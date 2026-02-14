@@ -5,11 +5,83 @@ import BracketMatchCard from "@/components/tournaments/BracketMatchCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, Gamepad2, Swords } from "lucide-react";
+import { useRef, useEffect } from "react";
 
 const TournamentBracket = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tournament, rounds, totalRounds, currentRound, matches, isLoading } = useBracket(id);
+  const bracketRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Draw connecting lines between bracket rounds
+  useEffect(() => {
+    if (!bracketRef.current || !svgRef.current || matches.length === 0) return;
+
+    const timer = setTimeout(() => {
+      const container = bracketRef.current!;
+      const svg = svgRef.current!;
+
+      // Clear all lines (keep defs)
+      const children = Array.from(svg.children);
+      children.forEach((child) => {
+        if (child.tagName !== 'defs') {
+          svg.removeChild(child);
+        }
+      });
+
+      // Get all round containers
+      const roundDivs = Array.from(container.querySelectorAll('[data-round]')) as HTMLElement[];
+      if (roundDivs.length < 2) return;
+
+      // For each pair of consecutive rounds, draw lines
+      for (let i = 0; i < roundDivs.length - 1; i++) {
+        const currentRound = roundDivs[i];
+        const nextRound = roundDivs[i + 1];
+
+        const currentMatches = Array.from(currentRound.querySelectorAll('[data-match-id]')) as HTMLElement[];
+        const nextMatches = Array.from(nextRound.querySelectorAll('[data-match-id]')) as HTMLElement[];
+
+        if (currentMatches.length === 0 || nextMatches.length === 0) continue;
+
+        // Draw lines from current round matches to next round
+        currentMatches.forEach((match, idx) => {
+          const r1 = match.getBoundingClientRect();
+          const cr = container.getBoundingClientRect();
+
+          const x1 = r1.right - cr.left;
+          const y1 = r1.top - cr.top + r1.height / 2;
+
+          // Each pair of current matches feeds into next match
+          const nextIdx = Math.floor(idx / 2);
+          const nextMatch = nextMatches[Math.min(nextIdx, nextMatches.length - 1)];
+
+          if (nextMatch) {
+            const r2 = nextMatch.getBoundingClientRect();
+            const x2 = r2.left - cr.left;
+            const y2 = r2.top - cr.top + r2.height / 2;
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', String(x1));
+            line.setAttribute('y1', String(y1));
+            line.setAttribute('x2', String(x2));
+            line.setAttribute('y2', String(y2));
+            line.setAttribute('stroke', 'hsl(var(--primary))');
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('stroke-linecap', 'round');
+            line.setAttribute('opacity', '0.5');
+            svg.appendChild(line);
+          }
+        });
+      }
+
+      // Update SVG size
+      svg.setAttribute('width', String(container.scrollWidth));
+      svg.setAttribute('height', String(container.scrollHeight));
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [matches.length]);
 
   const roundLabel = (round: number) => {
     if (totalRounds === 0) return `Round ${round}`;
@@ -91,8 +163,25 @@ const TournamentBracket = () => {
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl border border-border bg-card p-6 overflow-x-auto">
-                <div className="flex gap-8 min-w-max items-start">
+              <div className="rounded-xl border border-border bg-card p-6 overflow-x-auto relative" ref={bracketRef}>
+                <svg
+                  ref={svgRef}
+                  className="absolute top-0 left-0 pointer-events-none z-0"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    minHeight: "600px",
+                  }}
+                >
+                  <defs>
+                    <linearGradient id="bracket-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.6" />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                <div className="relative flex gap-8 min-w-max items-start z-10">
                   {Object.entries(rounds)
                     .sort(([a], [b]) => Number(a) - Number(b))
                     .map(([round, roundMatches]) => {
@@ -101,7 +190,11 @@ const TournamentBracket = () => {
                       const isCurrentRound = roundNum === currentRound;
 
                       return (
-                        <div key={round} className="flex flex-col items-center">
+                        <div
+                          key={round}
+                          className="flex flex-col items-center"
+                          data-round={roundNum}
+                        >
                           {/* Round header */}
                           <div className="mb-4 text-center">
                             <h3
@@ -109,8 +202,8 @@ const TournamentBracket = () => {
                                 isCurrentRound
                                   ? "text-primary neon-text"
                                   : isFinalRound
-                                  ? "gradient-text"
-                                  : "text-muted-foreground"
+                                    ? "gradient-text"
+                                    : "text-muted-foreground"
                               }`}
                             >
                               {roundLabel(roundNum)}
@@ -121,8 +214,8 @@ const TournamentBracket = () => {
                                   isCurrentRound
                                     ? "bg-primary w-full"
                                     : roundMatches.every((m) => m.status === "completed")
-                                    ? "bg-success w-full"
-                                    : "w-0"
+                                      ? "bg-success w-full"
+                                      : "w-0"
                                 }`}
                               />
                             </div>
@@ -131,10 +224,7 @@ const TournamentBracket = () => {
                           {/* Matches in this round */}
                           <div className="flex flex-col justify-around gap-6 flex-1">
                             {roundMatches.map((match) => (
-                              <div
-                                key={match.id}
-                                className="animate-fade-in"
-                              >
+                              <div key={match.id} className="animate-fade-in" data-match-id={match.id}>
                                 <BracketMatchCard match={match} isFinal={isFinalRound} />
                                 <p className="text-[10px] text-muted-foreground text-center mt-1.5 font-body">
                                   Match {match.match_number}
