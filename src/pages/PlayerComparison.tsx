@@ -1,16 +1,29 @@
-import { useState } from "react";
+import { useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import PlayerSelector from "@/components/compare/PlayerSelector";
 import ComparisonStatRow from "@/components/compare/ComparisonStatRow";
 import ComparisonChart from "@/components/compare/ComparisonChart";
 import { useAllPlayers, usePlayerComparisonData } from "@/hooks/usePlayerComparison";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Swords, Trophy, Target, TrendingUp, Calendar } from "lucide-react";
+import { Swords, Trophy, Target, TrendingUp, Calendar, Link2, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 const PlayerComparison = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: players, isLoading: loadingPlayers } = useAllPlayers();
-  const [playerAId, setPlayerAId] = useState<string | null>(null);
-  const [playerBId, setPlayerBId] = useState<string | null>(null);
+
+  const playerAId = searchParams.get("a");
+  const playerBId = searchParams.get("b");
+
+  const setPlayerAId = useCallback((id: string) => {
+    setSearchParams((prev) => { prev.set("a", id); return prev; }, { replace: true });
+  }, [setSearchParams]);
+
+  const setPlayerBId = useCallback((id: string) => {
+    setSearchParams((prev) => { prev.set("b", id); return prev; }, { replace: true });
+  }, [setSearchParams]);
 
   const { data: playerA, isLoading: loadingA } = usePlayerComparisonData(playerAId);
   const { data: playerB, isLoading: loadingB } = usePlayerComparisonData(playerBId);
@@ -74,7 +87,23 @@ const PlayerComparison = () => {
                   </AvatarFallback>
                 </Avatar>
                 <span className="font-display text-lg font-bold text-foreground">{playerA.display_name}</span>
-              </div>
+            </div>
+
+            {/* Share Button */}
+            <div className="flex justify-center mb-8">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast({ title: "Link copied!", description: "Share this URL to show this comparison." });
+                }}
+              >
+                <Link2 className="h-4 w-4" />
+                Copy Share Link
+              </Button>
+            </div>
               <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 border border-primary/30">
                 <Swords className="h-5 w-5 text-primary" />
               </div>
