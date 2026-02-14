@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -254,6 +255,31 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
   });
 
   const isOwner = !!(user && tournamentQuery.data && tournamentQuery.data.created_by === user.id);
+
+  // Real-time subscription for live match updates
+  useEffect(() => {
+    if (!tournamentId) return;
+
+    const channel = supabase
+      .channel(`manage-realtime-${tournamentId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "match_results",
+          filter: `tournament_id=eq.${tournamentId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["manage-matches", tournamentId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tournamentId, queryClient]);
 
   return {
     tournament: tournamentQuery.data ?? null,
