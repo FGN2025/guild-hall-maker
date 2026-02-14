@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MessageSquare, Users, Megaphone, ThumbsUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTopics, type CommunityTopic } from "@/hooks/useCommunity";
+import { useTopics, useCommunityRealtime, type CommunityTopic } from "@/hooks/useCommunity";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreateTopicDialog } from "@/components/community/CreateTopicDialog";
 import { TopicDetail } from "@/components/community/TopicDetail";
@@ -15,6 +15,7 @@ const categoryColor: Record<string, string> = {
 
 const Community = () => {
   const { user } = useAuth();
+  useCommunityRealtime();
   const { data: topics, isLoading } = useTopics();
   const [selectedTopic, setSelectedTopic] = useState<CommunityTopic | null>(null);
 
