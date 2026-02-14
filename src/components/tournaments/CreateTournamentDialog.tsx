@@ -100,11 +100,12 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="font-heading text-sm">Start Date *</Label>
-              <Input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                required className="bg-card border-border font-body" />
-            </div>
+           <div className="space-y-2">
+               <Label className="font-heading text-sm">Start Date *</Label>
+               <Input type="text" placeholder="e.g. 02/28/2026, 02:00 PM" value={startDate} 
+                 onChange={(e) => setStartDate(e.target.value)}
+                 required className="bg-card border-border font-body" />
+             </div>
             <div className="space-y-2">
               <Label className="font-heading text-sm">Prize Pool</Label>
               <Input value={prizePool} onChange={(e) => setPrizePool(e.target.value)} maxLength={50}
