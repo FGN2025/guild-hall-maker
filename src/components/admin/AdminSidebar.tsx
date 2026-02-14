@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound } from "lucide-react";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2 } from "lucide-react";
 
 const sidebarItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/media", label: "Media Library", icon: Image },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/bypass-codes", label: "Bypass Codes", icon: KeyRound },
 ];
 
