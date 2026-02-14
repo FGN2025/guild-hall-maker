@@ -1,6 +1,38 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+
+/** Subscribe to realtime changes on community tables and auto-invalidate queries */
+export function useCommunityRealtime() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("community-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_posts" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["community-topics"] });
+          queryClient.invalidateQueries({ queryKey: ["community-replies"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_likes" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["community-topics"] });
+          queryClient.invalidateQueries({ queryKey: ["community-replies"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+}
 
 export interface CommunityTopic {
   id: string;
