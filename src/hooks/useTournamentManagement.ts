@@ -20,6 +20,17 @@ const sendTournamentEmail = async (payload: {
   }
 };
 
+const awardSeasonPoints = async (winnerId: string, loserId: string | null) => {
+  try {
+    const { error } = await supabase.functions.invoke("award-season-points", {
+      body: { winner_id: winnerId, loser_id: loserId },
+    });
+    if (error) console.error("Season points failed:", error);
+  } catch (err) {
+    console.error("Season points error:", err);
+  }
+};
+
 export interface RegisteredPlayer {
   user_id: string;
   display_name: string;
@@ -251,6 +262,12 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         if (tournamentId) {
           sendTournamentEmail({ type: "player_advanced", tournament_id: tournamentId, winner_id: winnerId });
         }
+      }
+
+      // Award season points
+      if (winnerId) {
+        const loserId = winnerId === match.player1_id ? match.player2_id : match.player1_id;
+        awardSeasonPoints(winnerId, loserId);
       }
 
       // Send score posted email
