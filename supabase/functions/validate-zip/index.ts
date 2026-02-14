@@ -38,7 +38,6 @@ Deno.serve(async (req) => {
 
     const smartyData = await smartyRes.json();
 
-    // Smarty returns an array; check first result for valid city_states
     const result = smartyData?.[0];
     const cityStates = result?.city_states;
 
@@ -72,12 +71,24 @@ Deno.serve(async (req) => {
       throw new Error(provError.message);
     }
 
+    // If no providers, fetch the admin-configurable message
+    let noProvidersMessage: string | null = null;
+    if (!providers || providers.length === 0) {
+      const { data: setting } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "no_providers_message")
+        .maybeSingle();
+      noProvidersMessage = setting?.value || null;
+    }
+
     return new Response(
       JSON.stringify({
         valid: true,
         city,
         state,
         providers: providers || [],
+        no_providers_message: noProvidersMessage,
         message:
           providers && providers.length > 0
             ? `Valid ZIP: ${city}, ${state} — ${providers.length} provider(s) found!`

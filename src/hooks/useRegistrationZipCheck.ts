@@ -13,6 +13,7 @@ interface ZipCheckResult {
   providers: Provider[];
   bypassed: boolean;
   message: string;
+  noProvidersMessage?: string | null;
 }
 
 export function useRegistrationZipCheck() {
@@ -77,6 +78,7 @@ export function useRegistrationZipCheck() {
             ? `Found ${providerList.length} provider(s) in your area!`
             : "Your ZIP is valid, but no broadband providers currently serve your area."
         ),
+        noProvidersMessage: data.no_providers_message || null,
       };
       setResult(res);
       return res;
