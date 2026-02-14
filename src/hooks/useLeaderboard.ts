@@ -14,18 +14,60 @@ export interface LeaderboardPlayer {
   rank: number;
 }
 
-export const useLeaderboard = () => {
+export interface LeaderboardFilters {
+  game: string;
+  tournamentId: string;
+  timePeriod: string;
+}
+
+export const useLeaderboard = (filters: LeaderboardFilters) => {
   return useQuery({
-    queryKey: ["leaderboard"],
+    queryKey: ["leaderboard", filters],
     queryFn: async () => {
-      // Fetch all completed matches
-      const { data: matches, error: matchError } = await supabase
+      // Build match query with filters
+      let matchQuery = supabase
         .from("match_results")
-        .select("player1_id, player2_id, winner_id, status")
+        .select("player1_id, player2_id, winner_id, status, tournament_id, completed_at")
         .eq("status", "completed");
 
+      // Time period filter
+      if (filters.timePeriod && filters.timePeriod !== "all") {
+        const now = new Date();
+        let since: Date;
+        switch (filters.timePeriod) {
+          case "7d":
+            since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case "30d":
+            since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case "90d":
+            since = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            since = new Date(0);
+        }
+        matchQuery = matchQuery.gte("completed_at", since.toISOString());
+      }
+
+      // Tournament filter
+      if (filters.tournamentId && filters.tournamentId !== "all") {
+        matchQuery = matchQuery.eq("tournament_id", filters.tournamentId);
+      }
+
+      const { data: matches, error: matchError } = await matchQuery;
       if (matchError) throw matchError;
       if (!matches || matches.length === 0) return [] as LeaderboardPlayer[];
+
+      // If game filter is active, fetch tournament IDs for that game
+      let validTournamentIds: Set<string> | null = null;
+      if (filters.game && filters.game !== "all") {
+        const { data: tournaments } = await supabase
+          .from("tournaments")
+          .select("id")
+          .eq("game", filters.game);
+        validTournamentIds = new Set((tournaments ?? []).map((t) => t.id));
+      }
 
       // Aggregate stats per player
       const stats: Record<string, { wins: number; losses: number; draws: number }> = {};
@@ -35,6 +77,9 @@ export const useLeaderboard = () => {
       };
 
       matches.forEach((m) => {
+        // Skip if game filter active and tournament not matching
+        if (validTournamentIds && !validTournamentIds.has(m.tournament_id)) return;
+
         const p1 = m.player1_id;
         const p2 = m.player2_id;
         if (!p1 && !p2) return;
@@ -43,7 +88,6 @@ export const useLeaderboard = () => {
         if (p2) ensurePlayer(p2);
 
         if (!m.winner_id) {
-          // Draw
           if (p1) stats[p1].draws++;
           if (p2) stats[p2].draws++;
         } else {
@@ -82,14 +126,12 @@ export const useLeaderboard = () => {
         };
       });
 
-      // Sort by win rate (desc), then total wins (desc), then fewer losses
       leaderboard.sort((a, b) => {
         if (b.win_rate !== a.win_rate) return b.win_rate - a.win_rate;
         if (b.wins !== a.wins) return b.wins - a.wins;
         return a.losses - b.losses;
       });
 
-      // Assign ranks
       leaderboard.forEach((p, i) => {
         p.rank = i + 1;
       });
@@ -97,4 +139,31 @@ export const useLeaderboard = () => {
       return leaderboard;
     },
   });
+};
+
+export const useLeaderboardFilterOptions = () => {
+  const gamesQuery = useQuery({
+    queryKey: ["leaderboard-games"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tournaments")
+        .select("game")
+        .order("game");
+      const unique = [...new Set((data ?? []).map((t) => t.game))];
+      return unique;
+    },
+  });
+
+  const tournamentsQuery = useQuery({
+    queryKey: ["leaderboard-tournaments"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tournaments")
+        .select("id, name")
+        .order("name");
+      return data ?? [];
+    },
+  });
+
+  return { games: gamesQuery.data ?? [], tournaments: tournamentsQuery.data ?? [] };
 };

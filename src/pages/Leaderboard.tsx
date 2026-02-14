@@ -1,8 +1,16 @@
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import { Trophy, Medal, TrendingUp, Minus, Swords, Crown } from "lucide-react";
-import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { Trophy, Medal, TrendingUp, Minus, Swords, Crown, Filter } from "lucide-react";
+import { useLeaderboard, useLeaderboardFilterOptions } from "@/hooks/useLeaderboard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const rankColor = (rank: number) => {
   if (rank === 1) return "text-warning";
@@ -18,8 +26,24 @@ const rankBg = (rank: number) => {
   return "bg-muted";
 };
 
+const TIME_OPTIONS = [
+  { value: "all", label: "All Time" },
+  { value: "7d", label: "Last 7 Days" },
+  { value: "30d", label: "Last 30 Days" },
+  { value: "90d", label: "Last 90 Days" },
+];
+
 const Leaderboard = () => {
-  const { data: players, isLoading } = useLeaderboard();
+  const [game, setGame] = useState("all");
+  const [tournamentId, setTournamentId] = useState("all");
+  const [timePeriod, setTimePeriod] = useState("all");
+
+  const { games, tournaments } = useLeaderboardFilterOptions();
+  const { data: players, isLoading } = useLeaderboard({ game, tournamentId, timePeriod });
+
+  const filteredTournaments = game !== "all"
+    ? tournaments.filter((t) => t.name) // all tournaments shown; game filtering happens in hook
+    : tournaments;
 
   const topThree = players?.slice(0, 3) ?? [];
   const podiumOrder = topThree.length === 3
@@ -30,9 +54,50 @@ const Leaderboard = () => {
     <div className="min-h-screen bg-background grid-bg">
       <Navbar />
       <div className="pt-24 pb-16 container mx-auto px-4">
-        <div className="mb-10">
+        <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Global Rankings</p>
           <h1 className="font-display text-4xl font-bold text-foreground">Leaderboard</h1>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3 mb-8 p-4 rounded-xl border border-border bg-card">
+          <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="text-sm font-heading text-muted-foreground mr-1">Filters:</span>
+
+          <Select value={game} onValueChange={(v) => { setGame(v); setTournamentId("all"); }}>
+            <SelectTrigger className="w-[160px] h-9 text-sm bg-background border-border">
+              <SelectValue placeholder="All Games" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Games</SelectItem>
+              {games.map((g) => (
+                <SelectItem key={g} value={g}>{g}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={tournamentId} onValueChange={setTournamentId}>
+            <SelectTrigger className="w-[200px] h-9 text-sm bg-background border-border">
+              <SelectValue placeholder="All Tournaments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tournaments</SelectItem>
+              {filteredTournaments.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={timePeriod} onValueChange={setTimePeriod}>
+            <SelectTrigger className="w-[150px] h-9 text-sm bg-background border-border">
+              <SelectValue placeholder="All Time" />
+            </SelectTrigger>
+            <SelectContent>
+              {TIME_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading ? (
@@ -104,12 +169,9 @@ const Leaderboard = () => {
                   key={p.user_id}
                   className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
                 >
-                  {/* Rank */}
                   <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
                     #{p.rank}
                   </span>
-
-                  {/* Player */}
                   <div className="col-span-3 flex items-center gap-3 min-w-0">
                     <Avatar className="h-8 w-8 shrink-0">
                       <AvatarImage src={p.avatar_url ?? undefined} />
@@ -121,36 +183,24 @@ const Leaderboard = () => {
                       {p.display_name}
                     </span>
                   </div>
-
-                  {/* Win Rate */}
                   <div className="col-span-2 flex items-center gap-2">
                     <Progress value={p.win_rate} className="h-1.5 flex-1 bg-muted" />
                     <span className="font-display text-xs text-primary font-bold w-10 text-right">
                       {p.win_rate}%
                     </span>
                   </div>
-
-                  {/* Matches */}
                   <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
                     {p.total_matches}
                   </span>
-
-                  {/* W */}
                   <span className="col-span-1 font-display text-sm text-success font-bold text-center">
                     {p.wins}
                   </span>
-
-                  {/* L */}
                   <span className="col-span-1 font-display text-sm text-destructive font-bold text-center">
                     {p.losses}
                   </span>
-
-                  {/* D */}
                   <span className="col-span-1 font-display text-sm text-warning font-bold text-center">
                     {p.draws}
                   </span>
-
-                  {/* Visual indicator */}
                   <div className="col-span-1 flex justify-end">
                     {p.rank <= 3 ? (
                       <Trophy className={`h-4 w-4 ${rankColor(p.rank)}`} />
