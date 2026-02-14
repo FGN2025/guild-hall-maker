@@ -26,6 +26,10 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminBypassCodes from "./pages/admin/AdminBypassCodes";
 import AdminTenants from "./pages/admin/AdminTenants";
+import ProviderRoute from "./components/provider/ProviderRoute";
+import ProviderDashboard from "./pages/provider/ProviderDashboard";
+import ProviderLeads from "./pages/provider/ProviderLeads";
+import ProviderZipCodes from "./pages/provider/ProviderZipCodes";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +57,9 @@ const App = () => (
             <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
             <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
             <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
+            <Route path="/provider" element={<ProviderRoute><ProviderDashboard /></ProviderRoute>} />
+            <Route path="/provider/leads" element={<ProviderRoute><ProviderLeads /></ProviderRoute>} />
+            <Route path="/provider/zip-codes" element={<ProviderRoute><ProviderZipCodes /></ProviderRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/player/:id" element={<ProtectedRoute><PlayerProfile /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
