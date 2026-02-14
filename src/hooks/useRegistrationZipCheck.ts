@@ -48,44 +48,35 @@ export function useRegistrationZipCheck() {
         return res;
       }
 
-      // Validate ZIP against national database
-      const { data: nationalZip, error: natError } = await supabase
-        .from("national_zip_codes")
-        .select("zip_code, city, state")
-        .eq("zip_code", zipCode.trim())
-        .maybeSingle();
+      // Validate ZIP via Smarty edge function
+      const { data, error: fnError } = await supabase.functions.invoke('validate-zip', {
+        body: { zipCode: zipCode.trim() },
+      });
 
-      if (natError) throw natError;
+      if (fnError) throw fnError;
 
-      if (!nationalZip) {
+      if (!data.valid) {
         const res: ZipCheckResult = {
           valid: false,
           providers: [],
           bypassed: false,
-          message: "Invalid ZIP code. Please enter a valid US ZIP code.",
+          message: data.message || "Invalid ZIP code. Please enter a valid US ZIP code.",
         };
         setResult(res);
         return res;
       }
 
-      // Lookup providers by ZIP
-      const { data: providers, error: provError } = await supabase.rpc(
-        "lookup_providers_by_zip",
-        { _zip: zipCode.trim() }
-      );
-
-      if (provError) throw provError;
-
-      const providerList = (providers as Provider[]) || [];
+      const providerList = (data.providers as Provider[]) || [];
 
       const res: ZipCheckResult = {
         valid: true,
         providers: providerList,
         bypassed: false,
-        message:
+        message: data.message || (
           providerList.length > 0
             ? `Found ${providerList.length} provider(s) in your area!`
-            : "Your ZIP is valid, but no broadband providers currently serve your area.",
+            : "Your ZIP is valid, but no broadband providers currently serve your area."
+        ),
       };
       setResult(res);
       return res;
