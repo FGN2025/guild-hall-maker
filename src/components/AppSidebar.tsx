@@ -53,7 +53,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
-        <NavLink to="/dashboard" className="flex items-center gap-2 group">
+        <NavLink to="/" className="flex items-center gap-2 group">
           <Gamepad2 className="h-6 w-6 text-primary shrink-0" />
           <span className="font-display text-lg font-bold tracking-wider text-sidebar-foreground group-hover:text-primary transition-colors group-data-[collapsible=icon]:hidden">
             FGN
