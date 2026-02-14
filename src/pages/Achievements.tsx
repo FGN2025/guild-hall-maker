@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Award, Trophy, Crown, Medal, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
+import PageHero from "@/components/PageHero";
 
 const tierBadge = (label: string, count: number, color: string) =>
   count > 0 ? (
@@ -17,6 +18,7 @@ const Achievements = () => {
   return (
     <div className="min-h-screen bg-background grid-bg">
       <div className="py-8 container mx-auto px-4">
+        <PageHero pageSlug="achievements" />
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">
             Global Rankings

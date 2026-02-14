@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import PageHero from "@/components/PageHero";
 
 type SortKey = "rank" | "win_rate" | "total_matches" | "wins" | "losses" | "draws";
 type SortDir = "asc" | "desc";
@@ -134,6 +135,7 @@ const Leaderboard = () => {
   return (
     <div className="min-h-screen bg-background grid-bg">
       <div className="py-8 container mx-auto px-4">
+        <PageHero pageSlug="leaderboard" />
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Global Rankings</p>
           <h1 className="font-display text-4xl font-bold text-foreground">Leaderboard</h1>

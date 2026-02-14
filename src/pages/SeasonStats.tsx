@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PageHero from "@/components/PageHero";
 import { useSeasons, useSeasonStats, useSeasonProgression } from "@/hooks/useSeasonStats";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,7 @@ const SeasonStats = () => {
   return (
     <div className="min-h-screen bg-background grid-bg">
       <div className="py-8 container mx-auto px-4">
+        <PageHero pageSlug="season-stats" />
         {/* Header */}
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Analytics</p>

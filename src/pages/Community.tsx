@@ -7,6 +7,7 @@ import { CreateTopicDialog } from "@/components/community/CreateTopicDialog";
 import { TopicDetail } from "@/components/community/TopicDetail";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import PageHero from "@/components/PageHero";
 
 const categoryColor: Record<string, string> = {
   "Team Recruitment": "text-neon-accent",
@@ -28,6 +29,7 @@ const Community = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="py-8 container mx-auto px-4">
+        <PageHero pageSlug="community" />
         <div className="mb-10 flex items-end justify-between">
           <div>
             <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Connect & Discuss</p>

@@ -4,6 +4,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import PageHero from "@/components/PageHero";
 
 const Dashboard = () => {
   const { stats, registeredTournaments, recentMatches, isLoading } = useDashboard();
@@ -19,6 +20,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background grid-bg">
       <div className="py-8 container mx-auto px-4">
+        <PageHero pageSlug="dashboard" />
         <div className="mb-10">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Welcome Back</p>
           <h1 className="font-display text-4xl font-bold text-foreground">Player Dashboard</h1>
