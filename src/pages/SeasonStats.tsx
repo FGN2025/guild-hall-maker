@@ -25,8 +25,11 @@ import {
   Line,
   Legend,
 } from "recharts";
-import { Calendar, Users, Zap, Target, TrendingUp, Award, Crown, Star, Shield } from "lucide-react";
+import { Calendar, Users, Zap, Target, TrendingUp, Award, Crown, Star, Shield, Download, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { exportCsv, exportPdf } from "@/lib/exportSeasonStats";
+import { toast } from "@/hooks/use-toast";
 
 const tierColors: Record<string, string> = {
   platinum: "hsl(var(--primary))",
@@ -93,6 +96,31 @@ const SeasonStats = () => {
               <span className="text-xs text-muted-foreground font-body">
                 {new Date(selectedSeason.start_date).toLocaleDateString()} — {new Date(selectedSeason.end_date).toLocaleDateString()}
               </span>
+              {stats && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 ml-2"
+                    onClick={() => {
+                      exportCsv(stats, selectedSeason.name);
+                      toast({ title: "CSV downloaded", description: `${selectedSeason.name} stats exported.` });
+                    }}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => exportPdf(stats, selectedSeason.name)}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    PDF
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>
