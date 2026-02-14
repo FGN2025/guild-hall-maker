@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   onCreate: (data: {
@@ -17,6 +18,7 @@ interface Props {
     prize_pool?: string;
     start_date: string;
     rules?: string;
+    image_url?: string;
   }) => void;
   isCreating: boolean;
 }
@@ -31,9 +33,33 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [prizePool, setPrizePool] = useState("");
   const [startDate, setStartDate] = useState("");
   const [rules, setRules] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    let image_url: string | undefined;
+
+    if (imageFile) {
+      setUploadingImage(true);
+      const ext = imageFile.name.split(".").pop() ?? "png";
+      const filePath = `tournament/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("app-media").upload(filePath, imageFile, { contentType: imageFile.type });
+      if (!error) {
+        const { data } = supabase.storage.from("app-media").getPublicUrl(filePath);
+        image_url = data.publicUrl;
+      }
+      setUploadingImage(false);
+    }
+
     onCreate({
       name: name.trim(),
       game: game.trim(),
@@ -43,10 +69,12 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
       prize_pool: prizePool.trim() || undefined,
       start_date: new Date(startDate).toISOString(),
       rules: rules.trim() || undefined,
+      image_url,
     });
     setOpen(false);
     setName(""); setGame(""); setDescription(""); setFormat("single_elimination");
     setMaxParticipants("16"); setPrizePool(""); setStartDate(""); setRules("");
+    setImageFile(null); setImagePreview(null);
   };
 
   return (
@@ -113,11 +141,24 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             </div>
           </div>
           <div className="space-y-2">
+            <Label className="font-heading text-sm">Hero Image</Label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-card text-sm font-heading text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                <Upload className="h-4 w-4" />
+                {imageFile ? imageFile.name : "Choose image"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              </label>
+              {imagePreview && (
+                <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover border border-border" />
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
             <Label className="font-heading text-sm">Rules</Label>
             <Textarea value={rules} onChange={(e) => setRules(e.target.value)} maxLength={2000}
               className="bg-card border-border font-body min-h-[80px]" placeholder="Tournament rules..." />
           </div>
-          <Button type="submit" disabled={isCreating}
+          <Button type="submit" disabled={isCreating || uploadingImage}
             className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5">
             {isCreating ? "Creating..." : "Create Tournament"}
           </Button>
