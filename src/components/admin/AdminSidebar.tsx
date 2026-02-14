@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2 } from "lucide-react";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings } from "lucide-react";
 
 const sidebarItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -8,6 +8,7 @@ const sidebarItems = [
   { to: "/admin/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/bypass-codes", label: "Bypass Codes", icon: KeyRound },
+  { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 const AdminSidebar = () => {

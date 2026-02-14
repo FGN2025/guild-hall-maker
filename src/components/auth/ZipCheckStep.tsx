@@ -1,4 +1,4 @@
-import { MapPin, KeyRound, Building2, CheckCircle2, AlertCircle } from "lucide-react";
+import { MapPin, KeyRound, Building2, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface ZipCheckResult {
   providers: Provider[];
   bypassed: boolean;
   message: string;
+  noProvidersMessage?: string | null;
 }
 
 interface ZipCheckStepProps {
@@ -121,6 +122,14 @@ const ZipCheckStep = ({
                   <span className="font-heading text-sm">{p.tenant_name}</span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* No-providers admin message */}
+          {result.valid && result.providers.length === 0 && !result.bypassed && result.noProvidersMessage && (
+            <div className="mt-3 flex items-start gap-2 rounded-md bg-accent/50 border border-accent p-3">
+              <Info className="h-4 w-4 mt-0.5 text-accent-foreground shrink-0" />
+              <span className="text-sm text-accent-foreground">{result.noProvidersMessage}</span>
             </div>
           )}
         </div>
