@@ -4,7 +4,7 @@ import { useBracket } from "@/hooks/useBracket";
 import BracketMatchCard from "@/components/tournaments/BracketMatchCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trophy, Gamepad2, Swords } from "lucide-react";
+import { ArrowLeft, Trophy, Gamepad2, Swords, Radio } from "lucide-react";
 import { useRef, useEffect } from "react";
 
 const TournamentBracket = () => {
@@ -145,7 +145,16 @@ const TournamentBracket = () => {
                   {tournament.format.replace("_", " ")}
                 </span>
               </div>
-              <h1 className="font-display text-3xl font-bold text-foreground mb-1">{tournament.name}</h1>
+               <h1 className="font-display text-3xl font-bold text-foreground mb-1">{tournament.name}</h1>
+               {tournament.status === "in_progress" && (
+                 <div className="flex items-center gap-1.5 mt-2">
+                   <span className="relative flex h-2 w-2">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                     <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                   </span>
+                   <span className="text-xs text-primary font-heading">Live</span>
+                 </div>
+               )}
               {currentRound > 0 && (
                 <p className="text-sm text-muted-foreground font-body">
                   Currently in <span className="text-primary font-semibold">{roundLabel(currentRound)}</span>
