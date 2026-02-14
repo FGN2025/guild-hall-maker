@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Trophy, Gamepad2, FileText } from "lucide-react";
+import { Calendar, Users, Trophy, Gamepad2, FileText, GitBranch } from "lucide-react";
 import { Tournament } from "@/hooks/useTournaments";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   tournament: Tournament | null;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister, onUnregister, isRegistering }: Props) => {
+  const navigate = useNavigate();
   if (!t) return null;
 
   const isFull = t.registrations_count >= t.max_participants;
@@ -64,6 +66,17 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
               </div>
               <p className="text-xs text-muted-foreground font-body whitespace-pre-wrap">{t.rules}</p>
             </div>
+          )}
+
+          {(t.status === "in_progress" || t.status === "completed") && (
+            <Button
+              variant="outline"
+              className="w-full font-heading tracking-wide border-primary/30 text-primary hover:bg-primary/10 py-5"
+              onClick={() => { navigate(`/tournaments/${t.id}/bracket`); onOpenChange(false); }}
+            >
+              <GitBranch className="h-4 w-4 mr-2" />
+              View Bracket
+            </Button>
           )}
 
           {t.is_registered ? (
