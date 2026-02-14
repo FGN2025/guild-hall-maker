@@ -17,6 +17,7 @@ import TournamentBracket from "./pages/TournamentBracket";
 import TournamentManage from "./pages/TournamentManage";
 import PlayerProfile from "./pages/PlayerProfile";
 import SeasonStats from "./pages/SeasonStats";
+import PlayerComparison from "./pages/PlayerComparison";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
             <Route path="/season-stats" element={<ProtectedRoute><SeasonStats /></ProtectedRoute>} />
+            <Route path="/compare" element={<ProtectedRoute><PlayerComparison /></ProtectedRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/player/:id" element={<ProtectedRoute><PlayerProfile /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
