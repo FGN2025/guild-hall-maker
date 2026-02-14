@@ -7,6 +7,7 @@ import { useTournaments, Tournament } from "@/hooks/useTournaments";
 import TournamentCard from "@/components/tournaments/TournamentCard";
 import TournamentDetailsDialog from "@/components/tournaments/TournamentDetailsDialog";
 import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
+import PageHero from "@/components/PageHero";
 
 const Tournaments = () => {
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
@@ -34,6 +35,7 @@ const Tournaments = () => {
   return (
     <div className="min-h-screen bg-background grid-bg">
       <div className="py-8 container mx-auto px-4">
+        <PageHero pageSlug="tournaments" />
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
             <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Browse & Register</p>

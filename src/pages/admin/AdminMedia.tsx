@@ -11,6 +11,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Image, Search, Save, Loader2, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import HeroImageManager from "@/components/admin/HeroImageManager";
 
 function extractYouTubeId(url: string): string | null {
   const match = url.match(
@@ -121,6 +122,8 @@ const AdminMedia = () => {
           </div>
         </CardContent>
       </Card>
+
+      <HeroImageManager />
 
       <MediaUploader onUpload={upload} isUploading={isUploading} />
 
