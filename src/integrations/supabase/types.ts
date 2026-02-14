@@ -103,6 +103,121 @@ export type Database = {
         }
         Relationships: []
       }
+      season_scores: {
+        Row: {
+          created_at: string
+          id: string
+          losses: number
+          points: number
+          season_id: string
+          tournaments_played: number
+          updated_at: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          losses?: number
+          points?: number
+          season_id: string
+          tournaments_played?: number
+          updated_at?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          losses?: number
+          points?: number
+          season_id?: string
+          tournaments_played?: number
+          updated_at?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_scores_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_snapshots: {
+        Row: {
+          created_at: string
+          final_points: number
+          final_rank: number
+          id: string
+          losses: number
+          season_id: string
+          tier: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          final_points: number
+          final_rank: number
+          id?: string
+          losses?: number
+          season_id: string
+          tier?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          final_points?: number
+          final_rank?: number
+          id?: string
+          losses?: number
+          season_id?: string
+          tier?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_snapshots_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasons: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          name: string
+          start_date: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string
+        }
+        Relationships: []
+      }
       tournament_registrations: {
         Row: {
           id: string
