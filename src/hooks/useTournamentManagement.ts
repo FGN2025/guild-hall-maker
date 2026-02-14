@@ -4,6 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+const sendTournamentEmail = async (payload: {
+  type: "tournament_started" | "score_posted" | "player_advanced";
+  tournament_id: string;
+  match_id?: string;
+  winner_id?: string;
+}) => {
+  try {
+    const { error } = await supabase.functions.invoke("send-tournament-email", {
+      body: payload,
+    });
+    if (error) console.error("Email notification failed:", error);
+  } catch (err) {
+    console.error("Email notification error:", err);
+  }
+};
+
 export interface RegisteredPlayer {
   user_id: string;
   display_name: string;
@@ -175,6 +191,10 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       queryClient.invalidateQueries({ queryKey: ["manage-matches", tournamentId] });
       queryClient.invalidateQueries({ queryKey: ["manage-tournament", tournamentId] });
       queryClient.invalidateQueries({ queryKey: ["tournaments"] });
+      // Send tournament started email
+      if (tournamentId) {
+        sendTournamentEmail({ type: "tournament_started", tournament_id: tournamentId });
+      }
     },
     onError: (err: Error) => toast.error(err.message || "Failed to generate bracket"),
   });
@@ -227,6 +247,15 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
             await supabase.from("match_results").update(updateField).eq("id", nextMatch.id);
           }
         }
+        // Send advancement email
+        if (tournamentId) {
+          sendTournamentEmail({ type: "player_advanced", tournament_id: tournamentId, winner_id: winnerId });
+        }
+      }
+
+      // Send score posted email
+      if (tournamentId) {
+        sendTournamentEmail({ type: "score_posted", tournament_id: tournamentId, match_id: matchId });
       }
     },
     onSuccess: () => {

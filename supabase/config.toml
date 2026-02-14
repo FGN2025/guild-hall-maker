@@ -1,1 +1,4 @@
 project_id = "yrhwzmkenjgiujhofucx"
+
+[functions.send-tournament-email]
+verify_jwt = false
