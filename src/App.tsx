@@ -19,6 +19,7 @@ import PlayerProfile from "./pages/PlayerProfile";
 import SeasonStats from "./pages/SeasonStats";
 import PlayerComparison from "./pages/PlayerComparison";
 import Achievements from "./pages/Achievements";
+import MediaLibrary from "./pages/MediaLibrary";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/season-stats" element={<ProtectedRoute><SeasonStats /></ProtectedRoute>} />
             <Route path="/compare" element={<ProtectedRoute><PlayerComparison /></ProtectedRoute>} />
             <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+            <Route path="/media" element={<ProtectedRoute><MediaLibrary /></ProtectedRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/player/:id" element={<ProtectedRoute><PlayerProfile /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
