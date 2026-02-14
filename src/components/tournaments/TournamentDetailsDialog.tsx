@@ -1,10 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Trophy, Gamepad2, FileText, GitBranch } from "lucide-react";
+import { Calendar, Users, Trophy, Gamepad2, FileText, GitBranch, Settings } from "lucide-react";
 import { Tournament } from "@/hooks/useTournaments";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   tournament: Tournament | null;
@@ -17,10 +18,12 @@ interface Props {
 
 const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister, onUnregister, isRegistering }: Props) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   if (!t) return null;
 
   const isFull = t.registrations_count >= t.max_participants;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
+  const isCreator = user?.id === t.created_by;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,6 +69,17 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
               </div>
               <p className="text-xs text-muted-foreground font-body whitespace-pre-wrap">{t.rules}</p>
             </div>
+          )}
+
+          {isCreator && (
+            <Button
+              variant="outline"
+              className="w-full font-heading tracking-wide border-accent/30 text-accent hover:bg-accent/10 py-5"
+              onClick={() => { navigate(`/tournaments/${t.id}/manage`); onOpenChange(false); }}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Tournament
+            </Button>
           )}
 
           {(t.status === "in_progress" || t.status === "completed") && (
