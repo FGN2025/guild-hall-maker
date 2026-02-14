@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { MessageSquare, Users, Megaphone, ThumbsUp } from "lucide-react";
+import { MessageSquare, Users, Megaphone, ThumbsUp, Pin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTopics, useCommunityRealtime, type CommunityTopic } from "@/hooks/useCommunity";
+import { useTopics, useCommunityRealtime, useTogglePin, type CommunityTopic } from "@/hooks/useCommunity";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreateTopicDialog } from "@/components/community/CreateTopicDialog";
 import { TopicDetail } from "@/components/community/TopicDetail";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 const categoryColor: Record<string, string> = {
   "Team Recruitment": "text-neon-accent",
@@ -14,9 +15,10 @@ const categoryColor: Record<string, string> = {
 };
 
 const Community = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   useCommunityRealtime();
   const { data: topics, isLoading } = useTopics();
+  const togglePin = useTogglePin();
   const [selectedTopic, setSelectedTopic] = useState<CommunityTopic | null>(null);
 
   const totalTopics = topics?.length ?? 0;
@@ -66,15 +68,36 @@ const Community = () => {
                 onClick={() => setSelectedTopic(t)}
                 className="p-4 border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer flex items-center justify-between"
               >
-                <div>
-                  <p className="font-heading font-semibold text-foreground">{t.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    by <span className="text-foreground">{t.author_name}</span> ·{" "}
-                    <span className={categoryColor[t.category] || "text-muted-foreground"}>{t.category}</span> ·{" "}
-                    {formatDistanceToNow(new Date(t.created_at), { addSuffix: true })}
-                  </p>
+                <div className="flex items-center gap-2">
+                  {t.is_pinned && <Pin className="h-4 w-4 text-primary shrink-0" />}
+                  <div>
+                    <p className="font-heading font-semibold text-foreground">{t.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      by <span className="text-foreground">{t.author_name}</span> ·{" "}
+                      <span className={categoryColor[t.category] || "text-muted-foreground"}>{t.category}</span> ·{" "}
+                      {formatDistanceToNow(new Date(t.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePin.mutate(
+                          { postId: t.id, pinned: !t.is_pinned },
+                          {
+                            onSuccess: () => toast.success(t.is_pinned ? "Unpinned" : "Pinned"),
+                            onError: () => toast.error("Failed to update pin"),
+                          }
+                        );
+                      }}
+                      className={`flex items-center gap-1 hover:text-primary transition-colors ${t.is_pinned ? "text-primary" : ""}`}
+                      title={t.is_pinned ? "Unpin topic" : "Pin topic"}
+                    >
+                      <Pin className="h-3 w-3" />
+                    </button>
+                  )}
                   <span className="flex items-center gap-1">
                     <MessageSquare className="h-3 w-3" /> {t.reply_count}
                   </span>

@@ -44,6 +44,7 @@ export interface CommunityTopic {
   author_name: string;
   reply_count: number;
   like_count: number;
+  is_pinned: boolean;
 }
 
 export interface CommunityReply {
@@ -62,8 +63,9 @@ export function useTopics() {
       // Fetch top-level posts
       const { data: posts, error } = await supabase
         .from("community_posts")
-        .select("id, user_id, title, body, category, created_at")
+        .select("id, user_id, title, body, category, created_at, is_pinned")
         .is("parent_id", null)
+        .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -104,6 +106,7 @@ export function useTopics() {
         author_name: profileMap.get(p.user_id) ?? "Anonymous",
         reply_count: replyCountMap.get(p.id) ?? 0,
         like_count: likeCountMap.get(p.id) ?? 0,
+        is_pinned: p.is_pinned ?? false,
       }));
     },
   });
@@ -217,6 +220,23 @@ export function useToggleLike() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["community-topics"] });
       queryClient.invalidateQueries({ queryKey: ["community-replies"] });
+    },
+  });
+}
+
+export function useTogglePin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ postId, pinned }: { postId: string; pinned: boolean }) => {
+      const { error } = await supabase
+        .from("community_posts")
+        .update({ is_pinned: pinned })
+        .eq("id", postId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["community-topics"] });
     },
   });
 }

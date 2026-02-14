@@ -109,6 +109,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          is_pinned: boolean
           parent_id: string | null
           title: string | null
           updated_at: string
@@ -119,6 +120,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          is_pinned?: boolean
           parent_id?: string | null
           title?: string | null
           updated_at?: string
@@ -129,6 +131,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          is_pinned?: boolean
           parent_id?: string | null
           title?: string | null
           updated_at?: string
