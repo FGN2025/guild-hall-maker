@@ -1,9 +1,10 @@
-import { Calendar, Users, Trophy, GitBranch } from "lucide-react";
+import { Calendar, Users, Trophy, GitBranch, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tournament } from "@/hooks/useTournaments";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -29,10 +30,12 @@ const TournamentCard = ({
   isRegistering,
 }: TournamentCardProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isFull = t.registrations_count >= t.max_participants;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const dateStr = format(new Date(t.start_date), "MMM d, yyyy");
   const showBracket = t.status === "in_progress" || t.status === "completed";
+  const isCreator = user?.id === t.created_by;
 
   return (
     <div className="rounded-xl border border-border bg-card p-6 glow-card flex flex-col">
@@ -68,6 +71,15 @@ const TournamentCard = ({
         >
           Details
         </Button>
+        {isCreator && (
+          <Button
+            variant="outline"
+            className="font-heading tracking-wide border-accent/30 text-accent hover:bg-accent/10"
+            onClick={() => navigate(`/tournaments/${t.id}/manage`)}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        )}
         {showBracket && (
           <Button
             variant="outline"
