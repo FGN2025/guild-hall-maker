@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import { Trophy, Medal, TrendingUp, Minus, Swords, Crown, Filter } from "lucide-react";
-import { useLeaderboard, useLeaderboardFilterOptions } from "@/hooks/useLeaderboard";
+import { Trophy, Medal, TrendingUp, Minus, Swords, Crown, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useLeaderboard, useLeaderboardFilterOptions, type LeaderboardPlayer } from "@/hooks/useLeaderboard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+type SortKey = "rank" | "win_rate" | "total_matches" | "wins" | "losses" | "draws";
+type SortDir = "asc" | "desc";
 
 const rankColor = (rank: number) => {
   if (rank === 1) return "text-warning";
@@ -38,13 +42,48 @@ const Leaderboard = () => {
   const [game, setGame] = useState("all");
   const [tournamentId, setTournamentId] = useState("all");
   const [timePeriod, setTimePeriod] = useState("all");
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("rank");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const { games, tournaments } = useLeaderboardFilterOptions();
   const { data: players, isLoading } = useLeaderboard({ game, tournamentId, timePeriod });
 
   const filteredTournaments = game !== "all"
-    ? tournaments.filter((t) => t.name) // all tournaments shown; game filtering happens in hook
+    ? tournaments.filter((t) => t.name)
     : tournaments;
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "rank" ? "asc" : "desc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3 ml-1 text-primary" /> : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
+  };
+
+  const sortedPlayers = useMemo(() => {
+    if (!players) return [];
+    let list = [...players];
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((p) =>
+        p.display_name.toLowerCase().includes(q) ||
+        (p.gamer_tag && p.gamer_tag.toLowerCase().includes(q))
+      );
+    }
+    list.sort((a, b) => {
+      const av = a[sortKey] as number;
+      const bv = b[sortKey] as number;
+      return sortDir === "asc" ? av - bv : bv - av;
+    });
+    return list;
+  }, [players, search, sortKey, sortDir]);
 
   const topThree = players?.slice(0, 3) ?? [];
   const podiumOrder = topThree.length === 3
@@ -61,7 +100,7 @@ const Leaderboard = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-8 p-4 rounded-xl border border-border bg-card">
+        <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card">
           <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
           <span className="text-sm font-heading text-muted-foreground mr-1">Filters:</span>
 
@@ -99,6 +138,17 @@ const Leaderboard = () => {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-8 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search players..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9 text-sm bg-card border-border"
+          />
         </div>
 
         {isLoading ? (
@@ -156,16 +206,33 @@ const Leaderboard = () => {
             {/* Full table */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
-                <span className="col-span-1">Rank</span>
+                <button onClick={() => handleSort("rank")} className="col-span-1 flex items-center cursor-pointer hover:text-foreground transition-colors">
+                  Rank <SortIcon col="rank" />
+                </button>
                 <span className="col-span-3">Player</span>
-                <span className="col-span-2">Win Rate</span>
-                <span className="col-span-2 text-center">Matches</span>
-                <span className="col-span-1 text-center">W</span>
-                <span className="col-span-1 text-center">L</span>
-                <span className="col-span-1 text-center">D</span>
+                <button onClick={() => handleSort("win_rate")} className="col-span-2 flex items-center cursor-pointer hover:text-foreground transition-colors">
+                  Win Rate <SortIcon col="win_rate" />
+                </button>
+                <button onClick={() => handleSort("total_matches")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                  Matches <SortIcon col="total_matches" />
+                </button>
+                <button onClick={() => handleSort("wins")} className="col-span-1 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                  W <SortIcon col="wins" />
+                </button>
+                <button onClick={() => handleSort("losses")} className="col-span-1 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                  L <SortIcon col="losses" />
+                </button>
+                <button onClick={() => handleSort("draws")} className="col-span-1 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                  D <SortIcon col="draws" />
+                </button>
                 <span className="col-span-1" />
               </div>
-              {players.map((p) => (
+              {sortedPlayers.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground font-body">
+                  No players match your search.
+                </div>
+              ) : (
+                sortedPlayers.map((p) => (
                 <div
                   key={p.user_id}
                   className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
@@ -212,7 +279,8 @@ const Leaderboard = () => {
                     )}
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </>
         )}
