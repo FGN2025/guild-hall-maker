@@ -1,180 +1,142 @@
 
+# Sidebar Navigation Migration Plan
 
-## ZIP-Gated Registration with Bypass Code
+## Overview
+Replace the current top `Navbar` across all authenticated pages with a unified sidebar using the existing shadcn `Sidebar` component. The landing page (`/`) and auth page (`/auth`) will keep their current layout (no sidebar). Admin and Provider sections will also retain their existing dedicated sidebars.
 
-### Overview
-Modify the registration flow so that during signup, new users must either pass a ZIP code coverage check (verifying they are within a broadband provider's service area) or enter a valid bypass code to skip the check. This is the single integration point between the broadband provider system and the gaming platform -- the only shared touchpoint.
+## What Changes
 
-### How It Works
+### Pages getting the new sidebar (11 pages)
+Tournaments, Dashboard, Community, Leaderboard, SeasonStats, PlayerComparison, Achievements, PlayerProfile, ProfileSettings, TournamentBracket, TournamentManage, MediaLibrary
 
-The signup form gains two new fields: **ZIP Code** (required) and **Bypass Code** (optional). The flow works as follows:
+### Pages staying as-is
+- `/` (Index) -- landing page keeps top Navbar
+- `/auth` -- login/signup, no nav needed
+- `/admin/*` -- already has AdminLayout with sidebar
+- `/provider/*` -- already has ProviderLayout with sidebar
+
+---
+
+## Implementation Steps
+
+### Step 1: Create `AppSidebar` component
+**New file:** `src/components/AppSidebar.tsx`
+
+- Uses shadcn `Sidebar`, `SidebarContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton`, etc.
+- Contains all 7 main nav items (Tournaments, Dashboard, Community, Leaderboard, Stats, Compare, Badges)
+- Conditionally shows Admin and Provider links based on `isAdmin` / `isTenantAdmin`
+- Header section with FGN logo/branding
+- Footer section with Profile and Sign Out actions
+- Supports icon-only collapsed state via `collapsible="icon"`
+- Uses `NavLink` for active-route highlighting
+
+### Step 2: Create `AppLayout` wrapper component
+**New file:** `src/components/AppLayout.tsx`
+
+- Wraps content in `SidebarProvider` + `AppSidebar` + main content area
+- Includes a small header bar with `SidebarTrigger` (always visible for toggling)
+- Replaces the need for `<Navbar />` on each page
+
+### Step 3: Apply layout at the route level in `App.tsx`
+Instead of editing all 11 page files individually, wrap the authenticated routes in `AppLayout`:
 
 ```text
-User fills signup form (name, email, password, ZIP code)
-         |
-         v
-  Has bypass code? ---- YES ----> Validate code against DB
-         |                              |
-         NO                       Valid? -- YES --> Create account, skip ZIP check
-         |                              |
-         v                        NO --> Show error
-  Check ZIP against national DB
-         |
-    Valid ZIP? ---- NO ----> "Invalid ZIP code"
-         |
-        YES
-         |
-  Check ZIP against tenant_zip_codes
-         |
-  Matches providers? -- NO ----> "No providers in your area" (still allow signup but no provider link)
-         |
-        YES
-         |
-  Create account + store matched providers in user_service_interests
-  Show user which providers serve their area
+Before:
+  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
+After:
+  <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/tournaments" element={<Tournaments />} />
+    ...all other authenticated routes
+  </Route>
 ```
 
-### Database Changes
+`AppLayout` will use `<Outlet />` from react-router-dom to render child routes.
 
-**1. New table: `bypass_codes`**
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid | Primary key |
-| code | text | Unique, the actual bypass code string |
-| description | text | Admin note (e.g. "VIP invite batch 1") |
-| max_uses | integer | Nullable -- null means unlimited |
-| times_used | integer | Default 0 |
-| expires_at | timestamptz | Nullable -- null means never expires |
-| created_by | uuid | FK to auth.users (the admin who created it) |
-| is_active | boolean | Default true |
-| created_at | timestamptz | Auto |
+### Step 4: Remove `<Navbar />` from all 11 page components
+Each page currently imports and renders `<Navbar />` at the top along with a `pt-24` padding class (to offset the fixed navbar). Both will be removed since the sidebar layout handles navigation.
 
-RLS: Only super admins can create/update/delete. The validation will happen via a security definer function so no direct user read access is needed.
+**Files modified:** Dashboard, Tournaments, Community, Leaderboard, SeasonStats, PlayerComparison, Achievements, PlayerProfile, ProfileSettings, TournamentBracket, TournamentManage (and MediaLibrary if used)
 
-**2. Add `zip_code` column to `profiles` table**
-- `zip_code text` -- stores the user's ZIP at registration time
+### Step 5: Keep `Navbar.tsx` for the landing page
+The existing `Navbar` component stays -- it is only used by `Index.tsx` (the landing/marketing page).
 
-**3. New database function: `validate_bypass_code(code text)`**
-- Security definer function (bypasses RLS)
-- Checks the code exists, is active, not expired, and under max_uses
-- Returns boolean
-- If valid, increments `times_used`
+---
 
-**4. New database function: `lookup_providers_by_zip(zip text)`**
-- Returns matching tenants for a given ZIP code
-- Joins `tenant_zip_codes` with `tenants` where tenant status is active
+## Technical Details
 
-### Changes to Registration Flow (Auth.tsx)
-
-The signup form will be updated to a **two-step process**:
-
-**Step 1**: Email, password, display name (existing fields) + ZIP code + optional bypass code
-**Step 2**: If ZIP check found providers, show them before completing. If bypass code was used, skip directly to account creation.
-
-The ZIP validation and provider lookup happen **before** the Supabase `signUp` call. This prevents creating accounts that fail the check.
-
-### Admin Management
-
-- Add a **Bypass Codes** section to the super admin panel (`/admin/bypass-codes`)
-- Super admins can create codes with optional expiry and usage limits
-- View usage stats for each code
-
-### Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/components/auth/ZipCheckStep.tsx` | ZIP code input + bypass code field + provider results display |
-| `src/pages/admin/AdminBypassCodes.tsx` | Admin page to manage bypass codes |
-| `src/hooks/useBypassCodes.ts` | Hook for bypass code CRUD |
-| `src/hooks/useRegistrationZipCheck.ts` | Hook that validates ZIP, checks bypass code, and finds providers |
-
-### Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/pages/Auth.tsx` | Add ZIP code and bypass code fields to signup; two-step registration flow; call ZIP validation before signUp |
-| `src/components/admin/AdminSidebar.tsx` | Add "Bypass Codes" nav item |
-| `src/App.tsx` | Add `/admin/bypass-codes` route |
-
-### Technical Details
-
-**Database migration SQL:**
+### AppSidebar structure
 ```text
--- Bypass codes table
-CREATE TABLE public.bypass_codes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  code TEXT NOT NULL UNIQUE,
-  description TEXT,
-  max_uses INTEGER,
-  times_used INTEGER NOT NULL DEFAULT 0,
-  expires_at TIMESTAMPTZ,
-  created_by UUID NOT NULL,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.bypass_codes ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can manage bypass codes"
-  ON public.bypass_codes FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
-
--- Add ZIP to profiles
-ALTER TABLE public.profiles ADD COLUMN zip_code TEXT;
-
--- Validate bypass code (security definer, no RLS needed for callers)
-CREATE OR REPLACE FUNCTION public.validate_bypass_code(_code TEXT)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  _record RECORD;
-BEGIN
-  SELECT * INTO _record FROM public.bypass_codes
-  WHERE code = _code AND is_active = true
-  FOR UPDATE;
-
-  IF NOT FOUND THEN RETURN false; END IF;
-  IF _record.expires_at IS NOT NULL AND _record.expires_at < now() THEN RETURN false; END IF;
-  IF _record.max_uses IS NOT NULL AND _record.times_used >= _record.max_uses THEN RETURN false; END IF;
-
-  UPDATE public.bypass_codes SET times_used = times_used + 1 WHERE id = _record.id;
-  RETURN true;
-END;
-$$;
-
--- Lookup providers by ZIP
-CREATE OR REPLACE FUNCTION public.lookup_providers_by_zip(_zip TEXT)
-RETURNS TABLE(tenant_id UUID, tenant_name TEXT, tenant_slug TEXT, logo_url TEXT)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT t.id, t.name, t.slug, t.logo_url
-  FROM tenant_zip_codes tz
-  JOIN tenants t ON t.id = tz.tenant_id
-  WHERE tz.zip_code = _zip AND t.status = 'active';
-$$;
++---------------------------+
+| [Gamepad2 icon] FGN       |  <-- SidebarHeader
++---------------------------+
+| MAIN                      |  <-- SidebarGroupLabel
+|  > Tournaments            |
+|  > Dashboard              |
+|  > Community              |
+|  > Leaderboard            |
+|  > Stats                  |
+|  > Compare                |
+|  > Badges                 |
++---------------------------+
+| ADMIN (if admin)          |  <-- conditional group
+|  > Admin Panel            |
++---------------------------+
+| PROVIDER (if tenant admin)|  <-- conditional group
+|  > Provider Panel         |
++---------------------------+
+| [Settings] Profile        |  <-- SidebarFooter
+| [LogOut]   Sign Out       |
++---------------------------+
 ```
 
-**Registration flow logic (in Auth.tsx):**
-1. When user is signing up, show ZIP code field (required) and bypass code field (optional)
-2. On submit, if bypass code is provided, call `validate_bypass_code` RPC first
-3. If no bypass code, validate ZIP against `national_zip_codes`, then call `lookup_providers_by_zip`
-4. If ZIP is invalid nationally, show error and block signup
-5. If ZIP is valid but no providers match, allow signup but inform user no providers serve their area
-6. If providers found, show them, then proceed with signup
-7. After successful signup, store ZIP in profile metadata and create `user_service_interests` rows for matched providers
+### Mobile behavior
+- On mobile (less than 768px), the shadcn Sidebar automatically renders as a slide-out `Sheet`
+- `SidebarTrigger` in the top header bar opens/closes it
+- No extra mobile menu code needed -- the component handles it
 
-### Implementation Sequence
+### Route structure in App.tsx
+```text
+<Routes>
+  <Route path="/" element={<Index />} />
+  <Route path="/auth" element={<Auth />} />
 
-1. Database migration (bypass_codes table, profiles zip_code column, two functions)
-2. Registration ZIP check hook
-3. Update Auth.tsx with two-step signup flow
-4. Bypass codes admin page
-5. Wire up admin sidebar route
+  {/* Authenticated routes with sidebar */}
+  <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/tournaments" element={<Tournaments />} />
+    <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
+    <Route path="/tournaments/:id/manage" element={<TournamentManage />} />
+    <Route path="/community" element={<Community />} />
+    <Route path="/leaderboard" element={<Leaderboard />} />
+    <Route path="/season-stats" element={<SeasonStats />} />
+    <Route path="/compare" element={<PlayerComparison />} />
+    <Route path="/achievements" element={<Achievements />} />
+    <Route path="/player/:id" element={<PlayerProfile />} />
+    <Route path="/profile" element={<ProfileSettings />} />
+  </Route>
 
+  {/* Admin routes (keep existing AdminRoute wrapper) */}
+  <Route path="/admin" element={<AdminRoute>...</AdminRoute>} />
+  ...
+
+  {/* Provider routes (keep existing ProviderRoute wrapper) */}
+  <Route path="/provider" element={<ProviderRoute>...</ProviderRoute>} />
+  ...
+
+  <Route path="*" element={<NotFound />} />
+</Routes>
+```
+
+### Files created (2)
+- `src/components/AppSidebar.tsx`
+- `src/components/AppLayout.tsx`
+
+### Files modified (13)
+- `src/App.tsx` -- restructure routes with layout route
+- `src/components/ProtectedRoute.tsx` -- ensure it supports `<Outlet />` when no children passed
+- 11 page files -- remove `<Navbar />` import and `pt-24` top padding
+
+### Estimated effort
+2 messages to implement and verify.
