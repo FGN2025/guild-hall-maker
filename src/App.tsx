@@ -19,7 +19,11 @@ import PlayerProfile from "./pages/PlayerProfile";
 import SeasonStats from "./pages/SeasonStats";
 import PlayerComparison from "./pages/PlayerComparison";
 import Achievements from "./pages/Achievements";
-import MediaLibrary from "./pages/MediaLibrary";
+import AdminRoute from "./components/admin/AdminRoute";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminMedia from "./pages/admin/AdminMedia";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminTournaments from "./pages/admin/AdminTournaments";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +45,10 @@ const App = () => (
             <Route path="/season-stats" element={<ProtectedRoute><SeasonStats /></ProtectedRoute>} />
             <Route path="/compare" element={<ProtectedRoute><PlayerComparison /></ProtectedRoute>} />
             <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-            <Route path="/media" element={<ProtectedRoute><MediaLibrary /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/media" element={<AdminRoute><AdminMedia /></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+            <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/player/:id" element={<ProtectedRoute><PlayerProfile /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
