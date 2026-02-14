@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords } from "lucide-react";
+import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,7 @@ const navItems = [
   { to: "/leaderboard", label: "Leaderboard", icon: Shield },
   { to: "/season-stats", label: "Stats", icon: BarChart3 },
   { to: "/compare", label: "Compare", icon: Swords },
+  { to: "/achievements", label: "Badges", icon: Award },
 ];
 
 const Navbar = () => {
