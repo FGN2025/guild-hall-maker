@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
@@ -8,20 +9,22 @@ import { Settings, Save, Loader2 } from "lucide-react";
 
 const AdminSettings = () => {
   const [message, setMessage] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingVideo, setSavingVideo] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "no_providers_message")
-        .maybeSingle();
-      setMessage(data?.value ?? "");
+    const fetchSettings = async () => {
+      const [msgRes, vidRes] = await Promise.all([
+        supabase.from("app_settings").select("value").eq("key", "no_providers_message").maybeSingle(),
+        supabase.from("app_settings").select("value").eq("key", "featured_video_url").maybeSingle(),
+      ]);
+      setMessage(msgRes.data?.value ?? "");
+      setVideoUrl(vidRes.data?.value ?? "");
       setLoading(false);
     };
-    fetch();
+    fetchSettings();
   }, []);
 
   const handleSave = async () => {
@@ -37,6 +40,21 @@ const AdminSettings = () => {
       toast({ title: "Saved", description: "No-providers message updated." });
     }
     setSaving(false);
+  };
+
+  const handleSaveVideo = async () => {
+    setSavingVideo(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ value: videoUrl })
+      .eq("key", "featured_video_url");
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Saved", description: "Featured video URL updated." });
+    }
+    setSavingVideo(false);
   };
 
   return (
@@ -71,6 +89,35 @@ const AdminSettings = () => {
 
         <Button onClick={handleSave} disabled={saving || loading} className="font-heading">
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+          Save Changes
+        </Button>
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="featuredVideoUrl" className="font-heading text-sm">
+            Featured Video URL
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            YouTube video embedded on the home page. Paste a youtu.be or youtube.com link.
+          </p>
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+            </div>
+          ) : (
+            <Input
+              id="featuredVideoUrl"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://youtu.be/..."
+              className="bg-background border-border font-body"
+            />
+          )}
+        </div>
+
+        <Button onClick={handleSaveVideo} disabled={savingVideo || loading} className="font-heading">
+          {savingVideo ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
           Save Changes
         </Button>
       </div>
