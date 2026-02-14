@@ -1,8 +1,9 @@
-import { Calendar, Users, Trophy } from "lucide-react";
+import { Calendar, Users, Trophy, GitBranch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tournament } from "@/hooks/useTournaments";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -27,9 +28,11 @@ const TournamentCard = ({
   onUnregister,
   isRegistering,
 }: TournamentCardProps) => {
+  const navigate = useNavigate();
   const isFull = t.registrations_count >= t.max_participants;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const dateStr = format(new Date(t.start_date), "MMM d, yyyy");
+  const showBracket = t.status === "in_progress" || t.status === "completed";
 
   return (
     <div className="rounded-xl border border-border bg-card p-6 glow-card flex flex-col">
@@ -65,6 +68,15 @@ const TournamentCard = ({
         >
           Details
         </Button>
+        {showBracket && (
+          <Button
+            variant="outline"
+            className="font-heading tracking-wide border-primary/30 text-primary hover:bg-primary/10"
+            onClick={() => navigate(`/tournaments/${t.id}/bracket`)}
+          >
+            <GitBranch className="h-4 w-4" />
+          </Button>
+        )}
         {t.is_registered ? (
           <Button
             variant="secondary"
