@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { useTenants, useTenantAdmins } from "@/hooks/useTenants";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -61,7 +60,7 @@ const AdminTenants = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -201,7 +200,7 @@ const AdminTenants = () => {
           )}
         </SheetContent>
       </Sheet>
-    </AdminLayout>
+    </>
   );
 };
 

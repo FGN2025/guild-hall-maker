@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
+
 import { useBypassCodes } from "@/hooks/useBypassCodes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ const AdminBypassCodes = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -153,7 +153,7 @@ const AdminBypassCodes = () => {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </>
   );
 };
 
