@@ -1,79 +1,113 @@
+import { useState, useMemo } from "react";
 import Navbar from "@/components/Navbar";
-import { Calendar, Users, Trophy, Search, Filter } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Search, Filter, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-const allTournaments = [
-  { id: 1, title: "Apex Legends Showdown", game: "Apex Legends", date: "Mar 15, 2026", players: "64/128", prize: "$5,000", status: "Open", format: "Single Elimination" },
-  { id: 2, title: "Valorant Masters Cup", game: "Valorant", date: "Mar 22, 2026", players: "32/32", prize: "$10,000", status: "Full", format: "Double Elimination" },
-  { id: 3, title: "Rocket League Blitz", game: "Rocket League", date: "Apr 1, 2026", players: "18/64", prize: "$2,500", status: "Open", format: "Round Robin" },
-  { id: 4, title: "CS2 Pro League", game: "Counter-Strike 2", date: "Apr 10, 2026", players: "8/16", prize: "$15,000", status: "Open", format: "Swiss" },
-  { id: 5, title: "Fortnite Friday", game: "Fortnite", date: "Feb 21, 2026", players: "100/100", prize: "$1,000", status: "Full", format: "Battle Royale" },
-  { id: 6, title: "League of Legends Clash", game: "League of Legends", date: "Apr 15, 2026", players: "12/32", prize: "$8,000", status: "Open", format: "Single Elimination" },
-];
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTournaments, Tournament } from "@/hooks/useTournaments";
+import TournamentCard from "@/components/tournaments/TournamentCard";
+import TournamentDetailsDialog from "@/components/tournaments/TournamentDetailsDialog";
+import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
 
 const Tournaments = () => {
+  const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    return tournaments.filter((t) => {
+      const matchesSearch =
+        !search ||
+        t.name.toLowerCase().includes(search.toLowerCase()) ||
+        t.game.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === "all" || t.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [tournaments, search, statusFilter]);
+
+  const handleViewDetails = (t: Tournament) => {
+    setSelectedTournament(t);
+    setDetailsOpen(true);
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background grid-bg">
       <Navbar />
       <div className="pt-24 pb-16 container mx-auto px-4">
-        <div className="mb-10">
-          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Browse & Register</p>
-          <h1 className="font-display text-4xl font-bold text-foreground">Tournaments</h1>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+          <div>
+            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Browse & Register</p>
+            <h1 className="font-display text-4xl font-bold text-foreground">Tournaments</h1>
+          </div>
+          <CreateTournamentDialog onCreate={createTournament} isCreating={isCreating} />
         </div>
 
         {/* Search / Filter bar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-10">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search tournaments..." className="pl-10 bg-card border-border font-body" />
+            <Input
+              placeholder="Search by name or game..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 bg-card border-border font-body"
+            />
           </div>
-          <Button variant="outline" className="font-heading gap-2 border-border text-muted-foreground hover:text-foreground">
-            <Filter className="h-4 w-4" /> Filters
-          </Button>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border font-body">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Filter status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {allTournaments.map((t) => (
-            <div
-              key={t.id}
-              className="rounded-xl border border-border bg-card p-6 glow-card flex flex-col"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <Badge
-                  variant={t.status === "Open" ? "default" : "secondary"}
-                  className={t.status === "Open" ? "bg-primary/15 text-primary border-primary/30" : ""}
-                >
-                  {t.status}
-                </Badge>
-                <span className="text-xs font-body text-muted-foreground">{t.format}</span>
-              </div>
-              <h3 className="font-heading text-xl font-semibold text-foreground mb-1">{t.title}</h3>
-              <p className="text-sm text-muted-foreground mb-6">{t.game}</p>
-              <div className="mt-auto grid grid-cols-3 gap-3 text-center">
-                {[
-                  { icon: Calendar, label: "Date", value: t.date },
-                  { icon: Users, label: "Players", value: t.players },
-                  { icon: Trophy, label: "Prize", value: t.prize },
-                ].map((info) => (
-                  <div key={info.label} className="bg-muted rounded-lg p-3">
-                    <info.icon className="h-4 w-4 text-primary mx-auto mb-1" />
-                    <p className="font-heading text-sm font-semibold text-foreground">{info.value}</p>
-                    <p className="text-[10px] text-muted-foreground">{info.label}</p>
-                  </div>
-                ))}
-              </div>
-              <Button
-                className="mt-4 w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90"
-                disabled={t.status === "Full"}
-              >
-                {t.status === "Open" ? "Register Now" : "Full"}
-              </Button>
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Trophy className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="font-heading text-xl text-foreground mb-2">No tournaments found</h3>
+            <p className="text-sm text-muted-foreground font-body">
+              {search || statusFilter !== "all"
+                ? "Try adjusting your search or filters."
+                : "Be the first to create a tournament!"}
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((t) => (
+              <TournamentCard
+                key={t.id}
+                tournament={t}
+                onViewDetails={handleViewDetails}
+                onRegister={register}
+                onUnregister={unregister}
+                isRegistering={isRegistering}
+              />
+            ))}
+          </div>
+        )}
       </div>
+
+      <TournamentDetailsDialog
+        tournament={selectedTournament}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        onRegister={register}
+        onUnregister={unregister}
+        isRegistering={isRegistering}
+      />
     </div>
   );
 };
