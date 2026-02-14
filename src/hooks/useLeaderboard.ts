@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LeaderboardPlayer {
@@ -21,6 +22,26 @@ export interface LeaderboardFilters {
 }
 
 export const useLeaderboard = (filters: LeaderboardFilters) => {
+  const queryClient = useQueryClient();
+
+  // Subscribe to realtime match_results changes to auto-refresh rankings
+  useEffect(() => {
+    const channel = supabase
+      .channel("leaderboard-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "match_results" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["leaderboard", filters] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, filters]);
+
   return useQuery({
     queryKey: ["leaderboard", filters],
     queryFn: async () => {
