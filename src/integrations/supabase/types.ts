@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      bypass_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          times_used: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          times_used?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          times_used?: number
+        }
+        Relationships: []
+      }
       match_results: {
         Row: {
           completed_at: string | null
@@ -115,6 +151,36 @@ export type Database = {
         }
         Relationships: []
       }
+      national_zip_codes: {
+        Row: {
+          city: string | null
+          county: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          state: string | null
+          zip_code: string
+        }
+        Insert: {
+          city?: string | null
+          county?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          state?: string | null
+          zip_code: string
+        }
+        Update: {
+          city?: string | null
+          county?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          state?: string | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -124,6 +190,7 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
+          zip_code: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -133,6 +200,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
+          zip_code?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -142,6 +210,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -260,6 +329,74 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_zip_codes: {
+        Row: {
+          city: string | null
+          created_at: string
+          id: string
+          state: string | null
+          tenant_id: string
+          zip_code: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          state?: string | null
+          tenant_id: string
+          zip_code: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          state?: string | null
+          tenant_id?: string
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_zip_codes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          contact_email: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tournament_registrations: {
         Row: {
           id: string
@@ -367,6 +504,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_service_interests: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+          zip_code: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+          zip_code: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_service_interests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -379,6 +554,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      lookup_providers_by_zip: {
+        Args: { _zip: string }
+        Returns: {
+          logo_url: string
+          tenant_id: string
+          tenant_name: string
+          tenant_slug: string
+        }[]
+      }
+      validate_bypass_code: { Args: { _code: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
