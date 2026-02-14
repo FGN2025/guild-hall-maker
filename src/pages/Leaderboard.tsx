@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Trophy, Medal, TrendingUp, Minus, Swords, Crown, Filter } from "lucide-react";
 import { useLeaderboard, useLeaderboardFilterOptions } from "@/hooks/useLeaderboard";
@@ -128,9 +129,9 @@ const Leaderboard = () => {
                           {p.display_name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <p className="font-heading font-semibold text-foreground text-sm text-center truncate max-w-[120px]">
+                      <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm text-center truncate max-w-[120px] hover:text-primary transition-colors">
                         {p.display_name}
-                      </p>
+                      </Link>
                       <p className="font-display text-xs text-primary">{p.win_rate}% WR</p>
                       <p className="text-[10px] text-muted-foreground font-body">
                         {p.wins}W / {p.losses}L / {p.draws}D
@@ -179,9 +180,9 @@ const Leaderboard = () => {
                         {p.display_name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-heading font-semibold text-foreground text-sm truncate">
+                    <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
                       {p.display_name}
-                    </span>
+                    </Link>
                   </div>
                   <div className="col-span-2 flex items-center gap-2">
                     <Progress value={p.win_rate} className="h-1.5 flex-1 bg-muted" />
