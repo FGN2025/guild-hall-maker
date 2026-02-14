@@ -1,7 +1,8 @@
-import { Link, useLocation } from "react-router-dom";
-import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
@@ -12,7 +13,14 @@ const navItems = [
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-border/50">
@@ -46,12 +54,34 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="font-heading tracking-wide text-muted-foreground hover:text-foreground">
-            Sign In
-          </Button>
-          <Button size="sm" className="font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90">
-            Join Now
-          </Button>
+          {user ? (
+            <>
+              <span className="text-sm font-heading text-muted-foreground truncate max-w-[150px]">
+                {user.email}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                className="font-heading tracking-wide text-muted-foreground hover:text-foreground gap-1"
+              >
+                <LogOut className="h-4 w-4" /> Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/auth">
+                <Button variant="ghost" size="sm" className="font-heading tracking-wide text-muted-foreground hover:text-foreground">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/auth">
+                <Button size="sm" className="font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90">
+                  Join Now
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -86,8 +116,20 @@ const Navbar = () => {
               );
             })}
             <div className="flex gap-2 pt-2 border-t border-border/50 mt-2">
-              <Button variant="ghost" size="sm" className="flex-1 font-heading">Sign In</Button>
-              <Button size="sm" className="flex-1 font-heading bg-primary text-primary-foreground">Join Now</Button>
+              {user ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { handleSignOut(); setMobileOpen(false); }}
+                  className="flex-1 font-heading gap-1"
+                >
+                  <LogOut className="h-4 w-4" /> Sign Out
+                </Button>
+              ) : (
+                <Link to="/auth" className="flex-1" onClick={() => setMobileOpen(false)}>
+                  <Button size="sm" className="w-full font-heading bg-primary text-primary-foreground">Join Now</Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
