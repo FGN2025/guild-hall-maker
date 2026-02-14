@@ -25,6 +25,7 @@ import AdminMedia from "./pages/admin/AdminMedia";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminBypassCodes from "./pages/admin/AdminBypassCodes";
+import AdminTenants from "./pages/admin/AdminTenants";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
             <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
+            <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/player/:id" element={<ProtectedRoute><PlayerProfile /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
