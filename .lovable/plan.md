@@ -1,63 +1,38 @@
 
 
-# Admin-Manageable Featured YouTube Video on Home Page
+# Add YouTube Video Management to Media Library
 
 ## Overview
-Add a YouTube video embed to the home page that admins can update from the existing Admin Settings page. The video URL is stored in the `app_settings` table (same pattern used for the "no providers" message).
+Move the Featured Video URL management into the Admin Media Library page so admins can manage all media (images, video, audio, and the embedded YouTube video) from one place.
 
-## Step 1: Seed a New `app_settings` Row
-Add a database migration to insert the default video URL into the existing `app_settings` table.
+## Changes
 
-- **key**: `featured_video_url`
-- **value**: `https://youtu.be/sBj4pCgMlt4`
-- **description**: `YouTube video embedded on the home page`
+### Modify `src/pages/admin/AdminMedia.tsx`
+Add a "Featured Video" card at the top of the media library page (above the uploader). This card will:
+- Fetch the `featured_video_url` from `app_settings` on mount
+- Show a YouTube preview embed (small 16:9 thumbnail) of the current video
+- Provide an input field to update the URL
+- Include a Save button using the same pattern as AdminSettings
 
-No schema changes needed -- the table already exists with the right structure and RLS policies.
+The card will sit in a distinct section with a heading like "Featured Video" and a brief description ("YouTube video shown on the home page. Paste a youtu.be or youtube.com link.").
 
-## Step 2: Create a `FeaturedVideo` Component
-New file: `src/components/FeaturedVideo.tsx`
-
-- On mount, fetch the `featured_video_url` value from `app_settings`
-- Extract the YouTube video ID from the URL (handles `youtu.be/ID` and `youtube.com/watch?v=ID` formats)
-- Render a responsive 16:9 YouTube iframe embed
-- Wrap in a styled section with a heading like "Featured Video" to sit between the hero and featured tournaments
-
-## Step 3: Add the Component to the Home Page
-Modify `src/pages/Index.tsx` to render `<FeaturedVideo />` between `<HeroSection />` and `<FeaturedTournaments />`.
-
-## Step 4: Add Video URL Field to Admin Settings
-Modify `src/pages/admin/AdminSettings.tsx` to add a second settings card for "Featured Video URL" with a text input, using the same fetch/save pattern already in place for the no-providers message. Both settings will load on mount and save independently.
-
----
+### No other file changes needed
+- The `app_settings` row already exists
+- The Admin Settings page keeps its copy of the field (no harm in having it in both places)
+- No database or edge function changes required
 
 ## Technical Details
-
-### Database migration
-```sql
-INSERT INTO public.app_settings (key, value, description)
-VALUES (
-  'featured_video_url',
-  'https://youtu.be/sBj4pCgMlt4',
-  'YouTube video embedded on the home page'
-);
-```
-
-### YouTube ID extraction logic
-```typescript
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
-  );
-  return match ? match[1] : null;
-}
-```
 
 ### Files changed
 
 | Action | File |
 |--------|------|
-| Migration | Insert `featured_video_url` seed row |
-| Create | `src/components/FeaturedVideo.tsx` -- fetches URL and renders YouTube embed |
-| Modify | `src/pages/Index.tsx` -- add `<FeaturedVideo />` to the page |
-| Modify | `src/pages/admin/AdminSettings.tsx` -- add video URL input field |
+| Modify | `src/pages/admin/AdminMedia.tsx` -- add Featured Video management card with URL input, preview, and save |
+
+### Implementation approach
+- Reuse the `extractYouTubeId` helper from `FeaturedVideo.tsx` (or inline it)
+- Use `useState` + `useEffect` to fetch the current URL from `app_settings` on mount
+- Save via `supabase.from("app_settings").update({ value }).eq("key", "featured_video_url")`
+- Show a small AspectRatio 16:9 iframe preview of the current video when a valid URL is set
+- Use `sonner` toast for save feedback, matching existing patterns in the media page
 
