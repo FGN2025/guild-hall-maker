@@ -1,80 +1,43 @@
 
 
-# Integrate Smarty ZIP Code Validation
+# Implement Smarty ZIP Code Validation
 
-## Overview
-Replace the current `national_zip_codes` database table lookup with Smarty's US ZIP Code API for real-time ZIP validation during registration. This gives you access to the full US ZIP database without needing to import/maintain CSV data.
+## Step 1: Store Smarty Secrets
+Prompt you to securely enter both values:
+- **SMARTY_AUTH_ID** -- your embedded/public key
+- **SMARTY_AUTH_TOKEN** -- your secret key
 
-## What Changes
+## Step 2: Create `validate-zip` Edge Function
+**New file:** `supabase/functions/validate-zip/index.ts`
 
-### 1. Store Smarty credentials as secrets
-Smarty requires two credentials for their API:
-- **auth-id**: `260377163906526147` (you provided this)
-- **auth-token**: A secret token from your Smarty account keys page
+- Reads `SMARTY_AUTH_ID` and `SMARTY_AUTH_TOKEN` from environment
+- Accepts POST with `{ zipCode }` body
+- Calls Smarty API: `https://us-zipcode.api.smarty.com/lookup?auth-id=...&auth-token=...&zipcode=XXXXX`
+- If Smarty returns valid city/state data, calls `lookup_providers_by_zip` RPC via Supabase service role client
+- Returns `{ valid, city, state, providers[] }`
+- Includes CORS headers and OPTIONS handling
 
-You will be prompted to enter both values securely.
+Also update `supabase/config.toml` to add `[functions.validate-zip]` with `verify_jwt = false` (public registration endpoint).
 
-### 2. Create a backend function: `validate-zip`
-A new backend function that:
-- Receives a ZIP code from the frontend
-- Calls `https://us-zipcode.api.smarty.com/lookup` with your Smarty credentials
-- Returns city, state, and validity status
-- Still runs the existing `lookup_providers_by_zip` query for provider matching
+## Step 3: Update `useRegistrationZipCheck` Hook
+**Modify:** `src/hooks/useRegistrationZipCheck.ts`
 
-### 3. Update the registration ZIP check hook
-Modify `src/hooks/useRegistrationZipCheck.ts` to:
-- Call the new `validate-zip` backend function instead of querying `national_zip_codes`
-- Use the city/state data returned by Smarty in the success message
-- Keep the existing bypass code logic and provider lookup unchanged
+- Replace the `national_zip_codes` table query with a call to `supabase.functions.invoke('validate-zip', { body: { zipCode } })`
+- Use city/state from Smarty response in the success message (e.g., "Valid ZIP: Springfield, IL")
+- Keep bypass code logic completely unchanged (still calls `validate_bypass_code` RPC directly from frontend)
+- Keep provider list handling unchanged
 
-## Flow
-
-```text
-User enters ZIP
-       |
-       v
-Frontend calls validate-zip edge function
-       |
-       v
-Edge function calls Smarty US ZIP Code API
-       |
-       v
-Valid? --No--> Return error "Invalid ZIP"
-  |
-  Yes
-  |
-  v
-Edge function calls lookup_providers_by_zip RPC
-       |
-       v
-Return city, state, providers to frontend
-```
+## What stays the same
+- Bypass code validation (unchanged)
+- `ZipCheckStep` UI component (unchanged)
+- `Auth.tsx` page (unchanged)
+- `national_zip_codes` table remains but is no longer queried during registration
 
 ## Files
 
-| Action | File | Purpose |
-|--------|------|---------|
-| Create | `supabase/functions/validate-zip/index.ts` | Backend function calling Smarty API + provider lookup |
-| Modify | `src/hooks/useRegistrationZipCheck.ts` | Call edge function instead of `national_zip_codes` table |
-
-## Technical Details
-
-### Edge function: `validate-zip`
-```text
-- Reads SMARTY_AUTH_ID and SMARTY_AUTH_TOKEN from environment
-- GET https://us-zipcode.api.smarty.com/lookup?auth-id=...&auth-token=...&zipcode=XXXXX
-- Smarty returns an array; if result has valid city/state data, ZIP is valid
-- Then calls lookup_providers_by_zip via Supabase service role client
-- Returns JSON: { valid, city, state, providers[] }
-```
-
-### Secrets needed
-- `SMARTY_AUTH_ID` = `260377163906526147`
-- `SMARTY_AUTH_TOKEN` = (from your Smarty account keys page)
-
-### What stays the same
-- Bypass code validation (unchanged)
-- Provider lookup via `lookup_providers_by_zip` RPC (unchanged)
-- ZipCheckStep UI component (unchanged)
-- The `national_zip_codes` table remains in the database but is no longer queried during registration
+| Action | File |
+|--------|------|
+| Create | `supabase/functions/validate-zip/index.ts` |
+| Modify | `supabase/config.toml` |
+| Modify | `src/hooks/useRegistrationZipCheck.ts` |
 
