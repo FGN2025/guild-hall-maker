@@ -16,6 +16,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import TournamentBracket from "./pages/TournamentBracket";
 import TournamentManage from "./pages/TournamentManage";
 import PlayerProfile from "./pages/PlayerProfile";
+import SeasonStats from "./pages/SeasonStats";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+            <Route path="/season-stats" element={<ProtectedRoute><SeasonStats /></ProtectedRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/player/:id" element={<ProtectedRoute><PlayerProfile /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
