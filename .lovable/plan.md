@@ -1,91 +1,63 @@
 
 
-# Admin-Manageable "No Providers" Message
+# Admin-Manageable Featured YouTube Video on Home Page
 
 ## Overview
-When a user enters a valid ZIP code but no providers serve their area, the system will display a configurable message that admins can edit from the Admin Panel. The default message will be: *"Contact your Internet Service Provider and ask them to contact Fiber Gaming Network so that you can join the Esports fun."*
+Add a YouTube video embed to the home page that admins can update from the existing Admin Settings page. The video URL is stored in the `app_settings` table (same pattern used for the "no providers" message).
 
-## Step 1: Create `app_settings` Database Table
-Create a new `app_settings` table to store key-value configuration pairs. This gives admins a flexible way to manage site-wide messages and settings.
+## Step 1: Seed a New `app_settings` Row
+Add a database migration to insert the default video URL into the existing `app_settings` table.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | uuid | Primary key |
-| `key` | text | Unique setting identifier |
-| `value` | text | The setting value |
-| `description` | text | Admin-friendly label |
-| `updated_at` | timestamptz | Auto-updated |
+- **key**: `featured_video_url`
+- **value**: `https://youtu.be/sBj4pCgMlt4`
+- **description**: `YouTube video embedded on the home page`
 
-Seed with default row:
-- **key**: `no_providers_message`
-- **value**: `Contact your Internet Service Provider and ask them to contact Fiber Gaming Network so that you can join the Esports fun.`
-- **description**: `Message shown to users when their ZIP code has no providers`
+No schema changes needed -- the table already exists with the right structure and RLS policies.
 
-RLS policies:
-- Anyone can **read** settings (needed during registration)
-- Only **admins** can update/insert/delete
+## Step 2: Create a `FeaturedVideo` Component
+New file: `src/components/FeaturedVideo.tsx`
 
-## Step 2: Update the `validate-zip` Edge Function
-After determining there are no providers for a valid ZIP, query the `app_settings` table for the `no_providers_message` key and include it in the response as a separate `no_providers_message` field.
+- On mount, fetch the `featured_video_url` value from `app_settings`
+- Extract the YouTube video ID from the URL (handles `youtu.be/ID` and `youtube.com/watch?v=ID` formats)
+- Render a responsive 16:9 YouTube iframe embed
+- Wrap in a styled section with a heading like "Featured Video" to sit between the hero and featured tournaments
 
-## Step 3: Update `useRegistrationZipCheck` Hook
-Pass the `no_providers_message` field from the edge function response through to the result object so it can be displayed in the UI.
+## Step 3: Add the Component to the Home Page
+Modify `src/pages/Index.tsx` to render `<FeaturedVideo />` between `<HeroSection />` and `<FeaturedTournaments />`.
 
-## Step 4: Update `ZipCheckStep` Component
-When a valid ZIP has zero providers, display the admin-configured message below the existing status message in a distinct callout style so users know what action to take.
-
-## Step 5: Create Admin Settings Page
-**New page**: `/admin/settings`
-
-A simple page where admins can:
-- See the current "No Providers" message in an editable text area
-- Save changes with a button
-
-Add a "Settings" link (with a gear icon) to the Admin Sidebar navigation.
-
-## Step 6: Wire Up the Route
-Add the new `/admin/settings` route to `App.tsx` wrapped in `AdminRoute`.
+## Step 4: Add Video URL Field to Admin Settings
+Modify `src/pages/admin/AdminSettings.tsx` to add a second settings card for "Featured Video URL" with a text input, using the same fetch/save pattern already in place for the no-providers message. Both settings will load on mount and save independently.
 
 ---
 
 ## Technical Details
 
-### Database migration SQL
+### Database migration
 ```sql
-CREATE TABLE public.app_settings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  key text UNIQUE NOT NULL,
-  value text NOT NULL DEFAULT '',
-  description text,
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Anyone can read settings"
-  ON public.app_settings FOR SELECT USING (true);
-
-CREATE POLICY "Admins can manage settings"
-  ON public.app_settings FOR ALL
-  USING (has_role(auth.uid(), 'admin'::app_role))
-  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-
 INSERT INTO public.app_settings (key, value, description)
 VALUES (
-  'no_providers_message',
-  'Contact your Internet Service Provider and ask them to contact Fiber Gaming Network so that you can join the Esports fun.',
-  'Message shown to users when their ZIP code has no providers'
+  'featured_video_url',
+  'https://youtu.be/sBj4pCgMlt4',
+  'YouTube video embedded on the home page'
 );
+```
+
+### YouTube ID extraction logic
+```typescript
+function extractYouTubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
+  );
+  return match ? match[1] : null;
+}
 ```
 
 ### Files changed
 
 | Action | File |
 |--------|------|
-| Migration | New `app_settings` table with seed data |
-| Modify | `supabase/functions/validate-zip/index.ts` -- fetch message from `app_settings` |
-| Modify | `src/hooks/useRegistrationZipCheck.ts` -- pass through `no_providers_message` |
-| Modify | `src/components/auth/ZipCheckStep.tsx` -- render the message |
-| Create | `src/pages/admin/AdminSettings.tsx` -- admin settings page |
-| Modify | `src/components/admin/AdminSidebar.tsx` -- add Settings nav link |
-| Modify | `src/App.tsx` -- add `/admin/settings` route |
+| Migration | Insert `featured_video_url` seed row |
+| Create | `src/components/FeaturedVideo.tsx` -- fetches URL and renders YouTube embed |
+| Modify | `src/pages/Index.tsx` -- add `<FeaturedVideo />` to the page |
+| Modify | `src/pages/admin/AdminSettings.tsx` -- add video URL input field |
+
