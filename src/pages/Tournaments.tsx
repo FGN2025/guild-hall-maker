@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import Navbar from "@/components/Navbar";
 import { Search, Filter, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,8 +33,7 @@ const Tournaments = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4">
+      <div className="py-8 container mx-auto px-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
             <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Browse & Register</p>

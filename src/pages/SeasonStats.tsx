@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
 import { useSeasons, useSeasonStats, useSeasonProgression } from "@/hooks/useSeasonStats";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -57,8 +56,7 @@ const SeasonStats = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4">
+      <div className="py-8 container mx-auto px-4">
         {/* Header */}
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Analytics</p>

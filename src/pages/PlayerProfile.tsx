@@ -1,5 +1,4 @@
 import { useParams, Link } from "react-router-dom";
-import Navbar from "@/components/Navbar";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
 import { usePlayerAchievements } from "@/hooks/usePlayerAchievements";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
@@ -17,8 +16,7 @@ const PlayerProfile = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4 max-w-5xl">
+      <div className="py-8 container mx-auto px-4 max-w-5xl">
         <Link
           to="/leaderboard"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors font-body text-sm"

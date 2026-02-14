@@ -1,4 +1,3 @@
-import Navbar from "@/components/Navbar";
 import { MessageSquare, Users, Megaphone, ThumbsUp } from "lucide-react";
 
 const topics = [
@@ -18,8 +17,7 @@ const categoryColor: Record<string, string> = {
 const Community = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4">
+      <div className="py-8 container mx-auto px-4">
         <div className="mb-10">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Connect & Discuss</p>
           <h1 className="font-display text-4xl font-bold text-foreground">Community</h1>

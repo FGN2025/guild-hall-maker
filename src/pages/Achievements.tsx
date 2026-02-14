@@ -1,4 +1,3 @@
-import Navbar from "@/components/Navbar";
 import { useGlobalAchievements } from "@/hooks/useGlobalAchievements";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -17,8 +16,7 @@ const Achievements = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4">
+      <div className="py-8 container mx-auto px-4">
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">
             Global Rankings

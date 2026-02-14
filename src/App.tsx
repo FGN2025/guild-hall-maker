@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProfileSettings from "./pages/ProfileSettings";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AppLayout from "./components/AppLayout";
 import TournamentBracket from "./pages/TournamentBracket";
 import TournamentManage from "./pages/TournamentManage";
 import PlayerProfile from "./pages/PlayerProfile";
@@ -42,27 +43,36 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/tournaments" element={<ProtectedRoute><Tournaments /></ProtectedRoute>} />
-            <Route path="/tournaments/:id/bracket" element={<ProtectedRoute><TournamentBracket /></ProtectedRoute>} />
-            <Route path="/tournaments/:id/manage" element={<ProtectedRoute><TournamentManage /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
-            <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-            <Route path="/season-stats" element={<ProtectedRoute><SeasonStats /></ProtectedRoute>} />
-            <Route path="/compare" element={<ProtectedRoute><PlayerComparison /></ProtectedRoute>} />
-            <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+            <Route path="/auth" element={<Auth />} />
+
+            {/* Authenticated routes with sidebar */}
+            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/tournaments" element={<Tournaments />} />
+              <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
+              <Route path="/tournaments/:id/manage" element={<TournamentManage />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/season-stats" element={<SeasonStats />} />
+              <Route path="/compare" element={<PlayerComparison />} />
+              <Route path="/achievements" element={<Achievements />} />
+              <Route path="/player/:id" element={<PlayerProfile />} />
+              <Route path="/profile" element={<ProfileSettings />} />
+            </Route>
+
+            {/* Admin routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/media" element={<AdminRoute><AdminMedia /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
             <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
             <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
+
+            {/* Provider routes */}
             <Route path="/provider" element={<ProviderRoute><ProviderDashboard /></ProviderRoute>} />
             <Route path="/provider/leads" element={<ProviderRoute><ProviderLeads /></ProviderRoute>} />
             <Route path="/provider/zip-codes" element={<ProviderRoute><ProviderZipCodes /></ProviderRoute>} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/player/:id" element={<ProtectedRoute><PlayerProfile /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
