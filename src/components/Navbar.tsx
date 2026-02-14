@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut } from "lucide-react";
+import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,9 +56,15 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <>
-              <span className="text-sm font-heading text-muted-foreground truncate max-w-[150px]">
-                {user.email}
-              </span>
+              <Link to="/profile">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="font-heading tracking-wide text-muted-foreground hover:text-foreground gap-1"
+                >
+                  <Settings className="h-4 w-4" /> Profile
+                </Button>
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
@@ -117,14 +123,21 @@ const Navbar = () => {
             })}
             <div className="flex gap-2 pt-2 border-t border-border/50 mt-2">
               {user ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { handleSignOut(); setMobileOpen(false); }}
-                  className="flex-1 font-heading gap-1"
-                >
-                  <LogOut className="h-4 w-4" /> Sign Out
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Link to="/profile" onClick={() => setMobileOpen(false)}>
+                    <Button variant="ghost" size="sm" className="w-full font-heading gap-1">
+                      <Settings className="h-4 w-4" /> Profile
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { handleSignOut(); setMobileOpen(false); }}
+                    className="w-full font-heading gap-1"
+                  >
+                    <LogOut className="h-4 w-4" /> Sign Out
+                  </Button>
+                </div>
               ) : (
                 <Link to="/auth" className="flex-1" onClick={() => setMobileOpen(false)}>
                   <Button size="sm" className="w-full font-heading bg-primary text-primary-foreground">Join Now</Button>
