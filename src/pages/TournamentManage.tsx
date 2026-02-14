@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+
 import { useTournamentManagement, ManageMatch } from "@/hooks/useTournamentManagement";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,8 +47,7 @@ const TournamentManage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background grid-bg">
-        <Navbar />
-        <div className="pt-24 pb-16 container mx-auto px-4 flex items-center justify-center py-20">
+        <div className="py-8 container mx-auto px-4 flex items-center justify-center py-20">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
         </div>
       </div>
@@ -58,8 +57,7 @@ const TournamentManage = () => {
   if (!tournament || !isOwner) {
     return (
       <div className="min-h-screen bg-background grid-bg">
-        <Navbar />
-        <div className="pt-24 pb-16 container mx-auto px-4">
+        <div className="py-8 container mx-auto px-4">
           <div className="rounded-xl border border-border bg-card p-12 text-center">
             <ShieldAlert className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h3 className="font-heading text-lg text-foreground mb-2">Access Denied</h3>
@@ -84,8 +82,7 @@ const TournamentManage = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4 max-w-5xl">
+      <div className="py-8 container mx-auto px-4 max-w-5xl">
         <Button
           variant="ghost"
           className="mb-6 text-muted-foreground hover:text-foreground font-heading"

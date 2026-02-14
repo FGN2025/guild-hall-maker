@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
+
 import { useMediaLibrary } from "@/hooks/useMediaLibrary";
 import MediaUploader from "@/components/media/MediaUploader";
 import MediaGrid from "@/components/media/MediaGrid";
@@ -21,8 +21,7 @@ const MediaLibrary = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4 max-w-6xl">
+      <div className="py-8 container mx-auto px-4 max-w-6xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">

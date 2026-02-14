@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Camera, Save, User, Gamepad2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+
 
 const ProfileSettings = () => {
   const { user } = useAuth();
@@ -122,8 +122,7 @@ const ProfileSettings = () => {
   if (initialLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center pt-32">
+        <div className="flex items-center justify-center pt-16">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
         </div>
       </div>
@@ -132,8 +131,7 @@ const ProfileSettings = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-12 max-w-2xl">
+      <main className="container mx-auto px-4 py-8 max-w-2xl">
         <Link
           to="/dashboard"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors font-body text-sm"

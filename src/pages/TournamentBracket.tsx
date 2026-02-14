@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+
 import { useBracket } from "@/hooks/useBracket";
 import BracketMatchCard from "@/components/tournaments/BracketMatchCard";
 import { Badge } from "@/components/ui/badge";
@@ -106,8 +106,7 @@ const TournamentBracket = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4">
+      <div className="py-8 container mx-auto px-4">
         {/* Back button */}
         <Button
           variant="ghost"

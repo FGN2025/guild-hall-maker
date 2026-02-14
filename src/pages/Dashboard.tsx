@@ -1,4 +1,3 @@
-import Navbar from "@/components/Navbar";
 import { Trophy, Target, Swords, TrendingUp, Calendar, Clock, Users, Gamepad2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -19,8 +18,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Navbar />
-      <div className="pt-24 pb-16 container mx-auto px-4">
+      <div className="py-8 container mx-auto px-4">
         <div className="mb-10">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Welcome Back</p>
           <h1 className="font-display text-4xl font-bold text-foreground">Player Dashboard</h1>
