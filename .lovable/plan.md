@@ -1,142 +1,80 @@
 
-# Sidebar Navigation Migration Plan
+
+# Integrate Smarty ZIP Code Validation
 
 ## Overview
-Replace the current top `Navbar` across all authenticated pages with a unified sidebar using the existing shadcn `Sidebar` component. The landing page (`/`) and auth page (`/auth`) will keep their current layout (no sidebar). Admin and Provider sections will also retain their existing dedicated sidebars.
+Replace the current `national_zip_codes` database table lookup with Smarty's US ZIP Code API for real-time ZIP validation during registration. This gives you access to the full US ZIP database without needing to import/maintain CSV data.
 
 ## What Changes
 
-### Pages getting the new sidebar (11 pages)
-Tournaments, Dashboard, Community, Leaderboard, SeasonStats, PlayerComparison, Achievements, PlayerProfile, ProfileSettings, TournamentBracket, TournamentManage, MediaLibrary
+### 1. Store Smarty credentials as secrets
+Smarty requires two credentials for their API:
+- **auth-id**: `260377163906526147` (you provided this)
+- **auth-token**: A secret token from your Smarty account keys page
 
-### Pages staying as-is
-- `/` (Index) -- landing page keeps top Navbar
-- `/auth` -- login/signup, no nav needed
-- `/admin/*` -- already has AdminLayout with sidebar
-- `/provider/*` -- already has ProviderLayout with sidebar
+You will be prompted to enter both values securely.
 
----
+### 2. Create a backend function: `validate-zip`
+A new backend function that:
+- Receives a ZIP code from the frontend
+- Calls `https://us-zipcode.api.smarty.com/lookup` with your Smarty credentials
+- Returns city, state, and validity status
+- Still runs the existing `lookup_providers_by_zip` query for provider matching
 
-## Implementation Steps
+### 3. Update the registration ZIP check hook
+Modify `src/hooks/useRegistrationZipCheck.ts` to:
+- Call the new `validate-zip` backend function instead of querying `national_zip_codes`
+- Use the city/state data returned by Smarty in the success message
+- Keep the existing bypass code logic and provider lookup unchanged
 
-### Step 1: Create `AppSidebar` component
-**New file:** `src/components/AppSidebar.tsx`
-
-- Uses shadcn `Sidebar`, `SidebarContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton`, etc.
-- Contains all 7 main nav items (Tournaments, Dashboard, Community, Leaderboard, Stats, Compare, Badges)
-- Conditionally shows Admin and Provider links based on `isAdmin` / `isTenantAdmin`
-- Header section with FGN logo/branding
-- Footer section with Profile and Sign Out actions
-- Supports icon-only collapsed state via `collapsible="icon"`
-- Uses `NavLink` for active-route highlighting
-
-### Step 2: Create `AppLayout` wrapper component
-**New file:** `src/components/AppLayout.tsx`
-
-- Wraps content in `SidebarProvider` + `AppSidebar` + main content area
-- Includes a small header bar with `SidebarTrigger` (always visible for toggling)
-- Replaces the need for `<Navbar />` on each page
-
-### Step 3: Apply layout at the route level in `App.tsx`
-Instead of editing all 11 page files individually, wrap the authenticated routes in `AppLayout`:
+## Flow
 
 ```text
-Before:
-  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-
-After:
-  <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-    <Route path="/dashboard" element={<Dashboard />} />
-    <Route path="/tournaments" element={<Tournaments />} />
-    ...all other authenticated routes
-  </Route>
+User enters ZIP
+       |
+       v
+Frontend calls validate-zip edge function
+       |
+       v
+Edge function calls Smarty US ZIP Code API
+       |
+       v
+Valid? --No--> Return error "Invalid ZIP"
+  |
+  Yes
+  |
+  v
+Edge function calls lookup_providers_by_zip RPC
+       |
+       v
+Return city, state, providers to frontend
 ```
 
-`AppLayout` will use `<Outlet />` from react-router-dom to render child routes.
+## Files
 
-### Step 4: Remove `<Navbar />` from all 11 page components
-Each page currently imports and renders `<Navbar />` at the top along with a `pt-24` padding class (to offset the fixed navbar). Both will be removed since the sidebar layout handles navigation.
-
-**Files modified:** Dashboard, Tournaments, Community, Leaderboard, SeasonStats, PlayerComparison, Achievements, PlayerProfile, ProfileSettings, TournamentBracket, TournamentManage (and MediaLibrary if used)
-
-### Step 5: Keep `Navbar.tsx` for the landing page
-The existing `Navbar` component stays -- it is only used by `Index.tsx` (the landing/marketing page).
-
----
+| Action | File | Purpose |
+|--------|------|---------|
+| Create | `supabase/functions/validate-zip/index.ts` | Backend function calling Smarty API + provider lookup |
+| Modify | `src/hooks/useRegistrationZipCheck.ts` | Call edge function instead of `national_zip_codes` table |
 
 ## Technical Details
 
-### AppSidebar structure
+### Edge function: `validate-zip`
 ```text
-+---------------------------+
-| [Gamepad2 icon] FGN       |  <-- SidebarHeader
-+---------------------------+
-| MAIN                      |  <-- SidebarGroupLabel
-|  > Tournaments            |
-|  > Dashboard              |
-|  > Community              |
-|  > Leaderboard            |
-|  > Stats                  |
-|  > Compare                |
-|  > Badges                 |
-+---------------------------+
-| ADMIN (if admin)          |  <-- conditional group
-|  > Admin Panel            |
-+---------------------------+
-| PROVIDER (if tenant admin)|  <-- conditional group
-|  > Provider Panel         |
-+---------------------------+
-| [Settings] Profile        |  <-- SidebarFooter
-| [LogOut]   Sign Out       |
-+---------------------------+
+- Reads SMARTY_AUTH_ID and SMARTY_AUTH_TOKEN from environment
+- GET https://us-zipcode.api.smarty.com/lookup?auth-id=...&auth-token=...&zipcode=XXXXX
+- Smarty returns an array; if result has valid city/state data, ZIP is valid
+- Then calls lookup_providers_by_zip via Supabase service role client
+- Returns JSON: { valid, city, state, providers[] }
 ```
 
-### Mobile behavior
-- On mobile (less than 768px), the shadcn Sidebar automatically renders as a slide-out `Sheet`
-- `SidebarTrigger` in the top header bar opens/closes it
-- No extra mobile menu code needed -- the component handles it
+### Secrets needed
+- `SMARTY_AUTH_ID` = `260377163906526147`
+- `SMARTY_AUTH_TOKEN` = (from your Smarty account keys page)
 
-### Route structure in App.tsx
-```text
-<Routes>
-  <Route path="/" element={<Index />} />
-  <Route path="/auth" element={<Auth />} />
+### What stays the same
+- Bypass code validation (unchanged)
+- Provider lookup via `lookup_providers_by_zip` RPC (unchanged)
+- ZipCheckStep UI component (unchanged)
+- The `national_zip_codes` table remains in the database but is no longer queried during registration
 
-  {/* Authenticated routes with sidebar */}
-  <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-    <Route path="/dashboard" element={<Dashboard />} />
-    <Route path="/tournaments" element={<Tournaments />} />
-    <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
-    <Route path="/tournaments/:id/manage" element={<TournamentManage />} />
-    <Route path="/community" element={<Community />} />
-    <Route path="/leaderboard" element={<Leaderboard />} />
-    <Route path="/season-stats" element={<SeasonStats />} />
-    <Route path="/compare" element={<PlayerComparison />} />
-    <Route path="/achievements" element={<Achievements />} />
-    <Route path="/player/:id" element={<PlayerProfile />} />
-    <Route path="/profile" element={<ProfileSettings />} />
-  </Route>
-
-  {/* Admin routes (keep existing AdminRoute wrapper) */}
-  <Route path="/admin" element={<AdminRoute>...</AdminRoute>} />
-  ...
-
-  {/* Provider routes (keep existing ProviderRoute wrapper) */}
-  <Route path="/provider" element={<ProviderRoute>...</ProviderRoute>} />
-  ...
-
-  <Route path="*" element={<NotFound />} />
-</Routes>
-```
-
-### Files created (2)
-- `src/components/AppSidebar.tsx`
-- `src/components/AppLayout.tsx`
-
-### Files modified (13)
-- `src/App.tsx` -- restructure routes with layout route
-- `src/components/ProtectedRoute.tsx` -- ensure it supports `<Outlet />` when no children passed
-- 11 page files -- remove `<Navbar />` import and `pt-24` top padding
-
-### Estimated effort
-2 messages to implement and verify.
