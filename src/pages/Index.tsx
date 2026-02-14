@@ -1,4 +1,5 @@
 import HeroSection from "@/components/HeroSection";
+import FeaturedVideo from "@/components/FeaturedVideo";
 import FeaturedTournaments from "@/components/FeaturedTournaments";
 import Navbar from "@/components/Navbar";
 
@@ -7,6 +8,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
+      <FeaturedVideo />
       <FeaturedTournaments />
       <footer className="border-t border-border py-12">
         <div className="container mx-auto px-4 text-center">
