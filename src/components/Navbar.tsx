@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck } from "lucide-react";
+import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 
 const navItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
@@ -19,6 +20,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut, isAdmin } = useAuth();
+  const { isTenantAdmin } = useTenantAdmin();
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,6 +67,19 @@ const Navbar = () => {
             >
               <ShieldCheck className="h-4 w-4" />
               Admin
+            </Link>
+          )}
+          {isTenantAdmin && (
+            <Link
+              to="/provider"
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-heading font-medium tracking-wide transition-all ${
+                location.pathname.startsWith("/provider")
+                  ? "text-primary bg-primary/10 neon-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              <Building2 className="h-4 w-4" />
+              Provider
             </Link>
           )}
         </div>
