@@ -1,0 +1,109 @@
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Provider {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_slug: string;
+  logo_url: string | null;
+}
+
+interface ZipCheckResult {
+  valid: boolean;
+  providers: Provider[];
+  bypassed: boolean;
+  message: string;
+}
+
+export function useRegistrationZipCheck() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<ZipCheckResult | null>(null);
+
+  const checkZip = async (zipCode: string, bypassCode?: string): Promise<ZipCheckResult> => {
+    setLoading(true);
+    try {
+      // If bypass code provided, validate it
+      if (bypassCode?.trim()) {
+        const { data, error } = await supabase.rpc("validate_bypass_code", {
+          _code: bypassCode.trim(),
+        });
+        if (error) throw error;
+        if (data) {
+          const res: ZipCheckResult = {
+            valid: true,
+            providers: [],
+            bypassed: true,
+            message: "Bypass code accepted.",
+          };
+          setResult(res);
+          return res;
+        }
+        const res: ZipCheckResult = {
+          valid: false,
+          providers: [],
+          bypassed: false,
+          message: "Invalid or expired bypass code.",
+        };
+        setResult(res);
+        return res;
+      }
+
+      // Validate ZIP against national database
+      const { data: nationalZip, error: natError } = await supabase
+        .from("national_zip_codes")
+        .select("zip_code, city, state")
+        .eq("zip_code", zipCode.trim())
+        .maybeSingle();
+
+      if (natError) throw natError;
+
+      if (!nationalZip) {
+        const res: ZipCheckResult = {
+          valid: false,
+          providers: [],
+          bypassed: false,
+          message: "Invalid ZIP code. Please enter a valid US ZIP code.",
+        };
+        setResult(res);
+        return res;
+      }
+
+      // Lookup providers by ZIP
+      const { data: providers, error: provError } = await supabase.rpc(
+        "lookup_providers_by_zip",
+        { _zip: zipCode.trim() }
+      );
+
+      if (provError) throw provError;
+
+      const providerList = (providers as Provider[]) || [];
+
+      const res: ZipCheckResult = {
+        valid: true,
+        providers: providerList,
+        bypassed: false,
+        message:
+          providerList.length > 0
+            ? `Found ${providerList.length} provider(s) in your area!`
+            : "Your ZIP is valid, but no broadband providers currently serve your area.",
+      };
+      setResult(res);
+      return res;
+    } catch (err: any) {
+      const res: ZipCheckResult = {
+        valid: false,
+        providers: [],
+        bypassed: false,
+        message: err.message || "An error occurred during validation.",
+      };
+      setResult(res);
+      return res;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reset = () => setResult(null);
+
+  return { checkZip, loading, result, reset };
+}
