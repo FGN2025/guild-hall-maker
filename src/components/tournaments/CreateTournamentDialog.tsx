@@ -154,6 +154,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
                      mode="single"
                      selected={startDate}
                      onSelect={setStartDate}
+                     disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                      initialFocus
                      className={cn("p-3 pointer-events-auto")}
                    />
