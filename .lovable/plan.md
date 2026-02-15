@@ -1,21 +1,56 @@
 
-# Add File Upload to Page Backgrounds Manager
+
+# Unified Page Appearance Manager with Dynamic Page Support
 
 ## Overview
-Add a file upload button to each page row in the BackgroundManager, so admins can upload an image file directly from their computer in addition to pasting a URL or generating with AI.
+Combine the separate "Page Hero Images" and "Page Backgrounds" managers into a single "Page Appearance" card. Instead of hardcoding page lists, store the list of manageable pages in the database so admins can add new pages without code changes.
 
-## Changes
+## Database Change
 
-### Modified: `src/components/admin/BackgroundManager.tsx`
+### New table: `managed_pages`
+Stores which pages are available for appearance customization.
 
-- Add an **"Upload"** button (with an Upload icon) next to the "Generate AI" and "Save" buttons for each page row
-- Include a hidden `<input type="file" accept="image/*">` per row, triggered by the Upload button click
-- On file selection:
-  1. Upload the file to the `app-media` storage bucket under the `banner/` path (reusing the same pattern from `useMediaLibrary`)
-  2. Get the public URL
-  3. Set that URL into the page row's `image_url` field
-  4. Show a success toast prompting the admin to click Save
-- Add uploading state tracking per slug to disable the button and show a spinner during upload
-- Import the `Upload` icon from lucide-react
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | default gen_random_uuid() |
+| slug | text (unique, not null) | e.g. "dashboard" |
+| label | text (not null) | e.g. "Dashboard" |
+| supports_hero | boolean | default true |
+| supports_background | boolean | default true |
+| display_order | integer | default 0, for sorting |
+| created_at | timestamptz | default now() |
 
-No database or schema changes needed -- the existing `app-media` bucket and `page_backgrounds` table already support this workflow.
+Seed it with the current six pages (Dashboard, Tournaments hero-only, Leaderboard, Community, Achievements, Season Stats). RLS: public read, admin-only write.
+
+Add a small "Add Page" form at the top of the manager so admins can register new pages (slug + label + checkboxes for hero/background support).
+
+## UI Changes
+
+### New: `src/components/admin/PageAppearanceManager.tsx`
+- Fetches from `managed_pages` (ordered by `display_order`) instead of a hardcoded array
+- For each page, renders a single collapsible row with two sub-sections:
+  - **Hero Banner** (if `supports_hero`): image selector from media library or URL input, title, subtitle, Save button -- logic from HeroImageManager
+  - **Background** (if `supports_background`): URL input, Upload, Generate AI, opacity slider, Save, Clear -- logic from BackgroundManager
+- Includes a small inline form to add a new managed page (slug, label, hero/background toggles) and a delete button per page
+- Uses existing hooks: `useAllPageHeroes`, `useUpsertPageHero`, `useAllPageBackgrounds`, `useUpsertPageBackground`, `useDeletePageBackground`, `useMediaLibrary`
+- New hook `useManagedPages` for CRUD on the `managed_pages` table
+
+### New: `src/hooks/useManagedPages.ts`
+- `useAllManagedPages()` -- fetches all rows ordered by `display_order`
+- `useAddManagedPage()` -- inserts a new page
+- `useDeleteManagedPage()` -- removes a page (and optionally its hero/background records)
+
+### Modified: `src/pages/admin/AdminMedia.tsx`
+- Replace `<HeroImageManager />` and `<BackgroundManager />` with `<PageAppearanceManager />`
+
+### Removed (unused after merge):
+- `src/components/admin/HeroImageManager.tsx`
+- `src/components/admin/BackgroundManager.tsx`
+
+## Technical Details
+
+- The `managed_pages` table is the single source of truth for which pages can be customized, making it trivial to add future pages
+- Collapsible rows (using Radix Collapsible) keep the UI compact when managing many pages
+- All existing hero/background data and hooks remain unchanged -- only the UI layer is consolidated
+- No changes to `PageHero.tsx`, `PageBackground.tsx`, or their hooks
+
