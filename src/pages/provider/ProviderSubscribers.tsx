@@ -58,6 +58,12 @@ const ProviderSubscribers = () => {
       description: "Fiber Gaming Network management portal — centralized subscriber verification and access codes.",
       comingSoon: true,
     },
+    {
+      name: "hub.fgn.gg",
+      providerType: "hub_fgn",
+      description: "FGN Partner Hub — creative assets, marketing collateral, web pages, and brand kits.",
+      comingSoon: true,
+    },
   ];
 
   return (
