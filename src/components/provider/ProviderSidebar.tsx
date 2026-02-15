@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink } from "lucide-react";
 
 interface ProviderSidebarProps {
   tenantName: string;
@@ -10,6 +10,11 @@ const sidebarItems = [
   { to: "/provider/leads", label: "Leads", icon: Users },
   { to: "/provider/zip-codes", label: "ZIP Codes", icon: MapPin },
   { to: "/provider/subscribers", label: "Subscribers", icon: Database },
+];
+
+const ecosystemLinks = [
+  { href: "https://manage.fgn.gg", label: "Manage" },
+  { href: "https://hub.fgn.gg", label: "Hub" },
 ];
 
 const ProviderSidebar = ({ tenantName }: ProviderSidebarProps) => {
@@ -46,6 +51,24 @@ const ProviderSidebar = ({ tenantName }: ProviderSidebarProps) => {
             </Link>
           );
         })}
+
+        <div className="mt-6 mb-2 px-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading">
+            FGN Ecosystem
+          </p>
+        </div>
+        {ecosystemLinks.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+          >
+            <ExternalLink className="h-4 w-4" />
+            {link.label}
+          </a>
+        ))}
       </nav>
       <div className="p-4 border-t border-border">
         <Link
