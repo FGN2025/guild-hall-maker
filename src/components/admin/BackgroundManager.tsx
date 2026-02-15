@@ -37,7 +37,7 @@ const BackgroundManager = () => {
       const existing = backgrounds.find((b) => b.page_slug === p.slug);
       initial[p.slug] = {
         image_url: existing?.image_url ?? "",
-        opacity: existing?.opacity ?? 0.15,
+        opacity: existing?.opacity ?? 0.25,
       };
     });
     setState(initial);
