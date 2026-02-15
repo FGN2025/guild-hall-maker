@@ -62,3 +62,24 @@ export const useDeleteManagedPage = () => {
     onError: (err: Error) => toast.error(err.message || "Failed to remove page"),
   });
 };
+
+export const useReorderManagedPages = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      // Update each page's display_order to match its array index
+      const updates = orderedIds.map((id, index) =>
+        (supabase.from("managed_pages" as any) as any)
+          .update({ display_order: index })
+          .eq("id", id)
+      );
+      const results = await Promise.all(updates);
+      const err = results.find((r: any) => r.error);
+      if (err?.error) throw err.error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["managed-pages"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to reorder pages"),
+  });
+};

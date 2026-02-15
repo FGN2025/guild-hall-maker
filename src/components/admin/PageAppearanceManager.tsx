@@ -8,14 +8,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Image, Save, Loader2, Sparkles, Upload, Trash2, ChevronDown, Plus, Paintbrush,
+  Image, Save, Loader2, Sparkles, Upload, Trash2, ChevronDown, Plus, Paintbrush, GripVertical,
 } from "lucide-react";
-import { useAllManagedPages, useAddManagedPage, useDeleteManagedPage, type ManagedPage } from "@/hooks/useManagedPages";
+import { useAllManagedPages, useAddManagedPage, useDeleteManagedPage, useReorderManagedPages, type ManagedPage } from "@/hooks/useManagedPages";
 import { useAllPageHeroes, useUpsertPageHero } from "@/hooks/usePageHero";
 import { useAllPageBackgrounds, useUpsertPageBackground, useDeletePageBackground } from "@/hooks/usePageBackground";
 import { useMediaLibrary } from "@/hooks/useMediaLibrary";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ── Add Page Form ──────────────────────────────────────────────
 const AddPageForm = () => {
@@ -213,6 +220,103 @@ const BackgroundSubSection = ({ slug, label, draft, onUpdate, onSave, onClear, s
   );
 };
 
+// ── Sortable Page Row ──────────────────────────────────────────
+interface SortablePageRowProps {
+  page: ManagedPage;
+  getHeroDraft: (slug: string) => { image_url: string; title: string; subtitle: string };
+  getBgDraft: (slug: string) => { image_url: string; opacity: number };
+  updateHeroDraft: (slug: string, field: string, value: string) => void;
+  updateBgDraft: (slug: string, field: string, value: string | number) => void;
+  imageOptions: { id: string; url: string; file_name: string }[];
+  upsertHero: any;
+  upsertBg: any;
+  deleteBg: any;
+  deletePage: any;
+  setBgDrafts: React.Dispatch<React.SetStateAction<Record<string, { image_url: string; opacity: number }>>>;
+}
+
+const SortablePageRow = ({
+  page, getHeroDraft, getBgDraft, updateHeroDraft, updateBgDraft,
+  imageOptions, upsertHero, upsertBg, deleteBg, deletePage, setBgDrafts,
+}: SortablePageRowProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Collapsible defaultOpen={false}>
+        <div className="rounded-lg border border-border">
+          <div className="flex items-center">
+            <button
+              {...attributes}
+              {...listeners}
+              className="p-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+              aria-label="Drag to reorder"
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+            <CollapsibleTrigger asChild>
+              <button className="flex flex-1 items-center justify-between p-4 pl-0 hover:bg-muted/50 transition-colors text-left">
+                <span className="font-heading font-semibold text-foreground">{page.label}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">/{page.slug}</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                </div>
+              </button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {page.supports_hero && (
+                <HeroSubSection
+                  slug={page.slug}
+                  draft={getHeroDraft(page.slug)}
+                  onUpdate={(f, v) => updateHeroDraft(page.slug, f, v)}
+                  imageOptions={imageOptions}
+                  onSave={() => {
+                    const d = getHeroDraft(page.slug);
+                    upsertHero.mutate({ page_slug: page.slug, image_url: d.image_url, title: d.title || null, subtitle: d.subtitle || null });
+                  }}
+                  saving={upsertHero.isPending}
+                />
+              )}
+              {page.supports_background && (
+                <BackgroundSubSection
+                  slug={page.slug}
+                  label={page.label}
+                  draft={getBgDraft(page.slug)}
+                  onUpdate={(f, v) => updateBgDraft(page.slug, f, v)}
+                  onSave={() => {
+                    const d = getBgDraft(page.slug);
+                    if (!d.image_url) { toast.error("Enter an image URL first"); return; }
+                    upsertBg.mutate({ page_slug: page.slug, image_url: d.image_url, opacity: d.opacity });
+                  }}
+                  onClear={() => {
+                    deleteBg.mutate(page.slug);
+                    setBgDrafts((prev) => ({ ...prev, [page.slug]: { image_url: "", opacity: 0.25 } }));
+                  }}
+                  saving={upsertBg.isPending}
+                  clearing={deleteBg.isPending}
+                />
+              )}
+            </div>
+            <div className="px-4 pb-4 flex justify-end">
+              <Button variant="ghost" size="sm" className="text-destructive gap-1.5 font-heading" disabled={deletePage.isPending} onClick={() => deletePage.mutate(page.id)}>
+                <Trash2 className="h-3.5 w-3.5" /> Remove Page
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    </div>
+  );
+};
+
 // ── Main Component ─────────────────────────────────────────────
 const PageAppearanceManager = () => {
   const { data: pages, isLoading: pagesLoading } = useAllManagedPages();
@@ -223,9 +327,16 @@ const PageAppearanceManager = () => {
   const upsertBg = useUpsertPageBackground();
   const deleteBg = useDeletePageBackground();
   const deletePage = useDeleteManagedPage();
+  const reorder = useReorderManagedPages();
 
+  const [localPages, setLocalPages] = useState<ManagedPage[]>([]);
   const [heroDrafts, setHeroDrafts] = useState<Record<string, { image_url: string; title: string; subtitle: string }>>({});
   const [bgDrafts, setBgDrafts] = useState<Record<string, { image_url: string; opacity: number }>>({});
+
+  // Sync server pages to local order state
+  useEffect(() => {
+    if (pages) setLocalPages(pages);
+  }, [pages]);
 
   useEffect(() => {
     if (!heroes) return;
@@ -253,6 +364,21 @@ const PageAppearanceManager = () => {
 
   const imageOptions = media.filter((m) => m.file_type === "image");
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = localPages.findIndex((p) => p.id === active.id);
+    const newIndex = localPages.findIndex((p) => p.id === over.id);
+    const reordered = arrayMove(localPages, oldIndex, newIndex);
+    setLocalPages(reordered);
+    reorder.mutate(reordered.map((p) => p.id));
+  };
+
   if (pagesLoading) {
     return (
       <Card className="mb-8">
@@ -271,68 +397,32 @@ const PageAppearanceManager = () => {
           Page Appearance
         </CardTitle>
         <CardDescription className="font-body">
-          Manage hero banners and background images for each page. Add new pages below.
+          Manage hero banners and background images for each page. Drag to reorder. Add new pages below.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <AddPageForm />
 
-        {(pages ?? []).map((page) => (
-          <Collapsible key={page.id} defaultOpen={false}>
-            <div className="rounded-lg border border-border">
-              <CollapsibleTrigger asChild>
-                <button className="flex w-full items-center justify-between p-4 hover:bg-muted/50 transition-colors rounded-t-lg text-left">
-                  <span className="font-heading font-semibold text-foreground">{page.label}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">/{page.slug}</span>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
-                  </div>
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {page.supports_hero && (
-                    <HeroSubSection
-                      slug={page.slug}
-                      draft={getHeroDraft(page.slug)}
-                      onUpdate={(f, v) => updateHeroDraft(page.slug, f, v)}
-                      imageOptions={imageOptions}
-                      onSave={() => {
-                        const d = getHeroDraft(page.slug);
-                        upsertHero.mutate({ page_slug: page.slug, image_url: d.image_url, title: d.title || null, subtitle: d.subtitle || null });
-                      }}
-                      saving={upsertHero.isPending}
-                    />
-                  )}
-                  {page.supports_background && (
-                    <BackgroundSubSection
-                      slug={page.slug}
-                      label={page.label}
-                      draft={getBgDraft(page.slug)}
-                      onUpdate={(f, v) => updateBgDraft(page.slug, f, v)}
-                      onSave={() => {
-                        const d = getBgDraft(page.slug);
-                        if (!d.image_url) { toast.error("Enter an image URL first"); return; }
-                        upsertBg.mutate({ page_slug: page.slug, image_url: d.image_url, opacity: d.opacity });
-                      }}
-                      onClear={() => {
-                        deleteBg.mutate(page.slug);
-                        setBgDrafts((prev) => ({ ...prev, [page.slug]: { image_url: "", opacity: 0.25 } }));
-                      }}
-                      saving={upsertBg.isPending}
-                      clearing={deleteBg.isPending}
-                    />
-                  )}
-                </div>
-                <div className="px-4 pb-4 flex justify-end">
-                  <Button variant="ghost" size="sm" className="text-destructive gap-1.5 font-heading" disabled={deletePage.isPending} onClick={() => deletePage.mutate(page.id)}>
-                    <Trash2 className="h-3.5 w-3.5" /> Remove Page
-                  </Button>
-                </div>
-              </CollapsibleContent>
-            </div>
-          </Collapsible>
-        ))}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            {localPages.map((page) => (
+              <SortablePageRow
+                key={page.id}
+                page={page}
+                getHeroDraft={getHeroDraft}
+                getBgDraft={getBgDraft}
+                updateHeroDraft={updateHeroDraft}
+                updateBgDraft={updateBgDraft}
+                imageOptions={imageOptions}
+                upsertHero={upsertHero}
+                upsertBg={upsertBg}
+                deleteBg={deleteBg}
+                deletePage={deletePage}
+                setBgDrafts={setBgDrafts}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       </CardContent>
     </Card>
   );
