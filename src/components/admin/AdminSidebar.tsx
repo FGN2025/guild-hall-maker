@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, ExternalLink, Loader2 } from "lucide-react";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, ExternalLink, Loader2, Gamepad2 } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 const sidebarItems = [
@@ -8,6 +8,7 @@ const sidebarItems = [
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
+  { to: "/admin/games", label: "Games", icon: Gamepad2 },
   { to: "/admin/bypass-codes", label: "Bypass Codes", icon: KeyRound },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];

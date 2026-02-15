@@ -7,6 +7,7 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 
 const navItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/community", label: "Community", icon: Users },
   { to: "/leaderboard", label: "Leaderboard", icon: Shield },

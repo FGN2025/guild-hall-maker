@@ -180,6 +180,51 @@ export type Database = {
         }
         Relationships: []
       }
+      games: {
+        Row: {
+          category: string
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          guide_content: string | null
+          id: string
+          is_active: boolean
+          name: string
+          platform_tags: string[] | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          guide_content?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          platform_tags?: string[] | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          guide_content?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          platform_tags?: string[] | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       managed_pages: {
         Row: {
           created_at: string
