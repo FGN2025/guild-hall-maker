@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PageHero from "@/components/PageHero";
+import PageBackground from "@/components/PageBackground";
 
 type SortKey = "rank" | "win_rate" | "total_matches" | "wins" | "losses" | "draws";
 type SortDir = "asc" | "desc";
@@ -133,8 +134,9 @@ const Leaderboard = () => {
     : topThree;
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="py-8 container mx-auto px-4">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="leaderboard" />
+      <div className="py-8 container mx-auto px-4 relative z-10">
         <PageHero pageSlug="leaderboard" />
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Global Rankings</p>

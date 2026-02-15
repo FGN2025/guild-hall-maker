@@ -278,6 +278,33 @@ export type Database = {
         }
         Relationships: []
       }
+      page_backgrounds: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          opacity: number
+          page_slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          opacity?: number
+          page_slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          opacity?: number
+          page_slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_hero_images: {
         Row: {
           created_at: string

@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PageHero from "@/components/PageHero";
+import PageBackground from "@/components/PageBackground";
 
 const Dashboard = () => {
   const { stats, registeredTournaments, recentMatches, isLoading } = useDashboard();
@@ -18,8 +19,9 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="py-8 container mx-auto px-4">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="dashboard" />
+      <div className="py-8 container mx-auto px-4 relative z-10">
         <PageHero pageSlug="dashboard" />
         <div className="mb-10">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Welcome Back</p>
