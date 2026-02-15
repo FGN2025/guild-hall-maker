@@ -542,6 +542,124 @@ export type Database = {
           },
         ]
       }
+      tenant_integrations: {
+        Row: {
+          additional_config: Json | null
+          api_key_encrypted: string | null
+          api_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          last_sync_message: string | null
+          last_sync_status: string | null
+          provider_type: string
+          tenant_id: string
+        }
+        Insert: {
+          additional_config?: Json | null
+          api_key_encrypted?: string | null
+          api_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          last_sync_message?: string | null
+          last_sync_status?: string | null
+          provider_type: string
+          tenant_id: string
+        }
+        Update: {
+          additional_config?: Json | null
+          api_key_encrypted?: string | null
+          api_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          last_sync_message?: string | null
+          last_sync_status?: string | null
+          provider_type?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_integrations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_subscribers: {
+        Row: {
+          account_number: string | null
+          address: string | null
+          created_at: string
+          email: string | null
+          external_id: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          plan_name: string | null
+          service_status: string | null
+          source: string | null
+          synced_at: string | null
+          tenant_id: string
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          external_id?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          plan_name?: string | null
+          service_status?: string | null
+          source?: string | null
+          synced_at?: string | null
+          tenant_id: string
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          external_id?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          plan_name?: string | null
+          service_status?: string | null
+          source?: string | null
+          synced_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_subscribers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_zip_codes: {
         Row: {
           city: string | null
