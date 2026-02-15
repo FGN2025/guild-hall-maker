@@ -20,6 +20,8 @@ import PlayerProfile from "./pages/PlayerProfile";
 import SeasonStats from "./pages/SeasonStats";
 import PlayerComparison from "./pages/PlayerComparison";
 import Achievements from "./pages/Achievements";
+import Games from "./pages/Games";
+import GameDetail from "./pages/GameDetail";
 import AdminRoute from "./components/admin/AdminRoute";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMedia from "./pages/admin/AdminMedia";
@@ -28,6 +30,7 @@ import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminBypassCodes from "./pages/admin/AdminBypassCodes";
 import AdminTenants from "./pages/admin/AdminTenants";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminGames from "./pages/admin/AdminGames";
 import TenantRoute from "./components/tenant/TenantRoute";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import TenantLeads from "./pages/tenant/TenantLeads";
@@ -58,6 +61,8 @@ const App = () => (
               <Route path="/season-stats" element={<SeasonStats />} />
               <Route path="/compare" element={<PlayerComparison />} />
               <Route path="/achievements" element={<Achievements />} />
+              <Route path="/games" element={<Games />} />
+              <Route path="/games/:slug" element={<GameDetail />} />
               <Route path="/player/:id" element={<PlayerProfile />} />
               <Route path="/profile" element={<ProfileSettings />} />
             </Route>
@@ -70,6 +75,7 @@ const App = () => (
             <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
             <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+            <Route path="/admin/games" element={<AdminRoute><AdminGames /></AdminRoute>} />
 
             {/* Tenant routes */}
             <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
