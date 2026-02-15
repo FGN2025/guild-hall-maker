@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.generate-media-image]
 verify_jwt = false
+
+[functions.ecosystem-magic-link]
+verify_jwt = false

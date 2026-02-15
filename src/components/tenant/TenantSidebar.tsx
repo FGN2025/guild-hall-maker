@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2 } from "lucide-react";
+import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 interface TenantSidebarProps {
   tenantName: string;
@@ -12,13 +13,14 @@ const sidebarItems = [
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database },
 ];
 
-const ecosystemLinks = [
-  { href: "https://manage.fgn.gg", label: "Manage" },
-  { href: "https://hub.fgn.gg", label: "Hub" },
+const ecosystemApps = [
+  { target: "manage" as const, label: "Manage" },
+  { target: "hub" as const, label: "Hub" },
 ];
 
 const TenantSidebar = ({ tenantName }: TenantSidebarProps) => {
   const location = useLocation();
+  const { requestMagicLink, loading } = useEcosystemAuth();
 
   return (
     <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
@@ -57,17 +59,20 @@ const TenantSidebar = ({ tenantName }: TenantSidebarProps) => {
             FGN Ecosystem
           </p>
         </div>
-        {ecosystemLinks.map((link) => (
-          <a
-            key={link.href}
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+        {ecosystemApps.map((app) => (
+          <button
+            key={app.target}
+            onClick={() => requestMagicLink(app.target)}
+            disabled={loading !== null}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide text-muted-foreground hover:text-foreground hover:bg-secondary transition-all disabled:opacity-50 w-full text-left"
           >
-            <ExternalLink className="h-4 w-4" />
-            {link.label}
-          </a>
+            {loading === app.target ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ExternalLink className="h-4 w-4" />
+            )}
+            {app.label}
+          </button>
         ))}
       </nav>
       <div className="p-4 border-t border-border">
