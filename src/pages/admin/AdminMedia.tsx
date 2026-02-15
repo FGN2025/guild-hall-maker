@@ -12,6 +12,7 @@ import { Image, Search, Save, Loader2, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import HeroImageManager from "@/components/admin/HeroImageManager";
+import BackgroundManager from "@/components/admin/BackgroundManager";
 
 function extractYouTubeId(url: string): string | null {
   const match = url.match(
@@ -124,6 +125,7 @@ const AdminMedia = () => {
       </Card>
 
       <HeroImageManager />
+      <BackgroundManager />
 
       <MediaUploader onUpload={upload} isUploading={isUploading} />
 

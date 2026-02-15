@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Award, Trophy, Crown, Medal, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import PageHero from "@/components/PageHero";
+import PageBackground from "@/components/PageBackground";
 
 const tierBadge = (label: string, count: number, color: string) =>
   count > 0 ? (
@@ -16,8 +17,9 @@ const Achievements = () => {
   const { data: players, isLoading } = useGlobalAchievements();
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="py-8 container mx-auto px-4">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="achievements" />
+      <div className="py-8 container mx-auto px-4 relative z-10">
         <PageHero pageSlug="achievements" />
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">

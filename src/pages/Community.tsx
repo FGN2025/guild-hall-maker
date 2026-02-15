@@ -8,6 +8,7 @@ import { TopicDetail } from "@/components/community/TopicDetail";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import PageHero from "@/components/PageHero";
+import PageBackground from "@/components/PageBackground";
 
 const categoryColor: Record<string, string> = {
   "Team Recruitment": "text-neon-accent",
@@ -27,8 +28,9 @@ const Community = () => {
   const announcements = topics?.filter((t) => t.category === "Announcement").length ?? 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="py-8 container mx-auto px-4">
+    <div className="min-h-screen bg-background relative">
+      <PageBackground pageSlug="community" />
+      <div className="py-8 container mx-auto px-4 relative z-10">
         <PageHero pageSlug="community" />
         <div className="mb-10 flex items-end justify-between">
           <div>
