@@ -1,93 +1,62 @@
 
 
-# Subscriber Management -- Flexible Foundation
+# FGN Ecosystem Integration Plan
 
-## Summary
-Build the Subscribers page and local data storage now, with a design that supports both standalone operation (CSV upload, manual entry) and future API connection to manage.fgn.gg. Authentication remains independent in both apps.
+## Current Ecosystem
 
-## Why This Approach
-- manage.fgn.gg does not yet have API endpoints to call
-- Rebuilding NISC/GLDS integrations here is not needed
-- We can build the subscriber UI and database now, and add the API proxy layer later when manage.fgn.gg exposes endpoints
-- Player authentication stays in both apps independently
+```text
++-------------------+     +--------------------+     +-------------------+
+|  play.fgn.gg      |     |  manage.fgn.gg     |     |  hub.fgn.gg       |
+|  Gaming Platform   |     |  Subscriber Mgmt   |     |  Partner Hub      |
+|                   |     |                    |     |                   |
+| - Tournaments     |     | - NISC/GLDS APIs   |     | - Creative Assets |
+| - Leaderboards    |     | - Verification     |     | - Marketing       |
+| - Provider Admin  |     | - Access Codes     |     | - Web Pages       |
+| - Subscriber Mgmt |     |                    |     | - Brand Kits      |
++-------------------+     +--------------------+     +-------------------+
+```
 
-## What Gets Built Now
+All three are Lovable apps with independent authentication. None currently have API endpoints for cross-app communication.
 
-### 1. Database: `tenant_subscribers` table
-Stores subscriber records from any source (CSV upload now, API sync later).
+## What This Plan Covers
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | Auto-generated |
-| tenant_id | uuid (FK to tenants) | Required |
-| account_number | text | External account ID |
-| first_name | text | Nullable |
-| last_name | text | Nullable |
-| email | text | Nullable |
-| phone | text | Nullable |
-| address | text | Nullable |
-| zip_code | text | Nullable |
-| service_status | text | active, inactive, suspended |
-| plan_name | text | Broadband plan name |
-| source | text | 'csv', 'manual', 'nisc', 'glds' |
-| external_id | text | ID from external system |
-| synced_at | timestamptz | Last sync timestamp |
-| created_at | timestamptz | Auto |
-| updated_at | timestamptz | Auto |
+### 1. Add hub.fgn.gg to the Integrations Tab
 
-Unique constraint on `(tenant_id, source, external_id)` to prevent duplicates.
+Add a fourth integration card on the `/provider/subscribers` Integrations tab for hub.fgn.gg, marked as "Coming Soon" alongside manage.fgn.gg. This gives providers visibility into the planned connection.
 
-RLS: tenant admins see only their own tenant's data; super admins see all.
+**File**: `src/pages/provider/ProviderSubscribers.tsx`
+- Add an entry to the `availableIntegrations` array with `providerType: "hub_fgn"` and `comingSoon: true`
 
-### 2. Database: `tenant_integrations` table
-Stores API connection config per tenant -- empty for now but ready for when manage.fgn.gg adds endpoints.
+### 2. Add Cross-App Navigation Links
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | Auto-generated |
-| tenant_id | uuid (FK to tenants) | Required |
-| provider_type | text | 'nisc', 'glds', 'manage_fgn', 'custom' |
-| display_name | text | Friendly label |
-| api_url | text | Base URL |
-| api_key_encrypted | text | Write-only from frontend |
-| additional_config | jsonb | Flexible settings |
-| is_active | boolean | Default true |
-| last_sync_at | timestamptz | Nullable |
-| last_sync_status | text | success, error, pending |
-| last_sync_message | text | Error details |
-| created_at | timestamptz | Auto |
+Add a dedicated "FGN Ecosystem" section to the Provider Sidebar with external links to the other two apps. This gives provider admins quick access without needing to remember URLs.
 
-RLS: same tenant-scoping as subscribers.
+**File**: `src/components/provider/ProviderSidebar.tsx`
+- Add an "Ecosystem" section at the bottom of the nav (above "Back to App") with external links to manage.fgn.gg and hub.fgn.gg
+- Use `ExternalLink` icon to indicate these open in new tabs
 
-### 3. New Page: `/provider/subscribers`
-Three tabs:
-- **Subscribers** -- searchable table of imported records with status badges and counts
-- **Upload** -- CSV file upload with preview and field mapping, bulk inserts into `tenant_subscribers`
-- **Integrations** -- cards showing available systems (NISC, GLDS, manage.fgn.gg) with configure buttons. Displays "Coming Soon -- API endpoints pending" for manage.fgn.gg, with a form to save connection details in `tenant_integrations` so they are ready when the API goes live
+### 3. Future API Integration Groundwork
 
-### 4. Sidebar and Route Updates
-- Add "Subscribers" link with Database icon to `ProviderSidebar.tsx`
-- Add `/provider/subscribers` route in `App.tsx` wrapped in `ProviderRoute`
+The `tenant_integrations` table already supports a flexible `provider_type` field and `additional_config` JSONB column. When hub.fgn.gg adds API endpoints, we can store its connection config with `provider_type: 'hub_fgn'` and use the same proxy edge function pattern planned for manage.fgn.gg.
 
-## What Gets Built Later (when manage.fgn.gg has API endpoints)
-- Edge function `proxy-manage-api` to securely call manage.fgn.gg
-- Shared API key generation and secret storage
-- "Sync Now" button that pulls subscriber data via the proxy
-- Automatic scheduled syncs
+Planned future data flows from Hub:
+- **Marketing assets**: Logos, banners, tournament graphics per tenant
+- **Brand kit references**: Colors, fonts, templates for auto-generating collateral
+- **Web page content**: Landing page blocks or promotional content
 
-## Files to Create
-- `src/pages/provider/ProviderSubscribers.tsx` -- main page with tabs
-- `src/components/provider/SubscriberUploader.tsx` -- CSV parsing and import component
-- `src/components/provider/IntegrationConfigCard.tsx` -- integration setup cards
-- `src/hooks/useProviderSubscribers.ts` -- CRUD hook for tenant_subscribers
-- `src/hooks/useProviderIntegrations.ts` -- CRUD hook for tenant_integrations
+No database changes are needed for this phase.
 
 ## Files to Modify
-- `src/components/provider/ProviderSidebar.tsx` -- add Subscribers nav item
-- `src/App.tsx` -- add route
 
-## Security
-- Both new tables have RLS enforcing tenant isolation
-- API credentials stored server-side only, never returned to frontend after creation
-- Access restricted to provider admins and super admins via existing role checks
+| File | Change |
+|------|--------|
+| `src/pages/provider/ProviderSubscribers.tsx` | Add hub.fgn.gg integration card |
+| `src/components/provider/ProviderSidebar.tsx` | Add Ecosystem external links section |
+
+## Technical Notes
+
+- External links use `target="_blank"` and `rel="noopener noreferrer"` for security
+- The `tenant_integrations` table is already flexible enough to store hub.fgn.gg config when ready
+- No new database tables or migrations are needed
+- When either manage.fgn.gg or hub.fgn.gg exposes API endpoints, the same shared-key + edge-function-proxy pattern applies to both
 
