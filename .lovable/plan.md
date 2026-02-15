@@ -1,72 +1,84 @@
 
 
-# Add Page Hero Images with Admin Management
+# Add Page Background Images with Admin Control and AI Generation
 
 ## Overview
-Create a system where admins can assign hero images to any page in the app, managed from the Admin Media page. A reusable `PageHero` component will display the assigned image at the top of each page.
+Add full-page background images (like the home page's cyberpunk-themed background) to every page except Tournaments. Admins can assign and generate these backgrounds from the Admin Media panel using the existing AI image generation system.
 
 ## Database
 
-### New table: `page_hero_images`
-Stores the mapping between a page identifier (slug) and its hero image.
+### New table: `page_backgrounds`
+Separate from the existing `page_hero_images` (which handles top-of-page banners).
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid | Primary key |
-| page_slug | text | Unique, e.g. "dashboard", "tournaments", "leaderboard" |
-| image_url | text | URL from media library / storage |
-| title | text (nullable) | Optional overlay title |
-| subtitle | text (nullable) | Optional overlay subtitle |
+| page_slug | text | Unique -- e.g. "dashboard", "community" |
+| image_url | text | Background image URL |
+| opacity | real | 0.0 to 1.0, controls visibility (default 0.15) |
 | updated_at | timestamptz | Auto-updated |
 | created_at | timestamptz | Default now() |
 
 ### RLS Policies
-- **SELECT**: Anyone can read (heroes are public UI)
-- **ALL** (insert/update/delete): Admin-only via `has_role(auth.uid(), 'admin')`
+- **SELECT**: Public (backgrounds are visible to all users)
+- **INSERT/UPDATE/DELETE**: Admin-only via `has_role(auth.uid(), 'admin')`
 
-## New Component: `PageHero`
+## New Components
 
-A reusable component (`src/components/PageHero.tsx`) that:
-- Accepts a `pageSlug` prop (e.g. `"tournaments"`)
-- Fetches the hero image from `page_hero_images` for that slug
-- Renders a banner with the image, gradient overlay, and optional title/subtitle
-- Gracefully renders nothing if no hero image is assigned
-- Caches data with React Query
+### 1. `src/components/PageBackground.tsx`
+A component that renders a fixed background image behind page content, similar to the home page's `HeroSection`:
+- Accepts `pageSlug` prop
+- Fetches background from `page_backgrounds` table
+- Renders the image with configurable opacity plus a gradient overlay matching the dark cyberpunk theme
+- Returns null gracefully if no background is set
+- Placed inside each page's root `<div>` as an absolute-positioned layer
+
+### 2. `src/components/admin/BackgroundManager.tsx`
+Admin panel card for managing page backgrounds:
+- Lists all assignable pages (Dashboard, Leaderboard, Community, Achievements, Season Stats -- excludes Tournaments)
+- For each page: media library picker, URL input, and opacity slider
+- "Generate with AI" button per page that uses the existing `generate-media-image` edge function with a pre-built prompt for cyberpunk gaming backgrounds
+- Save button per page that upserts into `page_backgrounds`
+
+## New Hook: `src/hooks/usePageBackground.ts`
+- `usePageBackground(slug)` -- fetch a single page's background
+- `useAllPageBackgrounds()` -- fetch all for admin view
+- `useUpsertPageBackground()` -- mutation for saving
 
 ## Page Integration
 
-Add `<PageHero pageSlug="..." />` to the top of these pages:
+Add `<PageBackground pageSlug="..." />` to these pages (NOT Tournaments):
 - **Dashboard** (`pageSlug="dashboard"`)
-- **Tournaments** (`pageSlug="tournaments"`)
 - **Leaderboard** (`pageSlug="leaderboard"`)
 - **Community** (`pageSlug="community"`)
 - **Achievements** (`pageSlug="achievements"`)
 - **Season Stats** (`pageSlug="season-stats"`)
 
-Each page will show its hero banner above the existing content if an image is assigned.
+Each page's root div will need `relative` positioning so the background layers correctly behind content.
 
-## Admin Management UI
+## Admin Media Page Update
 
-Add a new "Page Hero Images" card to `AdminMedia.tsx` (between the Featured Video card and the uploader), containing:
-- A list of all assignable pages with their current hero image preview
-- For each page: a media picker (select from existing media library items or paste a URL), plus optional title/subtitle fields
-- Save button per page that upserts into `page_hero_images`
+Add the `BackgroundManager` card to `src/pages/admin/AdminMedia.tsx` alongside the existing `HeroImageManager`.
 
-The list of assignable pages will be defined as a constant array so new pages can easily be added later.
+## AI Generation Integration
+
+The "Generate with AI" button in `BackgroundManager` will call the existing `generate-media-image` edge function with a themed prompt like:
+> "Dark cyberpunk gaming background with neon cyan accents, abstract digital patterns, suitable for a [page name] page background"
+
+The generated image is saved to the media library and its URL is automatically populated into the background assignment.
 
 ## Technical Details
 
 | Action | File | Detail |
 |--------|------|--------|
-| Migration | `supabase/migrations/...` | Create `page_hero_images` table with RLS policies |
-| Create | `src/hooks/usePageHero.ts` | Hook to fetch hero image by slug + admin hook for managing all heroes |
-| Create | `src/components/PageHero.tsx` | Reusable hero banner component |
-| Create | `src/components/admin/HeroImageManager.tsx` | Admin card for assigning hero images to pages |
-| Modify | `src/pages/admin/AdminMedia.tsx` | Add the HeroImageManager card |
-| Modify | `src/pages/Dashboard.tsx` | Add `<PageHero>` |
-| Modify | `src/pages/Tournaments.tsx` | Add `<PageHero>` |
-| Modify | `src/pages/Leaderboard.tsx` | Add `<PageHero>` |
-| Modify | `src/pages/Community.tsx` | Add `<PageHero>` |
-| Modify | `src/pages/Achievements.tsx` | Add `<PageHero>` |
-| Modify | `src/pages/SeasonStats.tsx` | Add `<PageHero>` |
+| Migration | `supabase/migrations/...` | Create `page_backgrounds` table with RLS |
+| Create | `src/hooks/usePageBackground.ts` | Hooks for fetch and upsert |
+| Create | `src/components/PageBackground.tsx` | Background image renderer |
+| Create | `src/components/admin/BackgroundManager.tsx` | Admin card with media picker, AI generate, and opacity slider |
+| Modify | `src/pages/admin/AdminMedia.tsx` | Add BackgroundManager card |
+| Modify | `src/pages/Dashboard.tsx` | Add PageBackground + relative positioning |
+| Modify | `src/pages/Leaderboard.tsx` | Add PageBackground + relative positioning |
+| Modify | `src/pages/Community.tsx` | Add PageBackground + relative positioning |
+| Modify | `src/pages/Achievements.tsx` | Add PageBackground + relative positioning |
+| Modify | `src/pages/SeasonStats.tsx` | Add PageBackground + relative positioning |
 
