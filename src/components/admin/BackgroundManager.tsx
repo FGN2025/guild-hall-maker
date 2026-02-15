@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save, Sparkles, ImageIcon } from "lucide-react";
+import { Loader2, Save, Sparkles, ImageIcon, Upload } from "lucide-react";
 import { useAllPageBackgrounds, useUpsertPageBackground, type PageBackground } from "@/hooks/usePageBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRef } from "react";
 
 const PAGES = [
   { slug: "dashboard", label: "Dashboard" },
@@ -27,7 +28,8 @@ const BackgroundManager = () => {
   const upsert = useUpsertPageBackground();
   const [state, setState] = useState<Record<string, PageRowState>>({});
   const [generating, setGenerating] = useState<string | null>(null);
-
+  const [uploading, setUploading] = useState<string | null>(null);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   useEffect(() => {
     if (!backgrounds) return;
     const initial: Record<string, PageRowState> = {};
@@ -71,6 +73,24 @@ const BackgroundManager = () => {
     }
   };
 
+  const handleFileUpload = async (slug: string, file: File) => {
+    setUploading(slug);
+    try {
+      const ext = file.name.split(".").pop() ?? "bin";
+      const fileName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      const filePath = `banner/${fileName}`;
+      const { error: uploadError } = await supabase.storage.from("app-media").upload(filePath, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(filePath);
+      setState((prev) => ({ ...prev, [slug]: { ...prev[slug], image_url: urlData.publicUrl } }));
+      toast.success("Image uploaded! Click Save to apply.");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(null);
+    }
+  };
+
   const updateField = (slug: string, field: keyof PageRowState, value: string | number) => {
     setState((prev) => ({ ...prev, [slug]: { ...prev[slug], [field]: value } }));
   };
@@ -105,10 +125,31 @@ const BackgroundManager = () => {
               <div className="flex items-center justify-between">
                 <h4 className="font-heading font-semibold text-foreground">{page.label}</h4>
                 <div className="flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={(el) => { fileInputRefs.current[page.slug] = el; }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(page.slug, file);
+                      e.target.value = "";
+                    }}
+                  />
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={isGen || generating !== null}
+                    disabled={uploading !== null || generating !== null}
+                    onClick={() => fileInputRefs.current[page.slug]?.click()}
+                    className="gap-1.5 font-heading"
+                  >
+                    {uploading === page.slug ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    Upload
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isGen || generating !== null || uploading !== null}
                     onClick={() => handleGenerate(page.slug, page.label)}
                     className="gap-1.5 font-heading"
                   >
