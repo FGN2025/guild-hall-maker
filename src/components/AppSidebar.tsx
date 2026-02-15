@@ -109,18 +109,18 @@ export function AppSidebar() {
 
         {isTenantAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Provider</SidebarGroupLabel>
+            <SidebarGroupLabel>Tenant</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Provider Panel">
+                  <SidebarMenuButton asChild tooltip="Tenant Panel">
                     <NavLink
-                      to="/provider"
+                      to="/tenant"
                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <Building2 className="h-4 w-4 shrink-0" />
-                      <span>Provider Panel</span>
+                      <span>Tenant Panel</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

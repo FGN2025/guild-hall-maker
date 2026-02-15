@@ -1,10 +1,10 @@
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-import { useProviderLeads } from "@/hooks/useProviderLeads";
+import { useTenantLeads } from "@/hooks/useTenantLeads";
 import { Badge } from "@/components/ui/badge";
 
-const ProviderLeads = () => {
+const TenantLeads = () => {
   const { tenantInfo } = useTenantAdmin();
-  const { leads, isLoading } = useProviderLeads(tenantInfo?.tenantId || null);
+  const { leads, isLoading } = useTenantLeads(tenantInfo?.tenantId || null);
 
   return (
     <div className="space-y-6">
@@ -69,4 +69,4 @@ const ProviderLeads = () => {
   );
 };
 
-export default ProviderLeads;
+export default TenantLeads;

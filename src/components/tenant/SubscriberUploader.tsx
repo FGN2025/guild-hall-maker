@@ -46,7 +46,6 @@ const SubscriberUploader = ({ tenantId, onImport, isImporting }: SubscriberUploa
       );
       setCsvRows(rows);
 
-      // Auto-map by fuzzy match
       const autoMap: Record<string, string> = {};
       SUBSCRIBER_FIELDS.forEach((field) => {
         const match = headers.find(

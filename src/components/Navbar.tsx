@@ -71,15 +71,15 @@ const Navbar = () => {
           )}
           {isTenantAdmin && (
             <Link
-              to="/provider"
+              to="/tenant"
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-heading font-medium tracking-wide transition-all ${
-                location.pathname.startsWith("/provider")
+                location.pathname.startsWith("/tenant")
                   ? "text-primary bg-primary/10 neon-border"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
               <Building2 className="h-4 w-4" />
-              Provider
+              Tenant
             </Link>
           )}
         </div>

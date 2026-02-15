@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Users, Upload, Plug } from "lucide-react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-import { useProviderSubscribers } from "@/hooks/useProviderSubscribers";
-import { useProviderIntegrations } from "@/hooks/useProviderIntegrations";
-import SubscriberUploader from "@/components/provider/SubscriberUploader";
-import IntegrationConfigCard from "@/components/provider/IntegrationConfigCard";
+import { useTenantSubscribers } from "@/hooks/useTenantSubscribers";
+import { useTenantIntegrations } from "@/hooks/useTenantIntegrations";
+import SubscriberUploader from "@/components/tenant/SubscriberUploader";
+import IntegrationConfigCard from "@/components/tenant/IntegrationConfigCard";
 
 const statusColor: Record<string, string> = {
   active: "bg-green-500/10 text-green-600 border-green-500/30",
@@ -16,11 +16,11 @@ const statusColor: Record<string, string> = {
   suspended: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
 };
 
-const ProviderSubscribers = () => {
+const TenantSubscribers = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId;
-  const { subscribers, isLoading, bulkInsert } = useProviderSubscribers(tenantId);
-  const { integrations } = useProviderIntegrations(tenantId);
+  const { subscribers, isLoading, bulkInsert } = useTenantSubscribers(tenantId);
+  const { integrations } = useTenantIntegrations(tenantId);
   const [search, setSearch] = useState("");
 
   const filtered = subscribers.filter((s) => {
@@ -199,4 +199,4 @@ const ProviderSubscribers = () => {
   );
 };
 
-export default ProviderSubscribers;
+export default TenantSubscribers;

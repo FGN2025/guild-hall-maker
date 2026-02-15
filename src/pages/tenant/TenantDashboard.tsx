@@ -1,15 +1,15 @@
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-import { useProviderLeads } from "@/hooks/useProviderLeads";
+import { useTenantLeads } from "@/hooks/useTenantLeads";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, MapPin, TrendingUp, Clock } from "lucide-react";
 
-const ProviderDashboard = () => {
+const TenantDashboard = () => {
   const { tenantInfo } = useTenantAdmin();
-  const { leads } = useProviderLeads(tenantInfo?.tenantId || null);
+  const { leads } = useTenantLeads(tenantInfo?.tenantId || null);
 
   const { data: zipCount = 0 } = useQuery({
-    queryKey: ["provider-zip-count", tenantInfo?.tenantId],
+    queryKey: ["tenant-zip-count", tenantInfo?.tenantId],
     enabled: !!tenantInfo?.tenantId,
     queryFn: async () => {
       const { count, error } = await supabase
@@ -26,30 +26,10 @@ const ProviderDashboard = () => {
   const convertedLeads = leads.filter((l) => l.status === "converted").length;
 
   const stats = [
-    {
-      label: "Total Leads",
-      value: leads.length,
-      icon: Users,
-      color: "text-primary",
-    },
-    {
-      label: "New Leads",
-      value: newLeads,
-      icon: Clock,
-      color: "text-yellow-400",
-    },
-    {
-      label: "Converted",
-      value: convertedLeads,
-      icon: TrendingUp,
-      color: "text-green-400",
-    },
-    {
-      label: "ZIP Codes Covered",
-      value: zipCount,
-      icon: MapPin,
-      color: "text-blue-400",
-    },
+    { label: "Total Leads", value: leads.length, icon: Users, color: "text-primary" },
+    { label: "New Leads", value: newLeads, icon: Clock, color: "text-yellow-400" },
+    { label: "Converted", value: convertedLeads, icon: TrendingUp, color: "text-green-400" },
+    { label: "ZIP Codes Covered", value: zipCount, icon: MapPin, color: "text-blue-400" },
   ];
 
   return (
@@ -63,28 +43,18 @@ const ProviderDashboard = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
-          <div
-            key={s.label}
-            className="border border-border rounded-lg p-5 bg-card"
-          >
+          <div key={s.label} className="border border-border rounded-lg p-5 bg-card">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground uppercase tracking-widest font-heading">
-                {s.label}
-              </span>
+              <span className="text-xs text-muted-foreground uppercase tracking-widest font-heading">{s.label}</span>
               <s.icon className={`h-5 w-5 ${s.color}`} />
             </div>
-            <p className="font-display text-3xl font-bold text-foreground">
-              {s.value}
-            </p>
+            <p className="font-display text-3xl font-bold text-foreground">{s.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Recent leads */}
       <div>
-        <h2 className="font-display text-lg font-bold text-foreground mb-4">
-          Recent Leads
-        </h2>
+        <h2 className="font-display text-lg font-bold text-foreground mb-4">Recent Leads</h2>
         {leads.length === 0 ? (
           <p className="text-muted-foreground text-sm">
             No leads yet. Users who match your service area during registration will appear here.
@@ -134,4 +104,4 @@ const ProviderDashboard = () => {
   );
 };
 
-export default ProviderDashboard;
+export default TenantDashboard;
