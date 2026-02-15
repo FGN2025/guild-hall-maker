@@ -300,6 +300,41 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: () => toast.error("Failed to update status"),
   });
 
+  const updateDetailsMutation = useMutation({
+    mutationFn: async (details: {
+      name: string;
+      game: string;
+      description?: string;
+      format: string;
+      max_participants: number;
+      prize_pool?: string;
+      start_date: string;
+      rules?: string;
+    }) => {
+      if (!user || !tournamentId) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("tournaments")
+        .update({
+          name: details.name,
+          game: details.game,
+          description: details.description ?? null,
+          format: details.format,
+          max_participants: details.max_participants,
+          prize_pool: details.prize_pool ?? null,
+          start_date: details.start_date,
+          rules: details.rules ?? null,
+        })
+        .eq("id", tournamentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Tournament details updated!");
+      queryClient.invalidateQueries({ queryKey: ["manage-tournament", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
+    },
+    onError: () => toast.error("Failed to update tournament details"),
+  });
+
   const isOwner = !!(user && tournamentQuery.data && tournamentQuery.data.created_by === user.id);
 
   // Real-time subscription for live match updates
@@ -339,5 +374,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     isUpdatingScore: updateScoreMutation.isPending,
     updateStatus: updateStatusMutation.mutate,
     isUpdatingStatus: updateStatusMutation.isPending,
+    updateDetails: updateDetailsMutation.mutate,
+    isUpdatingDetails: updateDetailsMutation.isPending,
   };
 };

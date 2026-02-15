@@ -18,6 +18,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import EditTournamentDialog from "@/components/tournaments/EditTournamentDialog";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/15 text-primary border-primary/30",
@@ -42,6 +43,8 @@ const TournamentManage = () => {
     isUpdatingScore,
     updateStatus,
     isUpdatingStatus,
+    updateDetails,
+    isUpdatingDetails,
   } = useTournamentManagement(id);
 
   if (isLoading) {
@@ -105,7 +108,12 @@ const TournamentManage = () => {
               <h1 className="font-display text-2xl font-bold text-foreground">{tournament.name}</h1>
               <p className="text-sm text-muted-foreground font-body mt-1">{tournament.game} · {tournament.format.replace("_", " ")}</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <EditTournamentDialog
+                tournament={tournament}
+                onUpdate={updateDetails}
+                isUpdating={isUpdatingDetails}
+              />
               <Button
                 variant="outline"
                 className="font-heading border-primary/30 text-primary hover:bg-primary/10"
