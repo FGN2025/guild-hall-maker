@@ -1,26 +1,75 @@
 
-# Add Calendar Date/Time Picker to Create Tournament Dialog
+
+# Games Library / Catalog Feature
 
 ## Overview
-Replace the plain text input for "Start Date" with a dual-input approach: a calendar date picker (using the existing Shadcn Calendar + Popover) combined with a separate time input, while keeping the ability to type manually.
+Add a full Games Library to the platform where admins can manage hundreds of games (with descriptions, categories, cover images, and user guides), and all users can browse, search, and filter them. Each game gets its own detail page showing its info, guide, and any related tournaments. This mirrors the reference design from Fiber Gaming Network while staying consistent with the existing app's dark theme and branding.
 
-## Changes
+## Database Changes
 
-### File: `src/components/tournaments/CreateTournamentDialog.tsx`
+### New table: `games`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | default gen_random_uuid() |
+| name | text | required, unique |
+| slug | text | required, unique (URL-friendly) |
+| description | text | nullable |
+| category | text | default 'General' (e.g. Fighting, Shooter, Sports, Party, Racing, Strategy) |
+| cover_image_url | text | nullable |
+| guide_content | text | nullable, markdown/plain text for the user guide |
+| platform_tags | text[] | e.g. ['PC', 'PS5', 'Xbox'] |
+| is_active | boolean | default true |
+| display_order | integer | default 0 |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
 
-1. **Replace state management** -- split `startDate` string into `startDate: Date | undefined` and `startTime: string` (e.g. "14:00")
+### RLS Policies
+- **SELECT**: anyone can read active games (`true` or `is_active = true`)
+- **ALL (admin)**: admins can create/update/delete games via `has_role(auth.uid(), 'admin'::app_role)`
 
-2. **Replace the Start Date text input** with:
-   - A Popover containing the existing `Calendar` component for date selection
-   - A time `<Input type="time">` beside it for picking the hour/minute
-   - The calendar button displays the selected date formatted nicely, or placeholder text
+### Tournament linking
+The existing `tournaments.game` column stores a free-text game name. Rather than a breaking migration, tournaments will be linked by matching `tournaments.game` to `games.name`, allowing the game detail page to show related tournaments without altering the tournaments table.
 
-3. **Update `handleSubmit`** to combine the selected date + time into an ISO string before calling `onCreate`
+## New Pages and Components
 
-### Technical Details
+### 1. Games List Page (`src/pages/Games.tsx`)
+- Grid of game cover-image cards (similar to the reference screenshots)
+- Left sidebar panel with:
+  - Search input (filters by name)
+  - Category dropdown (All, Fighting, Shooter, Sports, Party, Racing, Strategy, etc.)
+  - "Has Tournaments" checkbox toggle to show only games with active tournaments
+- Clicking a card navigates to `/games/:slug`
 
-- Uses existing `Calendar`, `Popover`, `PopoverTrigger`, `PopoverContent` components already in the project
-- Uses `date-fns` `format` (already installed) for display formatting
-- Adds `pointer-events-auto` class to Calendar per Shadcn datepicker best practices
-- The time input uses native `<Input type="time">` for simplicity
-- No new dependencies required
+### 2. Game Detail Page (`src/pages/GameDetail.tsx`)
+- Back link to "/games"
+- Large cover image on the left, name + category badge + description on the right
+- "User Guide" section below (rendered from `guide_content`)
+- "Tournaments" section listing any tournaments where `tournaments.game` matches this game's name
+
+### 3. Admin Games Management Page (`src/pages/admin/AdminGames.tsx`)
+- Table of all games with edit/delete actions
+- "Add Game" dialog with form fields: name, slug (auto-generated from name), category, description, cover image upload, guide content, platform tags
+- Edit dialog for updating existing games
+- Accessible from admin sidebar
+
+### 4. Supporting Components
+- `src/components/games/GameCard.tsx` -- cover image card with hover effect and game name overlay
+- `src/components/games/AddGameDialog.tsx` -- dialog for creating/editing a game
+- `src/hooks/useGames.ts` -- queries and mutations for the games table
+
+## Routing Changes (`src/App.tsx`)
+- `/games` -- Games list (inside authenticated AppLayout)
+- `/games/:slug` -- Game detail (inside authenticated AppLayout)
+- `/admin/games` -- Admin games management
+
+## Navigation Changes
+- Add "Games" nav item to `Navbar.tsx` (with Gamepad2 icon, between Tournaments and Dashboard)
+- Add "Games" link to `AdminSidebar.tsx`
+
+## Technical Details
+- Cover images uploaded to the existing `app-media` storage bucket under a `games/` prefix
+- The guide_content field stores plain text or markdown; rendered with basic formatting on the detail page
+- Search and category filtering done client-side for simplicity (works fine for hundreds of games)
+- Slug auto-generated from name (lowercase, hyphens) with manual override option
+- Consistent styling: `glass-panel`, `font-display`, `font-heading`, `bg-card`, `border-border` classes throughout
+
