@@ -1,86 +1,93 @@
 
 
-# Connect to manage.fgn.gg via API
+# Subscriber Management -- Flexible Foundation
 
-## Assessment
+## Summary
+Build the Subscribers page and local data storage now, with a design that supports both standalone operation (CSV upload, manual entry) and future API connection to manage.fgn.gg. Authentication remains independent in both apps.
 
-### What manage.fgn.gg already does
-- Subscriber verification against ISP billing systems (NISC, GLDS)
-- Provider selection UI with multiple ISPs configured
-- Access code generation after verification
-- Admin portal for managing providers and verification settings
+## Why This Approach
+- manage.fgn.gg does not yet have API endpoints to call
+- Rebuilding NISC/GLDS integrations here is not needed
+- We can build the subscriber UI and database now, and add the API proxy layer later when manage.fgn.gg exposes endpoints
+- Player authentication stays in both apps independently
 
-### What this app already does
-- Multi-tenant provider management (tenants, tenant_admins, tenant_zip_codes)
-- Lead tracking via user_service_interests
-- Provider admin dashboard with ZIP code management
-- Role-based access (super admin, provider admin)
+## What Gets Built Now
 
-### Recommendation: API Integration (not rebuild)
-Rebuilding NISC/GLDS integrations would duplicate complex, proprietary billing-system connections that are already working in manage.fgn.gg. Instead, this app should call manage.fgn.gg's API for subscriber-related operations and display the results in the provider admin.
+### 1. Database: `tenant_subscribers` table
+Stores subscriber records from any source (CSV upload now, API sync later).
 
-## What We Need to Build
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | Auto-generated |
+| tenant_id | uuid (FK to tenants) | Required |
+| account_number | text | External account ID |
+| first_name | text | Nullable |
+| last_name | text | Nullable |
+| email | text | Nullable |
+| phone | text | Nullable |
+| address | text | Nullable |
+| zip_code | text | Nullable |
+| service_status | text | active, inactive, suspended |
+| plan_name | text | Broadband plan name |
+| source | text | 'csv', 'manual', 'nisc', 'glds' |
+| external_id | text | ID from external system |
+| synced_at | timestamptz | Last sync timestamp |
+| created_at | timestamptz | Auto |
+| updated_at | timestamptz | Auto |
 
-### 1. Edge Function: `proxy-manage-api`
-A backend function that securely proxies requests from this app to manage.fgn.gg. This keeps API credentials server-side and adds authorization checks.
+Unique constraint on `(tenant_id, source, external_id)` to prevent duplicates.
 
-- Accepts requests from authenticated provider admins or super admins
-- Forwards calls to manage.fgn.gg endpoints (subscriber lookup, verification status, provider config)
-- Returns the response to the frontend
+RLS: tenant admins see only their own tenant's data; super admins see all.
 
-### 2. API Key / Auth Configuration
-- Store the manage.fgn.gg API credentials as a secret (`MANAGE_FGN_API_KEY` or similar)
-- The edge function reads this secret to authenticate with manage.fgn.gg
+### 2. Database: `tenant_integrations` table
+Stores API connection config per tenant -- empty for now but ready for when manage.fgn.gg adds endpoints.
 
-### 3. New Provider Page: `/provider/subscribers`
-A UI page in the existing provider admin sidebar that displays subscriber data fetched from manage.fgn.gg:
-- **Subscriber list** — shows verified subscribers for the provider's tenant
-- **Verification status** — shows pending/completed verifications
-- **Sync button** — triggers a fresh pull from manage.fgn.gg
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | Auto-generated |
+| tenant_id | uuid (FK to tenants) | Required |
+| provider_type | text | 'nisc', 'glds', 'manage_fgn', 'custom' |
+| display_name | text | Friendly label |
+| api_url | text | Base URL |
+| api_key_encrypted | text | Write-only from frontend |
+| additional_config | jsonb | Flexible settings |
+| is_active | boolean | Default true |
+| last_sync_at | timestamptz | Nullable |
+| last_sync_status | text | success, error, pending |
+| last_sync_message | text | Error details |
+| created_at | timestamptz | Auto |
 
-### 4. Sidebar and Routing Updates
-- Add "Subscribers" link to `ProviderSidebar.tsx`
-- Add route in `App.tsx`
+RLS: same tenant-scoping as subscribers.
 
-## Before We Proceed
+### 3. New Page: `/provider/subscribers`
+Three tabs:
+- **Subscribers** -- searchable table of imported records with status badges and counts
+- **Upload** -- CSV file upload with preview and field mapping, bulk inserts into `tenant_subscribers`
+- **Integrations** -- cards showing available systems (NISC, GLDS, manage.fgn.gg) with configure buttons. Displays "Coming Soon -- API endpoints pending" for manage.fgn.gg, with a form to save connection details in `tenant_integrations` so they are ready when the API goes live
 
-There are a few things I need from you to move forward:
+### 4. Sidebar and Route Updates
+- Add "Subscribers" link with Database icon to `ProviderSidebar.tsx`
+- Add `/provider/subscribers` route in `App.tsx` wrapped in `ProviderRoute`
 
-1. **Does manage.fgn.gg have API endpoints we can call?** (e.g., REST endpoints for listing subscribers, checking verification status by provider). If not, we would need to add an API layer to that app first.
-
-2. **What authentication does manage.fgn.gg use?** (API key, shared secret, or something else for server-to-server calls)
-
-3. **What data should flow between the apps?** For example:
-   - Subscriber verification status
-   - Access codes generated
-   - Provider/ISP configuration
-   - Or just a simple "is this user a verified subscriber?" check
-
-Once these are answered, I can write the exact edge function, hook, and UI code to wire it all together. The approach keeps subscriber verification centralized in manage.fgn.gg while giving provider admins in this app full visibility into their subscribers.
-
-## Technical Architecture
-
-```text
-+---------------------+          +----------------------+
-|   This App          |          |  manage.fgn.gg       |
-|   (Gaming Platform) |          |  (Subscriber Mgmt)   |
-|                     |          |                      |
-|  Provider Admin UI  |          |  NISC / GLDS APIs    |
-|        |            |          |       |               |
-|  useProviderSubs()  |          |  Verification Logic  |
-|        |            |          |       |               |
-|  Edge Function:     |  HTTPS   |  API Endpoints       |
-|  proxy-manage-api  --------->  |  (needs confirmation) |
-|                     |          |                      |
-+---------------------+          +----------------------+
-```
+## What Gets Built Later (when manage.fgn.gg has API endpoints)
+- Edge function `proxy-manage-api` to securely call manage.fgn.gg
+- Shared API key generation and secret storage
+- "Sync Now" button that pulls subscriber data via the proxy
+- Automatic scheduled syncs
 
 ## Files to Create
-- `supabase/functions/proxy-manage-api/index.ts` -- edge function proxy
-- `src/hooks/useProviderSubscribers.ts` -- data fetching hook
-- `src/pages/provider/ProviderSubscribers.tsx` -- subscriber list page
+- `src/pages/provider/ProviderSubscribers.tsx` -- main page with tabs
+- `src/components/provider/SubscriberUploader.tsx` -- CSV parsing and import component
+- `src/components/provider/IntegrationConfigCard.tsx` -- integration setup cards
+- `src/hooks/useProviderSubscribers.ts` -- CRUD hook for tenant_subscribers
+- `src/hooks/useProviderIntegrations.ts` -- CRUD hook for tenant_integrations
 
 ## Files to Modify
 - `src/components/provider/ProviderSidebar.tsx` -- add Subscribers nav item
-- `src/App.tsx` -- add subscriber route
+- `src/App.tsx` -- add route
+
+## Security
+- Both new tables have RLS enforcing tenant isolation
+- API credentials stored server-side only, never returned to frontend after creation
+- Access restricted to provider admins and super admins via existing role checks
 
