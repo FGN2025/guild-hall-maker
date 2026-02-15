@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save, Sparkles, ImageIcon, Upload } from "lucide-react";
-import { useAllPageBackgrounds, useUpsertPageBackground, type PageBackground } from "@/hooks/usePageBackground";
+import { Loader2, Save, Sparkles, ImageIcon, Upload, Trash2 } from "lucide-react";
+import { useAllPageBackgrounds, useUpsertPageBackground, useDeletePageBackground, type PageBackground } from "@/hooks/usePageBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useRef } from "react";
@@ -26,6 +26,7 @@ interface PageRowState {
 const BackgroundManager = () => {
   const { data: backgrounds, isLoading } = useAllPageBackgrounds();
   const upsert = useUpsertPageBackground();
+  const deleteBg = useDeletePageBackground();
   const [state, setState] = useState<Record<string, PageRowState>>({});
   const [generating, setGenerating] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -165,6 +166,21 @@ const BackgroundManager = () => {
                     {upsert.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     Save
                   </Button>
+                  {s.image_url && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={deleteBg.isPending}
+                      onClick={() => {
+                        deleteBg.mutate(page.slug);
+                        setState((prev) => ({ ...prev, [page.slug]: { image_url: "", opacity: 0.25 } }));
+                      }}
+                      className="gap-1.5 font-heading"
+                    >
+                      {deleteBg.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      Clear
+                    </Button>
+                  )}
                 </div>
               </div>
 
