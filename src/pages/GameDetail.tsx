@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useGameBySlug, useGameTournaments } from "@/hooks/useGames";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Gamepad2, Calendar, Trophy, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
 
 const GameDetail = () => {
@@ -61,8 +62,8 @@ const GameDetail = () => {
       {game.guide_content && (
         <section className="glass-panel rounded-xl p-6 space-y-3">
           <h2 className="font-display text-xl font-bold tracking-wider">User Guide</h2>
-          <div className="prose prose-invert max-w-none font-heading text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-            {game.guide_content}
+          <div className="prose prose-invert max-w-none font-heading text-sm text-muted-foreground leading-relaxed [&_h2]:font-display [&_h2]:text-lg [&_h2]:font-bold [&_h2]:tracking-wider [&_h2]:text-foreground [&_h2]:mt-6 [&_h2]:mb-2 [&_h3]:font-display [&_h3]:text-base [&_h3]:font-semibold [&_h3]:tracking-wider [&_h3]:text-foreground [&_h3]:mt-4 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_p]:mb-2 [&_strong]:text-foreground [&_code]:bg-secondary [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs">
+            <ReactMarkdown>{game.guide_content}</ReactMarkdown>
           </div>
         </section>
       )}
