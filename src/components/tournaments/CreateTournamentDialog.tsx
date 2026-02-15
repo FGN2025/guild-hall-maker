@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, Upload, CalendarIcon } from "lucide-react";
+import { format as formatDate } from "date-fns";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
@@ -31,7 +35,8 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [format, setFormat] = useState("single_elimination");
   const [maxParticipants, setMaxParticipants] = useState("16");
   const [prizePool, setPrizePool] = useState("");
-  const [startDate, setStartDate] = useState("");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [startTime, setStartTime] = useState("12:00");
   const [rules, setRules] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -60,6 +65,10 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
       setUploadingImage(false);
     }
 
+    const combinedDate = new Date(startDate!);
+    const [hours, minutes] = startTime.split(":").map(Number);
+    combinedDate.setHours(hours, minutes, 0, 0);
+
     onCreate({
       name: name.trim(),
       game: game.trim(),
@@ -67,13 +76,13 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
       format,
       max_participants: parseInt(maxParticipants) || 16,
       prize_pool: prizePool.trim() || undefined,
-      start_date: new Date(startDate).toISOString(),
+      start_date: combinedDate.toISOString(),
       rules: rules.trim() || undefined,
       image_url,
     });
     setOpen(false);
     setName(""); setGame(""); setDescription(""); setFormat("single_elimination");
-    setMaxParticipants("16"); setPrizePool(""); setStartDate(""); setRules("");
+    setMaxParticipants("16"); setPrizePool(""); setStartDate(undefined); setStartTime("12:00"); setRules("");
     setImageFile(null); setImagePreview(null);
   };
 
@@ -130,15 +139,37 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
           <div className="grid grid-cols-2 gap-4">
            <div className="space-y-2">
                <Label className="font-heading text-sm">Start Date *</Label>
-               <Input type="text" placeholder="e.g. 02/28/2026, 02:00 PM" value={startDate} 
-                 onChange={(e) => setStartDate(e.target.value)}
-                 required className="bg-card border-border font-body" />
+               <Popover>
+                 <PopoverTrigger asChild>
+                   <Button variant="outline" className={cn(
+                     "w-full justify-start text-left font-body bg-card border-border",
+                     !startDate && "text-muted-foreground"
+                   )}>
+                     <CalendarIcon className="mr-2 h-4 w-4" />
+                     {startDate ? formatDate(startDate, "PPP") : "Pick a date"}
+                   </Button>
+                 </PopoverTrigger>
+                 <PopoverContent className="w-auto p-0" align="start">
+                   <Calendar
+                     mode="single"
+                     selected={startDate}
+                     onSelect={setStartDate}
+                     initialFocus
+                     className={cn("p-3 pointer-events-auto")}
+                   />
+                 </PopoverContent>
+               </Popover>
              </div>
             <div className="space-y-2">
-              <Label className="font-heading text-sm">Prize Pool</Label>
-              <Input value={prizePool} onChange={(e) => setPrizePool(e.target.value)} maxLength={50}
-                className="bg-card border-border font-body" placeholder="e.g. $5,000" />
-            </div>
+              <Label className="font-heading text-sm">Start Time *</Label>
+              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)}
+                required className="bg-card border-border font-body" />
+             </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-heading text-sm">Prize Pool</Label>
+            <Input value={prizePool} onChange={(e) => setPrizePool(e.target.value)} maxLength={50}
+              className="bg-card border-border font-body" placeholder="e.g. $5,000" />
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Hero Image</Label>
@@ -158,7 +189,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             <Textarea value={rules} onChange={(e) => setRules(e.target.value)} maxLength={2000}
               className="bg-card border-border font-body min-h-[80px]" placeholder="Tournament rules..." />
           </div>
-          <Button type="submit" disabled={isCreating || uploadingImage}
+          <Button type="submit" disabled={isCreating || uploadingImage || !startDate}
             className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5">
             {isCreating ? "Creating..." : "Create Tournament"}
           </Button>
