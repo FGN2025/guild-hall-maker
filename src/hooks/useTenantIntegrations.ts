@@ -16,7 +16,7 @@ export interface TenantIntegration {
   created_at: string;
 }
 
-export const useProviderIntegrations = (tenantId: string | undefined) => {
+export const useTenantIntegrations = (tenantId: string | undefined) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

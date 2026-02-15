@@ -21,7 +21,7 @@ export interface TenantSubscriber {
   updated_at: string;
 }
 
-export const useProviderSubscribers = (tenantId: string | undefined) => {
+export const useTenantSubscribers = (tenantId: string | undefined) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

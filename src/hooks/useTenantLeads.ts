@@ -15,14 +15,11 @@ interface Lead {
   };
 }
 
-export function useProviderLeads(tenantId: string | null) {
+export function useTenantLeads(tenantId: string | null) {
   const { data: leads = [], isLoading } = useQuery({
-    queryKey: ["provider-leads", tenantId],
+    queryKey: ["tenant-leads", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      // Since tenant admins can't directly read user_service_interests via RLS,
-      // we need an admin-level read. For now, use the user's own scope.
-      // The admin policy on user_service_interests allows admins to read all.
       const { data, error } = await supabase
         .from("user_service_interests")
         .select("*")
@@ -32,7 +29,6 @@ export function useProviderLeads(tenantId: string | null) {
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      // Fetch profiles for the leads
       const userIds = data.map((d: any) => d.user_id);
       const { data: profiles } = await supabase
         .from("profiles")

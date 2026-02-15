@@ -28,11 +28,11 @@ import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminBypassCodes from "./pages/admin/AdminBypassCodes";
 import AdminTenants from "./pages/admin/AdminTenants";
 import AdminSettings from "./pages/admin/AdminSettings";
-import ProviderRoute from "./components/provider/ProviderRoute";
-import ProviderDashboard from "./pages/provider/ProviderDashboard";
-import ProviderLeads from "./pages/provider/ProviderLeads";
-import ProviderZipCodes from "./pages/provider/ProviderZipCodes";
-import ProviderSubscribers from "./pages/provider/ProviderSubscribers";
+import TenantRoute from "./components/tenant/TenantRoute";
+import TenantDashboard from "./pages/tenant/TenantDashboard";
+import TenantLeads from "./pages/tenant/TenantLeads";
+import TenantZipCodes from "./pages/tenant/TenantZipCodes";
+import TenantSubscribers from "./pages/tenant/TenantSubscribers";
 
 const queryClient = new QueryClient();
 
@@ -71,11 +71,11 @@ const App = () => (
             <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
 
-            {/* Provider routes */}
-            <Route path="/provider" element={<ProviderRoute><ProviderDashboard /></ProviderRoute>} />
-            <Route path="/provider/leads" element={<ProviderRoute><ProviderLeads /></ProviderRoute>} />
-            <Route path="/provider/zip-codes" element={<ProviderRoute><ProviderZipCodes /></ProviderRoute>} />
-            <Route path="/provider/subscribers" element={<ProviderRoute><ProviderSubscribers /></ProviderRoute>} />
+            {/* Tenant routes */}
+            <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
+            <Route path="/tenant/leads" element={<TenantRoute><TenantLeads /></TenantRoute>} />
+            <Route path="/tenant/zip-codes" element={<TenantRoute><TenantZipCodes /></TenantRoute>} />
+            <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

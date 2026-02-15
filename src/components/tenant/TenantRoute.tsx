@@ -1,9 +1,9 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-import ProviderLayout from "./ProviderLayout";
+import TenantLayout from "./TenantLayout";
 
-const ProviderRoute = ({ children }: { children: React.ReactNode }) => {
+const TenantRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { isTenantAdmin, isLoading, tenantInfo } = useTenantAdmin();
 
@@ -18,7 +18,7 @@ const ProviderRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) return <Navigate to="/auth" replace />;
   if (!isTenantAdmin) return <Navigate to="/dashboard" replace />;
 
-  return <ProviderLayout tenantInfo={tenantInfo!}>{children}</ProviderLayout>;
+  return <TenantLayout tenantInfo={tenantInfo!}>{children}</TenantLayout>;
 };
 
-export default ProviderRoute;
+export default TenantRoute;

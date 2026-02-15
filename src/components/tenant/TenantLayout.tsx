@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
-import ProviderSidebar from "./ProviderSidebar";
+import TenantSidebar from "./TenantSidebar";
 
-interface ProviderLayoutProps {
+interface TenantLayoutProps {
   children: ReactNode;
   tenantInfo: {
     tenantId: string;
@@ -10,13 +10,13 @@ interface ProviderLayoutProps {
   };
 }
 
-const ProviderLayout = ({ children, tenantInfo }: ProviderLayoutProps) => {
+const TenantLayout = ({ children, tenantInfo }: TenantLayoutProps) => {
   return (
     <div className="min-h-screen bg-background flex">
-      <ProviderSidebar tenantName={tenantInfo.tenantName} />
+      <TenantSidebar tenantName={tenantInfo.tenantName} />
       <main className="flex-1 p-8 overflow-auto">{children}</main>
     </div>
   );
 };
 
-export default ProviderLayout;
+export default TenantLayout;

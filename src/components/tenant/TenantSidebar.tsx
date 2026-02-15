@@ -1,15 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink } from "lucide-react";
 
-interface ProviderSidebarProps {
+interface TenantSidebarProps {
   tenantName: string;
 }
 
 const sidebarItems = [
-  { to: "/provider", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/provider/leads", label: "Leads", icon: Users },
-  { to: "/provider/zip-codes", label: "ZIP Codes", icon: MapPin },
-  { to: "/provider/subscribers", label: "Subscribers", icon: Database },
+  { to: "/tenant", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/tenant/leads", label: "Leads", icon: Users },
+  { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin },
+  { to: "/tenant/subscribers", label: "Subscribers", icon: Database },
 ];
 
 const ecosystemLinks = [
@@ -17,14 +17,14 @@ const ecosystemLinks = [
   { href: "https://hub.fgn.gg", label: "Hub" },
 ];
 
-const ProviderSidebar = ({ tenantName }: ProviderSidebarProps) => {
+const TenantSidebar = ({ tenantName }: TenantSidebarProps) => {
   const location = useLocation();
 
   return (
     <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
         <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading mb-1">
-          Provider Admin
+          Tenant Admin
         </p>
         <h2 className="font-display text-lg font-bold text-primary tracking-wider truncate">
           {tenantName}
@@ -33,8 +33,8 @@ const ProviderSidebar = ({ tenantName }: ProviderSidebarProps) => {
       <nav className="flex-1 p-4 flex flex-col gap-1">
         {sidebarItems.map((item) => {
           const active =
-            item.to === "/provider"
-              ? location.pathname === "/provider"
+            item.to === "/tenant"
+              ? location.pathname === "/tenant"
               : location.pathname.startsWith(item.to);
           return (
             <Link
@@ -83,4 +83,4 @@ const ProviderSidebar = ({ tenantName }: ProviderSidebarProps) => {
   );
 };
 
-export default ProviderSidebar;
+export default TenantSidebar;

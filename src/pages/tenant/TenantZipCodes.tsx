@@ -25,7 +25,7 @@ interface ZipEntry {
   created_at: string;
 }
 
-const ProviderZipCodes = () => {
+const TenantZipCodes = () => {
   const { tenantInfo } = useTenantAdmin();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -36,7 +36,7 @@ const ProviderZipCodes = () => {
   const tenantId = tenantInfo?.tenantId || "";
 
   const { data: zips = [], isLoading } = useQuery({
-    queryKey: ["provider-zips", tenantId],
+    queryKey: ["tenant-zips", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -60,7 +60,7 @@ const ProviderZipCodes = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["provider-zips", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
       toast.success("ZIP code added.");
     },
     onError: (err: any) => toast.error(err.message),
@@ -72,7 +72,7 @@ const ProviderZipCodes = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["provider-zips", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
       toast.success("ZIP code removed.");
     },
     onError: (err: any) => toast.error(err.message),
@@ -103,7 +103,6 @@ const ProviderZipCodes = () => {
       const text = await file.text();
       const lines = text.split("\n").filter((l) => l.trim());
 
-      // Detect header
       const firstLine = lines[0].toLowerCase();
       const hasHeader =
         firstLine.includes("zip") || firstLine.includes("code") || firstLine.includes("city");
@@ -128,7 +127,6 @@ const ProviderZipCodes = () => {
         return;
       }
 
-      // Batch insert in chunks of 500
       const chunkSize = 500;
       for (let i = 0; i < rows.length; i += chunkSize) {
         const chunk = rows.slice(i, i + chunkSize);
@@ -138,7 +136,7 @@ const ProviderZipCodes = () => {
         if (error) throw error;
       }
 
-      queryClient.invalidateQueries({ queryKey: ["provider-zips", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
       toast.success(`Uploaded ${rows.length} ZIP codes.`);
     } catch (err: any) {
       toast.error(err.message || "Failed to upload CSV.");
@@ -278,4 +276,4 @@ const ProviderZipCodes = () => {
   );
 };
 
-export default ProviderZipCodes;
+export default TenantZipCodes;
