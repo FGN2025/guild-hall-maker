@@ -147,6 +147,36 @@ export type Database = {
           },
         ]
       }
+      managed_pages: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          label: string
+          slug: string
+          supports_background: boolean
+          supports_hero: boolean
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          label: string
+          slug: string
+          supports_background?: boolean
+          supports_hero?: boolean
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          label?: string
+          slug?: string
+          supports_background?: boolean
+          supports_hero?: boolean
+        }
+        Relationships: []
+      }
       match_results: {
         Row: {
           completed_at: string | null
