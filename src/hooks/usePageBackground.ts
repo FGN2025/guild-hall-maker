@@ -48,7 +48,7 @@ export const useUpsertPageBackground = () => {
         {
           page_slug: bg.page_slug,
           image_url: bg.image_url,
-          opacity: bg.opacity ?? 0.15,
+          opacity: bg.opacity ?? 0.25,
         },
         { onConflict: "page_slug" }
       );
@@ -60,5 +60,23 @@ export const useUpsertPageBackground = () => {
       queryClient.invalidateQueries({ queryKey: ["page-backgrounds-all"] });
     },
     onError: (err: Error) => toast.error(err.message || "Failed to save background"),
+  });
+};
+
+export const useDeletePageBackground = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (pageSlug: string) => {
+      const { error } = await (supabase.from("page_backgrounds" as any) as any)
+        .delete()
+        .eq("page_slug", pageSlug);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Background cleared");
+      queryClient.invalidateQueries({ queryKey: ["page-background"] });
+      queryClient.invalidateQueries({ queryKey: ["page-backgrounds-all"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to clear background"),
   });
 };
