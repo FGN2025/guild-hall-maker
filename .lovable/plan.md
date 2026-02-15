@@ -1,62 +1,74 @@
 
+# Rename "Provider" to "Tenant" Across the Application
 
-# FGN Ecosystem Integration Plan
+## Summary
+Rename all references from "Provider" to "Tenant" for consistency with the manage.fgn.gg and hub.fgn.gg ecosystem. This includes user-facing labels, URL routes, file names, component names, and hook names.
 
-## Current Ecosystem
+## Changes Overview
 
-```text
-+-------------------+     +--------------------+     +-------------------+
-|  play.fgn.gg      |     |  manage.fgn.gg     |     |  hub.fgn.gg       |
-|  Gaming Platform   |     |  Subscriber Mgmt   |     |  Partner Hub      |
-|                   |     |                    |     |                   |
-| - Tournaments     |     | - NISC/GLDS APIs   |     | - Creative Assets |
-| - Leaderboards    |     | - Verification     |     | - Marketing       |
-| - Provider Admin  |     | - Access Codes     |     | - Web Pages       |
-| - Subscriber Mgmt |     |                    |     | - Brand Kits      |
-+-------------------+     +--------------------+     +-------------------+
-```
+### Files to Create (new names replacing old)
 
-All three are Lovable apps with independent authentication. None currently have API endpoints for cross-app communication.
+| Old File | New File |
+|----------|----------|
+| `src/pages/provider/ProviderDashboard.tsx` | `src/pages/tenant/TenantDashboard.tsx` |
+| `src/pages/provider/ProviderLeads.tsx` | `src/pages/tenant/TenantLeads.tsx` |
+| `src/pages/provider/ProviderZipCodes.tsx` | `src/pages/tenant/TenantZipCodes.tsx` |
+| `src/pages/provider/ProviderSubscribers.tsx` | `src/pages/tenant/TenantSubscribers.tsx` |
+| `src/components/provider/ProviderLayout.tsx` | `src/components/tenant/TenantLayout.tsx` |
+| `src/components/provider/ProviderRoute.tsx` | `src/components/tenant/TenantRoute.tsx` |
+| `src/components/provider/ProviderSidebar.tsx` | `src/components/tenant/TenantSidebar.tsx` |
+| `src/components/provider/IntegrationConfigCard.tsx` | `src/components/tenant/IntegrationConfigCard.tsx` |
+| `src/components/provider/SubscriberUploader.tsx` | `src/components/tenant/SubscriberUploader.tsx` |
+| `src/hooks/useProviderLeads.ts` | `src/hooks/useTenantLeads.ts` |
+| `src/hooks/useProviderSubscribers.ts` | `src/hooks/useTenantSubscribers.ts` |
+| `src/hooks/useProviderIntegrations.ts` | `src/hooks/useTenantIntegrations.ts` |
 
-## What This Plan Covers
+### Files to Modify
 
-### 1. Add hub.fgn.gg to the Integrations Tab
+| File | Changes |
+|------|---------|
+| `src/App.tsx` | Update imports to new paths, change routes from `/provider/*` to `/tenant/*`, rename components |
+| `src/components/Navbar.tsx` | Change link from `/provider` to `/tenant`, label from "Provider" to "Tenant" |
+| `src/components/AppSidebar.tsx` | Change label from "Provider" to "Tenant", link to `/tenant`, tooltip to "Tenant Panel" |
 
-Add a fourth integration card on the `/provider/subscribers` Integrations tab for hub.fgn.gg, marked as "Coming Soon" alongside manage.fgn.gg. This gives providers visibility into the planned connection.
+### Route Changes
 
-**File**: `src/pages/provider/ProviderSubscribers.tsx`
-- Add an entry to the `availableIntegrations` array with `providerType: "hub_fgn"` and `comingSoon: true`
+| Old Route | New Route |
+|-----------|-----------|
+| `/provider` | `/tenant` |
+| `/provider/leads` | `/tenant/leads` |
+| `/provider/zip-codes` | `/tenant/zip-codes` |
+| `/provider/subscribers` | `/tenant/subscribers` |
 
-### 2. Add Cross-App Navigation Links
+### Label Changes
 
-Add a dedicated "FGN Ecosystem" section to the Provider Sidebar with external links to the other two apps. This gives provider admins quick access without needing to remember URLs.
+| Location | Old Text | New Text |
+|----------|----------|----------|
+| Sidebar header | "Provider Admin" | "Tenant Admin" |
+| Navbar link | "Provider" | "Tenant" |
+| AppSidebar group | "Provider" | "Tenant" |
+| AppSidebar tooltip | "Provider Panel" | "Tenant Panel" |
 
-**File**: `src/components/provider/ProviderSidebar.tsx`
-- Add an "Ecosystem" section at the bottom of the nav (above "Back to App") with external links to manage.fgn.gg and hub.fgn.gg
-- Use `ExternalLink` icon to indicate these open in new tabs
+### Internal Renames
 
-### 3. Future API Integration Groundwork
+- All component names: `ProviderDashboard` becomes `TenantDashboard`, etc.
+- All hook names: `useProviderLeads` becomes `useTenantLeads`, etc.
+- Query keys: `provider-leads` becomes `tenant-leads`, `provider-zips` becomes `tenant-zips`, `provider-zip-count` becomes `tenant-zip-count`
+- Import paths updated throughout
 
-The `tenant_integrations` table already supports a flexible `provider_type` field and `additional_config` JSONB column. When hub.fgn.gg adds API endpoints, we can store its connection config with `provider_type: 'hub_fgn'` and use the same proxy edge function pattern planned for manage.fgn.gg.
+### What Does NOT Change
 
-Planned future data flows from Hub:
-- **Marketing assets**: Logos, banners, tournament graphics per tenant
-- **Brand kit references**: Colors, fonts, templates for auto-generating collateral
-- **Web page content**: Landing page blocks or promotional content
+- Database table names (`tenant_admins`, `tenant_zip_codes`, `tenant_subscribers`, `tenant_integrations`) -- these already use "tenant"
+- The `useTenantAdmin` hook -- already named correctly
+- The `provider_type` column in `tenant_integrations` -- this refers to external system providers (NISC, GLDS), not the broadband provider concept
+- The `useRegistrationZipCheck.ts` hook's internal `Provider` interface -- refers to broadband service providers found during ZIP lookup, which is a different concept
+- React context providers (AuthProvider, TooltipProvider, etc.) -- these are React patterns, not related
+- The `ExternalLink` ecosystem links to manage.fgn.gg and hub.fgn.gg
 
-No database changes are needed for this phase.
+### Implementation Approach
 
-## Files to Modify
+1. Create all new files under `src/pages/tenant/` and `src/components/tenant/` and `src/hooks/` with updated names
+2. Update `App.tsx`, `Navbar.tsx`, and `AppSidebar.tsx` to use new imports and routes
+3. Delete old files under `src/pages/provider/` and `src/components/provider/` and old hook files
 
-| File | Change |
-|------|--------|
-| `src/pages/provider/ProviderSubscribers.tsx` | Add hub.fgn.gg integration card |
-| `src/components/provider/ProviderSidebar.tsx` | Add Ecosystem external links section |
-
-## Technical Notes
-
-- External links use `target="_blank"` and `rel="noopener noreferrer"` for security
-- The `tenant_integrations` table is already flexible enough to store hub.fgn.gg config when ready
-- No new database tables or migrations are needed
-- When either manage.fgn.gg or hub.fgn.gg exposes API endpoints, the same shared-key + edge-function-proxy pattern applies to both
-
+No database migrations needed -- the database already uses "tenant" terminology.
