@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "FGN <onboarding@resend.dev>",
+        from: "FGN <noreply@fgn.gg>",
         to: [userEmail],
         subject: `Your login link for ${appLabel}`,
         html: `
