@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database } from "lucide-react";
 
 interface ProviderSidebarProps {
   tenantName: string;
@@ -9,6 +9,7 @@ const sidebarItems = [
   { to: "/provider", label: "Dashboard", icon: LayoutDashboard },
   { to: "/provider/leads", label: "Leads", icon: Users },
   { to: "/provider/zip-codes", label: "ZIP Codes", icon: MapPin },
+  { to: "/provider/subscribers", label: "Subscribers", icon: Database },
 ];
 
 const ProviderSidebar = ({ tenantName }: ProviderSidebarProps) => {

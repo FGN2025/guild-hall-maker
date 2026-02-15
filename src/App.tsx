@@ -32,6 +32,7 @@ import ProviderRoute from "./components/provider/ProviderRoute";
 import ProviderDashboard from "./pages/provider/ProviderDashboard";
 import ProviderLeads from "./pages/provider/ProviderLeads";
 import ProviderZipCodes from "./pages/provider/ProviderZipCodes";
+import ProviderSubscribers from "./pages/provider/ProviderSubscribers";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/provider" element={<ProviderRoute><ProviderDashboard /></ProviderRoute>} />
             <Route path="/provider/leads" element={<ProviderRoute><ProviderLeads /></ProviderRoute>} />
             <Route path="/provider/zip-codes" element={<ProviderRoute><ProviderZipCodes /></ProviderRoute>} />
+            <Route path="/provider/subscribers" element={<ProviderRoute><ProviderSubscribers /></ProviderRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
