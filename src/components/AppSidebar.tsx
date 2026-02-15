@@ -11,6 +11,7 @@ import {
   Swords,
   Award,
   Gamepad2,
+  Joystick,
   Settings,
   LogOut,
   ShieldCheck,
@@ -32,6 +33,7 @@ import {
 
 const mainNav = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/community", label: "Community", icon: Users },
   { to: "/leaderboard", label: "Leaderboard", icon: Shield },
@@ -54,7 +56,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <NavLink to="/" className="flex items-center gap-2 group">
-          <Gamepad2 className="h-6 w-6 text-primary shrink-0" />
+          <Joystick className="h-6 w-6 text-primary shrink-0" />
           <span className="font-display text-lg font-bold tracking-wider text-sidebar-foreground group-hover:text-primary transition-colors group-data-[collapsible=icon]:hidden">
             FGN
           </span>
