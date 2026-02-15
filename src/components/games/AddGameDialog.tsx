@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Upload, X, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import type { Game, GameInsert } from "@/hooks/useGames";
 
 const CATEGORIES = ["General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Strategy", "RPG", "Puzzle", "Adventure"];
@@ -31,6 +34,27 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const [guideContent, setGuideContent] = useState("");
   const [platformTags, setPlatformTags] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `games/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("app-media").upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("app-media").getPublicUrl(path);
+      setCoverImageUrl(publicUrl);
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     if (editGame) {
@@ -90,8 +114,45 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
             </Select>
           </div>
           <div>
-            <Label>Cover Image URL</Label>
-            <Input value={coverImageUrl} onChange={e => setCoverImageUrl(e.target.value)} placeholder="https://..." />
+            <Label>Cover Image</Label>
+            {coverImageUrl && (
+              <div className="relative w-32 h-40 mt-1 mb-2 rounded-lg overflow-hidden border border-border">
+                <img src={coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setCoverImageUrl("")}
+                  className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 hover:bg-destructive/80 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="gap-1"
+              >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploading ? "Uploading..." : "Upload"}
+              </Button>
+              <Input
+                value={coverImageUrl}
+                onChange={e => setCoverImageUrl(e.target.value)}
+                placeholder="Or paste URL..."
+                className="flex-1"
+              />
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
           </div>
           <div>
             <Label>Description</Label>
