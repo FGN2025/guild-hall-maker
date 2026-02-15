@@ -134,7 +134,7 @@ const Leaderboard = () => {
     : topThree;
 
   return (
-    <div className="min-h-screen bg-background grid-bg relative">
+    <div className="min-h-screen grid-bg relative">
       <PageBackground pageSlug="leaderboard" />
       <div className="py-8 container mx-auto px-4 relative z-10">
         <PageHero pageSlug="leaderboard" />
@@ -144,7 +144,7 @@ const Leaderboard = () => {
         </div>
 
         <Tabs value={tab} onValueChange={setTab} className="mb-6">
-          <TabsList className="bg-card border border-border">
+          <TabsList className="bg-card/70 backdrop-blur-sm border border-border">
             <TabsTrigger value="seasonal" className="gap-2 data-[state=active]:bg-primary/20">
               <Calendar className="h-4 w-4" />
               Seasonal
@@ -158,7 +158,7 @@ const Leaderboard = () => {
           {/* SEASONAL TAB */}
           <TabsContent value="seasonal" className="mt-6">
             {/* Season selector */}
-            <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card">
+            <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
               <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm font-heading text-muted-foreground mr-1">Season:</span>
               <Select
@@ -196,7 +196,7 @@ const Leaderboard = () => {
                 placeholder="Search players..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-sm bg-card border-border"
+                className="pl-9 h-9 text-sm bg-card/70 backdrop-blur-sm border-border"
               />
             </div>
 
@@ -205,7 +205,7 @@ const Leaderboard = () => {
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
               </div>
             ) : !filteredSeasonalPlayers || filteredSeasonalPlayers.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-12 text-center">
+              <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm p-12 text-center">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-heading text-lg text-foreground mb-2">No seasonal rankings yet</h3>
                 <p className="text-sm text-muted-foreground font-body">
@@ -213,7 +213,7 @@ const Leaderboard = () => {
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
                 <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                   <span className="col-span-1">Rank</span>
                   <span className="col-span-3">Player</span>
@@ -273,7 +273,7 @@ const Leaderboard = () => {
           {/* ALL-TIME TAB */}
           <TabsContent value="alltime" className="mt-6">
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card">
+            <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
               <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm font-heading text-muted-foreground mr-1">Filters:</span>
 
@@ -320,7 +320,7 @@ const Leaderboard = () => {
                 placeholder="Search players..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-sm bg-card border-border"
+                className="pl-9 h-9 text-sm bg-card/70 backdrop-blur-sm border-border"
               />
             </div>
 
@@ -329,7 +329,7 @@ const Leaderboard = () => {
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
               </div>
             ) : !players || players.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-12 text-center">
+               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm p-12 text-center">
                 <Swords className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-heading text-lg text-foreground mb-2">No rankings yet</h3>
                 <p className="text-sm text-muted-foreground font-body">
@@ -377,7 +377,7 @@ const Leaderboard = () => {
                 )}
 
                 {/* Full table */}
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
                   <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                     <button onClick={() => handleSort("rank")} className="col-span-1 flex items-center cursor-pointer hover:text-foreground transition-colors">
                       Rank <SortIcon col="rank" />
