@@ -14,6 +14,7 @@ import {
   Gamepad2,
   ChevronDown,
   X,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -93,6 +94,23 @@ export default function CoachFloatingButton() {
     clearChat();
   };
 
+  const handleExport = () => {
+    const gameName = selectedGame?.name || "General";
+    const date = new Date().toISOString().slice(0, 10);
+    const header = `# AI Coach Chat — ${gameName}\n_Exported on ${date}_\n`;
+    const body = messages
+      .map((m) => `**${m.role === "user" ? "You" : "Coach"}:** ${m.content}`)
+      .join("\n\n---\n\n");
+    const content = `${header}\n---\n\n${body}\n`;
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ai-coach-${gameName.toLowerCase().replace(/\s+/g, "-")}-${date}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const suggestions = getSuggestions(selectedGame?.name || null);
 
   return (
@@ -160,9 +178,14 @@ export default function CoachFloatingButton() {
               </DropdownMenuContent>
             </DropdownMenu>
             {messages.length > 0 && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={clearChat}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleExport} title="Download chat">
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={clearChat}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
             )}
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
               <X className="h-4 w-4" />
