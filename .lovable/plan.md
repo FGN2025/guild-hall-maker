@@ -1,25 +1,37 @@
 
 
-## Add New Games to the Catalog
+## Adapt Game Cover Images to Tournament Cards
 
-Minecraft is already in the catalog, so we'll add the 3 new titles:
+### Goal
+When a tournament doesn't have its own `image_url`, fall back to the matching game's `cover_image_url` as the card hero image. This replaces the plain gradient placeholder with the actual game artwork.
 
-| # | Name | Slug | Category | Platform Tags | Display Order |
-|---|------|------|----------|---------------|---------------|
-| 1 | Super Smash Brothers | super-smash-brothers | Fighting | Switch | 22 |
-| 2 | ARC Raiders | arc-raiders | Shooter | PC, PS5, Xbox | 23 |
-| 3 | BeamNG.drive | beamng-drive | Racing | PC | 24 |
+### Current Behavior
+- Tournament cards show `t.image_url` if set, otherwise a gradient with the game name text
+- Games table has `cover_image_url` for every game
+- Tournaments link to games by the `game` name string
 
-### Steps
+### Implementation
 
-1. **Generate cover art** for each of the 3 games using AI image generation (cyberpunk/gaming style, 3:4 aspect ratio)
-2. **Upload cover images** to cloud storage (`app-media` bucket, `games/` path)
-3. **Insert game records** into the `games` table with proper metadata (name, slug, category, description, platform tags, cover image URL, display_order 22-24, is_active: true)
-4. **Verify** the updated grid at `/games` shows all 25 games correctly
+**1. Update `useTournaments` hook** (`src/hooks/useTournaments.ts`)
+- After fetching tournaments and registrations, also fetch games (`name`, `cover_image_url`) from the `games` table
+- Enrich each tournament object with a new `game_cover_url` field by matching `t.game` to `game.name`
+- Update the `Tournament` type to include `game_cover_url?: string | null`
 
-### Notes
+**2. Update `TournamentCard` component** (`src/components/tournaments/TournamentCard.tsx`)
+- In the hero image section (lines 43-51), use `t.image_url || t.game_cover_url` as the image source
+- Keep the gradient fallback only when neither image is available
 
-- Minecraft already exists (display_order 18) -- no action needed for it
-- Each game gets a short description summarizing the gameplay
-- Cover images will be stored at `games/{slug}-cover.png` in the storage bucket
+**3. Update `FeaturedTournaments` component** (`src/components/FeaturedTournaments.tsx`)
+- This uses hardcoded static data, so no change needed (it doesn't use real tournament data)
+
+### Technical Details
+
+```text
+Tournament Card Hero Logic:
+  image_url set?        --> show tournament image
+  game_cover_url set?   --> show game cover image
+  neither?              --> show gradient fallback with game name
+```
+
+The hook change adds one extra lightweight query (just `name` and `cover_image_url` columns) and maps results in memory -- no schema changes needed.
 
