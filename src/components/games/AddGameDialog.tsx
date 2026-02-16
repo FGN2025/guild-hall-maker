@@ -43,12 +43,33 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
     if (!file) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `games/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("app-media").upload(path, file);
+      const ext = file.name.split(".").pop() ?? "bin";
+      const fileName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      const path = `games/${fileName}`;
+      const { error } = await supabase.storage.from("app-media").upload(path, file, { contentType: file.type });
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from("app-media").getPublicUrl(path);
       setCoverImageUrl(publicUrl);
+
+      // Register in media_library so it appears in Media Management
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        let fileType = "image";
+        if (file.type.startsWith("video/")) fileType = "video";
+        else if (file.type.startsWith("audio/")) fileType = "audio";
+
+        await supabase.from("media_library").insert({
+          user_id: user.id,
+          file_name: file.name,
+          file_path: path,
+          file_type: fileType,
+          mime_type: file.type,
+          file_size: file.size,
+          url: publicUrl,
+          category: "general",
+          tags: ["game-cover"],
+        } as any);
+      }
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     } finally {
