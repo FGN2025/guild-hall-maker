@@ -15,6 +15,7 @@ import {
   ChevronDown,
   X,
   Download,
+  FileText,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -111,6 +112,37 @@ export default function CoachFloatingButton() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportPdf = () => {
+    const gameName = selectedGame?.name || "General";
+    const date = new Date().toISOString().slice(0, 10);
+
+    const msgHtml = messages
+      .map(
+        (m) =>
+          `<div class="${m.role}" style="margin-bottom:16px"><span class="label">${m.role === "user" ? "You" : "Coach"}:</span> ${m.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</div>`
+      )
+      .join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>AI Coach — ${gameName}</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;color:#1a1a1a;padding:40px;max-width:700px;margin:auto}
+  h1{font-size:22px;margin-bottom:4px} .date{color:#888;font-size:13px;margin-bottom:24px}
+  .label{font-weight:700} .user{color:#333} .assistant{color:#0a7;border-left:3px solid #0cc;padding-left:12px}
+  @media print{body{padding:20px}}
+</style></head><body>
+<h1>AI Coach Chat — ${gameName}</h1>
+<p class="date">Exported on ${date}</p>
+<hr/>
+${msgHtml}
+</body></html>`;
+
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => win.print(), 400);
+    }
+  };
   const suggestions = getSuggestions(selectedGame?.name || null);
 
   return (
@@ -179,9 +211,23 @@ export default function CoachFloatingButton() {
             </DropdownMenu>
             {messages.length > 0 && (
               <>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleExport} title="Download chat">
-                  <Download className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Download chat">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExport}>
+                      <Download className="h-3.5 w-3.5 mr-2" />
+                      Markdown (.md)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportPdf}>
+                      <FileText className="h-3.5 w-3.5 mr-2" />
+                      PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={clearChat}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
