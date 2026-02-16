@@ -36,7 +36,10 @@ const TournamentCard = ({
   const isCreator = user?.id === t.created_by;
 
   return (
-    <div className="rounded-xl border border-border bg-card glow-card flex flex-col overflow-hidden">
+    <div
+      className="rounded-xl border border-border bg-card glow-card flex flex-col overflow-hidden cursor-pointer transition-transform hover:scale-[1.01]"
+      onClick={() => navigate(`/tournaments/${t.id}`)}
+    >
       {/* Hero Image */}
       <div className="relative h-36 bg-muted overflow-hidden">
       {(t.image_url || t.game_cover_url) ? (
@@ -72,14 +75,7 @@ const TournamentCard = ({
           </div>
         ))}
       </div>
-      <div className="flex gap-2 mt-4">
-        <Button
-          variant="outline"
-          className="flex-1 font-heading tracking-wide border-border text-muted-foreground hover:text-foreground"
-          onClick={() => navigate(`/tournaments/${t.id}`)}
-        >
-          Details
-        </Button>
+      <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
         {isCreator && (
           <Button
             variant="outline"
