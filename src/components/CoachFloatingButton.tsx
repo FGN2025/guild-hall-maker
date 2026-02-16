@@ -30,12 +30,70 @@ import {
 import { cn } from "@/lib/utils";
 import CoachHistoryPanel from "@/components/coach/CoachHistoryPanel";
 
-const defaultSuggestions: Record<string, string[]> = {
-  general: [
-    "How do I improve my game sense?",
-    "Best warm-up routines?",
-    "How do I deal with tilt?",
+const categorySuggestions: Record<string, string[]> = {
+  Shooter: [
+    "How do I improve my aim?",
+    "Best crosshair placement tips?",
+    "How do I counter-strafe effectively?",
   ],
+  MOBA: [
+    "How do I farm better in lane?",
+    "When should I roam?",
+    "How do I track the enemy jungler?",
+  ],
+  Fighting: [
+    "How do I improve my neutral game?",
+    "Best way to learn combos?",
+    "How do I punish unsafe moves?",
+  ],
+  Sports: [
+    "How do I read the defense better?",
+    "Best offensive formations?",
+    "How do I manage stamina effectively?",
+  ],
+  MMORPG: [
+    "How do I optimize my DPS rotation?",
+    "Best gear progression path?",
+    "How do I find a good guild?",
+  ],
+  RPG: [
+    "How do I build my character efficiently?",
+    "Best leveling strategies?",
+    "How do I beat tough bosses?",
+  ],
+  Racing: [
+    "How do I hit better racing lines?",
+    "Best braking technique for corners?",
+    "How do I tune my car setup?",
+  ],
+  Simulation: [
+    "How do I optimize my economy?",
+    "Best progression strategies?",
+    "What mods should I use?",
+  ],
+  Strategy: [
+    "What are the best opening build orders?",
+    "How do I scout effectively?",
+    "How do I manage my economy?",
+  ],
+  "Card Game": [
+    "How do I build a balanced deck?",
+    "Best mulligan strategies?",
+    "How do I play around removal?",
+  ],
+  Party: [
+    "How do I win more minigames?",
+    "Best board strategies?",
+    "How do I read my opponents?",
+  ],
+  "Battle Royale": [
+    "How do I improve my drop strategy?",
+    "Best looting routes?",
+    "How do I win endgame fights?",
+  ],
+};
+
+const gameSuggestions: Record<string, string[]> = {
   "Rocket League": [
     "How do I improve my aerials?",
     "How should I rotate in 3v3?",
@@ -46,11 +104,6 @@ const defaultSuggestions: Record<string, string[]> = {
     "Best agents for solo queue?",
     "How do I lurk effectively?",
   ],
-  "Fortnite": [
-    "How do I build faster?",
-    "Best drop strategy?",
-    "How to win endgame fights?",
-  ],
   "League of Legends": [
     "How do I improve my CS?",
     "When should I roam as mid?",
@@ -58,12 +111,20 @@ const defaultSuggestions: Record<string, string[]> = {
   ],
 };
 
-function getSuggestions(gameName: string | null): string[] {
-  if (!gameName) return defaultSuggestions.general;
-  return defaultSuggestions[gameName] || [
-    `Best strategies for ${gameName}?`,
-    `How do I improve at ${gameName}?`,
-    `Beginner tips for ${gameName}?`,
+const generalSuggestions = [
+  "How do I improve my game sense?",
+  "Best warm-up routines?",
+  "How do I deal with tilt?",
+];
+
+function getSuggestions(game: Game | null): string[] {
+  if (!game) return generalSuggestions;
+  if (gameSuggestions[game.name]) return gameSuggestions[game.name];
+  if (game.category && categorySuggestions[game.category]) return categorySuggestions[game.category];
+  return [
+    `Best strategies for ${game.name}?`,
+    `How do I improve at ${game.name}?`,
+    `Beginner tips for ${game.name}?`,
   ];
 }
 
@@ -213,7 +274,7 @@ ${msgHtml}
     }
   };
 
-  const suggestions = getSuggestions(selectedGame?.name || null);
+  const suggestions = getSuggestions(selectedGame);
 
   return (
     <>
