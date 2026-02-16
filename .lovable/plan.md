@@ -1,90 +1,71 @@
 
 
-# Admin Achievement Management System
+# Enhanced Custom Badge System
 
 ## Overview
 
-Replace the current hardcoded, frontend-only achievement system with a database-backed one. Admins will be able to create/edit/delete achievement definitions and manually award badges to specific players.
+The database and basic admin UI for custom badges already exist. This plan focuses on polishing the experience: showing player names instead of UUIDs in recent awards, visually distinguishing custom badges on player profiles, streamlining the award flow, and displaying award notes.
 
-## Database Design
+## Changes
 
-Two new tables:
+### 1. Fix Recent Awards to Show Player Names (AdminAchievements.tsx - AwardTab)
 
-**`achievement_definitions`** -- Stores the templates/definitions of all achievements
-- `id` (uuid, PK)
-- `name` (text) -- e.g. "First Blood"
-- `description` (text) -- e.g. "Win your first match"
-- `icon` (text) -- one of: trophy, flame, star, crown, target, shield, swords, zap, medal
-- `tier` (text) -- bronze, silver, gold, platinum
-- `category` (text, default 'milestone') -- 'milestone' (auto-computed) or 'custom' (manually awarded)
-- `auto_criteria` (jsonb, nullable) -- For milestone achievements: `{ "type": "wins", "threshold": 5 }` etc. Null for custom badges.
-- `max_progress` (integer, nullable) -- For progress-bar display
-- `is_active` (boolean, default true)
-- `display_order` (integer, default 0)
-- `created_at`, `updated_at` (timestamptz)
+The recent awards table currently shows `a.user_id.slice(0, 8)...` which is not useful. Update `useRecentAwards` to join with `profiles` so we get `display_name` and `avatar_url` for each award.
 
-**`player_achievements`** -- Records which players have earned which achievements
-- `id` (uuid, PK)
-- `user_id` (uuid, not null)
-- `achievement_id` (uuid, FK to achievement_definitions)
-- `awarded_at` (timestamptz, default now())
-- `awarded_by` (uuid, nullable) -- null = auto-computed, set = manually awarded by admin
-- `progress` (integer, nullable) -- current progress toward max_progress
-- `notes` (text, nullable) -- optional admin note when manually awarding
-- unique constraint on (user_id, achievement_id)
+**File: `src/hooks/useAchievementAdmin.ts`**
+- Modify the `useRecentAwards` query: instead of `select("*")`, use a two-step approach -- fetch awards then batch-fetch profiles for the user_ids (since there's no FK, we can't use Supabase joins). Alternatively, fetch profiles separately and merge client-side.
 
-**RLS Policies:**
-- Both tables readable by everyone (SELECT true)
-- achievement_definitions: admin-only for INSERT/UPDATE/DELETE
-- player_achievements: admin-only for INSERT/UPDATE/DELETE
+**File: `src/pages/admin/AdminAchievements.tsx`**
+- In the AwardTab, look up player names from a profiles map and display avatar + display_name instead of truncated UUIDs.
 
-## Migration for Seed Data
+### 2. Separate Custom Badges Visually on Player Profiles (PlayerAchievements.tsx)
 
-The 12 existing hardcoded achievements will be inserted as rows in `achievement_definitions` with `category = 'milestone'` and appropriate `auto_criteria` JSON, so existing functionality is preserved.
+- Split the achievements grid into two sections: "Milestone Achievements" and "Special Recognition" (custom badges).
+- Custom badges get a distinct visual treatment: a small ribbon/banner style or a unique accent color (e.g., purple/violet) so they stand out from tier-based milestone badges.
+- Show the award note (reason) as a tooltip or small subtitle under the badge description for custom awards.
 
-## Files to Create
+**File: `src/hooks/usePlayerAchievements.ts`**
+- Add `category` and `notes` fields to the `Achievement` interface so the UI can differentiate and display them.
 
-1. **`supabase/migrations/..._achievement_tables.sql`** -- Creates both tables, RLS policies, and seeds the 12 existing achievement definitions.
+**File: `src/components/player/PlayerAchievements.tsx`**
+- Group achievements by category (milestone vs custom).
+- Render custom badges with a "Special Recognition" header and a distinct visual style (e.g., purple gradient border, sparkle icon indicator).
+- Show `notes` text under the description for custom badges when available.
 
-2. **`src/pages/admin/AdminAchievements.tsx`** -- Admin page with two tabs:
-   - **Definitions Tab**: Table listing all achievement definitions with name, tier, icon, category, and active status. Buttons to create new, edit, and delete definitions. Uses a dialog form.
-   - **Award Tab**: Search for a player by name, select an achievement definition, add optional notes, and click "Award" to insert into `player_achievements`. Shows a table of recent manual awards with the ability to revoke.
+### 3. Streamline the Award Tab for Custom Badges (AdminAchievements.tsx)
 
-3. **`src/hooks/useAchievementAdmin.ts`** -- Hook with queries and mutations for:
-   - Fetching all achievement definitions
-   - Creating/updating/deleting definitions
-   - Awarding an achievement to a player
-   - Revoking a manually awarded achievement
-   - Fetching recent awards
+- In the achievement dropdown, group options: show "Custom Badges" first with a separator, then "Milestone Achievements" below.
+- Add a "Quick Create + Award" button that opens a combined dialog: create a new custom badge definition and immediately award it to the selected player in one step (saves admins from switching between tabs).
 
-## Files to Modify
+### 4. Add Bulk Award Support
 
-4. **`src/hooks/usePlayerAchievements.ts`** -- Rewrite to:
-   - Fetch `achievement_definitions` from the database
-   - Fetch `player_achievements` for the given user
-   - Still compute auto-milestone progress from `match_results` data
-   - Merge: an achievement is "unlocked" if it exists in `player_achievements` OR if auto-criteria is met
-   - Auto-upsert into `player_achievements` when a milestone is newly met (so the award is persisted)
+- Allow selecting multiple players in the Award tab (checkbox-style multi-select from search results) so admins can award a badge like "Event MVP" to several players at once.
 
-5. **`src/hooks/useGlobalAchievements.ts`** -- Rewrite to query `player_achievements` joined with `achievement_definitions` and `profiles`, instead of recomputing everything client-side.
+## Technical Details
 
-6. **`src/components/player/PlayerAchievements.tsx`** -- Minor update to handle any new fields (e.g. showing "Awarded by admin" indicator on manually-awarded badges).
+### Updated Achievement Interface
+```typescript
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: "trophy" | "flame" | "star" | "crown" | "target" | "shield" | "swords" | "zap" | "medal";
+  tier: "bronze" | "silver" | "gold" | "platinum";
+  unlocked: boolean;
+  progress?: number;
+  maxProgress?: number;
+  awardedBy?: string | null;
+  category: "milestone" | "custom";  // NEW
+  notes?: string | null;             // NEW
+}
+```
 
-7. **`src/components/admin/AdminSidebar.tsx`** -- Add "Achievements" nav item with `Award` icon.
+### Files Modified
+1. **`src/hooks/useAchievementAdmin.ts`** -- Enhance `useRecentAwards` to fetch profile names alongside awards
+2. **`src/hooks/usePlayerAchievements.ts`** -- Add `category` and `notes` to Achievement interface and query results
+3. **`src/components/player/PlayerAchievements.tsx`** -- Split display into milestone vs custom sections, show notes, add distinct styling for custom badges
+4. **`src/pages/admin/AdminAchievements.tsx`** -- Show player names in recent awards, group achievement dropdown, add quick-create-and-award flow, add multi-player selection
 
-8. **`src/App.tsx`** -- Add `/admin/achievements` route.
-
-## Implementation Approach
-
-- The existing 12 milestone achievements become database rows with `auto_criteria` JSON like `{"type":"wins","threshold":1}`, `{"type":"streak","threshold":3}`, etc.
-- The `usePlayerAchievements` hook will still compute win/loss/streak stats from `match_results`, but will check those stats against `auto_criteria` from the DB rather than hardcoded logic.
-- Custom (non-milestone) achievements have no auto-criteria and can only be awarded manually by admins.
-- The global achievements leaderboard will query `player_achievements` counts grouped by user, making it much more efficient than the current approach of recomputing everything.
-
-## Technical Notes
-
-- The `auto_criteria` JSON schema supports types: `wins`, `streak`, `matches`, `win_rate`, `tournament_champion`, `multi_tournament`, `iron_will` -- matching the current 12 hardcoded checks.
-- The `player_achievements` table uses a unique constraint on `(user_id, achievement_id)` to prevent duplicate awards.
-- Auto-computed achievements will be upserted into `player_achievements` when a player's profile is viewed, so the global leaderboard query stays simple.
-- No changes to auto-generated files (`client.ts`, `types.ts`, `.env`, `config.toml`).
+### No Database Changes Required
+All needed columns (`category`, `notes`, `awarded_by`) already exist in the schema.
 
