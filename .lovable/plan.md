@@ -1,75 +1,109 @@
 
 
-# Games Library / Catalog Feature
+# is_active Filtering and Drag-to-Reorder for Games
 
-## Overview
-Add a full Games Library to the platform where admins can manage hundreds of games (with descriptions, categories, cover images, and user guides), and all users can browse, search, and filter them. Each game gets its own detail page showing its info, guide, and any related tournaments. This mirrors the reference design from Fiber Gaming Network while staying consistent with the existing app's dark theme and branding.
+## 1. Public Games Query -- is_active Filter
 
-## Database Changes
+**File:** `src/hooks/useGames.ts`
 
-### New table: `games`
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | default gen_random_uuid() |
-| name | text | required, unique |
-| slug | text | required, unique (URL-friendly) |
-| description | text | nullable |
-| category | text | default 'General' (e.g. Fighting, Shooter, Sports, Party, Racing, Strategy) |
-| cover_image_url | text | nullable |
-| guide_content | text | nullable, markdown/plain text for the user guide |
-| platform_tags | text[] | e.g. ['PC', 'PS5', 'Xbox'] |
-| is_active | boolean | default true |
-| display_order | integer | default 0 |
-| created_at | timestamptz | default now() |
-| updated_at | timestamptz | default now() |
+- Split the current `useGames` hook into two variants:
+  - `useGames()` (public) -- adds `.eq("is_active", true)` to only return active games. Used by the catalog page.
+  - `useAdminGames()` (admin) -- returns all games regardless of `is_active`. Used by the admin page.
+- Update `src/pages/Games.tsx` to continue using `useGames()` (no change needed there).
+- Update `src/pages/admin/AdminGames.tsx` to import and use `useAdminGames()` instead.
 
-### RLS Policies
-- **SELECT**: anyone can read active games (`true` or `is_active = true`)
-- **ALL (admin)**: admins can create/update/delete games via `has_role(auth.uid(), 'admin'::app_role)`
+## 2. Drag-to-Reorder in Admin Games Table
 
-### Tournament linking
-The existing `tournaments.game` column stores a free-text game name. Rather than a breaking migration, tournaments will be linked by matching `tournaments.game` to `games.name`, allowing the game detail page to show related tournaments without altering the tournaments table.
+**File:** `src/pages/admin/AdminGames.tsx`
 
-## New Pages and Components
+- Add `@dnd-kit/core` and `@dnd-kit/sortable` integration (already installed).
+- Wrap the `TableBody` in a `SortableContext` with the games array ordered by `display_order`.
+- Add a new "Order" column with a drag handle icon (GripVertical) as the first column.
+- Each `TableRow` becomes a sortable item using `useSortable`.
+- On drag end, compute the new order and batch-update `display_order` for all affected rows.
 
-### 1. Games List Page (`src/pages/Games.tsx`)
-- Grid of game cover-image cards (similar to the reference screenshots)
-- Left sidebar panel with:
-  - Search input (filters by name)
-  - Category dropdown (All, Fighting, Shooter, Sports, Party, Racing, Strategy, etc.)
-  - "Has Tournaments" checkbox toggle to show only games with active tournaments
-- Clicking a card navigates to `/games/:slug`
+**File:** `src/hooks/useGames.ts`
 
-### 2. Game Detail Page (`src/pages/GameDetail.tsx`)
-- Back link to "/games"
-- Large cover image on the left, name + category badge + description on the right
-- "User Guide" section below (rendered from `guide_content`)
-- "Tournaments" section listing any tournaments where `tournaments.game` matches this game's name
-
-### 3. Admin Games Management Page (`src/pages/admin/AdminGames.tsx`)
-- Table of all games with edit/delete actions
-- "Add Game" dialog with form fields: name, slug (auto-generated from name), category, description, cover image upload, guide content, platform tags
-- Edit dialog for updating existing games
-- Accessible from admin sidebar
-
-### 4. Supporting Components
-- `src/components/games/GameCard.tsx` -- cover image card with hover effect and game name overlay
-- `src/components/games/AddGameDialog.tsx` -- dialog for creating/editing a game
-- `src/hooks/useGames.ts` -- queries and mutations for the games table
-
-## Routing Changes (`src/App.tsx`)
-- `/games` -- Games list (inside authenticated AppLayout)
-- `/games/:slug` -- Game detail (inside authenticated AppLayout)
-- `/admin/games` -- Admin games management
-
-## Navigation Changes
-- Add "Games" nav item to `Navbar.tsx` (with Gamepad2 icon, between Tournaments and Dashboard)
-- Add "Games" link to `AdminSidebar.tsx`
+- Add a new `useReorderGames()` mutation that accepts an array of `{ id, display_order }` and performs a batch update (loop of individual updates, since Supabase JS doesn't support bulk upsert on arbitrary columns easily).
 
 ## Technical Details
-- Cover images uploaded to the existing `app-media` storage bucket under a `games/` prefix
-- The guide_content field stores plain text or markdown; rendered with basic formatting on the detail page
-- Search and category filtering done client-side for simplicity (works fine for hundreds of games)
-- Slug auto-generated from name (lowercase, hyphens) with manual override option
-- Consistent styling: `glass-panel`, `font-display`, `font-heading`, `bg-card`, `border-border` classes throughout
+
+### useGames split
+
+```typescript
+// Public: only active games
+export const useGames = () => {
+  return useQuery({
+    queryKey: ["games"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("games" as any)
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true })
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data as unknown as Game[]) ?? [];
+    },
+  });
+};
+
+// Admin: all games
+export const useAdminGames = () => {
+  return useQuery({
+    queryKey: ["admin-games"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("games" as any)
+        .select("*")
+        .order("display_order", { ascending: true })
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data as unknown as Game[]) ?? [];
+    },
+  });
+};
+```
+
+### Reorder mutation
+
+```typescript
+export const useReorderGames = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase
+          .from("games" as any)
+          .update({ display_order: item.display_order } as any)
+          .eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-games"] });
+      qc.invalidateQueries({ queryKey: ["games"] });
+      toast({ title: "Order updated" });
+    },
+  });
+};
+```
+
+### Admin table drag-and-drop
+
+- Use `DndContext` with `closestCenter` collision detection and `restrictToVerticalAxis` modifier.
+- Use `SortableContext` with `verticalListSortingStrategy`.
+- Create a `SortableGameRow` component that uses `useSortable` hook to make each row draggable.
+- Apply `transform` and `transition` styles from `useSortable` to the row.
+- Add a `GripVertical` icon in the first cell as the drag handle (using `attributes` and `listeners` from `useSortable`).
+- On `onDragEnd`, use `arrayMove` to reorder the local list, then call `useReorderGames` with the new order indices.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `src/hooks/useGames.ts` | Add `useAdminGames`, `useReorderGames`; add `.eq("is_active", true)` to `useGames` |
+| `src/pages/admin/AdminGames.tsx` | Switch to `useAdminGames`, add dnd-kit drag-to-reorder with GripVertical handles and Order column |
+
+No database changes required -- both `is_active` and `display_order` columns already exist.
 
