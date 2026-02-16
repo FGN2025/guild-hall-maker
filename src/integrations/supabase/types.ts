@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notebook_connections: {
+        Row: {
+          api_url: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_health_check: string | null
+          last_health_status: string | null
+          name: string
+          notebook_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_url: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_health_check?: string | null
+          last_health_status?: string | null
+          name: string
+          notebook_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_url?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_health_check?: string | null
+          last_health_status?: string | null
+          name?: string
+          notebook_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           description: string | null
