@@ -4,13 +4,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Pencil, Trash2, Award, Search, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Pencil, Trash2, Award, Search, X, Sparkles } from "lucide-react";
 import { useAchievementDefinitions, useAchievementAdmin, useRecentAwards } from "@/hooks/useAchievementAdmin";
 import type { AchievementDefinition } from "@/hooks/useAchievementAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -194,14 +195,18 @@ const DefinitionsTab = () => {
 const AwardTab = () => {
   const { data: defs } = useAchievementDefinitions();
   const { data: recentAwards, isLoading } = useRecentAwards();
-  const { awardAchievement, revokeAchievement } = useAchievementAdmin();
+  const { awardAchievement, bulkAwardAchievement, createDef, revokeAchievement } = useAchievementAdmin();
   const { user } = useAuth();
 
   const [search, setSearch] = useState("");
   const [players, setPlayers] = useState<{ user_id: string; display_name: string; avatar_url: string | null }[]>([]);
-  const [selectedPlayer, setSelectedPlayer] = useState<{ user_id: string; display_name: string } | null>(null);
+  const [selectedPlayers, setSelectedPlayers] = useState<{ user_id: string; display_name: string; avatar_url: string | null }[]>([]);
   const [selectedAchievement, setSelectedAchievement] = useState("");
   const [notes, setNotes] = useState("");
+  const [showQuickCreate, setShowQuickCreate] = useState(false);
+
+  const customDefs = defs?.filter((d) => d.is_active && d.category === "custom") ?? [];
+  const milestoneDefs = defs?.filter((d) => d.is_active && d.category === "milestone") ?? [];
 
   const searchPlayers = async (q: string) => {
     setSearch(q);
@@ -214,21 +219,42 @@ const AwardTab = () => {
     setPlayers(data ?? []);
   };
 
+  const togglePlayer = (p: { user_id: string; display_name: string; avatar_url: string | null }) => {
+    setSelectedPlayers((prev) =>
+      prev.some((s) => s.user_id === p.user_id)
+        ? prev.filter((s) => s.user_id !== p.user_id)
+        : [...prev, p]
+    );
+  };
+
   const handleAward = () => {
-    if (!selectedPlayer || !selectedAchievement || !user) return;
-    awardAchievement.mutate({
-      user_id: selectedPlayer.user_id,
-      achievement_id: selectedAchievement,
-      notes,
-      awarded_by: user.id,
-    });
-    setSelectedPlayer(null);
+    if (!selectedPlayers.length || !selectedAchievement || !user) return;
+    if (selectedPlayers.length === 1) {
+      awardAchievement.mutate({
+        user_id: selectedPlayers[0].user_id,
+        achievement_id: selectedAchievement,
+        notes,
+        awarded_by: user.id,
+      });
+    } else {
+      bulkAwardAchievement.mutate({
+        user_ids: selectedPlayers.map((p) => p.user_id),
+        achievement_id: selectedAchievement,
+        notes,
+        awarded_by: user.id,
+      });
+    }
+    setSelectedPlayers([]);
     setSelectedAchievement("");
     setNotes("");
     setSearch("");
   };
 
-  // Build lookup maps for recent awards
+  const handleQuickCreate = (data: Partial<AchievementDefinition>) => {
+    createDef.mutate({ ...data, category: "custom" });
+    setShowQuickCreate(false);
+  };
+
   const defMap = new Map(defs?.map((d) => [d.id, d]) ?? []);
 
   return (
@@ -238,46 +264,77 @@ const AwardTab = () => {
           <Award className="h-5 w-5 text-primary" /> Award Achievement
         </h2>
 
-        {/* Player search */}
+        {/* Player multi-select */}
         <div>
-          <Label>Player</Label>
-          {selectedPlayer ? (
-            <div className="flex items-center gap-2 p-2 rounded-lg border border-border bg-muted/30">
-              <span className="font-heading text-sm text-foreground">{selectedPlayer.display_name}</span>
-              <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={() => setSelectedPlayer(null)}><X className="h-3 w-3" /></Button>
+          <Label>Players</Label>
+          {selectedPlayers.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedPlayers.map((p) => (
+                <div key={p.user_id} className="flex items-center gap-1.5 px-2 py-1 rounded-full border border-border bg-muted/30 text-sm">
+                  <Avatar className="h-5 w-5">
+                    <AvatarImage src={p.avatar_url ?? undefined} />
+                    <AvatarFallback className="text-[9px]">{(p.display_name ?? "?").slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-heading text-foreground">{p.display_name}</span>
+                  <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={() => togglePlayer(p)}><X className="h-3 w-3" /></Button>
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search player…" value={search} onChange={(e) => searchPlayers(e.target.value)} />
-              {players.length > 0 && (
-                <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
-                  {players.map((p) => (
-                    <button key={p.user_id} className="flex items-center gap-2 w-full px-3 py-2 hover:bg-muted/50 text-left" onClick={() => { setSelectedPlayer(p); setPlayers([]); setSearch(""); }}>
+          )}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-9" placeholder="Search players…" value={search} onChange={(e) => searchPlayers(e.target.value)} />
+            {players.length > 0 && (
+              <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
+                {players.map((p) => {
+                  const isSelected = selectedPlayers.some((s) => s.user_id === p.user_id);
+                  return (
+                    <button key={p.user_id} className="flex items-center gap-2 w-full px-3 py-2 hover:bg-muted/50 text-left" onClick={() => { togglePlayer(p); setSearch(""); setPlayers([]); }}>
+                      <Checkbox checked={isSelected} className="pointer-events-none" />
                       <Avatar className="h-6 w-6">
                         <AvatarImage src={p.avatar_url ?? undefined} />
                         <AvatarFallback className="text-[10px]">{(p.display_name ?? "?").slice(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <span className="text-sm font-heading text-foreground">{p.display_name}</span>
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Achievement select */}
+        {/* Achievement select - grouped */}
         <div>
-          <Label>Achievement</Label>
+          <div className="flex items-center justify-between mb-1">
+            <Label>Achievement</Label>
+            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowQuickCreate(true)}>
+              <Sparkles className="h-3 w-3" /> Quick Create
+            </Button>
+          </div>
           <Select value={selectedAchievement} onValueChange={setSelectedAchievement}>
             <SelectTrigger><SelectValue placeholder="Select achievement…" /></SelectTrigger>
             <SelectContent>
-              {defs?.filter((d) => d.is_active).map((d) => (
-                <SelectItem key={d.id} value={d.id}>
-                  <span className={tierColor[d.tier]}>{d.tier}</span> — {d.name}
-                </SelectItem>
-              ))}
+              {customDefs.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel className="text-purple-400">Custom Badges</SelectLabel>
+                  {customDefs.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-purple-400 inline" /> {d.name}</span>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
+              {milestoneDefs.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel>Milestone Achievements</SelectLabel>
+                  {milestoneDefs.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      <span className={tierColor[d.tier]}>{d.tier}</span> — {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -287,10 +344,18 @@ const AwardTab = () => {
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Reason for awarding…" />
         </div>
 
-        <Button onClick={handleAward} disabled={!selectedPlayer || !selectedAchievement || awardAchievement.isPending}>
-          Award Badge
+        <Button onClick={handleAward} disabled={!selectedPlayers.length || !selectedAchievement || awardAchievement.isPending || bulkAwardAchievement.isPending}>
+          Award Badge{selectedPlayers.length > 1 ? ` to ${selectedPlayers.length} Players` : ""}
         </Button>
       </div>
+
+      {/* Quick Create Dialog */}
+      <Dialog open={showQuickCreate} onOpenChange={setShowQuickCreate}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Quick Create Custom Badge</DialogTitle></DialogHeader>
+          <DefForm onSubmit={handleQuickCreate} onClose={() => setShowQuickCreate(false)} />
+        </DialogContent>
+      </Dialog>
 
       {/* Recent manual awards */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -318,7 +383,15 @@ const AwardTab = () => {
                   const def = defMap.get(a.achievement_id);
                   return (
                     <tr key={a.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
-                      <td className="py-3 px-4 font-heading text-foreground">{a.user_id.slice(0, 8)}…</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={a.avatar_url ?? undefined} />
+                            <AvatarFallback className="text-[10px]">{(a.display_name ?? "?").slice(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-heading text-foreground">{a.display_name ?? a.user_id.slice(0, 8) + "…"}</span>
+                        </div>
+                      </td>
                       <td className="py-3 px-2 text-foreground">{def?.name ?? "—"}</td>
                       <td className="py-3 px-2 text-muted-foreground truncate max-w-[200px]">{a.notes ?? "—"}</td>
                       <td className="py-3 px-2 text-muted-foreground">{new Date(a.awarded_at).toLocaleDateString()}</td>

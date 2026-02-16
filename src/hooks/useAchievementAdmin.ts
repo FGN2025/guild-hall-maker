@@ -27,6 +27,11 @@ export interface PlayerAchievementRow {
   notes: string | null;
 }
 
+export interface RecentAward extends PlayerAchievementRow {
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export const useAchievementDefinitions = () =>
   useQuery({
     queryKey: ["achievement-definitions"],
@@ -98,6 +103,26 @@ export const useAchievementAdmin = () => {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const bulkAwardAchievement = useMutation({
+    mutationFn: async (params: { user_ids: string[]; achievement_id: string; notes?: string; awarded_by: string }) => {
+      const rows = params.user_ids.map((uid) => ({
+        user_id: uid,
+        achievement_id: params.achievement_id,
+        notes: params.notes || null,
+        awarded_by: params.awarded_by,
+      }));
+      const { error } = await supabase.from("player_achievements").insert(rows as any);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["recent-awards"] });
+      qc.invalidateQueries({ queryKey: ["player-achievements"] });
+      qc.invalidateQueries({ queryKey: ["global-achievements"] });
+      toast.success(`Achievement awarded to ${vars.user_ids.length} player(s)`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const revokeAchievement = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("player_achievements").delete().eq("id", id);
@@ -112,20 +137,41 @@ export const useAchievementAdmin = () => {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return { createDef, updateDef, deleteDef, awardAchievement, revokeAchievement };
+  return { createDef, updateDef, deleteDef, awardAchievement, bulkAwardAchievement, revokeAchievement };
 };
 
 export const useRecentAwards = () =>
   useQuery({
     queryKey: ["recent-awards"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: awards, error } = await supabase
         .from("player_achievements")
         .select("*")
         .not("awarded_by", "is", null)
         .order("awarded_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return data as PlayerAchievementRow[];
+      const rows = awards as PlayerAchievementRow[];
+      if (!rows.length) return [] as RecentAward[];
+
+      // Batch-fetch profiles for all user_ids
+      const userIds = [...new Set(rows.map((r) => r.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url")
+        .in("user_id", userIds);
+
+      const profileMap = new Map(
+        (profiles ?? []).map((p: any) => [p.user_id, p])
+      );
+
+      return rows.map((r) => {
+        const profile = profileMap.get(r.user_id);
+        return {
+          ...r,
+          display_name: profile?.display_name ?? null,
+          avatar_url: profile?.avatar_url ?? null,
+        } as RecentAward;
+      });
     },
   });
