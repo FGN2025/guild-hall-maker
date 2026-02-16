@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
+import type { Game } from "@/hooks/useGames";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -8,7 +9,7 @@ export type ChatMessage = {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-coach`;
 
-export function useCoachChat() {
+export function useCoachChat(selectedGame: Game | null = null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -32,13 +33,23 @@ export function useCoachChat() {
     };
 
     try {
+      const body: Record<string, unknown> = { messages: updatedMessages };
+      if (selectedGame) {
+        body.game = {
+          name: selectedGame.name,
+          category: selectedGame.category,
+          description: selectedGame.description,
+          guide_content: selectedGame.guide_content,
+        };
+      }
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify(body),
       });
 
       if (!resp.ok) {
@@ -111,7 +122,7 @@ export function useCoachChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages]);
+  }, [messages, selectedGame]);
 
   const clearChat = useCallback(() => setMessages([]), []);
 

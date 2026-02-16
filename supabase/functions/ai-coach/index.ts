@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
+    const { messages, game } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -28,18 +28,19 @@ serve(async (req) => {
         const nbHeaders: Record<string, string> = { "Content-Type": "application/json" };
         if (NOTEBOOK_PASS) nbHeaders["Authorization"] = `Bearer ${NOTEBOOK_PASS}`;
 
+        const searchQuery = game ? `${game.name}: ${query}` : query;
+
         const searchRes = await fetch(`${NOTEBOOK_URL.replace(/\/$/, "")}/api/search`, {
           method: "POST",
           headers: nbHeaders,
           body: JSON.stringify({
-            query,
+            query: searchQuery,
             notebook_id: "notebook:f8y4zed28cky7uibdoia",
           }),
         });
 
         if (searchRes.ok) {
           const searchData = await searchRes.json();
-          // Extract passages from search results
           const passages: string[] = [];
           if (Array.isArray(searchData)) {
             for (const item of searchData.slice(0, 5)) {
@@ -64,16 +65,26 @@ serve(async (req) => {
       }
     }
 
+    // Build game-specific context from local guide content
+    let gameContext = "";
+    if (game) {
+      gameContext = `\n\n## Active Game Focus: ${game.name}`;
+      if (game.category) gameContext += ` (${game.category})`;
+      if (game.description) gameContext += `\nGame Description: ${game.description}`;
+      if (game.guide_content) gameContext += `\n\n## Local Game Guide:\n${game.guide_content}`;
+    }
+
     const systemPrompt = `You are the FGN Esports Coach — a knowledgeable, encouraging, and strategic gaming coach for the FGN (Fiber Gaming Network) community. You specialize in esports coaching, game strategy, mechanical skills, and competitive improvement.
+${game ? `\nYou are currently coaching the user specifically on **${game.name}**. Focus your answers on this game. Use game-specific terminology, strategies, and mechanics relevant to ${game.name}.` : "\nYou are providing general esports coaching across all games."}
 
 When answering questions:
-- Draw from the knowledge base content provided below when relevant
+- Draw from the knowledge base content and game guide provided below when relevant
 - If no knowledge base content matches, use your general esports expertise
 - Be specific and actionable in your advice
 - Use gaming terminology naturally
 - Encourage improvement and competitive growth
 - Format responses with clear headers and bullet points when helpful
-${notebookContext}`;
+${gameContext}${notebookContext}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
