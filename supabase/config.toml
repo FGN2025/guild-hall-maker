@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.validate-ecosystem-token]
 verify_jwt = false
+
+[functions.notebook-proxy]
+verify_jwt = false
