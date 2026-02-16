@@ -9,7 +9,7 @@ import { Search, Gamepad2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
-const CATEGORIES = ["All", "General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Simulation", "Strategy", "RPG", "Puzzle", "Adventure"];
+const CATEGORIES = ["All", "General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Simulation", "Strategy", "MOBA", "RPG", "Puzzle", "Adventure"];
 
 const Games = () => {
   const { data: games, isLoading } = useGames();
