@@ -22,7 +22,6 @@ import PlayerProfile from "./pages/PlayerProfile";
 import SeasonStats from "./pages/SeasonStats";
 import PlayerComparison from "./pages/PlayerComparison";
 import Achievements from "./pages/Achievements";
-import Coach from "./pages/Coach";
 import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
 import AdminRoute from "./components/admin/AdminRoute";
@@ -77,7 +76,7 @@ const App = () => (
               <Route path="/games/:slug" element={<GameDetail />} />
               <Route path="/player/:id" element={<PlayerProfile />} />
               <Route path="/profile" element={<ProfileSettings />} />
-              <Route path="/coach" element={<Coach />} />
+              
             </Route>
 
             {/* Admin routes */}
