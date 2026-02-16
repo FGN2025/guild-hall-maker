@@ -11,7 +11,7 @@ interface Props {
   isGenerating: boolean;
 }
 
-const CATEGORIES = ["general", "tournament", "badge", "trophy", "banner"];
+const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner"];
 
 const AIImageGenerator = ({ onGenerate, isGenerating }: Props) => {
   const [open, setOpen] = useState(false);

@@ -66,7 +66,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
           mime_type: file.type,
           file_size: file.size,
           url: publicUrl,
-          category: "general",
+          category: "games",
           tags: ["game-cover"],
         } as any);
       }
