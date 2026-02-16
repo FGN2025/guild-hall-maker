@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { Game, GameInsert } from "@/hooks/useGames";
+import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 
 const CATEGORIES = ["General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Strategy", "RPG", "Puzzle", "Adventure"];
 
@@ -36,7 +37,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const [isActive, setIsActive] = useState(true);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -132,6 +133,16 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
                 type="button"
                 variant="outline"
                 size="sm"
+                onClick={() => setMediaPickerOpen(true)}
+                className="gap-1"
+              >
+                <ImageIcon className="h-4 w-4" />
+                Media Library
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 className="gap-1"
@@ -152,6 +163,11 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
               accept="image/*"
               className="hidden"
               onChange={handleFileUpload}
+            />
+            <MediaPickerDialog
+              open={mediaPickerOpen}
+              onOpenChange={setMediaPickerOpen}
+              onSelect={(url) => setCoverImageUrl(url)}
             />
           </div>
           <div>
