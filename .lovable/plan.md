@@ -1,159 +1,90 @@
 
-# MVP Launch Readiness: All 10 Recommendations
 
-Working through the 10 items from the gap analysis in order.
+# Admin Achievement Management System
 
----
+## Overview
 
-## 1. Add "Forgot Password" Flow
+Replace the current hardcoded, frontend-only achievement system with a database-backed one. Admins will be able to create/edit/delete achievement definitions and manually award badges to specific players.
 
-**What it does:** Adds a "Forgot your password?" link on the login form and a `/reset-password` page where users set a new password after clicking the email link.
+## Database Design
 
-**Changes:**
-- **Auth.tsx** -- Add a "Forgot your password?" link below the password field (visible only in login mode). Clicking it shows an inline email input + "Send Reset Link" button that calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/reset-password' })`.
-- **New file: `src/pages/ResetPassword.tsx`** -- Checks for `type=recovery` in the URL hash, shows a "Set New Password" form, calls `supabase.auth.updateUser({ password })`. On success, redirects to `/dashboard`.
-- **App.tsx** -- Add public route `/reset-password` pointing to `ResetPassword`.
+Two new tables:
 
----
+**`achievement_definitions`** -- Stores the templates/definitions of all achievements
+- `id` (uuid, PK)
+- `name` (text) -- e.g. "First Blood"
+- `description` (text) -- e.g. "Win your first match"
+- `icon` (text) -- one of: trophy, flame, star, crown, target, shield, swords, zap, medal
+- `tier` (text) -- bronze, silver, gold, platinum
+- `category` (text, default 'milestone') -- 'milestone' (auto-computed) or 'custom' (manually awarded)
+- `auto_criteria` (jsonb, nullable) -- For milestone achievements: `{ "type": "wins", "threshold": 5 }` etc. Null for custom badges.
+- `max_progress` (integer, nullable) -- For progress-bar display
+- `is_active` (boolean, default true)
+- `display_order` (integer, default 0)
+- `created_at`, `updated_at` (timestamptz)
 
-## 2. Enable Leaked Password Protection
+**`player_achievements`** -- Records which players have earned which achievements
+- `id` (uuid, PK)
+- `user_id` (uuid, not null)
+- `achievement_id` (uuid, FK to achievement_definitions)
+- `awarded_at` (timestamptz, default now())
+- `awarded_by` (uuid, nullable) -- null = auto-computed, set = manually awarded by admin
+- `progress` (integer, nullable) -- current progress toward max_progress
+- `notes` (text, nullable) -- optional admin note when manually awarding
+- unique constraint on (user_id, achievement_id)
 
-**What it does:** Enables the HaveIBeenPwned check on signup/password changes so compromised passwords are rejected.
+**RLS Policies:**
+- Both tables readable by everyone (SELECT true)
+- achievement_definitions: admin-only for INSERT/UPDATE/DELETE
+- player_achievements: admin-only for INSERT/UPDATE/DELETE
 
-**Change:**
-- Use the configure-auth tool to enable leaked password protection (`min_password_length: 6`, `hibp_enabled: true`).
+## Migration for Seed Data
 
----
+The 12 existing hardcoded achievements will be inserted as rows in `achievement_definitions` with `category = 'milestone'` and appropriate `auto_criteria` JSON, so existing functionality is preserved.
 
-## 3. Add Lead Status Update UI + RLS Policy
+## Files to Create
 
-**What it does:** Lets tenant admins change a lead's status (new/contacted/converted) from the Leads page.
+1. **`supabase/migrations/..._achievement_tables.sql`** -- Creates both tables, RLS policies, and seeds the 12 existing achievement definitions.
 
-**Changes:**
-- **Database migration** -- Add an UPDATE policy on `user_service_interests` for tenant admins:
-  ```
-  CREATE POLICY "Tenant admins can update lead status"
-    ON user_service_interests FOR UPDATE TO authenticated
-    USING (EXISTS (SELECT 1 FROM tenant_admins ta WHERE ta.tenant_id = user_service_interests.tenant_id AND ta.user_id = auth.uid()))
-    WITH CHECK (EXISTS (SELECT 1 FROM tenant_admins ta WHERE ta.tenant_id = user_service_interests.tenant_id AND ta.user_id = auth.uid()));
-  ```
-- **useTenantLeads.ts** -- Add an `updateLeadStatus` mutation that calls `.update({ status }).eq('id', leadId)` and invalidates the query cache.
-- **TenantLeads.tsx** -- Replace the static status Badge with a `<Select>` dropdown (options: new, contacted, converted) that triggers the mutation on change. Show a toast on success/error.
+2. **`src/pages/admin/AdminAchievements.tsx`** -- Admin page with two tabs:
+   - **Definitions Tab**: Table listing all achievement definitions with name, tier, icon, category, and active status. Buttons to create new, edit, and delete definitions. Uses a dialog form.
+   - **Award Tab**: Search for a player by name, select an achievement definition, add optional notes, and click "Award" to insert into `player_achievements`. Shows a table of recent manual awards with the ability to revoke.
 
----
+3. **`src/hooks/useAchievementAdmin.ts`** -- Hook with queries and mutations for:
+   - Fetching all achievement definitions
+   - Creating/updating/deleting definitions
+   - Awarding an achievement to a player
+   - Revoking a manually awarded achievement
+   - Fetching recent awards
 
-## 4. Add Pagination to Heavy Lists
+## Files to Modify
 
-**What it does:** Adds cursor/offset-based pagination to the tournament list, leaderboard, and tenant subscriber list.
+4. **`src/hooks/usePlayerAchievements.ts`** -- Rewrite to:
+   - Fetch `achievement_definitions` from the database
+   - Fetch `player_achievements` for the given user
+   - Still compute auto-milestone progress from `match_results` data
+   - Merge: an achievement is "unlocked" if it exists in `player_achievements` OR if auto-criteria is met
+   - Auto-upsert into `player_achievements` when a milestone is newly met (so the award is persisted)
 
-**Changes:**
-- **Tournaments.tsx** -- Add state for `page` (default 1), compute `pageSize = 12`. Slice `filtered` array by page. Render `Pagination` component below the grid.
-- **Leaderboard.tsx** -- Add pagination controls below both the Seasonal and All-Time tables. Page size of 25. Slice `sortedPlayers` / `filteredSeasonalPlayers`.
-- **TenantSubscribers.tsx** -- Add pagination state and slice the subscriber list. Render `Pagination` below the table.
-- All three pages will use the existing `src/components/ui/pagination.tsx` components.
+5. **`src/hooks/useGlobalAchievements.ts`** -- Rewrite to query `player_achievements` joined with `achievement_definitions` and `profiles`, instead of recomputing everything client-side.
 
----
+6. **`src/components/player/PlayerAchievements.tsx`** -- Minor update to handle any new fields (e.g. showing "Awarded by admin" indicator on manually-awarded badges).
 
-## 5. Document `ecosystem_auth_tokens` RLS Intent
+7. **`src/components/admin/AdminSidebar.tsx`** -- Add "Achievements" nav item with `Award` icon.
 
-**What it does:** Adds a comment to the table so future developers know it's intentionally service-role-only.
+8. **`src/App.tsx`** -- Add `/admin/achievements` route.
 
-**Change:**
-- **Database migration** -- `COMMENT ON TABLE public.ecosystem_auth_tokens IS 'Short-lived SSO tokens managed exclusively by edge functions via service role. No client-side RLS policies by design.';`
+## Implementation Approach
 
----
-
-## 6. Make AI Coach Accessible from Sidebar
-
-**What it does:** Adds an "AI Coach" entry in the main sidebar navigation so users can find it without relying solely on the floating button.
-
-**Change:**
-- **AppSidebar.tsx** -- Add `{ to: "#coach", label: "AI Coach", icon: BrainCircuit }` to the `mainNav` array. Instead of navigating to a page, clicking this item will programmatically open the floating coach panel. To achieve this cleanly:
-  - Create a small context/event: `src/contexts/CoachContext.tsx` with `{ isOpen, setIsOpen }`.
-  - Wrap the app with `CoachProvider` in `AppLayout.tsx`.
-  - Update `CoachFloatingButton` to use `useCoach()` for its open state instead of local `useState`.
-  - In `AppSidebar`, the "AI Coach" menu item calls `setIsOpen(true)` on click.
-
----
-
-## 7. Add Mobile-Responsive Navigation for Tenant and Admin Panels
-
-**What it does:** On small screens, the fixed 64-width sidebar collapses into a hamburger/sheet menu.
-
-**Changes:**
-- **AdminLayout.tsx** -- Wrap the sidebar in a responsive container: on desktop show inline, on mobile show via a `Sheet` (slide-out drawer) triggered by a hamburger button in a top bar.
-- **TenantLayout.tsx** -- Same pattern as AdminLayout.
-- Both will use `useIsMobile()` from `src/hooks/use-mobile.tsx` and the existing `Sheet` component.
-
----
-
-## 8. Seed More Realistic Test Data
-
-**What it does:** Creates a migration with INSERT statements to populate the test environment with realistic demo data.
-
-**Changes:**
-- **Database migration** -- Insert:
-  - 5-10 additional profiles (using known test user IDs or generating new ones via helper)
-  - 5+ additional tournaments across different games and statuses
-  - Additional match results to populate leaderboards
-  - Season scores for the active season
-  - Additional community topics and replies
-  - A second tenant with ZIP codes and sample leads
-
-*Note:* Since we can't create auth users via migration, this will add profiles and data for existing users, plus add more tournaments and matches. We can also add a second tenant for demo purposes.
-
----
-
-## 9. Add Season Management UI in Admin Panel
-
-**What it does:** Creates an admin page to view, create, and rotate seasons.
-
-**Changes:**
-- **New file: `src/pages/admin/AdminSeasons.tsx`** -- Table showing all seasons (name, status, start/end dates). Buttons to:
-  - Create a new season (name, start date, end date)
-  - Manually trigger season rotation (calls the `rotate-season` edge function)
-- **Database migration** -- Add admin INSERT/UPDATE policies on `seasons` table (currently only service role can manage):
-  ```
-  CREATE POLICY "Admins can manage seasons" ON seasons FOR ALL TO authenticated
-    USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
-  ```
-- **AdminSidebar.tsx** -- Add "Seasons" nav item with `BarChart3` icon.
-- **App.tsx** -- Add `/admin/seasons` route.
-- **AdminDashboard.tsx** -- Update "Active Seasons" card link from `#` to `/admin/seasons`.
-
----
-
-## 10. Enable Theme Toggle (Dark/Light Mode)
-
-**What it does:** Adds a dark/light/system theme toggle using the already-installed `next-themes` package.
-
-**Changes:**
-- **New file: `src/components/ThemeToggle.tsx`** -- A button that cycles through light/dark/system using `useTheme()` from `next-themes`. Shows Sun/Moon/Monitor icons.
-- **main.tsx or App.tsx** -- Wrap the app with `<ThemeProvider attribute="class" defaultTheme="dark">`.
-- **AppSidebar.tsx** -- Add the `ThemeToggle` component in the footer section, above the Sign Out button.
-- **index.html** -- Ensure the `<html>` tag doesn't have a hardcoded `class="dark"` (let `next-themes` manage it).
-
----
-
-## Implementation Order
-
-The items are independent enough to implement sequentially in one pass:
-
-1. Password reset (Auth.tsx + new page + route)
-2. Leaked password protection (config change)
-3. Lead status updates (migration + hook + UI)
-4. Pagination (3 pages)
-5. Ecosystem tokens comment (migration)
-6. Coach sidebar access (new context + sidebar update)
-7. Mobile admin/tenant nav (2 layouts)
-8. Seed data (migration)
-9. Season management (new page + migration + sidebar + route)
-10. Theme toggle (new component + provider)
+- The existing 12 milestone achievements become database rows with `auto_criteria` JSON like `{"type":"wins","threshold":1}`, `{"type":"streak","threshold":3}`, etc.
+- The `usePlayerAchievements` hook will still compute win/loss/streak stats from `match_results`, but will check those stats against `auto_criteria` from the DB rather than hardcoded logic.
+- Custom (non-milestone) achievements have no auto-criteria and can only be awarded manually by admins.
+- The global achievements leaderboard will query `player_achievements` counts grouped by user, making it much more efficient than the current approach of recomputing everything.
 
 ## Technical Notes
 
-- All database changes use the migration tool
-- No changes to auto-generated files (`client.ts`, `types.ts`, `.env`, `config.toml`)
-- Existing UI patterns (glass-panel, font-display/heading/body classes, primary color scheme) will be followed
-- The pagination component already exists and will be reused
-- `next-themes` is already installed as a dependency
+- The `auto_criteria` JSON schema supports types: `wins`, `streak`, `matches`, `win_rate`, `tournament_champion`, `multi_tournament`, `iron_will` -- matching the current 12 hardcoded checks.
+- The `player_achievements` table uses a unique constraint on `(user_id, achievement_id)` to prevent duplicate awards.
+- Auto-computed achievements will be upserted into `player_achievements` when a player's profile is viewed, so the global leaderboard query stays simple.
+- No changes to auto-generated files (`client.ts`, `types.ts`, `.env`, `config.toml`).
+
