@@ -11,6 +11,8 @@ export interface Achievement {
   progress?: number;
   maxProgress?: number;
   awardedBy?: string | null;
+  category: "milestone" | "custom";
+  notes?: string | null;
 }
 
 const TIER_ORDER = { bronze: 0, silver: 1, gold: 2, platinum: 3 };
@@ -102,6 +104,8 @@ export const usePlayerAchievements = (userId: string | undefined) => {
           progress,
           maxProgress: d.max_progress ?? undefined,
           awardedBy: award?.awarded_by ?? null,
+          category: (d.category === "custom" ? "custom" : "milestone") as Achievement["category"],
+          notes: award?.notes ?? null,
         };
       });
 
