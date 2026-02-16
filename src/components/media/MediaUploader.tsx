@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
 
 interface Props {
   onUpload: (data: { file: File; category?: string; tags?: string[] }) => void;
@@ -40,12 +41,16 @@ const MediaUploader = ({ onUpload, isUploading }: Props) => {
   };
 
   const handleFiles = useCallback(
-    (files: FileList | null) => {
+    async (files: FileList | null) => {
       if (!files) return;
-      Array.from(files).forEach((file) => {
-        if (!file.type.startsWith("image/") && !file.type.startsWith("video/") && !file.type.startsWith("audio/")) return;
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/") && !file.type.startsWith("video/") && !file.type.startsWith("audio/")) continue;
+        if (file.type.startsWith("image/")) {
+          const ok = await validateAndToast(file, IMAGE_PRESETS.general);
+          if (!ok) continue;
+        }
         onUpload({ file, category, tags });
-      });
+      }
       setTags([]);
       setTagInput("");
     },
