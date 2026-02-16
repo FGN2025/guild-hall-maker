@@ -81,14 +81,17 @@ const PlayerAchievements = ({ achievements }: Props) => {
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className={`font-heading text-sm font-semibold truncate ${a.unlocked ? "text-foreground" : "text-muted-foreground"}`}>
-                      {a.name}
-                    </p>
-                    <span className={`text-[10px] font-display uppercase tracking-wider shrink-0 ${tier.text}`}>
-                      {a.tier}
-                    </span>
-                  </div>
+                    <div className="flex items-center gap-2">
+                      <p className={`font-heading text-sm font-semibold truncate ${a.unlocked ? "text-foreground" : "text-muted-foreground"}`}>
+                        {a.name}
+                      </p>
+                      <span className={`text-[10px] font-display uppercase tracking-wider shrink-0 ${tier.text}`}>
+                        {a.tier}
+                      </span>
+                      {a.awardedBy && (
+                        <span className="text-[10px] font-display uppercase tracking-wider shrink-0 text-primary">★ Awarded</span>
+                      )}
+                    </div>
                   <p className="text-xs text-muted-foreground font-body mt-0.5">{a.description}</p>
                   {a.maxProgress != null && a.progress != null && (
                     <div className="mt-2 flex items-center gap-2">

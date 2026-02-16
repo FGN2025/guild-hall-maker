@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_definitions: {
+        Row: {
+          auto_criteria: Json | null
+          category: string
+          created_at: string
+          description: string
+          display_order: number
+          icon: string
+          id: string
+          is_active: boolean
+          max_progress: number | null
+          name: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          auto_criteria?: Json | null
+          category?: string
+          created_at?: string
+          description: string
+          display_order?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          max_progress?: number | null
+          name: string
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_criteria?: Json | null
+          category?: string
+          created_at?: string
+          description?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          max_progress?: number | null
+          name?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_notebook_connections: {
         Row: {
           api_url: string
@@ -545,6 +590,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      player_achievements: {
+        Row: {
+          achievement_id: string
+          awarded_at: string
+          awarded_by: string | null
+          id: string
+          notes: string | null
+          progress: number | null
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          awarded_at?: string
+          awarded_by?: string | null
+          id?: string
+          notes?: string | null
+          progress?: number | null
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          awarded_at?: string
+          awarded_by?: string | null
+          id?: string
+          notes?: string | null
+          progress?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
