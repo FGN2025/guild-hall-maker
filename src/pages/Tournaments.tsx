@@ -1,5 +1,13 @@
 import { useState, useMemo } from "react";
 import { Search, Filter, Trophy } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +20,8 @@ const Tournaments = () => {
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
 
   const filtered = useMemo(() => {
     return tournaments.filter((t) => {
@@ -23,6 +33,12 @@ const Tournaments = () => {
       return matchesSearch && matchesStatus;
     });
   }, [tournaments, search, statusFilter]);
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginatedTournaments = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Reset page when filters change
+  useMemo(() => { setPage(1); }, [search, statusFilter]);
 
   return (
     <div className="min-h-screen bg-background grid-bg">
@@ -77,17 +93,48 @@ const Tournaments = () => {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((t) => (
-              <TournamentCard
-                key={t.id}
-                tournament={t}
-                onRegister={register}
-                onUnregister={unregister}
-                isRegistering={isRegistering}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedTournaments.map((t) => (
+                <TournamentCard
+                  key={t.id}
+                  tournament={t}
+                  onRegister={register}
+                  onUnregister={unregister}
+                  isRegistering={isRegistering}
+                />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <Pagination className="mt-8">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                    <PaginationItem key={p}>
+                      <PaginationLink
+                        isActive={p === page}
+                        onClick={() => setPage(p)}
+                        className="cursor-pointer"
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </>
         )}
       </div>
 

@@ -1,10 +1,22 @@
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantLeads } from "@/hooks/useTenantLeads";
-import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const statusOptions = [
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "converted", label: "Converted" },
+];
 
 const TenantLeads = () => {
   const { tenantInfo } = useTenantAdmin();
-  const { leads, isLoading } = useTenantLeads(tenantInfo?.tenantId || null);
+  const { leads, isLoading, updateLeadStatus } = useTenantLeads(tenantInfo?.tenantId || null);
 
   return (
     <div className="space-y-6">
@@ -44,17 +56,23 @@ const TenantLeads = () => {
                   </td>
                   <td className="p-3 text-muted-foreground">{lead.zip_code}</td>
                   <td className="p-3 text-center">
-                    <Badge
-                      variant={
-                        lead.status === "converted"
-                          ? "default"
-                          : lead.status === "contacted"
-                          ? "secondary"
-                          : "outline"
+                    <Select
+                      value={lead.status}
+                      onValueChange={(value) =>
+                        updateLeadStatus.mutate({ leadId: lead.id, status: value })
                       }
                     >
-                      {lead.status}
-                    </Badge>
+                      <SelectTrigger className="w-[130px] mx-auto h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </td>
                   <td className="p-3 text-right text-muted-foreground text-xs">
                     {new Date(lead.created_at).toLocaleDateString()}

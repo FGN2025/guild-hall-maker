@@ -34,6 +34,7 @@ import AdminTenants from "./pages/admin/AdminTenants";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminGames from "./pages/admin/AdminGames";
 import AdminNotebooks from "./pages/admin/AdminNotebooks";
+import AdminSeasons from "./pages/admin/AdminSeasons";
 import TenantRoute from "./components/tenant/TenantRoute";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import TenantLeads from "./pages/tenant/TenantLeads";
@@ -43,6 +44,7 @@ import TenantTeam from "./pages/tenant/TenantTeam";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookieConsent from "./components/CookieConsent";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Authenticated routes with sidebar */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -90,6 +93,7 @@ const App = () => (
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/games" element={<AdminRoute><AdminGames /></AdminRoute>} />
             <Route path="/admin/notebooks" element={<AdminRoute><AdminNotebooks /></AdminRoute>} />
+            <Route path="/admin/seasons" element={<AdminRoute><AdminSeasons /></AdminRoute>} />
 
             {/* Tenant routes */}
             <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />

@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Lead {
   id: string;
@@ -16,6 +17,8 @@ interface Lead {
 }
 
 export function useTenantLeads(tenantId: string | null) {
+  const queryClient = useQueryClient();
+
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["tenant-leads", tenantId],
     enabled: !!tenantId,
@@ -46,5 +49,22 @@ export function useTenantLeads(tenantId: string | null) {
     },
   });
 
-  return { leads, isLoading };
+  const updateLeadStatus = useMutation({
+    mutationFn: async ({ leadId, status }: { leadId: string; status: string }) => {
+      const { error } = await supabase
+        .from("user_service_interests")
+        .update({ status })
+        .eq("id", leadId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-leads", tenantId] });
+      toast.success("Lead status updated.");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update lead status.");
+    },
+  });
+
+  return { leads, isLoading, updateLeadStatus };
 }

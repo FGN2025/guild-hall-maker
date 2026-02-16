@@ -201,7 +201,7 @@ const Auth = () => {
                 <Label htmlFor="password" className="font-heading text-sm text-foreground">
                   Password
                 </Label>
-                <div className="relative">
+              <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
@@ -215,6 +215,25 @@ const Auth = () => {
                     required
                   />
                 </div>
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!email.trim()) {
+                        toast.error("Enter your email first, then click Forgot Password.");
+                        return;
+                      }
+                      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                        redirectTo: `${window.location.origin}/reset-password`,
+                      });
+                      if (error) toast.error(error.message);
+                      else toast.success("Password reset link sent! Check your email.");
+                    }}
+                    className="text-xs text-muted-foreground hover:text-primary transition-colors font-body"
+                  >
+                    Forgot your password?
+                  </button>
+                )}
               </div>
 
               {!isLogin && (

@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCoach } from "@/contexts/CoachContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Trophy,
   LayoutDashboard,
@@ -17,7 +19,7 @@ import {
   LogOut,
   ShieldCheck,
   Building2,
-  
+  BrainCircuit,
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,6 +50,7 @@ const mainNav = [
 export function AppSidebar() {
   const navigate = useNavigate();
   const { isAdmin, signOut } = useAuth();
+  const { setIsOpen: openCoach } = useCoach();
   const { isTenantAdmin } = useTenantAdmin();
 
   const handleSignOut = async () => {
@@ -86,6 +89,12 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="AI Coach" onClick={() => openCoach(true)}>
+                  <BrainCircuit className="h-4 w-4 shrink-0" />
+                  <span>AI Coach</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -139,6 +148,9 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <ThemeToggle />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Profile">
               <NavLink
