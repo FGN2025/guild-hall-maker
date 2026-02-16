@@ -1,43 +1,45 @@
 
 
-# Make AI Coach Game Selector More Prominent
+# Add Download/Export for AI Coach Conversations
 
 ## What Changes
-Replace the small gamepad icon button in the AI Coach header with a visible, labeled dropdown button that shows the current selection (e.g., "All Games" or the selected game name) with a chevron indicator.
+Add a download button to the AI Coach header that exports the current conversation as a `.md` (Markdown) file. The button appears only when there are messages in the chat.
 
-## Details
+## User Experience
+- A small download icon button appears in the header bar, next to the existing trash (clear) button
+- Clicking it instantly downloads a `.md` file containing the full conversation
+- The file is named with the game context and timestamp, e.g. `ai-coach-valorant-2026-02-16.md`
+- The button only shows when there are messages (same visibility logic as the trash button)
+
+## Technical Details
 
 ### File: `src/components/CoachFloatingButton.tsx`
 
-**Current** (lines ~120-137): A ghost icon button with `Gamepad2` icon triggers the dropdown -- easy to miss.
+1. Import `Download` icon from `lucide-react`
+2. Add a `handleExport` function that:
+   - Builds a Markdown string from `messages` array
+   - Prefixes user messages with `**You:**` and assistant messages with `**Coach:**`
+   - Adds a header line with game name and date
+   - Creates a Blob, generates an object URL, triggers download via a temporary `<a>` element
+3. Add a new `Button` (ghost, icon, same size as trash button) right next to the trash button in the header
 
-**New**: Replace with a styled button showing:
-- The `Gamepad2` icon (small, left side)
-- Text label: either "All Games" or the selected game name (truncated if long)
-- A `ChevronDown` icon on the right
-- Use `variant="outline"` and a compact size so it fits the header without overwhelming it
+### Export format example:
+```
+# AI Coach Chat — Valorant
+_Exported on 2026-02-16_
 
-The dropdown menu content stays the same -- just the trigger changes from an unlabeled icon to a labeled button.
+---
 
-## Technical Changes
+**You:** How do I improve crosshair placement?
 
-In `CoachFloatingButton.tsx`, replace the `DropdownMenuTrigger` button (around lines 121-125):
+**Coach:** Here are some tips...
 
-```tsx
-// Before
-<Button variant="ghost" size="icon" className="h-8 w-8">
-  <Gamepad2 className="h-4 w-4" />
-</Button>
+---
 
-// After
-<Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 max-w-[160px]">
-  <Gamepad2 className="h-3.5 w-3.5 shrink-0" />
-  <span className="truncate text-xs">
-    {selectedGame ? selectedGame.name : "All Games"}
-  </span>
-  <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
-</Button>
+**You:** Best agents for solo queue?
+
+**Coach:** For solo queue, consider...
 ```
 
-No other files need changes.
+No backend changes needed -- this is a pure client-side file download using the in-memory messages array.
 
