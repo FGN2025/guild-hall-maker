@@ -41,8 +41,8 @@ const TournamentCard = ({
     <div className="rounded-xl border border-border bg-card glow-card flex flex-col overflow-hidden">
       {/* Hero Image */}
       <div className="relative h-36 bg-muted overflow-hidden">
-        {t.image_url ? (
-          <img src={t.image_url} alt={t.name} className="w-full h-full object-cover" />
+      {(t.image_url || t.game_cover_url) ? (
+          <img src={t.image_url || t.game_cover_url!} alt={t.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full gradient-primary opacity-30 flex items-center justify-center">
             <span className="font-display text-lg text-foreground/60 uppercase tracking-widest">{t.game}</span>
