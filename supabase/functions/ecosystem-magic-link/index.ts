@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const magicLinkUrl = `${TARGET_URLS[target]}/auth?token=${tokenRow.token}`;
+    const magicLinkUrl = `${TARGET_URLS[target]}/auth/sso?token=${tokenRow.token}`;
     const appLabel = target === "manage" ? "FGN Manage" : "FGN Hub";
 
     // Send email via Resend
