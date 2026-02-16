@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 import type { Game } from "@/hooks/useGames";
 
@@ -9,15 +9,32 @@ export type ChatMessage = {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-coach`;
 
-export function useCoachChat(selectedGame: Game | null = null) {
+interface PersistenceCallbacks {
+  onUserMessage?: (content: string) => Promise<void>;
+  onAssistantMessage?: (content: string) => Promise<void>;
+}
+
+export function useCoachChat(
+  selectedGame: Game | null = null,
+  persistence?: PersistenceCallbacks
+) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const persistenceRef = useRef(persistence);
+  persistenceRef.current = persistence;
+
+  const setMessagesFromHistory = useCallback((msgs: ChatMessage[]) => {
+    setMessages(msgs);
+  }, []);
 
   const sendMessage = useCallback(async (input: string) => {
     const userMsg: ChatMessage = { role: "user", content: input };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setIsLoading(true);
+
+    // Persist user message
+    persistenceRef.current?.onUserMessage?.(input);
 
     let assistantSoFar = "";
 
@@ -116,6 +133,11 @@ export function useCoachChat(selectedGame: Game | null = null) {
           } catch { /* ignore */ }
         }
       }
+
+      // Persist complete assistant message
+      if (assistantSoFar) {
+        persistenceRef.current?.onAssistantMessage?.(assistantSoFar);
+      }
     } catch (e) {
       console.error("Coach chat error:", e);
       toast({ title: "Connection Error", description: "Failed to reach the AI Coach.", variant: "destructive" });
@@ -126,5 +148,5 @@ export function useCoachChat(selectedGame: Game | null = null) {
 
   const clearChat = useCallback(() => setMessages([]), []);
 
-  return { messages, isLoading, sendMessage, clearChat };
+  return { messages, isLoading, sendMessage, clearChat, setMessagesFromHistory };
 }
