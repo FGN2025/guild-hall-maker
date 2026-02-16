@@ -3,9 +3,8 @@ import { Search, Filter, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTournaments, Tournament } from "@/hooks/useTournaments";
+import { useTournaments } from "@/hooks/useTournaments";
 import TournamentCard from "@/components/tournaments/TournamentCard";
-import TournamentDetailsDialog from "@/components/tournaments/TournamentDetailsDialog";
 import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
 import PageHero from "@/components/PageHero";
 
@@ -13,8 +12,6 @@ const Tournaments = () => {
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return tournaments.filter((t) => {
@@ -26,11 +23,6 @@ const Tournaments = () => {
       return matchesSearch && matchesStatus;
     });
   }, [tournaments, search, statusFilter]);
-
-  const handleViewDetails = (t: Tournament) => {
-    setSelectedTournament(t);
-    setDetailsOpen(true);
-  };
 
   return (
     <div className="min-h-screen bg-background grid-bg">
@@ -90,7 +82,6 @@ const Tournaments = () => {
               <TournamentCard
                 key={t.id}
                 tournament={t}
-                onViewDetails={handleViewDetails}
                 onRegister={register}
                 onUnregister={unregister}
                 isRegistering={isRegistering}
@@ -100,14 +91,6 @@ const Tournaments = () => {
         )}
       </div>
 
-      <TournamentDetailsDialog
-        tournament={selectedTournament}
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
-        onRegister={register}
-        onUnregister={unregister}
-        isRegistering={isRegistering}
-      />
     </div>
   );
 };

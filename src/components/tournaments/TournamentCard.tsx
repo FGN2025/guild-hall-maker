@@ -8,7 +8,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface TournamentCardProps {
   tournament: Tournament;
-  onViewDetails: (tournament: Tournament) => void;
   onRegister: (id: string) => void;
   onUnregister: (id: string) => void;
   isRegistering: boolean;
@@ -24,7 +23,6 @@ const statusColors: Record<string, string> = {
 
 const TournamentCard = ({
   tournament: t,
-  onViewDetails,
   onRegister,
   onUnregister,
   isRegistering,
@@ -78,7 +76,7 @@ const TournamentCard = ({
         <Button
           variant="outline"
           className="flex-1 font-heading tracking-wide border-border text-muted-foreground hover:text-foreground"
-          onClick={() => onViewDetails(t)}
+          onClick={() => navigate(`/tournaments/${t.id}`)}
         >
           Details
         </Button>
