@@ -1,109 +1,33 @@
 
 
-# is_active Filtering and Drag-to-Reorder for Games
+## Add Eight More Multiplayer Games
 
-## 1. Public Games Query -- is_active Filter
+Adding 8 new games to the catalog, including the 3 specified titles plus 5 more multiplayer games.
 
-**File:** `src/hooks/useGames.ts`
+### Games to Add
 
-- Split the current `useGames` hook into two variants:
-  - `useGames()` (public) -- adds `.eq("is_active", true)` to only return active games. Used by the catalog page.
-  - `useAdminGames()` (admin) -- returns all games regardless of `is_active`. Used by the admin page.
-- Update `src/pages/Games.tsx` to continue using `useGames()` (no change needed there).
-- Update `src/pages/admin/AdminGames.tsx` to import and use `useAdminGames()` instead.
+| # | Name | Category | Platform Tags |
+|---|------|----------|---------------|
+| 1 | American Truck Simulator | Racing | PC |
+| 2 | Farm Simulator 2025 | Strategy | PC, PS5, Xbox |
+| 3 | Construction Simulator | Strategy | PC, PS5, Xbox |
+| 4 | Fortnite | Shooter | PC, PS5, Xbox, Switch |
+| 5 | Apex Legends | Shooter | PC, PS5, Xbox |
+| 6 | Fall Guys | Party | PC, PS5, Xbox, Switch |
+| 7 | Overwatch 2 | Shooter | PC, PS5, Xbox |
+| 8 | Valorant | Shooter | PC |
 
-## 2. Drag-to-Reorder in Admin Games Table
+### Steps
 
-**File:** `src/pages/admin/AdminGames.tsx`
+1. Generate cover art for each game (8 images, 3:4 aspect ratio) using AI image generation
+2. Upload each image to cloud storage (app-media bucket, `games/` path)
+3. Insert all 8 game records into the `games` table with proper metadata (name, slug, category, description, platform tags, cover image URL, display_order starting at 4)
+4. Verify the full grid layout at `/games` with all 12 games
 
-- Add `@dnd-kit/core` and `@dnd-kit/sortable` integration (already installed).
-- Wrap the `TableBody` in a `SortableContext` with the games array ordered by `display_order`.
-- Add a new "Order" column with a drag handle icon (GripVertical) as the first column.
-- Each `TableRow` becomes a sortable item using `useSortable`.
-- On drag end, compute the new order and batch-update `display_order` for all affected rows.
+### Technical Details
 
-**File:** `src/hooks/useGames.ts`
-
-- Add a new `useReorderGames()` mutation that accepts an array of `{ id, display_order }` and performs a batch update (loop of individual updates, since Supabase JS doesn't support bulk upsert on arbitrary columns easily).
-
-## Technical Details
-
-### useGames split
-
-```typescript
-// Public: only active games
-export const useGames = () => {
-  return useQuery({
-    queryKey: ["games"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("games" as any)
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order", { ascending: true })
-        .order("name", { ascending: true });
-      if (error) throw error;
-      return (data as unknown as Game[]) ?? [];
-    },
-  });
-};
-
-// Admin: all games
-export const useAdminGames = () => {
-  return useQuery({
-    queryKey: ["admin-games"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("games" as any)
-        .select("*")
-        .order("display_order", { ascending: true })
-        .order("name", { ascending: true });
-      if (error) throw error;
-      return (data as unknown as Game[]) ?? [];
-    },
-  });
-};
-```
-
-### Reorder mutation
-
-```typescript
-export const useReorderGames = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (items: { id: string; display_order: number }[]) => {
-      for (const item of items) {
-        const { error } = await supabase
-          .from("games" as any)
-          .update({ display_order: item.display_order } as any)
-          .eq("id", item.id);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-games"] });
-      qc.invalidateQueries({ queryKey: ["games"] });
-      toast({ title: "Order updated" });
-    },
-  });
-};
-```
-
-### Admin table drag-and-drop
-
-- Use `DndContext` with `closestCenter` collision detection and `restrictToVerticalAxis` modifier.
-- Use `SortableContext` with `verticalListSortingStrategy`.
-- Create a `SortableGameRow` component that uses `useSortable` hook to make each row draggable.
-- Apply `transform` and `transition` styles from `useSortable` to the row.
-- Add a `GripVertical` icon in the first cell as the drag handle (using `attributes` and `listeners` from `useSortable`).
-- On `onDragEnd`, use `arrayMove` to reorder the local list, then call `useReorderGames` with the new order indices.
-
-### Files changed
-
-| File | Change |
-|------|--------|
-| `src/hooks/useGames.ts` | Add `useAdminGames`, `useReorderGames`; add `.eq("is_active", true)` to `useGames` |
-| `src/pages/admin/AdminGames.tsx` | Switch to `useAdminGames`, add dnd-kit drag-to-reorder with GripVertical handles and Order column |
-
-No database changes required -- both `is_active` and `display_order` columns already exist.
+- Each game gets a unique slug (e.g., `american-truck-simulator`, `farm-simulator-2025`)
+- `display_order` values will be 4 through 11 (continuing from existing games)
+- All games set to `is_active: true`
+- Cover images uploaded to the existing `app-media` storage bucket under `games/`
 
