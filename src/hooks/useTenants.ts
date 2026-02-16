@@ -17,6 +17,7 @@ interface TenantAdmin {
   id: string;
   tenant_id: string;
   user_id: string;
+  role: string;
   created_at: string;
   profile?: {
     display_name: string | null;
@@ -132,10 +133,11 @@ export function useTenantAdmins(tenantId: string | null) {
   });
 
   const addAdmin = useMutation({
-    mutationFn: async ({ tenantId, userId }: { tenantId: string; userId: string }) => {
+    mutationFn: async ({ tenantId, userId, role = 'admin' }: { tenantId: string; userId: string; role?: string }) => {
       const { error } = await supabase.from("tenant_admins").insert({
         tenant_id: tenantId,
         user_id: userId,
+        role,
       });
       if (error) throw error;
     },
@@ -158,5 +160,17 @@ export function useTenantAdmins(tenantId: string | null) {
     onError: (err: any) => toast.error(err.message),
   });
 
-  return { admins, isLoading, addAdmin, removeAdmin };
+  const updateRole = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const { error } = await supabase.from("tenant_admins").update({ role }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-admins", tenantId] });
+      toast.success("Role updated.");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  return { admins, isLoading, addAdmin, removeAdmin, updateRole };
 }

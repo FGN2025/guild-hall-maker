@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Navigate } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,10 @@ const TenantZipCodes = () => {
   const [uploading, setUploading] = useState(false);
 
   const tenantId = tenantInfo?.tenantId || "";
+
+  if (tenantInfo?.tenantRole === "manager") {
+    return <Navigate to="/tenant" replace />;
+  }
 
   const { data: zips = [], isLoading } = useQuery({
     queryKey: ["tenant-zips", tenantId],

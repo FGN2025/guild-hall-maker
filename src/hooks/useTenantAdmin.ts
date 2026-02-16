@@ -6,6 +6,7 @@ interface TenantAdminInfo {
   tenantId: string;
   tenantName: string;
   tenantSlug: string;
+  tenantRole: 'admin' | 'manager';
 }
 
 export function useTenantAdmin() {
@@ -17,7 +18,7 @@ export function useTenantAdmin() {
     queryFn: async () => {
       const { data: adminRows, error } = await supabase
         .from("tenant_admins")
-        .select("tenant_id")
+        .select("tenant_id, role")
         .eq("user_id", user!.id);
 
       if (error) throw error;
@@ -36,10 +37,12 @@ export function useTenantAdmin() {
 
       // Return first active tenant (primary)
       const t = tenants[0];
+      const matchingAdmin = adminRows.find((r: any) => r.tenant_id === t.id);
       return {
         tenantId: t.id,
         tenantName: t.name,
         tenantSlug: t.slug,
+        tenantRole: (matchingAdmin?.role === 'manager' ? 'manager' : 'admin') as 'admin' | 'manager',
       } as TenantAdminInfo;
     },
   });
