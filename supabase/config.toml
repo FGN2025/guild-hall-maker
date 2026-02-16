@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.ecosystem-magic-link]
 verify_jwt = false
+
+[functions.validate-ecosystem-token]
+verify_jwt = false
