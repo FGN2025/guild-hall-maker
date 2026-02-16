@@ -38,6 +38,15 @@ export const IMAGE_PRESETS: Record<string, ImageValidationRules> = {
     allowedFormats: ["image/jpeg", "image/png", "image/webp"],
     label: "Avatar",
   },
+  tournamentHero: {
+    maxSizeKB: 500,
+    minWidth: 640,
+    minHeight: 360,
+    maxWidth: 3840,
+    maxHeight: 2160,
+    allowedFormats: ["image/jpeg", "image/png", "image/webp"],
+    label: "Tournament Hero",
+  },
   general: {
     maxSizeKB: 800,
     allowedFormats: ["image/jpeg", "image/png", "image/webp", "image/gif"],

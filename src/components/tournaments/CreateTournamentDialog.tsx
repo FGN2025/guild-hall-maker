@@ -11,6 +11,7 @@ import { Plus, Upload, CalendarIcon } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
 
 interface Props {
   onCreate: (data: {
@@ -42,9 +43,14 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const valid = await validateAndToast(file, IMAGE_PRESETS.tournamentHero);
+    if (!valid) {
+      e.target.value = "";
+      return;
+    }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
