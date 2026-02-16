@@ -20,7 +20,7 @@ function extractYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-const TABS = ["all", "tournament", "badge", "trophy", "banner", "general"];
+const TABS = ["all", "games", "tournament", "badge", "trophy", "banner", "general"];
 
 const AdminMedia = () => {
   const [activeTab, setActiveTab] = useState("all");
