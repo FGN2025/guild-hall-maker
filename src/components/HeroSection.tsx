@@ -27,7 +27,7 @@ const HeroSection = () => {
           </h1>
           <p className="font-body text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
             Join tournaments, climb leaderboards, and compete with the best.
-            The ultimate esports experience for players and organizers.
+            The ultimate experience for players and operators.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
