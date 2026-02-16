@@ -36,6 +36,7 @@ import TenantDashboard from "./pages/tenant/TenantDashboard";
 import TenantLeads from "./pages/tenant/TenantLeads";
 import TenantZipCodes from "./pages/tenant/TenantZipCodes";
 import TenantSubscribers from "./pages/tenant/TenantSubscribers";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/terms" element={<Terms />} />
 
             {/* Authenticated routes with sidebar */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
