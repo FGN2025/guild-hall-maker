@@ -7,6 +7,7 @@ import { toast } from "sonner";
 export type Tournament = Tables<"tournaments"> & {
   registrations_count: number;
   is_registered: boolean;
+  game_cover_url?: string | null;
 };
 
 export const useTournaments = () => {
@@ -27,12 +28,21 @@ export const useTournaments = () => {
         .from("tournament_registrations")
         .select("tournament_id, user_id");
 
+      const { data: games } = await supabase
+        .from("games")
+        .select("name, cover_image_url");
+
+      const gameCovers = new Map(
+        (games ?? []).map((g: any) => [g.name, g.cover_image_url])
+      );
+
       return (tournaments ?? []).map((t) => {
         const regs = (registrations ?? []).filter((r) => r.tournament_id === t.id);
         return {
           ...t,
           registrations_count: regs.length,
           is_registered: user ? regs.some((r) => r.user_id === user.id) : false,
+          game_cover_url: gameCovers.get(t.game) ?? null,
         } as Tournament;
       });
     },
