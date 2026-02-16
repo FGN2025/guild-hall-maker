@@ -210,7 +210,10 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
   const [searching, setSearching] = useState(false);
 
   const handleAdd = async () => {
-    if (!email.trim()) return;
+    if (!email.trim()) {
+      toast.error("Please enter a display name to search for.");
+      return;
+    }
     setSearching(true);
     try {
       // Look up profile by matching display_name or searching profiles
