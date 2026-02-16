@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Image, Search } from "lucide-react";
 
-const TABS = ["all", "tournament", "badge", "trophy", "banner", "general"];
+const TABS = ["all", "games", "tournament", "badge", "trophy", "banner", "general"];
 
 const MediaLibrary = () => {
   const [activeTab, setActiveTab] = useState("all");
