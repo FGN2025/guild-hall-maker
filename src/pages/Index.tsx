@@ -15,7 +15,8 @@ const Index = () => {
           <p className="font-display text-sm tracking-widest text-primary mb-2">FGN</p>
           <p className="text-sm text-muted-foreground">
             © 2026 Fibre Gaming Network. All rights reserved. ·{" "}
-            <a href="/terms" className="text-primary hover:underline">Terms & Conditions</a>
+            <a href="/terms" className="text-primary hover:underline">Terms & Conditions</a>{" · "}
+            <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>
           </p>
         </div>
       </footer>
