@@ -110,3 +110,31 @@
     background-size: 60px 60px;
   }
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print\\:hidden {
+    display: none !important;
+  }
+  .glass-panel {
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .grid-bg {
+    background-image: none !important;
+  }
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+  h1, h2, h3 {
+    color: black !important;
+  }
+  p, li, span, strong {
+    color: #333 !important;
+  }
+}

@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Gamepad2 } from "lucide-react";
+import { ArrowLeft, Gamepad2, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Terms = () => {
+  const handleDownload = () => window.print();
+
   return (
     <div className="min-h-screen bg-background grid-bg">
       <div className="max-w-3xl mx-auto px-4 py-12">
@@ -20,7 +23,12 @@ const Terms = () => {
             </h1>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-8">Last Updated: January 7, 2026</p>
+          <div className="flex items-center justify-between mb-8">
+            <p className="text-sm text-muted-foreground">Last Updated: January 7, 2026</p>
+            <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2 print:hidden">
+              <Download className="h-4 w-4" /> Download PDF
+            </Button>
+          </div>
 
           <div className="prose prose-invert prose-sm max-w-none space-y-6 text-foreground/90 font-body">
             <section>
