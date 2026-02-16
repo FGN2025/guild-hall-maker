@@ -119,14 +119,30 @@
     text-shadow: 0 0 7px hsl(var(--primary) / 0.6), 0 0 20px hsl(var(--primary) / 0.3), 0 0 42px hsl(var(--primary) / 0.15);
   }
 
+  :is(.light) .neon-text {
+    text-shadow: none;
+    color: hsl(var(--primary));
+  }
+
   .neon-border {
     box-shadow: 0 0 5px hsl(var(--primary) / 0.3), inset 0 0 5px hsl(var(--primary) / 0.1);
+  }
+
+  :is(.light) .neon-border {
+    box-shadow: 0 1px 3px hsl(var(--primary) / 0.15), inset 0 0 0 1px hsl(var(--primary) / 0.1);
   }
 
   .glass-panel {
     background: hsl(var(--surface-glass) / 0.6);
     backdrop-filter: blur(16px);
     border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  :is(.light) .glass-panel {
+    background: hsl(0 0% 100% / 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: 0 1px 4px hsl(220 20% 50% / 0.08);
   }
 
   .glow-card {
@@ -136,6 +152,11 @@
   .glow-card:hover {
     box-shadow: 0 0 20px hsl(var(--primary) / 0.15), 0 8px 32px hsl(220 20% 0% / 0.5);
     border-color: hsl(var(--primary) / 0.4);
+  }
+
+  :is(.light) .glow-card:hover {
+    box-shadow: 0 4px 16px hsl(220 20% 50% / 0.12), 0 1px 4px hsl(220 20% 50% / 0.08);
+    border-color: hsl(var(--primary) / 0.3);
   }
 
   .gradient-primary {
