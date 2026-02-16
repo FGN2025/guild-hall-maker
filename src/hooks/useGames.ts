@@ -20,9 +20,27 @@ export interface Game {
 export type GameInsert = Omit<Game, "id" | "created_at" | "updated_at">;
 export type GameUpdate = Partial<GameInsert>;
 
+// Public: only active games
 export const useGames = () => {
   return useQuery({
     queryKey: ["games"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("games" as any)
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true })
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data as unknown as Game[]) ?? [];
+    },
+  });
+};
+
+// Admin: all games regardless of is_active
+export const useAdminGames = () => {
+  return useQuery({
+    queryKey: ["admin-games"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("games" as any)
@@ -81,6 +99,7 @@ export const useCreateGame = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["games"] });
+      qc.invalidateQueries({ queryKey: ["admin-games"] });
       toast({ title: "Game created" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -102,6 +121,7 @@ export const useUpdateGame = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["games"] });
+      qc.invalidateQueries({ queryKey: ["admin-games"] });
       toast({ title: "Game updated" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -117,7 +137,29 @@ export const useDeleteGame = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["games"] });
+      qc.invalidateQueries({ queryKey: ["admin-games"] });
       toast({ title: "Game deleted" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+};
+
+export const useReorderGames = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase
+          .from("games" as any)
+          .update({ display_order: item.display_order } as any)
+          .eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-games"] });
+      qc.invalidateQueries({ queryKey: ["games"] });
+      toast({ title: "Order updated" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
