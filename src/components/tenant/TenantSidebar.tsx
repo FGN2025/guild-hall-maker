@@ -1,16 +1,18 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2 } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 interface TenantSidebarProps {
   tenantName: string;
+  tenantRole: 'admin' | 'manager';
 }
 
-const sidebarItems = [
-  { to: "/tenant", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/tenant/leads", label: "Leads", icon: Users },
-  { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin },
-  { to: "/tenant/subscribers", label: "Subscribers", icon: Database },
+const allSidebarItems = [
+  { to: "/tenant", label: "Dashboard", icon: LayoutDashboard, roles: ['admin', 'manager'] },
+  { to: "/tenant/leads", label: "Leads", icon: Users, roles: ['admin', 'manager'] },
+  { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin, roles: ['admin'] },
+  { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin'] },
+  { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
 ];
 
 const ecosystemApps = [
@@ -18,9 +20,11 @@ const ecosystemApps = [
   { target: "hub" as const, label: "Hub" },
 ];
 
-const TenantSidebar = ({ tenantName }: TenantSidebarProps) => {
+const TenantSidebar = ({ tenantName, tenantRole }: TenantSidebarProps) => {
   const location = useLocation();
   const { requestMagicLink, loading } = useEcosystemAuth();
+
+  const sidebarItems = allSidebarItems.filter((item) => item.roles.includes(tenantRole));
 
   return (
     <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">

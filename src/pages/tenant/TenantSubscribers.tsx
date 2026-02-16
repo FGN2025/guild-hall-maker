@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,10 @@ const TenantSubscribers = () => {
   const { subscribers, isLoading, bulkInsert } = useTenantSubscribers(tenantId);
   const { integrations } = useTenantIntegrations(tenantId);
   const [search, setSearch] = useState("");
+
+  if (tenantInfo?.tenantRole === "manager") {
+    return <Navigate to="/tenant" replace />;
+  }
 
   const filtered = subscribers.filter((s) => {
     const q = search.toLowerCase();

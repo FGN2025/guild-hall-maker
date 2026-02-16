@@ -208,6 +208,7 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
   const { admins, isLoading, addAdmin, removeAdmin } = useTenantAdmins(tenantId);
   const [email, setEmail] = useState("");
   const [searching, setSearching] = useState(false);
+  const [addRole, setAddRole] = useState("admin");
 
   const handleAdd = async () => {
     if (!email.trim()) {
@@ -229,7 +230,7 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
         return;
       }
 
-      addAdmin.mutate({ tenantId, userId: profiles[0].user_id });
+      addAdmin.mutate({ tenantId, userId: profiles[0].user_id, role: addRole });
       setEmail("");
     } catch (err: any) {
       toast.error(err.message);
@@ -248,6 +249,14 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
           className="flex-1"
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
         />
+        <select
+          value={addRole}
+          onChange={(e) => setAddRole(e.target.value)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="admin">Admin</option>
+          <option value="manager">Manager</option>
+        </select>
         <Button
           size="icon"
           onClick={handleAdd}
@@ -269,8 +278,11 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
               className="flex items-center justify-between p-3 rounded-lg border border-border bg-card"
             >
               <div>
-                <p className="font-heading text-sm text-foreground">
+                <p className="font-heading text-sm text-foreground flex items-center gap-2">
                   {a.profile?.display_name || "Unknown"}
+                  <Badge variant={a.role === "admin" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                    {a.role || "admin"}
+                  </Badge>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Added {new Date(a.created_at).toLocaleDateString()}

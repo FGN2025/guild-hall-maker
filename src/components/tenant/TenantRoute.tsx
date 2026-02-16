@@ -18,7 +18,7 @@ const TenantRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) return <Navigate to="/auth" replace />;
   if (!isTenantAdmin) return <Navigate to="/dashboard" replace />;
 
-  return <TenantLayout tenantInfo={tenantInfo!}>{children}</TenantLayout>;
+  return <TenantLayout tenantInfo={tenantInfo!} tenantRole={tenantInfo!.tenantRole}>{children}</TenantLayout>;
 };
 
 export default TenantRoute;
