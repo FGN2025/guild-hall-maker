@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.notebook-proxy]
 verify_jwt = false
+
+[functions.ai-coach]
+verify_jwt = false
