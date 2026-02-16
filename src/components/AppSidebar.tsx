@@ -11,6 +11,7 @@ import {
   Swords,
   Award,
   Gamepad2,
+  CalendarDays,
   Joystick,
   Settings,
   LogOut,
@@ -33,6 +34,7 @@ import {
 
 const mainNav = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/community", label: "Community", icon: Users },

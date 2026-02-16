@@ -15,6 +15,8 @@ import ProfileSettings from "./pages/ProfileSettings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 import TournamentBracket from "./pages/TournamentBracket";
+import TournamentCalendar from "./pages/TournamentCalendar";
+import TournamentDetail from "./pages/TournamentDetail";
 import TournamentManage from "./pages/TournamentManage";
 import PlayerProfile from "./pages/PlayerProfile";
 import SeasonStats from "./pages/SeasonStats";
@@ -60,7 +62,9 @@ const App = () => (
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tournaments" element={<Tournaments />} />
+              <Route path="/tournaments/:id" element={<TournamentDetail />} />
               <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
+              <Route path="/calendar" element={<TournamentCalendar />} />
               <Route path="/tournaments/:id/manage" element={<TournamentManage />} />
               <Route path="/community" element={<Community />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
