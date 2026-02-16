@@ -1,33 +1,25 @@
 
 
-## Add Eight More Multiplayer Games
+## Add New Games to the Catalog
 
-Adding 8 new games to the catalog, including the 3 specified titles plus 5 more multiplayer games.
+Minecraft is already in the catalog, so we'll add the 3 new titles:
 
-### Games to Add
-
-| # | Name | Category | Platform Tags |
-|---|------|----------|---------------|
-| 1 | American Truck Simulator | Racing | PC |
-| 2 | Farm Simulator 2025 | Strategy | PC, PS5, Xbox |
-| 3 | Construction Simulator | Strategy | PC, PS5, Xbox |
-| 4 | Fortnite | Shooter | PC, PS5, Xbox, Switch |
-| 5 | Apex Legends | Shooter | PC, PS5, Xbox |
-| 6 | Fall Guys | Party | PC, PS5, Xbox, Switch |
-| 7 | Overwatch 2 | Shooter | PC, PS5, Xbox |
-| 8 | Valorant | Shooter | PC |
+| # | Name | Slug | Category | Platform Tags | Display Order |
+|---|------|------|----------|---------------|---------------|
+| 1 | Super Smash Brothers | super-smash-brothers | Fighting | Switch | 22 |
+| 2 | ARC Raiders | arc-raiders | Shooter | PC, PS5, Xbox | 23 |
+| 3 | BeamNG.drive | beamng-drive | Racing | PC | 24 |
 
 ### Steps
 
-1. Generate cover art for each game (8 images, 3:4 aspect ratio) using AI image generation
-2. Upload each image to cloud storage (app-media bucket, `games/` path)
-3. Insert all 8 game records into the `games` table with proper metadata (name, slug, category, description, platform tags, cover image URL, display_order starting at 4)
-4. Verify the full grid layout at `/games` with all 12 games
+1. **Generate cover art** for each of the 3 games using AI image generation (cyberpunk/gaming style, 3:4 aspect ratio)
+2. **Upload cover images** to cloud storage (`app-media` bucket, `games/` path)
+3. **Insert game records** into the `games` table with proper metadata (name, slug, category, description, platform tags, cover image URL, display_order 22-24, is_active: true)
+4. **Verify** the updated grid at `/games` shows all 25 games correctly
 
-### Technical Details
+### Notes
 
-- Each game gets a unique slug (e.g., `american-truck-simulator`, `farm-simulator-2025`)
-- `display_order` values will be 4 through 11 (continuing from existing games)
-- All games set to `is_active: true`
-- Cover images uploaded to the existing `app-media` storage bucket under `games/`
+- Minecraft already exists (display_order 18) -- no action needed for it
+- Each game gets a short description summarizing the gameplay
+- Cover images will be stored at `games/{slug}-cover.png` in the storage bucket
 
