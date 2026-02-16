@@ -136,8 +136,12 @@ export default function CoachFloatingButton() {
           <div className="flex items-center gap-1 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Gamepad2 className="h-4 w-4" />
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 max-w-[160px]">
+                  <Gamepad2 className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate text-xs">
+                    {selectedGame ? selectedGame.name : "All Games"}
+                  </span>
+                  <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="max-h-[260px] overflow-y-auto">
