@@ -33,6 +33,7 @@ import AdminBypassCodes from "./pages/admin/AdminBypassCodes";
 import AdminTenants from "./pages/admin/AdminTenants";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminGames from "./pages/admin/AdminGames";
+import AdminNotebooks from "./pages/admin/AdminNotebooks";
 import TenantRoute from "./components/tenant/TenantRoute";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import TenantLeads from "./pages/tenant/TenantLeads";
@@ -86,6 +87,7 @@ const App = () => (
             <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/games" element={<AdminRoute><AdminGames /></AdminRoute>} />
+            <Route path="/admin/notebooks" element={<AdminRoute><AdminNotebooks /></AdminRoute>} />
 
             {/* Tenant routes */}
             <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
