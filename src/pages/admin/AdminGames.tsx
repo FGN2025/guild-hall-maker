@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
+
 import { useAdminGames, useCreateGame, useUpdateGame, useDeleteGame, useReorderGames, type Game, type GameInsert } from "@/hooks/useGames";
 import AddGameDialog from "@/components/games/AddGameDialog";
 import { Button } from "@/components/ui/button";
@@ -132,7 +132,7 @@ const AdminGames = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="font-display text-2xl font-bold tracking-wider">Games</h1>
@@ -196,7 +196,7 @@ const AdminGames = () => {
           editGame={editGame}
         />
       </div>
-    </AdminLayout>
+    </>
   );
 };
 
