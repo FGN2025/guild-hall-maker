@@ -1,45 +1,35 @@
 
-
-# Add Download/Export for AI Coach Conversations
+# Add PDF Export Option to AI Coach Download
 
 ## What Changes
-Add a download button to the AI Coach header that exports the current conversation as a `.md` (Markdown) file. The button appears only when there are messages in the chat.
+Replace the single download button with a dropdown menu offering two export formats: Markdown (.md) and PDF (via browser print).
 
 ## User Experience
-- A small download icon button appears in the header bar, next to the existing trash (clear) button
-- Clicking it instantly downloads a `.md` file containing the full conversation
-- The file is named with the game context and timestamp, e.g. `ai-coach-valorant-2026-02-16.md`
-- The button only shows when there are messages (same visibility logic as the trash button)
+- The download icon button becomes a dropdown trigger
+- Clicking it shows two options: "Download as Markdown" and "Download as PDF"
+- Markdown works as before (direct .md file download)
+- PDF opens a styled print-ready HTML document in a new tab and triggers the browser's print dialog (same proven approach used in Season Stats and legal pages)
 
 ## Technical Details
 
 ### File: `src/components/CoachFloatingButton.tsx`
 
-1. Import `Download` icon from `lucide-react`
-2. Add a `handleExport` function that:
-   - Builds a Markdown string from `messages` array
-   - Prefixes user messages with `**You:**` and assistant messages with `**Coach:**`
-   - Adds a header line with game name and date
-   - Creates a Blob, generates an object URL, triggers download via a temporary `<a>` element
-3. Add a new `Button` (ghost, icon, same size as trash button) right next to the trash button in the header
+1. **Add `FileText` icon import** from lucide-react (for the PDF menu item)
 
-### Export format example:
-```
-# AI Coach Chat — Valorant
-_Exported on 2026-02-16_
+2. **Add `handleExportPdf` function** that:
+   - Builds a styled HTML document with the conversation formatted nicely (game name header, date, messages styled as a chat log)
+   - Opens it in a new browser tab via `window.open`
+   - Triggers `window.print()` after a short delay (same pattern as `src/lib/exportSeasonStats.ts`)
 
----
+3. **Replace the single Download button** (line 182) with a `DropdownMenu` containing two `DropdownMenuItem` entries:
+   - "Markdown (.md)" -- calls existing `handleExport`
+   - "PDF" -- calls new `handleExportPdf`
+   - The trigger remains the same ghost icon button with the Download icon
 
-**You:** How do I improve crosshair placement?
+### PDF HTML template style
+- Clean, print-friendly layout matching the existing Season Stats PDF approach
+- User messages right-aligned or prefixed with "You:", coach messages prefixed with "Coach:"
+- Header with game name and export date
+- `@media print` CSS for clean output
 
-**Coach:** Here are some tips...
-
----
-
-**You:** Best agents for solo queue?
-
-**Coach:** For solo queue, consider...
-```
-
-No backend changes needed -- this is a pure client-side file download using the in-memory messages array.
-
+No new files or dependencies needed.
