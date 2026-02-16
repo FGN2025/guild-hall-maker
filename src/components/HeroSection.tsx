@@ -17,7 +17,7 @@ const HeroSection = () => {
 
       <div className="relative z-10 container mx-auto px-4 text-center">
         <div className="animate-slide-up">
-          <p className="font-display text-sm tracking-[0.3em] text-primary mb-4 uppercase">
+          <p className="font-display text-base md:text-xl lg:text-2xl tracking-[0.3em] text-primary mb-4 uppercase">
             Competitive Gaming Platform
           </p>
           <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6">
