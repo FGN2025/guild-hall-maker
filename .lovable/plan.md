@@ -1,62 +1,117 @@
 
 
-## Fix: Magic Link 404 on manage.fgn.gg
+# Connect to Open Notebook on Hostinger VPS
 
-### Root Cause
+## Assessment
 
-The `ecosystem-magic-link` edge function generates a URL like:
-```text
-https://manage.fgn.gg/auth?token=<uuid>
+The uploaded file is the **Hostinger infrastructure API** (for managing VPS servers, billing, etc.) -- it is **not needed** for connecting to the Open Notebook application. What we need instead is to call the **Open Notebook REST API** (FastAPI on port 5055) directly from a backend function.
+
+## Open Notebook API Summary
+
+Open Notebook (lfnovo/open-notebook) exposes a FastAPI REST API with these key endpoints relevant to the AI Coach:
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/notebooks` | GET | List all notebooks |
+| `/api/notebooks/{id}` | GET | Get a specific notebook |
+| `/api/sources?notebook_id=X` | GET | List sources in a notebook |
+| `/api/sources/{id}` | GET | Get source content/details |
+| `/api/notes?notebook_id=X` | GET | List notes in a notebook |
+| `/api/search` | POST | Full-text or vector search across content |
+| `/api/ask` | POST | Ask a question (search + AI-synthesized answer, SSE stream) |
+| `/health` | GET | Health check |
+
+**Authentication**: Bearer token via `Authorization: Bearer <password>` header (configured via `OPEN_NOTEBOOK_PASSWORD` env var on the VPS).
+
+## What We Need From You
+
+To connect, we need **3 pieces of information** stored as secrets:
+
+1. **OPEN_NOTEBOOK_URL** -- The public URL of your Open Notebook API (e.g., `https://notebook.yourdomain.com` or `http://123.45.67.89:5055`)
+2. **OPEN_NOTEBOOK_PASSWORD** -- The password/token configured on the Open Notebook container (the `OPEN_NOTEBOOK_PASSWORD` env var value)
+3. **OPEN_NOTEBOOK_ID** -- The specific Notebook ID to query (you can find this in the Open Notebook UI or via `GET /api/notebooks`)
+
+## Implementation Plan
+
+### Step 1: Database Table for Notebook Connections
+
+Create an `admin_notebook_connections` table to let admins manage multiple Open Notebook connections (e.g., one per game or category).
+
+```
+admin_notebook_connections
+- id (uuid, PK)
+- name (text) -- display name, e.g., "Valorant Guides"
+- api_url (text) -- base URL of the Open Notebook instance
+- notebook_id (text) -- the notebook:{id} to query
+- is_active (boolean, default true)
+- last_health_check (timestamptz)
+- last_health_status (text) -- "healthy" or "error"
+- created_at / updated_at
 ```
 
-But the ISP Verify Portal project has no `/auth` route. Its SSO callback lives at `/auth/sso`. The `/auth` path hits the catch-all `*` route, which renders the NotFound (404) page.
+The API password will be stored as a backend secret (not in the database) since all connections share the same VPS.
 
-### Two-Project Fix
+### Step 2: Admin Page -- Notebook Connections
 
-Changes are needed in **both** projects:
+New admin page at `/admin/notebooks` with:
 
----
+- List of configured notebook connections with health status
+- "Add Connection" dialog: name, API URL, notebook ID
+- "Test Connection" button that calls the health endpoint
+- Enable/disable toggle per connection
+- Add a "Notebooks" link to the admin sidebar (using BookOpen icon)
 
-### Part 1: This Project (play.fgn.gg) -- 2 changes
+### Step 3: Backend Function -- `notebook-proxy`
 
-**1. Update the magic link URL path**
-- File: `supabase/functions/ecosystem-magic-link/index.ts`
-- Change the generated link from `/auth?token=...` to `/auth/sso?token=...` so it lands on the existing SSO route in ISP Verify Portal
+A new edge function that acts as the proxy between the app and Open Notebook:
 
-**2. Add `validate-ecosystem-token` to the config**
-- File: `supabase/config.toml`
-- Add `[functions.validate-ecosystem-token]` with `verify_jwt = false` -- this endpoint is called by target apps without a JWT (it validates via the token itself)
+- **`GET /notebook-proxy?action=health`** -- Tests connectivity
+- **`GET /notebook-proxy?action=notebooks`** -- Lists available notebooks on the VPS
+- **`POST /notebook-proxy` with `{action: "search", query, notebook_id}`** -- Searches content
+- **`POST /notebook-proxy` with `{action: "ask", question, notebook_id}`** -- Asks a question via Open Notebook's `/ask` endpoint (streams SSE back)
 
----
+This function reads `OPEN_NOTEBOOK_URL` and `OPEN_NOTEBOOK_PASSWORD` from secrets.
 
-### Part 2: ISP Verify Portal (manage.fgn.gg) -- 1 change
+### Step 4: Integrate with AI Coach
 
-**Add ecosystem token handling to SSOCallback**
-- File: `src/pages/auth/SSOCallback.tsx`
-- The page already handles two auth flows (`code` and `access_token/refresh_token`). A third flow will be added for the `token` parameter:
-  1. Read the `token` query parameter
-  2. Call this project's `validate-ecosystem-token` endpoint to verify it
-  3. On success, use the returned email to generate a magic link session via the ISP Verify Portal's own auth system
-  4. On failure (expired, used, invalid), show an error and redirect to login
+Update the planned `ai-coach` edge function to:
+1. Fetch local game guide content from the `games` table
+2. Also call `notebook-proxy` to search/retrieve relevant content from Open Notebook
+3. Combine both sources as context for the AI coaching response
 
-The flow will look like:
+### Step 5: Store Secrets
+
+Two secrets need to be configured:
+- `OPEN_NOTEBOOK_URL` -- Your VPS endpoint (e.g., `https://notebook.yourdomain.com:5055`)
+- `OPEN_NOTEBOOK_PASSWORD` -- The bearer token for API access
+
+## Architecture
 
 ```text
-1. Admin clicks "Manage" in play.fgn.gg sidebar
-2. Edge function generates token, emails magic link
-3. User clicks link --> manage.fgn.gg/auth/sso?token=<uuid>
-4. SSOCallback reads "token" param
-5. Calls play.fgn.gg validate-ecosystem-token endpoint
-6. Gets back { email, user_id, target_app }
-7. Uses email to sign in locally (via OTP or session creation)
-8. Redirects to /admin/dashboard
+Admin Panel                    Edge Functions                    Hostinger VPS
++-----------------------+      +-------------------+            +------------------+
+| /admin/notebooks      | ---> | notebook-proxy    | ---------> | Open Notebook    |
+| - Add/edit/test       |      | (reads secrets)   |  REST API  | FastAPI :5055    |
+| - Health monitoring   |      +-------------------+            | - /notebooks     |
++-----------------------+             |                         | - /sources       |
+                                      v                         | - /search        |
++-----------------------+      +-------------------+            | - /ask           |
+| /coach (AI Coach)     | ---> | ai-coach          | ---------> +------------------+
+| - Chat UI             |      | (merges context)  |
+| - Game filter         |      +-------------------+
++-----------------------+             |
+                                      v
+                               +--------------+
+                               | games table  |
+                               | (local guides)|
+                               +--------------+
 ```
 
-### Summary of File Changes
+## Technical Notes
 
-| Project | File | Change |
-|---------|------|--------|
-| This project | `supabase/functions/ecosystem-magic-link/index.ts` | Change `/auth?token=` to `/auth/sso?token=` |
-| This project | `supabase/config.toml` | Add `validate-ecosystem-token` with `verify_jwt = false` |
-| ISP Verify Portal | `src/pages/auth/SSOCallback.tsx` | Add `token` param handling that calls `validate-ecosystem-token` and establishes a local session |
+- The Hostinger API you uploaded is for infrastructure management only -- we do not need it for this integration
+- Open Notebook uses SurrealDB internally and notebook IDs are in the format `notebook:xxxxx`
+- The `/ask` endpoint returns SSE streams, which aligns with our AI Coach streaming design
+- If your VPS uses a reverse proxy (nginx/Caddy), ensure port 5055 is proxied or exposed
+- CORS is enabled by default in Open Notebook development mode
 
