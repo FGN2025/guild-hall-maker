@@ -1,0 +1,131 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+export interface AchievementDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  tier: string;
+  category: string;
+  auto_criteria: Record<string, unknown> | null;
+  max_progress: number | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlayerAchievementRow {
+  id: string;
+  user_id: string;
+  achievement_id: string;
+  awarded_at: string;
+  awarded_by: string | null;
+  progress: number | null;
+  notes: string | null;
+}
+
+export const useAchievementDefinitions = () =>
+  useQuery({
+    queryKey: ["achievement-definitions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("achievement_definitions")
+        .select("*")
+        .order("display_order");
+      if (error) throw error;
+      return data as AchievementDefinition[];
+    },
+  });
+
+export const useAchievementAdmin = () => {
+  const qc = useQueryClient();
+
+  const createDef = useMutation({
+    mutationFn: async (def: Partial<AchievementDefinition>) => {
+      const { error } = await supabase.from("achievement_definitions").insert(def as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["achievement-definitions"] });
+      toast.success("Achievement created");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateDef = useMutation({
+    mutationFn: async ({ id, ...rest }: Partial<AchievementDefinition> & { id: string }) => {
+      const { error } = await supabase.from("achievement_definitions").update(rest as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["achievement-definitions"] });
+      toast.success("Achievement updated");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteDef = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("achievement_definitions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["achievement-definitions"] });
+      toast.success("Achievement deleted");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const awardAchievement = useMutation({
+    mutationFn: async (params: { user_id: string; achievement_id: string; notes?: string; awarded_by: string }) => {
+      const { error } = await supabase.from("player_achievements").insert({
+        user_id: params.user_id,
+        achievement_id: params.achievement_id,
+        notes: params.notes || null,
+        awarded_by: params.awarded_by,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["recent-awards"] });
+      qc.invalidateQueries({ queryKey: ["player-achievements"] });
+      qc.invalidateQueries({ queryKey: ["global-achievements"] });
+      toast.success("Achievement awarded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const revokeAchievement = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("player_achievements").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["recent-awards"] });
+      qc.invalidateQueries({ queryKey: ["player-achievements"] });
+      qc.invalidateQueries({ queryKey: ["global-achievements"] });
+      toast.success("Achievement revoked");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return { createDef, updateDef, deleteDef, awardAchievement, revokeAchievement };
+};
+
+export const useRecentAwards = () =>
+  useQuery({
+    queryKey: ["recent-awards"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("player_achievements")
+        .select("*")
+        .not("awarded_by", "is", null)
+        .order("awarded_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data as PlayerAchievementRow[];
+    },
+  });

@@ -10,181 +10,101 @@ export interface Achievement {
   unlocked: boolean;
   progress?: number;
   maxProgress?: number;
+  awardedBy?: string | null;
 }
 
 const TIER_ORDER = { bronze: 0, silver: 1, gold: 2, platinum: 3 };
+
+interface AutoCriteria {
+  type: string;
+  threshold?: number;
+  min_matches?: number;
+}
 
 export const usePlayerAchievements = (userId: string | undefined) => {
   return useQuery({
     queryKey: ["player-achievements", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data: matches, error } = await supabase
-        .from("match_results")
-        .select("player1_id, player2_id, winner_id, status, tournament_id, completed_at")
-        .eq("status", "completed")
-        .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-        .order("completed_at", { ascending: true });
+      // Fetch definitions, player awards, and match data in parallel
+      const [defsRes, awardsRes, matchesRes] = await Promise.all([
+        supabase.from("achievement_definitions").select("*").eq("is_active", true).order("display_order"),
+        supabase.from("player_achievements").select("*").eq("user_id", userId!),
+        supabase
+          .from("match_results")
+          .select("player1_id, player2_id, winner_id, status, tournament_id, completed_at")
+          .eq("status", "completed")
+          .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+          .order("completed_at", { ascending: true }),
+      ]);
 
-      if (error) throw error;
-      const m = matches ?? [];
+      if (defsRes.error) throw defsRes.error;
+      if (awardsRes.error) throw awardsRes.error;
+      if (matchesRes.error) throw matchesRes.error;
 
+      const defs = defsRes.data ?? [];
+      const awards = new Map((awardsRes.data ?? []).map((a: any) => [a.achievement_id, a]));
+      const m = matchesRes.data ?? [];
+
+      // Compute stats from match data
       let wins = 0, losses = 0, draws = 0;
       let currentStreak = 0, bestStreak = 0;
       const tournamentIds = new Set<string>();
       const tournamentWins = new Map<string, { wins: number; total: number }>();
 
-      m.forEach((match) => {
+      m.forEach((match: any) => {
         tournamentIds.add(match.tournament_id);
         const tw = tournamentWins.get(match.tournament_id) ?? { wins: 0, total: 0 };
         tw.total++;
-
-        if (!match.winner_id) {
-          draws++;
-          currentStreak = 0;
-        } else if (match.winner_id === userId) {
-          wins++;
-          currentStreak++;
-          bestStreak = Math.max(bestStreak, currentStreak);
-          tw.wins++;
-        } else {
-          losses++;
-          currentStreak = 0;
-        }
+        if (!match.winner_id) { draws++; currentStreak = 0; }
+        else if (match.winner_id === userId) { wins++; currentStreak++; bestStreak = Math.max(bestStreak, currentStreak); tw.wins++; }
+        else { losses++; currentStreak = 0; }
         tournamentWins.set(match.tournament_id, tw);
       });
 
       const total = wins + losses + draws;
       const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
-
-      // Check if player won any tournament (won all matches in a tournament with 2+ matches)
       let tournamentChampion = false;
-      tournamentWins.forEach((tw) => {
-        if (tw.total >= 2 && tw.wins === tw.total) tournamentChampion = true;
+      tournamentWins.forEach((tw) => { if (tw.total >= 2 && tw.wins === tw.total) tournamentChampion = true; });
+
+      const evalCriteria = (c: AutoCriteria): { pass: boolean; progress: number } => {
+        switch (c.type) {
+          case "wins": return { pass: wins >= (c.threshold ?? 0), progress: Math.min(wins, c.threshold ?? 0) };
+          case "streak": return { pass: bestStreak >= (c.threshold ?? 0), progress: Math.min(bestStreak, c.threshold ?? 0) };
+          case "matches": return { pass: total >= (c.threshold ?? 0), progress: Math.min(total, c.threshold ?? 0) };
+          case "win_rate": return { pass: winRate >= (c.threshold ?? 0) && total >= (c.min_matches ?? 5), progress: total >= (c.min_matches ?? 5) ? Math.min(winRate, c.threshold ?? 0) : 0 };
+          case "tournament_champion": return { pass: tournamentChampion, progress: tournamentChampion ? 1 : 0 };
+          case "multi_tournament": return { pass: tournamentIds.size >= (c.threshold ?? 0), progress: Math.min(tournamentIds.size, c.threshold ?? 0) };
+          case "iron_will": return { pass: total >= (c.threshold ?? 0) && losses > 0, progress: Math.min(total, c.threshold ?? 0) };
+          default: return { pass: false, progress: 0 };
+        }
+      };
+
+      const achievements: Achievement[] = defs.map((d: any) => {
+        const award = awards.get(d.id);
+        const criteria = d.auto_criteria as AutoCriteria | null;
+        let unlocked = !!award;
+        let progress: number | undefined;
+
+        if (criteria) {
+          const result = evalCriteria(criteria);
+          if (result.pass) unlocked = true;
+          progress = result.progress;
+        }
+
+        return {
+          id: d.id,
+          name: d.name,
+          description: d.description,
+          icon: d.icon as Achievement["icon"],
+          tier: d.tier as Achievement["tier"],
+          unlocked,
+          progress,
+          maxProgress: d.max_progress ?? undefined,
+          awardedBy: award?.awarded_by ?? null,
+        };
       });
 
-      const achievements: Achievement[] = [
-        {
-          id: "first_win",
-          name: "First Blood",
-          description: "Win your first match",
-          icon: "zap",
-          tier: "bronze",
-          unlocked: wins >= 1,
-          progress: Math.min(wins, 1),
-          maxProgress: 1,
-        },
-        {
-          id: "five_wins",
-          name: "Rising Star",
-          description: "Win 5 matches",
-          icon: "star",
-          tier: "silver",
-          unlocked: wins >= 5,
-          progress: Math.min(wins, 5),
-          maxProgress: 5,
-        },
-        {
-          id: "twenty_wins",
-          name: "Veteran Fighter",
-          description: "Win 20 matches",
-          icon: "medal",
-          tier: "gold",
-          unlocked: wins >= 20,
-          progress: Math.min(wins, 20),
-          maxProgress: 20,
-        },
-        {
-          id: "streak_3",
-          name: "On Fire",
-          description: "Win 3 matches in a row",
-          icon: "flame",
-          tier: "bronze",
-          unlocked: bestStreak >= 3,
-          progress: Math.min(bestStreak, 3),
-          maxProgress: 3,
-        },
-        {
-          id: "streak_5",
-          name: "Unstoppable",
-          description: "Win 5 matches in a row",
-          icon: "flame",
-          tier: "silver",
-          unlocked: bestStreak >= 5,
-          progress: Math.min(bestStreak, 5),
-          maxProgress: 5,
-        },
-        {
-          id: "streak_10",
-          name: "Legendary Streak",
-          description: "Win 10 matches in a row",
-          icon: "flame",
-          tier: "gold",
-          unlocked: bestStreak >= 10,
-          progress: Math.min(bestStreak, 10),
-          maxProgress: 10,
-        },
-        {
-          id: "ten_matches",
-          name: "Competitor",
-          description: "Play 10 matches",
-          icon: "swords",
-          tier: "bronze",
-          unlocked: total >= 10,
-          progress: Math.min(total, 10),
-          maxProgress: 10,
-        },
-        {
-          id: "fifty_matches",
-          name: "Seasoned Warrior",
-          description: "Play 50 matches",
-          icon: "swords",
-          tier: "gold",
-          unlocked: total >= 50,
-          progress: Math.min(total, 50),
-          maxProgress: 50,
-        },
-        {
-          id: "win_rate_75",
-          name: "Elite Player",
-          description: "Achieve a 75%+ win rate (min 5 matches)",
-          icon: "target",
-          tier: "gold",
-          unlocked: winRate >= 75 && total >= 5,
-          progress: total >= 5 ? Math.min(winRate, 75) : 0,
-          maxProgress: 75,
-        },
-        {
-          id: "tournament_champ",
-          name: "Tournament Champion",
-          description: "Win all matches in a tournament",
-          icon: "crown",
-          tier: "platinum",
-          unlocked: tournamentChampion,
-        },
-        {
-          id: "multi_tournament",
-          name: "Circuit Player",
-          description: "Compete in 3 different tournaments",
-          icon: "shield",
-          tier: "silver",
-          unlocked: tournamentIds.size >= 3,
-          progress: Math.min(tournamentIds.size, 3),
-          maxProgress: 3,
-        },
-        {
-          id: "iron_will",
-          name: "Iron Will",
-          description: "Play 10 matches without giving up",
-          icon: "shield",
-          tier: "bronze",
-          unlocked: total >= 10 && losses > 0,
-          progress: Math.min(total, 10),
-          maxProgress: 10,
-        },
-      ];
-
-      // Sort: unlocked first, then by tier
       achievements.sort((a, b) => {
         if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
         return TIER_ORDER[b.tier] - TIER_ORDER[a.tier];
