@@ -1,4 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Link } from "react-router-dom";
 import { Trophy, Medal, TrendingUp, Minus, Swords, Crown, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star, Shield, Award } from "lucide-react";
 import { useLeaderboard, useLeaderboardFilterOptions, type LeaderboardPlayer } from "@/hooks/useLeaderboard";
@@ -70,6 +78,9 @@ const Leaderboard = () => {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [allTimePage, setAllTimePage] = useState(1);
+  const [seasonalPage, setSeasonalPage] = useState(1);
+  const lbPageSize = 25;
 
   // Seasonal state
   const { data: seasons } = useSeasons();
@@ -127,6 +138,48 @@ const Leaderboard = () => {
       (p.gamer_tag && p.gamer_tag.toLowerCase().includes(q))
     );
   }, [seasonalPlayers, search]);
+
+  const seasonalTotalPages = Math.ceil(filteredSeasonalPlayers.length / lbPageSize);
+  const paginatedSeasonal = filteredSeasonalPlayers.slice((seasonalPage - 1) * lbPageSize, seasonalPage * lbPageSize);
+
+  const allTimeTotalPages = Math.ceil(sortedPlayers.length / lbPageSize);
+  const paginatedAllTime = sortedPlayers.slice((allTimePage - 1) * lbPageSize, allTimePage * lbPageSize);
+
+  // Reset pages on filter changes
+  useEffect(() => { setSeasonalPage(1); }, [search, effectiveSeasonId]);
+  useEffect(() => { setAllTimePage(1); }, [search, game, tournamentId, timePeriod, sortKey, sortDir]);
+
+  const renderPagination = (currentPage: number, totalPages: number, setPageFn: (p: number) => void) => {
+    if (totalPages <= 1) return null;
+    return (
+      <Pagination className="mt-6">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() => setPageFn(Math.max(1, currentPage - 1))}
+              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            />
+          </PaginationItem>
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+            .map((p, idx, arr) => (
+              <PaginationItem key={p}>
+                {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-muted-foreground">…</span>}
+                <PaginationLink isActive={p === currentPage} onClick={() => setPageFn(p)} className="cursor-pointer">
+                  {p}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => setPageFn(Math.min(totalPages, currentPage + 1))}
+              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    );
+  };
 
   const topThree = players?.slice(0, 3) ?? [];
   const podiumOrder = topThree.length === 3
@@ -213,60 +266,63 @@ const Leaderboard = () => {
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
-                  <span className="col-span-1">Rank</span>
-                  <span className="col-span-3">Player</span>
-                  <span className="col-span-2">Tier</span>
-                  <span className="col-span-2 text-center">Points</span>
-                  <span className="col-span-1 text-center">W</span>
-                  <span className="col-span-1 text-center">L</span>
-                  <span className="col-span-2 text-center">Win Rate</span>
-                </div>
-                {filteredSeasonalPlayers.map((p) => {
-                  const total = p.wins + p.losses;
-                  const winRate = total > 0 ? Math.round((p.wins / total) * 100) : 0;
-                  return (
-                    <div
-                      key={p.user_id}
-                      className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
-                    >
-                      <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
-                        #{p.rank}
-                      </span>
-                      <div className="col-span-3 flex items-center gap-3 min-w-0">
-                        <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarImage src={p.avatar_url ?? undefined} />
-                          <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
-                            {p.display_name.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
-                          {p.display_name}
-                        </Link>
-                      </div>
-                      <div className="col-span-2">
-                        <TierBadge tier={p.tier} />
-                      </div>
-                      <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
-                        {p.points}
-                      </span>
-                      <span className="col-span-1 font-display text-sm text-success font-bold text-center">
-                        {p.wins}
-                      </span>
-                      <span className="col-span-1 font-display text-sm text-destructive font-bold text-center">
-                        {p.losses}
-                      </span>
-                      <div className="col-span-2 flex items-center gap-2">
-                        <Progress value={winRate} className="h-1.5 flex-1 bg-muted" />
-                        <span className="font-display text-xs text-primary font-bold w-10 text-right">
-                          {winRate}%
+              <>
+                <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
+                  <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                    <span className="col-span-1">Rank</span>
+                    <span className="col-span-3">Player</span>
+                    <span className="col-span-2">Tier</span>
+                    <span className="col-span-2 text-center">Points</span>
+                    <span className="col-span-1 text-center">W</span>
+                    <span className="col-span-1 text-center">L</span>
+                    <span className="col-span-2 text-center">Win Rate</span>
+                  </div>
+                  {paginatedSeasonal.map((p) => {
+                    const total = p.wins + p.losses;
+                    const winRate = total > 0 ? Math.round((p.wins / total) * 100) : 0;
+                    return (
+                      <div
+                        key={p.user_id}
+                        className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                      >
+                        <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
+                          #{p.rank}
                         </span>
+                        <div className="col-span-3 flex items-center gap-3 min-w-0">
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarImage src={p.avatar_url ?? undefined} />
+                            <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
+                              {p.display_name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
+                            {p.display_name}
+                          </Link>
+                        </div>
+                        <div className="col-span-2">
+                          <TierBadge tier={p.tier} />
+                        </div>
+                        <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
+                          {p.points}
+                        </span>
+                        <span className="col-span-1 font-display text-sm text-success font-bold text-center">
+                          {p.wins}
+                        </span>
+                        <span className="col-span-1 font-display text-sm text-destructive font-bold text-center">
+                          {p.losses}
+                        </span>
+                        <div className="col-span-2 flex items-center gap-2">
+                          <Progress value={winRate} className="h-1.5 flex-1 bg-muted" />
+                          <span className="font-display text-xs text-primary font-bold w-10 text-right">
+                            {winRate}%
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+                {renderPagination(seasonalPage, seasonalTotalPages, setSeasonalPage)}
+              </>
             )}
           </TabsContent>
 
@@ -400,12 +456,12 @@ const Leaderboard = () => {
                     </button>
                     <span className="col-span-1" />
                   </div>
-                  {sortedPlayers.length === 0 ? (
+                  {paginatedAllTime.length === 0 ? (
                     <div className="p-8 text-center text-sm text-muted-foreground font-body">
                       No players match your search.
                     </div>
                   ) : (
-                    sortedPlayers.map((p) => (
+                    paginatedAllTime.map((p) => (
                     <div
                       key={p.user_id}
                       className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
@@ -455,6 +511,7 @@ const Leaderboard = () => {
                   ))
                   )}
                 </div>
+                {renderPagination(allTimePage, allTimeTotalPages, setAllTimePage)}
               </>
             )}
           </TabsContent>

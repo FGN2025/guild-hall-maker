@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
+import { useCoach } from "@/contexts/CoachContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -129,7 +130,7 @@ function getSuggestions(game: Game | null): string[] {
 }
 
 export default function CoachFloatingButton() {
-  const [open, setOpen] = useState(false);
+  const { isOpen: open, setIsOpen: setOpen } = useCoach();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const activeConvIdRef = useRef<string | null>(null);
@@ -280,7 +281,7 @@ ${msgHtml}
     <>
       {/* Floating Action Button */}
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         className={cn(
           "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-300",
           "bg-primary text-primary-foreground hover:scale-110",

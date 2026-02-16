@@ -1,4 +1,12 @@
 import { useState } from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Navigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -23,6 +31,8 @@ const TenantSubscribers = () => {
   const { subscribers, isLoading, bulkInsert } = useTenantSubscribers(tenantId);
   const { integrations } = useTenantIntegrations(tenantId);
   const [search, setSearch] = useState("");
+  const [subPage, setSubPage] = useState(1);
+  const subPageSize = 25;
 
   if (tenantInfo?.tenantRole === "manager") {
     return <Navigate to="/tenant" replace />;
@@ -39,6 +49,9 @@ const TenantSubscribers = () => {
       s.zip_code?.includes(q)
     );
   });
+
+  const subTotalPages = Math.ceil(filtered.length / subPageSize);
+  const paginatedSubs = filtered.slice((subPage - 1) * subPageSize, subPage * subPageSize);
 
   const counts = {
     total: subscribers.length,
@@ -128,45 +141,72 @@ const TenantSubscribers = () => {
                 : "No subscribers match your search."}
             </div>
           ) : (
-            <div className="overflow-auto border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Account #</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>ZIP</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Source</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((sub) => (
-                    <TableRow key={sub.id}>
-                      <TableCell className="font-medium">
-                        {[sub.first_name, sub.last_name].filter(Boolean).join(" ") || "—"}
-                      </TableCell>
-                      <TableCell>{sub.account_number || "—"}</TableCell>
-                      <TableCell>{sub.email || "—"}</TableCell>
-                      <TableCell>{sub.zip_code || "—"}</TableCell>
-                      <TableCell>{sub.plan_name || "—"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={statusColor[sub.service_status || "inactive"] || ""}
-                        >
-                          {sub.service_status || "unknown"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{sub.source || "manual"}</Badge>
-                      </TableCell>
+            <>
+              <div className="overflow-auto border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Account #</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>ZIP</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Source</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedSubs.map((sub) => (
+                      <TableRow key={sub.id}>
+                        <TableCell className="font-medium">
+                          {[sub.first_name, sub.last_name].filter(Boolean).join(" ") || "—"}
+                        </TableCell>
+                        <TableCell>{sub.account_number || "—"}</TableCell>
+                        <TableCell>{sub.email || "—"}</TableCell>
+                        <TableCell>{sub.zip_code || "—"}</TableCell>
+                        <TableCell>{sub.plan_name || "—"}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={statusColor[sub.service_status || "inactive"] || ""}
+                          >
+                            {sub.service_status || "unknown"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{sub.source || "manual"}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {subTotalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setSubPage((p) => Math.max(1, p - 1))}
+                        className={subPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: subTotalPages }, (_, i) => i + 1).map((p) => (
+                      <PaginationItem key={p}>
+                        <PaginationLink isActive={p === subPage} onClick={() => setSubPage(p)} className="cursor-pointer">
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setSubPage((p) => Math.min(subTotalPages, p + 1))}
+                        className={subPage === subTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </TabsContent>
 

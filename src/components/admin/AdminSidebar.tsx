@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, ExternalLink, Loader2, Gamepad2, BookOpen } from "lucide-react";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, ExternalLink, Loader2, Gamepad2, BookOpen, Calendar } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 const sidebarItems = [
@@ -10,6 +10,7 @@ const sidebarItems = [
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/games", label: "Games", icon: Gamepad2 },
   { to: "/admin/notebooks", label: "Notebooks", icon: BookOpen },
+  { to: "/admin/seasons", label: "Seasons", icon: Calendar },
   { to: "/admin/bypass-codes", label: "Bypass Codes", icon: KeyRound },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
