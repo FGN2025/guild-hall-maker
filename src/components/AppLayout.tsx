@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import CoachFloatingButton from "@/components/CoachFloatingButton";
 
 const AppLayout = () => {
   return (
@@ -16,6 +17,7 @@ const AppLayout = () => {
           </main>
         </div>
       </div>
+      <CoachFloatingButton />
     </SidebarProvider>
   );
 };
