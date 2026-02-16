@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Loader2, GripVertical } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   DndContext,
   closestCenter,
@@ -28,9 +29,10 @@ interface SortableGameRowProps {
   game: Game;
   onEdit: (game: Game) => void;
   onDelete: (id: string) => void;
+  onToggleActive: (game: Game) => void;
 }
 
-const SortableGameRow = ({ game, onEdit, onDelete }: SortableGameRowProps) => {
+const SortableGameRow = ({ game, onEdit, onDelete, onToggleActive }: SortableGameRowProps) => {
   const {
     attributes,
     listeners,
@@ -60,7 +62,13 @@ const SortableGameRow = ({ game, onEdit, onDelete }: SortableGameRowProps) => {
       <TableCell className="font-heading font-medium">{game.name}</TableCell>
       <TableCell><Badge variant="secondary" className="font-heading">{game.category}</Badge></TableCell>
       <TableCell className="text-muted-foreground text-xs">{game.slug}</TableCell>
-      <TableCell>{game.is_active ? "✓" : "—"}</TableCell>
+      <TableCell>
+        <Switch
+          checked={game.is_active}
+          onCheckedChange={() => onToggleActive(game)}
+          aria-label={`Toggle ${game.name} active`}
+        />
+      </TableCell>
       <TableCell className="text-right space-x-2">
         <Button variant="ghost" size="icon" onClick={() => onEdit(game)}>
           <Pencil className="h-4 w-4" />
@@ -161,6 +169,9 @@ const AdminGames = () => {
                         game={game}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
+                        onToggleActive={(g) =>
+                          updateGame.mutate({ id: g.id, is_active: !g.is_active })
+                        }
                       />
                     ))}
                     {sortedGames.length === 0 && (
