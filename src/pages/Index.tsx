@@ -13,7 +13,10 @@ const Index = () => {
       <footer className="border-t border-border py-12">
         <div className="container mx-auto px-4 text-center">
           <p className="font-display text-sm tracking-widest text-primary mb-2">FGN</p>
-          <p className="text-sm text-muted-foreground">© 2026 Fibre Gaming Network. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">
+            © 2026 Fibre Gaming Network. All rights reserved. ·{" "}
+            <a href="/terms" className="text-primary hover:underline">Terms & Conditions</a>
+          </p>
         </div>
       </footer>
     </div>
