@@ -7,9 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Pencil, CalendarIcon } from "lucide-react";
+import { Pencil, CalendarIcon, Upload } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
 
 interface TournamentData {
   id: string;
@@ -34,11 +37,13 @@ interface Props {
     prize_pool?: string;
     start_date: string;
     rules?: string;
+    image_url?: string;
   }) => void;
   isUpdating: boolean;
 }
 
 const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
@@ -49,6 +54,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [startTime, setStartTime] = useState("12:00");
   const [rules, setRules] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (open && tournament) {
@@ -67,9 +75,44 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
     }
   }, [open, tournament]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const valid = await validateAndToast(file, IMAGE_PRESETS.tournamentHero);
+    if (!valid) { e.target.value = ""; return; }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startDate) return;
+
+    let image_url: string | undefined;
+    if (imageFile) {
+      setUploadingImage(true);
+      const ext = imageFile.name.split(".").pop() ?? "png";
+      const filePath = `tournament/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("app-media").upload(filePath, imageFile, { contentType: imageFile.type });
+      if (!error) {
+        const { data } = supabase.storage.from("app-media").getPublicUrl(filePath);
+        image_url = data.publicUrl;
+        if (user) {
+          await supabase.from("media_library").insert({
+            user_id: user.id,
+            file_name: imageFile.name,
+            file_path: filePath,
+            file_type: "image",
+            mime_type: imageFile.type,
+            file_size: imageFile.size,
+            url: data.publicUrl,
+            category: "tournament",
+            tags: ["tournament-hero", name.trim()],
+          } as any);
+        }
+      }
+      setUploadingImage(false);
+    }
 
     const combinedDate = new Date(startDate);
     const [hours, minutes] = startTime.split(":").map(Number);
@@ -84,6 +127,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       prize_pool: prizePool.trim() || undefined,
       start_date: combinedDate.toISOString(),
       rules: rules.trim() || undefined,
+      image_url,
     });
     setOpen(false);
   };
@@ -175,11 +219,24 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
               className="bg-card border-border font-body" placeholder="e.g. $5,000" />
           </div>
           <div className="space-y-2">
+            <Label className="font-heading text-sm">Hero Image</Label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-card text-sm font-heading text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                <Upload className="h-4 w-4" />
+                {imageFile ? imageFile.name : "Choose image"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              </label>
+              {imagePreview && (
+                <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover border border-border" />
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
             <Label className="font-heading text-sm">Rules</Label>
             <Textarea value={rules} onChange={(e) => setRules(e.target.value)} maxLength={2000}
               className="bg-card border-border font-body min-h-[80px]" />
           </div>
-          <Button type="submit" disabled={isUpdating || !startDate}
+          <Button type="submit" disabled={isUpdating || uploadingImage || !startDate}
             className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5">
             {isUpdating ? "Saving..." : "Save Changes"}
           </Button>

@@ -12,6 +12,7 @@ import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   onCreate: (data: {
@@ -29,6 +30,7 @@ interface Props {
 }
 
 const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
@@ -67,6 +69,21 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
       if (!error) {
         const { data } = supabase.storage.from("app-media").getPublicUrl(filePath);
         image_url = data.publicUrl;
+
+        // Register in media library
+        if (user) {
+          await supabase.from("media_library").insert({
+            user_id: user.id,
+            file_name: imageFile.name,
+            file_path: filePath,
+            file_type: "image",
+            mime_type: imageFile.type,
+            file_size: imageFile.size,
+            url: data.publicUrl,
+            category: "tournament",
+            tags: ["tournament-hero", name.trim()],
+          } as any);
+        }
       }
       setUploadingImage(false);
     }
