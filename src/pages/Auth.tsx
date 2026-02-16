@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Gamepad2, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -22,6 +23,7 @@ const Auth = () => {
   const [zipCode, setZipCode] = useState("");
   const [bypassCode, setBypassCode] = useState("");
   const [zipVerified, setZipVerified] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { checkZip, loading: zipLoading, result: zipResult, reset: resetZip } = useRegistrationZipCheck();
 
   const handleZipCheck = async () => {
@@ -37,6 +39,11 @@ const Auth = () => {
 
     if (!email.trim() || !password.trim()) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (!isLogin && !termsAccepted) {
+      toast.error("You must accept the Terms and Conditions to create an account.");
       return;
     }
 
@@ -101,6 +108,7 @@ const Auth = () => {
     setZipVerified(false);
     setZipCode("");
     setBypassCode("");
+    setTermsAccepted(false);
     resetZip();
   };
 
@@ -208,6 +216,23 @@ const Auth = () => {
                   />
                 </div>
               </div>
+
+              {!isLogin && (
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="terms"
+                    checked={termsAccepted}
+                    onCheckedChange={(v) => setTermsAccepted(!!v)}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="terms" className="text-sm font-body text-muted-foreground cursor-pointer leading-snug">
+                    I have read and agree to the{" "}
+                    <Link to="/terms" target="_blank" className="text-primary hover:underline">
+                      Terms and Conditions
+                    </Link>
+                  </Label>
+                </div>
+              )}
 
               <Button
                 type="submit"
