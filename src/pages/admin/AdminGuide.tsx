@@ -264,6 +264,29 @@ ${sectionBlocks}
         />
       </div>
 
+      {filteredSections.length > 0 && (
+        <nav className="border border-border rounded-lg bg-card/50 px-4 py-3">
+          <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary mb-2">Table of Contents</h2>
+          <ul className="columns-2 gap-x-6 text-sm space-y-1">
+            {filteredSections.map((s) => (
+              <li key={s.id}>
+                <a
+                  href={`#section-${s.id}`}
+                  className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors py-0.5"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                >
+                  <s.icon className="h-3.5 w-3.5 shrink-0" />
+                  {s.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
       {filteredPermissions.length > 0 && (
         <div className="border border-border rounded-lg overflow-hidden bg-card/50">
           <div className="px-4 py-3 border-b border-border">
@@ -296,7 +319,8 @@ ${sectionBlocks}
             <AccordionItem
               key={section.id}
               value={section.id}
-              className="border border-border rounded-lg px-4 bg-card/50"
+              id={`section-${section.id}`}
+              className="border border-border rounded-lg px-4 bg-card/50 scroll-mt-4"
             >
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex items-center gap-3">
