@@ -86,12 +86,16 @@ export const useAchievementAdmin = () => {
 
   const awardAchievement = useMutation({
     mutationFn: async (params: { user_id: string; achievement_id: string; notes?: string; awarded_by: string }) => {
-      const { error } = await supabase.from("player_achievements").upsert({
+      const row: Record<string, unknown> = {
         user_id: params.user_id,
         achievement_id: params.achievement_id,
-        notes: params.notes || null,
         awarded_by: params.awarded_by,
-      } as any, { onConflict: "user_id,achievement_id" });
+      };
+      // Only include notes if provided so upsert doesn't overwrite existing notes with null
+      if (params.notes && params.notes.trim().length > 0) {
+        row.notes = params.notes.trim();
+      }
+      const { error } = await supabase.from("player_achievements").upsert(row as any, { onConflict: "user_id,achievement_id" });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -105,12 +109,16 @@ export const useAchievementAdmin = () => {
 
   const bulkAwardAchievement = useMutation({
     mutationFn: async (params: { user_ids: string[]; achievement_id: string; notes?: string; awarded_by: string }) => {
-      const rows = params.user_ids.map((uid) => ({
-        user_id: uid,
-        achievement_id: params.achievement_id,
-        notes: params.notes || null,
-        awarded_by: params.awarded_by,
-      }));
+      const hasNotes = params.notes && params.notes.trim().length > 0;
+      const rows = params.user_ids.map((uid) => {
+        const row: Record<string, unknown> = {
+          user_id: uid,
+          achievement_id: params.achievement_id,
+          awarded_by: params.awarded_by,
+        };
+        if (hasNotes) row.notes = params.notes!.trim();
+        return row;
+      });
       const { error } = await supabase.from("player_achievements").upsert(rows as any, { onConflict: "user_id,achievement_id" });
       if (error) throw error;
     },
