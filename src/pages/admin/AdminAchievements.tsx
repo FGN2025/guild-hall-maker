@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Award, Search, X, Sparkles } from "lucide-react";
 import { useAchievementDefinitions, useAchievementAdmin, useRecentAwards } from "@/hooks/useAchievementAdmin";
 import type { AchievementDefinition } from "@/hooks/useAchievementAdmin";
@@ -204,6 +205,7 @@ const AwardTab = () => {
   const [selectedAchievement, setSelectedAchievement] = useState("");
   const [notes, setNotes] = useState("");
   const [showQuickCreate, setShowQuickCreate] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const customDefs = defs?.filter((d) => d.is_active && d.category === "custom") ?? [];
   const milestoneDefs = defs?.filter((d) => d.is_active && d.category === "milestone") ?? [];
@@ -344,9 +346,27 @@ const AwardTab = () => {
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Reason for awarding…" />
         </div>
 
-        <Button onClick={handleAward} disabled={!selectedPlayers.length || !selectedAchievement || awardAchievement.isPending || bulkAwardAchievement.isPending}>
+        <Button onClick={() => setShowConfirm(true)} disabled={!selectedPlayers.length || !selectedAchievement || awardAchievement.isPending || bulkAwardAchievement.isPending}>
           Award Badge{selectedPlayers.length > 1 ? ` to ${selectedPlayers.length} Players` : ""}
         </Button>
+
+        <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Award</AlertDialogTitle>
+              <AlertDialogDescription>
+                Award <span className="font-semibold text-foreground">{defs?.find(d => d.id === selectedAchievement)?.name ?? "this badge"}</span> to{" "}
+                <span className="font-semibold text-foreground">
+                  {selectedPlayers.length === 1 ? selectedPlayers[0].display_name : `${selectedPlayers.length} players`}
+                </span>? This action cannot be easily undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { setShowConfirm(false); handleAward(); }}>Award</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Quick Create Dialog */}
