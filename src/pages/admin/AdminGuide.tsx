@@ -153,6 +153,32 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Changes take effect immediately for all users.",
     ],
   },
+  {
+    id: "ai-coach",
+    icon: BrainCircuit,
+    title: "AI Coach Configuration",
+    bullets: [
+      "The AI Esports Coach is a floating chat widget accessible from any page via the sidebar.",
+      "Game Selection — Players choose a game from a dropdown; the coach tailors advice using category-specific frameworks (Shooter, MOBA, etc.).",
+      "Knowledge Sources — Responses are grounded in local markdown guides (stored per game in the Games catalog) and external Open Notebook search results.",
+      "Conversation History — All sessions are persisted in the database, allowing players to resume previous coaching conversations.",
+      "Streaming Responses — The coach streams replies in real time for a natural conversational experience.",
+      "Tip: Add detailed game-specific guides via Admin → Games → Guide Content to improve coach accuracy.",
+    ],
+  },
+  {
+    id: "notebook-connections",
+    icon: BookOpen,
+    title: "Notebook Connections",
+    bullets: [
+      "Manage external knowledge bases from Admin → Notebooks.",
+      "Adding Connections — Set a display name, the API URL of your Open Notebook instance, and the target Notebook ID.",
+      "Shared Credentials — The API password is stored as a backend secret (OPEN_NOTEBOOK_PASSWORD), shared across all connections pointing to the same host.",
+      "Health Checks — Use the built-in health check to verify VPS connectivity and credential validity before relying on a connection.",
+      "How It Works — The notebook-proxy backend function handles all communication with the external VPS, bypassing CORS and keeping credentials secure.",
+      "Tip: You can connect multiple notebooks (e.g., one per game or topic) to broaden the AI Coach's knowledge base.",
+    ],
+  },
 ];
 
 // Build JSX content from bullet data for the accordion
@@ -179,6 +205,8 @@ const permissionRows = [
   { feature: "Media Library", admin: true, manager: false },
   { feature: "Bypass Codes", admin: true, manager: false },
   { feature: "App Settings & Appearance", admin: true, manager: false },
+  { feature: "AI Coach Configuration", admin: true, manager: false },
+  { feature: "Notebook Connections", admin: true, manager: false },
   { feature: "Tenant Dashboard", admin: true, manager: true },
   { feature: "Tenant Leads", admin: true, manager: true },
   { feature: "Tenant ZIP Codes", admin: true, manager: false },
