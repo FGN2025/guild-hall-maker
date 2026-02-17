@@ -1,9 +1,11 @@
+import { useState, useMemo } from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
 import {
   Trophy,
   Users,
@@ -18,8 +20,8 @@ import {
   BookOpen,
   BrainCircuit,
   BarChart3,
+  Search,
 } from "lucide-react";
-
 const sections = [
   {
     id: "overview",
@@ -244,6 +246,20 @@ const permissionRows = [
 ];
 
 const AdminGuide = () => {
+  const [search, setSearch] = useState("");
+
+  const filteredSections = useMemo(() => {
+    if (!search.trim()) return sections;
+    const q = search.toLowerCase();
+    return sections.filter((s) => s.title.toLowerCase().includes(q));
+  }, [search]);
+
+  const filteredPermissions = useMemo(() => {
+    if (!search.trim()) return permissionRows;
+    const q = search.toLowerCase();
+    return permissionRows.filter((r) => r.feature.toLowerCase().includes(q));
+  }, [search]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -255,51 +271,67 @@ const AdminGuide = () => {
         </p>
       </div>
 
-      <div className="border border-border rounded-lg overflow-hidden bg-card/50">
-        <div className="px-4 py-3 border-b border-border">
-          <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary">Quick-Reference Permissions</h2>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-muted-foreground">
-              <th className="text-left px-4 py-2 font-heading font-medium">Feature</th>
-              <th className="text-center px-4 py-2 font-heading font-medium">Admin</th>
-              <th className="text-center px-4 py-2 font-heading font-medium">Manager</th>
-            </tr>
-          </thead>
-          <tbody>
-            {permissionRows.map((row) => (
-              <tr key={row.feature} className="border-b border-border/50 last:border-0">
-                <td className="px-4 py-2">{row.feature}</td>
-                <td className="text-center px-4 py-2">{row.admin ? "✅" : "—"}</td>
-                <td className="text-center px-4 py-2">{row.manager ? "✅" : "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search topics…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
-      <Accordion type="multiple" className="space-y-2">
-        {sections.map((section) => (
-          <AccordionItem
-            key={section.id}
-            value={section.id}
-            className="border border-border rounded-lg px-4 bg-card/50"
-          >
-            <AccordionTrigger className="hover:no-underline">
-              <div className="flex items-center gap-3">
-                <section.icon className="h-5 w-5 text-primary shrink-0" />
-                <span className="font-heading font-semibold text-base">
-                  {section.title}
-                </span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="text-sm leading-relaxed">
-              {section.content}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      {filteredPermissions.length > 0 && (
+        <div className="border border-border rounded-lg overflow-hidden bg-card/50">
+          <div className="px-4 py-3 border-b border-border">
+            <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary">Quick-Reference Permissions</h2>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-muted-foreground">
+                <th className="text-left px-4 py-2 font-heading font-medium">Feature</th>
+                <th className="text-center px-4 py-2 font-heading font-medium">Admin</th>
+                <th className="text-center px-4 py-2 font-heading font-medium">Manager</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPermissions.map((row) => (
+                <tr key={row.feature} className="border-b border-border/50 last:border-0">
+                  <td className="px-4 py-2">{row.feature}</td>
+                  <td className="text-center px-4 py-2">{row.admin ? "✅" : "—"}</td>
+                  <td className="text-center px-4 py-2">{row.manager ? "✅" : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {filteredSections.length > 0 ? (
+        <Accordion type="multiple" defaultValue={search.trim() ? filteredSections.map(s => s.id) : []} key={search} className="space-y-2">
+          {filteredSections.map((section) => (
+            <AccordionItem
+              key={section.id}
+              value={section.id}
+              className="border border-border rounded-lg px-4 bg-card/50"
+            >
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <section.icon className="h-5 w-5 text-primary shrink-0" />
+                  <span className="font-heading font-semibold text-base">
+                    {section.title}
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-sm leading-relaxed">
+                {section.content}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      ) : filteredPermissions.length === 0 ? (
+        <p className="text-muted-foreground text-sm text-center py-8">No results found for &ldquo;{search}&rdquo;</p>
+      ) : null}
     </div>
   );
 };
