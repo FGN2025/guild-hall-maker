@@ -37,6 +37,7 @@ import AdminGames from "./pages/admin/AdminGames";
 import AdminNotebooks from "./pages/admin/AdminNotebooks";
 import AdminSeasons from "./pages/admin/AdminSeasons";
 import AdminAchievements from "./pages/admin/AdminAchievements";
+import AdminGuide from "./pages/admin/AdminGuide";
 import TenantRoute from "./components/tenant/TenantRoute";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import TenantLeads from "./pages/tenant/TenantLeads";
@@ -98,6 +99,7 @@ const App = () => (
             <Route path="/admin/notebooks" element={<AdminRoute><AdminNotebooks /></AdminRoute>} />
             <Route path="/admin/seasons" element={<AdminRoute><AdminSeasons /></AdminRoute>} />
             <Route path="/admin/achievements" element={<AdminRoute><AdminAchievements /></AdminRoute>} />
+            <Route path="/admin/guide" element={<AdminRoute><AdminGuide /></AdminRoute>} />
 
             {/* Tenant routes */}
             <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
