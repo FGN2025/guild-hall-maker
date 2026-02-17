@@ -226,6 +226,23 @@ const sections = [
   },
 ];
 
+const permissionRows = [
+  { feature: "Admin Dashboard", admin: true, manager: false },
+  { feature: "User Management", admin: true, manager: false },
+  { feature: "Tournament Management", admin: true, manager: false },
+  { feature: "Badge / Achievement Awarding", admin: true, manager: false },
+  { feature: "Games Management", admin: true, manager: false },
+  { feature: "Season Management", admin: true, manager: false },
+  { feature: "Media Library", admin: true, manager: false },
+  { feature: "Bypass Codes", admin: true, manager: false },
+  { feature: "App Settings & Appearance", admin: true, manager: false },
+  { feature: "Tenant Dashboard", admin: true, manager: true },
+  { feature: "Tenant Leads", admin: true, manager: true },
+  { feature: "Tenant ZIP Codes", admin: true, manager: false },
+  { feature: "Tenant Subscribers", admin: true, manager: false },
+  { feature: "Tenant Team Management", admin: true, manager: false },
+];
+
 const AdminGuide = () => {
   return (
     <div className="space-y-6">
@@ -236,6 +253,30 @@ const AdminGuide = () => {
         <p className="text-muted-foreground mt-1">
           Reference documentation for platform administrators and tenant managers.
         </p>
+      </div>
+
+      <div className="border border-border rounded-lg overflow-hidden bg-card/50">
+        <div className="px-4 py-3 border-b border-border">
+          <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary">Quick-Reference Permissions</h2>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="text-left px-4 py-2 font-heading font-medium">Feature</th>
+              <th className="text-center px-4 py-2 font-heading font-medium">Admin</th>
+              <th className="text-center px-4 py-2 font-heading font-medium">Manager</th>
+            </tr>
+          </thead>
+          <tbody>
+            {permissionRows.map((row) => (
+              <tr key={row.feature} className="border-b border-border/50 last:border-0">
+                <td className="px-4 py-2">{row.feature}</td>
+                <td className="text-center px-4 py-2">{row.admin ? "✅" : "—"}</td>
+                <td className="text-center px-4 py-2">{row.manager ? "✅" : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <Accordion type="multiple" className="space-y-2">
