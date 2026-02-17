@@ -14,6 +14,7 @@ const sidebarItems = [
   { to: "/admin/achievements", label: "Achievements", icon: Award },
   { to: "/admin/bypass-codes", label: "Bypass Codes", icon: KeyRound },
   { to: "/admin/settings", label: "Settings", icon: Settings },
+  { to: "/admin/guide", label: "Admin Guide", icon: BookOpen },
 ];
 
 const ecosystemApps = [
