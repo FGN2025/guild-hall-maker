@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Building2,
   BrainCircuit,
+  BookOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,6 +46,7 @@ const mainNav = [
   { to: "/season-stats", label: "Stats", icon: BarChart3 },
   { to: "/compare", label: "Compare", icon: Swords },
   { to: "/achievements", label: "Badges", icon: Award },
+  { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 
 export function AppSidebar() {
