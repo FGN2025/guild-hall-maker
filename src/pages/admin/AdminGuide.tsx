@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -22,6 +22,7 @@ import {
   BarChart3,
   Search,
   Printer,
+  ArrowUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -216,6 +217,13 @@ const permissionRows = [
 
 const AdminGuide = () => {
   const [search, setSearch] = useState("");
+  const [showTop, setShowTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handlePrint = () => {
     const permRows = permissionRows
@@ -367,6 +375,18 @@ ${sectionBlocks}
       ) : filteredPermissions.length === 0 ? (
         <p className="text-muted-foreground text-sm text-center py-8">No results found for &ldquo;{search}&rdquo;</p>
       ) : null}
+
+      {showTop && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Back to top"
+        >
+          <ArrowUp className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 };
