@@ -18,7 +18,7 @@ import { useTenantSubscribers } from "@/hooks/useTenantSubscribers";
 import { useTenantIntegrations, type TenantIntegration } from "@/hooks/useTenantIntegrations";
 import SubscriberUploader from "@/components/tenant/SubscriberUploader";
 import IntegrationConfigCard from "@/components/tenant/IntegrationConfigCard";
-import NISCConfigDialog from "@/components/tenant/NISCConfigDialog";
+import BillingConfigDialog from "@/components/tenant/BillingConfigDialog";
 
 const statusColor: Record<string, string> = {
   active: "bg-green-500/10 text-green-600 border-green-500/30",
@@ -36,6 +36,7 @@ const TenantSubscribers = () => {
   const subPageSize = 25;
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<TenantIntegration | null>(null);
+  const [selectedProviderType, setSelectedProviderType] = useState<string>("nisc");
 
   if (tenantInfo?.tenantRole === "manager") {
     return <Navigate to="/tenant" replace />;
@@ -240,6 +241,7 @@ const TenantSubscribers = () => {
                   onConfigure={() => {
                     if (integ.providerType === "nisc" || integ.providerType === "glds") {
                       setSelectedIntegration(configured || null);
+                      setSelectedProviderType(integ.providerType);
                       setConfigDialogOpen(true);
                     }
                   }}
@@ -250,10 +252,11 @@ const TenantSubscribers = () => {
         </TabsContent>
       </Tabs>
       {tenantId && (
-        <NISCConfigDialog
+        <BillingConfigDialog
           open={configDialogOpen}
           onOpenChange={setConfigDialogOpen}
           tenantId={tenantId}
+          providerType={selectedProviderType}
           existing={selectedIntegration}
           onSave={(data) => {
             saveIntegration.mutate(data as any, { onSuccess: () => setConfigDialogOpen(false) });
