@@ -245,6 +245,8 @@ const TenantSubscribers = () => {
                       setConfigDialogOpen(true);
                     }
                   }}
+                  onSync={configured ? () => triggerSync.mutate({ integrationId: configured.id }) : undefined}
+                  isSyncing={triggerSync.isPending}
                 />
               );
             })}
