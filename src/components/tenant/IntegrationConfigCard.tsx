@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Settings, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Settings, Clock, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 
 interface IntegrationCardProps {
   name: string;
@@ -12,6 +12,8 @@ interface IntegrationCardProps {
   lastSyncAt?: string | null;
   lastSyncStatus?: string | null;
   onConfigure?: () => void;
+  onSync?: () => void;
+  isSyncing?: boolean;
 }
 
 const IntegrationConfigCard = ({
@@ -22,6 +24,8 @@ const IntegrationConfigCard = ({
   lastSyncAt,
   lastSyncStatus,
   onConfigure,
+  onSync,
+  isSyncing,
 }: IntegrationCardProps) => {
   const statusIcon = lastSyncStatus === "success" ? (
     <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -49,15 +53,29 @@ const IntegrationConfigCard = ({
             {statusIcon}
           </div>
         )}
-        <Button
-          variant={comingSoon ? "secondary" : "outline"}
-          size="sm"
-          disabled={comingSoon}
-          onClick={onConfigure}
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          {comingSoon ? "API Endpoints Pending" : isConfigured ? "Edit Settings" : "Configure"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={comingSoon ? "secondary" : "outline"}
+            size="sm"
+            disabled={comingSoon}
+            onClick={onConfigure}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            {comingSoon ? "API Endpoints Pending" : isConfigured ? "Edit Settings" : "Configure"}
+          </Button>
+          {isConfigured && !comingSoon && onSync && (
+            <Button
+              variant="default"
+              size="sm"
+              disabled={isSyncing}
+              onClick={onSync}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Syncing…" : "Sync Now"}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
