@@ -1152,6 +1152,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_tenant_admin: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_tenant_member: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
       lookup_providers_by_zip: {
         Args: { _zip: string }
         Returns: {
