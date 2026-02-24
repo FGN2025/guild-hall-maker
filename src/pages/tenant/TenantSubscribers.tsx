@@ -15,9 +15,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Users, Upload, Plug } from "lucide-react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantSubscribers } from "@/hooks/useTenantSubscribers";
-import { useTenantIntegrations } from "@/hooks/useTenantIntegrations";
+import { useTenantIntegrations, type TenantIntegration } from "@/hooks/useTenantIntegrations";
 import SubscriberUploader from "@/components/tenant/SubscriberUploader";
 import IntegrationConfigCard from "@/components/tenant/IntegrationConfigCard";
+import NISCConfigDialog from "@/components/tenant/NISCConfigDialog";
 
 const statusColor: Record<string, string> = {
   active: "bg-green-500/10 text-green-600 border-green-500/30",
@@ -29,10 +30,12 @@ const TenantSubscribers = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId;
   const { subscribers, isLoading, bulkInsert } = useTenantSubscribers(tenantId);
-  const { integrations } = useTenantIntegrations(tenantId);
+  const { integrations, saveIntegration, updateIntegration, triggerSync } = useTenantIntegrations(tenantId);
   const [search, setSearch] = useState("");
   const [subPage, setSubPage] = useState(1);
   const subPageSize = 25;
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState<TenantIntegration | null>(null);
 
   if (tenantInfo?.tenantRole === "manager") {
     return <Navigate to="/tenant" replace />;
@@ -234,12 +237,37 @@ const TenantSubscribers = () => {
                   isConfigured={!!configured}
                   lastSyncAt={configured?.last_sync_at}
                   lastSyncStatus={configured?.last_sync_status}
+                  onConfigure={() => {
+                    if (integ.providerType === "nisc" || integ.providerType === "glds") {
+                      setSelectedIntegration(configured || null);
+                      setConfigDialogOpen(true);
+                    }
+                  }}
                 />
               );
             })}
           </div>
         </TabsContent>
       </Tabs>
+      {tenantId && (
+        <NISCConfigDialog
+          open={configDialogOpen}
+          onOpenChange={setConfigDialogOpen}
+          tenantId={tenantId}
+          existing={selectedIntegration}
+          onSave={(data) => {
+            saveIntegration.mutate(data as any, { onSuccess: () => setConfigDialogOpen(false) });
+          }}
+          onUpdate={(id, fields) => {
+            updateIntegration.mutate({ id, ...fields } as any, { onSuccess: () => setConfigDialogOpen(false) });
+          }}
+          onTestConnection={async (integrationId) => {
+            const result = await triggerSync.mutateAsync({ integrationId, dryRun: true });
+            return result;
+          }}
+          isSaving={saveIntegration.isPending || updateIntegration.isPending}
+        />
+      )}
     </div>
   );
 };

@@ -58,5 +58,54 @@ export const useTenantIntegrations = (tenantId: string | undefined) => {
     },
   });
 
-  return { integrations, isLoading, saveIntegration };
+  const updateIntegration = useMutation({
+    mutationFn: async ({ id, ...fields }: {
+      id: string;
+      display_name?: string;
+      api_url?: string;
+      api_key_encrypted?: string;
+      is_active?: boolean;
+      additional_config?: Record<string, unknown>;
+    }) => {
+      const payload: Record<string, unknown> = { ...fields };
+      if (fields.additional_config) {
+        payload.additional_config = fields.additional_config as any;
+      }
+      const { error } = await supabase
+        .from("tenant_integrations")
+        .update(payload)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-integrations", tenantId] });
+      toast({ title: "Integration updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error updating integration", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const triggerSync = useMutation({
+    mutationFn: async ({ integrationId, dryRun }: { integrationId: string; dryRun?: boolean }) => {
+      const { data, error } = await supabase.functions.invoke("nisc-sync", {
+        body: { integrationId, dryRun },
+      });
+      if (error) throw error;
+      return data as { success: boolean; message?: string; error?: string; count?: number };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-integrations", tenantId] });
+      if (data.success) {
+        toast({ title: "Sync complete", description: data.message });
+      } else {
+        toast({ title: "Sync issue", description: data.error || data.message, variant: "destructive" });
+      }
+    },
+    onError: (err: Error) => {
+      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return { integrations, isLoading, saveIntegration, updateIntegration, triggerSync };
 };
