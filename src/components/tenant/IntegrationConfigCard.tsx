@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Settings, Clock, AlertCircle, CheckCircle2, RefreshCw, Unplug } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,9 +78,18 @@ const IntegrationConfigCard = ({
                 {new Date(lastSyncAt).toLocaleString()}
               </p>
               {lastSyncMessage && (
-                <p className="text-muted-foreground text-xs mt-0.5 truncate">
-                  {lastSyncMessage}
-                </p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-muted-foreground text-xs mt-0.5 truncate cursor-default">
+                        {lastSyncMessage}
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs whitespace-normal">
+                      <p className="text-xs">{lastSyncMessage}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>
