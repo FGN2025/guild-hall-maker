@@ -244,6 +244,7 @@ const TenantSubscribers = () => {
                   isConfigured={!!configured}
                   lastSyncAt={configured?.last_sync_at}
                   lastSyncStatus={configured?.last_sync_status}
+                  lastSyncMessage={configured?.last_sync_message}
                   onConfigure={() => {
                     if (integ.providerType === "nisc" || integ.providerType === "glds") {
                       setSelectedIntegration(configured || null);
