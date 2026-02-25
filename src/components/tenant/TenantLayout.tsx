@@ -11,6 +11,7 @@ interface TenantLayoutProps {
     tenantId: string;
     tenantName: string;
     tenantSlug: string;
+    logoUrl?: string | null;
   };
   tenantRole: 'admin' | 'manager';
 }
@@ -22,7 +23,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) =
   if (!isMobile) {
     return (
       <div className="min-h-screen bg-background flex">
-        <TenantSidebar tenantName={tenantInfo.tenantName} tenantRole={tenantRole} />
+        <TenantSidebar tenantName={tenantInfo.tenantName} tenantRole={tenantRole} logoUrl={tenantInfo.logoUrl} />
         <main className="flex-1 p-8 overflow-auto">{children}</main>
       </div>
     );
@@ -37,13 +38,16 @@ const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) =
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
+           <SheetContent side="left" className="p-0 w-64">
             <div onClick={() => setOpen(false)}>
-              <TenantSidebar tenantName={tenantInfo.tenantName} tenantRole={tenantRole} />
+              <TenantSidebar tenantName={tenantInfo.tenantName} tenantRole={tenantRole} logoUrl={tenantInfo.logoUrl} />
             </div>
           </SheetContent>
         </Sheet>
-        <span className="ml-3 font-display text-sm font-bold text-primary truncate">{tenantInfo.tenantName}</span>
+        {tenantInfo.logoUrl ? (
+          <img src={tenantInfo.logoUrl} alt={tenantInfo.tenantName} className="ml-3 h-6 w-6 rounded object-contain" />
+        ) : null}
+        <span className={`${tenantInfo.logoUrl ? 'ml-2' : 'ml-3'} font-display text-sm font-bold text-primary truncate`}>{tenantInfo.tenantName}</span>
       </header>
       <main className="flex-1 p-4 overflow-auto">{children}</main>
     </div>
