@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -9,6 +9,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import type { SyncLogEntry } from "@/hooks/useSyncLogs";
 
@@ -21,8 +28,29 @@ const PAGE_SIZE = 15;
 
 const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
   const [page, setPage] = useState(1);
-  const totalPages = Math.ceil(logs.length / PAGE_SIZE);
-  const paginatedLogs = logs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const [providerFilter, setProviderFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const providerTypes = useMemo(
+    () => Array.from(new Set(logs.map((l) => l.provider_type))).sort(),
+    [logs]
+  );
+
+  const filtered = useMemo(() => {
+    return logs.filter((log) => {
+      if (providerFilter !== "all" && log.provider_type !== providerFilter) return false;
+      if (statusFilter !== "all" && log.status !== statusFilter) return false;
+      return true;
+    });
+  }, [logs, providerFilter, statusFilter]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedLogs = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page when filters change
+  const handleProviderChange = (v: string) => { setProviderFilter(v); setPage(1); };
+  const handleStatusChange = (v: string) => { setStatusFilter(v); setPage(1); };
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -40,6 +68,42 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
   }
 
   return (
+    <>
+    <div className="flex flex-wrap gap-3 mb-4">
+      <Select value={providerFilter} onValueChange={handleProviderChange}>
+        <SelectTrigger className="w-[160px]">
+          <SelectValue placeholder="All Providers" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Providers</SelectItem>
+          {providerTypes.map((pt) => (
+            <SelectItem key={pt} value={pt}>
+              {pt.toUpperCase()}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={statusFilter} onValueChange={handleStatusChange}>
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="All Statuses" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Statuses</SelectItem>
+          <SelectItem value="success">Success</SelectItem>
+          <SelectItem value="error">Error</SelectItem>
+        </SelectContent>
+      </Select>
+      {(providerFilter !== "all" || statusFilter !== "all") && (
+        <span className="text-sm text-muted-foreground self-center">
+          {filtered.length} of {logs.length} records
+        </span>
+      )}
+    </div>
+    {filtered.length === 0 ? (
+      <div className="text-center py-8 text-muted-foreground">
+        No sync logs match the selected filters.
+      </div>
+    ) : (
     <>
     <div className="overflow-auto border rounded-lg">
       <Table>
@@ -112,6 +176,8 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
           </PaginationItem>
         </PaginationContent>
       </Pagination>
+    )}
+    </>
     )}
     </>
   );
