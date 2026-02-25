@@ -22,6 +22,7 @@ interface IntegrationCardProps {
   isConfigured?: boolean;
   lastSyncAt?: string | null;
   lastSyncStatus?: string | null;
+  lastSyncMessage?: string | null;
   onConfigure?: () => void;
   onSync?: () => void;
   onDisconnect?: () => void;
@@ -36,18 +37,13 @@ const IntegrationConfigCard = ({
   isConfigured,
   lastSyncAt,
   lastSyncStatus,
+  lastSyncMessage,
   onConfigure,
   onSync,
   onDisconnect,
   isSyncing,
   isDisconnecting,
 }: IntegrationCardProps) => {
-  const statusIcon = lastSyncStatus === "success" ? (
-    <CheckCircle2 className="h-4 w-4 text-green-500" />
-  ) : lastSyncStatus === "error" ? (
-    <AlertCircle className="h-4 w-4 text-destructive" />
-  ) : null;
-
   return (
     <Card className={comingSoon ? "opacity-70" : ""}>
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
@@ -61,11 +57,31 @@ const IntegrationConfigCard = ({
         </div>
       </CardHeader>
       <CardContent>
-        {lastSyncAt && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-            <Clock className="h-3.5 w-3.5" />
-            Last sync: {new Date(lastSyncAt).toLocaleString()}
-            {statusIcon}
+        {isConfigured && lastSyncAt && (
+          <div className={`flex items-start gap-2 text-sm border rounded-md p-3 mb-3 ${
+            lastSyncStatus === "success"
+              ? "bg-green-500/10 border-green-500/30"
+              : "bg-destructive/10 border-destructive/30"
+          }`}>
+            {lastSyncStatus === "success" ? (
+              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+            )}
+            <div className="min-w-0">
+              <p className={lastSyncStatus === "success" ? "text-green-600" : "text-destructive"}>
+                {lastSyncStatus === "success" ? "Last sync successful" : "Last sync failed"}
+              </p>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                <Clock className="h-3 w-3 inline mr-1" />
+                {new Date(lastSyncAt).toLocaleString()}
+              </p>
+              {lastSyncMessage && (
+                <p className="text-muted-foreground text-xs mt-0.5 truncate">
+                  {lastSyncMessage}
+                </p>
+              )}
+            </div>
           </div>
         )}
         <div className="flex items-center gap-2 flex-wrap">
