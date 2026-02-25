@@ -1,5 +1,14 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import type { SyncLogEntry } from "@/hooks/useSyncLogs";
 
@@ -8,7 +17,12 @@ interface SyncHistoryPanelProps {
   isLoading: boolean;
 }
 
+const PAGE_SIZE = 15;
+
 const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(logs.length / PAGE_SIZE);
+  const paginatedLogs = logs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -26,6 +40,7 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
   }
 
   return (
+    <>
     <div className="overflow-auto border rounded-lg">
       <Table>
         <TableHeader>
@@ -38,7 +53,7 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {logs.map((log) => (
+          {paginatedLogs.map((log) => (
             <TableRow key={log.id}>
               <TableCell className="whitespace-nowrap">
                 <div className="flex items-center gap-1.5 text-sm">
@@ -73,6 +88,32 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
         </TableBody>
       </Table>
     </div>
+    {totalPages > 1 && (
+      <Pagination className="mt-4">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            />
+          </PaginationItem>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <PaginationItem key={p}>
+              <PaginationLink isActive={p === page} onClick={() => setPage(p)} className="cursor-pointer">
+                {p}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    )}
+    </>
   );
 };
 
