@@ -115,46 +115,9 @@ Deno.serve(async (req) => {
     }
 
     const magicLinkUrl = `${TARGET_URLS[target]}/auth/sso?token=${tokenRow.token}`;
-    const appLabel = target === "manage" ? "FGN Manage" : "FGN Hub";
-
-    // Send email via Resend
-    const emailRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "FGN <onboarding@resend.dev>",
-        to: [userEmail],
-        subject: `Your login link for ${appLabel}`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-            <h2>Access ${appLabel}</h2>
-            <p>Click the button below to log in to ${appLabel}. This link expires in 10 minutes.</p>
-            <a href="${magicLinkUrl}" 
-               style="display: inline-block; padding: 12px 24px; background: #6366f1; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
-              Open ${appLabel}
-            </a>
-            <p style="margin-top: 24px; font-size: 13px; color: #666;">
-              If you didn't request this, you can safely ignore this email.
-            </p>
-          </div>
-        `,
-      }),
-    });
-
-    if (!emailRes.ok) {
-      const errBody = await emailRes.text();
-      console.error("Resend error:", errBody);
-      return new Response(JSON.stringify({ error: "Failed to send magic link email" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     return new Response(
-      JSON.stringify({ success: true, message: `Magic link sent to ${userEmail}` }),
+      JSON.stringify({ success: true, magicLink: magicLinkUrl }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
