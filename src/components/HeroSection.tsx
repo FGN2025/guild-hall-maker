@@ -51,7 +51,7 @@ const HeroSection = () => {
           {[
             { label: "Active Players", value: "12K+", icon: Users },
             { label: "Tournaments", value: "340+", icon: Trophy },
-            { label: "Prize Pool", value: "$85K", icon: Zap },
+            { label: "Prize Pool", value: "$8.5K", icon: Zap },
           ].map((stat) => (
             <div key={stat.label} className="glass-panel rounded-lg p-4">
               <stat.icon className="h-5 w-5 text-primary mx-auto mb-2" />
