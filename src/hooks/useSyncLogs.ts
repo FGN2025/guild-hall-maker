@@ -24,7 +24,7 @@ export const useSyncLogs = (tenantId: string | undefined) => {
         .select("*")
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
       if (error) throw error;
       return data as SyncLogEntry[];
     },
