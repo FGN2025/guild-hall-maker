@@ -97,6 +97,7 @@ export const useTenantIntegrations = (tenantId: string | undefined) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tenant-integrations", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["tenant-sync-logs", tenantId] });
       if (data.success) {
         toast({ title: "Sync complete", description: data.message });
       } else {

@@ -89,6 +89,17 @@ Deno.serve(async (req) => {
         .update({ last_sync_status: "error", last_sync_message: msg, last_sync_at: new Date().toISOString() })
         .eq("id", integrationId);
 
+      await serviceClient.from("tenant_sync_logs").insert({
+        tenant_id: integration.tenant_id,
+        integration_id: integrationId,
+        provider_type: "nisc",
+        status: "error",
+        message: msg,
+        records_synced: 0,
+        dry_run: false,
+        triggered_by: userId,
+      });
+
       return new Response(JSON.stringify({ success: false, error: msg }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
