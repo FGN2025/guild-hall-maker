@@ -12,13 +12,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Upload, Plug } from "lucide-react";
+import { Search, Users, Upload, Plug, History } from "lucide-react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantSubscribers } from "@/hooks/useTenantSubscribers";
 import { useTenantIntegrations, type TenantIntegration } from "@/hooks/useTenantIntegrations";
+import { useSyncLogs } from "@/hooks/useSyncLogs";
 import SubscriberUploader from "@/components/tenant/SubscriberUploader";
 import IntegrationConfigCard from "@/components/tenant/IntegrationConfigCard";
 import BillingConfigDialog from "@/components/tenant/BillingConfigDialog";
+import SyncHistoryPanel from "@/components/tenant/SyncHistoryPanel";
 
 const statusColor: Record<string, string> = {
   active: "bg-green-500/10 text-green-600 border-green-500/30",
@@ -31,6 +33,7 @@ const TenantSubscribers = () => {
   const tenantId = tenantInfo?.tenantId;
   const { subscribers, isLoading, bulkInsert } = useTenantSubscribers(tenantId);
   const { integrations, saveIntegration, updateIntegration, triggerSync } = useTenantIntegrations(tenantId);
+  const { logs: syncLogs, isLoading: syncLogsLoading } = useSyncLogs(tenantId);
   const [search, setSearch] = useState("");
   const [subPage, setSubPage] = useState(1);
   const subPageSize = 25;
@@ -120,6 +123,9 @@ const TenantSubscribers = () => {
           </TabsTrigger>
           <TabsTrigger value="integrations" className="gap-2">
             <Plug className="h-4 w-4" /> Integrations
+          </TabsTrigger>
+          <TabsTrigger value="sync-history" className="gap-2">
+            <History className="h-4 w-4" /> Sync History
           </TabsTrigger>
         </TabsList>
 
@@ -251,6 +257,10 @@ const TenantSubscribers = () => {
               );
             })}
           </div>
+        </TabsContent>
+
+        <TabsContent value="sync-history">
+          <SyncHistoryPanel logs={syncLogs} isLoading={syncLogsLoading} />
         </TabsContent>
       </Tabs>
       {tenantId && (
