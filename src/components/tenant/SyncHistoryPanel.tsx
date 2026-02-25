@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -16,7 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle2, AlertCircle, Clock, Download } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { CheckCircle2, AlertCircle, Clock, Download, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SyncLogEntry } from "@/hooks/useSyncLogs";
 
@@ -31,6 +39,8 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
   const [page, setPage] = useState(1);
   const [providerFilter, setProviderFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
   const providerTypes = useMemo(
     () => Array.from(new Set(logs.map((l) => l.provider_type))).sort(),
@@ -41,16 +51,27 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
     return logs.filter((log) => {
       if (providerFilter !== "all" && log.provider_type !== providerFilter) return false;
       if (statusFilter !== "all" && log.status !== statusFilter) return false;
+      if (startDate) {
+        const logDate = new Date(log.created_at);
+        if (logDate < startDate) return false;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (new Date(log.created_at) > end) return false;
+      }
       return true;
     });
-  }, [logs, providerFilter, statusFilter]);
+  }, [logs, providerFilter, statusFilter, startDate, endDate]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginatedLogs = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Reset page when filters change
   const handleProviderChange = (v: string) => { setProviderFilter(v); setPage(1); };
   const handleStatusChange = (v: string) => { setStatusFilter(v); setPage(1); };
+  const handleStartDate = (d: Date | undefined) => { setStartDate(d); setPage(1); };
+  const handleEndDate = (d: Date | undefined) => { setEndDate(d); setPage(1); };
+  const hasFilters = providerFilter !== "all" || statusFilter !== "all" || !!startDate || !!endDate;
 
   const handleExportCsv = () => {
     const headers = ["Date", "Provider", "Status", "Records Synced", "Message"];
@@ -89,7 +110,7 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
 
   return (
     <>
-    <div className="flex flex-wrap gap-3 mb-4">
+    <div className="flex flex-wrap gap-3 mb-4 items-center">
       <Select value={providerFilter} onValueChange={handleProviderChange}>
         <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="All Providers" />
@@ -113,7 +134,34 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
           <SelectItem value="error">Error</SelectItem>
         </SelectContent>
       </Select>
-      {(providerFilter !== "all" || statusFilter !== "all") && (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className={cn("gap-2 text-sm", !startDate && "text-muted-foreground")}>
+            <CalendarIcon className="h-4 w-4" />
+            {startDate ? format(startDate, "MMM d, yyyy") : "From"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={startDate} onSelect={handleStartDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+        </PopoverContent>
+      </Popover>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className={cn("gap-2 text-sm", !endDate && "text-muted-foreground")}>
+            <CalendarIcon className="h-4 w-4" />
+            {endDate ? format(endDate, "MMM d, yyyy") : "To"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={endDate} onSelect={handleEndDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+        </PopoverContent>
+      </Popover>
+      {(startDate || endDate) && (
+        <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); setPage(1); }} className="gap-1 text-muted-foreground">
+          <X className="h-3.5 w-3.5" /> Clear dates
+        </Button>
+      )}
+      {hasFilters && (
         <span className="text-sm text-muted-foreground self-center">
           {filtered.length} of {logs.length} records
         </span>
