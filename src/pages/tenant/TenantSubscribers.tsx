@@ -32,7 +32,7 @@ const TenantSubscribers = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId;
   const { subscribers, isLoading, bulkInsert } = useTenantSubscribers(tenantId);
-  const { integrations, saveIntegration, updateIntegration, triggerSync } = useTenantIntegrations(tenantId);
+  const { integrations, saveIntegration, updateIntegration, triggerSync, deleteIntegration } = useTenantIntegrations(tenantId);
   const { logs: syncLogs, isLoading: syncLogsLoading } = useSyncLogs(tenantId);
   const [search, setSearch] = useState("");
   const [subPage, setSubPage] = useState(1);
@@ -253,6 +253,8 @@ const TenantSubscribers = () => {
                   }}
                   onSync={configured ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
                   isSyncing={triggerSync.isPending}
+                  onDisconnect={configured ? () => deleteIntegration.mutate(configured.id) : undefined}
+                  isDisconnecting={deleteIntegration.isPending}
                 />
               );
             })}

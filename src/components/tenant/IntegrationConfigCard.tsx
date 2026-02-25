@@ -1,7 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Settings, Clock, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
+import { Settings, Clock, AlertCircle, CheckCircle2, RefreshCw, Unplug } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface IntegrationCardProps {
   name: string;
@@ -13,7 +24,9 @@ interface IntegrationCardProps {
   lastSyncStatus?: string | null;
   onConfigure?: () => void;
   onSync?: () => void;
+  onDisconnect?: () => void;
   isSyncing?: boolean;
+  isDisconnecting?: boolean;
 }
 
 const IntegrationConfigCard = ({
@@ -25,7 +38,9 @@ const IntegrationConfigCard = ({
   lastSyncStatus,
   onConfigure,
   onSync,
+  onDisconnect,
   isSyncing,
+  isDisconnecting,
 }: IntegrationCardProps) => {
   const statusIcon = lastSyncStatus === "success" ? (
     <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -53,7 +68,7 @@ const IntegrationConfigCard = ({
             {statusIcon}
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant={comingSoon ? "secondary" : "outline"}
             size="sm"
@@ -74,6 +89,34 @@ const IntegrationConfigCard = ({
               <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
               {isSyncing ? "Syncing…" : "Sync Now"}
             </Button>
+          )}
+          {isConfigured && !comingSoon && onDisconnect && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive gap-2">
+                  <Unplug className="h-4 w-4" />
+                  Disconnect
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Disconnect {name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will remove the integration configuration and stored credentials. Subscriber records previously synced will remain, but no future syncs will occur until reconfigured.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={onDisconnect}
+                    disabled={isDisconnecting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDisconnecting ? "Disconnecting…" : "Disconnect"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       </CardContent>

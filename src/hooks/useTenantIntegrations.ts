@@ -109,5 +109,23 @@ export const useTenantIntegrations = (tenantId: string | undefined) => {
     },
   });
 
-  return { integrations, isLoading, saveIntegration, updateIntegration, triggerSync };
+  const deleteIntegration = useMutation({
+    mutationFn: async (integrationId: string) => {
+      const { error } = await supabase
+        .from("tenant_integrations")
+        .delete()
+        .eq("id", integrationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-integrations", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["tenant-sync-logs", tenantId] });
+      toast({ title: "Integration disconnected" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error disconnecting integration", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return { integrations, isLoading, saveIntegration, updateIntegration, triggerSync, deleteIntegration };
 };
