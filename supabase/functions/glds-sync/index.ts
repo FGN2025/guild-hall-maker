@@ -195,6 +195,18 @@ Deno.serve(async (req) => {
       })
       .eq("id", integrationId);
 
+    // Log sync history
+    await serviceClient.from("tenant_sync_logs").insert({
+      tenant_id: integration.tenant_id,
+      integration_id: integrationId,
+      provider_type: "glds",
+      status: syncStatus,
+      message: syncMessage,
+      records_synced: syncedCount,
+      dry_run: false,
+      triggered_by: userId,
+    });
+
     return new Response(
       JSON.stringify({ success: syncStatus === "success", message: syncMessage, count: syncedCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

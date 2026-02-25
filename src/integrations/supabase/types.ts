@@ -927,6 +927,60 @@ export type Database = {
           },
         ]
       }
+      tenant_sync_logs: {
+        Row: {
+          created_at: string
+          dry_run: boolean | null
+          id: string
+          integration_id: string
+          message: string | null
+          provider_type: string
+          records_synced: number | null
+          status: string
+          tenant_id: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          dry_run?: boolean | null
+          id?: string
+          integration_id: string
+          message?: string | null
+          provider_type: string
+          records_synced?: number | null
+          status?: string
+          tenant_id: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          dry_run?: boolean | null
+          id?: string
+          integration_id?: string
+          message?: string | null
+          provider_type?: string
+          records_synced?: number | null
+          status?: string
+          tenant_id?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_sync_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_zip_codes: {
         Row: {
           city: string | null
