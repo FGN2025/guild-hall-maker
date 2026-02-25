@@ -1,21 +1,18 @@
+## ✅ Update Prize Values to 10% — COMPLETE
 
+All demo prize values have been reduced to 10% of their original amounts.
 
-## Update Database Tournament Prize Values to 10%
+### Frontend (Hardcoded)
+- ✅ `src/components/FeaturedTournaments.tsx` — Apex ($500), Valorant ($1,000), Rocket League ($250)
+- ✅ `src/components/HeroSection.tsx` — Total Prize Pool ($8.5K)
 
-The hardcoded prizes on the homepage were already updated. Now the database-stored tournaments on the `/tournaments` page need the same treatment.
+### Database (Tournaments table)
+- ✅ Counter-Strike Pro League: $500
+- ✅ League of Legends Championship: $800
+- ✅ Minecraft Invitational: $100
+- ✅ Test Championship: $500
+- ✅ Test Tournament: $100
+- ✅ Email Test Tournament: $10
 
-### Current Values and New Values
-
-| Tournament | Current | New (10%) |
-|---|---|---|
-| Counter-Strike Pro League | $5,000 | $500 |
-| League of Legends Championship | $8,000 | $800 |
-| Minecraft Invitational | $1,000 | $100 |
-| Test Championship | $5,000 | $500 |
-| Test Tournament | $1,000 | $100 |
-| Email Test Tournament | $100 | $10 |
-
-### Implementation
-
-Run a single SQL migration to update the `prize_pool` column for all six tournaments with their new 10% values.
-
+### Not Changed
+- `src/pages/Terms.tsx` — $600 tax threshold (IRS legal reference, not a demo prize)
