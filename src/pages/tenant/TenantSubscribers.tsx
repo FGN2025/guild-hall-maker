@@ -7,7 +7,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,11 @@ const TenantSubscribers = () => {
   const { subscribers, isLoading, bulkInsert } = useTenantSubscribers(tenantId);
   const { integrations, saveIntegration, updateIntegration, triggerSync, deleteIntegration } = useTenantIntegrations(tenantId);
   const { logs: syncLogs, isLoading: syncLogsLoading } = useSyncLogs(tenantId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "subscribers";
+  const setActiveTab = (tab: string) => {
+    setSearchParams(tab === "subscribers" ? {} : { tab }, { replace: true });
+  };
   const [search, setSearch] = useState("");
   const [subPage, setSubPage] = useState(1);
   const subPageSize = 25;
@@ -113,7 +118,7 @@ const TenantSubscribers = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="subscribers">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="subscribers" className="gap-2">
             <Users className="h-4 w-4" /> Subscribers

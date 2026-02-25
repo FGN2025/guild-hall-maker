@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 interface TenantSidebarProps {
@@ -12,6 +12,7 @@ const allSidebarItems = [
   { to: "/tenant/leads", label: "Leads", icon: Users, roles: ['admin', 'manager'] },
   { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin, roles: ['admin'] },
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin'] },
+  { to: "/tenant/subscribers?tab=integrations", label: "Integrations", icon: Plug, roles: ['admin'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
 ];
 
@@ -38,10 +39,15 @@ const TenantSidebar = ({ tenantName, tenantRole }: TenantSidebarProps) => {
       </div>
       <nav className="flex-1 p-4 flex flex-col gap-1">
         {sidebarItems.map((item) => {
-          const active =
-            item.to === "/tenant"
-              ? location.pathname === "/tenant"
-              : location.pathname.startsWith(item.to);
+          const isIntegrationsLink = item.to.includes("?tab=integrations");
+          const currentSearch = location.search;
+          const active = item.to === "/tenant"
+            ? location.pathname === "/tenant"
+            : isIntegrationsLink
+              ? location.pathname === "/tenant/subscribers" && currentSearch.includes("tab=integrations")
+              : item.to === "/tenant/subscribers"
+                ? location.pathname === "/tenant/subscribers" && !currentSearch.includes("tab=integrations")
+                : location.pathname.startsWith(item.to);
           return (
             <Link
               key={item.to}
