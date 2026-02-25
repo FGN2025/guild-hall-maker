@@ -1,17 +1,21 @@
 
 
-## Update Demo Prize Values to 10%
+## Update Database Tournament Prize Values to 10%
 
-Three files contain hardcoded prize amounts that need to be reduced to 10% of their current values:
+The hardcoded prizes on the homepage were already updated. Now the database-stored tournaments on the `/tournaments` page need the same treatment.
 
-### 1. `src/components/FeaturedTournaments.tsx`
-- Apex Legends Showdown: `$5,000` → `$500`
-- Valorant Masters Cup: `$10,000` → `$1,000`
-- Rocket League Blitz: `$2,500` → `$250`
+### Current Values and New Values
 
-### 2. `src/components/HeroSection.tsx`
-- Total Prize Pool stat: `$85K` → `$8.5K`
+| Tournament | Current | New (10%) |
+|---|---|---|
+| Counter-Strike Pro League | $5,000 | $500 |
+| League of Legends Championship | $8,000 | $800 |
+| Minecraft Invitational | $1,000 | $100 |
+| Test Championship | $5,000 | $500 |
+| Test Tournament | $1,000 | $100 |
+| Email Test Tournament | $100 | $10 |
 
-### 3. `src/pages/Terms.tsx`
-- Tax threshold reference (`$600`) -- this is a legal/IRS reference, not a demo prize, so it will **not** be changed.
+### Implementation
+
+Run a single SQL migration to update the `prize_pool` column for all six tournaments with their new 10% values.
 
