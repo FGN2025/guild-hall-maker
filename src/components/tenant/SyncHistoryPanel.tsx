@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { SyncLogEntry } from "@/hooks/useSyncLogs";
 
 interface SyncHistoryPanelProps {
@@ -50,6 +51,25 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
   // Reset page when filters change
   const handleProviderChange = (v: string) => { setProviderFilter(v); setPage(1); };
   const handleStatusChange = (v: string) => { setStatusFilter(v); setPage(1); };
+
+  const handleExportCsv = () => {
+    const headers = ["Date", "Provider", "Status", "Records Synced", "Message"];
+    const rows = filtered.map((log) => [
+      new Date(log.created_at).toLocaleString(),
+      log.provider_type.toUpperCase(),
+      log.status,
+      String(log.records_synced),
+      log.message || "",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sync-history-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (isLoading) {
     return (
@@ -98,6 +118,12 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
           {filtered.length} of {logs.length} records
         </span>
       )}
+      <div className="ml-auto">
+        <Button variant="outline" size="sm" onClick={handleExportCsv} className="gap-2">
+          <Download className="h-4 w-4" />
+          Export CSV
+        </Button>
+      </div>
     </div>
     {filtered.length === 0 ? (
       <div className="text-center py-8 text-muted-foreground">
