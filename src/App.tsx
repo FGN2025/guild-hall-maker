@@ -44,6 +44,7 @@ import TenantLeads from "./pages/tenant/TenantLeads";
 import TenantZipCodes from "./pages/tenant/TenantZipCodes";
 import TenantSubscribers from "./pages/tenant/TenantSubscribers";
 import TenantTeam from "./pages/tenant/TenantTeam";
+import TenantSettings from "./pages/tenant/TenantSettings";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookieConsent from "./components/CookieConsent";
@@ -107,6 +108,7 @@ const App = () => (
             <Route path="/tenant/zip-codes" element={<TenantRoute><TenantZipCodes /></TenantRoute>} />
             <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
             <Route path="/tenant/team" element={<TenantRoute><TenantTeam /></TenantRoute>} />
+            <Route path="/tenant/settings" element={<TenantRoute><TenantSettings /></TenantRoute>} />
 
             <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<NotFound />} />

@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 interface TenantSidebarProps {
   tenantName: string;
   tenantRole: 'admin' | 'manager';
+  logoUrl?: string | null;
 }
 
 const allSidebarItems = [
@@ -14,6 +15,7 @@ const allSidebarItems = [
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin'] },
   { to: "/tenant/subscribers?tab=integrations", label: "Integrations", icon: Plug, roles: ['admin'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
+  { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin'] },
 ];
 
 const ecosystemApps = [
@@ -22,7 +24,7 @@ const ecosystemApps = [
   { target: "hub" as const, label: "Hub" },
 ];
 
-const TenantSidebar = ({ tenantName, tenantRole }: TenantSidebarProps) => {
+const TenantSidebar = ({ tenantName, tenantRole, logoUrl }: TenantSidebarProps) => {
   const location = useLocation();
   const { requestMagicLink, loading } = useEcosystemAuth();
 
@@ -30,13 +32,22 @@ const TenantSidebar = ({ tenantName, tenantRole }: TenantSidebarProps) => {
 
   return (
     <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
-      <div className="p-6 border-b border-border">
-        <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading mb-1">
-          Tenant Admin
-        </p>
-        <h2 className="font-display text-lg font-bold text-primary tracking-wider truncate">
-          {tenantName}
-        </h2>
+      <div className="p-6 border-b border-border flex items-center gap-3">
+        {logoUrl ? (
+          <img src={logoUrl} alt={tenantName} className="h-10 w-10 rounded-lg object-contain shrink-0" />
+        ) : (
+          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <span className="font-display text-sm font-bold text-primary">{tenantName.charAt(0)}</span>
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading mb-0.5">
+            Tenant Admin
+          </p>
+          <h2 className="font-display text-sm font-bold text-primary tracking-wider truncate">
+            {tenantName}
+          </h2>
+        </div>
       </div>
       <nav className="flex-1 p-4 flex flex-col gap-1">
         {sidebarItems.map((item) => {

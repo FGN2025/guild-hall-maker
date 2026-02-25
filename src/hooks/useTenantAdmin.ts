@@ -7,6 +7,7 @@ interface TenantAdminInfo {
   tenantName: string;
   tenantSlug: string;
   tenantRole: 'admin' | 'manager';
+  logoUrl: string | null;
 }
 
 export function useTenantAdmin() {
@@ -28,7 +29,7 @@ export function useTenantAdmin() {
       const tenantIds = adminRows.map((r: any) => r.tenant_id);
       const { data: tenants, error: tErr } = await supabase
         .from("tenants")
-        .select("id, name, slug")
+        .select("id, name, slug, logo_url")
         .in("id", tenantIds)
         .eq("status", "active");
 
@@ -43,6 +44,7 @@ export function useTenantAdmin() {
         tenantName: t.name,
         tenantSlug: t.slug,
         tenantRole: (matchingAdmin?.role === 'manager' ? 'manager' : 'admin') as 'admin' | 'manager',
+        logoUrl: t.logo_url || null,
       } as TenantAdminInfo;
     },
   });
