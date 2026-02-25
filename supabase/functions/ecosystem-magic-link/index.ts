@@ -9,6 +9,7 @@ const corsHeaders = {
 const TARGET_URLS: Record<string, string> = {
   manage: "https://manage.fgn.gg",
   hub: "https://hub.fgn.gg",
+  play: "https://play.fgn.gg",
 };
 
 Deno.serve(async (req) => {
