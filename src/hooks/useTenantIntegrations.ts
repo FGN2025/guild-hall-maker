@@ -87,8 +87,9 @@ export const useTenantIntegrations = (tenantId: string | undefined) => {
   });
 
   const triggerSync = useMutation({
-    mutationFn: async ({ integrationId, dryRun }: { integrationId: string; dryRun?: boolean }) => {
-      const { data, error } = await supabase.functions.invoke("nisc-sync", {
+    mutationFn: async ({ integrationId, dryRun, providerType }: { integrationId: string; dryRun?: boolean; providerType?: string }) => {
+      const functionName = providerType === "glds" ? "glds-sync" : "nisc-sync";
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { integrationId, dryRun },
       });
       if (error) throw error;
