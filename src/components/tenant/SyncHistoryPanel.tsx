@@ -226,6 +226,11 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
         </TableBody>
       </Table>
     </div>
+    <div className="flex flex-wrap gap-4 mt-3 px-1 text-sm text-muted-foreground">
+      <span>Total synced: <span className="font-medium text-foreground">{filtered.reduce((sum, l) => sum + l.records_synced, 0)}</span></span>
+      <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> {filtered.filter(l => l.status === "success").length} success</span>
+      <span className="flex items-center gap-1"><AlertCircle className="h-3.5 w-3.5 text-destructive" /> {filtered.filter(l => l.status === "error").length} errors</span>
+    </div>
     {totalPages > 1 && (
       <Pagination className="mt-4">
         <PaginationContent>
