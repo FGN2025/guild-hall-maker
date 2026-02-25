@@ -26,15 +26,17 @@ export function useEcosystemAuth() {
         body: { target },
       });
 
-      if (res.error) {
-        const msg = res.error.message || "Failed to send magic link";
+      if (res.error || !res.data?.magicLink) {
+        const msg = res.error?.message || "Failed to generate magic link";
         toast({ title: "Error", description: msg, variant: "destructive" });
         return;
       }
 
+      window.open(res.data.magicLink, "_blank");
+
       toast({
-        title: "Magic link sent!",
-        description: `Check your email for a login link to ${APP_LABELS[target]}.`,
+        title: `Opening ${APP_LABELS[target]}...`,
+        description: "A new tab should open shortly.",
       });
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Something went wrong", variant: "destructive" });
