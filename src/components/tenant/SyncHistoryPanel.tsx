@@ -156,15 +156,15 @@ const SyncHistoryPanel = ({ logs, isLoading }: SyncHistoryPanelProps) => {
           <Calendar mode="single" selected={endDate} onSelect={handleEndDate} initialFocus className={cn("p-3 pointer-events-auto")} />
         </PopoverContent>
       </Popover>
-      {(startDate || endDate) && (
-        <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); setPage(1); }} className="gap-1 text-muted-foreground">
-          <X className="h-3.5 w-3.5" /> Clear dates
-        </Button>
-      )}
       {hasFilters && (
-        <span className="text-sm text-muted-foreground self-center">
-          {filtered.length} of {logs.length} records
-        </span>
+        <>
+          <Button variant="ghost" size="sm" onClick={() => { setProviderFilter("all"); setStatusFilter("all"); setStartDate(undefined); setEndDate(undefined); setPage(1); }} className="gap-1 text-muted-foreground">
+            <X className="h-3.5 w-3.5" /> Clear all
+          </Button>
+          <span className="text-sm text-muted-foreground self-center">
+            {filtered.length} of {logs.length} records
+          </span>
+        </>
       )}
       <div className="ml-auto">
         <Button variant="outline" size="sm" onClick={handleExportCsv} className="gap-2">
