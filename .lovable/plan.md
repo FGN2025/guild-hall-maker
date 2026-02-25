@@ -1,24 +1,25 @@
 
 
-## Make Integrations More Discoverable
+## Quick Fix: Direct Magic Link Redirect (Skip Email)
 
-Right now, the Integrations tab is hidden inside the Subscribers page — users have to navigate to Subscribers and then click the "Integrations" tab. This plan adds a dedicated **Integrations** sidebar link that navigates directly to the Subscribers page with the Integrations tab pre-selected.
+Instead of sending an email via Resend (which fails due to unverified domain), the edge function will return the magic link URL directly, and the frontend will open it in a new tab for instant access.
 
 ### Changes
 
-**1. Add "Integrations" link to the Tenant Sidebar** (`src/components/tenant/TenantSidebar.tsx`)
-- Add a new entry to `allSidebarItems` with a `Plug` icon (from lucide-react), label "Integrations", route `/tenant/subscribers?tab=integrations`, and restricted to `admin` role.
-- Position it right after the existing "Subscribers" entry so the two related items are grouped together.
-- Update the `active` detection logic so this item highlights when the current URL includes `tab=integrations`.
+**1. Edge Function (`supabase/functions/ecosystem-magic-link/index.ts`)**
+- Remove the Resend email-sending block entirely
+- Return `{ success: true, magicLink: "<url>" }` in the response instead of sending an email
 
-**2. Update TenantSubscribers to read the tab from URL** (`src/pages/tenant/TenantSubscribers.tsx`)
-- Read the `tab` query parameter from the URL using `useSearchParams`.
-- Use it to control the `Tabs` component's `value` / `onValueChange` so that navigating to `?tab=integrations` opens the Integrations tab directly.
-- When a user clicks a different tab, update the URL query param to keep things in sync (so the sidebar highlight stays accurate and the URL is shareable).
+**2. Frontend Hook (`src/hooks/useEcosystemAuth.ts`)**
+- Update `requestMagicLink` to read `magicLink` from the response
+- Open the URL in a new browser tab via `window.open()`
+- Change the success toast to say "Opening [App Name]..." instead of "Check your email"
 
-### Result
-- A clearly visible **Integrations** link with a plug icon appears in the sidebar for admin users.
-- Clicking it jumps straight to the Integrations tab — no extra clicks needed.
-- The sidebar link highlights correctly when viewing integrations.
-- All existing tab navigation within the Subscribers page continues to work normally.
+### What stays the same
+- All authentication, role checks, and token generation logic in the edge function remain unchanged
+- The `ecosystem_auth_tokens` table and token validation flow are untouched
+- Sidebar UI in both Admin and Tenant panels stays as-is
+
+### Pre-launch note
+Before launch, verify the `fgn.gg` domain in Resend, update the `from` address, and revert to email-based delivery for better security.
 
