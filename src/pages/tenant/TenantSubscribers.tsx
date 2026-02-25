@@ -245,7 +245,7 @@ const TenantSubscribers = () => {
                       setConfigDialogOpen(true);
                     }
                   }}
-                  onSync={configured ? () => triggerSync.mutate({ integrationId: configured.id }) : undefined}
+                  onSync={configured ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
                   isSyncing={triggerSync.isPending}
                 />
               );
@@ -267,7 +267,7 @@ const TenantSubscribers = () => {
             updateIntegration.mutate({ id, ...fields } as any, { onSuccess: () => setConfigDialogOpen(false) });
           }}
           onTestConnection={async (integrationId) => {
-            const result = await triggerSync.mutateAsync({ integrationId, dryRun: true });
+            const result = await triggerSync.mutateAsync({ integrationId, dryRun: true, providerType: selectedProviderType });
             return result;
           }}
           isSaving={saveIntegration.isPending || updateIntegration.isPending}
