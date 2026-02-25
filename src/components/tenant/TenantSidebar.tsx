@@ -17,6 +17,7 @@ const allSidebarItems = [
 ];
 
 const ecosystemApps = [
+  { target: "play" as const, label: "Play" },
   { target: "manage" as const, label: "Manage" },
   { target: "hub" as const, label: "Hub" },
 ];
