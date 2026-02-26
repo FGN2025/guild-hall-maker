@@ -1,52 +1,39 @@
 
 
-## Add Admin-Configurable Image Upload Limits
+## Add Enable/Disable Checkbox for Each Image Upload Limit Preset
 
 ### Overview
-Store image validation limits in the `app_settings` table as a JSON value, add a UI section to the Admin Settings page to configure them, and update the validation logic to fetch these settings at runtime instead of using hardcoded values.
+Add a checkbox next to each preset row in the Admin Settings "Image Upload Limits" section. When unchecked, validation for that preset is skipped entirely, allowing unrestricted uploads. The enabled/disabled state is stored alongside the existing limit values in the same JSON setting.
 
-### 1. Insert a new `app_settings` row for image limits
-Insert a row with `key = "image_upload_limits"` and a JSON `value` containing the current defaults:
-```json
-{
-  "cardCover": { "maxSizeKB": 500, "minWidth": 640, "minHeight": 360 },
-  "heroBanner": { "maxSizeKB": 800, "minWidth": 1280, "minHeight": 720 },
-  "tournamentHero": { "maxSizeKB": 500, "minWidth": 640, "minHeight": 360 },
-  "avatar": { "maxSizeKB": 100, "minWidth": 128, "minHeight": 128 },
-  "general": { "maxSizeKB": 800 }
-}
-```
+### 1. Update `LimitEntry` interface and defaults in `AdminSettings.tsx`
+- Add an `enabled: boolean` field to `LimitEntry` (default `true`)
+- Update `getDefaults()` to include `enabled: true` for each preset
+- Add a 5th column header "Enabled" to the grid
+- Add a `Checkbox` component in each row that toggles the `enabled` field
+- Disable (grey out) the numeric inputs when the preset is unchecked
+- Import `Checkbox` from `@/components/ui/checkbox`
 
-### 2. Create a hook to fetch image limits (`src/hooks/useImageLimits.ts`)
-- Query `app_settings` for `key = "image_upload_limits"`.
-- Parse the JSON value and merge with hardcoded defaults from `IMAGE_PRESETS` as fallback.
-- Export a function `getPreset(name)` that returns merged `ImageValidationRules`.
-- Cache with React Query so it's fetched once and shared app-wide.
+### 2. Update the grid layout
+- Change `grid-cols-4` to `grid-cols-5` for both header and data rows
+- The first column becomes the checkbox, followed by Preset name, Max Size, Min Width, Min Height
 
-### 3. Update `src/lib/imageValidation.ts`
-- Add a new `validateAndToastWithOverrides(file, presetName, overrides?)` function that accepts dynamic rules.
-- Keep the existing `validateAndToast` working as a fallback so nothing breaks immediately.
+### 3. Update `useImageLimits.ts` hook
+- Add `enabled?: boolean` to the `OverrideEntry` interface
+- In `getPreset()`, when `enabled` is explicitly `false`, return rules with extremely permissive values (e.g., `maxSizeKB: 999999`, no dimension constraints) so validation effectively passes everything
+- This keeps the validation pipeline intact without needing conditional skips in every upload component
 
-### 4. Update all upload components to use dynamic limits
-Update these 6 files to fetch limits from the hook instead of hardcoded `IMAGE_PRESETS`:
-- `src/components/games/AddGameDialog.tsx`
-- `src/components/tournaments/CreateTournamentDialog.tsx`
-- `src/components/tournaments/EditTournamentDialog.tsx`
-- `src/components/moderator/PrizeFormDialog.tsx`
-- `src/components/media/MediaUploader.tsx`
-- `src/pages/admin/AdminTenants.tsx`
-
-Each will call the hook and pass the dynamic rules to validation.
-
-### 5. Add Image Limits section to Admin Settings (`src/pages/admin/AdminSettings.tsx`)
-Add a new card section with:
-- A row for each preset (Card Cover, Hero Banner, Tournament Hero, Avatar, General)
-- Editable fields: Max File Size (KB), Min Width (px), Min Height (px)
-- A Save button that writes the JSON back to `app_settings`
-- Clear labeling so admins understand the impact of each setting
+### 4. Persist the `enabled` state
+- The existing JSON save/load already handles arbitrary fields -- the `enabled` boolean will be included automatically when saving `imgLimits` to `app_settings`
 
 ### Technical Details
-- The `app_settings` table already exists with admin-only write RLS and public read -- no schema changes needed.
-- The JSON value approach keeps it flexible without adding new database tables.
-- Hardcoded defaults in `IMAGE_PRESETS` remain as fallbacks if the setting hasn't been configured yet.
+
+**AdminSettings.tsx changes:**
+- Import `Checkbox` from UI components
+- Add `enabled` to `LimitEntry` interface
+- Update grid to 5 columns with checkbox in first position
+- Inputs are visually disabled (reduced opacity + `disabled` prop) when unchecked
+- `getDefaults()` sets `enabled: true` for all presets
+
+**useImageLimits.ts changes:**
+- When `enabled === false`, `getPreset()` returns a no-op ruleset: `{ maxSizeKB: Infinity, label: base.label }` -- no format, size, or dimension checks will trigger
 
