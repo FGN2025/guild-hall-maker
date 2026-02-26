@@ -12,7 +12,8 @@ import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
+import { validateAndToast } from "@/lib/imageValidation";
+import { useImageLimits } from "@/hooks/useImageLimits";
 
 interface TournamentData {
   id: string;
@@ -44,6 +45,7 @@ interface Props {
 
 const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const { user } = useAuth();
+  const { getPreset } = useImageLimits();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
@@ -78,7 +80,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const valid = await validateAndToast(file, IMAGE_PRESETS.tournamentHero);
+    const valid = await validateAndToast(file, getPreset("tournamentHero"));
     if (!valid) { e.target.value = ""; return; }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));

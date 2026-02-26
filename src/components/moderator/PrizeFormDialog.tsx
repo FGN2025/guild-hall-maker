@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImagePlus, X } from "lucide-react";
-import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
+import { validateAndToast } from "@/lib/imageValidation";
+import { useImageLimits } from "@/hooks/useImageLimits";
 
 export interface PrizeFormValues {
   name: string;
@@ -26,6 +27,7 @@ interface PrizeFormDialogProps {
 const empty: PrizeFormValues = { name: "", description: "", points_cost: "", quantity_available: "" };
 
 const PrizeFormDialog = ({ open, onOpenChange, title, initial, onSubmit, isPending }: PrizeFormDialogProps) => {
+  const { getPreset } = useImageLimits();
   const [form, setForm] = useState<PrizeFormValues>(initial ?? empty);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(initial?.image_url ?? null);
@@ -42,7 +44,7 @@ const PrizeFormDialog = ({ open, onOpenChange, title, initial, onSubmit, isPendi
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const ok = await validateAndToast(file, IMAGE_PRESETS.cardCover);
+    const ok = await validateAndToast(file, getPreset("cardCover"));
     if (!ok) { e.target.value = ""; return; }
     setImageFile(file);
     setPreview(URL.createObjectURL(file));
