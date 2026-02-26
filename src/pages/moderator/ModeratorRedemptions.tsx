@@ -5,15 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift, Plus, Package, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Gift, Plus, Package, CheckCircle, XCircle, Clock, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import PrizeFormDialog, { type PrizeFormValues } from "@/components/moderator/PrizeFormDialog";
 
 const statusConfig: Record<string, { color: string; icon: any }> = {
   pending: { color: "bg-yellow-500/20 text-yellow-400", icon: Clock },
@@ -22,11 +19,19 @@ const statusConfig: Record<string, { color: string; icon: any }> = {
   fulfilled: { color: "bg-primary/20 text-primary", icon: Package },
 };
 
+async function uploadPrizeImage(file: File, label: string): Promise<string> {
+  const path = `prizes/${Date.now()}-${file.name}`;
+  const { error } = await supabase.storage.from("app-media").upload(path, file);
+  if (error) throw new Error(`Image upload failed: ${error.message}`);
+  const { data } = supabase.storage.from("app-media").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 const ModeratorRedemptions = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", points_cost: "", quantity_available: "" });
+  const [editPrize, setEditPrize] = useState<any | null>(null);
 
   // Prizes
   const { data: prizes = [], isLoading: prizesLoading } = useQuery({
@@ -68,22 +73,46 @@ const ModeratorRedemptions = () => {
   });
 
   const createPrizeMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ values, imageFile }: { values: PrizeFormValues; imageFile: File | null }) => {
       if (!user) throw new Error("Not authenticated");
+      let image_url: string | null = null;
+      if (imageFile) image_url = await uploadPrizeImage(imageFile, "prize");
       const { error } = await supabase.from("prizes").insert({
-        name: form.name,
-        description: form.description || null,
-        points_cost: parseInt(form.points_cost) || 0,
-        quantity_available: form.quantity_available ? parseInt(form.quantity_available) : null,
+        name: values.name,
+        description: values.description || null,
+        points_cost: parseInt(values.points_cost) || 0,
+        quantity_available: values.quantity_available ? parseInt(values.quantity_available) : null,
+        image_url,
         created_by: user.id,
-      } as any);
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mod-prizes"] });
       toast.success("Prize created!");
       setCreateOpen(false);
-      setForm({ name: "", description: "", points_cost: "", quantity_available: "" });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updatePrizeMutation = useMutation({
+    mutationFn: async ({ id, values, imageFile }: { id: string; values: PrizeFormValues; imageFile: File | null }) => {
+      let image_url: string | undefined;
+      if (imageFile) image_url = await uploadPrizeImage(imageFile, "prize");
+      const payload: any = {
+        name: values.name,
+        description: values.description || null,
+        points_cost: parseInt(values.points_cost) || 0,
+        quantity_available: values.quantity_available ? parseInt(values.quantity_available) : null,
+      };
+      if (image_url !== undefined) payload.image_url = image_url;
+      const { error } = await supabase.from("prizes").update(payload).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mod-prizes"] });
+      toast.success("Prize updated!");
+      setEditPrize(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -206,39 +235,9 @@ const ModeratorRedemptions = () => {
 
         <TabsContent value="catalog">
           <div className="flex justify-end mb-4">
-            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="h-4 w-4" /> Add Prize</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="font-display">Add Prize</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-2">
-                  <div className="space-y-2">
-                    <Label>Name *</Label>
-                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Prize name..." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Prize description..." />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Points Cost</Label>
-                      <Input type="number" min={0} value={form.points_cost} onChange={(e) => setForm({ ...form, points_cost: e.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Quantity (blank = unlimited)</Label>
-                      <Input type="number" min={0} value={form.quantity_available} onChange={(e) => setForm({ ...form, quantity_available: e.target.value })} />
-                    </div>
-                  </div>
-                  <Button onClick={() => createPrizeMutation.mutate()} disabled={createPrizeMutation.isPending || !form.name.trim()} className="w-full">
-                    {createPrizeMutation.isPending ? "Adding..." : "Add Prize"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" /> Add Prize
+            </Button>
           </div>
 
           {prizesLoading ? (
@@ -256,13 +255,28 @@ const ModeratorRedemptions = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {prizes.map((p: any) => (
                 <Card key={p.id} className={!p.is_active ? "opacity-50" : ""}>
+                  {p.image_url && (
+                    <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="font-display text-base">{p.name}</CardTitle>
-                      <Switch
-                        checked={p.is_active}
-                        onCheckedChange={(checked) => togglePrizeMutation.mutate({ id: p.id, is_active: checked })}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setEditPrize(p)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Switch
+                          checked={p.is_active}
+                          onCheckedChange={(checked) => togglePrizeMutation.mutate({ id: p.id, is_active: checked })}
+                        />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -280,6 +294,31 @@ const ModeratorRedemptions = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Create dialog */}
+      <PrizeFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="Add Prize"
+        onSubmit={(values, imageFile) => createPrizeMutation.mutate({ values, imageFile })}
+        isPending={createPrizeMutation.isPending}
+      />
+
+      {/* Edit dialog */}
+      <PrizeFormDialog
+        open={!!editPrize}
+        onOpenChange={(open) => { if (!open) setEditPrize(null); }}
+        title="Edit Prize"
+        initial={editPrize ? {
+          name: editPrize.name,
+          description: editPrize.description ?? "",
+          points_cost: String(editPrize.points_cost),
+          quantity_available: editPrize.quantity_available != null ? String(editPrize.quantity_available) : "",
+          image_url: editPrize.image_url,
+        } : undefined}
+        onSubmit={(values, imageFile) => updatePrizeMutation.mutate({ id: editPrize.id, values, imageFile })}
+        isPending={updatePrizeMutation.isPending}
+      />
     </div>
   );
 };
