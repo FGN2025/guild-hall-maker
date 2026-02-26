@@ -46,10 +46,12 @@ const TickerEmbed = () => {
 
   return (
     <section className="w-full">
-      <div
-        ref={containerRef}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <div className="container mx-auto px-4">
+        <div
+          ref={containerRef}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
     </section>
   );
 };
