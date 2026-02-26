@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift, Plus, Package, CheckCircle, XCircle, Clock, Pencil } from "lucide-react";
+import { Gift, Plus, Package, CheckCircle, XCircle, Clock, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PrizeFormDialog, { type PrizeFormValues } from "@/components/moderator/PrizeFormDialog";
 
 const statusConfig: Record<string, { color: string; icon: any }> = {
@@ -32,6 +33,7 @@ const ModeratorRedemptions = () => {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [editPrize, setEditPrize] = useState<any | null>(null);
+  const [deletePrize, setDeletePrize] = useState<any | null>(null);
 
   // Prizes
   const { data: prizes = [], isLoading: prizesLoading } = useQuery({
@@ -129,6 +131,19 @@ const ModeratorRedemptions = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mod-prizes"] });
       toast.success("Updated!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deletePrizeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("prizes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mod-prizes"] });
+      toast.success("Prize deleted!");
+      setDeletePrize(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -283,6 +298,14 @@ const ModeratorRedemptions = () => {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => setDeletePrize(p)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                         <Switch
                           checked={p.is_active}
                           onCheckedChange={(checked) => togglePrizeMutation.mutate({ id: p.id, is_active: checked })}
@@ -330,6 +353,27 @@ const ModeratorRedemptions = () => {
         onSubmit={(values, imageFile) => updatePrizeMutation.mutate({ id: editPrize.id, values, imageFile })}
         isPending={updatePrizeMutation.isPending}
       />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deletePrize} onOpenChange={(open) => { if (!open) setDeletePrize(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Prize</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletePrize?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deletePrizeMutation.mutate(deletePrize.id)}
+            >
+              {deletePrizeMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
