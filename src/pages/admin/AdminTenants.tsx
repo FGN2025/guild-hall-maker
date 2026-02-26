@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTenants, useTenantAdmins } from "@/hooks/useTenants";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,13 +19,104 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Trash2, Building2, Users, UserPlus } from "lucide-react";
+import { Plus, Trash2, Building2, Users, UserPlus, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
 
+/* ─── Logo upload helper ─── */
+async function uploadTenantLogo(file: File, tenantId: string): Promise<string> {
+  const ext = file.name.split(".").pop() ?? "png";
+  const filePath = `tenant-logos/${tenantId}.${ext}`;
+  const { error } = await supabase.storage.from("app-media").upload(filePath, file, {
+    contentType: file.type,
+    upsert: true,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("app-media").getPublicUrl(filePath);
+  return data.publicUrl;
+}
+
+/* ─── Inline logo picker component ─── */
+function LogoPicker({
+  logoUrl,
+  onUploaded,
+  uploading,
+  setUploading,
+  tenantId,
+}: {
+  logoUrl: string | null;
+  onUploaded: (url: string) => void;
+  uploading: boolean;
+  setUploading: (v: boolean) => void;
+  tenantId?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    const ok = await validateAndToast(file, IMAGE_PRESETS.avatar);
+    if (!ok) return;
+    setUploading(true);
+    try {
+      const id = tenantId ?? crypto.randomUUID();
+      const url = await uploadTenantLogo(file, id);
+      onUploaded(url);
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      {logoUrl ? (
+        <div className="relative h-14 w-14 rounded-lg border border-border overflow-hidden">
+          <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
+          <button
+            type="button"
+            className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
+            onClick={() => onUploaded("")}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <div className="h-14 w-14 rounded-lg border-2 border-dashed border-border flex items-center justify-center">
+          <Building2 className="h-5 w-5 text-muted-foreground" />
+        </div>
+      )}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={uploading}
+        onClick={() => inputRef.current?.click()}
+        className="gap-1"
+      >
+        <Upload className="h-3.5 w-3.5" />
+        {uploading ? "Uploading..." : "Upload Logo"}
+      </Button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleFile(f);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
+/* ─── Main page ─── */
 const AdminTenants = () => {
   const { tenants, isLoading, createTenant, updateTenant, deleteTenant } = useTenants();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", slug: "", contact_email: "" });
+  const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "" });
+  const [logoUploading, setLogoUploading] = useState(false);
 
   // Admin assignment sheet
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
@@ -41,10 +132,11 @@ const AdminTenants = () => {
         name: form.name.trim(),
         slug: form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-"),
         contact_email: form.contact_email.trim() || undefined,
+        logo_url: form.logo_url || undefined,
       },
       {
         onSuccess: () => {
-          setForm({ name: "", slug: "", contact_email: "" });
+          setForm({ name: "", slug: "", contact_email: "", logo_url: "" });
           setCreateOpen(false);
         },
       }
@@ -57,6 +149,10 @@ const AdminTenants = () => {
       name,
       slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
     });
+  };
+
+  const handleInlineLogoUpdate = async (tenantId: string, url: string) => {
+    updateTenant.mutate({ id: tenantId, logo_url: url || null });
   };
 
   return (
@@ -80,6 +176,15 @@ const AdminTenants = () => {
                 <DialogTitle className="font-display">New Provider</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>Company Logo</Label>
+                  <LogoPicker
+                    logoUrl={form.logo_url || null}
+                    onUploaded={(url) => setForm({ ...form, logo_url: url })}
+                    uploading={logoUploading}
+                    setUploading={setLogoUploading}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>Company Name</Label>
                   <Input
@@ -108,7 +213,7 @@ const AdminTenants = () => {
                 </div>
                 <Button
                   onClick={handleCreate}
-                  disabled={createTenant.isPending}
+                  disabled={createTenant.isPending || logoUploading}
                   className="w-full"
                 >
                   {createTenant.isPending ? "Creating..." : "Create Provider"}
@@ -128,60 +233,16 @@ const AdminTenants = () => {
         ) : (
           <div className="grid gap-4">
             {tenants.map((t) => (
-              <div
+              <TenantCard
                 key={t.id}
-                className="border border-border rounded-lg p-4 flex items-center justify-between bg-card"
-              >
-                <div className="flex items-center gap-4">
-                  {t.logo_url ? (
-                    <img
-                      src={t.logo_url}
-                      alt={t.name}
-                      className="h-10 w-10 rounded object-contain"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                      <Building2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-heading font-semibold text-foreground">{t.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      /{t.slug}
-                      {t.contact_email && ` · ${t.contact_email}`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant={t.status === "active" ? "default" : "secondary"}>
-                    {t.status}
-                  </Badge>
-                  <Switch
-                    checked={t.status === "active"}
-                    onCheckedChange={(checked) =>
-                      updateTenant.mutate({
-                        id: t.id,
-                        status: checked ? "active" : "inactive",
-                      })
-                    }
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1"
-                    onClick={() => setSelectedTenantId(t.id)}
-                  >
-                    <Users className="h-4 w-4" /> Admins
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteTenant.mutate(t.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
+                tenant={t}
+                onToggleStatus={(checked) =>
+                  updateTenant.mutate({ id: t.id, status: checked ? "active" : "inactive" })
+                }
+                onLogoUpdated={(url) => handleInlineLogoUpdate(t.id, url)}
+                onOpenAdmins={() => setSelectedTenantId(t.id)}
+                onDelete={() => deleteTenant.mutate(t.id)}
+              />
             ))}
           </div>
         )}
@@ -204,6 +265,57 @@ const AdminTenants = () => {
   );
 };
 
+/* ─── Tenant card with inline logo edit ─── */
+function TenantCard({
+  tenant: t,
+  onToggleStatus,
+  onLogoUpdated,
+  onOpenAdmins,
+  onDelete,
+}: {
+  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string };
+  onToggleStatus: (checked: boolean) => void;
+  onLogoUpdated: (url: string) => void;
+  onOpenAdmins: () => void;
+  onDelete: () => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  return (
+    <div className="border border-border rounded-lg p-4 flex items-center justify-between bg-card">
+      <div className="flex items-center gap-4">
+        <LogoPicker
+          logoUrl={t.logo_url}
+          onUploaded={onLogoUpdated}
+          uploading={uploading}
+          setUploading={setUploading}
+          tenantId={t.id}
+        />
+        <div>
+          <h3 className="font-heading font-semibold text-foreground">{t.name}</h3>
+          <p className="text-xs text-muted-foreground">
+            /{t.slug}
+            {t.contact_email && ` · ${t.contact_email}`}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge variant={t.status === "active" ? "default" : "secondary"}>
+          {t.status}
+        </Badge>
+        <Switch checked={t.status === "active"} onCheckedChange={onToggleStatus} />
+        <Button variant="outline" size="sm" className="gap-1" onClick={onOpenAdmins}>
+          <Users className="h-4 w-4" /> Admins
+        </Button>
+        <Button variant="ghost" size="icon" onClick={onDelete}>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Admin panel (unchanged logic) ─── */
 function TenantAdminPanel({ tenantId }: { tenantId: string }) {
   const { admins, isLoading, addAdmin, removeAdmin } = useTenantAdmins(tenantId);
   const [email, setEmail] = useState("");
@@ -217,7 +329,6 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
     }
     setSearching(true);
     try {
-      // Look up profile by matching display_name or searching profiles
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select("user_id, display_name")
