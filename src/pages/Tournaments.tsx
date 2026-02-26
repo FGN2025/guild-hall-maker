@@ -19,7 +19,7 @@ import PageHero from "@/components/PageHero";
 const Tournaments = () => {
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("open");
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
@@ -29,7 +29,11 @@ const Tournaments = () => {
         !search ||
         t.name.toLowerCase().includes(search.toLowerCase()) ||
         t.game.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === "all" || t.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" ? true
+        : statusFilter === "open" ? (t.status === "open" || t.is_registered)
+        : statusFilter === "registered" ? t.is_registered
+        : t.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [tournaments, search, statusFilter]);
@@ -71,7 +75,7 @@ const Tournaments = () => {
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="registered">Registered</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
