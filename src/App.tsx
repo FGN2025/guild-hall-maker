@@ -41,6 +41,7 @@ import AdminNotebooks from "./pages/admin/AdminNotebooks";
 import AdminSeasons from "./pages/admin/AdminSeasons";
 import AdminAchievements from "./pages/admin/AdminAchievements";
 import AdminGuide from "./pages/admin/AdminGuide";
+import AdminMarketing from "./pages/admin/AdminMarketing";
 import ModeratorRoute from "./components/moderator/ModeratorRoute";
 import ModeratorDashboard from "./pages/moderator/ModeratorDashboard";
 import ModeratorTournaments from "./pages/moderator/ModeratorTournaments";
@@ -56,6 +57,8 @@ import TenantZipCodes from "./pages/tenant/TenantZipCodes";
 import TenantSubscribers from "./pages/tenant/TenantSubscribers";
 import TenantTeam from "./pages/tenant/TenantTeam";
 import TenantSettings from "./pages/tenant/TenantSettings";
+import TenantMarketing from "./pages/tenant/TenantMarketing";
+import TenantMarketingDetail from "./pages/tenant/TenantMarketingDetail";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookieConsent from "./components/CookieConsent";
@@ -115,6 +118,7 @@ const App = () => (
             <Route path="/admin/seasons" element={<AdminRoute><AdminSeasons /></AdminRoute>} />
             <Route path="/admin/achievements" element={<AdminRoute><AdminAchievements /></AdminRoute>} />
             <Route path="/admin/guide" element={<AdminRoute><AdminGuide /></AdminRoute>} />
+            <Route path="/admin/marketing" element={<AdminRoute><AdminMarketing /></AdminRoute>} />
 
             {/* Moderator routes */}
             <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
@@ -132,6 +136,8 @@ const App = () => (
             <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
             <Route path="/tenant/team" element={<TenantRoute><TenantTeam /></TenantRoute>} />
             <Route path="/tenant/settings" element={<TenantRoute><TenantSettings /></TenantRoute>} />
+            <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
+            <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
 
             <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<NotFound />} />

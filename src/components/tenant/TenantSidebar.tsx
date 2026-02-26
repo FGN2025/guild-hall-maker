@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 /** Convert hex color to rgba string */
@@ -23,6 +23,7 @@ const allSidebarItems = [
   { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin, roles: ['admin'] },
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin'] },
   { to: "/tenant/subscribers?tab=integrations", label: "Integrations", icon: Plug, roles: ['admin'] },
+  { to: "/tenant/marketing", label: "Marketing", icon: Megaphone, roles: ['admin', 'manager'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin'] },
 ];

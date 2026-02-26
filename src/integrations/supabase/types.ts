@@ -579,6 +579,86 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_assets: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          display_order: number
+          file_path: string
+          height: number | null
+          id: string
+          label: string
+          url: string
+          width: number | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          display_order?: number
+          file_path: string
+          height?: number | null
+          id?: string
+          label?: string
+          url: string
+          width?: number | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          display_order?: number
+          file_path?: string
+          height?: number | null
+          id?: string
+          label?: string
+          url?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_assets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaigns: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_published: boolean
+          social_copy: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          social_copy?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          social_copy?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       match_results: {
         Row: {
           completed_at: string | null
