@@ -6,7 +6,7 @@ interface TenantAdminInfo {
   tenantId: string;
   tenantName: string;
   tenantSlug: string;
-  tenantRole: 'admin' | 'manager';
+  tenantRole: 'admin' | 'manager' | 'marketing';
   logoUrl: string | null;
   primaryColor: string | null;
   accentColor: string | null;
@@ -45,7 +45,7 @@ export function useTenantAdmin() {
         tenantId: t.id,
         tenantName: t.name,
         tenantSlug: t.slug,
-        tenantRole: (matchingAdmin?.role === 'manager' ? 'manager' : 'admin') as 'admin' | 'manager',
+        tenantRole: (['manager', 'marketing'].includes(matchingAdmin?.role) ? matchingAdmin.role : 'admin') as 'admin' | 'manager' | 'marketing',
         logoUrl: t.logo_url || null,
         primaryColor: (t as any).primary_color || null,
         accentColor: (t as any).accent_color || null,

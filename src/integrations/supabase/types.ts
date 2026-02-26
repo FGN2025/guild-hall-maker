@@ -1676,7 +1676,7 @@ export type Database = {
       validate_bypass_code: { Args: { _code: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "marketing"
       match_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       tournament_status:
         | "upcoming"
@@ -1811,7 +1811,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "marketing"],
       match_status: ["scheduled", "in_progress", "completed", "cancelled"],
       tournament_status: [
         "upcoming",

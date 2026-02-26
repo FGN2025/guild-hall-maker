@@ -12,7 +12,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export interface TenantSidebarProps {
   tenantName: string;
-  tenantRole: 'admin' | 'manager';
+  tenantRole: 'admin' | 'manager' | 'marketing';
   logoUrl?: string | null;
   brandColor?: string;
 }

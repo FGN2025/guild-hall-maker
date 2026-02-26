@@ -16,6 +16,7 @@ const AdminUsers = () => {
   const roleBadge = (role: string | null) => {
     if (role === "admin") return <Badge className="bg-primary/20 text-primary border-primary/30">Admin</Badge>;
     if (role === "moderator") return <Badge className="bg-accent/20 text-accent-foreground border-accent/30">Moderator</Badge>;
+    if (role === "marketing") return <Badge className="bg-chart-4/20 text-chart-4 border-chart-4/30">Marketing</Badge>;
     return <Badge variant="secondary">User</Badge>;
   };
 
@@ -81,6 +82,7 @@ const AdminUsers = () => {
                         <SelectContent>
                           <SelectItem value="user">User</SelectItem>
                           <SelectItem value="moderator">Moderator</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>

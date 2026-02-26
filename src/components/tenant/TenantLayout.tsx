@@ -15,7 +15,7 @@ interface TenantLayoutProps {
     primaryColor?: string | null;
     accentColor?: string | null;
   };
-  tenantRole: 'admin' | 'manager';
+  tenantRole: 'admin' | 'manager' | 'marketing';
 }
 
 const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) => {
