@@ -25,6 +25,8 @@ import {
   Printer,
   Image,
   Cookie,
+  Target,
+  Gift,
 } from "lucide-react";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -208,6 +210,47 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Avatar — Upload a profile picture to make your account stand out across the platform.",
       "ZIP Code — Update your ZIP code to ensure correct broadband provider matching.",
       "Password — Use the password reset flow to update your login credentials securely.",
+    ],
+  },
+  {
+    id: "challenges",
+    icon: Target,
+    title: "Challenges",
+    bullets: [
+      "Challenges (/challenges) are time-limited objectives that reward you with season points.",
+      "Browse — View all active challenges with their point rewards, descriptions, and deadlines.",
+      "Types — Challenges can be one-time (complete once) or repeatable, and may be linked to specific games.",
+      "Completion — When a moderator verifies your challenge completion, points are awarded automatically to your season score.",
+      "Tracking — See which challenges you've already completed and the points you earned.",
+      "Tip: Check back often — new challenges are added regularly and some have limited completions!",
+    ],
+  },
+  {
+    id: "prize-shop",
+    icon: Gift,
+    title: "Prize Shop",
+    bullets: [
+      "The Prize Shop (/prize-shop) lets you spend your earned season points on real rewards.",
+      "Points Balance — Your current season point balance is displayed at the top of the shop.",
+      "Browse Prizes — View available prizes with descriptions, point costs, and remaining stock.",
+      "Redeem — Click Redeem on any prize you can afford. A confirmation dialog shows your balance before and after.",
+      "Review Queue — Redemption requests are reviewed by moderators. You'll see the status update in the 'My Requests' tab.",
+      "Status Tracking — Track each request's status: Pending (awaiting review), Approved, Fulfilled (delivered), or Denied.",
+      "Tip: Save up points from tournaments and challenges for high-value prizes!",
+    ],
+  },
+  {
+    id: "ladders",
+    icon: Swords,
+    title: "Ranked Ladders",
+    bullets: [
+      "Ranked Ladders (/ladders) provide persistent competitive rankings outside of tournaments.",
+      "Browse — View all active ladders, each with a name, description, and optional game link.",
+      "Join — Click into a ladder and hit 'Join Ladder' to start competing. Your initial rating is 1000.",
+      "Rankings — View the live leaderboard sorted by ELO rating, with wins, losses, and rank for each player.",
+      "Multiple Ladders — You can join and compete in as many ladders as you like simultaneously.",
+      "Your Position — Your entry is highlighted on the leaderboard so you can quickly spot your rank.",
+      "Tip: Ladders are great for continuous competition between tournaments!",
     ],
   },
   {
