@@ -124,9 +124,21 @@ const Tournaments = () => {
           </Select>
         </div>
 
-        <p className="text-sm text-muted-foreground font-body mb-4">
-          {filtered.length} {filtered.length === 1 ? "tournament" : "tournaments"} found
-        </p>
+        {(() => {
+          const filtersActive = search || statusFilter !== "open" || sortBy !== "date_asc";
+          return (
+            <div className="flex items-center gap-2 mb-4">
+              <span className={`inline-flex items-center gap-1.5 text-sm font-body px-3 py-1 rounded-full transition-colors ${
+                filtersActive
+                  ? "bg-primary/15 text-primary border border-primary/30"
+                  : "text-muted-foreground"
+              }`}>
+                <span className="font-semibold">{filtered.length}</span>
+                {filtered.length === 1 ? "tournament" : "tournaments"} found
+              </span>
+            </div>
+          );
+        })()}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
