@@ -1,76 +1,35 @@
 
 
-## Leaderboard: Positive Stats Only
+## Add Edit & Image Upload to Prize Catalog
 
-### Goal
-Redesign the leaderboard to celebrate player participation and achievement rather than exposing losses or win rates. The four featured categories will be:
-- **Most Matches Participated**
-- **Most Wins**
-- **Most Points Earned**
-- **Most Hours Played** (new data point -- see note below)
+### Overview
+Add the ability for moderators to edit existing prize details (name, description, cost, quantity) and upload prize images, all within the Prize Catalog tab on the Moderator Redemptions page.
 
-### Key Changes
+### Changes
 
-#### 1. Remove Negative/Shaming Stats from UI
-Remove from both the **Seasonal** and **All-Time** tabs:
-- Losses column (the red "L" column)
-- Win Rate column and progress bars
-- The "W / L / D" text on the podium cards
-- Draws column (optional -- draws aren't negative but don't fit the new categories)
-- The `TrendingUp` / `Minus` indicator icon that implies underperformance
+**1. Update `src/pages/moderator/ModeratorRedemptions.tsx`**
 
-#### 2. Restructure the Leaderboard Columns
+- Add an **Edit button** (pencil icon) on each prize card that opens an edit dialog
+- Add state for `editPrize` (the prize being edited) and `editForm` (form fields)
+- Add an `updatePrizeMutation` that calls `supabase.from("prizes").update(...)` with the edited fields
+- Add an **image upload input** to both the Create and Edit dialogs:
+  - File input accepts `image/jpeg, image/png, image/webp`
+  - On file select, validate using the existing `validateAndToast` utility with the `cardCover` preset
+  - Upload the file to the `app-media` storage bucket under `prizes/{prizeId or timestamp}-{filename}`
+  - Get the public URL and save it as `image_url` on the prize record
+- Show a **thumbnail preview** of the current image (if any) in the edit dialog and on each prize card
+- Add `imageFile` state to track the pending upload for both create and edit flows
+- Import `Pencil`, `ImagePlus` icons from lucide-react
 
-**Seasonal Tab** -- new column layout:
-| Rank | Player | Tier | Points | Wins | Matches |
+**2. No database or storage changes needed**
+- The `prizes` table already has an `image_url` column
+- The `app-media` storage bucket already exists and is public
+- RLS on prizes already allows moderator/admin full access
 
-**All-Time Tab** -- new column layout:
-| Rank | Player | Points | Wins | Matches |
+### Technical Details
 
-The sort options will be updated to: `rank`, `wins`, `total_matches`, `points`.
-
-#### 3. Update the Podium (Top 3 Cards)
-Replace the `{wins}W / {losses}L / {draws}D` line with:
-- Points earned and total matches played (positive framing)
-
-#### 4. Update the Sort Type
-Change the `SortKey` type from `"rank" | "win_rate" | "total_matches" | "wins" | "losses" | "draws"` to `"rank" | "total_matches" | "wins" | "points"`.
-
-Default sort will rank by **points** (seasonal) or **wins** (all-time) rather than win rate.
-
-#### 5. Update the Ranking Algorithm
-In `useLeaderboard.ts`, change the sort logic from win-rate-first to:
-1. Most wins (primary)
-2. Most matches played (tiebreaker)
-
-This ensures the ranking itself doesn't penalize players who participate a lot but lose some matches.
-
-#### 6. "Most Hours Played" -- Data Consideration
-The current database does not track play time / hours. Two options:
-
-**Option A (Recommended for now):** Skip "Hours Played" until a tracking mechanism exists. Use "Most Matches Participated" as the engagement metric instead -- it's already available.
-
-**Option B (Future):** Add a `play_time_minutes` column to `match_results` or `season_scores` and aggregate it. This requires match duration tracking which is a separate feature.
-
-The plan will proceed with Option A -- the four visible categories will effectively be **Matches, Wins, Points, Tier** (seasonal) and **Matches, Wins, Points** (all-time).
-
-#### 7. Update Player Profile Stats Grid
-In `PlayerStatsGrid.tsx`, replace the current 4-stat grid (Wins, Losses, Draws, Win Rate) with positive stats:
-- **Wins** (keep)
-- **Matches Played** (rename from total, positive framing)
-- **Points Earned** (pull from season data)
-- **Tournaments Played** (already available)
-
-#### 8. Update Player Profile Header
-Remove the "Win Rate %" display from `PlayerProfileHeader.tsx` and replace with "Points" or "Matches".
-
-### Technical Summary
-
-**Files modified:**
-- `src/pages/Leaderboard.tsx` -- Remove losses/win-rate columns, update podium, update sort keys
-- `src/hooks/useLeaderboard.ts` -- Change ranking sort from win-rate to wins-first, remove `win_rate` from the interface (or keep but don't display)
-- `src/components/player/PlayerStatsGrid.tsx` -- Replace losses/draws/win-rate with positive stats
-- `src/components/player/PlayerProfileHeader.tsx` -- Replace win-rate display with matches or points
-
-**No database changes required.** All data already exists; this is purely a UI/presentation change.
+- **Image upload flow**: On form submit, if an `imageFile` is set, upload to `app-media` bucket first, get public URL, then include `image_url` in the insert/update call
+- **Validation**: Reuse `validateAndToast(file, IMAGE_PRESETS.cardCover)` from `src/lib/imageValidation.ts`
+- **Edit dialog**: Pre-populate form fields from the selected prize; reuse the same form layout as the create dialog with an added image section
+- **Prize cards**: Show the image thumbnail at the top of each card if `image_url` exists, matching the layout already used in `PrizeShop.tsx`
 
