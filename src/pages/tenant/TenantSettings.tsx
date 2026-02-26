@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Upload, Loader2, Palette } from "lucide-react";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -131,42 +132,17 @@ const TenantSettings = () => {
             <div className="space-y-2">
               <Label>Primary Color</Label>
               <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="h-10 w-10 rounded border border-border cursor-pointer bg-transparent p-0.5"
-                />
-                <Input
-                  value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  placeholder="#00e5ff"
-                  className="flex-1 font-mono text-sm"
-                />
+                <ColorPicker value={primaryColor} onChange={setPrimaryColor} />
+                <span className="font-mono text-sm text-muted-foreground">{primaryColor}</span>
               </div>
             </div>
             <div className="space-y-2">
               <Label>Accent Color</Label>
               <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                  className="h-10 w-10 rounded border border-border cursor-pointer bg-transparent p-0.5"
-                />
-                <Input
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                  placeholder="#7c3aed"
-                  className="flex-1 font-mono text-sm"
-                />
+                <ColorPicker value={accentColor} onChange={setAccentColor} />
+                <span className="font-mono text-sm text-muted-foreground">{accentColor}</span>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3 pt-2">
-            <div className="text-xs text-muted-foreground">Preview:</div>
-            <div className="h-8 w-8 rounded-full border border-border" style={{ backgroundColor: primaryColor }} />
-            <div className="h-8 w-8 rounded-full border border-border" style={{ backgroundColor: accentColor }} />
           </div>
           <Button onClick={handleSaveColors} disabled={savingColors}>
             {savingColors ? "Saving..." : "Save Colors"}
