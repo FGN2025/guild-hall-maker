@@ -1018,31 +1018,37 @@ export type Database = {
       }
       tenants: {
         Row: {
+          accent_color: string | null
           contact_email: string | null
           created_at: string
           id: string
           logo_url: string | null
           name: string
+          primary_color: string | null
           slug: string
           status: string
           updated_at: string
         }
         Insert: {
+          accent_color?: string | null
           contact_email?: string | null
           created_at?: string
           id?: string
           logo_url?: string | null
           name: string
+          primary_color?: string | null
           slug: string
           status?: string
           updated_at?: string
         }
         Update: {
+          accent_color?: string | null
           contact_email?: string | null
           created_at?: string
           id?: string
           logo_url?: string | null
           name?: string
+          primary_color?: string | null
           slug?: string
           status?: string
           updated_at?: string

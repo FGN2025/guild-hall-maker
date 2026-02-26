@@ -115,7 +115,7 @@ function LogoPicker({
 const AdminTenants = () => {
   const { tenants, isLoading, createTenant, updateTenant, deleteTenant } = useTenants();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "" });
+  const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
   const [logoUploading, setLogoUploading] = useState(false);
 
   // Admin assignment sheet
@@ -133,10 +133,12 @@ const AdminTenants = () => {
         slug: form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-"),
         contact_email: form.contact_email.trim() || undefined,
         logo_url: form.logo_url || undefined,
+        primary_color: form.primary_color || undefined,
+        accent_color: form.accent_color || undefined,
       },
       {
         onSuccess: () => {
-          setForm({ name: "", slug: "", contact_email: "", logo_url: "" });
+          setForm({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
           setCreateOpen(false);
         },
       }
@@ -211,6 +213,19 @@ const AdminTenants = () => {
                     onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Brand Colors (optional)</Label>
+                  <div className="flex gap-4">
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={form.primary_color || "#00e5ff"} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} className="h-8 w-8 rounded border border-border cursor-pointer bg-transparent p-0.5" />
+                      <span className="text-xs text-muted-foreground">Primary</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={form.accent_color || "#7c3aed"} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="h-8 w-8 rounded border border-border cursor-pointer bg-transparent p-0.5" />
+                      <span className="text-xs text-muted-foreground">Accent</span>
+                    </div>
+                  </div>
+                </div>
                 <Button
                   onClick={handleCreate}
                   disabled={createTenant.isPending || logoUploading}
@@ -273,7 +288,7 @@ function TenantCard({
   onOpenAdmins,
   onDelete,
 }: {
-  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string };
+  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null };
   onToggleStatus: (checked: boolean) => void;
   onLogoUpdated: (url: string) => void;
   onOpenAdmins: () => void;
@@ -293,9 +308,15 @@ function TenantCard({
         />
         <div>
           <h3 className="font-heading font-semibold text-foreground">{t.name}</h3>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             /{t.slug}
             {t.contact_email && ` · ${t.contact_email}`}
+            {(t.primary_color || t.accent_color) && (
+              <span className="inline-flex gap-1 ml-1">
+                {t.primary_color && <span className="h-3 w-3 rounded-full border border-border inline-block" style={{ backgroundColor: t.primary_color }} />}
+                {t.accent_color && <span className="h-3 w-3 rounded-full border border-border inline-block" style={{ backgroundColor: t.accent_color }} />}
+              </span>
+            )}
           </p>
         </div>
       </div>
