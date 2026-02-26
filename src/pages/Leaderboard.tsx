@@ -430,13 +430,16 @@ const Leaderboard = () => {
                       Rank <SortIcon col="rank" />
                     </button>
                     <span className="col-span-3">Player</span>
+                    <button onClick={() => handleSort("points")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                      Points <SortIcon col="points" />
+                    </button>
                     <button onClick={() => handleSort("wins")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
                       Wins <SortIcon col="wins" />
                     </button>
-                    <button onClick={() => handleSort("total_matches")} className="col-span-3 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                    <button onClick={() => handleSort("total_matches")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
                       Matches <SortIcon col="total_matches" />
                     </button>
-                    <span className="col-span-3" />
+                    <span className="col-span-2" />
                   </div>
                   {paginatedAllTime.length === 0 ? (
                     <div className="p-8 text-center text-sm text-muted-foreground font-body">
@@ -462,13 +465,16 @@ const Leaderboard = () => {
                           {p.display_name}
                         </Link>
                       </div>
+                      <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
+                        {p.points}
+                      </span>
                       <span className="col-span-2 font-display text-sm text-success font-bold text-center">
                         {p.wins}
                       </span>
-                      <span className="col-span-3 font-body text-sm text-muted-foreground text-center">
+                      <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
                         {p.total_matches}
                       </span>
-                      <div className="col-span-3 flex justify-end">
+                      <div className="col-span-2 flex justify-end">
                         {p.rank <= 3 && (
                           <Trophy className={`h-4 w-4 ${rankColor(p.rank)}`} />
                         )}
