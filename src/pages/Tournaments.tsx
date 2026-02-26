@@ -124,6 +124,10 @@ const Tournaments = () => {
           </Select>
         </div>
 
+        <p className="text-sm text-muted-foreground font-body mb-4">
+          {filtered.length} {filtered.length === 1 ? "tournament" : "tournaments"} found
+        </p>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
