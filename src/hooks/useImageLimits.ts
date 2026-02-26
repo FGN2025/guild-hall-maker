@@ -5,6 +5,7 @@ import { IMAGE_PRESETS, type ImageValidationRules } from "@/lib/imageValidation"
 type PresetName = keyof typeof IMAGE_PRESETS;
 
 interface OverrideEntry {
+  enabled?: boolean;
   maxSizeKB?: number;
   minWidth?: number;
   minHeight?: number;
@@ -35,6 +36,9 @@ export function useImageLimits() {
     const base = IMAGE_PRESETS[name];
     const ov = overrides?.[name];
     if (!ov) return base;
+    if (ov.enabled === false) {
+      return { maxSizeKB: Infinity, label: base.label };
+    }
     return {
       ...base,
       maxSizeKB: ov.maxSizeKB ?? base.maxSizeKB,
