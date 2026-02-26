@@ -1,102 +1,127 @@
 
 
-## Add Marketing Role at Both Platform and Tenant Levels
+## Tenant-Scoped Marketing Assets with Role-Based Access
 
 ### Overview
-Introduce a "Marketing" role at two levels so that Super Admins can assign platform-wide marketing access, and Tenant Admins can assign marketing access within their team. Users with this role will be able to access and manage source marketing assets in the media library.
+Introduce a new `tenant_marketing_assets` table where tenants store their customized/branded versions of master marketing assets. Access is restricted to users with the **marketing** or **admin** role for that specific tenant, plus platform Super Admins.
+
+The master templates live in the existing `marketing_assets` table (managed by Super Admins). Tenants pick a master asset, customize it (brand overlay -- future step), and save the result to the tenant-scoped table.
 
 ---
 
-### 1. Database: Add "marketing" to the `app_role` enum
-
-Run a migration to extend the existing PostgreSQL enum:
+### 1. Database: New `tenant_marketing_assets` Table
 
 ```sql
-ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'marketing';
+CREATE TABLE public.tenant_marketing_assets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  source_asset_id uuid REFERENCES public.marketing_assets(id) ON DELETE SET NULL,
+  campaign_id uuid REFERENCES public.marketing_campaigns(id) ON DELETE SET NULL,
+  file_name text NOT NULL,
+  file_path text NOT NULL,
+  url text NOT NULL,
+  label text NOT NULL DEFAULT 'Default',
+  is_published boolean NOT NULL DEFAULT false,
+  created_by uuid NOT NULL,
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.tenant_marketing_assets ENABLE ROW LEVEL SECURITY;
 ```
 
-This allows the `user_roles` table to store `marketing` as a valid platform-level role alongside `admin`, `moderator`, and `user`.
-
-No changes needed to the `tenant_admins` table since it uses a plain `text` column for `role` -- it already supports arbitrary values like `marketing` without a schema change.
-
----
-
-### 2. Database: Security-definer helper (optional but clean)
-
-Add a convenience function for checking the marketing role, following the existing `has_role` pattern:
+**RLS Policies** -- uses existing `is_tenant_admin` and `is_tenant_member` security-definer functions, plus a new helper:
 
 ```sql
--- Reuse existing has_role() -- no new function needed.
--- has_role(uid, 'marketing') will work once the enum value exists.
+-- Helper: check if user has admin or marketing role for a tenant
+CREATE OR REPLACE FUNCTION public.is_tenant_marketing_member(
+  _tenant_id uuid, _user_id uuid
+) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.tenant_admins
+    WHERE tenant_id = _tenant_id
+      AND user_id = _user_id
+      AND role IN ('admin', 'marketing')
+  )
+$$;
+
+-- Super Admins: full access
+CREATE POLICY "Super admins full access"
+  ON public.tenant_marketing_assets FOR ALL
+  USING (has_role(auth.uid(), 'admin'))
+  WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- Tenant admin/marketing: full CRUD on own tenant's assets
+CREATE POLICY "Tenant admin and marketing can manage"
+  ON public.tenant_marketing_assets FOR ALL
+  USING (is_tenant_marketing_member(tenant_id, auth.uid()))
+  WITH CHECK (is_tenant_marketing_member(tenant_id, auth.uid()));
 ```
 
 ---
 
-### 3. Frontend: Super Admin user management (AdminUsers.tsx)
+### 2. Update Marketing Role Access in Sidebar
 
-Add "Marketing" as a selectable role in the role dropdown on the Admin Users page:
-
-- Add `<SelectItem value="marketing">Marketing</SelectItem>` to the role selector
-- Add a marketing badge style in the `roleBadge` helper
-
-**File**: `src/pages/admin/AdminUsers.tsx`
-
----
-
-### 4. Frontend: useAdminUsers hook update
-
-In `src/hooks/useAdminUsers.ts`, the `setRole` mutation inserts into `user_roles` -- no change needed since it already handles arbitrary role strings. The enum extension at the DB level is sufficient.
-
----
-
-### 5. Frontend: Tenant Team page (TenantTeam.tsx)
-
-Add "Marketing" as a third role option in the tenant team management:
-
-- Add `<SelectItem value="marketing">Marketing</SelectItem>` to both the "add member" role selector and the per-member role dropdown
-- Update the role descriptions text to explain the Marketing role
-
-**File**: `src/pages/tenant/TenantTeam.tsx`
-
----
-
-### 6. Frontend: AuthContext -- expose `isMarketing` flag
-
-Update `src/contexts/AuthContext.tsx` to:
-- Add `isMarketing` boolean state
-- Set it when fetching the user's role (`data?.role === 'marketing'`)
-- Expose it in the context value
-
-This enables route guards and conditional UI for marketing users.
-
----
-
-### 7. Frontend: useTenantAdmin hook update
-
-Update `src/hooks/useTenantAdmin.ts` to also recognize `marketing` as a valid tenant role (alongside `admin` and `manager`), so tenant-level marketing users can access the tenant panel.
-
----
-
-### 8. Frontend: useUserRole hook update
-
-Update `src/hooks/useUserRole.ts` to add `"marketing"` to the `AppRole` type union:
+In `TenantSidebar.tsx`, add `'marketing'` to the Marketing nav item's roles array so marketing-role users can see and access the marketing pages:
 
 ```typescript
-export type AppRole = "admin" | "moderator" | "marketing" | "user";
+{ to: "/tenant/marketing", label: "Marketing", icon: Megaphone, roles: ['admin', 'manager', 'marketing'] },
 ```
 
 ---
 
-### Summary of files to change
+### 3. New Hook: `useTenantMarketingAssets`
 
-| File | Change |
-|------|--------|
-| Migration (SQL) | Add `marketing` to `app_role` enum |
-| `src/hooks/useUserRole.ts` | Add `marketing` to `AppRole` type |
-| `src/contexts/AuthContext.tsx` | Add `isMarketing` flag |
-| `src/pages/admin/AdminUsers.tsx` | Add Marketing option to role dropdown + badge |
-| `src/pages/tenant/TenantTeam.tsx` | Add Marketing option to role dropdowns + description |
-| `src/hooks/useTenantAdmin.ts` | Recognize `marketing` as valid tenant role |
+Create `src/hooks/useTenantMarketingAssets.ts` that provides:
 
-This lays the groundwork for the next step: creating a marketing-specific area of the media library gated behind this role.
+- **List** tenant-scoped assets (filtered by tenant_id from `useTenantAdmin`)
+- **Upload** a new customized asset (stores file in `app-media` under `tenant-marketing/{tenantId}/...`, inserts row)
+- **Delete** an asset
+- **Toggle publish** status
+- Optionally link to the `source_asset_id` (the master template it was derived from)
+
+---
+
+### 4. New Page: Tenant Marketing Assets (`TenantMarketingAssets.tsx`)
+
+Create `src/pages/tenant/TenantMarketingAssets.tsx`:
+
+- Shows a grid of the tenant's own customized marketing assets
+- Upload button to add new assets (with label, optional notes)
+- "Pick from Library" button that opens a dialog showing published master `marketing_assets` -- selecting one copies the URL as `source_asset_id` and opens an upload flow for the branded version
+- Publish/unpublish toggle per asset
+- Delete button
+- Only accessible to `admin` and `marketing` tenant roles
+
+---
+
+### 5. Route and Navigation
+
+- Add route `/tenant/marketing/assets` in `App.tsx` wrapped in `<TenantRoute>`
+- Add a new sidebar item in `TenantSidebar.tsx`:
+  ```typescript
+  { to: "/tenant/marketing/assets", label: "My Assets", icon: ImageIcon, roles: ['admin', 'marketing'] }
+  ```
+
+---
+
+### 6. Update Tenant Marketing Detail Page
+
+In `TenantMarketingDetail.tsx`, add a "Save to My Assets" button next to the existing "Download" button. This copies the master asset into the `tenant_marketing_assets` table linked to the tenant, so they can track which templates they've used.
+
+---
+
+### Summary of Changes
+
+| Item | Type | Description |
+|------|------|-------------|
+| `tenant_marketing_assets` table | DB Migration | New table with RLS for tenant-scoped branded assets |
+| `is_tenant_marketing_member()` | DB Function | Security-definer helper for admin+marketing role check |
+| `useTenantMarketingAssets.ts` | Hook | CRUD operations for tenant marketing assets |
+| `TenantMarketingAssets.tsx` | Page | UI for managing tenant's own branded assets |
+| `App.tsx` | Route | Add `/tenant/marketing/assets` route |
+| `TenantSidebar.tsx` | Nav | Add "My Assets" link, grant marketing role access to Marketing |
+| `TenantMarketingDetail.tsx` | UI Update | Add "Save to My Assets" action |
 
