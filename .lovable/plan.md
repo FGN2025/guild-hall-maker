@@ -1,51 +1,38 @@
 
 
-## Per-Tenant Logos and Branding Enhancement
+## Enhanced Color Picker for Brand Colors
 
 ### Overview
-The database already stores `logo_url` per tenant, but there's no UI to upload or manage it, and it's not displayed in the tenant portal. This plan adds a complete per-tenant branding flow.
+Replace the basic native `<input type="color">` elements with a rich, custom color picker component that includes a visual palette, preset swatches, and hex/RGB input -- all built with existing project dependencies (Radix Popover).
 
 ### Changes
 
-#### 1. Add Tenant Branding Settings Page (`src/pages/tenant/TenantSettings.tsx`)
-- New page accessible from tenant sidebar (admin-only)
-- Logo upload with preview, using the existing `app-media` storage bucket
-- Fields: Company Logo, Company Name (display-only), Contact Email (editable)
-- Uses existing `useTenants` hook's `updateTenant` mutation to save `logo_url`
+#### 1. Create `ColorPicker` Component (`src/components/ui/color-picker.tsx`)
+- A reusable component that opens a Popover when clicked
+- Contains:
+  - **Saturation/brightness gradient panel** -- a 2D canvas-based picker area for selecting shade and brightness
+  - **Hue slider** -- a horizontal rainbow strip to select the base hue
+  - **Preset swatches** -- a row of commonly used brand colors (8-10 presets) for quick selection
+  - **Hex input** -- editable text field showing the current hex value
+- Uses Radix Popover (already installed) for the dropdown
+- Trigger is a styled color swatch button showing the current color
+- Fully controlled via `value` and `onChange` props
 
-#### 2. Add Logo Upload to Admin Create/Edit Tenant Dialog (`src/pages/admin/AdminTenants.tsx`)
-- Add a logo upload field to the "New Provider" dialog
-- Add an inline edit button on each tenant card to update the logo
-- Uploads go to `app-media` bucket under a `tenant-logos/` prefix
+#### 2. Update Tenant Settings Page (`src/pages/tenant/TenantSettings.tsx`)
+- Replace the native `<input type="color">` + `<Input>` combos for both Primary and Accent colors with the new `<ColorPicker>` component
+- Keep the existing save flow unchanged
 
-#### 3. Display Logo in Tenant Sidebar (`src/components/tenant/TenantSidebar.tsx`)
-- Pass `logoUrl` through `TenantLayout` from `tenantInfo`
-- Show tenant logo (or fallback icon) in the sidebar header area above the tenant name
-
-#### 4. Display Logo in Tenant Layout Mobile Header (`src/components/tenant/TenantLayout.tsx`)
-- Show small logo next to tenant name in the mobile top bar
-
-#### 5. Update `useTenantAdmin` Hook (`src/hooks/useTenantAdmin.ts`)
-- Include `logo_url` in the `TenantAdminInfo` interface and query result so it's available throughout the tenant portal
-
-#### 6. Add Route and Sidebar Link
-- Register `/tenant/settings` route in `src/App.tsx`
-- Add "Settings" link to tenant sidebar (admin-only), using a Settings/Cog icon
+#### 3. Update Admin Tenants Page (`src/pages/admin/AdminTenants.tsx`)
+- Replace any native color inputs in the New Provider dialog with the new `<ColorPicker>` component for consistency
 
 ### Technical Details
 
 **Files to create:**
-- `src/pages/tenant/TenantSettings.tsx` -- Branding settings page with logo upload
+- `src/components/ui/color-picker.tsx` -- Reusable color picker with gradient panel, hue slider, swatches, and hex input
 
 **Files to modify:**
-- `src/hooks/useTenantAdmin.ts` -- Add `logoUrl` to returned tenant info
-- `src/components/tenant/TenantSidebar.tsx` -- Accept and display logo; add Settings nav link
-- `src/components/tenant/TenantLayout.tsx` -- Pass `logoUrl` to sidebar and mobile header
-- `src/components/tenant/TenantRoute.tsx` -- Pass `logoUrl` through
-- `src/pages/admin/AdminTenants.tsx` -- Add logo upload to create/edit flows
-- `src/App.tsx` -- Register `/tenant/settings` route
+- `src/pages/tenant/TenantSettings.tsx` -- Swap native inputs for `<ColorPicker>`
+- `src/pages/admin/AdminTenants.tsx` -- Swap native inputs for `<ColorPicker>`
 
-**Storage:** Uses existing `app-media` public bucket. Logos uploaded under `tenant-logos/{tenantId}.{ext}`.
-
-**No database migration needed** -- `logo_url` column already exists on the `tenants` table.
+**No new dependencies required.** The component uses HTML Canvas for the gradient, Radix Popover for the dropdown, and pure color math (HSV to/from hex) implemented inline.
 
