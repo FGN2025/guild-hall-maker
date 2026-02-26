@@ -1,4 +1,4 @@
-import { Trophy, Swords, Star, Gift, TrendingUp } from "lucide-react";
+import { Trophy, Swords, Star, Gift, TrendingUp, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 
@@ -6,6 +6,7 @@ const quickLinks = [
   { to: "/moderator/tournaments", label: "Tournaments", description: "Manage tournaments, brackets, and results", icon: Trophy },
   { to: "/moderator/matches", label: "Matches", description: "Score matches and advance players", icon: Swords },
   { to: "/moderator/points", label: "Points", description: "Award and adjust player points", icon: Star },
+  { to: "/moderator/challenges", label: "Challenges", description: "Create and manage player challenges", icon: Target },
   { to: "/moderator/ladders", label: "Ladders", description: "Manage ranked ladders and progression", icon: TrendingUp },
   { to: "/moderator/redemptions", label: "Redemptions", description: "Review and approve prize redemptions", icon: Gift },
 ];
