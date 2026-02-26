@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+import { playNotificationSound, showBrowserNotification, requestPushPermission } from "@/lib/notificationAlerts";
 
 export interface Notification {
   id: string;
@@ -33,6 +34,11 @@ export const useNotifications = () => {
     },
   });
 
+  // Request push permission on mount
+  useEffect(() => {
+    if (user) requestPushPermission();
+  }, [user]);
+
   // Realtime subscription
   useEffect(() => {
     if (!user) return;
@@ -46,8 +52,14 @@ export const useNotifications = () => {
           table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
-        () => {
+        (payload: any) => {
           queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+          // Play sound + show browser notification
+          const row = payload.new;
+          if (row) {
+            playNotificationSound();
+            showBrowserNotification(row.title ?? "New Notification", row.message ?? "", row.link);
+          }
         }
       )
       .subscribe();
