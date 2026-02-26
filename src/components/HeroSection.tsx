@@ -29,7 +29,7 @@ const HeroSection = () => {
             <br />
             <span className="gradient-text">LEGEND</span>
           </h1>
-          <p className="font-body text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="font-body text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-bold">
             Join Tournaments, climb Leaderboards, and compete with the best.
             The Ultimate Experience for Players and Broadband Operators
           </p>
