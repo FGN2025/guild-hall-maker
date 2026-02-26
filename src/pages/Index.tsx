@@ -1,4 +1,5 @@
 import HeroSection from "@/components/HeroSection";
+import TickerEmbed from "@/components/TickerEmbed";
 import FeaturedVideo from "@/components/FeaturedVideo";
 import FeaturedTournaments from "@/components/FeaturedTournaments";
 import Navbar from "@/components/Navbar";
@@ -8,6 +9,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
+      <TickerEmbed />
       <FeaturedVideo />
       <FeaturedTournaments />
       <footer className="border-t border-border py-12">
