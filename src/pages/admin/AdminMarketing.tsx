@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { useMarketingCampaigns, useMarketingAssets, MarketingCampaign } from "@/hooks/useMarketingCampaigns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,8 +41,7 @@ const AdminMarketing = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
@@ -113,7 +111,7 @@ const AdminMarketing = () => {
           <CampaignAssetsDialog campaign={detailCampaign} onClose={() => setDetailCampaign(null)} />
         )}
       </div>
-    </AdminLayout>
+    
   );
 };
 
