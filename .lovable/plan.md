@@ -1,25 +1,10 @@
 
+## Widen Featured Video to Match Ticker and Header
 
-## Restrict Ticker Width to Match Header
+The Featured Video section is currently capped at `max-w-4xl` (896px), while the ticker and header use the full `container` width. This makes the video noticeably narrower.
 
 ### Change
-Update `src/components/TickerEmbed.tsx` to wrap the embed div inside a `container mx-auto px-4` wrapper, matching the Navbar's layout constraints.
+Remove the `max-w-4xl` constraint from the Featured Video component so it uses the same `container mx-auto px-4` layout as the ticker -- matching widths across all three sections.
 
 ### Technical Detail
-In `TickerEmbed.tsx`, change the return JSX from:
-```tsx
-<section className="w-full">
-  <div ref={containerRef} dangerouslySetInnerHTML={{ __html: html }} />
-</section>
-```
-to:
-```tsx
-<section className="w-full">
-  <div className="container mx-auto px-4">
-    <div ref={containerRef} dangerouslySetInnerHTML={{ __html: html }} />
-  </div>
-</section>
-```
-
-This single-file change ensures the ticker content aligns with the header width on all screen sizes.
-
+In `src/components/FeaturedVideo.tsx`, change the wrapper `div` class from `container mx-auto px-4 max-w-4xl` to `container mx-auto px-4` in both the loading skeleton and the main render.
