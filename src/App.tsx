@@ -59,6 +59,7 @@ import TenantTeam from "./pages/tenant/TenantTeam";
 import TenantSettings from "./pages/tenant/TenantSettings";
 import TenantMarketing from "./pages/tenant/TenantMarketing";
 import TenantMarketingDetail from "./pages/tenant/TenantMarketingDetail";
+import TenantMarketingAssets from "./pages/tenant/TenantMarketingAssets";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookieConsent from "./components/CookieConsent";
@@ -137,6 +138,7 @@ const App = () => (
             <Route path="/tenant/team" element={<TenantRoute><TenantTeam /></TenantRoute>} />
             <Route path="/tenant/settings" element={<TenantRoute><TenantSettings /></TenantRoute>} />
             <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
+            <Route path="/tenant/marketing/assets" element={<TenantRoute><TenantMarketingAssets /></TenantRoute>} />
             <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
 
             <Route path="/coach" element={<Navigate to="/dashboard" replace />} />

@@ -1302,6 +1302,76 @@ export type Database = {
           },
         ]
       }
+      tenant_marketing_assets: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          created_by: string
+          file_name: string
+          file_path: string
+          id: string
+          is_published: boolean
+          label: string
+          notes: string | null
+          source_asset_id: string | null
+          tenant_id: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          created_by: string
+          file_name: string
+          file_path: string
+          id?: string
+          is_published?: boolean
+          label?: string
+          notes?: string | null
+          source_asset_id?: string | null
+          tenant_id: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          is_published?: boolean
+          label?: string
+          notes?: string | null
+          source_asset_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_marketing_assets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_marketing_assets_source_asset_id_fkey"
+            columns: ["source_asset_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_marketing_assets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_subscribers: {
         Row: {
           account_number: string | null
@@ -1653,6 +1723,10 @@ export type Database = {
         Returns: boolean
       }
       is_tenant_admin: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_tenant_marketing_member: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }

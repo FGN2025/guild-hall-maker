@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMarketingCampaigns, useMarketingAssets } from "@/hooks/useMarketingCampaigns";
+import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Copy, Check } from "lucide-react";
+import { ArrowLeft, Download, Copy, Check, BookmarkPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,6 +13,7 @@ const TenantMarketingDetail = () => {
   const navigate = useNavigate();
   const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(true);
   const { assets, isLoading: loadingAssets } = useMarketingAssets(id);
+  const { saveFromLibrary } = useTenantMarketingAssets();
   const [copied, setCopied] = useState(false);
 
   const campaign = campaigns.find((c) => c.id === id);
@@ -88,9 +90,27 @@ const TenantMarketingDetail = () => {
                 <img src={a.url} alt={a.label} className="w-full h-48 object-cover" />
                 <CardContent className="pt-4 flex items-center justify-between">
                   <Badge variant="secondary">{a.label}</Badge>
-                  <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
-                    <Download className="h-4 w-4 mr-2" /> Download
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        saveFromLibrary.mutate({
+                          sourceAssetId: a.id,
+                          campaignId: campaign.id,
+                          url: a.url,
+                          label: a.label,
+                          filePath: a.file_path,
+                        })
+                      }
+                      disabled={saveFromLibrary.isPending}
+                    >
+                      <BookmarkPlus className="h-4 w-4 mr-2" /> Save
+                    </Button>
+                    <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
+                      <Download className="h-4 w-4 mr-2" /> Download
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
