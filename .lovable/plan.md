@@ -1,39 +1,44 @@
 
 
-## Add Enable/Disable Checkbox for Each Image Upload Limit Preset
+## Add CommonNinja Ticker Embed with Admin Management
 
 ### Overview
-Add a checkbox next to each preset row in the Admin Settings "Image Upload Limits" section. When unchecked, validation for that preset is skipped entirely, allowing unrestricted uploads. The enabled/disabled state is stored alongside the existing limit values in the same JSON setting.
+Add a CommonNinja ticker widget between the Hero section and the Featured Video on the landing page. Store the embed HTML in the `app_settings` table so admins can change or remove it from the Settings page.
 
-### 1. Update `LimitEntry` interface and defaults in `AdminSettings.tsx`
-- Add an `enabled: boolean` field to `LimitEntry` (default `true`)
-- Update `getDefaults()` to include `enabled: true` for each preset
-- Add a 5th column header "Enabled" to the grid
-- Add a `Checkbox` component in each row that toggles the `enabled` field
-- Disable (grey out) the numeric inputs when the preset is unchecked
-- Import `Checkbox` from `@/components/ui/checkbox`
+### 1. Insert a new `app_settings` row for the ticker embed
+Insert a row with `key = "homepage_ticker_embed"` and `value` set to the provided CommonNinja embed HTML.
 
-### 2. Update the grid layout
-- Change `grid-cols-4` to `grid-cols-5` for both header and data rows
-- The first column becomes the checkbox, followed by Preset name, Max Size, Min Width, Min Height
+### 2. Create a `TickerEmbed` component (`src/components/TickerEmbed.tsx`)
+- Fetch the `homepage_ticker_embed` value from `app_settings`
+- If empty/null, render nothing
+- Use `useEffect` to dynamically inject the CommonNinja SDK script (`https://cdn.commoninja.com/sdk/latest/commonninja.js`) into the document head (only once)
+- Render the embed HTML using `dangerouslySetInnerHTML`
+- Wrap in a styled section that matches the page layout (container, padding, etc.)
+- After rendering the HTML, trigger CommonNinja to re-scan by dispatching or re-adding the script
 
-### 3. Update `useImageLimits.ts` hook
-- Add `enabled?: boolean` to the `OverrideEntry` interface
-- In `getPreset()`, when `enabled` is explicitly `false`, return rules with extremely permissive values (e.g., `maxSizeKB: 999999`, no dimension constraints) so validation effectively passes everything
-- This keeps the validation pipeline intact without needing conditional skips in every upload component
+### 3. Add `TickerEmbed` to the landing page (`src/pages/Index.tsx`)
+- Import and place `<TickerEmbed />` between `<HeroSection />` and `<FeaturedVideo />`
 
-### 4. Persist the `enabled` state
-- The existing JSON save/load already handles arbitrary fields -- the `enabled` boolean will be included automatically when saving `imgLimits` to `app_settings`
+### 4. Add Ticker Embed setting to Admin Settings (`src/pages/admin/AdminSettings.tsx`)
+- Add a new state variable `tickerEmbed` for the embed code
+- Fetch `homepage_ticker_embed` alongside the other settings in the existing `useEffect`
+- Add a new card section with:
+  - A `Code` icon and "Homepage Ticker Embed" label
+  - Helper text explaining this is raw HTML/script embed code displayed above the Featured Video
+  - A `Textarea` for pasting embed HTML
+  - A Save button that upserts the value to `app_settings`
 
 ### Technical Details
 
-**AdminSettings.tsx changes:**
-- Import `Checkbox` from UI components
-- Add `enabled` to `LimitEntry` interface
-- Update grid to 5 columns with checkbox in first position
-- Inputs are visually disabled (reduced opacity + `disabled` prop) when unchecked
-- `getDefaults()` sets `enabled: true` for all presets
+**TickerEmbed component approach:**
+- The CommonNinja SDK script is loaded once via a `<script>` tag appended to `document.head`
+- The embed div is rendered with `dangerouslySetInnerHTML` so CommonNinja's SDK can find and initialize the `commonninja_component` div
+- A `useEffect` with a MutationObserver or script re-trigger ensures the widget initializes after React renders the DOM
 
-**useImageLimits.ts changes:**
-- When `enabled === false`, `getPreset()` returns a no-op ruleset: `{ maxSizeKB: Infinity, label: base.label }` -- no format, size, or dimension checks will trigger
+**Admin Settings additions:**
+- New state: `tickerEmbed`, `savingTicker`
+- Fetched in parallel with the existing settings queries
+- Save uses `upsert` (insert on conflict update) to handle the case where the row doesn't exist yet
+
+**Security note:** Only admins can write to `app_settings` (existing RLS policy), so the embed code is admin-controlled. The embed HTML is rendered on the public landing page.
 
