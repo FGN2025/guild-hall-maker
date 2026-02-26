@@ -1,16 +1,20 @@
 
 
-## Make Tournament Cards Semi-Transparent
+## Increase All Background Opacities to 50% and Expand Admin Slider to 100%
 
-### Goal
-Allow the page background image to be slightly visible through the tournament cards, matching the frosted-glass aesthetic shown in the reference screenshot.
+### 1. Update all existing background opacities in the database
+Run an UPDATE query to set all `page_backgrounds` rows to `opacity = 0.50`.
 
-### Changes
+### 2. Expand the admin opacity slider range (`src/components/admin/PageAppearanceManager.tsx`)
+- **Line 207**: Change `Slider` `max` from `0.5` to `1.0`
+- **Line 301**: Change the clear-handler default opacity from `0.25` to `0.50`
+- **Line 356**: Change the `getBgDraft` fallback opacity from `0.25` to `0.50`
 
-**File: `src/components/tournaments/TournamentCard.tsx` (line 41)**
-- Change the outer card div's classes from `bg-card` to `bg-card/70 backdrop-blur-sm`
-- This makes the card 70% opaque with a subtle blur, letting the background image peek through -- consistent with the project's glassmorphism style noted in the visual identity guidelines.
+### 3. Update default opacity in the upsert hook (`src/hooks/usePageBackground.ts`)
+- **Line 56**: Change the default `opacity` value from `0.25` to `0.50`
 
 ### Result
-Tournament cards will have a subtle transparency effect, allowing the page background image to show through slightly while maintaining full readability of card content.
+- All existing backgrounds immediately display at 50% opacity
+- New backgrounds default to 50%
+- Admins can set opacity from 5% up to 100% via the slider
 
