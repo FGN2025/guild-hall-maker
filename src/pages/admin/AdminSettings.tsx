@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Settings, Save, Loader2, ImageIcon } from "lucide-react";
 import { IMAGE_PRESETS } from "@/lib/imageValidation";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface LimitEntry {
+  enabled: boolean;
   maxSizeKB: number;
   minWidth?: number;
   minHeight?: number;
@@ -28,7 +30,7 @@ function getDefaults(): Record<string, LimitEntry> {
   const out: Record<string, LimitEntry> = {};
   for (const k of PRESET_KEYS) {
     const p = IMAGE_PRESETS[k];
-    out[k] = { maxSizeKB: p.maxSizeKB, minWidth: p.minWidth, minHeight: p.minHeight };
+    out[k] = { enabled: true, maxSizeKB: p.maxSizeKB, minWidth: p.minWidth, minHeight: p.minHeight };
   }
   return out;
 }
@@ -203,7 +205,8 @@ const AdminSettings = () => {
         ) : (
           <div className="space-y-4">
             {/* Header row */}
-            <div className="grid grid-cols-4 gap-3 text-xs font-heading text-muted-foreground">
+            <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-3 text-xs font-heading text-muted-foreground">
+              <div>On</div>
               <div>Preset</div>
               <div>Max Size (KB)</div>
               <div>Min Width (px)</div>
@@ -211,9 +214,19 @@ const AdminSettings = () => {
             </div>
 
             {PRESET_KEYS.map((key) => {
-              const entry: LimitEntry = imgLimits[key] ?? { maxSizeKB: 500 };
+              const entry: LimitEntry = imgLimits[key] ?? { enabled: true, maxSizeKB: 500 };
+              const disabled = !entry.enabled;
               return (
-                <div key={key} className="grid grid-cols-4 gap-3 items-center">
+                <div key={key} className={`grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-3 items-center ${disabled ? "opacity-50" : ""}`}>
+                  <Checkbox
+                    checked={entry.enabled}
+                    onCheckedChange={(checked) =>
+                      setImgLimits((prev) => ({
+                        ...prev,
+                        [key]: { ...prev[key], enabled: !!checked },
+                      }))
+                    }
+                  />
                   <Label className="text-xs font-body text-foreground truncate" title={PRESET_LABELS[key]}>
                     {PRESET_LABELS[key]}
                   </Label>
@@ -222,6 +235,7 @@ const AdminSettings = () => {
                     min={0}
                     value={entry.maxSizeKB ?? ""}
                     onChange={(e) => updateLimit(key, "maxSizeKB", e.target.value)}
+                    disabled={disabled}
                     className="bg-background border-border font-body text-sm h-8"
                   />
                   <Input
@@ -229,6 +243,7 @@ const AdminSettings = () => {
                     min={0}
                     value={entry.minWidth ?? ""}
                     onChange={(e) => updateLimit(key, "minWidth", e.target.value)}
+                    disabled={disabled}
                     placeholder="—"
                     className="bg-background border-border font-body text-sm h-8"
                   />
@@ -237,6 +252,7 @@ const AdminSettings = () => {
                     min={0}
                     value={entry.minHeight ?? ""}
                     onChange={(e) => updateLimit(key, "minHeight", e.target.value)}
+                    disabled={disabled}
                     placeholder="—"
                     className="bg-background border-border font-body text-sm h-8"
                   />
