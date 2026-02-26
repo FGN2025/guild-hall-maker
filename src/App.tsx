@@ -27,6 +27,7 @@ import PrizeShop from "./pages/PrizeShop";
 import PlayerGuide from "./pages/PlayerGuide";
 import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
+import Ladders from "./pages/Ladders";
 import AdminRoute from "./components/admin/AdminRoute";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMedia from "./pages/admin/AdminMedia";
@@ -96,6 +97,7 @@ const App = () => (
               <Route path="/challenges" element={<Challenges />} />
               <Route path="/prize-shop" element={<PrizeShop />} />
               <Route path="/guide" element={<PlayerGuide />} />
+              <Route path="/ladders" element={<Ladders />} />
               <Route path="/profile" element={<ProfileSettings />} />
               
             </Route>

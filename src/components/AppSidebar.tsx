@@ -51,6 +51,7 @@ const mainNav = [
   { to: "/achievements", label: "Badges", icon: Award },
   { to: "/challenges", label: "Challenges", icon: Target },
   { to: "/prize-shop", label: "Prize Shop", icon: Gift },
+  { to: "/ladders", label: "Ladders", icon: SwordIcon },
   { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 
