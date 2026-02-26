@@ -1,10 +1,26 @@
+import { useEffect, useState } from "react";
 import { Trophy, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
+import defaultLogo from "@/assets/fgn-hero-logo.png";
 import ParticlesBackground from "@/components/ParticlesBackground";
+import { supabase } from "@/integrations/supabase/client";
 
 const HeroSection = () => {
+  const [logoUrl, setLogoUrl] = useState<string>(defaultLogo);
+
+  useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "hero_logo_url")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) setLogoUrl(data.value);
+      });
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background image */}
@@ -21,6 +37,13 @@ const HeroSection = () => {
 
       <div className="relative z-10 container mx-auto px-4 text-center">
         <div className="animate-slide-up">
+          {/* Hero Logo */}
+          <img
+            src={logoUrl}
+            alt="Fiber Gaming Network"
+            className="max-h-20 md:max-h-28 mx-auto mb-6 object-contain"
+          />
+
           <p className="font-display text-base md:text-xl lg:text-2xl tracking-[0.3em] text-primary mb-4 uppercase font-bold">
             Network Gaming Platform
           </p>

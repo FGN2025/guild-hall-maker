@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { Settings, Save, Loader2, ImageIcon, Code } from "lucide-react";
 import { IMAGE_PRESETS } from "@/lib/imageValidation";
 import { Checkbox } from "@/components/ui/checkbox";
+import HeroLogoSettings from "@/components/admin/HeroLogoSettings";
 
 interface LimitEntry {
   enabled: boolean;
@@ -47,18 +48,21 @@ const AdminSettings = () => {
   // Image limits
   const [imgLimits, setImgLimits] = useState<Record<string, LimitEntry>>(getDefaults());
   const [savingImg, setSavingImg] = useState(false);
+  const [heroLogoUrl, setHeroLogoUrl] = useState("");
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const [msgRes, vidRes, imgRes, tickerRes] = await Promise.all([
+      const [msgRes, vidRes, imgRes, tickerRes, heroRes] = await Promise.all([
         supabase.from("app_settings").select("value").eq("key", "no_providers_message").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "featured_video_url").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "image_upload_limits").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "homepage_ticker_embed").maybeSingle(),
+        supabase.from("app_settings").select("value").eq("key", "hero_logo_url").maybeSingle(),
       ]);
       setMessage(msgRes.data?.value ?? "");
       setVideoUrl(vidRes.data?.value ?? "");
       setTickerEmbed(tickerRes.data?.value ?? "");
+      setHeroLogoUrl(heroRes.data?.value ?? "");
       if (imgRes.data?.value) {
         try {
           const parsed = JSON.parse(imgRes.data.value);
@@ -206,6 +210,13 @@ const AdminSettings = () => {
           Save Changes
         </Button>
       </div>
+
+      {/* Hero Logo */}
+      <HeroLogoSettings
+        currentUrl={heroLogoUrl}
+        loading={loading}
+        onSaved={(url) => setHeroLogoUrl(url)}
+      />
 
       {/* Homepage Ticker Embed */}
       <div className="rounded-lg border border-border bg-card p-6 space-y-4">
