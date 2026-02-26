@@ -1,36 +1,20 @@
 
 
-## Fix: Double Sidebar on Admin Marketing Page
+## Fix: Double Sidebar on Achievements and Notebooks Pages
 
 ### Problem
-The Admin Marketing page renders **two sidebars** because:
-1. `AdminRoute` (line 27) wraps its children in `<AdminLayout>`
-2. `AdminMarketing` (line 45) also wraps its content in `<AdminLayout>`
-
-This causes the sidebar to appear twice.
+Same root cause as the Marketing page fix: `AdminRoute` already wraps children in `<AdminLayout>`, but both `AdminAchievements.tsx` and `AdminNotebooks.tsx` also wrap their content in `<AdminLayout>`, causing the sidebar to render twice.
 
 ### Fix
-Remove the `<AdminLayout>` wrapper from `AdminMarketing.tsx`. The route-level `AdminRoute` already provides it.
+Remove the `<AdminLayout>` wrapper and its import from both files:
 
-### Technical Detail
-In `src/pages/admin/AdminMarketing.tsx`, change:
-```tsx
-// Before
-return (
-  <AdminLayout>
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      ...
-    </div>
-  </AdminLayout>
-);
+**`src/pages/admin/AdminAchievements.tsx`**
+- Remove `import AdminLayout from "@/components/admin/AdminLayout"`
+- Replace `<AdminLayout>...</AdminLayout>` wrapper with just the inner `<div>`
 
-// After
-return (
-  <div className="p-6 max-w-6xl mx-auto space-y-6">
-    ...
-  </div>
-);
-```
+**`src/pages/admin/AdminNotebooks.tsx`**
+- Remove `import AdminLayout from "@/components/admin/AdminLayout"`
+- Replace `<AdminLayout>...</AdminLayout>` wrapper with just the inner `<div>`
 
-Remove the `AdminLayout` import as well. This is a one-line structural fix -- no other files need changes.
+Two-file fix, identical pattern to the Marketing page fix already applied.
 
