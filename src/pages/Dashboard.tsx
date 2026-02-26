@@ -71,7 +71,7 @@ const Dashboard = () => {
                       <div
                         key={t.id}
                         className="bg-muted rounded-lg p-4 flex items-center justify-between cursor-pointer hover:border-primary/40 border border-transparent transition-colors"
-                        onClick={() => navigate("/tournaments")}
+onClick={() => navigate(`/tournaments/${t.id}`)}
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
