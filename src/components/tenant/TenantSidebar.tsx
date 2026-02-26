@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
+/** Convert hex color to rgba string */
 function hexToRgba(hex: string, alpha: number): string {
   const m = hex.replace("#", "").match(/.{2}/g);
   if (!m) return hex;
