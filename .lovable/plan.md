@@ -1,33 +1,16 @@
 
 
-## Fix: Add PageBackground to the Tournaments Page
+## Make Tournament Cards Semi-Transparent
 
-### Root Cause
-The Tournaments page (`src/pages/Tournaments.tsx`) does not import or render the `PageBackground` component. Every other page that displays a background image (Leaderboard, Dashboard, Community, etc.) includes it. The database flag was correctly set to `supports_background = true`, but the component was never wired into the page.
+### Goal
+Allow the page background image to be slightly visible through the tournament cards, matching the frosted-glass aesthetic shown in the reference screenshot.
 
-### Changes Required
+### Changes
 
-**File: `src/pages/Tournaments.tsx`**
+**File: `src/components/tournaments/TournamentCard.tsx` (line 41)**
+- Change the outer card div's classes from `bg-card` to `bg-card/70 backdrop-blur-sm`
+- This makes the card 70% opaque with a subtle blur, letting the background image peek through -- consistent with the project's glassmorphism style noted in the visual identity guidelines.
 
-1. Import `PageBackground` from `@/components/PageBackground`.
-2. Add `relative` to the outer wrapper div's className (needed so the absolutely-positioned background image stays contained).
-3. Render `<PageBackground pageSlug="tournaments" />` inside the wrapper, before the content.
-4. Add `relative z-10` to the content container div so it sits above the background layer.
-
-### Before vs After (simplified)
-
-```text
-BEFORE:
-<div className="min-h-screen bg-background grid-bg">
-  <div className="py-8 container ...">
-    ...
-
-AFTER:
-<div className="min-h-screen bg-background grid-bg relative">
-  <PageBackground pageSlug="tournaments" />
-  <div className="py-8 container ... relative z-10">
-    ...
-```
-
-This matches the exact pattern used on Leaderboard, Dashboard, Community, and all other pages with working backgrounds. No database or backend changes are needed.
+### Result
+Tournament cards will have a subtle transparency effect, allowing the page background image to show through slightly while maintaining full readability of card content.
 
