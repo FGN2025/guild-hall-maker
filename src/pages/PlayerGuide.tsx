@@ -27,6 +27,7 @@ import {
   Cookie,
   Target,
   Gift,
+  Bell,
 } from "lucide-react";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -262,6 +263,23 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Browse — View uploaded images organized by category and tags.",
       "AI Image Generation — Generate custom images using built-in AI capabilities for your creative needs.",
       "Usage — Images from the library can be used for tournament hero images and other platform content.",
+    ],
+  },
+  {
+    id: "notifications",
+    icon: Bell,
+    title: "Notifications",
+    bullets: [
+      "Stay informed with in-app and email notifications for important platform events.",
+      "Bell Icon — Click the Notifications button in the sidebar footer to open the notification panel.",
+      "Unread Badge — A badge on the bell icon shows how many unread notifications you have.",
+      "Prize Redemptions — When a moderator approves, fulfills, or denies your prize redemption, you'll receive an instant notification with the prize name and status.",
+      "New Challenges — When a new challenge is published, all players receive a notification with the challenge name and point reward.",
+      "Email Alerts — Key events (redemption updates, new challenges) also trigger email notifications so you never miss an update.",
+      "Mark as Read — Click any notification to mark it as read, or use 'Mark all read' to clear all at once.",
+      "Quick Navigation — Notifications include links that take you directly to the relevant page (e.g., Prize Shop, Challenges).",
+      "Real-Time — Notifications appear instantly via real-time updates — no need to refresh the page.",
+      "Tip: Check your notifications regularly to stay on top of challenge deadlines and prize approvals!",
     ],
   },
 ];
