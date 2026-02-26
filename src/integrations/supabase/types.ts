@@ -155,6 +155,97 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_completions: {
+        Row: {
+          awarded_points: number
+          challenge_id: string
+          completed_at: string
+          id: string
+          user_id: string
+          verified_by: string | null
+        }
+        Insert: {
+          awarded_points?: number
+          challenge_id: string
+          completed_at?: string
+          id?: string
+          user_id: string
+          verified_by?: string | null
+        }
+        Update: {
+          awarded_points?: number
+          challenge_id?: string
+          completed_at?: string
+          id?: string
+          user_id?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_completions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          challenge_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string | null
+          game_id: string | null
+          id: string
+          is_active: boolean
+          max_completions: number | null
+          name: string
+          points_reward: number
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          challenge_type?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date?: string | null
+          game_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_completions?: number | null
+          name: string
+          points_reward?: number
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          challenge_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string | null
+          game_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_completions?: number | null
+          name?: string
+          points_reward?: number
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_conversations: {
         Row: {
           created_at: string
@@ -372,6 +463,91 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ladder_entries: {
+        Row: {
+          created_at: string
+          id: string
+          ladder_id: string
+          losses: number
+          rank: number | null
+          rating: number
+          updated_at: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ladder_id: string
+          losses?: number
+          rank?: number | null
+          rating?: number
+          updated_at?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ladder_id?: string
+          losses?: number
+          rank?: number | null
+          rating?: number
+          updated_at?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ladder_entries_ladder_id_fkey"
+            columns: ["ladder_id"]
+            isOneToOne: false
+            referencedRelation: "ladders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ladders: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          game_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          game_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          game_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ladders_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       managed_pages: {
         Row: {
@@ -669,6 +845,89 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      prize_redemptions: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          points_spent: number
+          prize_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          points_spent?: number
+          prize_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          points_spent?: number
+          prize_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prize_redemptions_prize_id_fkey"
+            columns: ["prize_id"]
+            isOneToOne: false
+            referencedRelation: "prizes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prizes: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          points_cost: number
+          quantity_available: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          points_cost?: number
+          quantity_available?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          points_cost?: number
+          quantity_available?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

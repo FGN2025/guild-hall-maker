@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Trophy, Swords, Star, Gift, ArrowLeft, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Trophy, Swords, Star, Gift, ArrowLeft, TrendingUp, Target } from "lucide-react";
 
 const sidebarItems = [
   { to: "/moderator", label: "Dashboard", icon: LayoutDashboard },
   { to: "/moderator/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/moderator/matches", label: "Matches", icon: Swords },
   { to: "/moderator/points", label: "Points", icon: Star },
+  { to: "/moderator/challenges", label: "Challenges", icon: Target },
   { to: "/moderator/ladders", label: "Ladders", icon: TrendingUp },
   { to: "/moderator/redemptions", label: "Redemptions", icon: Gift },
 ];

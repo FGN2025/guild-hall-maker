@@ -43,6 +43,9 @@ import ModeratorDashboard from "./pages/moderator/ModeratorDashboard";
 import ModeratorTournaments from "./pages/moderator/ModeratorTournaments";
 import ModeratorMatches from "./pages/moderator/ModeratorMatches";
 import ModeratorPoints from "./pages/moderator/ModeratorPoints";
+import ModeratorChallenges from "./pages/moderator/ModeratorChallenges";
+import ModeratorLadders from "./pages/moderator/ModeratorLadders";
+import ModeratorRedemptions from "./pages/moderator/ModeratorRedemptions";
 import TenantRoute from "./components/tenant/TenantRoute";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import TenantLeads from "./pages/tenant/TenantLeads";
@@ -112,6 +115,9 @@ const App = () => (
             <Route path="/moderator/tournaments" element={<ModeratorRoute><ModeratorTournaments /></ModeratorRoute>} />
             <Route path="/moderator/matches" element={<ModeratorRoute><ModeratorMatches /></ModeratorRoute>} />
             <Route path="/moderator/points" element={<ModeratorRoute><ModeratorPoints /></ModeratorRoute>} />
+            <Route path="/moderator/challenges" element={<ModeratorRoute><ModeratorChallenges /></ModeratorRoute>} />
+            <Route path="/moderator/ladders" element={<ModeratorRoute><ModeratorLadders /></ModeratorRoute>} />
+            <Route path="/moderator/redemptions" element={<ModeratorRoute><ModeratorRedemptions /></ModeratorRoute>} />
 
             {/* Tenant routes */}
             <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
