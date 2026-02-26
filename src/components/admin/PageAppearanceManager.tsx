@@ -204,7 +204,7 @@ const BackgroundSubSection = ({ slug, label, draft, onUpdate, onSave, onClear, s
       <Input value={draft.image_url} onChange={(e) => onUpdate("image_url", e.target.value)} placeholder="Image URL…" className="bg-background border-border text-sm" />
       <div className="flex items-center gap-3">
         <Label className="text-xs text-muted-foreground font-heading shrink-0 w-16">Opacity: {Math.round(draft.opacity * 100)}%</Label>
-        <Slider value={[draft.opacity]} onValueChange={([v]) => onUpdate("opacity", v)} min={0.05} max={0.5} step={0.01} className="flex-1" />
+        <Slider value={[draft.opacity]} onValueChange={([v]) => onUpdate("opacity", v)} min={0.05} max={1.0} step={0.01} className="flex-1" />
       </div>
       <div className="flex gap-2">
         <Button size="sm" disabled={!draft.image_url || saving} onClick={onSave} className="gap-1.5 font-heading">
@@ -298,7 +298,7 @@ const SortablePageRow = ({
                   }}
                   onClear={() => {
                     deleteBg.mutate(page.slug);
-                    setBgDrafts((prev) => ({ ...prev, [page.slug]: { image_url: "", opacity: 0.25 } }));
+                    setBgDrafts((prev) => ({ ...prev, [page.slug]: { image_url: "", opacity: 0.50 } }));
                   }}
                   saving={upsertBg.isPending}
                   clearing={deleteBg.isPending}
@@ -353,7 +353,7 @@ const PageAppearanceManager = () => {
   }, [backgrounds]);
 
   const getHeroDraft = (slug: string) => heroDrafts[slug] ?? { image_url: "", title: "", subtitle: "" };
-  const getBgDraft = (slug: string) => bgDrafts[slug] ?? { image_url: "", opacity: 0.25 };
+  const getBgDraft = (slug: string) => bgDrafts[slug] ?? { image_url: "", opacity: 0.50 };
 
   const updateHeroDraft = (slug: string, field: string, value: string) => {
     setHeroDrafts((prev) => ({ ...prev, [slug]: { ...getHeroDraft(slug), [field]: value } }));
