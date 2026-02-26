@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  isModerator: boolean;
   roleLoading: boolean;
   signOut: () => Promise<void>;
 }
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isAdmin: false,
+  isModerator: false,
   roleLoading: true,
   signOut: async () => {},
 });
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
 
   const fetchRole = async (userId: string) => {
@@ -37,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq("user_id", userId)
       .maybeSingle();
     setIsAdmin(data?.role === "admin");
+    setIsModerator(data?.role === "moderator");
     setRoleLoading(false);
   };
 
@@ -50,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setTimeout(() => fetchRole(session.user.id), 0);
         } else {
           setIsAdmin(false);
+          setIsModerator(false);
           setRoleLoading(false);
         }
       }
@@ -74,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, isAdmin, roleLoading, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, roleLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -44,29 +44,22 @@ export const useAdminUsers = (search: string) => {
     },
   });
 
-  const promoteToAdmin = useMutation({
-    mutationFn: async (userId: string) => {
-      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" } as any);
-      if (error) throw error;
+  const setRole = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string | null }) => {
+      // Remove existing role first
+      await supabase.from("user_roles").delete().eq("user_id", userId);
+      // Insert new role if not "user"
+      if (role && role !== "user") {
+        const { error } = await supabase.from("user_roles").insert({ user_id: userId, role } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast({ title: "User promoted to admin" });
+      toast({ title: "User role updated" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const revokeAdmin = useMutation({
-    mutationFn: async (userId: string) => {
-      const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast({ title: "Admin role revoked" });
-    },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
-
-  return { users, isLoading, promoteToAdmin, revokeAdmin };
+  return { users, isLoading, setRole };
 };
