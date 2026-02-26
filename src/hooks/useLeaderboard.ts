@@ -12,6 +12,7 @@ export interface LeaderboardPlayer {
   draws: number;
   total_matches: number;
   win_rate: number;
+  points: number;
   rank: number;
 }
 
@@ -127,6 +128,20 @@ export const useLeaderboard = (filters: LeaderboardFilters) => {
             .in("user_id", playerIds)
         : { data: [] };
 
+      // Fetch all-time points from season_scores
+      const { data: seasonScores } = playerIds.length > 0
+        ? await supabase
+            .from("season_scores")
+            .select("user_id, points")
+            .in("user_id", playerIds)
+        : { data: [] };
+
+      // Aggregate total points per player across all seasons
+      const pointsMap: Record<string, number> = {};
+      (seasonScores ?? []).forEach((s) => {
+        pointsMap[s.user_id] = (pointsMap[s.user_id] || 0) + s.points;
+      });
+
       // Build leaderboard
       const leaderboard: LeaderboardPlayer[] = playerIds.map((uid) => {
         const s = stats[uid];
@@ -143,6 +158,7 @@ export const useLeaderboard = (filters: LeaderboardFilters) => {
           draws: s.draws,
           total_matches: total,
           win_rate: total > 0 ? Math.round((s.wins / total) * 100) : 0,
+          points: pointsMap[uid] || 0,
           rank: 0,
         };
       });
