@@ -20,6 +20,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Plus, Trash2, Building2, Users, UserPlus, Upload, X } from "lucide-react";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
 
@@ -217,11 +218,11 @@ const AdminTenants = () => {
                   <Label>Brand Colors (optional)</Label>
                   <div className="flex gap-4">
                     <div className="flex items-center gap-2">
-                      <input type="color" value={form.primary_color || "#00e5ff"} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} className="h-8 w-8 rounded border border-border cursor-pointer bg-transparent p-0.5" />
+                      <ColorPicker value={form.primary_color || "#00e5ff"} onChange={(c) => setForm({ ...form, primary_color: c })} />
                       <span className="text-xs text-muted-foreground">Primary</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <input type="color" value={form.accent_color || "#7c3aed"} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="h-8 w-8 rounded border border-border cursor-pointer bg-transparent p-0.5" />
+                      <ColorPicker value={form.accent_color || "#7c3aed"} onChange={(c) => setForm({ ...form, accent_color: c })} />
                       <span className="text-xs text-muted-foreground">Accent</span>
                     </div>
                   </div>
