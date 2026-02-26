@@ -4,18 +4,20 @@ import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Copy, Check, BookmarkPlus } from "lucide-react";
+import { ArrowLeft, Download, Copy, Check, BookmarkPlus, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 
 const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(true);
   const { assets, isLoading: loadingAssets } = useMarketingAssets(id);
-  const { saveFromLibrary } = useTenantMarketingAssets();
+  const { saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
   const [copied, setCopied] = useState(false);
-
+  const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
+  const [editorAssetMeta, setEditorAssetMeta] = useState<{ id: string; label: string } | null>(null);
   const campaign = campaigns.find((c) => c.id === id);
 
   if (loadingCampaigns) {
@@ -94,6 +96,16 @@ const TenantMarketingDetail = () => {
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => {
+                        setEditorAssetUrl(a.url);
+                        setEditorAssetMeta({ id: a.id, label: a.label });
+                      }}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" /> Customize
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() =>
                         saveFromLibrary.mutate({
                           sourceAssetId: a.id,
@@ -117,6 +129,23 @@ const TenantMarketingDetail = () => {
           </div>
         )}
       </div>
+
+      {editorAssetUrl && editorAssetMeta && (
+        <AssetEditorDialog
+          open={!!editorAssetUrl}
+          onOpenChange={(open) => { if (!open) { setEditorAssetUrl(null); setEditorAssetMeta(null); } }}
+          baseImageUrl={editorAssetUrl}
+          onSave={async (blob) => {
+            const file = new File([blob], `customized-${Date.now()}.png`, { type: "image/png" });
+            await uploadAsset.mutateAsync({
+              file,
+              label: `${editorAssetMeta.label} (customized)`,
+              sourceAssetId: editorAssetMeta.id,
+              campaignId: campaign.id,
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
