@@ -93,6 +93,7 @@ const TenantTeam = () => {
           <SelectContent>
             <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="manager">Manager</SelectItem>
+            <SelectItem value="marketing">Marketing</SelectItem>
           </SelectContent>
         </Select>
         <Button
@@ -107,6 +108,7 @@ const TenantTeam = () => {
       <div className="text-xs text-muted-foreground space-y-1">
         <p><strong>Admin</strong> — Full access: dashboard, leads, ZIP codes, subscribers, and team management.</p>
         <p><strong>Manager</strong> — Read-only access to dashboard and leads.</p>
+        <p><strong>Marketing</strong> — Access to marketing assets and media library.</p>
       </div>
 
       {/* Team list */}
@@ -157,6 +159,7 @@ const TenantTeam = () => {
                         <SelectContent>
                           <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
                         </SelectContent>
                       </Select>
                       <Button
