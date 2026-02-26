@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCoach } from "@/contexts/CoachContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 import {
   Trophy,
   LayoutDashboard,
@@ -180,6 +181,9 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <ThemeToggle />
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <NotificationBell />
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Profile">
