@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
+import { validateAndToast } from "@/lib/imageValidation";
+import { useImageLimits } from "@/hooks/useImageLimits";
 import { toast } from "@/hooks/use-toast";
 import type { Game, GameInsert } from "@/hooks/useGames";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
@@ -28,6 +29,7 @@ interface Props {
 }
 
 const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Props) => {
+  const { getPreset } = useImageLimits();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -42,7 +44,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const ok = await validateAndToast(file, IMAGE_PRESETS.cardCover);
+    const ok = await validateAndToast(file, getPreset("cardCover"));
     if (!ok) { if (fileInputRef.current) fileInputRef.current.value = ""; return; }
     setUploading(true);
     try {

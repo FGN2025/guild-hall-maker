@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { validateAndToast, IMAGE_PRESETS } from "@/lib/imageValidation";
+import { validateAndToast } from "@/lib/imageValidation";
+import { useImageLimits } from "@/hooks/useImageLimits";
 
 interface Props {
   onUpload: (data: { file: File; category?: string; tags?: string[] }) => void;
@@ -15,6 +16,7 @@ const CATEGORIES = ["general", "tournament", "badge", "trophy", "banner"];
 const MAX_TAGS = 10;
 
 const MediaUploader = ({ onUpload, isUploading }: Props) => {
+  const { getPreset } = useImageLimits();
   const [dragOver, setDragOver] = useState(false);
   const [category, setCategory] = useState("general");
   const [tags, setTags] = useState<string[]>([]);
@@ -46,7 +48,7 @@ const MediaUploader = ({ onUpload, isUploading }: Props) => {
       for (const file of Array.from(files)) {
         if (!file.type.startsWith("image/") && !file.type.startsWith("video/") && !file.type.startsWith("audio/")) continue;
         if (file.type.startsWith("image/")) {
-          const ok = await validateAndToast(file, IMAGE_PRESETS.general);
+          const ok = await validateAndToast(file, getPreset("general"));
           if (!ok) continue;
         }
         onUpload({ file, category, tags });
