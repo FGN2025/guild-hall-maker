@@ -21,8 +21,8 @@ const HeroSection = () => {
 
       <div className="relative z-10 container mx-auto px-4 text-center">
         <div className="animate-slide-up">
-          <p className="font-display text-base md:text-xl lg:text-2xl tracking-[0.3em] text-primary mb-4 uppercase">
-            Competitive Gaming Platform
+          <p className="font-display text-base md:text-xl lg:text-2xl tracking-[0.3em] text-primary mb-4 uppercase font-bold">
+            Network Gaming Platform
           </p>
           <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6">
             <span className="text-foreground">FORGE YOUR</span>
@@ -30,8 +30,8 @@ const HeroSection = () => {
             <span className="gradient-text">LEGEND</span>
           </h1>
           <p className="font-body text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Join tournaments, climb leaderboards, and compete with the best.
-            The ultimate experience for players and operators.
+            Join Tournaments, climb Leaderboards, and compete with the best.
+            The Ultimate Experience for Players and Broadband Operators
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
