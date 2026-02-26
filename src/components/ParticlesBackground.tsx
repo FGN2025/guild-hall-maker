@@ -22,27 +22,27 @@ const ParticlesBackground = () => {
         background: { color: { value: "transparent" } },
         fpsLimit: 60,
         particles: {
-          color: { value: "hsl(var(--primary))" },
+          color: { value: "#00ff88" },
           links: {
-            color: "hsl(var(--primary))",
-            distance: 150,
+            color: "#00ff88",
+            distance: 160,
             enable: true,
-            opacity: 0.3,
-            width: 1,
+            opacity: 0.5,
+            width: 1.5,
           },
           move: {
             enable: true,
-            speed: 1.2,
+            speed: 1.5,
             direction: "none",
             outModes: { default: "bounce" },
           },
           number: {
             density: { enable: true, width: 800, height: 800 },
-            value: 60,
+            value: 80,
           },
-          opacity: { value: 0.4 },
+          opacity: { value: 0.7 },
           shape: { type: "circle" },
-          size: { value: { min: 1, max: 3 } },
+          size: { value: { min: 2, max: 4 } },
         },
         interactivity: {
           events: {
