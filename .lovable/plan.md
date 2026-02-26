@@ -1,35 +1,15 @@
 
 
-## Tournament Filtering & Sorting Improvements
+## Fix: Tournament Click Navigation on Player Dashboard
 
-### Overview
-Three changes to how tournaments are filtered and displayed on the Tournaments page.
+**Problem**: In the "My Tournaments" section of the Player Dashboard, clicking a tournament navigates to `/tournaments` (the listing page) instead of the specific tournament's detail page (`/tournaments/:id`).
 
-### Changes (all in `src/pages/Tournaments.tsx`)
+**Fix**: Update the `onClick` handler in `src/pages/Dashboard.tsx` to navigate to `/tournaments/${t.id}` instead of `/tournaments`.
 
-#### 1. Default filter set to "Open" instead of "All Statuses"
-- Change `useState("all")` to `useState("open")` for `statusFilter`
+### Changes
 
-#### 2. Rename "Upcoming" filter to "Registered"
-- Replace the `<SelectItem value="upcoming">Upcoming</SelectItem>` with `<SelectItem value="registered">Registered</SelectItem>`
-- Update the filter logic: when `statusFilter === "registered"`, show tournaments where `t.is_registered === true` (regardless of status)
+**File: `src/pages/Dashboard.tsx`**
+- Line 79: Change `onClick={() => navigate("/tournaments")}` to `onClick={() => navigate(`/tournaments/${t.id}`)}`
+- This matches the pattern already used in `TournamentCard.tsx` which navigates to `/tournaments/${t.id}`
 
-#### 3. Show registered tournaments in the "Open" view
-- When `statusFilter === "open"`, show tournaments that are status `"open"` OR where the user is registered (`t.is_registered === true`)
-
-### Technical Details
-
-**File to modify:** `src/pages/Tournaments.tsx`
-
-The filter logic in the `useMemo` block (lines 26-35) will be updated:
-
-```text
-Current:  matchesStatus = statusFilter === "all" || t.status === statusFilter
-Updated:
-  - "all"        -> true (no status filter)
-  - "open"       -> t.status === "open" || t.is_registered
-  - "registered" -> t.is_registered
-  - other values -> t.status === statusFilter
-```
-
-No database changes or new dependencies required.
+This is a one-line fix.
