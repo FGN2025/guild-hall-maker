@@ -13,6 +13,7 @@ import {
   Swords,
   SwordIcon,
   Award,
+  Target,
   Gamepad2,
   CalendarDays,
   Joystick,
@@ -47,6 +48,7 @@ const mainNav = [
   { to: "/season-stats", label: "Stats", icon: BarChart3 },
   { to: "/compare", label: "Compare", icon: Swords },
   { to: "/achievements", label: "Badges", icon: Award },
+  { to: "/challenges", label: "Challenges", icon: Target },
   { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 
