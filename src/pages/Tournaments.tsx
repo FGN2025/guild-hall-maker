@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Filter, Trophy } from "lucide-react";
+import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -20,11 +20,12 @@ const Tournaments = () => {
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("open");
+  const [sortBy, setSortBy] = useState("date_asc");
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
   const filtered = useMemo(() => {
-    return tournaments.filter((t) => {
+    const result = tournaments.filter((t) => {
       const matchesSearch =
         !search ||
         t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -36,13 +37,40 @@ const Tournaments = () => {
         : t.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [tournaments, search, statusFilter]);
+
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "date_asc":
+          return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+        case "date_desc":
+          return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+        case "name_asc":
+          return a.name.localeCompare(b.name);
+        case "name_desc":
+          return b.name.localeCompare(a.name);
+        case "prize_desc": {
+          const prizeA = parseFloat(a.prize_pool?.replace(/[^0-9.]/g, "") || "0");
+          const prizeB = parseFloat(b.prize_pool?.replace(/[^0-9.]/g, "") || "0");
+          return prizeB - prizeA;
+        }
+        case "prize_asc": {
+          const prizeA = parseFloat(a.prize_pool?.replace(/[^0-9.]/g, "") || "0");
+          const prizeB = parseFloat(b.prize_pool?.replace(/[^0-9.]/g, "") || "0");
+          return prizeA - prizeB;
+        }
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [tournaments, search, statusFilter, sortBy]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginatedTournaments = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   // Reset page when filters change
-  useMemo(() => { setPage(1); }, [search, statusFilter]);
+  useMemo(() => { setPage(1); }, [search, statusFilter, sortBy]);
 
   return (
     <div className="min-h-screen bg-background grid-bg">
@@ -78,6 +106,20 @@ const Tournaments = () => {
               <SelectItem value="registered">Registered</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full sm:w-[200px] bg-card border-border font-body">
+              <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date_asc">Date (Earliest)</SelectItem>
+              <SelectItem value="date_desc">Date (Latest)</SelectItem>
+              <SelectItem value="name_asc">Name (A–Z)</SelectItem>
+              <SelectItem value="name_desc">Name (Z–A)</SelectItem>
+              <SelectItem value="prize_desc">Prize (Highest)</SelectItem>
+              <SelectItem value="prize_asc">Prize (Lowest)</SelectItem>
             </SelectContent>
           </Select>
         </div>
