@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, ShieldCheck, ShieldOff, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const AdminUsers = () => {
   const [search, setSearch] = useState("");
-  const { users, isLoading, promoteToAdmin, revokeAdmin } = useAdminUsers(search);
+  const { users, isLoading, setRole } = useAdminUsers(search);
   const { user: currentUser } = useAuth();
+
+  const roleBadge = (role: string | null) => {
+    if (role === "admin") return <Badge className="bg-primary/20 text-primary border-primary/30">Admin</Badge>;
+    if (role === "moderator") return <Badge className="bg-accent/20 text-accent-foreground border-accent/30">Moderator</Badge>;
+    return <Badge variant="secondary">User</Badge>;
+  };
 
   return (
     <div>
@@ -40,7 +46,7 @@ const AdminUsers = () => {
                 <TableHead>Gamer Tag</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Set Role</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -56,39 +62,28 @@ const AdminUsers = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{u.gamer_tag ?? "—"}</TableCell>
-                  <TableCell>
-                    {u.role === "admin" ? (
-                      <Badge className="bg-primary/20 text-primary border-primary/30">Admin</Badge>
-                    ) : (
-                      <Badge variant="secondary">User</Badge>
-                    )}
-                  </TableCell>
+                  <TableCell>{roleBadge(u.role)}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {new Date(u.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
                     {u.user_id === currentUser?.id ? (
                       <span className="text-xs text-muted-foreground">You</span>
-                    ) : u.role === "admin" ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => revokeAdmin.mutate(u.user_id)}
-                        disabled={revokeAdmin.isPending}
-                        className="text-destructive hover:text-destructive gap-1"
-                      >
-                        <ShieldOff className="h-4 w-4" /> Revoke
-                      </Button>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => promoteToAdmin.mutate(u.user_id)}
-                        disabled={promoteToAdmin.isPending}
-                        className="text-primary hover:text-primary gap-1"
+                      <Select
+                        value={u.role ?? "user"}
+                        onValueChange={(val) => setRole.mutate({ userId: u.user_id, role: val })}
+                        disabled={setRole.isPending}
                       >
-                        <ShieldCheck className="h-4 w-4" /> Make Admin
-                      </Button>
+                        <SelectTrigger className="w-[130px] ml-auto">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="moderator">Moderator</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
                     )}
                   </TableCell>
                 </TableRow>
