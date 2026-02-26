@@ -8,6 +8,8 @@ interface Tenant {
   slug: string;
   logo_url: string | null;
   contact_email: string | null;
+  primary_color: string | null;
+  accent_color: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -30,6 +32,8 @@ interface CreateTenantInput {
   slug: string;
   contact_email?: string;
   logo_url?: string;
+  primary_color?: string;
+  accent_color?: string;
 }
 
 interface UpdateTenantInput {
@@ -38,6 +42,8 @@ interface UpdateTenantInput {
   slug?: string;
   contact_email?: string | null;
   logo_url?: string | null;
+  primary_color?: string | null;
+  accent_color?: string | null;
   status?: string;
 }
 
@@ -63,7 +69,9 @@ export function useTenants() {
         slug: input.slug,
         contact_email: input.contact_email || null,
         logo_url: input.logo_url || null,
-      });
+        primary_color: input.primary_color || null,
+        accent_color: input.accent_color || null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {

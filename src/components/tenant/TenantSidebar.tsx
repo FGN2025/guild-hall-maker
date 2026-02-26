@@ -2,10 +2,11 @@ import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
-interface TenantSidebarProps {
+export interface TenantSidebarProps {
   tenantName: string;
   tenantRole: 'admin' | 'manager';
   logoUrl?: string | null;
+  brandColor?: string;
 }
 
 const allSidebarItems = [
@@ -24,7 +25,7 @@ const ecosystemApps = [
   { target: "hub" as const, label: "Hub" },
 ];
 
-const TenantSidebar = ({ tenantName, tenantRole, logoUrl }: TenantSidebarProps) => {
+const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor }: TenantSidebarProps) => {
   const location = useLocation();
   const { requestMagicLink, loading } = useEcosystemAuth();
 
@@ -44,7 +45,7 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl }: TenantSidebarProps) 
           <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading mb-0.5">
             Tenant Admin
           </p>
-          <h2 className="font-display text-sm font-bold text-primary tracking-wider truncate">
+          <h2 className="font-display text-sm font-bold tracking-wider truncate" style={brandColor ? { color: brandColor } : undefined}>
             {tenantName}
           </h2>
         </div>

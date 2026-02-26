@@ -8,6 +8,8 @@ interface TenantAdminInfo {
   tenantSlug: string;
   tenantRole: 'admin' | 'manager';
   logoUrl: string | null;
+  primaryColor: string | null;
+  accentColor: string | null;
 }
 
 export function useTenantAdmin() {
@@ -29,7 +31,7 @@ export function useTenantAdmin() {
       const tenantIds = adminRows.map((r: any) => r.tenant_id);
       const { data: tenants, error: tErr } = await supabase
         .from("tenants")
-        .select("id, name, slug, logo_url")
+        .select("id, name, slug, logo_url, primary_color, accent_color")
         .in("id", tenantIds)
         .eq("status", "active");
 
@@ -45,6 +47,8 @@ export function useTenantAdmin() {
         tenantSlug: t.slug,
         tenantRole: (matchingAdmin?.role === 'manager' ? 'manager' : 'admin') as 'admin' | 'manager',
         logoUrl: t.logo_url || null,
+        primaryColor: (t as any).primary_color || null,
+        accentColor: (t as any).accent_color || null,
       } as TenantAdminInfo;
     },
   });

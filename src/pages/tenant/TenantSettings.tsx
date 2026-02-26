@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Upload, Loader2 } from "lucide-react";
+import { Building2, Upload, Loader2, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -14,75 +14,76 @@ const TenantSettings = () => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [contactEmail, setContactEmail] = useState(tenantInfo?.tenantName ? "" : "");
+  const [contactEmail, setContactEmail] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#00e5ff");
+  const [accentColor, setAccentColor] = useState("#7c3aed");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(tenantInfo?.logoUrl || null);
+  const [savingColors, setSavingColors] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tenantInfo) {
+      setPreviewUrl(tenantInfo.logoUrl);
+      setPrimaryColor(tenantInfo.primaryColor || "#00e5ff");
+      setAccentColor(tenantInfo.accentColor || "#7c3aed");
+    }
+  }, [tenantInfo]);
 
   if (!tenantInfo) return null;
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
-      return;
-    }
-    if (file.size > 500 * 1024) {
-      toast.error("Logo must be under 500KB.");
-      return;
-    }
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file."); return; }
+    if (file.size > 500 * 1024) { toast.error("Logo must be under 500KB."); return; }
 
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
       const path = `tenant-logos/${tenantInfo.tenantId}.${ext}`;
-
-      const { error: uploadErr } = await supabase.storage
-        .from("app-media")
-        .upload(path, file, { upsert: true });
+      const { error: uploadErr } = await supabase.storage.from("app-media").upload(path, file, { upsert: true });
       if (uploadErr) throw uploadErr;
-
-      const { data: urlData } = supabase.storage
-        .from("app-media")
-        .getPublicUrl(path);
-
+      const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
       const logoUrl = urlData.publicUrl;
-
-      const { error: updateErr } = await supabase
-        .from("tenants")
-        .update({ logo_url: logoUrl })
-        .eq("id", tenantInfo.tenantId);
+      const { error: updateErr } = await supabase.from("tenants").update({ logo_url: logoUrl }).eq("id", tenantInfo.tenantId);
       if (updateErr) throw updateErr;
-
       setPreviewUrl(logoUrl);
       queryClient.invalidateQueries({ queryKey: ["tenant-admin-check"] });
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
       toast.success("Logo updated!");
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setUploading(false);
-    }
+    } catch (err: any) { toast.error(err.message); }
+    finally { setUploading(false); }
   };
 
   const handleSaveEmail = async () => {
     if (!contactEmail.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("tenants")
-        .update({ contact_email: contactEmail.trim() })
-        .eq("id", tenantInfo.tenantId);
+      const { error } = await supabase.from("tenants").update({ contact_email: contactEmail.trim() }).eq("id", tenantInfo.tenantId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
       toast.success("Contact email updated!");
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (err: any) { toast.error(err.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleSaveColors = async () => {
+    setSavingColors(true);
+    try {
+      const { error } = await supabase
+        .from("tenants")
+        .update({
+          primary_color: primaryColor,
+          accent_color: accentColor,
+        } as any)
+        .eq("id", tenantInfo.tenantId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["tenant-admin-check"] });
+      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      toast.success("Brand colors updated!");
+    } catch (err: any) { toast.error(err.message); }
+    finally { setSavingColors(false); }
   };
 
   return (
@@ -108,28 +109,68 @@ const TenantSettings = () => {
               )}
             </div>
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Upload a square logo (PNG, JPG, WebP). Max 500KB.
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleLogoUpload}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
+              <p className="text-sm text-muted-foreground">Upload a square logo (PNG, JPG, WebP). Max 500KB.</p>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 {uploading ? "Uploading..." : "Upload Logo"}
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Palette className="h-5 w-5" /> Brand Colors
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Primary Color</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  className="h-10 w-10 rounded border border-border cursor-pointer bg-transparent p-0.5"
+                />
+                <Input
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  placeholder="#00e5ff"
+                  className="flex-1 font-mono text-sm"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Accent Color</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  className="h-10 w-10 rounded border border-border cursor-pointer bg-transparent p-0.5"
+                />
+                <Input
+                  value={accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  placeholder="#7c3aed"
+                  className="flex-1 font-mono text-sm"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 pt-2">
+            <div className="text-xs text-muted-foreground">Preview:</div>
+            <div className="h-8 w-8 rounded-full border border-border" style={{ backgroundColor: primaryColor }} />
+            <div className="h-8 w-8 rounded-full border border-border" style={{ backgroundColor: accentColor }} />
+          </div>
+          <Button onClick={handleSaveColors} disabled={savingColors}>
+            {savingColors ? "Saving..." : "Save Colors"}
+          </Button>
         </CardContent>
       </Card>
 
@@ -145,12 +186,7 @@ const TenantSettings = () => {
           <div className="space-y-2">
             <Label>Contact Email</Label>
             <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="admin@company.com"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-              />
+              <Input type="email" placeholder="admin@company.com" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
               <Button onClick={handleSaveEmail} disabled={saving || !contactEmail.trim()}>
                 {saving ? "Saving..." : "Save"}
               </Button>
