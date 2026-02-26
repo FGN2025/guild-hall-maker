@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIcon, Library } from "lucide-react";
+import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import { toast } from "sonner";
 
 const CATEGORIES = [
@@ -116,8 +117,9 @@ const AdminMarketing = () => {
 };
 
 function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampaign; onClose: () => void }) {
-  const { assets, isLoading, uploadAsset, deleteAsset } = useMarketingAssets(campaign.id);
+  const { assets, isLoading, uploadAsset, deleteAsset, addAssetFromUrl } = useMarketingAssets(campaign.id);
   const [label, setLabel] = useState("Square");
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -126,13 +128,18 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
     e.target.value = "";
   };
 
+  const handleMediaSelect = async (url: string, filePath?: string) => {
+    const fp = filePath || url.split("/app-media/")[1] || url;
+    await addAssetFromUrl.mutateAsync({ url, file_path: fp, label });
+  };
+
   return (
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader><DialogTitle>{campaign.title} — Assets</DialogTitle></DialogHeader>
         <div className="space-y-4">
-          <div className="flex gap-2 items-end">
-            <div className="flex-1">
+          <div className="flex gap-2 items-end flex-wrap">
+            <div className="flex-1 min-w-[140px]">
               <Label>Label</Label>
               <Select value={label} onValueChange={setLabel}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -150,7 +157,12 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
               </Button>
               <input id="asset-upload" type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             </Label>
+            <Button variant="outline" onClick={() => setMediaPickerOpen(true)} disabled={addAssetFromUrl.isPending}>
+              <Library className="h-4 w-4 mr-2" /> Media Library
+            </Button>
           </div>
+
+          <MediaPickerDialog open={mediaPickerOpen} onOpenChange={setMediaPickerOpen} onSelect={handleMediaSelect} />
 
           {isLoading ? (
             <div className="flex justify-center py-8"><div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full" /></div>

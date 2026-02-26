@@ -126,5 +126,16 @@ export function useMarketingAssets(campaignId: string | undefined) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  return { assets: assetsQuery.data ?? [], isLoading: assetsQuery.isLoading, uploadAsset, deleteAsset };
+  const addAssetFromUrl = useMutation({
+    mutationFn: async ({ url, file_path, label }: { url: string; file_path: string; label: string }) => {
+      const { error } = await supabase
+        .from("marketing_assets" as any)
+        .insert({ campaign_id: campaignId, label, file_path, url } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success("Asset added from library"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return { assets: assetsQuery.data ?? [], isLoading: assetsQuery.isLoading, uploadAsset, deleteAsset, addAssetFromUrl };
 }

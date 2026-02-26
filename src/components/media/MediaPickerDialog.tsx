@@ -11,7 +11,7 @@ const TABS = ["all", "games", "general", "tournament", "badge", "trophy", "banne
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (url: string) => void;
+  onSelect: (url: string, filePath?: string) => void;
 }
 
 const MediaPickerDialog = ({ open, onOpenChange, onSelect }: Props) => {
@@ -32,7 +32,8 @@ const MediaPickerDialog = ({ open, onOpenChange, onSelect }: Props) => {
 
   const handleConfirm = () => {
     if (selected) {
-      onSelect(selected);
+      const item = filtered.find((m) => m.url === selected);
+      onSelect(selected, item?.file_path);
       setSelected(null);
       setSearch("");
       onOpenChange(false);
