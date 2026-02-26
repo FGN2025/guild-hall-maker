@@ -11,6 +11,11 @@ export interface NotificationPreference {
 const NOTIFICATION_TYPES = [
   { key: "redemption_update", label: "Prize Redemption Updates", description: "When your prize redemption is approved, fulfilled, or denied" },
   { key: "new_challenge", label: "New Challenges", description: "When a new challenge is published on the platform" },
+  { key: "tournament_starting", label: "Tournament Starting", description: "When a tournament you registered for goes live" },
+  { key: "upcoming_tournament", label: "Upcoming Tournament Reminder", description: "Reminder ~24 hours before a tournament you joined starts" },
+  { key: "registration_confirmed", label: "Registration Confirmed", description: "When you successfully register for a tournament" },
+  { key: "match_completed", label: "Match Completed", description: "When a match you played in has a result recorded" },
+  { key: "achievement_earned", label: "Achievement Earned", description: "When you unlock a new achievement or badge" },
 ] as const;
 
 export { NOTIFICATION_TYPES };
