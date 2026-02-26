@@ -178,6 +178,30 @@
   }
 }
 
+/* ─── Tenant brand color overrides ─── */
+/* Buttons inside the tenant portal when a brand color is set */
+.tenant-branded .tenant-portal .btn-tenant,
+.tenant-branded .tenant-portal button[class*="bg-primary"] {
+  background-color: var(--tenant-primary) !important;
+  border-color: var(--tenant-primary) !important;
+}
+
+.tenant-branded .tenant-portal .btn-tenant:hover,
+.tenant-branded .tenant-portal button[class*="bg-primary"]:hover {
+  background-color: var(--tenant-primary) !important;
+  filter: brightness(0.85);
+}
+
+/* Badges inside the tenant portal */
+.tenant-branded .tenant-portal [class*="bg-primary"]:not(button) {
+  background-color: var(--tenant-primary) !important;
+}
+
+/* Focus ring override */
+.tenant-branded .tenant-portal *:focus-visible {
+  --tw-ring-color: var(--tenant-primary);
+}
+
 @media print {
   body {
     background: white !important;

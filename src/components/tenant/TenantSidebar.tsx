@@ -61,6 +61,11 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor }: TenantSi
               : item.to === "/tenant/subscribers"
                 ? location.pathname === "/tenant/subscribers" && !currentSearch.includes("tab=integrations")
                 : location.pathname.startsWith(item.to);
+
+          const activeStyle = active && brandColor
+            ? { color: brandColor, backgroundColor: `${brandColor}15`, borderColor: `${brandColor}4D` }
+            : undefined;
+
           return (
             <Link
               key={item.to}
@@ -70,6 +75,7 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor }: TenantSi
                   ? "text-primary bg-primary/10 border border-primary/30"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
+              style={activeStyle}
             >
               <item.icon className="h-5 w-5" />
               {item.label}
