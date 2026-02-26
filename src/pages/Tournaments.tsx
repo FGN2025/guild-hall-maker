@@ -15,6 +15,7 @@ import { useTournaments } from "@/hooks/useTournaments";
 import TournamentCard from "@/components/tournaments/TournamentCard";
 import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
 import PageHero from "@/components/PageHero";
+import PageBackground from "@/components/PageBackground";
 
 const Tournaments = () => {
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
@@ -73,8 +74,9 @@ const Tournaments = () => {
   useMemo(() => { setPage(1); }, [search, statusFilter, sortBy]);
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="py-8 container mx-auto px-4">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="tournaments" />
+      <div className="py-8 container mx-auto px-4 relative z-10">
         <PageHero pageSlug="tournaments" />
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
