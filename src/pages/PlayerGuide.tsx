@@ -279,6 +279,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Mark as Read — Click any notification to mark it as read, or use 'Mark all read' to clear all at once.",
       "Quick Navigation — Notifications include links that take you directly to the relevant page (e.g., Prize Shop, Challenges).",
       "Real-Time — Notifications appear instantly via real-time updates — no need to refresh the page.",
+      "Preferences — Customize which notifications you receive from Profile Settings (/profile). Toggle In-App and Email independently for each event type (Prize Redemption Updates, New Challenges).",
+      "Defaults — All notification channels are enabled by default. Changes take effect immediately.",
       "Tip: Check your notifications regularly to stay on top of challenge deadlines and prize approvals!",
     ],
   },
