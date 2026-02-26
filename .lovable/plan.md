@@ -1,38 +1,35 @@
 
 
-## Enhanced Color Picker for Brand Colors
+## Tournament Filtering & Sorting Improvements
 
 ### Overview
-Replace the basic native `<input type="color">` elements with a rich, custom color picker component that includes a visual palette, preset swatches, and hex/RGB input -- all built with existing project dependencies (Radix Popover).
+Three changes to how tournaments are filtered and displayed on the Tournaments page.
 
-### Changes
+### Changes (all in `src/pages/Tournaments.tsx`)
 
-#### 1. Create `ColorPicker` Component (`src/components/ui/color-picker.tsx`)
-- A reusable component that opens a Popover when clicked
-- Contains:
-  - **Saturation/brightness gradient panel** -- a 2D canvas-based picker area for selecting shade and brightness
-  - **Hue slider** -- a horizontal rainbow strip to select the base hue
-  - **Preset swatches** -- a row of commonly used brand colors (8-10 presets) for quick selection
-  - **Hex input** -- editable text field showing the current hex value
-- Uses Radix Popover (already installed) for the dropdown
-- Trigger is a styled color swatch button showing the current color
-- Fully controlled via `value` and `onChange` props
+#### 1. Default filter set to "Open" instead of "All Statuses"
+- Change `useState("all")` to `useState("open")` for `statusFilter`
 
-#### 2. Update Tenant Settings Page (`src/pages/tenant/TenantSettings.tsx`)
-- Replace the native `<input type="color">` + `<Input>` combos for both Primary and Accent colors with the new `<ColorPicker>` component
-- Keep the existing save flow unchanged
+#### 2. Rename "Upcoming" filter to "Registered"
+- Replace the `<SelectItem value="upcoming">Upcoming</SelectItem>` with `<SelectItem value="registered">Registered</SelectItem>`
+- Update the filter logic: when `statusFilter === "registered"`, show tournaments where `t.is_registered === true` (regardless of status)
 
-#### 3. Update Admin Tenants Page (`src/pages/admin/AdminTenants.tsx`)
-- Replace any native color inputs in the New Provider dialog with the new `<ColorPicker>` component for consistency
+#### 3. Show registered tournaments in the "Open" view
+- When `statusFilter === "open"`, show tournaments that are status `"open"` OR where the user is registered (`t.is_registered === true`)
 
 ### Technical Details
 
-**Files to create:**
-- `src/components/ui/color-picker.tsx` -- Reusable color picker with gradient panel, hue slider, swatches, and hex input
+**File to modify:** `src/pages/Tournaments.tsx`
 
-**Files to modify:**
-- `src/pages/tenant/TenantSettings.tsx` -- Swap native inputs for `<ColorPicker>`
-- `src/pages/admin/AdminTenants.tsx` -- Swap native inputs for `<ColorPicker>`
+The filter logic in the `useMemo` block (lines 26-35) will be updated:
 
-**No new dependencies required.** The component uses HTML Canvas for the gradient, Radix Popover for the dropdown, and pure color math (HSV to/from hex) implemented inline.
+```text
+Current:  matchesStatus = statusFilter === "all" || t.status === statusFilter
+Updated:
+  - "all"        -> true (no status filter)
+  - "open"       -> t.status === "open" || t.is_registered
+  - "registered" -> t.is_registered
+  - other values -> t.status === statusFilter
+```
 
+No database changes or new dependencies required.
