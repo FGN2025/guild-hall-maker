@@ -25,6 +25,7 @@ import {
   Building2,
   BrainCircuit,
   BookOpen,
+  Megaphone,
 } from "lucide-react";
 import {
   Sidebar,
@@ -58,7 +59,7 @@ const mainNav = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const { isAdmin, isModerator, signOut } = useAuth();
+  const { isAdmin, isModerator, isMarketing, signOut } = useAuth();
   const { setIsOpen: openCoach } = useCoach();
   const { isTenantAdmin } = useTenantAdmin();
 
@@ -144,6 +145,28 @@ export function AppSidebar() {
                     >
                       <SwordIcon className="h-4 w-4 shrink-0" />
                       <span>Moderator Panel</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {(isAdmin || isMarketing) && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Marketing</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Marketing">
+                    <NavLink
+                      to="/admin/marketing"
+                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <Megaphone className="h-4 w-4 shrink-0" />
+                      <span>Marketing</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
