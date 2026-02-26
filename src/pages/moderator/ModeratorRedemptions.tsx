@@ -58,17 +58,21 @@ const ModeratorRedemptions = () => {
 
       const [profilesRes, prizesRes] = await Promise.all([
         userIds.length > 0 ? supabase.from("profiles").select("user_id, display_name").in("user_id", userIds) : { data: [] },
-        prizeIds.length > 0 ? supabase.from("prizes").select("id, name").in("id", prizeIds) : { data: [] },
+        prizeIds.length > 0 ? supabase.from("prizes").select("id, name, quantity_available").in("id", prizeIds) : { data: [] },
       ]);
 
       const nameMap = new Map((profilesRes.data ?? []).map((p: any) => [p.user_id, p.display_name ?? "Unknown"]));
-      const prizeMap = new Map((prizesRes.data ?? []).map((p: any) => [p.id, p.name]));
+      const prizeMap = new Map((prizesRes.data ?? []).map((p: any) => [p.id, { name: p.name, quantity_available: p.quantity_available }]));
 
-      return (data ?? []).map((r: any) => ({
-        ...r,
-        player_name: nameMap.get(r.user_id) ?? "Unknown",
-        prize_name: prizeMap.get(r.prize_id) ?? "Unknown",
-      }));
+      return (data ?? []).map((r: any) => {
+        const prize = prizeMap.get(r.prize_id);
+        return {
+          ...r,
+          player_name: nameMap.get(r.user_id) ?? "Unknown",
+          prize_name: prize?.name ?? "Unknown",
+          prize_stock: prize?.quantity_available ?? null,
+        };
+      });
     },
   });
 
@@ -205,18 +209,25 @@ const ModeratorRedemptions = () => {
                           {new Date(r.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          {r.status === "pending" && (
-                            <div className="flex gap-1 justify-end">
-                              <Button size="sm" variant="outline" className="gap-1 text-green-400 hover:text-green-300"
-                                onClick={() => updateRedemptionMutation.mutate({ id: r.id, status: "approved" })}>
-                                <CheckCircle className="h-3 w-3" /> Approve
-                              </Button>
-                              <Button size="sm" variant="outline" className="gap-1 text-destructive hover:text-destructive/80"
-                                onClick={() => updateRedemptionMutation.mutate({ id: r.id, status: "denied" })}>
-                                <XCircle className="h-3 w-3" /> Deny
-                              </Button>
-                            </div>
-                          )}
+                          {r.status === "pending" && (() => {
+                            const outOfStock = r.prize_stock !== null && r.prize_stock <= 0;
+                            return (
+                              <div className="flex gap-1 justify-end items-center">
+                                {outOfStock && (
+                                  <span className="text-xs text-destructive mr-1">Out of stock</span>
+                                )}
+                                <Button size="sm" variant="outline" className="gap-1 text-green-400 hover:text-green-300"
+                                  disabled={outOfStock}
+                                  onClick={() => updateRedemptionMutation.mutate({ id: r.id, status: "approved" })}>
+                                  <CheckCircle className="h-3 w-3" /> Approve
+                                </Button>
+                                <Button size="sm" variant="outline" className="gap-1 text-destructive hover:text-destructive/80"
+                                  onClick={() => updateRedemptionMutation.mutate({ id: r.id, status: "denied" })}>
+                                  <XCircle className="h-3 w-3" /> Deny
+                                </Button>
+                              </div>
+                            );
+                          })()}
                           {r.status === "approved" && (
                             <Button size="sm" variant="outline" className="gap-1"
                               onClick={() => updateRedemptionMutation.mutate({ id: r.id, status: "fulfilled" })}>
