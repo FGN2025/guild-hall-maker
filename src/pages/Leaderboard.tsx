@@ -402,7 +402,8 @@ const Leaderboard = () => {
                           <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm text-center truncate max-w-[120px] hover:text-primary transition-colors">
                             {p.display_name}
                           </Link>
-                          <p className="font-display text-xs text-primary">{p.wins} Wins</p>
+                          <p className="font-display text-xs text-primary">{p.points} Points</p>
+                          <p className="font-display text-xs text-success">{p.wins} Wins</p>
                           <p className="text-[10px] text-muted-foreground font-body">
                             {p.total_matches} Matches
                           </p>
