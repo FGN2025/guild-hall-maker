@@ -2,6 +2,13 @@ import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
+function hexToRgba(hex: string, alpha: number): string {
+  const m = hex.replace("#", "").match(/.{2}/g);
+  if (!m) return hex;
+  const [r, g, b] = m.map((c) => parseInt(c, 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export interface TenantSidebarProps {
   tenantName: string;
   tenantRole: 'admin' | 'manager';
@@ -63,7 +70,7 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor }: TenantSi
                 : location.pathname.startsWith(item.to);
 
           const activeStyle = active && brandColor
-            ? { color: brandColor, backgroundColor: `${brandColor}15`, borderColor: `${brandColor}4D` }
+            ? { color: brandColor, backgroundColor: hexToRgba(brandColor, 0.1), borderColor: hexToRgba(brandColor, 0.3) }
             : undefined;
 
           return (

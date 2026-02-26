@@ -179,21 +179,23 @@
 }
 
 /* ─── Tenant brand color overrides ─── */
-/* Buttons inside the tenant portal when a brand color is set */
-.tenant-branded .tenant-portal .btn-tenant,
-.tenant-branded .tenant-portal button[class*="bg-primary"] {
+/* ─── Tenant brand color overrides ─── */
+/* Only target elements with the exact bg-primary class (not bg-primary/10 etc.) */
+.tenant-branded .tenant-portal button.bg-primary,
+.tenant-branded .tenant-portal .btn-tenant {
   background-color: var(--tenant-primary) !important;
   border-color: var(--tenant-primary) !important;
 }
 
-.tenant-branded .tenant-portal .btn-tenant:hover,
-.tenant-branded .tenant-portal button[class*="bg-primary"]:hover {
+.tenant-branded .tenant-portal button.bg-primary:hover,
+.tenant-branded .tenant-portal .btn-tenant:hover {
   background-color: var(--tenant-primary) !important;
   filter: brightness(0.85);
 }
 
-/* Badges inside the tenant portal */
-.tenant-branded .tenant-portal [class*="bg-primary"]:not(button) {
+/* Badges with exact bg-primary (not opacity variants, not links) */
+.tenant-branded .tenant-portal span.bg-primary,
+.tenant-branded .tenant-portal div.bg-primary {
   background-color: var(--tenant-primary) !important;
 }
 
