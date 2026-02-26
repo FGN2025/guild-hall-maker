@@ -1,39 +1,77 @@
 
-## Add Manageable Hero Logo
 
-### Overview
-Add the uploaded FGN logo above the "NETWORK GAMING PLATFORM" text in the hero section, centered with the rest of the content. The logo will be admin-manageable through the Admin Settings panel.
+## Multi-Tenant Marketing Library
 
-### Steps
+### Concept
+Build a marketing asset library (similar to Harper) where admins create master marketing campaigns with assets (social media posts, flyers, banners), and each tenant can browse and download versions automatically adapted with their own logo and brand colors.
 
-1. **Copy the logo asset** into `src/assets/fgn-hero-logo.png` as the default fallback image.
+### How It Works
 
-2. **Add a new `app_settings` row** with key `hero_logo_url` (empty by default, meaning "use the bundled default logo"). This follows the existing pattern used for `featured_video_url` and `homepage_ticker_embed`.
+1. **Admins create "Marketing Campaigns"** -- each campaign has a title, description, suggested social copy, category (social media, print, email, event), and one or more asset variants (square, vertical, horizontal).
 
-3. **Update `src/components/HeroSection.tsx`**:
-   - Fetch the `hero_logo_url` setting from the database on mount.
-   - Display the logo (from setting or fallback) above the "NETWORK GAMING PLATFORM" text, centered.
-   - Use `max-h-20 md:max-h-28` sizing so it scales well on mobile/desktop.
-   - All elements are already centered via `text-center` on the container -- just ensure the `img` uses `mx-auto`.
+2. **Asset variants are uploaded as master images** to the `app-media` storage bucket. Each variant stores dimensions and format metadata.
 
-4. **Update `src/pages/admin/AdminSettings.tsx`**:
-   - Add a new "Hero Logo" settings card with a file upload button (uploads to `app-media` storage bucket under `hero/logo.*`).
-   - On upload, store the public URL in `app_settings` with key `hero_logo_url`.
-   - Show a preview of the current logo and a "Reset to Default" option that clears the setting value.
+3. **Tenants browse the Marketing Library** from a new `/tenant/marketing` page. They see all published campaigns in a grid (like Harper's product listing). Clicking a campaign shows the detail view with copy, preview images, and a download button.
 
-### Technical Detail
+4. **Tenant-branded downloads** -- when a tenant downloads an asset, the system overlays their logo onto a designated region of the master image using a backend function. This is the simplest approach that works without Canva API integration. For a Phase 2, we can add full Canva Autofill API integration for richer template customization.
 
-**Database migration**: Insert the new setting row:
-```sql
-INSERT INTO public.app_settings (key, value)
-VALUES ('hero_logo_url', '')
-ON CONFLICT (key) DO NOTHING;
-```
+### Database Schema
 
-**HeroSection changes**: Add a `useEffect` that queries `app_settings` for `hero_logo_url`. If the value is non-empty, use it as the `src`; otherwise import and use the bundled `fgn-hero-logo.png`. Render the logo as a centered `img` tag above the subtitle `p` tag, with `mb-6` spacing.
+**`marketing_campaigns`** table:
+- `id` (uuid, PK)
+- `title` (text)
+- `description` (text, nullable)
+- `social_copy` (text, nullable) -- suggested post text
+- `category` (text, default 'social_media') -- social_media, print, email, event
+- `is_published` (boolean, default false)
+- `created_by` (uuid)
+- `created_at`, `updated_at` (timestamps)
 
-**AdminSettings changes**: Add a new card section between the existing settings cards. It will include:
-- A preview thumbnail of the current hero logo
-- A file input (hidden, triggered by button) that uploads to `app-media/hero/logo.{ext}` with `upsert: true`
-- On successful upload, update the `hero_logo_url` row in `app_settings`
-- A "Reset to Default" button that sets the value back to empty string
+**`marketing_assets`** table:
+- `id` (uuid, PK)
+- `campaign_id` (uuid, FK to marketing_campaigns)
+- `label` (text) -- e.g. "Square", "Vertical", "Horizontal"
+- `file_path` (text) -- storage path in app-media
+- `url` (text) -- public URL of master asset
+- `width` (int, nullable)
+- `height` (int, nullable)
+- `display_order` (int, default 0)
+- `created_at` (timestamp)
+
+RLS: Admins can manage both tables. Published campaigns are readable by tenant members. Assets inherit campaign visibility.
+
+### Routes and Pages
+
+| Route | Component | Access |
+|-------|-----------|--------|
+| `/admin/marketing` | AdminMarketing | Admin only |
+| `/tenant/marketing` | TenantMarketing | Tenant admins/managers |
+| `/tenant/marketing/:id` | TenantMarketingDetail | Tenant admins/managers |
+
+### UI Components
+
+**Admin side (`/admin/marketing`)**:
+- Campaign list with create/edit/delete/publish toggle
+- Campaign editor dialog: title, description, social copy, category picker
+- Asset uploader per campaign (drag-drop, multiple variants)
+- Publish/unpublish toggle
+
+**Tenant side (`/tenant/marketing`)**:
+- Grid of published campaigns with cover thumbnails and category badges
+- Search and category filter tabs
+- Campaign detail page showing all asset variants with previews, the social copy (with a copy-to-clipboard button), and download buttons
+- Each download provides the master image directly (Phase 1) with tenant logo watermark overlay (Phase 2)
+
+### Implementation Steps
+
+1. **Database migration** -- create `marketing_campaigns` and `marketing_assets` tables with RLS policies
+2. **Hook: `useMarketingCampaigns`** -- CRUD for campaigns and assets (admin), read-only listing (tenant)
+3. **Admin page and components** -- campaign management UI at `/admin/marketing`, add sidebar link
+4. **Tenant page and components** -- browsing UI at `/tenant/marketing` and `/tenant/marketing/:id`, add sidebar link
+5. **Wire up routes** in `App.tsx`
+
+### Phase 2 (Future)
+- Canva Autofill API integration for dynamic template rendering with tenant brand kits
+- Auto-generate tenant-specific versions with logo/color swaps via edge function
+- Asset usage analytics per tenant
+
