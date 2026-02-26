@@ -27,6 +27,9 @@ import {
   Database,
   ExternalLink,
   UserPlus,
+  Target,
+  Gift,
+  Swords,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -300,6 +303,46 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Provider Matching — The lookup_providers_by_zip database function returns matching tenants for a given ZIP code, creating a lead (user_service_interests) automatically.",
     ],
   },
+  {
+    id: "challenges",
+    icon: Target,
+    title: "Challenges",
+    bullets: [
+      "Challenges are time-limited objectives that reward players with season points upon completion.",
+      "Moderators create and manage challenges from the Moderator Panel → Challenges.",
+      "Each challenge has a name, description, point reward, optional game link, type (one-time or repeatable), and optional start/end dates.",
+      "Players view active challenges at /challenges and can see which ones they've already completed.",
+      "Challenge completions are recorded by moderators and automatically award points to the player's season score.",
+      "Max completions can be set to limit how many players can complete a challenge.",
+    ],
+  },
+  {
+    id: "prize-shop",
+    icon: Gift,
+    title: "Prize Shop",
+    bullets: [
+      "The Prize Shop (/prize-shop) lets players spend earned season points on rewards.",
+      "Moderators create prizes with name, description, point cost, optional image, and available quantity.",
+      "Players browse active prizes, see their current point balance, and submit redemption requests.",
+      "A confirmation dialog shows point cost and remaining balance before submitting.",
+      "Redemptions go into a pending queue reviewed by moderators at Moderator → Redemptions.",
+      "Moderators can approve, fulfill, or deny redemption requests with optional notes.",
+      "Players can track their redemption history and status from the 'My Requests' tab.",
+    ],
+  },
+  {
+    id: "ladders",
+    icon: Swords,
+    title: "Ranked Ladders",
+    bullets: [
+      "Ranked Ladders (/ladders) provide persistent ELO-based competitive rankings outside of tournaments.",
+      "Moderators create ladders from the Moderator Panel → Ladders, optionally linking them to a specific game.",
+      "Players browse active ladders and join them with a single click.",
+      "Each ladder displays a live leaderboard sorted by rating, showing wins, losses, and rank.",
+      "Moderators manage ladder entries (update ratings, record wins/losses) from the Moderator Panel.",
+      "Players can participate in multiple ladders simultaneously.",
+    ],
+  },
 ];
 
 // Build JSX content from bullet data for the accordion
@@ -331,6 +374,10 @@ const permissionRows = [
   { feature: "Notebook Connections", admin: true, manager: false },
   { feature: "Community Moderation", admin: true, manager: false },
   { feature: "Ecosystem Navigation", admin: true, manager: false },
+  { feature: "Challenges", admin: true, manager: true },
+  { feature: "Prize Shop (Manage Prizes)", admin: true, manager: true },
+  { feature: "Prize Redemptions (Review)", admin: true, manager: true },
+  { feature: "Ranked Ladders (Manage)", admin: true, manager: true },
   { feature: "Tenant Dashboard", admin: true, manager: true },
   { feature: "Tenant Leads", admin: true, manager: true },
   { feature: "Tenant ZIP Codes", admin: true, manager: false },
