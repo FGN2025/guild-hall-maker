@@ -710,6 +710,33 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          email_enabled: boolean
+          id: string
+          in_app_enabled: boolean
+          notification_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email_enabled?: boolean
+          id?: string
+          in_app_enabled?: boolean
+          notification_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email_enabled?: boolean
+          id?: string
+          in_app_enabled?: boolean
+          notification_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1561,6 +1588,10 @@ export type Database = {
           tenant_name: string
           tenant_slug: string
         }[]
+      }
+      should_notify: {
+        Args: { _channel: string; _type: string; _user_id: string }
+        Returns: boolean
       }
       validate_bypass_code: { Args: { _code: string }; Returns: boolean }
     }

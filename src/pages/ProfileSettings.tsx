@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Camera, Save, User, Gamepad2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import NotificationPreferences from "@/components/NotificationPreferences";
 
 
 const ProfileSettings = () => {
@@ -232,6 +233,8 @@ const ProfileSettings = () => {
             </form>
           </CardContent>
         </Card>
+
+        <NotificationPreferences />
       </main>
     </div>
   );
