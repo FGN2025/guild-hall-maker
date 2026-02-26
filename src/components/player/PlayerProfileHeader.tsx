@@ -32,8 +32,8 @@ const PlayerProfileHeader = ({ profile, stats }: Props) => {
         <div className="flex gap-6 text-center">
           <div className="flex flex-col items-center">
             <Crown className="h-5 w-5 text-warning mb-1" />
-            <span className="font-display text-2xl font-bold text-foreground">{stats.win_rate}%</span>
-            <span className="text-xs text-muted-foreground font-body">Win Rate</span>
+            <span className="font-display text-2xl font-bold text-foreground">{stats.wins}</span>
+            <span className="text-xs text-muted-foreground font-body">Wins</span>
           </div>
           <div className="flex flex-col items-center">
             <Swords className="h-5 w-5 text-primary mb-1" />

@@ -8,11 +8,10 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Link } from "react-router-dom";
-import { Trophy, Medal, TrendingUp, Minus, Swords, Crown, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star, Shield, Award } from "lucide-react";
+import { Trophy, Medal, Swords, Crown, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star, Shield, Award } from "lucide-react";
 import { useLeaderboard, useLeaderboardFilterOptions, type LeaderboardPlayer } from "@/hooks/useLeaderboard";
 import { useSeasons, useSeasonalLeaderboard, type SeasonalPlayer } from "@/hooks/useSeasonalLeaderboard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +25,7 @@ import {
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 
-type SortKey = "rank" | "win_rate" | "total_matches" | "wins" | "losses" | "draws";
+type SortKey = "rank" | "total_matches" | "wins" | "points";
 type SortDir = "asc" | "desc";
 
 const rankColor = (rank: number) => {
@@ -48,7 +47,7 @@ const tierConfig: Record<string, { label: string; color: string; icon: typeof St
   gold: { label: "Gold", color: "bg-warning/20 text-warning border-warning/40", icon: Star },
   silver: { label: "Silver", color: "bg-foreground/20 text-foreground/70 border-foreground/30", icon: Shield },
   bronze: { label: "Bronze", color: "bg-warning/10 text-warning/60 border-warning/20", icon: Award },
-  none: { label: "", color: "", icon: Minus },
+  none: { label: "", color: "", icon: Star },
 };
 
 const TierBadge = ({ tier }: { tier: string }) => {
@@ -273,13 +272,11 @@ const Leaderboard = () => {
                     <span className="col-span-3">Player</span>
                     <span className="col-span-2">Tier</span>
                     <span className="col-span-2 text-center">Points</span>
-                    <span className="col-span-1 text-center">W</span>
-                    <span className="col-span-1 text-center">L</span>
-                    <span className="col-span-2 text-center">Win Rate</span>
+                    <span className="col-span-2 text-center">Wins</span>
+                    <span className="col-span-2 text-center">Matches</span>
                   </div>
                   {paginatedSeasonal.map((p) => {
-                    const total = p.wins + p.losses;
-                    const winRate = total > 0 ? Math.round((p.wins / total) * 100) : 0;
+                    const totalMatches = p.wins + p.losses + (p.tournaments_played > 0 ? 0 : 0);
                     return (
                       <div
                         key={p.user_id}
@@ -305,18 +302,12 @@ const Leaderboard = () => {
                         <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
                           {p.points}
                         </span>
-                        <span className="col-span-1 font-display text-sm text-success font-bold text-center">
+                        <span className="col-span-2 font-display text-sm text-success font-bold text-center">
                           {p.wins}
                         </span>
-                        <span className="col-span-1 font-display text-sm text-destructive font-bold text-center">
-                          {p.losses}
+                        <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
+                          {p.wins + p.losses}
                         </span>
-                        <div className="col-span-2 flex items-center gap-2">
-                          <Progress value={winRate} className="h-1.5 flex-1 bg-muted" />
-                          <span className="font-display text-xs text-primary font-bold w-10 text-right">
-                            {winRate}%
-                          </span>
-                        </div>
                       </div>
                     );
                   })}
@@ -411,9 +402,9 @@ const Leaderboard = () => {
                           <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm text-center truncate max-w-[120px] hover:text-primary transition-colors">
                             {p.display_name}
                           </Link>
-                          <p className="font-display text-xs text-primary">{p.win_rate}% WR</p>
+                          <p className="font-display text-xs text-primary">{p.wins} Wins</p>
                           <p className="text-[10px] text-muted-foreground font-body">
-                            {p.wins}W / {p.losses}L / {p.draws}D
+                            {p.total_matches} Matches
                           </p>
                           <div
                             className={`${heights[i]} w-full mt-3 rounded-t-lg flex items-start justify-center pt-2 ${
@@ -439,22 +430,13 @@ const Leaderboard = () => {
                       Rank <SortIcon col="rank" />
                     </button>
                     <span className="col-span-3">Player</span>
-                    <button onClick={() => handleSort("win_rate")} className="col-span-2 flex items-center cursor-pointer hover:text-foreground transition-colors">
-                      Win Rate <SortIcon col="win_rate" />
+                    <button onClick={() => handleSort("wins")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                      Wins <SortIcon col="wins" />
                     </button>
-                    <button onClick={() => handleSort("total_matches")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                    <button onClick={() => handleSort("total_matches")} className="col-span-3 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
                       Matches <SortIcon col="total_matches" />
                     </button>
-                    <button onClick={() => handleSort("wins")} className="col-span-1 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
-                      W <SortIcon col="wins" />
-                    </button>
-                    <button onClick={() => handleSort("losses")} className="col-span-1 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
-                      L <SortIcon col="losses" />
-                    </button>
-                    <button onClick={() => handleSort("draws")} className="col-span-1 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
-                      D <SortIcon col="draws" />
-                    </button>
-                    <span className="col-span-1" />
+                    <span className="col-span-3" />
                   </div>
                   {paginatedAllTime.length === 0 ? (
                     <div className="p-8 text-center text-sm text-muted-foreground font-body">
@@ -480,31 +462,15 @@ const Leaderboard = () => {
                           {p.display_name}
                         </Link>
                       </div>
-                      <div className="col-span-2 flex items-center gap-2">
-                        <Progress value={p.win_rate} className="h-1.5 flex-1 bg-muted" />
-                        <span className="font-display text-xs text-primary font-bold w-10 text-right">
-                          {p.win_rate}%
-                        </span>
-                      </div>
-                      <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
-                        {p.total_matches}
-                      </span>
-                      <span className="col-span-1 font-display text-sm text-success font-bold text-center">
+                      <span className="col-span-2 font-display text-sm text-success font-bold text-center">
                         {p.wins}
                       </span>
-                      <span className="col-span-1 font-display text-sm text-destructive font-bold text-center">
-                        {p.losses}
+                      <span className="col-span-3 font-body text-sm text-muted-foreground text-center">
+                        {p.total_matches}
                       </span>
-                      <span className="col-span-1 font-display text-sm text-warning font-bold text-center">
-                        {p.draws}
-                      </span>
-                      <div className="col-span-1 flex justify-end">
-                        {p.rank <= 3 ? (
+                      <div className="col-span-3 flex justify-end">
+                        {p.rank <= 3 && (
                           <Trophy className={`h-4 w-4 ${rankColor(p.rank)}`} />
-                        ) : p.win_rate >= 50 ? (
-                          <TrendingUp className="h-4 w-4 text-success" />
-                        ) : (
-                          <Minus className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
                     </div>
