@@ -37,7 +37,7 @@ const TournamentCard = ({
 
   return (
     <div
-      className="rounded-xl border border-border bg-card glow-card flex flex-col overflow-hidden cursor-pointer transition-transform hover:scale-[1.01]"
+      className="rounded-xl border border-border bg-card/70 backdrop-blur-sm glow-card flex flex-col overflow-hidden cursor-pointer transition-transform hover:scale-[1.01]"
       onClick={() => navigate(`/tournaments/${t.id}`)}
     >
       {/* Hero Image */}
