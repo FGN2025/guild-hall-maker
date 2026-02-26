@@ -5,10 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Upload, Trash2, Image as ImageIcon } from "lucide-react";
+import { Upload, Trash2, Image as ImageIcon, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 
 const TenantMarketingAssets = () => {
   const { assets, isLoading, uploadAsset, togglePublish, deleteAsset } = useTenantMarketingAssets();
@@ -16,6 +17,7 @@ const TenantMarketingAssets = () => {
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [editorAsset, setEditorAsset] = useState<TenantMarketingAsset | null>(null);
 
   const handleUpload = () => {
     const file = fileRef.current?.files?.[0];
@@ -96,18 +98,43 @@ const TenantMarketingAssets = () => {
                     />
                     <span className="text-xs text-muted-foreground">Publish</span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => deleteAsset.mutate({ id: a.id, file_path: a.file_path })}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditorAsset(a)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteAsset.mutate({ id: a.id, file_path: a.file_path })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {editorAsset && (
+        <AssetEditorDialog
+          open={!!editorAsset}
+          onOpenChange={(open) => { if (!open) setEditorAsset(null); }}
+          baseImageUrl={editorAsset.url}
+          onSave={async (blob) => {
+            const file = new File([blob], `edited-${Date.now()}.png`, { type: "image/png" });
+            await uploadAsset.mutateAsync({
+              file,
+              label: `${editorAsset.label} (edited)`,
+              sourceAssetId: editorAsset.source_asset_id || undefined,
+            });
+          }}
+        />
       )}
     </div>
   );

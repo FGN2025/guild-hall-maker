@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIcon, Library } from "lucide-react";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import { toast } from "sonner";
 
 const CATEGORIES = [
@@ -120,6 +121,7 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
   const { assets, isLoading, uploadAsset, deleteAsset, addAssetFromUrl } = useMarketingAssets(campaign.id);
   const [label, setLabel] = useState("Square");
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -175,6 +177,9 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
                   <img src={a.url} alt={a.label} className="w-full h-40 object-cover" />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <Badge className="bg-background/80 text-foreground">{a.label}</Badge>
+                    <Button size="icon" variant="outline" className="h-8 w-8 bg-background/80" onClick={() => setEditorAssetUrl(a.url)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => deleteAsset.mutate({ id: a.id, file_path: a.file_path })}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -184,6 +189,18 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
             </div>
           )}
         </div>
+
+        {editorAssetUrl && (
+          <AssetEditorDialog
+            open={!!editorAssetUrl}
+            onOpenChange={(open) => { if (!open) setEditorAssetUrl(null); }}
+            baseImageUrl={editorAssetUrl}
+            onSave={async (blob) => {
+              const file = new File([blob], `edited-${Date.now()}.png`, { type: "image/png" });
+              await uploadAsset.mutateAsync({ file, label });
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
