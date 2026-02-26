@@ -138,7 +138,6 @@ const AdminNotebooks = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
   );
 };
 
