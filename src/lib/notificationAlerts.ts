@@ -1,20 +1,25 @@
-// Notification sound + browser push alerts
+const SOUND_MUTED_KEY = "notification_sound_muted";
+
+export function isSoundMuted(): boolean {
+  return localStorage.getItem(SOUND_MUTED_KEY) === "true";
+}
+
+export function setSoundMuted(muted: boolean) {
+  localStorage.setItem(SOUND_MUTED_KEY, muted ? "true" : "false");
+}
 
 let audioInstance: HTMLAudioElement | null = null;
 
 export function playNotificationSound() {
+  if (isSoundMuted()) return;
   try {
     if (!audioInstance) {
       audioInstance = new Audio("/sounds/notification.mp3");
       audioInstance.volume = 0.5;
     }
     audioInstance.currentTime = 0;
-    audioInstance.play().catch(() => {
-      // Browser may block autoplay — silently ignore
-    });
-  } catch {
-    // Audio not supported
-  }
+    audioInstance.play().catch(() => {});
+  } catch {}
 }
 
 export async function requestPushPermission(): Promise<boolean> {
