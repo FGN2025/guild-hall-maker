@@ -629,6 +629,47 @@ export type Database = {
           },
         ]
       }
+      point_adjustments: {
+        Row: {
+          adjusted_by: string
+          adjustment_type: string
+          created_at: string
+          id: string
+          points_change: number
+          reason: string
+          season_id: string | null
+          user_id: string
+        }
+        Insert: {
+          adjusted_by: string
+          adjustment_type?: string
+          created_at?: string
+          id?: string
+          points_change: number
+          reason: string
+          season_id?: string | null
+          user_id: string
+        }
+        Update: {
+          adjusted_by?: string
+          adjustment_type?: string
+          created_at?: string
+          id?: string
+          points_change?: number
+          reason?: string
+          season_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_adjustments_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

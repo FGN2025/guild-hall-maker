@@ -40,6 +40,9 @@ import AdminAchievements from "./pages/admin/AdminAchievements";
 import AdminGuide from "./pages/admin/AdminGuide";
 import ModeratorRoute from "./components/moderator/ModeratorRoute";
 import ModeratorDashboard from "./pages/moderator/ModeratorDashboard";
+import ModeratorTournaments from "./pages/moderator/ModeratorTournaments";
+import ModeratorMatches from "./pages/moderator/ModeratorMatches";
+import ModeratorPoints from "./pages/moderator/ModeratorPoints";
 import TenantRoute from "./components/tenant/TenantRoute";
 import TenantDashboard from "./pages/tenant/TenantDashboard";
 import TenantLeads from "./pages/tenant/TenantLeads";
@@ -106,6 +109,9 @@ const App = () => (
 
             {/* Moderator routes */}
             <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
+            <Route path="/moderator/tournaments" element={<ModeratorRoute><ModeratorTournaments /></ModeratorRoute>} />
+            <Route path="/moderator/matches" element={<ModeratorRoute><ModeratorMatches /></ModeratorRoute>} />
+            <Route path="/moderator/points" element={<ModeratorRoute><ModeratorPoints /></ModeratorRoute>} />
 
             {/* Tenant routes */}
             <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
