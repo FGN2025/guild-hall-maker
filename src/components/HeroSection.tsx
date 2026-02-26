@@ -2,6 +2,7 @@ import { Trophy, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
+import ParticlesBackground from "@/components/ParticlesBackground";
 
 const HeroSection = () => {
   return (
@@ -12,8 +13,11 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
       </div>
 
+      {/* Particles network */}
+      <ParticlesBackground />
+
       {/* Grid overlay */}
-      <div className="absolute inset-0 grid-bg opacity-20" />
+      <div className="absolute inset-0 grid-bg opacity-20 z-[2]" />
 
       <div className="relative z-10 container mx-auto px-4 text-center">
         <div className="animate-slide-up">
