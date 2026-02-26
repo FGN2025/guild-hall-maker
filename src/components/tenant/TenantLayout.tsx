@@ -27,6 +27,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) =
     const root = document.documentElement;
     if (tenantInfo.primaryColor) {
       root.style.setProperty("--tenant-primary", tenantInfo.primaryColor);
+      root.classList.add("tenant-branded");
     }
     if (tenantInfo.accentColor) {
       root.style.setProperty("--tenant-accent", tenantInfo.accentColor);
@@ -34,6 +35,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) =
     return () => {
       root.style.removeProperty("--tenant-primary");
       root.style.removeProperty("--tenant-accent");
+      root.classList.remove("tenant-branded");
     };
   }, [tenantInfo.primaryColor, tenantInfo.accentColor]);
 
@@ -41,7 +43,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) =
 
   if (!isMobile) {
     return (
-      <div className="min-h-screen bg-background flex">
+      <div className="min-h-screen bg-background flex tenant-portal">
         <TenantSidebar tenantName={tenantInfo.tenantName} tenantRole={tenantRole} logoUrl={tenantInfo.logoUrl} brandColor={brandAccent} />
         <main className="flex-1 p-8 overflow-auto">{children}</main>
       </div>
@@ -49,7 +51,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) =
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col tenant-portal">
       <header className="h-12 flex items-center border-b border-border px-4 bg-background shrink-0" style={brandAccent ? { borderBottomColor: brandAccent } : undefined}>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
