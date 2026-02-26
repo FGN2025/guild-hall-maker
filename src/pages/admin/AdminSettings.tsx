@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Save, Loader2, ImageIcon } from "lucide-react";
+import { Settings, Save, Loader2, ImageIcon, Code } from "lucide-react";
 import { IMAGE_PRESETS } from "@/lib/imageValidation";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -38,9 +38,11 @@ function getDefaults(): Record<string, LimitEntry> {
 const AdminSettings = () => {
   const [message, setMessage] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [tickerEmbed, setTickerEmbed] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingVideo, setSavingVideo] = useState(false);
+  const [savingTicker, setSavingTicker] = useState(false);
 
   // Image limits
   const [imgLimits, setImgLimits] = useState<Record<string, LimitEntry>>(getDefaults());
@@ -48,13 +50,15 @@ const AdminSettings = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const [msgRes, vidRes, imgRes] = await Promise.all([
+      const [msgRes, vidRes, imgRes, tickerRes] = await Promise.all([
         supabase.from("app_settings").select("value").eq("key", "no_providers_message").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "featured_video_url").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "image_upload_limits").maybeSingle(),
+        supabase.from("app_settings").select("value").eq("key", "homepage_ticker_embed").maybeSingle(),
       ]);
       setMessage(msgRes.data?.value ?? "");
       setVideoUrl(vidRes.data?.value ?? "");
+      setTickerEmbed(tickerRes.data?.value ?? "");
       if (imgRes.data?.value) {
         try {
           const parsed = JSON.parse(imgRes.data.value);
@@ -94,6 +98,21 @@ const AdminSettings = () => {
       toast({ title: "Saved", description: "Featured video URL updated." });
     }
     setSavingVideo(false);
+  };
+
+  const handleSaveTicker = async () => {
+    setSavingTicker(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ value: tickerEmbed })
+      .eq("key", "homepage_ticker_embed");
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Saved", description: "Homepage ticker embed updated." });
+    }
+    setSavingTicker(false);
   };
 
   const updateLimit = (preset: string, field: keyof LimitEntry, value: string) => {
@@ -184,6 +203,39 @@ const AdminSettings = () => {
         </div>
         <Button onClick={handleSaveVideo} disabled={savingVideo || loading} className="font-heading">
           {savingVideo ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+          Save Changes
+        </Button>
+      </div>
+
+      {/* Homepage Ticker Embed */}
+      <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Code className="h-5 w-5 text-primary" />
+            <Label htmlFor="tickerEmbed" className="font-heading text-sm">
+              Homepage Ticker Embed
+            </Label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Raw HTML/script embed code displayed between the Hero section and Featured Video on the homepage. Leave empty to hide.
+          </p>
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+            </div>
+          ) : (
+            <Textarea
+              id="tickerEmbed"
+              value={tickerEmbed}
+              onChange={(e) => setTickerEmbed(e.target.value)}
+              rows={4}
+              placeholder='<div class="commonninja_component pid-..."></div>'
+              className="bg-background border-border font-mono text-xs"
+            />
+          )}
+        </div>
+        <Button onClick={handleSaveTicker} disabled={savingTicker || loading} className="font-heading">
+          {savingTicker ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
           Save Changes
         </Button>
       </div>
