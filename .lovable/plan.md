@@ -1,56 +1,26 @@
 
 
-## Add Media Library Picker to Marketing Asset Upload
+## Add Marketing Link to Main App Sidebar
 
-### Overview
-Enhance the `CampaignAssetsDialog` in the Admin Marketing page so that when uploading assets to a campaign, the admin can choose between two sources:
-1. **Local machine** (existing file input -- works today)
-2. **Media Library** (pick an existing image from the app's centralized media library)
+### Problem
+The main application sidebar (`AppSidebar.tsx`) has no "Marketing" entry. Users with the Super Admin or Marketing role can only reach marketing pages by first navigating into the Admin Panel or Tenant Panel, which is not discoverable.
 
-This reuses the existing `MediaPickerDialog` component, which already provides category tabs, search, and image selection.
+### Solution
+Add a new sidebar group for "Marketing" that appears for users with either the `isAdmin` or `isMarketing` flag.
 
 ### Changes
 
-#### 1. Update `CampaignAssetsDialog` in `src/pages/admin/AdminMarketing.tsx`
+#### `src/components/AppSidebar.tsx`
 
-- Import `MediaPickerDialog` from `@/components/media/MediaPickerDialog`
-- Add a state variable `mediaPickerOpen` to control the picker dialog
-- Add a new "Library" button next to the existing "Upload" button
-- When a media library image is selected (returns a URL), create a new `marketing_assets` row directly with that URL and file path (no re-upload needed since the image is already in storage)
+1. Import `Megaphone` icon from lucide-react
+2. Destructure `isMarketing` from `useAuth()`
+3. Add a new `SidebarGroup` (between Moderator and Tenant sections) that renders when `isAdmin || isMarketing`:
+   - Links to `/admin/marketing` for Super Admins (they manage campaigns from the admin area)
+   - The label will be "Marketing" with a `Megaphone` icon
 
-The upload area will have two buttons side by side:
-- **Upload** -- opens the file picker from local machine (existing behavior)
-- **Library** -- opens the `MediaPickerDialog` to browse the app media library
-
-#### 2. Update `useMarketingAssets` hook in `src/hooks/useMarketingCampaigns.ts`
-
-- Add a new `addAssetFromUrl` mutation that inserts a `marketing_assets` row using a URL and file_path directly (no storage upload needed since the file already exists in the media library bucket)
-
-### UI Layout (Asset Dialog)
-
-```text
-+------------------------------------------+
-| Rocket League -- Assets                   |
-+------------------------------------------+
-| Label: [Square v]                        |
-|                                          |
-| [ Upload from Device ] [ Media Library ] |
-|                                          |
-| [asset grid...]                          |
-+------------------------------------------+
-```
-
-### Technical Details
-
-- `MediaPickerDialog.onSelect` returns a URL string; we also need the file_path for the `marketing_assets` record
-- We'll update the `MediaPickerDialog` callback to return both `url` and `file_path` (or modify the `addAssetFromUrl` mutation to accept just a URL and derive file_path from it)
-- Since both the media library and marketing assets use the same `app-media` bucket, we can reference the same storage path -- no file duplication needed
-
-### Files to modify
+This follows the existing pattern used by Admin Panel, Moderator Panel, and Tenant Panel sidebar groups.
 
 | File | Change |
 |------|--------|
-| `src/pages/admin/AdminMarketing.tsx` | Add Library button + MediaPickerDialog integration in `CampaignAssetsDialog` |
-| `src/hooks/useMarketingCampaigns.ts` | Add `addAssetFromUrl` mutation to `useMarketingAssets` |
-| `src/components/media/MediaPickerDialog.tsx` | Extend `onSelect` to pass both URL and file_path (or add an alternate callback prop) |
+| `src/components/AppSidebar.tsx` | Add Marketing sidebar group visible to admin and marketing roles |
 
