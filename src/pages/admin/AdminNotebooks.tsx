@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
+
 import { useNotebookConnections, NotebookConnection } from "@/hooks/useNotebookConnections";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,8 +46,7 @@ const AdminNotebooks = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold font-display text-foreground">Notebook Connections</h1>
@@ -139,7 +138,7 @@ const AdminNotebooks = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -432,19 +432,17 @@ const AwardTab = () => {
 
 // ---------- Main Page ----------
 const AdminAchievements = () => (
-  <AdminLayout>
-    <div className="space-y-6">
-      <h1 className="font-display text-3xl font-bold text-foreground">Achievements</h1>
-      <Tabs defaultValue="definitions">
-        <TabsList>
-          <TabsTrigger value="definitions">Definitions</TabsTrigger>
-          <TabsTrigger value="award">Award</TabsTrigger>
-        </TabsList>
-        <TabsContent value="definitions"><DefinitionsTab /></TabsContent>
-        <TabsContent value="award"><AwardTab /></TabsContent>
-      </Tabs>
-    </div>
-  </AdminLayout>
+  <div className="space-y-6">
+    <h1 className="font-display text-3xl font-bold text-foreground">Achievements</h1>
+    <Tabs defaultValue="definitions">
+      <TabsList>
+        <TabsTrigger value="definitions">Definitions</TabsTrigger>
+        <TabsTrigger value="award">Award</TabsTrigger>
+      </TabsList>
+      <TabsContent value="definitions"><DefinitionsTab /></TabsContent>
+      <TabsContent value="award"><AwardTab /></TabsContent>
+    </Tabs>
+  </div>
 );
 
 export default AdminAchievements;
