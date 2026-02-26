@@ -14,6 +14,7 @@ import {
   SwordIcon,
   Award,
   Target,
+  Gift,
   Gamepad2,
   CalendarDays,
   Joystick,
@@ -49,6 +50,7 @@ const mainNav = [
   { to: "/compare", label: "Compare", icon: Swords },
   { to: "/achievements", label: "Badges", icon: Award },
   { to: "/challenges", label: "Challenges", icon: Target },
+  { to: "/prize-shop", label: "Prize Shop", icon: Gift },
   { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 

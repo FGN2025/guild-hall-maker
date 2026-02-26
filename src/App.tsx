@@ -23,6 +23,7 @@ import SeasonStats from "./pages/SeasonStats";
 import PlayerComparison from "./pages/PlayerComparison";
 import Achievements from "./pages/Achievements";
 import Challenges from "./pages/Challenges";
+import PrizeShop from "./pages/PrizeShop";
 import PlayerGuide from "./pages/PlayerGuide";
 import Games from "./pages/Games";
 import GameDetail from "./pages/GameDetail";
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="/games/:slug" element={<GameDetail />} />
               <Route path="/player/:id" element={<PlayerProfile />} />
               <Route path="/challenges" element={<Challenges />} />
+              <Route path="/prize-shop" element={<PrizeShop />} />
               <Route path="/guide" element={<PlayerGuide />} />
               <Route path="/profile" element={<ProfileSettings />} />
               
