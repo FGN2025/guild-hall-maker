@@ -1,4 +1,4 @@
-import { Trophy, XCircle, Minus, TrendingUp } from "lucide-react";
+import { Trophy, Swords, Star, Award } from "lucide-react";
 import type { PlayerStats } from "@/hooks/usePlayerProfile";
 
 interface Props {
@@ -10,13 +10,12 @@ const PlayerStatsGrid = ({ stats }: Props) => {
 
   const items = [
     { label: "Wins", value: stats.wins, icon: Trophy, color: "text-success" },
-    { label: "Losses", value: stats.losses, icon: XCircle, color: "text-destructive" },
-    { label: "Draws", value: stats.draws, icon: Minus, color: "text-warning" },
-    { label: "Win Rate", value: `${stats.win_rate}%`, icon: TrendingUp, color: "text-primary" },
+    { label: "Matches Played", value: stats.total_matches, icon: Swords, color: "text-primary" },
+    { label: "Tournaments", value: stats.tournaments_played, icon: Award, color: "text-warning" },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-3 gap-4">
       {items.map((item) => (
         <div
           key={item.label}

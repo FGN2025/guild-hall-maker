@@ -148,9 +148,8 @@ export const useLeaderboard = (filters: LeaderboardFilters) => {
       });
 
       leaderboard.sort((a, b) => {
-        if (b.win_rate !== a.win_rate) return b.win_rate - a.win_rate;
         if (b.wins !== a.wins) return b.wins - a.wins;
-        return a.losses - b.losses;
+        return b.total_matches - a.total_matches;
       });
 
       leaderboard.forEach((p, i) => {
