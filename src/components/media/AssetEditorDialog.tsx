@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { ImagePlus, Type, Trash2, Download, Save, ExternalLink, LayoutTemplate, Undo2, Redo2 } from "lucide-react";
+import { ImagePlus, Type, Trash2, Download, Save, ExternalLink, LayoutTemplate, Undo2, Redo2, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -73,7 +73,10 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
   const {
     canvasRef,
     canvasSize,
+    overlays,
+    selectedId,
     selectedOverlay,
+    setSelectedId,
     addLogo,
     addText,
     applyTemplate,
@@ -185,6 +188,43 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Layers Panel */}
+            {overlays.length > 0 && (
+              <div className="space-y-1 p-3 border border-border rounded-lg bg-card">
+                <span className="text-xs font-heading uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Layers className="h-3 w-3" /> Layers
+                </span>
+                <div className="space-y-0.5 max-h-40 overflow-y-auto">
+                  {overlays.map((o) => (
+                    <button
+                      key={o.id}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left transition-colors group ${
+                        o.id === selectedId
+                          ? "bg-accent ring-2 ring-primary"
+                          : "hover:bg-accent/50"
+                      }`}
+                      onClick={() => setSelectedId(o.id)}
+                    >
+                      {o.type === "logo" ? (
+                        <ImagePlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <Type className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="text-sm truncate flex-1 text-foreground">
+                        {o.type === "logo" ? "Logo" : (o.text.length > 18 ? o.text.slice(0, 18) + "…" : o.text)}
+                      </span>
+                      <button
+                        className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-destructive hover:text-destructive/80"
+                        onClick={(e) => { e.stopPropagation(); deleteOverlay(o.id); }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Selected overlay controls */}
             {selectedOverlay && (
