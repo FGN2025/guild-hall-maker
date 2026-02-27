@@ -78,7 +78,7 @@ export const useBracket = (tournamentId: string | undefined) => {
         playerIds.length > 0
           ? await supabase
               .from("profiles")
-              .select("user_id, display_name, gamer_tag")
+              .select("user_id, display_name, gamer_tag, discord_username")
               .in("user_id", playerIds)
           : { data: [] };
 
@@ -90,8 +90,8 @@ export const useBracket = (tournamentId: string | undefined) => {
           id: m.id,
           round: m.round,
           match_number: m.match_number,
-          player1_name: p1Profile?.gamer_tag || p1Profile?.display_name || (m.player1_id ? "Unknown" : null),
-          player2_name: p2Profile?.gamer_tag || p2Profile?.display_name || (m.player2_id ? "Unknown" : null),
+          player1_name: p1Profile?.discord_username || p1Profile?.gamer_tag || p1Profile?.display_name || (m.player1_id ? "Unknown" : null),
+          player2_name: p2Profile?.discord_username || p2Profile?.gamer_tag || p2Profile?.display_name || (m.player2_id ? "Unknown" : null),
           player1_score: m.player1_score,
           player2_score: m.player2_score,
           winner_id: m.winner_id,

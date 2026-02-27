@@ -40,6 +40,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "ZIP Code Check — During registration, enter your ZIP code to see if a broadband provider in the FGN network serves your area. If a match is found, you'll be connected automatically.",
       "Bypass Codes — If you have a special bypass code (from staff or an event), you can skip ZIP verification entirely.",
       "Set Your Profile — Head to Profile Settings to choose a display name, gamer tag, and avatar. Your gamer tag is how other players recognize you on leaderboards, brackets, and community posts.",
+      "Link Discord — After signing in, you'll be asked to link your Discord account. This is required for tournament communication, brackets, and player identity. If you don't have Discord, you can create a free account during the process.",
       "Explore — Use the sidebar to navigate between tournaments, games, the community forum, leaderboard, and more.",
       "Tip: Pick a memorable gamer tag early — it shows up everywhere on the platform.",
     ],

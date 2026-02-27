@@ -368,6 +368,21 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tip: The notification system works automatically — just manage tournaments, approve redemptions, and create challenges as usual, and players will be notified.",
     ],
   },
+  {
+    id: "discord-integration",
+    icon: ExternalLink,
+    title: "Discord Integration",
+    bullets: [
+      "All players are required to link their Discord account after registration before accessing the platform.",
+      "Discord linking uses OAuth2 with the 'identify' and 'guilds.members.read' scopes.",
+      "A unique constraint prevents two FGN accounts from linking the same Discord account.",
+      "Discord usernames are displayed in tournament brackets and leaderboards as the primary player identity.",
+      "If DISCORD_GUILD_ID and DISCORD_VERIFIED_ROLE_ID secrets are configured, the system automatically assigns a 'Verified Player' role in the FGN Discord server upon linking.",
+      "Players can unlink or re-link their Discord account from Profile Settings. Unlinking blocks platform access until re-linked.",
+      "Three secrets are required: DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, and DISCORD_BOT_TOKEN.",
+      "Optional secrets for server role management: DISCORD_GUILD_ID and DISCORD_VERIFIED_ROLE_ID.",
+    ],
+  },
 ];
 
 // Build JSX content from bullet data for the accordion

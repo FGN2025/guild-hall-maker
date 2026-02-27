@@ -1,0 +1,6 @@
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS discord_id TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS discord_username TEXT,
+  ADD COLUMN IF NOT EXISTS discord_avatar TEXT,
+  ADD COLUMN IF NOT EXISTS discord_linked_at TIMESTAMPTZ;

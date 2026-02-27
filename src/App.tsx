@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProfileSettings from "./pages/ProfileSettings";
 import ProtectedRoute from "./components/ProtectedRoute";
+import LinkDiscord from "./pages/LinkDiscord";
 import AppLayout from "./components/AppLayout";
 import TournamentBracket from "./pages/TournamentBracket";
 import TournamentCalendar from "./pages/TournamentCalendar";
@@ -86,6 +87,11 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
             <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
+
+            {/* Authenticated but Discord-exempt */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/link-discord" element={<LinkDiscord />} />
+            </Route>
 
             {/* Authenticated routes with sidebar */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
