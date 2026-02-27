@@ -1,44 +1,141 @@
 
 
-## Add "Reset Bracket" Feature for Tournament Management
+## Discord Identity Verification -- Implementation Plan
 
-### Problem
-Once an admin/moderator generates a bracket, there is no way to undo it. The "Generate Bracket" button disappears and the tournament moves to `in_progress` status. If the admin needs to add more players or make changes before play begins, they are stuck.
+This plan implements mandatory Discord account linking as a secondary identity gate for all authenticated players. Players who haven't linked Discord will be redirected to a dedicated page before they can access the platform.
 
-### Solution
-Add a "Reset Bracket" button that deletes all match results for the tournament and resets its status back to `open`, allowing further registration changes before re-generating.
+---
 
-### Changes
+### Step 1: Request Discord Secrets
 
-**1. Add `resetBracket` mutation to `useTournamentManagement.ts`**
-- New mutation that:
-  - Deletes all rows from `match_results` where `tournament_id` matches
-  - Updates the tournament status back to `open`
-  - Invalidates relevant query caches
-- Include a confirmation guard in the UI (not the hook) to prevent accidental resets
+Three secrets need to be stored securely in the backend:
 
-**2. Update `TournamentManage.tsx` UI**
-- When matches exist (`hasMatches` is true), show a "Reset Bracket" button in the players panel (where the Generate button used to be)
-- Wrap it in an `AlertDialog` confirmation: "Are you sure? This will delete all match results and reset the tournament to Open status."
-- After reset, the Generate Bracket button will naturally reappear since `hasMatches` becomes false again
+- **DISCORD_CLIENT_ID** -- Your application's client ID from the Discord Developer Portal
+- **DISCORD_CLIENT_SECRET** -- Your application's client secret
+- **DISCORD_BOT_TOKEN** -- Your bot's token for server role management
 
-### Technical Details
+These will be requested using the secure secrets tool before any code is written.
 
-Reset mutation SQL logic:
-```sql
-DELETE FROM match_results WHERE tournament_id = :id;
-UPDATE tournaments SET status = 'open' WHERE id = :id;
-```
+---
 
-No RLS changes needed -- the existing "Tournament creators can update matches" and "Moderators can manage match results" (with DELETE) policies already cover this. The tournament creator can also update the tournament status via existing policies.
+### Step 2: Database Migration
 
-The reset button will only appear when:
-- Matches exist (bracket has been generated)
-- No matches have been completed yet (safety check to prevent resetting mid-tournament)
+Add Discord columns to the existing `profiles` table:
 
-If any matches are already completed, the button will be disabled with a tooltip explaining that completed matches prevent a reset.
+- `discord_id` (TEXT, UNIQUE) -- Prevents two FGN accounts from linking the same Discord
+- `discord_username` (TEXT) -- Displayed in brackets and leaderboards
+- `discord_avatar` (TEXT) -- Discord avatar hash for display
+- `discord_linked_at` (TIMESTAMPTZ) -- Timestamp of when the link was established
 
-### Files to Modify
-1. `src/hooks/useTournamentManagement.ts` -- add `resetBracketMutation`
-2. `src/pages/TournamentManage.tsx` -- add Reset Bracket button with AlertDialog confirmation
+---
+
+### Step 3: Backend Function -- `discord-oauth-callback`
+
+A new backend function that:
+
+1. Validates the authenticated user via JWT
+2. Receives a Discord OAuth2 authorization `code` and `redirect_uri` from the client
+3. Exchanges the code with Discord's token endpoint using the server-side secret
+4. Calls Discord `/users/@me` to retrieve Discord ID, username, and avatar
+5. Checks the `discord_id` isn't already claimed by another player (unique constraint)
+6. Updates the authenticated user's profile row with Discord data
+7. Optionally assigns a "Verified Player" role in the FGN Discord server using the bot token
+8. Returns the linked Discord username to the client
+
+Configuration: `verify_jwt = false` in `config.toml` with in-code JWT validation via `getClaims()`.
+
+---
+
+### Step 4: New Page -- `/link-discord`
+
+Create `src/pages/LinkDiscord.tsx` with:
+
+- Branded card explaining why Discord is required ("Discord is used for tournament communication, brackets, and player identity")
+- Helpful tip: "Don't have a Discord account yet? You'll be able to create one for free during the linking process."
+- "Link Discord Account" button that redirects to Discord's OAuth2 authorize URL with scopes `identify` and `guilds.members.read`
+- Callback handling: reads the `code` query parameter, calls the backend function, shows success confirmation
+- On success, redirects to the Dashboard
+
+---
+
+### Step 5: Auth Context Updates
+
+Modify `src/contexts/AuthContext.tsx`:
+
+- Add `discordLinked` boolean state (default `false`)
+- Fetch `discord_id` from the user's profile alongside the role check
+- Set `discordLinked = true` when `discord_id` is non-null
+
+---
+
+### Step 6: Protected Route Gate
+
+Modify `src/components/ProtectedRoute.tsx`:
+
+- After confirming authentication, check `discordLinked` from AuthContext
+- If `false`, redirect to `/link-discord`
+- Exempt `/link-discord` and `/profile` from the Discord check so users can still access those pages
+
+---
+
+### Step 7: App.tsx Route Updates
+
+- Add `/link-discord` as an authenticated but non-Discord-gated route (inside AuthProvider, accessible to logged-in users who haven't linked Discord yet)
+
+---
+
+### Step 8: Bracket and Tournament Display -- Discord Usernames
+
+Update two hooks to prefer `discord_username` as the displayed player name:
+
+- **`src/hooks/useBracket.ts`**: Add `discord_username` to the profile select query. Name resolution priority: `discord_username` > `gamer_tag` > `display_name`
+- **`src/hooks/useTournamentManagement.ts`**: Same change to profile queries and the `profileMap` construction
+
+---
+
+### Step 9: Profile Settings -- Discord Card
+
+Update `src/pages/ProfileSettings.tsx`:
+
+- Add a Discord section card showing:
+  - Linked Discord username and avatar (if linked)
+  - "Unlink Discord" button with a warning that unlinking blocks platform access until re-linked
+  - "Re-link Discord" option to switch to a different Discord account
+
+---
+
+### Step 10: Guide Updates
+
+- **Player Guide** (`src/pages/PlayerGuide.tsx`): Add a bullet to the "Getting Started" section about Discord linking being required after registration
+- **Admin Guide** (`src/pages/admin/AdminGuide.tsx`): Add a section about Discord integration management
+
+---
+
+### Implementation Order
+
+1. Request and store the three Discord secrets
+2. Run database migration (add columns to profiles)
+3. Create the `discord-oauth-callback` backend function
+4. Create the `LinkDiscord.tsx` page
+5. Update AuthContext with `discordLinked` state
+6. Update ProtectedRoute to enforce Discord gate
+7. Update App.tsx routes
+8. Update bracket/tournament hooks for Discord username display
+9. Update ProfileSettings with Discord management card
+10. Update Player Guide and Admin Guide
+
+### Files Created
+- `supabase/functions/discord-oauth-callback/index.ts`
+- `src/pages/LinkDiscord.tsx`
+
+### Files Modified
+- `supabase/config.toml` (add function config)
+- `src/contexts/AuthContext.tsx`
+- `src/components/ProtectedRoute.tsx`
+- `src/App.tsx`
+- `src/hooks/useBracket.ts`
+- `src/hooks/useTournamentManagement.ts`
+- `src/pages/ProfileSettings.tsx`
+- `src/pages/PlayerGuide.tsx`
+- `src/pages/admin/AdminGuide.tsx`
 
