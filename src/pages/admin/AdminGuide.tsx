@@ -65,10 +65,11 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Tournament Management",
     bullets: [
       "Full control over the tournament lifecycle from Admin → Tournaments.",
-      "Creating: Set name, game, format, date/time, max participants, description, rules, prize pool, entry fee, and hero image.",
+      "Creating: Set name, game, format, date/time, max participants, description, rules, prize pool, entry fee, and hero image. Hero images can be uploaded or selected from the Media Library.",
       "Status flow: Upcoming → Open (registration) → In Progress → Completed (or Cancelled at any point).",
       "Managing Registrations: View registered players, approve/remove registrations.",
       "Bracket & Scoring: Generate single-elimination bracket, enter match scores, winners advance automatically.",
+      "Reset Bracket: Before any matches are completed, tournament creators can reset the bracket to delete all match data and return the tournament to Open status. This allows adding/removing players and regenerating the bracket. A confirmation dialog prevents accidental resets.",
       "Season Points: Points are awarded automatically when a tournament is completed based on placement.",
       "Calendar View: All tournaments appear on the /calendar monthly calendar, clickable for quick navigation to detail pages.",
       "Editing: Update any field including dates, rules, and hero images after creation via the Edit dialog.",
