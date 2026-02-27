@@ -7,6 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Trophy,
   Users,
@@ -16,6 +27,7 @@ import {
   CheckCircle,
   Settings,
   ShieldAlert,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import EditTournamentDialog from "@/components/tournaments/EditTournamentDialog";
@@ -45,6 +57,8 @@ const TournamentManage = () => {
     isUpdatingStatus,
     updateDetails,
     isUpdatingDetails,
+    resetBracket,
+    isResettingBracket,
   } = useTournamentManagement(id);
 
   if (isLoading) {
@@ -77,6 +91,7 @@ const TournamentManage = () => {
   }
 
   const hasMatches = matches.length > 0;
+  const hasCompletedMatches = matches.some((m) => m.status === "completed");
   const rounds = matches.reduce<Record<number, ManageMatch[]>>((acc, m) => {
     if (!acc[m.round]) acc[m.round] = [];
     acc[m.round].push(m);
@@ -187,6 +202,40 @@ const TournamentManage = () => {
                     <Play className="h-4 w-4 mr-2" />
                     {isGenerating ? "Generating..." : "Generate Bracket"}
                   </Button>
+                </div>
+              )}
+
+              {hasMatches && !hasCompletedMatches && (
+                <div className="p-4 border-t border-border">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full font-heading tracking-wide border-destructive/30 text-destructive hover:bg-destructive/10"
+                        disabled={isResettingBracket}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        {isResettingBracket ? "Resetting..." : "Reset Bracket"}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset Bracket?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will delete all match results and reset the tournament back to Open status. You can then modify registrations and regenerate the bracket.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => resetBracket()}
+                        >
+                          Reset Bracket
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </div>
