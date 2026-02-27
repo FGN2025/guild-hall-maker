@@ -7,13 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Pencil, CalendarIcon, Upload } from "lucide-react";
+import { Pencil, CalendarIcon, Upload, ImageIcon } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
+import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 
 interface TournamentData {
   id: string;
@@ -59,6 +60,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   useEffect(() => {
     if (open && tournament) {
@@ -114,6 +116,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
         }
       }
       setUploadingImage(false);
+    } else if (imagePreview) {
+      // Selected from media library
+      image_url = imagePreview;
     }
 
     const combinedDate = new Date(startDate);
@@ -225,13 +230,30 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-card text-sm font-heading text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
                 <Upload className="h-4 w-4" />
-                {imageFile ? imageFile.name : "Choose image"}
+                {imageFile ? imageFile.name : "Upload image"}
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               </label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="font-heading gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                onClick={() => setMediaPickerOpen(true)}
+              >
+                <ImageIcon className="h-4 w-4" /> Media Library
+              </Button>
               {imagePreview && (
                 <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover border border-border" />
               )}
             </div>
+            <MediaPickerDialog
+              open={mediaPickerOpen}
+              onOpenChange={setMediaPickerOpen}
+              onSelect={(url) => {
+                setImageFile(null);
+                setImagePreview(url);
+              }}
+            />
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Rules</Label>
