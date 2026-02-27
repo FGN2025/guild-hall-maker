@@ -283,6 +283,31 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: (err: Error) => toast.error(err.message || "Failed to update score"),
   });
 
+  const resetBracketMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !tournamentId) throw new Error("Not authenticated");
+      const { error: deleteError } = await supabase
+        .from("match_results")
+        .delete()
+        .eq("tournament_id", tournamentId);
+      if (deleteError) throw deleteError;
+
+      const { error: updateError } = await supabase
+        .from("tournaments")
+        .update({ status: "open" as any })
+        .eq("id", tournamentId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      toast.success("Bracket reset! Tournament is back to Open status.");
+      queryClient.invalidateQueries({ queryKey: ["manage-matches", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["manage-tournament", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["bracket-matches", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to reset bracket"),
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: async (status: string) => {
       if (!user || !tournamentId) throw new Error("Not authenticated");
@@ -376,5 +401,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     isUpdatingStatus: updateStatusMutation.isPending,
     updateDetails: updateDetailsMutation.mutate,
     isUpdatingDetails: updateDetailsMutation.isPending,
+    resetBracket: resetBracketMutation.mutate,
+    isResettingBracket: resetBracketMutation.isPending,
   };
 };
