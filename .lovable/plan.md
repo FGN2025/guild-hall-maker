@@ -1,138 +1,55 @@
 
 
-## Per-Tenant Event Publishing with Marketing and Branding
+## Add Element Picker / Layers Panel to Asset Editor
 
-### Overview
-Enable tenants (operators and schools) to create, manage, and publish their own private tournaments and events -- complete with branded public-facing event pages accessible via a unique tenant URL (e.g., `/events/tenant-slug`). Each tenant's event page will showcase their branding (logo, colors) and list only their events, giving them a professional, self-contained presence.
+### Problem
+Currently, the only way to select an overlay element on the canvas is by clicking directly on it, which can be difficult -- especially when elements overlap or are small. There is no visible list of all active layers.
 
-### Architecture
+### Solution
+Add an **Element Picker (Layers Panel)** to the toolbar sidebar that lists every overlay on the canvas. Each row shows the element type (logo/text icon), a label (truncated text or "Logo"), and allows:
+- **Click to select** -- highlights the element on canvas and shows its properties
+- **Reorder via drag** (future) -- for now, visual list with click-to-select
+- **Visibility of selection state** -- the currently selected element is highlighted in the list
+
+### Changes
+
+#### 1. `AssetEditorDialog.tsx` -- Add Layers Panel
+- Import `overlays` and `setSelectedId` from the hook (already exposed)
+- Add a new "Layers" section between the toolbar buttons and the properties panel
+- Each layer row shows:
+  - An icon: `ImagePlus` for logos, `Type` for text
+  - A label: truncated `text` value for text overlays, "Logo" for logo overlays
+  - A highlight ring when it matches `selectedId`
+  - A delete button on hover
+- Clicking a row calls `setSelectedId(overlay.id)` to select it and show its properties
+- Add a `Layers` icon button to the toolbar row for visual consistency
+
+#### 2. `useCanvasEditor.ts` -- Expose `overlays` and `selectedId`
+These are already returned from the hook -- no changes needed here.
+
+### UI Layout (in the toolbar sidebar)
 
 ```text
-+-------------------------------+       +-----------------------------+
-| Tenant Portal (/tenant/...)   |       | Public Event Page            |
-|  - Create/Edit Events         | ----> | /events/:tenantSlug          |
-|  - Upload Hero Images         |       | - Tenant-branded header      |
-|  - Attach Marketing Assets    |       | - Logo + brand colors        |
-|  - Publish/Unpublish          |       | - Event listings             |
-+-------------------------------+       | - Event detail view          |
-                                        | - Registration (logged-in)   |
-                                        +-----------------------------+
+[Undo] [Redo] [Logo] [Text] [Templates]
+
+--- Layers ----------------------------
+| [T] TOURNAMENT              [trash] |  <-- selected (highlighted)
+| [T] $500 Prize Pool         [trash] |
+| [T] Game Title Here         [trash] |
+| [img] Logo                  [trash] |
+----------------------------------------
+
+--- Text Properties --------------------
+| Text: [TOURNAMENT________]          |
+| Font Size: 52px  [====o====]        |
+| Color: [#ffffff ████]                |
+----------------------------------------
 ```
 
-### Database Changes
-
-#### 1. New Table: `tenant_events`
-Stores events created by tenants, separate from the platform-wide `tournaments` table.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | |
-| tenant_id | uuid FK -> tenants | Owner tenant |
-| created_by | uuid | User who created |
-| name | text | Event name |
-| game | text | Game title |
-| description | text | Optional |
-| format | text | single_elimination, round_robin, etc. |
-| max_participants | integer | Default 16 |
-| prize_pool | text | Optional |
-| start_date | timestamptz | Required |
-| end_date | timestamptz | Optional |
-| rules | text | Optional |
-| image_url | text | Hero image |
-| status | text | draft, published, in_progress, completed, cancelled |
-| is_public | boolean | Whether visible on the public event page |
-| registration_open | boolean | Whether users can register |
-| social_copy | text | Optional social media copy |
-| created_at / updated_at | timestamptz | Timestamps |
-
-#### 2. New Table: `tenant_event_registrations`
-Tracks user registrations to tenant events.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | |
-| event_id | uuid FK -> tenant_events | |
-| user_id | uuid | |
-| registered_at | timestamptz | |
-| status | text | registered, cancelled |
-
-#### 3. New Table: `tenant_event_assets`
-Links marketing assets to specific events for promotional use.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | |
-| event_id | uuid FK -> tenant_events | |
-| asset_url | text | |
-| label | text | e.g., "Banner", "Social Post" |
-| display_order | integer | |
-| created_at | timestamptz | |
-
-#### 4. RLS Policies
-- **tenant_events**: Tenant admins/managers can CRUD their own tenant's events; public users can SELECT where `is_public = true` and `status = 'published'`
-- **tenant_event_registrations**: Authenticated users can insert/view their own registrations; tenant members can view all registrations for their events
-- **tenant_event_assets**: Tenant marketing members can manage; public can view assets for published events
-
-### Frontend Changes
-
-#### 1. Tenant Portal -- Events Management
-**New page: `src/pages/tenant/TenantEvents.tsx`**
-- List all events for this tenant with status badges
-- Create Event dialog (similar to `CreateTournamentDialog` but with tenant-specific fields like `is_public` toggle and marketing asset attachment)
-- Edit/Delete events
-- Publish/Unpublish toggle
-- View registrations per event
-
-**New sidebar entry in `TenantSidebar.tsx`:**
-- Add "Events" link with `Calendar` icon, visible to admin and manager roles
-
-#### 2. Public Event Pages (No Auth Required)
-**New page: `src/pages/TenantEventPage.tsx`** -- route: `/events/:tenantSlug`
-- Fetches tenant branding (logo, colors, name) by slug
-- Lists published events for that tenant
-- Applies tenant brand colors to the page header and accent elements
-- No sidebar -- standalone branded page with a clean layout
-
-**New page: `src/pages/TenantEventDetail.tsx`** -- route: `/events/:tenantSlug/:eventId`
-- Event details with hero image, description, rules, schedule
-- Registration button (redirects to login if not authenticated)
-- Attached marketing assets / promotional images
-- Branded with tenant colors
-
-#### 3. Routes (in `App.tsx`)
-```text
-/events/:tenantSlug              -- Public tenant event listing
-/events/:tenantSlug/:eventId     -- Public event detail
-/tenant/events                   -- Tenant portal event management (protected)
-```
-
-#### 4. New Hooks
-- **`useTenantEvents.ts`**: CRUD operations for tenant events, filtered by tenant_id
-- **`usePublicTenantEvents.ts`**: Read-only hook for public event pages, fetches by tenant slug
-
-#### 5. Marketing Integration
-- When creating/editing an event, tenants can attach assets from their "My Assets" collection
-- The Asset Editor (already built) can be used to customize promotional materials for specific events
-- Social copy field allows tenants to prepare shareable text for their events
-
-### Files to Create/Modify
-
-| File | Action | Description |
-|------|--------|-------------|
-| Migration SQL | Create | `tenant_events`, `tenant_event_registrations`, `tenant_event_assets` tables with RLS |
-| `src/hooks/useTenantEvents.ts` | Create | CRUD hook for tenant event management |
-| `src/hooks/usePublicTenantEvents.ts` | Create | Read-only hook for public pages |
-| `src/pages/tenant/TenantEvents.tsx` | Create | Tenant portal event management page |
-| `src/pages/TenantEventPage.tsx` | Create | Public branded event listing page |
-| `src/pages/TenantEventDetail.tsx` | Create | Public branded event detail page |
-| `src/components/tenant/TenantSidebar.tsx` | Modify | Add "Events" sidebar link |
-| `src/App.tsx` | Modify | Add new routes for public and tenant event pages |
-| `src/components/tenant/TenantRoute.tsx` | Modify | Include TenantEvents in protected routes |
-
-### Key Design Decisions
-
-- **Separate from platform tournaments**: Tenant events live in their own table to maintain clean data isolation. Platform-wide tournaments remain unchanged.
-- **Public pages without auth**: The `/events/:tenantSlug` route is accessible without login, giving tenants a shareable URL for promotion. Registration requires authentication.
-- **Tenant branding applied dynamically**: Public event pages fetch the tenant's logo, primary color, and accent color and apply them via CSS variables, matching the existing tenant portal branding pattern.
-- **Marketing asset reuse**: Tenants can attach assets from their existing "My Assets" collection to events, leveraging the asset editor for customization.
+### Technical Details
+- The layers list iterates `overlays` array (renders bottom-to-top, matching canvas z-order)
+- Selected layer gets `bg-accent` or `ring-2 ring-primary` styling
+- Truncate long text labels to ~18 characters with ellipsis
+- Uses existing `selectedId`, `setSelectedId`, and `deleteOverlay` -- no new hook logic needed
+- Only UI changes in `AssetEditorDialog.tsx`
 
