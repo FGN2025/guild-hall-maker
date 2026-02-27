@@ -1,55 +1,44 @@
 
 
-## Fix: RLS Policy Conflict on `season_scores`
+## Add "Reset Bracket" Feature for Tournament Management
 
 ### Problem
-When a moderator tries to award points via the Points Management page, the insert/update fails with:
-> "new row violates row-level security policy for table 'season_scores'"
+Once an admin/moderator generates a bracket, there is no way to undo it. The "Generate Bracket" button disappears and the tournament moves to `in_progress` status. If the admin needs to add more players or make changes before play begins, they are stuck.
 
-### Root Cause
-The `season_scores` table has two sets of conflicting RLS policies:
-- "Moderators can insert season scores" (allows moderator inserts)
-- "Moderators can update season scores" (allows moderator updates)
-- "Only service role manages scores" -- `WITH CHECK (false)` (blocks ALL inserts)
-- "Only service role updates scores" -- `USING (false)` (blocks ALL updates)
+### Solution
+Add a "Reset Bracket" button that deletes all match results for the tournament and resets its status back to `open`, allowing further registration changes before re-generating.
 
-The `false` policies were likely added when only the Edge Function (using the service role key) was supposed to manage scores. Now that moderators also need client-side access, these policies conflict and block all browser-based writes.
+### Changes
 
-### Fix
-Run a single database migration to drop the two blocking policies:
+**1. Add `resetBracket` mutation to `useTournamentManagement.ts`**
+- New mutation that:
+  - Deletes all rows from `match_results` where `tournament_id` matches
+  - Updates the tournament status back to `open`
+  - Invalidates relevant query caches
+- Include a confirmation guard in the UI (not the hook) to prevent accidental resets
 
+**2. Update `TournamentManage.tsx` UI**
+- When matches exist (`hasMatches` is true), show a "Reset Bracket" button in the players panel (where the Generate button used to be)
+- Wrap it in an `AlertDialog` confirmation: "Are you sure? This will delete all match results and reset the tournament to Open status."
+- After reset, the Generate Bracket button will naturally reappear since `hasMatches` becomes false again
+
+### Technical Details
+
+Reset mutation SQL logic:
 ```sql
-DROP POLICY "Only service role manages scores" ON public.season_scores;
-DROP POLICY "Only service role updates scores" ON public.season_scores;
+DELETE FROM match_results WHERE tournament_id = :id;
+UPDATE tournaments SET status = 'open' WHERE id = :id;
 ```
 
-Additionally, the moderator UPDATE policy should also include admins for consistency (it currently only checks for `moderator`). We'll update both the INSERT and UPDATE policies to allow admins as well:
+No RLS changes needed -- the existing "Tournament creators can update matches" and "Moderators can manage match results" (with DELETE) policies already cover this. The tournament creator can also update the tournament status via existing policies.
 
-```sql
-DROP POLICY "Moderators can insert season scores" ON public.season_scores;
-CREATE POLICY "Moderators can insert season scores"
-  ON public.season_scores FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    has_role(auth.uid(), 'moderator'::app_role)
-    OR has_role(auth.uid(), 'admin'::app_role)
-  );
+The reset button will only appear when:
+- Matches exist (bracket has been generated)
+- No matches have been completed yet (safety check to prevent resetting mid-tournament)
 
-DROP POLICY "Moderators can update season scores" ON public.season_scores;
-CREATE POLICY "Moderators can update season scores"
-  ON public.season_scores FOR UPDATE
-  TO authenticated
-  USING (
-    has_role(auth.uid(), 'moderator'::app_role)
-    OR has_role(auth.uid(), 'admin'::app_role)
-  );
-```
+If any matches are already completed, the button will be disabled with a tooltip explaining that completed matches prevent a reset.
 
-### No Code Changes Needed
-The `ModeratorPoints.tsx` component logic is correct -- it properly inserts/updates `season_scores` and records an audit trail in `point_adjustments`. Only the database policies need to be fixed.
-
-### Summary of Changes
-1. Drop "Only service role manages scores" policy (INSERT blocker)
-2. Drop "Only service role updates scores" policy (UPDATE blocker)
-3. Recreate moderator INSERT and UPDATE policies to also include admin role
+### Files to Modify
+1. `src/hooks/useTournamentManagement.ts` -- add `resetBracketMutation`
+2. `src/pages/TournamentManage.tsx` -- add Reset Bracket button with AlertDialog confirmation
 
