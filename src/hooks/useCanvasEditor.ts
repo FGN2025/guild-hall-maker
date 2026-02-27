@@ -1,28 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useCanvasHistory } from "./canvas/useCanvasHistory";
+import { useCanvasSnap } from "./canvas/useCanvasSnap";
+import type { Overlay, LogoOverlay, TextOverlay, SnapGuide } from "./canvas/canvasTypes";
 
-export type LogoOverlay = {
-  id: string;
-  type: "logo";
-  src: string;
-  img: HTMLImageElement;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-export type TextOverlay = {
-  id: string;
-  type: "text";
-  text: string;
-  x: number;
-  y: number;
-  fontSize: number;
-  color: string;
-  fontFamily: string;
-};
-
-export type Overlay = LogoOverlay | TextOverlay;
+export type { Overlay, LogoOverlay, TextOverlay, SnapGuide };
 
 type DragState = {
   overlayId: string;
@@ -32,11 +13,12 @@ type DragState = {
 
 export function useCanvasEditor(baseImageUrl: string) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [overlays, setOverlays] = useState<Overlay[]>([]);
+  const { overlays, pushState, setOverlaysLive, undo, redo, canUndo, canRedo } = useCanvasHistory();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const dragRef = useRef<DragState>(null);
+  const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
   // Load base image
   useEffect(() => {
@@ -73,9 +55,8 @@ export function useCanvasEditor(baseImageUrl: string) {
         ctx.fillText(o.text, o.x, o.y);
       }
 
-      // Selection outline
       if (o.id === selectedId) {
-        ctx.strokeStyle = "hsl(var(--primary))";
+        ctx.strokeStyle = "#3b82f6";
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 3]);
         if (o.type === "logo") {
@@ -87,7 +68,24 @@ export function useCanvasEditor(baseImageUrl: string) {
         ctx.setLineDash([]);
       }
     });
-  }, [overlays, baseImage, selectedId]);
+
+    // Draw snap guides
+    guides.forEach((g) => {
+      ctx.strokeStyle = "#f43f5e";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      if (g.orientation === "vertical") {
+        ctx.moveTo(g.position, 0);
+        ctx.lineTo(g.position, canvas.height);
+      } else {
+        ctx.moveTo(0, g.position);
+        ctx.lineTo(canvas.width, g.position);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }, [overlays, baseImage, selectedId, guides]);
 
   useEffect(() => {
     renderCanvas();
@@ -98,7 +96,6 @@ export function useCanvasEditor(baseImageUrl: string) {
     (mx: number, my: number): Overlay | null => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
-      // Reverse order so top-most is hit first
       for (let i = overlays.length - 1; i >= 0; i--) {
         const o = overlays[i];
         if (o.type === "logo") {
@@ -140,16 +137,32 @@ export function useCanvasEditor(baseImageUrl: string) {
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
       const { overlayId, offsetX, offsetY } = dragRef.current;
-      setOverlays((prev) =>
-        prev.map((o) => (o.id === overlayId ? { ...o, x: mx - offsetX, y: my - offsetY } : o))
-      );
+
+      setOverlaysLive((prev) => {
+        const idx = prev.findIndex((o) => o.id === overlayId);
+        if (idx === -1) return prev;
+        const dragged = { ...prev[idx], x: mx - offsetX, y: my - offsetY };
+        const ctx = canvasRef.current?.getContext("2d");
+        const { dx, dy, guides: newGuides } = snapOverlay(dragged as Overlay, prev, ctx);
+        dragged.x += dx;
+        dragged.y += dy;
+        setGuides(newGuides);
+        const next = [...prev];
+        next[idx] = dragged as Overlay;
+        return next;
+      });
     },
-    []
+    [snapOverlay, setGuides, setOverlaysLive]
   );
 
   const onMouseUp = useCallback(() => {
+    if (dragRef.current) {
+      // Commit to history on drop
+      pushState(overlays);
+      clearGuides();
+    }
     dragRef.current = null;
-  }, []);
+  }, [overlays, pushState, clearGuides]);
 
   // Add logo
   const addLogo = useCallback((file: File) => {
@@ -168,11 +181,12 @@ export function useCanvasEditor(baseImageUrl: string) {
         width: Math.round(img.naturalWidth * scale),
         height: Math.round(img.naturalHeight * scale),
       };
-      setOverlays((prev) => [...prev, overlay]);
+      const next = [...overlays, overlay];
+      pushState(next);
       setSelectedId(overlay.id);
     };
     img.src = url;
-  }, []);
+  }, [overlays, pushState]);
 
   // Add text
   const addText = useCallback((defaults?: Partial<Omit<TextOverlay, "id" | "type">>) => {
@@ -186,53 +200,47 @@ export function useCanvasEditor(baseImageUrl: string) {
       color: defaults?.color ?? "#ffffff",
       fontFamily: defaults?.fontFamily ?? "sans-serif",
     };
-    setOverlays((prev) => [...prev, overlay]);
+    const next = [...overlays, overlay];
+    pushState(next);
     setSelectedId(overlay.id);
     return overlay.id;
-  }, []);
+  }, [overlays, pushState]);
 
-  // Apply a template (clears existing overlays and adds template texts)
+  // Apply template
   const applyTemplate = useCallback(
     (texts: Array<Omit<TextOverlay, "id" | "type">>) => {
       const newOverlays: TextOverlay[] = texts.map((t) => ({
         id: crypto.randomUUID(),
         type: "text" as const,
-        text: t.text,
-        x: t.x,
-        y: t.y,
-        fontSize: t.fontSize,
-        color: t.color,
-        fontFamily: t.fontFamily,
+        ...t,
       }));
-      setOverlays(newOverlays);
+      pushState(newOverlays);
       if (newOverlays.length > 0) setSelectedId(newOverlays[0].id);
     },
-    []
+    [pushState]
   );
 
   // Update overlay
   const updateOverlay = useCallback((id: string, updates: Record<string, unknown>) => {
-    setOverlays((prev) =>
-      prev.map((o) => {
-        if (o.id !== id) return o;
-        if (o.type === "logo") return { ...o, ...updates } as LogoOverlay;
-        return { ...o, ...updates } as TextOverlay;
-      })
-    );
-  }, []);
+    const next = overlays.map((o) => {
+      if (o.id !== id) return o;
+      if (o.type === "logo") return { ...o, ...updates } as LogoOverlay;
+      return { ...o, ...updates } as TextOverlay;
+    });
+    pushState(next);
+  }, [overlays, pushState]);
 
   // Delete overlay
   const deleteOverlay = useCallback(
     (id: string) => {
-      setOverlays((prev) => prev.filter((o) => o.id !== id));
+      pushState(overlays.filter((o) => o.id !== id));
       if (selectedId === id) setSelectedId(null);
     },
-    [selectedId]
+    [overlays, selectedId, pushState]
   );
 
   // Export
   const exportCanvas = useCallback(async (): Promise<Blob | null> => {
-    // Render at full resolution for export
     const canvas = document.createElement("canvas");
     if (!baseImage) return null;
     canvas.width = baseImage.naturalWidth;
@@ -276,5 +284,10 @@ export function useCanvasEditor(baseImageUrl: string) {
     onMouseUp,
     exportCanvas,
     setSelectedId,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    guides,
   };
 }

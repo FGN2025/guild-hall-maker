@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { ImagePlus, Type, Trash2, Download, Save, ExternalLink, LayoutTemplate } from "lucide-react";
+import { ImagePlus, Type, Trash2, Download, Save, ExternalLink, LayoutTemplate, Undo2, Redo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -83,6 +83,10 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
     onMouseMove,
     onMouseUp,
     exportCanvas,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useCanvasEditor(baseImageUrl);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +149,12 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
           {/* Toolbar */}
           <div className="w-full lg:w-64 space-y-4">
             <div className="flex flex-wrap gap-2">
+              <Button size="icon" variant="outline" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Undo">
+                <Undo2 className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="outline" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Redo">
+                <Redo2 className="h-4 w-4" />
+              </Button>
               <Button size="sm" variant="outline" onClick={() => logoInputRef.current?.click()}>
                 <ImagePlus className="h-4 w-4 mr-1" /> Logo
               </Button>
