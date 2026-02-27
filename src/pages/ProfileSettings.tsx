@@ -6,18 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Camera, Save, User, Gamepad2, ArrowLeft } from "lucide-react";
+import { Camera, Save, User, Gamepad2, ArrowLeft, MessageSquare, Unlink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import NotificationPreferences from "@/components/NotificationPreferences";
+import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
 
 const ProfileSettings = () => {
-  const { user } = useAuth();
+  const { user, discordLinked, refreshDiscordStatus } = useAuth();
+  const discordClientId = useDiscordClientId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState("");
   const [gamerTag, setGamerTag] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [discordUsername, setDiscordUsername] = useState<string | null>(null);
+  const [discordAvatarHash, setDiscordAvatarHash] = useState<string | null>(null);
+  const [discordId, setDiscordId] = useState<string | null>(null);
+  const [unlinking, setUnlinking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -29,7 +35,7 @@ const ProfileSettings = () => {
   const fetchProfile = async () => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("display_name, gamer_tag, avatar_url")
+      .select("display_name, gamer_tag, avatar_url, discord_id, discord_username, discord_avatar")
       .eq("user_id", user!.id)
       .single();
 
@@ -39,6 +45,9 @@ const ProfileSettings = () => {
       setDisplayName(data.display_name ?? "");
       setGamerTag(data.gamer_tag ?? "");
       setAvatarUrl(data.avatar_url);
+      setDiscordUsername((data as any).discord_username);
+      setDiscordAvatarHash((data as any).discord_avatar);
+      setDiscordId((data as any).discord_id);
     }
     setInitialLoading(false);
   };
@@ -231,6 +240,102 @@ const ProfileSettings = () => {
                 {loading ? "Saving..." : "Save Changes"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Discord Section */}
+        <Card className="glass-panel border-border/50 mt-6">
+          <CardHeader>
+            <CardTitle className="font-display text-xl flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-[#5865F2]" />
+              Discord
+            </CardTitle>
+            <CardDescription className="font-body">
+              Your Discord identity for tournaments and brackets
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {discordLinked && discordUsername ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  {discordAvatarHash && discordId ? (
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={`https://cdn.discordapp.com/avatars/${discordId}/${discordAvatarHash}.png`} alt="Discord avatar" />
+                      <AvatarFallback className="bg-[#5865F2] text-white text-sm">{discordUsername.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-[#5865F2] flex items-center justify-center text-white font-bold text-sm">
+                      {discordUsername.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-heading text-foreground">{discordUsername}</p>
+                    <p className="text-xs text-muted-foreground">Linked</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const params = new URLSearchParams({
+                        client_id: discordClientId!,
+                        redirect_uri: `${window.location.origin}/link-discord`,
+                        response_type: "code",
+                        scope: "identify guilds.members.read",
+                      });
+                      window.location.href = `https://discord.com/api/oauth2/authorize?${params}`;
+                    }}
+                    className="gap-1 font-heading text-xs"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Re-link
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={unlinking}
+                    onClick={async () => {
+                      if (!confirm("Unlinking Discord will block platform access until you re-link. Continue?")) return;
+                      setUnlinking(true);
+                      try {
+                        const { error } = await supabase.functions.invoke("discord-oauth-callback", {
+                          body: { action: "unlink" },
+                        });
+                        if (error) throw error;
+                        setDiscordUsername(null);
+                        setDiscordAvatarHash(null);
+                        setDiscordId(null);
+                        await refreshDiscordStatus();
+                        toast.success("Discord unlinked.");
+                      } catch {
+                        toast.error("Failed to unlink Discord.");
+                      }
+                      setUnlinking(false);
+                    }}
+                    className="gap-1 font-heading text-xs"
+                  >
+                    <Unlink className="h-3 w-3" /> {unlinking ? "Unlinking…" : "Unlink"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                onClick={() => {
+                  const params = new URLSearchParams({
+                    client_id: discordClientId!,
+                    redirect_uri: `${window.location.origin}/link-discord`,
+                    response_type: "code",
+                    scope: "identify guilds.members.read",
+                  });
+                  window.location.href = `https://discord.com/api/oauth2/authorize?${params}`;
+                }}
+                className="w-full py-5 font-heading tracking-wide gap-2"
+                style={{ backgroundColor: "#5865F2" }}
+              >
+                <MessageSquare className="h-4 w-4" />
+                Link Discord Account
+              </Button>
+            )}
           </CardContent>
         </Card>
 

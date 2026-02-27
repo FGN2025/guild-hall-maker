@@ -10,7 +10,9 @@ interface AuthContextType {
   isModerator: boolean;
   isMarketing: boolean;
   roleLoading: boolean;
+  discordLinked: boolean;
   signOut: () => Promise<void>;
+  refreshDiscordStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -21,7 +23,9 @@ const AuthContext = createContext<AuthContextType>({
   isModerator: false,
   isMarketing: false,
   roleLoading: true,
+  discordLinked: false,
   signOut: async () => {},
+  refreshDiscordStatus: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -34,18 +38,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isModerator, setIsModerator] = useState(false);
   const [isMarketing, setIsMarketing] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
+  const [discordLinked, setDiscordLinked] = useState(false);
 
-  const fetchRole = async (userId: string) => {
+  const fetchRoleAndDiscord = async (userId: string) => {
     setRoleLoading(true);
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .maybeSingle();
-    setIsAdmin(data?.role === "admin");
-    setIsModerator(data?.role === "moderator");
-    setIsMarketing(data?.role === "marketing");
+    const [roleResult, profileResult] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+      supabase.from("profiles").select("discord_id").eq("user_id", userId).maybeSingle(),
+    ]);
+    setIsAdmin(roleResult.data?.role === "admin");
+    setIsModerator(roleResult.data?.role === "moderator");
+    setIsMarketing(roleResult.data?.role === "marketing");
+    setDiscordLinked(!!profileResult.data?.discord_id);
     setRoleLoading(false);
+  };
+
+  const refreshDiscordStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("profiles").select("discord_id").eq("user_id", user.id).maybeSingle();
+    setDiscordLinked(!!data?.discord_id);
   };
 
   useEffect(() => {
@@ -55,11 +66,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
         if (session?.user) {
-          setTimeout(() => fetchRole(session.user.id), 0);
+          setTimeout(() => fetchRoleAndDiscord(session.user.id), 0);
         } else {
           setIsAdmin(false);
           setIsModerator(false);
           setIsMarketing(false);
+          setDiscordLinked(false);
           setRoleLoading(false);
         }
       }
@@ -70,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       setLoading(false);
       if (session?.user) {
-        fetchRole(session.user.id);
+        fetchRoleAndDiscord(session.user.id);
       } else {
         setRoleLoading(false);
       }
@@ -84,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, roleLoading, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, roleLoading, discordLinked, signOut, refreshDiscordStatus }}>
       {children}
     </AuthContext.Provider>
   );

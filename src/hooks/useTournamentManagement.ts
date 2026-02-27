@@ -83,7 +83,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       const userIds = regs.map((r) => r.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, display_name, gamer_tag")
+        .select("user_id, display_name, gamer_tag, discord_username")
         .in("user_id", userIds);
 
       return (profiles ?? []).map((p) => ({
@@ -115,11 +115,11 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
 
       const { data: profiles } =
         playerIds.length > 0
-          ? await supabase.from("profiles").select("user_id, display_name, gamer_tag").in("user_id", playerIds)
+          ? await supabase.from("profiles").select("user_id, display_name, gamer_tag, discord_username").in("user_id", playerIds)
           : { data: [] };
 
       const profileMap = new Map(
-        (profiles ?? []).map((p) => [p.user_id, p.gamer_tag || p.display_name || "Unknown"])
+        (profiles ?? []).map((p) => [p.user_id, (p as any).discord_username || p.gamer_tag || p.display_name || "Unknown"])
       );
 
       return matches.map((m) => ({
