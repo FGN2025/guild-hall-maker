@@ -60,6 +60,9 @@ import TenantSettings from "./pages/tenant/TenantSettings";
 import TenantMarketing from "./pages/tenant/TenantMarketing";
 import TenantMarketingDetail from "./pages/tenant/TenantMarketingDetail";
 import TenantMarketingAssets from "./pages/tenant/TenantMarketingAssets";
+import TenantEvents from "./pages/tenant/TenantEvents";
+import TenantEventPage from "./pages/TenantEventPage";
+import TenantEventDetail from "./pages/TenantEventDetail";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookieConsent from "./components/CookieConsent";
@@ -81,6 +84,8 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
+            <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
 
             {/* Authenticated routes with sidebar */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -140,6 +145,7 @@ const App = () => (
             <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
             <Route path="/tenant/marketing/assets" element={<TenantRoute><TenantMarketingAssets /></TenantRoute>} />
             <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
+            <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
 
             <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<NotFound />} />

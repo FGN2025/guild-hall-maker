@@ -1249,6 +1249,147 @@ export type Database = {
           },
         ]
       }
+      tenant_event_assets: {
+        Row: {
+          asset_url: string
+          created_at: string
+          display_order: number
+          event_id: string
+          id: string
+          label: string
+        }
+        Insert: {
+          asset_url: string
+          created_at?: string
+          display_order?: number
+          event_id: string
+          id?: string
+          label?: string
+        }
+        Update: {
+          asset_url?: string
+          created_at?: string
+          display_order?: number
+          event_id?: string
+          id?: string
+          label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_event_assets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_event_registrations: {
+        Row: {
+          event_id: string
+          id: string
+          registered_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          registered_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          registered_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_events: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string | null
+          format: string
+          game: string
+          id: string
+          image_url: string | null
+          is_public: boolean
+          max_participants: number
+          name: string
+          prize_pool: string | null
+          registration_open: boolean
+          rules: string | null
+          social_copy: string | null
+          start_date: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date?: string | null
+          format?: string
+          game?: string
+          id?: string
+          image_url?: string | null
+          is_public?: boolean
+          max_participants?: number
+          name: string
+          prize_pool?: string | null
+          registration_open?: boolean
+          rules?: string | null
+          social_copy?: string | null
+          start_date: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string | null
+          format?: string
+          game?: string
+          id?: string
+          image_url?: string | null
+          is_public?: boolean
+          max_participants?: number
+          name?: string
+          prize_pool?: string | null
+          registration_open?: boolean
+          rules?: string | null
+          social_copy?: string | null
+          start_date?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_integrations: {
         Row: {
           additional_config: Json | null

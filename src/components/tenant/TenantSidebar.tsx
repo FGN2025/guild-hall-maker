@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 /** Convert hex color to rgba string */
@@ -20,6 +20,7 @@ export interface TenantSidebarProps {
 const allSidebarItems = [
   { to: "/tenant", label: "Dashboard", icon: LayoutDashboard, roles: ['admin', 'manager'] },
   { to: "/tenant/leads", label: "Leads", icon: Users, roles: ['admin', 'manager'] },
+  { to: "/tenant/events", label: "Events", icon: Calendar, roles: ['admin', 'manager'] },
   { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin, roles: ['admin'] },
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin'] },
   { to: "/tenant/subscribers?tab=integrations", label: "Integrations", icon: Plug, roles: ['admin'] },
