@@ -175,20 +175,40 @@ export function useCanvasEditor(baseImageUrl: string) {
   }, []);
 
   // Add text
-  const addText = useCallback(() => {
+  const addText = useCallback((defaults?: Partial<Omit<TextOverlay, "id" | "type">>) => {
     const overlay: TextOverlay = {
       id: crypto.randomUUID(),
       type: "text",
-      text: "Your Text Here",
-      x: 20,
-      y: 20,
-      fontSize: 32,
-      color: "#ffffff",
-      fontFamily: "sans-serif",
+      text: defaults?.text ?? "Your Text Here",
+      x: defaults?.x ?? 20,
+      y: defaults?.y ?? 20,
+      fontSize: defaults?.fontSize ?? 32,
+      color: defaults?.color ?? "#ffffff",
+      fontFamily: defaults?.fontFamily ?? "sans-serif",
     };
     setOverlays((prev) => [...prev, overlay]);
     setSelectedId(overlay.id);
+    return overlay.id;
   }, []);
+
+  // Apply a template (clears existing overlays and adds template texts)
+  const applyTemplate = useCallback(
+    (texts: Array<Omit<TextOverlay, "id" | "type">>) => {
+      const newOverlays: TextOverlay[] = texts.map((t) => ({
+        id: crypto.randomUUID(),
+        type: "text" as const,
+        text: t.text,
+        x: t.x,
+        y: t.y,
+        fontSize: t.fontSize,
+        color: t.color,
+        fontFamily: t.fontFamily,
+      }));
+      setOverlays(newOverlays);
+      if (newOverlays.length > 0) setSelectedId(newOverlays[0].id);
+    },
+    []
+  );
 
   // Update overlay
   const updateOverlay = useCallback((id: string, updates: Record<string, unknown>) => {
@@ -248,6 +268,7 @@ export function useCanvasEditor(baseImageUrl: string) {
     selectedOverlay,
     addLogo,
     addText,
+    applyTemplate,
     updateOverlay,
     deleteOverlay,
     onMouseDown,
