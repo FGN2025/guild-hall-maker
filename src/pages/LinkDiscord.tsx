@@ -16,7 +16,9 @@ const LinkDiscord = () => {
   const [linked, setLinked] = useState(false);
   const clientId = useDiscordClientId();
 
-  const redirectUri = `${window.location.origin}/link-discord`;
+  const redirectUri = window.location.hostname.includes("localhost")
+    ? `${window.location.origin}/link-discord`
+    : "https://play.fgn.gg/link-discord";
 
   // Handle OAuth callback
   useEffect(() => {
