@@ -9,12 +9,19 @@ import { MessageSquare, ExternalLink, CheckCircle2, Loader2 } from "lucide-react
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
 const LinkDiscord = () => {
-  const { user, refreshDiscordStatus } = useAuth();
+  const { user, isAdmin, roleLoading, refreshDiscordStatus } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [linking, setLinking] = useState(false);
   const [linked, setLinked] = useState(false);
   const clientId = useDiscordClientId();
+
+  // Admins don't need Discord — redirect them to dashboard
+  useEffect(() => {
+    if (!roleLoading && isAdmin) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [roleLoading, isAdmin, navigate]);
 
   const redirectUri = window.location.hostname.includes("localhost")
     ? `${window.location.origin}/link-discord`
