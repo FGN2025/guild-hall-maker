@@ -1,0 +1,313 @@
+import { useState, useMemo, useEffect } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Shield,
+  Trophy,
+  Swords,
+  Star,
+  Target,
+  Gift,
+  TrendingUp,
+  Bell,
+  Search,
+  Printer,
+  ArrowUp,
+  Users,
+  LayoutDashboard,
+} from "lucide-react";
+
+const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
+  {
+    id: "overview",
+    icon: Shield,
+    title: "Moderator Role Overview",
+    bullets: [
+      "Moderators manage the day-to-day competitive lifecycle of the FGN platform.",
+      "Access — The Moderator Panel is available at /moderator. Admins and Super Admins also have full access.",
+      "Scope — Moderators handle tournaments, match scoring, player points, challenges, ranked ladders, and prize redemptions.",
+      "Sidebar — Use the Moderator Panel sidebar to navigate between Dashboard, Tournaments, Matches, Points, Challenges, Ladders, and Redemptions.",
+      "Role Assignment — Moderator roles are assigned by Admins via Admin → Users.",
+    ],
+  },
+  {
+    id: "dashboard",
+    icon: LayoutDashboard,
+    title: "Moderator Dashboard",
+    bullets: [
+      "The Moderator Dashboard provides a quick overview of platform activity relevant to your role.",
+      "Quick Stats — See counts of active tournaments, pending redemptions, open challenges, and active ladders at a glance.",
+      "Recent Activity — Review recently completed matches and newly registered players.",
+      "Quick Links — Jump directly to any moderator function from the dashboard.",
+    ],
+  },
+  {
+    id: "tournaments",
+    icon: Trophy,
+    title: "Tournament Management",
+    bullets: [
+      "Navigate to Moderator → Tournaments to manage the tournament lifecycle.",
+      "Creating — Set name, game, format, date/time, max participants, description, rules, prize pool, entry fee, and hero image.",
+      "Status Flow — Upcoming → Open (registration) → In Progress → Completed (or Cancelled).",
+      "Registrations — View registered players, approve or remove registrations before tournament start.",
+      "Bracket Generation — Generate single-elimination brackets once registration closes. Players are seeded and matched automatically.",
+      "Reset Bracket — Before any matches are completed, you can reset the bracket to delete all match data and return to Open status for re-registration.",
+      "Editing — Update tournament details at any time via the Edit dialog.",
+      "Season Points — Points are awarded automatically when a tournament completes, based on final placement.",
+    ],
+  },
+  {
+    id: "matches",
+    icon: Swords,
+    title: "Match Scoring",
+    bullets: [
+      "Navigate to Moderator → Matches to record match results.",
+      "Score Entry — Select a tournament, then enter scores for each match in the bracket.",
+      "Winner Advancement — Winners are advanced automatically to the next round when scores are submitted.",
+      "Notifications — Both players receive automatic notifications when a match result is recorded.",
+      "Validation — Match scores require both player scores to be entered before submission.",
+      "Tip: Double-check scores before submitting — match results affect season points and leaderboard standings.",
+    ],
+  },
+  {
+    id: "points",
+    icon: Star,
+    title: "Points Management",
+    bullets: [
+      "Navigate to Moderator → Points to manage player season points.",
+      "Point Adjustments — Award or deduct points manually with a required reason for audit tracking.",
+      "Adjustment Types — Adjustments are categorized (bonus, penalty, correction) for reporting clarity.",
+      "Season Scope — Points are tied to the currently active season.",
+      "Audit Trail — All manual adjustments are logged with the moderator who made them and a timestamp.",
+      "Automatic Awards — Tournament placement points are awarded automatically and don't need manual entry.",
+    ],
+  },
+  {
+    id: "challenges",
+    icon: Target,
+    title: "Challenges",
+    bullets: [
+      "Navigate to Moderator → Challenges to create and manage challenges.",
+      "Creating — Set name, description, point reward, optional game link, type (one-time or repeatable), and start/end dates.",
+      "Notifications — When a new active challenge is created, all registered players are automatically notified with the challenge name and point reward.",
+      "Completions — Record challenge completions for players. Points are awarded automatically to the player's season score.",
+      "Max Completions — Optionally limit how many players can complete a challenge.",
+      "Active/Inactive — Toggle challenges on or off without deleting them.",
+      "Tip: Time-limited challenges with generous point rewards drive the most engagement!",
+    ],
+  },
+  {
+    id: "ladders",
+    icon: TrendingUp,
+    title: "Ranked Ladders",
+    bullets: [
+      "Navigate to Moderator → Ladders to create and manage ranked ladders.",
+      "Creating — Set name, description, and optionally link to a specific game.",
+      "Player Entries — Players join ladders themselves; moderators manage entries (update ratings, record wins/losses).",
+      "ELO Ratings — Each player starts at 1000 ELO. Ratings update based on match outcomes.",
+      "Live Leaderboard — Each ladder has a live leaderboard sorted by rating showing wins, losses, and rank.",
+      "Multiple Ladders — The platform supports many simultaneous ladders (e.g., per-game ladders).",
+    ],
+  },
+  {
+    id: "redemptions",
+    icon: Gift,
+    title: "Prize Redemptions",
+    bullets: [
+      "Navigate to Moderator → Redemptions to review prize redemption requests.",
+      "Review Queue — See all pending redemption requests with player name, prize, point cost, and submission date.",
+      "Actions — Approve, fulfill (mark as delivered), or deny redemption requests with optional notes.",
+      "Notifications — Players are automatically notified when their redemption status changes.",
+      "Prize Management — Create prizes with name, description, point cost, optional image, and available quantity from the Prize Shop management interface.",
+      "Stock Tracking — Available quantity is tracked automatically as redemptions are fulfilled.",
+    ],
+  },
+  {
+    id: "community",
+    icon: Users,
+    title: "Community Moderation",
+    bullets: [
+      "Moderators can manage community forum content to enforce standards.",
+      "Pinned Topics — Pin important announcements or discussions to the top of the forum.",
+      "Content Oversight — Monitor discussions for violations of the Acceptable Use Policy.",
+      "Categories — Help organize discussions by guiding players to use appropriate categories.",
+    ],
+  },
+  {
+    id: "notifications",
+    icon: Bell,
+    title: "Notification System",
+    bullets: [
+      "The platform generates automatic notifications — no manual action is needed from moderators beyond normal workflows.",
+      "Tournament Starting — When you change a tournament to 'In Progress', all registered players are notified.",
+      "Match Completed — Both players are notified when you record a match result.",
+      "Challenge Published — All players are notified when you create a new active challenge.",
+      "Redemption Updates — Players are notified when you approve, fulfill, or deny a redemption.",
+      "Achievement Earned — Players are notified when badges are awarded.",
+      "Scheduled Reminders — A background job sends tournament reminders ~24 hours before start time.",
+      "Email Notifications — Key events also trigger email alerts via the notification system.",
+      "Tip: Just do your normal workflows — the notification system handles player communication automatically.",
+    ],
+  },
+];
+
+const ModeratorGuide = () => {
+  const [search, setSearch] = useState("");
+  const [showTop, setShowTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const filteredSections = useMemo(() => {
+    if (!search.trim()) return sectionData;
+    const q = search.toLowerCase();
+    return sectionData.filter(
+      (s) =>
+        s.title.toLowerCase().includes(q) ||
+        s.bullets.some((b) => b.toLowerCase().includes(q))
+    );
+  }, [search]);
+
+  const handlePrint = () => {
+    const sectionBlocks = sectionData
+      .map((s) => {
+        const items = s.bullets.map((b) => `<li>${b}</li>`).join("");
+        return `<div class="section"><h2>${s.title}</h2><ul>${items}</ul></div>`;
+      })
+      .join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Moderator Guide</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;color:#1a1a1a;padding:40px;max-width:900px;margin:auto;font-size:13px}
+  h1{font-size:24px;margin-bottom:2px} h2{font-size:16px;margin-top:24px;border-bottom:2px solid #0cc;padding-bottom:4px}
+  .section{page-break-inside:avoid;margin-bottom:16px}
+  ul{padding-left:20px;margin:4px 0} li{margin:4px 0}
+  @media print{body{padding:20px}}
+</style></head><body>
+<h1>Moderator Guide</h1>
+<p style="color:#888;font-size:12px">Reference documentation for platform moderators.</p>
+${sectionBlocks}
+</body></html>`;
+
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 400);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-display font-bold tracking-tight">
+            Moderator Guide
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Reference documentation for platform moderators.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handlePrint} className="shrink-0 gap-2">
+          <Printer className="h-4 w-4" />
+          Export PDF
+        </Button>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search topics…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {filteredSections.length > 0 && (
+        <nav className="border border-border rounded-lg bg-card/50 px-4 py-3">
+          <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary mb-2">Table of Contents</h2>
+          <ul className="columns-2 gap-x-6 text-sm space-y-1">
+            {filteredSections.map((s) => (
+              <li key={s.id}>
+                <a
+                  href={`#section-${s.id}`}
+                  className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors py-0.5"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                >
+                  <s.icon className="h-3.5 w-3.5 shrink-0" />
+                  {s.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
+      {filteredSections.length > 0 ? (
+        <Accordion type="multiple" defaultValue={search.trim() ? filteredSections.map(s => s.id) : []} key={search} className="space-y-2">
+          {filteredSections.map((section) => (
+            <AccordionItem
+              key={section.id}
+              value={section.id}
+              id={`section-${section.id}`}
+              className="border border-border rounded-lg px-4 bg-card/50 scroll-mt-4"
+            >
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <section.icon className="h-5 w-5 text-primary shrink-0" />
+                  <span className="font-heading font-semibold text-base">
+                    {section.title}
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-sm leading-relaxed">
+                <ul className="list-disc pl-5 space-y-2">
+                  {section.bullets.map((b, i) => {
+                    const dashIdx = b.indexOf(" — ");
+                    if (dashIdx > 0) {
+                      return (
+                        <li key={i}>
+                          <strong className="text-foreground">{b.slice(0, dashIdx)}</strong>
+                          {" — "}{b.slice(dashIdx + 3)}
+                        </li>
+                      );
+                    }
+                    return <li key={i}>{b}</li>;
+                  })}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      ) : (
+        <p className="text-muted-foreground text-sm text-center py-8">No results found for &ldquo;{search}&rdquo;</p>
+      )}
+
+      {showTop && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Back to top"
+        >
+          <ArrowUp className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
+};
+
+export default ModeratorGuide;
