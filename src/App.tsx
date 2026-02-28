@@ -66,6 +66,8 @@ import TenantEventPage from "./pages/TenantEventPage";
 import TenantEventDetail from "./pages/TenantEventDetail";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import AcceptableUsePolicy from "./pages/AcceptableUsePolicy";
+import DisabledUsersNotice from "./pages/DisabledUsersNotice";
 import CookieConsent from "./components/CookieConsent";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -84,6 +86,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/acceptable-use" element={<AcceptableUsePolicy />} />
+            <Route path="/disabled-users" element={<DisabledUsersNotice />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
             <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
