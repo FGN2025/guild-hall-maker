@@ -15,6 +15,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 
 interface Props {
   onCreate: (data: {
@@ -24,6 +25,8 @@ interface Props {
     format: string;
     max_participants: number;
     prize_pool?: string;
+    prize_type?: string;
+    prize_id?: string;
     start_date: string;
     rules?: string;
     image_url?: string;
@@ -45,6 +48,8 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [format, setFormat] = useState("single_elimination");
   const [maxParticipants, setMaxParticipants] = useState("16");
   const [prizePool, setPrizePool] = useState("");
+  const [prizeType, setPrizeType] = useState("none");
+  const [prizeId, setPrizeId] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [startTime, setStartTime] = useState("12:00");
   const [rules, setRules] = useState("");
@@ -113,6 +118,8 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
       format,
       max_participants: parseInt(maxParticipants) || 16,
       prize_pool: prizePool.trim() || undefined,
+      prize_type: prizeType,
+      prize_id: prizeType === "physical" && prizeId ? prizeId : undefined,
       start_date: combinedDate.toISOString(),
       rules: rules.trim() || undefined,
       image_url,
@@ -123,7 +130,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
     });
     setOpen(false);
     setName(""); setGame(""); setDescription(""); setFormat("single_elimination");
-    setMaxParticipants("16"); setPrizePool(""); setStartDate(undefined); setStartTime("12:00"); setRules("");
+    setMaxParticipants("16"); setPrizePool(""); setPrizeType("none"); setPrizeId(""); setStartDate(undefined); setStartTime("12:00"); setRules("");
     setImageFile(null); setImagePreview(null);
     setPointsFirst("10"); setPointsSecond("5"); setPointsThird("3"); setPointsParticipation("2");
   };
@@ -209,11 +216,17 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
                 required className="bg-card border-border font-body" />
              </div>
           </div>
-          <div className="space-y-2">
-            <Label className="font-heading text-sm">Prize Pool</Label>
-            <Input value={prizePool} onChange={(e) => setPrizePool(e.target.value)} maxLength={50}
-              className="bg-card border-border font-body" placeholder="e.g. $5,000" />
-          </div>
+          <PrizePoolSelector
+            prizeType={prizeType}
+            onPrizeTypeChange={setPrizeType}
+            prizePool={prizePool}
+            onPrizePoolChange={setPrizePool}
+            prizeId={prizeId}
+            onPrizeIdChange={setPrizeId}
+            pointsFirst={parseInt(pointsFirst) || 10}
+            pointsSecond={parseInt(pointsSecond) || 5}
+            pointsThird={parseInt(pointsThird) || 3}
+          />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Hero Image</Label>
             <div className="flex items-center gap-3">

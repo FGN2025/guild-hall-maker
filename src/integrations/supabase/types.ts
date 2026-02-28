@@ -1779,7 +1779,9 @@ export type Database = {
           points_participation: number
           points_second: number
           points_third: number
+          prize_id: string | null
           prize_pool: string | null
+          prize_type: string
           rules: string | null
           start_date: string
           status: Database["public"]["Enums"]["tournament_status"]
@@ -1801,7 +1803,9 @@ export type Database = {
           points_participation?: number
           points_second?: number
           points_third?: number
+          prize_id?: string | null
           prize_pool?: string | null
+          prize_type?: string
           rules?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["tournament_status"]
@@ -1823,13 +1827,23 @@ export type Database = {
           points_participation?: number
           points_second?: number
           points_third?: number
+          prize_id?: string | null
           prize_pool?: string | null
+          prize_type?: string
           rules?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["tournament_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_prize_id_fkey"
+            columns: ["prize_id"]
+            isOneToOne: false
+            referencedRelation: "prizes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

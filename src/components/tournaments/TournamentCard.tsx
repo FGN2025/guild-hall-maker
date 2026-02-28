@@ -1,4 +1,5 @@
-import { Calendar, Users, Trophy, GitBranch, Settings } from "lucide-react";
+import { Calendar, Users, GitBranch, Settings } from "lucide-react";
+import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tournament } from "@/hooks/useTournaments";
@@ -66,12 +67,23 @@ const TournamentCard = ({
         {[
           { icon: Calendar, label: "Date", value: dateStr },
           { icon: Users, label: "Players", value: `${t.registrations_count}/${t.max_participants}` },
-          { icon: Trophy, label: "Prize", value: t.prize_pool || "—" },
-        ].map((info) => (
+          { icon: null, label: "Prize", value: null, isPrize: true },
+        ].map((info: any) => (
           <div key={info.label} className="bg-muted rounded-lg p-3">
-            <info.icon className="h-4 w-4 text-primary mx-auto mb-1" />
-            <p className="font-heading text-sm font-semibold text-foreground">{info.value}</p>
-            <p className="text-[10px] text-muted-foreground">{info.label}</p>
+            {info.isPrize ? (
+              <>
+                <div className="font-heading text-sm font-semibold text-foreground">
+                  <PrizeDisplay prizeType={(t as any).prize_type} prizePool={t.prize_pool} compact />
+                </div>
+                <p className="text-[10px] text-muted-foreground">{info.label}</p>
+              </>
+            ) : (
+              <>
+                <info.icon className="h-4 w-4 text-primary mx-auto mb-1" />
+                <p className="font-heading text-sm font-semibold text-foreground">{info.value}</p>
+                <p className="text-[10px] text-muted-foreground">{info.label}</p>
+              </>
+            )}
           </div>
         ))}
       </div>

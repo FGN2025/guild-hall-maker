@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 
 interface TournamentData {
   id: string;
@@ -24,6 +25,8 @@ interface TournamentData {
   format: string;
   max_participants: number;
   prize_pool: string | null;
+  prize_type?: string | null;
+  prize_id?: string | null;
   start_date: string;
   rules: string | null;
   points_first?: number;
@@ -41,6 +44,8 @@ interface Props {
     format: string;
     max_participants: number;
     prize_pool?: string;
+    prize_type?: string;
+    prize_id?: string;
     start_date: string;
     rules?: string;
     image_url?: string;
@@ -62,6 +67,8 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [format, setFormat] = useState("single_elimination");
   const [maxParticipants, setMaxParticipants] = useState("16");
   const [prizePool, setPrizePool] = useState("");
+  const [prizeType, setPrizeType] = useState("none");
+  const [prizeId, setPrizeId] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [startTime, setStartTime] = useState("12:00");
   const [rules, setRules] = useState("");
@@ -82,6 +89,8 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setFormat(tournament.format);
       setMaxParticipants(String(tournament.max_participants));
       setPrizePool(tournament.prize_pool ?? "");
+      setPrizeType(tournament.prize_type ?? "none");
+      setPrizeId(tournament.prize_id ?? "");
       setRules(tournament.rules ?? "");
       setPointsFirst(String(tournament.points_first ?? 10));
       setPointsSecond(String(tournament.points_second ?? 5));
@@ -148,6 +157,8 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       format,
       max_participants: parseInt(maxParticipants) || 16,
       prize_pool: prizePool.trim() || undefined,
+      prize_type: prizeType,
+      prize_id: prizeType === "physical" && prizeId ? prizeId : undefined,
       start_date: combinedDate.toISOString(),
       rules: rules.trim() || undefined,
       image_url,
@@ -240,11 +251,17 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
                 required className="bg-card border-border font-body" />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label className="font-heading text-sm">Prize Pool</Label>
-            <Input value={prizePool} onChange={(e) => setPrizePool(e.target.value)} maxLength={50}
-              className="bg-card border-border font-body" placeholder="e.g. $5,000" />
-          </div>
+          <PrizePoolSelector
+            prizeType={prizeType}
+            onPrizeTypeChange={setPrizeType}
+            prizePool={prizePool}
+            onPrizePoolChange={setPrizePool}
+            prizeId={prizeId}
+            onPrizeIdChange={setPrizeId}
+            pointsFirst={parseInt(pointsFirst) || 10}
+            pointsSecond={parseInt(pointsSecond) || 5}
+            pointsThird={parseInt(pointsThird) || 3}
+          />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Hero Image</Label>
             <div className="flex items-center gap-3">
