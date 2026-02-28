@@ -31,6 +31,10 @@ import {
   Gift,
   Swords,
   Bell,
+  Megaphone,
+  CalendarDays,
+  Moon,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -383,6 +387,58 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Optional secrets for server role management: DISCORD_GUILD_ID and DISCORD_VERIFIED_ROLE_ID.",
     ],
   },
+  {
+    id: "marketing",
+    icon: Megaphone,
+    title: "Marketing Campaigns",
+    bullets: [
+      "Manage marketing campaigns and creative assets from Admin → Marketing.",
+      "Campaigns — Create campaigns with a title, description, category, and optional social copy for coordinated promotions.",
+      "Assets — Upload marketing images and files to campaigns. Each asset has a label, display order, and dimension metadata.",
+      "Publishing — Toggle campaigns between draft and published states to control visibility.",
+      "Tenant Access — Tenant admins can browse published campaigns and download assets for local marketing use via the Tenant → Marketing section.",
+      "Categories — Organize campaigns by category (social media, print, digital, event) for easy filtering.",
+    ],
+  },
+  {
+    id: "tenant-events",
+    icon: CalendarDays,
+    title: "Tenant Events",
+    bullets: [
+      "Tenants can create and manage their own events from the Tenant → Events section.",
+      "Event Creation — Set name, game, format, dates, max participants, description, rules, prize pool, and a hero image.",
+      "Public Events — Toggle events as public to make them visible on a shareable public page at /events/:tenantSlug.",
+      "Registration — Players can register for public tenant events directly from the public event page.",
+      "Event Assets — Upload supporting images and files to events for promotional use.",
+      "Social Copy — Add social media copy for easy sharing across platforms.",
+    ],
+  },
+  {
+    id: "theme-appearance",
+    icon: Moon,
+    title: "Theme & Visual Customization",
+    bullets: [
+      "The platform supports dark and light themes, selectable from the sidebar footer's Theme toggle.",
+      "System Mode — Players can choose 'System' to match their device preference automatically.",
+      "Persistence — Theme choice is saved in localStorage and persists across sessions.",
+      "Page Backgrounds — Admins can set custom background images with adjustable opacity per page from Admin → Settings.",
+      "Page Heroes — Configure hero banners with custom titles and subtitles for managed pages.",
+      "Cookie Consent — A cookie consent banner appears on first visit. Players can accept or decline; the choice is persisted.",
+    ],
+  },
+  {
+    id: "legal-pages",
+    icon: Scale,
+    title: "Legal Pages",
+    bullets: [
+      "The platform includes four legal pages accessible from the home page footer.",
+      "Terms & Conditions (/terms) — Governs platform usage, account rules, intellectual property, and liability.",
+      "Privacy Policy (/privacy) — Covers data collection, usage, and protection practices.",
+      "Acceptable Use Policy (/acceptable-use) — Outlines prohibited activities (cheating, harassment, exploits) and consequences.",
+      "Disabled Users Notice (/disabled-users) — Accessibility commitments (WCAG compliance) and account suspension/appeals process.",
+      "All legal pages include a Download PDF feature for offline reference.",
+    ],
+  },
 ];
 
 // Build JSX content from bullet data for the accordion
@@ -414,6 +470,8 @@ const permissionRows = [
   { feature: "Notebook Connections", admin: true, manager: false },
   { feature: "Community Moderation", admin: true, manager: false },
   { feature: "Ecosystem Navigation", admin: true, manager: false },
+  { feature: "Marketing Campaigns", admin: true, manager: false },
+  { feature: "Legal Pages (view)", admin: true, manager: true },
   { feature: "Challenges", admin: true, manager: true },
   { feature: "Prize Shop (Manage Prizes)", admin: true, manager: true },
   { feature: "Prize Redemptions (Review)", admin: true, manager: true },
@@ -421,6 +479,8 @@ const permissionRows = [
   { feature: "Ranked Ladders (Manage)", admin: true, manager: true },
   { feature: "Tenant Dashboard", admin: true, manager: true },
   { feature: "Tenant Leads", admin: true, manager: true },
+  { feature: "Tenant Events", admin: true, manager: true },
+  { feature: "Tenant Marketing Assets", admin: true, manager: true },
   { feature: "Tenant ZIP Codes", admin: true, manager: false },
   { feature: "Tenant Subscribers", admin: true, manager: false },
   { feature: "Tenant Integrations", admin: true, manager: false },
