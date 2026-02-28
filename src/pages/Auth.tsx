@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Gamepad2, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Gamepad2, Mail, Lock, User, ArrowLeft, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import ZipCheckStep from "@/components/auth/ZipCheckStep";
 import { useRegistrationZipCheck } from "@/hooks/useRegistrationZipCheck";
+import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,6 +26,7 @@ const Auth = () => {
   const [zipVerified, setZipVerified] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { checkZip, loading: zipLoading, result: zipResult, reset: resetZip } = useRegistrationZipCheck();
+  const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && zipVerified);
 
   const handleZipCheck = async () => {
     await checkZip(zipCode, bypassCode || undefined);
@@ -44,6 +46,16 @@ const Auth = () => {
 
     if (!isLogin && !termsAccepted) {
       toast.error("You must accept the Terms and Conditions to create an account.");
+      return;
+    }
+
+    if (!isLogin && !displayName.trim()) {
+      toast.error("Display Name is required.");
+      return;
+    }
+
+    if (!isLogin && displayNameStatus === "taken") {
+      toast.error("That display name is already taken. Please choose another.");
       return;
     }
 
@@ -173,8 +185,22 @@ const Auth = () => {
                       onChange={(e) => setDisplayName(e.target.value)}
                       className="pl-10 bg-card border-border font-body"
                       maxLength={50}
+                      required
                     />
                   </div>
+                  {displayName.trim().length >= 2 && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {displayNameStatus === "checking" && (
+                        <><Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" /><span className="text-xs text-muted-foreground">Checking…</span></>
+                      )}
+                      {displayNameStatus === "available" && (
+                        <><CheckCircle2 className="h-3.5 w-3.5 text-green-500" /><span className="text-xs text-green-500">Available</span></>
+                      )}
+                      {displayNameStatus === "taken" && (
+                        <><XCircle className="h-3.5 w-3.5 text-destructive" /><span className="text-xs text-destructive">Already taken</span></>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -255,7 +281,7 @@ const Auth = () => {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (!isLogin && (displayNameStatus === "taken" || displayNameStatus === "checking"))}
                 className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5"
               >
                 {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
