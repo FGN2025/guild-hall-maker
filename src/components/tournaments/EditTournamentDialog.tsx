@@ -26,6 +26,10 @@ interface TournamentData {
   prize_pool: string | null;
   start_date: string;
   rules: string | null;
+  points_first?: number;
+  points_second?: number;
+  points_third?: number;
+  points_participation?: number;
 }
 
 interface Props {
@@ -40,6 +44,10 @@ interface Props {
     start_date: string;
     rules?: string;
     image_url?: string;
+    points_first?: number;
+    points_second?: number;
+    points_third?: number;
+    points_participation?: number;
   }) => void;
   isUpdating: boolean;
 }
@@ -61,6 +69,10 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [pointsFirst, setPointsFirst] = useState("10");
+  const [pointsSecond, setPointsSecond] = useState("5");
+  const [pointsThird, setPointsThird] = useState("3");
+  const [pointsParticipation, setPointsParticipation] = useState("2");
 
   useEffect(() => {
     if (open && tournament) {
@@ -71,6 +83,10 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setMaxParticipants(String(tournament.max_participants));
       setPrizePool(tournament.prize_pool ?? "");
       setRules(tournament.rules ?? "");
+      setPointsFirst(String(tournament.points_first ?? 10));
+      setPointsSecond(String(tournament.points_second ?? 5));
+      setPointsThird(String(tournament.points_third ?? 3));
+      setPointsParticipation(String(tournament.points_participation ?? 2));
       const d = new Date(tournament.start_date);
       setStartDate(d);
       setStartTime(
@@ -135,6 +151,10 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       start_date: combinedDate.toISOString(),
       rules: rules.trim() || undefined,
       image_url,
+      points_first: parseInt(pointsFirst) || 10,
+      points_second: parseInt(pointsSecond) || 5,
+      points_third: parseInt(pointsThird) || 3,
+      points_participation: parseInt(pointsParticipation) || 2,
     });
     setOpen(false);
   };
@@ -254,6 +274,28 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
                 setImagePreview(url);
               }}
             />
+          </div>
+          <div className="space-y-2">
+            <Label className="font-heading text-sm">Season Points</Label>
+            <p className="text-xs text-muted-foreground">Points awarded based on final placement</p>
+            <div className="grid grid-cols-4 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">1st Place</Label>
+                <Input type="number" min={0} value={pointsFirst} onChange={(e) => setPointsFirst(e.target.value)} className="bg-card border-border font-body" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">2nd Place</Label>
+                <Input type="number" min={0} value={pointsSecond} onChange={(e) => setPointsSecond(e.target.value)} className="bg-card border-border font-body" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">3rd Place</Label>
+                <Input type="number" min={0} value={pointsThird} onChange={(e) => setPointsThird(e.target.value)} className="bg-card border-border font-body" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Participation</Label>
+                <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body" />
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Rules</Label>

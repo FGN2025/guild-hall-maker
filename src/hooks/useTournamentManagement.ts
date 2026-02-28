@@ -20,10 +20,10 @@ const sendTournamentEmail = async (payload: {
   }
 };
 
-const awardSeasonPoints = async (winnerId: string, loserId: string | null) => {
+const awardSeasonPoints = async (winnerId: string, loserId: string | null, pointsWinner?: number, pointsLoser?: number) => {
   try {
     const { error } = await supabase.functions.invoke("award-season-points", {
-      body: { winner_id: winnerId, loser_id: loserId },
+      body: { winner_id: winnerId, loser_id: loserId, points_winner: pointsWinner, points_loser: pointsLoser },
     });
     if (error) console.error("Season points failed:", error);
   } catch (err) {
@@ -264,10 +264,13 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         }
       }
 
-      // Award season points
+      // Award season points using tournament-configured participation points per match
       if (winnerId) {
         const loserId = winnerId === match.player1_id ? match.player2_id : match.player1_id;
-        awardSeasonPoints(winnerId, loserId);
+        const t = tournamentQuery.data;
+        const participationPts = t?.points_participation ?? 2;
+        // During regular matches, award participation points to both players
+        awardSeasonPoints(winnerId, loserId, participationPts, participationPts);
       }
 
       // Send score posted email
@@ -335,6 +338,10 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       prize_pool?: string;
       start_date: string;
       rules?: string;
+      points_first?: number;
+      points_second?: number;
+      points_third?: number;
+      points_participation?: number;
     }) => {
       if (!user || !tournamentId) throw new Error("Not authenticated");
       const { error } = await supabase
@@ -348,7 +355,11 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
           prize_pool: details.prize_pool ?? null,
           start_date: details.start_date,
           rules: details.rules ?? null,
-        })
+          points_first: details.points_first ?? 10,
+          points_second: details.points_second ?? 5,
+          points_third: details.points_third ?? 3,
+          points_participation: details.points_participation ?? 2,
+        } as any)
         .eq("id", tournamentId);
       if (error) throw error;
     },

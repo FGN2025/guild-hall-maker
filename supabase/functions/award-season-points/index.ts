@@ -17,8 +17,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { winner_id, loser_id } = await req.json();
+    const { winner_id, loser_id, points_winner, points_loser } = await req.json();
     if (!winner_id) throw new Error("winner_id required");
+
+    // Use provided points or fall back to defaults
+    const winnerPoints = typeof points_winner === "number" ? points_winner : 10;
+    const loserPoints = typeof points_loser === "number" ? points_loser : 2;
 
     // Get active season
     const { data: season } = await supabase
@@ -34,7 +38,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Upsert winner: +10 points, +1 win
+    // Upsert winner
     const { data: existingWinner } = await supabase
       .from("season_scores")
       .select("id, points, wins")
@@ -44,20 +48,20 @@ Deno.serve(async (req) => {
 
     if (existingWinner) {
       await supabase.from("season_scores").update({
-        points: existingWinner.points + 10,
+        points: existingWinner.points + winnerPoints,
         wins: existingWinner.wins + 1,
       }).eq("id", existingWinner.id);
     } else {
       await supabase.from("season_scores").insert({
         season_id: season.id,
         user_id: winner_id,
-        points: 10,
+        points: winnerPoints,
         wins: 1,
       });
     }
 
-    // Upsert loser: +2 points (participation), +1 loss
-    if (loser_id) {
+    // Upsert loser
+    if (loser_id && loserPoints > 0) {
       const { data: existingLoser } = await supabase
         .from("season_scores")
         .select("id, points, losses")
@@ -67,14 +71,14 @@ Deno.serve(async (req) => {
 
       if (existingLoser) {
         await supabase.from("season_scores").update({
-          points: existingLoser.points + 2,
+          points: existingLoser.points + loserPoints,
           losses: existingLoser.losses + 1,
         }).eq("id", existingLoser.id);
       } else {
         await supabase.from("season_scores").insert({
           season_id: season.id,
           user_id: loser_id,
-          points: 2,
+          points: loserPoints,
           losses: 1,
         });
       }

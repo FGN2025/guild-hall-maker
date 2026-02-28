@@ -18,7 +18,7 @@ const ModeratorChallenges = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", points_reward: "", challenge_type: "one_time", start_date: "", end_date: "" });
+  const [form, setForm] = useState({ name: "", description: "", challenge_type: "one_time", start_date: "", end_date: "", points_first: "10", points_second: "5", points_third: "3", points_participation: "2" });
 
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["mod-challenges"],
@@ -46,11 +46,15 @@ const ModeratorChallenges = () => {
       const { error } = await supabase.from("challenges").insert({
         name: form.name,
         description: form.description || null,
-        points_reward: parseInt(form.points_reward) || 0,
+        points_reward: parseInt(form.points_first) || 10,
         challenge_type: form.challenge_type,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         created_by: user.id,
+        points_first: parseInt(form.points_first) || 10,
+        points_second: parseInt(form.points_second) || 5,
+        points_third: parseInt(form.points_third) || 3,
+        points_participation: parseInt(form.points_participation) || 2,
       } as any);
       if (error) throw error;
     },
@@ -58,7 +62,7 @@ const ModeratorChallenges = () => {
       queryClient.invalidateQueries({ queryKey: ["mod-challenges"] });
       toast.success("Challenge created!");
       setCreateOpen(false);
-      setForm({ name: "", description: "", points_reward: "", challenge_type: "one_time", start_date: "", end_date: "" });
+      setForm({ name: "", description: "", challenge_type: "one_time", start_date: "", end_date: "", points_first: "10", points_second: "5", points_third: "3", points_participation: "2" });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -99,14 +103,30 @@ const ModeratorChallenges = () => {
                 <Label>Description</Label>
                 <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What players need to do..." />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Points Reward</Label>
-                  <Input type="number" min={0} value={form.points_reward} onChange={(e) => setForm({ ...form, points_reward: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Input value={form.challenge_type} onChange={(e) => setForm({ ...form, challenge_type: e.target.value })} placeholder="one_time, daily, weekly" />
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Input value={form.challenge_type} onChange={(e) => setForm({ ...form, challenge_type: e.target.value })} placeholder="one_time, daily, weekly" />
+              </div>
+              <div className="space-y-2">
+                <Label>Season Points</Label>
+                <p className="text-xs text-muted-foreground">Points awarded based on completion order</p>
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">1st</Label>
+                    <Input type="number" min={0} value={form.points_first} onChange={(e) => setForm({ ...form, points_first: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">2nd</Label>
+                    <Input type="number" min={0} value={form.points_second} onChange={(e) => setForm({ ...form, points_second: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">3rd</Label>
+                    <Input type="number" min={0} value={form.points_third} onChange={(e) => setForm({ ...form, points_third: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Others</Label>
+                    <Input type="number" min={0} value={form.points_participation} onChange={(e) => setForm({ ...form, points_participation: e.target.value })} />
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -144,7 +164,7 @@ const ModeratorChallenges = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Points</TableHead>
+                 <TableHead>Points (1st/2nd/3rd/P)</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Completions</TableHead>
                 <TableHead>Dates</TableHead>
@@ -161,7 +181,7 @@ const ModeratorChallenges = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="font-mono">{c.points_reward}</Badge>
+                    <Badge variant="secondary" className="font-mono">{c.points_first ?? c.points_reward}/{c.points_second ?? 0}/{c.points_third ?? 0}/{c.points_participation ?? 0}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{c.challenge_type}</TableCell>
                   <TableCell>
