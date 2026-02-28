@@ -1,22 +1,46 @@
 
 
-## Bypass Discord Linking for Admins
+## Prevent Duplicate Display Names at Registration
 
 ### Problem
-Currently, all authenticated users -- including Super Admins and Admins -- are redirected to `/link-discord` if they haven't linked a Discord account. Admins need unrestricted platform access regardless of Discord status.
+Currently, multiple users can register with the same display name. There is no uniqueness check on the `display_name` column in the `profiles` table, and no validation during signup.
 
 ### Solution
-Update `ProtectedRoute.tsx` to skip the Discord gate when the user has an admin role.
+Add a two-layer defense:
+
+1. **Database: Add a unique index on `display_name`** (case-insensitive) so duplicates are impossible at the data level.
+2. **Frontend: Real-time availability check** during registration so users get immediate feedback before submitting.
 
 ### Changes
 
-**File: `src/components/ProtectedRoute.tsx`**
-- Import `isAdmin` from the `useAuth` context (already available)
-- Modify the Discord gate condition to also bypass when `isAdmin` is true:
-  - Current: `if (!discordLinked && !DISCORD_EXEMPT_PATHS.includes(...))`
-  - Updated: `if (!discordLinked && !isAdmin && !DISCORD_EXEMPT_PATHS.includes(...))`
+#### 1. Database Migration
+- Add a unique index on `LOWER(display_name)` to the `profiles` table (case-insensitive uniqueness)
+- This prevents duplicates even if the frontend check is bypassed
 
-This is a single-line change. The `isAdmin` flag is already computed in `AuthContext` from the `user_roles` table and loaded alongside `discordLinked`, so no timing or loading issues arise.
+```sql
+CREATE UNIQUE INDEX idx_profiles_display_name_lower
+ON public.profiles (LOWER(display_name))
+WHERE display_name IS NOT NULL;
+```
 
-No other files need changes.
+#### 2. Frontend -- `src/pages/Auth.tsx`
+- After the user types a display name (on blur or with a debounce), query the `profiles` table to check if that name is already taken:
+  ```typescript
+  const { data } = await supabase
+    .from("profiles")
+    .select("id")
+    .ilike("display_name", displayName.trim())
+    .limit(1);
+  ```
+- Show a red "This name is already taken" or green "Available" indicator next to the Display Name field
+- Block form submission if the name is taken
+- Also make the Display Name field **required** for signup (currently optional)
+
+### Technical Details
+
+**Files modified:**
+- `src/pages/Auth.tsx` -- add availability check with debounced query, validation message, and require the field
+
+**Database change:**
+- One migration adding a partial unique index on `LOWER(display_name)` (partial because `display_name` can be NULL for legacy rows)
 
