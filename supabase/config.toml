@@ -1,34 +1,27 @@
 project_id = "yrhwzmkenjgiujhofucx"
 
-[functions.send-tournament-email]
-verify_jwt = false
-
-[functions.rotate-season]
-verify_jwt = false
-
-[functions.award-season-points]
-verify_jwt = false
-
-[functions.generate-media-image]
-verify_jwt = false
-
-[functions.ecosystem-magic-link]
-verify_jwt = false
-
-[functions.validate-ecosystem-token]
-verify_jwt = false
-
-[functions.notebook-proxy]
-verify_jwt = false
-
-[functions.ai-coach]
-verify_jwt = false
-
-[functions.nisc-sync]
-verify_jwt = false
-
-[functions.glds-sync]
-verify_jwt = false
-
-[functions.discord-oauth-callback]
-verify_jwt = false
+[functions]
+  [functions.ai-coach]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.award-season-points]
+    verify_jwt = false
+  [functions.discord-oauth-callback]
+    verify_jwt = false
+  [functions.ecosystem-magic-link]
+    verify_jwt = false
+  [functions.generate-media-image]
+    verify_jwt = false
+  [functions.glds-sync]
+    verify_jwt = false
+  [functions.nisc-sync]
+    verify_jwt = false
+  [functions.notebook-proxy]
+    verify_jwt = false
+  [functions.rotate-season]
+    verify_jwt = false
+  [functions.send-tournament-email]
+    verify_jwt = false
+  [functions.validate-ecosystem-token]
+    verify_jwt = false
