@@ -1,21 +1,53 @@
 
 
-## Update Discord Credentials for New App
+## Legal Pages and Footer Update
 
-### Overview
-Replace the old Discord Client ID in the database and update the backend secrets with credentials from the new Discord application.
+### What Already Exists
+- **Terms and Conditions** (`/terms`) -- fully built
+- **Privacy Policy** (`/privacy`) -- fully built
 
-### Steps
+### What Will Be Created
 
-1. **Update the `discord_client_id` in `app_settings` table** with the new value: `1477107974810898502`
+#### 1. Acceptable Use Policy (`/acceptable-use`)
+A new page following the same visual pattern (glass-panel, back link, download button, Gamepad2 icon) covering:
+- Prohibited activities (cheating, harassment, exploits, spam)
+- Account sharing and multi-accounting rules
+- Content standards for community posts and media
+- Consequences of violations (warnings, suspensions, bans)
+- Reporting procedures
+- FGN's right to modify the policy
 
-2. **Update backend secrets** (secure prompt for each):
-   - `DISCORD_CLIENT_ID` -- the new Client ID
-   - `DISCORD_CLIENT_SECRET` -- from the new app's OAuth2 page
-   - `DISCORD_BOT_TOKEN` -- from the new app's Bot page
+#### 2. Disabled Users Notice (`/disabled-users`)
+A new page covering accessibility and account disability information:
+- Commitment to accessibility (WCAG compliance goals)
+- Assistive technology compatibility
+- Account suspension/disability process and appeals
+- How to request accommodations
+- Contact information for accessibility concerns
 
-3. **Test the Discord linking flow** end-to-end to confirm the `invalid_client` error is resolved
+### What Will Be Updated
 
-### No Code Changes Required
-The edge function and frontend code remain unchanged -- only the database setting and backend secrets need updating.
+#### 3. Footer on Index Page
+Update the existing footer to include all four legal links in a clean layout:
+- Terms & Conditions
+- Privacy Policy
+- Acceptable Use Policy
+- Disabled Users Notice
+
+#### 4. Routes in App.tsx
+Add two new routes:
+- `/acceptable-use` -> `AcceptableUsePolicy`
+- `/disabled-users` -> `DisabledUsersNotice`
+
+### Technical Details
+
+**New files:**
+- `src/pages/AcceptableUsePolicy.tsx` -- mirrors Terms.tsx structure
+- `src/pages/DisabledUsersNotice.tsx` -- mirrors Terms.tsx structure
+
+**Modified files:**
+- `src/App.tsx` -- add imports and routes for the two new pages
+- `src/pages/Index.tsx` -- expand the footer with all four legal links
+
+All pages will use the same styling conventions: `glass-panel`, `grid-bg`, `font-display` headings, `prose prose-invert` content, and the Download PDF button.
 
