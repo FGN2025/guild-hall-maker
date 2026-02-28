@@ -1,53 +1,46 @@
 
 
-## Legal Pages and Footer Update
+## Update Player Guide with Missing Features
 
-### What Already Exists
-- **Terms and Conditions** (`/terms`) -- fully built
-- **Privacy Policy** (`/privacy`) -- fully built
+### Overview
+Add missing documentation to the Player Guide covering Discord account linking, dark/light theme, password reset, legal pages, and cookie consent. Also expand the existing Profile Settings section.
 
-### What Will Be Created
+### Changes (single file: `src/pages/PlayerGuide.tsx`)
 
-#### 1. Acceptable Use Policy (`/acceptable-use`)
-A new page following the same visual pattern (glass-panel, back link, download button, Gamepad2 icon) covering:
-- Prohibited activities (cheating, harassment, exploits, spam)
-- Account sharing and multi-accounting rules
-- Content standards for community posts and media
-- Consequences of violations (warnings, suspensions, bans)
-- Reporting procedures
-- FGN's right to modify the policy
+#### 1. Expand "Profile Settings" section
+Add bullets covering:
+- Discord Linking -- how to link/re-link/unlink Discord from the Profile Settings page
+- Discord avatar and username display once linked
+- Warning that unlinking Discord blocks platform access until re-linked
+- Notification preferences toggle (in-app and email) accessible from Profile Settings
 
-#### 2. Disabled Users Notice (`/disabled-users`)
-A new page covering accessibility and account disability information:
-- Commitment to accessibility (WCAG compliance goals)
-- Assistive technology compatibility
-- Account suspension/disability process and appeals
-- How to request accommodations
-- Contact information for accessibility concerns
+#### 2. Add new section: "Dark & Light Theme"
+- Theme toggle location (sidebar footer, sun/moon icon)
+- Preference is saved and persists across sessions
+- Applies site-wide immediately
 
-### What Will Be Updated
+#### 3. Add new section: "Password Reset"
+- How to initiate a password reset from the login page
+- Email verification flow
+- Link to /reset-password
 
-#### 3. Footer on Index Page
-Update the existing footer to include all four legal links in a clean layout:
-- Terms & Conditions
-- Privacy Policy
-- Acceptable Use Policy
-- Disabled Users Notice
+#### 4. Add new section: "Legal & Policies"
+- Terms and Conditions (/terms)
+- Privacy Policy (/privacy)
+- Acceptable Use Policy (/acceptable-use)
+- Disabled Users Notice (/disabled-users)
+- Footer links on the home page
+- Cookie consent banner and what it means
 
-#### 4. Routes in App.tsx
-Add two new routes:
-- `/acceptable-use` -> `AcceptableUsePolicy`
-- `/disabled-users` -> `DisabledUsersNotice`
+#### 5. Import additional icons
+Add `Moon`, `Scale`, `Lock` (or similar) icons for the new sections.
 
 ### Technical Details
 
-**New files:**
-- `src/pages/AcceptableUsePolicy.tsx` -- mirrors Terms.tsx structure
-- `src/pages/DisabledUsersNotice.tsx` -- mirrors Terms.tsx structure
+**Modified file:** `src/pages/PlayerGuide.tsx`
+- Add 3 new entries to the `sectionData` array (Theme, Password Reset, Legal/Policies)
+- Expand the existing `profile-settings` entry with Discord and notification preference bullets
+- Add corresponding icon imports from `lucide-react`
 
-**Modified files:**
-- `src/App.tsx` -- add imports and routes for the two new pages
-- `src/pages/Index.tsx` -- expand the footer with all four legal links
-
-All pages will use the same styling conventions: `glass-panel`, `grid-bg`, `font-display` headings, `prose prose-invert` content, and the Download PDF button.
+No other files need changes. The Admin Guide does not need updates for these player-facing features.
 
