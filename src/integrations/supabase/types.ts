@@ -202,7 +202,11 @@ export type Database = {
           is_active: boolean
           max_completions: number | null
           name: string
+          points_first: number
+          points_participation: number
           points_reward: number
+          points_second: number
+          points_third: number
           start_date: string | null
           updated_at: string
         }
@@ -217,7 +221,11 @@ export type Database = {
           is_active?: boolean
           max_completions?: number | null
           name: string
+          points_first?: number
+          points_participation?: number
           points_reward?: number
+          points_second?: number
+          points_third?: number
           start_date?: string | null
           updated_at?: string
         }
@@ -232,7 +240,11 @@ export type Database = {
           is_active?: boolean
           max_completions?: number | null
           name?: string
+          points_first?: number
+          points_participation?: number
           points_reward?: number
+          points_second?: number
+          points_third?: number
           start_date?: string | null
           updated_at?: string
         }
@@ -1763,6 +1775,10 @@ export type Database = {
           image_url: string | null
           max_participants: number
           name: string
+          points_first: number
+          points_participation: number
+          points_second: number
+          points_third: number
           prize_pool: string | null
           rules: string | null
           start_date: string
@@ -1781,6 +1797,10 @@ export type Database = {
           image_url?: string | null
           max_participants?: number
           name: string
+          points_first?: number
+          points_participation?: number
+          points_second?: number
+          points_third?: number
           prize_pool?: string | null
           rules?: string | null
           start_date: string
@@ -1799,6 +1819,10 @@ export type Database = {
           image_url?: string | null
           max_participants?: number
           name?: string
+          points_first?: number
+          points_participation?: number
+          points_second?: number
+          points_third?: number
           prize_pool?: string | null
           rules?: string | null
           start_date?: string
