@@ -1,19 +1,41 @@
 
 
-## Add Discord Server Secrets
+## Fix Email Verification and Notification Delivery
 
-Two secrets need to be stored so the backend function can automatically assign the "Verified Player" role when players link their Discord accounts.
+### Problem Summary
 
-### Secrets to Add
+Three issues are preventing email delivery:
 
-1. **DISCORD_GUILD_ID** -- Your FGN Discord server ID (the number from the URL: `989943710013870140`)
-2. **DISCORD_VERIFIED_ROLE_ID** -- The role ID you copied from Server Settings
+1. **Email auto-confirm is enabled** -- signups bypass email verification entirely (users are logged in immediately with no confirmation email sent)
+2. **Resend "from" address uses test domain** -- `onboarding@resend.dev` only delivers to your own Resend account email, not real users
+3. **No custom auth email templates** -- default generic templates would be used even if verification were re-enabled
 
-### What Happens
+### Plan
 
-No code changes are needed. The existing backend function already checks for these two values and uses them to call the Discord API. Once stored, any player who links their Discord will automatically receive the "Verified Player" role in your server.
+#### Step 1: Disable email auto-confirm
 
-### Prerequisite Check
+Turn off auto-confirm so new signups must verify their email before they can log in. This restores the standard signup flow: user registers, receives a verification email, clicks the link, then can sign in.
 
-Before adding: confirm the bot's role is positioned **above** the "Verified Player" role in your Discord server's role hierarchy (Server Settings > Roles -- drag the bot role higher than the Verified Player role). Without this, Discord will reject the role assignment silently.
+(Existing admin accounts are unaffected -- they are already confirmed.)
+
+#### Step 2: Set up custom auth email templates
+
+Scaffold branded FGN email templates for all auth emails (signup confirmation, password reset, magic link, etc.) so they match the platform's look and feel instead of using generic defaults.
+
+#### Step 3: Verify fgn.gg domain in Resend (manual step)
+
+You will need to verify your sending domain in Resend so transactional emails (prize updates, challenge alerts, tournament reminders) can be delivered to all users -- not just your own email. This involves adding DNS records provided by Resend.
+
+#### Step 4: Update the notification edge function "from" address
+
+Change `send-notification-email` to use a verified fgn.gg address (e.g., `noreply@fgn.gg`) instead of `onboarding@resend.dev`.
+
+---
+
+### Technical Details
+
+- **Auth config change**: Use the configure-auth tool to set `autoConfirmEmail: false`
+- **Email templates**: Use `scaffold_auth_email_templates` tool, then apply FGN brand colors (cyan `#00f0ff` primary, dark background theme) and deploy via `deploy_edge_functions`
+- **Edge function update**: Modify line in `supabase/functions/send-notification-email/index.ts` changing `from: "FGN <onboarding@resend.dev>"` to `from: "FGN <noreply@fgn.gg>"` (once domain is verified)
+- **Domain verification**: Manual step in Resend dashboard -- add DNS TXT/CNAME records for fgn.gg
 
