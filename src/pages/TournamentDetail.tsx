@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import {
   Calendar,
   Users,
-  Trophy,
   Gamepad2,
   FileText,
   GitBranch,
   Settings,
   ArrowLeft,
 } from "lucide-react";
+import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { format } from "date-fns";
 
 const TournamentDetail = () => {
@@ -134,40 +134,46 @@ const TournamentDetail = () => {
 
             {/* Metadata grid */}
             <div className="grid grid-cols-2 gap-3">
-              {[
-                {
-                  icon: Calendar,
-                  label: "Start Date",
-                  value: format(new Date(t.start_date), "MMM d, yyyy · h:mm a"),
-                },
-                {
-                  icon: Users,
-                  label: "Players",
-                  value: `${t.registrations_count} / ${t.max_participants}`,
-                },
-                {
-                  icon: Trophy,
-                  label: "Prize Pool",
-                  value: t.prize_pool || "None",
-                },
-                {
-                  icon: Gamepad2,
-                  label: "Entry Fee",
-                  value: t.entry_fee ? `$${t.entry_fee}` : "Free",
-                },
-              ].map((info) => (
-                <div key={info.label} className="bg-muted rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <info.icon className="h-4 w-4 text-primary" />
-                    <span className="text-xs text-muted-foreground">
-                      {info.label}
-                    </span>
+                {[
+                  {
+                    icon: Calendar,
+                    label: "Start Date",
+                    value: format(new Date(t.start_date), "MMM d, yyyy · h:mm a"),
+                  },
+                  {
+                    icon: Users,
+                    label: "Players",
+                    value: `${t.registrations_count} / ${t.max_participants}`,
+                  },
+                  {
+                    icon: Gamepad2,
+                    label: "Entry Fee",
+                    value: t.entry_fee ? `$${t.entry_fee}` : "Free",
+                  },
+                ].map((info) => (
+                  <div key={info.label} className="bg-muted rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <info.icon className="h-4 w-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">
+                        {info.label}
+                      </span>
+                    </div>
+                    <p className="font-heading text-sm font-semibold text-foreground">
+                      {info.value}
+                    </p>
                   </div>
-                  <p className="font-heading text-sm font-semibold text-foreground">
-                    {info.value}
-                  </p>
+                ))}
+                {/* Prize Pool — full display with breakdown */}
+                <div className="bg-muted rounded-lg p-3 col-span-2">
+                  <span className="text-xs text-muted-foreground mb-1 block">Prize Pool</span>
+                  <PrizeDisplay
+                    prizeType={t.prize_type}
+                    prizePool={t.prize_pool}
+                    pointsFirst={t.points_first}
+                    pointsSecond={t.points_second}
+                    pointsThird={t.points_third}
+                  />
                 </div>
-              ))}
             </div>
 
             {/* Actions */}

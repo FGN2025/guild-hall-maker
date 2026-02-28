@@ -90,6 +90,8 @@ export const useTournaments = () => {
       format: string;
       max_participants: number;
       prize_pool?: string;
+      prize_type?: string;
+      prize_id?: string;
       start_date: string;
       rules?: string;
       image_url?: string;
