@@ -1,57 +1,50 @@
 
 
-## Configurable Points for Tournaments and Challenges
+## Prize Pool: Physical Prize or Weighted Value
 
 ### Overview
-Replace the hardcoded 10/2 point system with configurable per-tournament and per-challenge point values for 1st, 2nd, 3rd place, and participation.
+Replace the freeform Prize Pool text field with a structured selector that supports two modes:
+1. **Physical Prize** -- select an item from the Prize Shop catalog
+2. **Point/Cash Value** -- enter a total value that is displayed with a weighted breakdown for 1st, 2nd, and 3rd place
 
 ### Database Changes
-Add four new columns to both `tournaments` and `challenges` tables:
-- `points_first` (integer, default 10) -- 1st place points
-- `points_second` (integer, default 5) -- 2nd place points
-- `points_third` (integer, default 3) -- 3rd place points
-- `points_participation` (integer, default 2) -- participation points for all completers
+Add two new columns to the `tournaments` table:
+- `prize_type` (text, default `'none'`) -- one of `'none'`, `'physical'`, or `'value'`
+- `prize_id` (UUID, nullable, FK to `prizes.id`) -- links to the Prize Shop item when type is `'physical'`
+
+The existing `prize_pool` text column continues to store the display value (e.g., "$5,000") when `prize_type = 'value'`.
 
 ### Frontend Changes
 
-**1. Create Tournament Dialog** (`src/components/tournaments/CreateTournamentDialog.tsx`)
-- Add a "Season Points" section with 4 numeric inputs: 1st Place, 2nd Place, 3rd Place, Participation
-- Pass these values through the `onCreate` callback
+**1. Create Tournament Dialog and Edit Tournament Dialog**
+Replace the single "Prize Pool" text input with a Prize Type selector:
 
-**2. Edit Tournament Dialog** (`src/components/tournaments/EditTournamentDialog.tsx`)
-- Same 4 fields, pre-populated from tournament data
-- Pass through `onUpdate` callback
+- **Radio/Tab toggle**: "None", "Physical Prize", "Value"
+- **Physical Prize mode**: Show a dropdown populated from the `prizes` table (active items only), displaying name and image thumbnail. Stores `prize_id` and sets `prize_pool` to the prize name for display.
+- **Value mode**: Show a text input for the total value (e.g., "$5,000"). Below it, display a read-only weighted breakdown based on the Season Points ratios:
+  - 1st Place share: `(points_first / total_points) * value`
+  - 2nd Place share: `(points_second / total_points) * value`
+  - 3rd Place share: `(points_third / total_points) * value`
 
-**3. Moderator Challenges** (`src/pages/moderator/ModeratorChallenges.tsx`)
-- Add the same 4 point fields to the challenge creation form (replacing the single "Points Reward" field)
-- Show tiered points in the challenge list table
+**2. Tournament Card and Detail Page**
+- When `prize_type = 'physical'`, display the prize name (and optionally its image)
+- When `prize_type = 'value'`, display the value with the weighted breakdown
+- When `prize_type = 'none'`, show "No Prize" or hide the section
 
-**4. Tournament Management Hook** (`src/hooks/useTournamentManagement.ts`)
-- Update `updateDetailsMutation` to include the 4 point fields
-- Update `updateScoreMutation` to pass tournament-specific point values to the `award-season-points` function instead of relying on hardcoded values
-- When the final match completes, determine 1st/2nd/3rd place and award accordingly
-
-**5. Award Season Points Edge Function** (`supabase/functions/award-season-points/index.ts`)
-- Accept optional `points_winner` and `points_loser` parameters (falling back to 10/2 defaults)
-- This allows the frontend to pass the tournament's configured values
-
-### How Placement Works
-
-**Tournaments**: The bracket structure naturally determines placements:
-- Winner of the final match = 1st place (gets `points_first`)
-- Loser of the final match = 2nd place (gets `points_second`)
-- Losers of the semifinal matches = 3rd place (gets `points_third`)
-- All other participants = participation (gets `points_participation`)
-
-During regular match scoring, only participation points are awarded per match. The placement bonus points (1st/2nd/3rd) are awarded when the tournament is marked as completed.
-
-**Challenges**: The existing `points_reward` field will be replaced by the tiered system. Since challenges are typically complete/not-complete, the `points_participation` value applies to all completers, while `points_first/second/third` can be used for the first 3 completers (based on completion timestamp).
+### Display Logic for Value Breakdown
+Using the Season Points values as weights:
+```
+total_weight = points_first + points_second + points_third
+1st gets: value * (points_first / total_weight)
+2nd gets: value * (points_second / total_weight)  
+3rd gets: value * (points_third / total_weight)
+```
+Example: $5,000 with points 10/5/3 = 1st: $2,778, 2nd: $1,389, 3rd: $833
 
 ### Files Modified
-- `src/components/tournaments/CreateTournamentDialog.tsx`
-- `src/components/tournaments/EditTournamentDialog.tsx`
-- `src/pages/moderator/ModeratorChallenges.tsx`
-- `src/hooks/useTournamentManagement.ts`
-- `supabase/functions/award-season-points/index.ts`
-- New database migration for the 4 columns on both tables
+- New database migration (add `prize_type` and `prize_id` columns)
+- `src/components/tournaments/CreateTournamentDialog.tsx` -- new prize type UI
+- `src/components/tournaments/EditTournamentDialog.tsx` -- same updates
+- `src/components/tournaments/TournamentCard.tsx` -- updated prize display
+- `src/pages/TournamentDetail.tsx` -- updated prize detail view
 
