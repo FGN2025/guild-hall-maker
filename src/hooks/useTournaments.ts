@@ -95,6 +95,9 @@ export const useTournaments = () => {
       start_date: string;
       rules?: string;
       image_url?: string;
+      prize_pct_first?: number;
+      prize_pct_second?: number;
+      prize_pct_third?: number;
     }) => {
       if (!user) throw new Error("Not authenticated");
       const { error } = await supabase

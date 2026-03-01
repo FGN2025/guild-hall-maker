@@ -29,7 +29,7 @@ const PrizeShop = () => {
       if (!season) return null;
       const { data } = await supabase
         .from("season_scores")
-        .select("points")
+        .select("points, points_available")
         .eq("user_id", user!.id)
         .eq("season_id", season.id)
         .single();
@@ -37,7 +37,8 @@ const PrizeShop = () => {
     },
   });
 
-  const currentPoints = seasonScore?.points ?? 0;
+  const availablePoints = (seasonScore as any)?.points_available ?? 0;
+  const totalEarned = seasonScore?.points ?? 0;
 
   const { data: prizes = [], isLoading } = useQuery({
     queryKey: ["shop-prizes"],
@@ -69,7 +70,7 @@ const PrizeShop = () => {
   const redeemMutation = useMutation({
     mutationFn: async (prize: any) => {
       if (!user) throw new Error("Not authenticated");
-      if (currentPoints < prize.points_cost) throw new Error("Not enough points");
+      if (availablePoints < prize.points_cost) throw new Error("Not enough points");
       const { error } = await supabase.from("prize_redemptions").insert({
         user_id: user.id,
         prize_id: prize.id,
@@ -125,11 +126,15 @@ const PrizeShop = () => {
             </p>
           </div>
           <Card>
-            <CardContent className="p-4 flex items-center gap-3">
+            <CardContent className="p-4 flex items-center gap-4">
               <ShoppingBag className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-xs text-muted-foreground">Your Points</p>
-                <p className="text-xl font-bold font-mono text-primary">{currentPoints}</p>
+                <p className="text-xs text-muted-foreground">Available</p>
+                <p className="text-xl font-bold font-mono text-primary">{availablePoints} pts</p>
+              </div>
+              <div className="border-l border-border pl-4">
+                <p className="text-xs text-muted-foreground">Total Earned</p>
+                <p className="text-sm font-mono text-muted-foreground">{totalEarned} pts</p>
               </div>
             </CardContent>
           </Card>
@@ -159,7 +164,7 @@ const PrizeShop = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {prizes.map((prize: any) => {
-                  const canAfford = currentPoints >= prize.points_cost;
+                  const canAfford = availablePoints >= prize.points_cost;
                   const outOfStock = prize.quantity_available !== null && prize.quantity_available <= 0;
                   return (
                     <Card key={prize.id} className={`transition-colors ${canAfford && !outOfStock ? "hover:border-primary/40" : "opacity-60"}`}>
@@ -244,8 +249,8 @@ const PrizeShop = () => {
                   <span className="font-mono text-primary">{confirmPrize.points_cost} points</span>?
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Your balance: <span className="font-mono">{currentPoints} pts</span> →{" "}
-                  <span className="font-mono">{currentPoints - confirmPrize.points_cost} pts</span>
+                  Available balance: <span className="font-mono">{availablePoints} pts</span> →{" "}
+                  <span className="font-mono">{availablePoints - confirmPrize.points_cost} pts</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   A moderator will review your request. Points will be deducted upon approval.

@@ -34,6 +34,9 @@ interface Props {
     points_second?: number;
     points_third?: number;
     points_participation?: number;
+    prize_pct_first?: number;
+    prize_pct_second?: number;
+    prize_pct_third?: number;
   }) => void;
   isCreating: boolean;
 }
@@ -61,6 +64,9 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [pointsSecond, setPointsSecond] = useState("5");
   const [pointsThird, setPointsThird] = useState("3");
   const [pointsParticipation, setPointsParticipation] = useState("2");
+  const [prizePctFirst, setPrizePctFirst] = useState(50);
+  const [prizePctSecond, setPrizePctSecond] = useState(30);
+  const [prizePctThird, setPrizePctThird] = useState(20);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -127,12 +133,16 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
       points_second: parseInt(pointsSecond) || 5,
       points_third: parseInt(pointsThird) || 3,
       points_participation: parseInt(pointsParticipation) || 2,
+      prize_pct_first: prizePctFirst,
+      prize_pct_second: prizePctSecond,
+      prize_pct_third: prizePctThird,
     });
     setOpen(false);
     setName(""); setGame(""); setDescription(""); setFormat("single_elimination");
     setMaxParticipants("16"); setPrizePool(""); setPrizeType("none"); setPrizeId(""); setStartDate(undefined); setStartTime("12:00"); setRules("");
     setImageFile(null); setImagePreview(null);
     setPointsFirst("10"); setPointsSecond("5"); setPointsThird("3"); setPointsParticipation("2");
+    setPrizePctFirst(50); setPrizePctSecond(30); setPrizePctThird(20);
   };
 
   return (
@@ -226,6 +236,12 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             pointsFirst={parseInt(pointsFirst) || 10}
             pointsSecond={parseInt(pointsSecond) || 5}
             pointsThird={parseInt(pointsThird) || 3}
+            prizePctFirst={prizePctFirst}
+            prizePctSecond={prizePctSecond}
+            prizePctThird={prizePctThird}
+            onPrizePctFirstChange={setPrizePctFirst}
+            onPrizePctSecondChange={setPrizePctSecond}
+            onPrizePctThirdChange={setPrizePctThird}
           />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Hero Image</Label>

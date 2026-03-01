@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     // Upsert winner
     const { data: existingWinner } = await supabase
       .from("season_scores")
-      .select("id, points, wins")
+      .select("id, points, points_available, wins")
       .eq("season_id", season.id)
       .eq("user_id", winner_id)
       .maybeSingle();
@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
     if (existingWinner) {
       await supabase.from("season_scores").update({
         points: existingWinner.points + winnerPoints,
+        points_available: (existingWinner.points_available ?? 0) + winnerPoints,
         wins: existingWinner.wins + 1,
       }).eq("id", existingWinner.id);
     } else {
@@ -56,6 +57,7 @@ Deno.serve(async (req) => {
         season_id: season.id,
         user_id: winner_id,
         points: winnerPoints,
+        points_available: winnerPoints,
         wins: 1,
       });
     }
@@ -64,7 +66,7 @@ Deno.serve(async (req) => {
     if (loser_id && loserPoints > 0) {
       const { data: existingLoser } = await supabase
         .from("season_scores")
-        .select("id, points, losses")
+        .select("id, points, points_available, losses")
         .eq("season_id", season.id)
         .eq("user_id", loser_id)
         .maybeSingle();
@@ -72,6 +74,7 @@ Deno.serve(async (req) => {
       if (existingLoser) {
         await supabase.from("season_scores").update({
           points: existingLoser.points + loserPoints,
+          points_available: (existingLoser.points_available ?? 0) + loserPoints,
           losses: existingLoser.losses + 1,
         }).eq("id", existingLoser.id);
       } else {
@@ -79,6 +82,7 @@ Deno.serve(async (req) => {
           season_id: season.id,
           user_id: loser_id,
           points: loserPoints,
+          points_available: loserPoints,
           losses: 1,
         });
       }
