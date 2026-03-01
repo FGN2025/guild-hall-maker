@@ -1132,6 +1132,7 @@ export type Database = {
           id: string
           losses: number
           points: number
+          points_available: number
           season_id: string
           tournaments_played: number
           updated_at: string
@@ -1143,6 +1144,7 @@ export type Database = {
           id?: string
           losses?: number
           points?: number
+          points_available?: number
           season_id: string
           tournaments_played?: number
           updated_at?: string
@@ -1154,6 +1156,7 @@ export type Database = {
           id?: string
           losses?: number
           points?: number
+          points_available?: number
           season_id?: string
           tournaments_played?: number
           updated_at?: string
@@ -1780,6 +1783,9 @@ export type Database = {
           points_second: number
           points_third: number
           prize_id: string | null
+          prize_pct_first: number
+          prize_pct_second: number
+          prize_pct_third: number
           prize_pool: string | null
           prize_type: string
           rules: string | null
@@ -1804,6 +1810,9 @@ export type Database = {
           points_second?: number
           points_third?: number
           prize_id?: string | null
+          prize_pct_first?: number
+          prize_pct_second?: number
+          prize_pct_third?: number
           prize_pool?: string | null
           prize_type?: string
           rules?: string | null
@@ -1828,6 +1837,9 @@ export type Database = {
           points_second?: number
           points_third?: number
           prize_id?: string | null
+          prize_pct_first?: number
+          prize_pct_second?: number
+          prize_pct_third?: number
           prize_pool?: string | null
           prize_type?: string
           rules?: string | null

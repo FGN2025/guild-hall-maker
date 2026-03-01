@@ -16,6 +16,12 @@ interface PrizePoolSelectorProps {
   pointsFirst: number;
   pointsSecond: number;
   pointsThird: number;
+  prizePctFirst: number;
+  prizePctSecond: number;
+  prizePctThird: number;
+  onPrizePctFirstChange: (v: number) => void;
+  onPrizePctSecondChange: (v: number) => void;
+  onPrizePctThirdChange: (v: number) => void;
 }
 
 const PrizePoolSelector = ({
@@ -28,6 +34,12 @@ const PrizePoolSelector = ({
   pointsFirst,
   pointsSecond,
   pointsThird,
+  prizePctFirst,
+  prizePctSecond,
+  prizePctThird,
+  onPrizePctFirstChange,
+  onPrizePctSecondChange,
+  onPrizePctThirdChange,
 }: PrizePoolSelectorProps) => {
   const { data: prizes } = useQuery({
     queryKey: ["prizes-active"],
@@ -42,17 +54,13 @@ const PrizePoolSelector = ({
     },
   });
 
-  const totalWeight = pointsFirst + pointsSecond + pointsThird;
-
   const parseValue = (v: string) => {
     const num = parseFloat(v.replace(/[^0-9.]/g, ""));
     return isNaN(num) ? 0 : num;
   };
 
   const numericValue = parseValue(prizePool);
-
-  const formatCurrency = (n: number) =>
-    n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const pctSum = prizePctFirst + prizePctSecond + prizePctThird;
 
   const selectedPrize = prizes?.find((p) => p.id === prizeId);
 
@@ -132,25 +140,51 @@ const PrizePoolSelector = ({
       )}
 
       {prizeType === "value" && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Input
+            type="number"
+            min={0}
             value={prizePool}
             onChange={(e) => onPrizePoolChange(e.target.value)}
-            maxLength={50}
             className="bg-card border-border font-body"
-            placeholder="e.g. $5,000"
+            placeholder="e.g. 5000"
           />
-          {numericValue > 0 && totalWeight > 0 && (
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Prize Distribution (%)</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "1st", value: prizePctFirst, onChange: onPrizePctFirstChange },
+                { label: "2nd", value: prizePctSecond, onChange: onPrizePctSecondChange },
+                { label: "3rd", value: prizePctThird, onChange: onPrizePctThirdChange },
+              ].map((tier) => (
+                <div key={tier.label} className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">{tier.label} %</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={tier.value}
+                    onChange={(e) => tier.onChange(parseInt(e.target.value) || 0)}
+                    className="bg-card border-border font-body text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+            {pctSum !== 100 && (
+              <p className="text-xs text-destructive">Percentages must sum to 100% (currently {pctSum}%)</p>
+            )}
+          </div>
+          {numericValue > 0 && pctSum === 100 && (
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
-                { label: "1st Place", weight: pointsFirst },
-                { label: "2nd Place", weight: pointsSecond },
-                { label: "3rd Place", weight: pointsThird },
+                { label: "1st Place", pct: prizePctFirst },
+                { label: "2nd Place", pct: prizePctSecond },
+                { label: "3rd Place", pct: prizePctThird },
               ].map((tier) => (
                 <div key={tier.label} className="bg-muted rounded-lg p-2">
                   <p className="text-[10px] text-muted-foreground">{tier.label}</p>
                   <p className="font-heading text-sm font-semibold text-foreground">
-                    {formatCurrency(numericValue * (tier.weight / totalWeight))}
+                    {Math.round(numericValue * (tier.pct / 100))} pts
                   </p>
                 </div>
               ))}

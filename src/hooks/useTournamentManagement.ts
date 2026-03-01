@@ -342,6 +342,11 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       points_second?: number;
       points_third?: number;
       points_participation?: number;
+      prize_type?: string;
+      prize_id?: string;
+      prize_pct_first?: number;
+      prize_pct_second?: number;
+      prize_pct_third?: number;
     }) => {
       if (!user || !tournamentId) throw new Error("Not authenticated");
       const { error } = await supabase
@@ -359,6 +364,11 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
           points_second: details.points_second ?? 5,
           points_third: details.points_third ?? 3,
           points_participation: details.points_participation ?? 2,
+          prize_type: details.prize_type ?? 'none',
+          prize_id: details.prize_id ?? null,
+          prize_pct_first: details.prize_pct_first ?? 50,
+          prize_pct_second: details.prize_pct_second ?? 30,
+          prize_pct_third: details.prize_pct_third ?? 20,
         } as any)
         .eq("id", tournamentId);
       if (error) throw error;

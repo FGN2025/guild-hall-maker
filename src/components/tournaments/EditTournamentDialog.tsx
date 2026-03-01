@@ -53,6 +53,9 @@ interface Props {
     points_second?: number;
     points_third?: number;
     points_participation?: number;
+    prize_pct_first?: number;
+    prize_pct_second?: number;
+    prize_pct_third?: number;
   }) => void;
   isUpdating: boolean;
 }
@@ -80,6 +83,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [pointsSecond, setPointsSecond] = useState("5");
   const [pointsThird, setPointsThird] = useState("3");
   const [pointsParticipation, setPointsParticipation] = useState("2");
+  const [prizePctFirst, setPrizePctFirst] = useState(50);
+  const [prizePctSecond, setPrizePctSecond] = useState(30);
+  const [prizePctThird, setPrizePctThird] = useState(20);
 
   useEffect(() => {
     if (open && tournament) {
@@ -96,6 +102,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPointsSecond(String(tournament.points_second ?? 5));
       setPointsThird(String(tournament.points_third ?? 3));
       setPointsParticipation(String(tournament.points_participation ?? 2));
+      setPrizePctFirst((tournament as any).prize_pct_first ?? 50);
+      setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
+      setPrizePctThird((tournament as any).prize_pct_third ?? 20);
       const d = new Date(tournament.start_date);
       setStartDate(d);
       setStartTime(
@@ -166,6 +175,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       points_second: parseInt(pointsSecond) || 5,
       points_third: parseInt(pointsThird) || 3,
       points_participation: parseInt(pointsParticipation) || 2,
+      prize_pct_first: prizePctFirst,
+      prize_pct_second: prizePctSecond,
+      prize_pct_third: prizePctThird,
     });
     setOpen(false);
   };
@@ -261,6 +273,12 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             pointsFirst={parseInt(pointsFirst) || 10}
             pointsSecond={parseInt(pointsSecond) || 5}
             pointsThird={parseInt(pointsThird) || 3}
+            prizePctFirst={prizePctFirst}
+            prizePctSecond={prizePctSecond}
+            prizePctThird={prizePctThird}
+            onPrizePctFirstChange={setPrizePctFirst}
+            onPrizePctSecondChange={setPrizePctSecond}
+            onPrizePctThirdChange={setPrizePctThird}
           />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Hero Image</Label>

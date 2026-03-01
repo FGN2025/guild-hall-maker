@@ -6,6 +6,9 @@ interface PrizeDisplayProps {
   pointsFirst?: number;
   pointsSecond?: number;
   pointsThird?: number;
+  prizePctFirst?: number;
+  prizePctSecond?: number;
+  prizePctThird?: number;
   /** compact mode for cards */
   compact?: boolean;
 }
@@ -16,6 +19,9 @@ const PrizeDisplay = ({
   pointsFirst = 10,
   pointsSecond = 5,
   pointsThird = 3,
+  prizePctFirst = 50,
+  prizePctSecond = 30,
+  prizePctThird = 20,
   compact = false,
 }: PrizeDisplayProps) => {
   const type = prizeType ?? "none";
@@ -43,33 +49,30 @@ const PrizeDisplay = ({
 
   // value type
   const numericValue = parseFloat((prizePool ?? "").replace(/[^0-9.]/g, ""));
-  const totalWeight = pointsFirst + pointsSecond + pointsThird;
-  const hasBreakdown = !isNaN(numericValue) && numericValue > 0 && totalWeight > 0;
-
-  const formatCurrency = (n: number) =>
-    n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const pctSum = prizePctFirst + prizePctSecond + prizePctThird;
+  const hasBreakdown = !isNaN(numericValue) && numericValue > 0 && pctSum === 100;
 
   if (compact) {
-    return <span>{prizePool}</span>;
+    return <span>{prizePool} pts</span>;
   }
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Trophy className="h-4 w-4 text-primary" />
-        <span className="font-heading font-semibold text-foreground">{prizePool}</span>
+        <span className="font-heading font-semibold text-foreground">{prizePool} pts</span>
       </div>
       {hasBreakdown && (
         <div className="grid grid-cols-3 gap-2 text-center">
           {[
-            { label: "1st", weight: pointsFirst },
-            { label: "2nd", weight: pointsSecond },
-            { label: "3rd", weight: pointsThird },
+            { label: "1st", pct: prizePctFirst },
+            { label: "2nd", pct: prizePctSecond },
+            { label: "3rd", pct: prizePctThird },
           ].map((tier) => (
             <div key={tier.label} className="bg-muted rounded-lg p-2">
               <p className="text-[10px] text-muted-foreground">{tier.label}</p>
               <p className="font-heading text-xs font-semibold text-foreground">
-                {formatCurrency(numericValue * (tier.weight / totalWeight))}
+                {Math.round(numericValue * (tier.pct / 100))} pts
               </p>
             </div>
           ))}

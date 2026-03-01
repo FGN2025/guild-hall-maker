@@ -44,7 +44,7 @@ const ModeratorPoints = () => {
       const { data: profiles, error } = await query;
       if (error) throw error;
 
-      if (!activeSeason) return (profiles ?? []).map((p: any) => ({ ...p, points: 0, wins: 0 }));
+      if (!activeSeason) return (profiles ?? []).map((p: any) => ({ ...p, points: 0, points_available: 0, wins: 0 }));
 
       const { data: scores } = await supabase
         .from("season_scores")
@@ -56,6 +56,7 @@ const ModeratorPoints = () => {
       return (profiles ?? []).map((p: any) => ({
         ...p,
         points: scoreMap.get(p.user_id)?.points ?? 0,
+        points_available: scoreMap.get(p.user_id)?.points_available ?? 0,
         wins: scoreMap.get(p.user_id)?.wins ?? 0,
         score_id: scoreMap.get(p.user_id)?.id ?? null,
       }));
@@ -98,12 +99,13 @@ const ModeratorPoints = () => {
       const player = players.find((p: any) => p.user_id === selectedPlayer);
       if (!player) throw new Error("Player not found");
 
-      // Upsert season score
+      // Upsert season score (both total earned and available)
       if (player.score_id) {
         const newPoints = Math.max(0, player.points + actualChange);
+        const newAvailable = Math.max(0, player.points_available + actualChange);
         const { error } = await supabase
           .from("season_scores")
-          .update({ points: newPoints })
+          .update({ points: newPoints, points_available: newAvailable } as any)
           .eq("id", player.score_id);
         if (error) throw error;
       } else {
@@ -111,7 +113,8 @@ const ModeratorPoints = () => {
           season_id: activeSeason.id,
           user_id: selectedPlayer,
           points: Math.max(0, actualChange),
-        });
+          points_available: Math.max(0, actualChange),
+        } as any);
         if (error) throw error;
       }
 
@@ -168,7 +171,8 @@ const ModeratorPoints = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Player</TableHead>
-                    <TableHead>Points</TableHead>
+                    <TableHead>Total Earned</TableHead>
+                    <TableHead>Available</TableHead>
                     <TableHead>Wins</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
@@ -179,6 +183,9 @@ const ModeratorPoints = () => {
                       <TableCell className="font-medium">{p.display_name ?? "Unknown"}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="font-mono">{p.points}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono">{p.points_available}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{p.wins}</TableCell>
                       <TableCell className="text-right">

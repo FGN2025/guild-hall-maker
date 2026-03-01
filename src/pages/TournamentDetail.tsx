@@ -172,6 +172,9 @@ const TournamentDetail = () => {
                     pointsFirst={t.points_first}
                     pointsSecond={t.points_second}
                     pointsThird={t.points_third}
+                    prizePctFirst={(t as any).prize_pct_first}
+                    prizePctSecond={(t as any).prize_pct_second}
+                    prizePctThird={(t as any).prize_pct_third}
                   />
                 </div>
             </div>
