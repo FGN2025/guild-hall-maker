@@ -1,50 +1,144 @@
 
 
-## Prize Pool: Physical Prize or Weighted Value
+## Points Wallet: Available vs Total Earned
 
-### Overview
-Replace the freeform Prize Pool text field with a structured selector that supports two modes:
-1. **Physical Prize** -- select an item from the Prize Shop catalog
-2. **Point/Cash Value** -- enter a total value that is displayed with a weighted breakdown for 1st, 2nd, and 3rd place
+### Problem
+Currently the system tracks only a single `points` value in `season_scores`. There is no distinction between total points earned and points available to spend. When a prize is redeemed, the points are not actually deducted from the player's balance -- the redemption is recorded but the balance stays the same.
+
+### Solution
+Add a proper points wallet with two tracked values:
+- **Total Points Earned** -- lifetime accumulation, never decreases (used for leaderboard ranking)
+- **Available Points** -- spendable balance that decreases when prizes are redeemed (used in the Prize Shop)
 
 ### Database Changes
-Add two new columns to the `tournaments` table:
-- `prize_type` (text, default `'none'`) -- one of `'none'`, `'physical'`, or `'value'`
-- `prize_id` (UUID, nullable, FK to `prizes.id`) -- links to the Prize Shop item when type is `'physical'`
 
-The existing `prize_pool` text column continues to store the display value (e.g., "$5,000") when `prize_type = 'value'`.
+**1. Add `points_available` column to `season_scores`**
+- New column: `points_available` (integer, default 0)
+- The existing `points` column becomes "total points earned" (rename conceptually, no column rename needed)
+- Whenever points are awarded (match wins, challenges, manual adjustments), both `points` and `points_available` increase by the same amount
+- When a redemption is approved, only `points_available` decreases
+
+**2. Auto-deduct on redemption approval (database trigger)**
+- Create a trigger on `prize_redemptions` that fires when `status` changes to `'approved'`
+- The trigger deducts `points_spent` from the player's `points_available` in `season_scores`
+- Validates that the player has sufficient available points before allowing approval
 
 ### Frontend Changes
 
-**1. Create Tournament Dialog and Edit Tournament Dialog**
-Replace the single "Prize Pool" text input with a Prize Type selector:
+**3. Prize Shop (`src/pages/PrizeShop.tsx`)**
+- Query `points_available` instead of `points` for the "Your Points" wallet display
+- Use `points_available` for the "can afford" check
+- Show both values: "Available: X pts" prominently, "Total Earned: Y pts" as secondary info
 
-- **Radio/Tab toggle**: "None", "Physical Prize", "Value"
-- **Physical Prize mode**: Show a dropdown populated from the `prizes` table (active items only), displaying name and image thumbnail. Stores `prize_id` and sets `prize_pool` to the prize name for display.
-- **Value mode**: Show a text input for the total value (e.g., "$5,000"). Below it, display a read-only weighted breakdown based on the Season Points ratios:
-  - 1st Place share: `(points_first / total_points) * value`
-  - 2nd Place share: `(points_second / total_points) * value`
-  - 3rd Place share: `(points_third / total_points) * value`
+**4. Award Season Points Edge Function (`supabase/functions/award-season-points/index.ts`)**
+- When awarding points, increment both `points` (total earned) and `points_available` (spendable balance)
 
-**2. Tournament Card and Detail Page**
-- When `prize_type = 'physical'`, display the prize name (and optionally its image)
-- When `prize_type = 'value'`, display the value with the weighted breakdown
-- When `prize_type = 'none'`, show "No Prize" or hide the section
+**5. Moderator Points Management (`src/pages/moderator/ModeratorPoints.tsx`)**
+- Display both columns in the player table: "Total Earned" and "Available"
+- When manually adjusting points, update both values (or allow moderators to choose which to adjust)
 
-### Display Logic for Value Breakdown
-Using the Season Points values as weights:
+**6. Tournament Management Hook (`src/hooks/useTournamentManagement.ts`)**
+- Update the score mutation to increment both `points` and `points_available`
+
+**7. Leaderboard and Player Profile**
+- Leaderboard continues to sort by `points` (total earned)
+- Player profile shows both values
+
+### Combined with Previous Plan Changes
+
+These wallet changes will be implemented alongside the previously approved changes:
+- Moderator notification trigger for tournament completion validation
+- All prize values displayed as numeric (pts), not currency
+- Configurable prize distribution percentages (`prize_pct_first`, `prize_pct_second`, `prize_pct_third`)
+
+### Technical Details
+
+**Migration SQL (single migration for all changes)**:
+```text
+-- Add points_available to season_scores
+ALTER TABLE public.season_scores
+  ADD COLUMN points_available integer NOT NULL DEFAULT 0;
+
+-- Add prize distribution percentage columns to tournaments
+ALTER TABLE public.tournaments
+  ADD COLUMN prize_pct_first integer NOT NULL DEFAULT 50,
+  ADD COLUMN prize_pct_second integer NOT NULL DEFAULT 30,
+  ADD COLUMN prize_pct_third integer NOT NULL DEFAULT 20;
+
+-- Backfill: set points_available = points - already_spent
+UPDATE public.season_scores ss
+SET points_available = GREATEST(0, ss.points - COALESCE(
+  (SELECT SUM(pr.points_spent) FROM public.prize_redemptions pr
+   WHERE pr.user_id = ss.user_id AND pr.status IN ('approved','fulfilled')),
+  0));
+
+-- Trigger: auto-deduct points_available on redemption approval
+CREATE OR REPLACE FUNCTION public.deduct_points_on_approval()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path TO 'public' AS $$
+BEGIN
+  IF NEW.status = 'approved' AND OLD.status IS DISTINCT FROM NEW.status THEN
+    UPDATE public.season_scores
+    SET points_available = points_available - NEW.points_spent
+    WHERE user_id = NEW.user_id
+      AND season_id = (SELECT id FROM public.seasons WHERE status = 'active' LIMIT 1)
+      AND points_available >= NEW.points_spent;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Insufficient available points';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_deduct_points_on_approval
+  BEFORE UPDATE ON public.prize_redemptions
+  FOR EACH ROW EXECUTE FUNCTION public.deduct_points_on_approval();
+
+-- Trigger: notify moderators when tournament final match completes
+CREATE OR REPLACE FUNCTION public.notify_moderators_tournament_complete()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path TO 'public' AS $$
+DECLARE
+  _max_round integer;
+  _tname text;
+  _uid uuid;
+BEGIN
+  IF NEW.status = 'completed' AND OLD.status IS DISTINCT FROM NEW.status THEN
+    SELECT MAX(round) INTO _max_round
+    FROM public.match_results WHERE tournament_id = NEW.tournament_id;
+    IF NEW.round = _max_round THEN
+      SELECT name INTO _tname FROM public.tournaments WHERE id = NEW.tournament_id;
+      FOR _uid IN
+        SELECT ur.user_id FROM public.user_roles ur
+        WHERE ur.role IN ('moderator', 'admin')
+      LOOP
+        INSERT INTO public.notifications (user_id, type, title, message, link)
+        VALUES (_uid, 'info',
+          'Tournament Placements Need Validation',
+          '"' || _tname || '" final match is complete. Please validate 1st, 2nd, and 3rd place results.',
+          '/moderator/tournaments');
+      END LOOP;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_notify_mods_tournament_complete
+  AFTER UPDATE ON public.match_results
+  FOR EACH ROW EXECUTE FUNCTION public.notify_moderators_tournament_complete();
 ```
-total_weight = points_first + points_second + points_third
-1st gets: value * (points_first / total_weight)
-2nd gets: value * (points_second / total_weight)  
-3rd gets: value * (points_third / total_weight)
-```
-Example: $5,000 with points 10/5/3 = 1st: $2,778, 2nd: $1,389, 3rd: $833
 
 ### Files Modified
-- New database migration (add `prize_type` and `prize_id` columns)
-- `src/components/tournaments/CreateTournamentDialog.tsx` -- new prize type UI
-- `src/components/tournaments/EditTournamentDialog.tsx` -- same updates
-- `src/components/tournaments/TournamentCard.tsx` -- updated prize display
-- `src/pages/TournamentDetail.tsx` -- updated prize detail view
+- New database migration (all schema changes above)
+- `supabase/functions/award-season-points/index.ts` -- increment both `points` and `points_available`
+- `src/pages/PrizeShop.tsx` -- show wallet with available/total, use `points_available` for affordability
+- `src/pages/moderator/ModeratorPoints.tsx` -- show both columns, adjust both on manual changes
+- `src/hooks/useTournamentManagement.ts` -- increment both fields
+- `src/components/tournaments/PrizePoolSelector.tsx` -- numeric display, add percentage inputs
+- `src/components/tournaments/PrizeDisplay.tsx` -- numeric display, use percentages
+- `src/components/tournaments/CreateTournamentDialog.tsx` -- add percentage fields
+- `src/components/tournaments/EditTournamentDialog.tsx` -- add percentage fields
+- `src/hooks/useTournaments.ts` -- include percentage fields
 
