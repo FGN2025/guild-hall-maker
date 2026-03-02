@@ -1,62 +1,126 @@
 
 
-# Dynamic Notebook Connections for AI Coach
+# No-Provider Fallback: Invite Code + Admin Approval Request
 
 ## Overview
 
-Update the `ai-coach` edge function to dynamically query all active notebook connections from the `admin_notebook_connections` table instead of using a hardcoded notebook ID. When notebook results are empty or irrelevant, the AI model's general knowledge will serve as the fallback (this already happens naturally since the system prompt instructs it to "use your general esports expertise" when no knowledge base content matches).
+When a user's ZIP code is valid but no providers are found, instead of allowing them to register freely, the UI will prompt them to enter an invite code. If they don't have one, they can submit an "access request" that notifies Super Admins for review and approval.
+
+## Current Behavior
+- Valid ZIP + providers found --> proceed to registration
+- Valid ZIP + no providers --> user sees admin message but can still proceed
+- Bypass code entered upfront --> skips ZIP check entirely
+
+## New Behavior
+- Valid ZIP + providers found --> proceed (unchanged)
+- Valid ZIP + no providers --> show invite code input. Two paths:
+  - **Has invite code**: validate it, proceed if valid
+  - **No invite code**: submit an access request (name + email + ZIP). Super Admins are notified. User sees "Your request has been submitted" confirmation and cannot proceed until approved.
+- Bypass code upfront still works as before
 
 ## Changes
 
-### 1. Update `supabase/functions/ai-coach/index.ts`
+### 1. Database: New `access_requests` table
 
-**What changes:**
-- Import the Supabase client (service role) to query the `admin_notebook_connections` table
-- Replace the hardcoded notebook ID (`notebook:f8y4zed28cky7uibdoia`) with a dynamic lookup
-- Query all rows where `is_active = true` from `admin_notebook_connections`
-- For each active connection, search using the connection's `api_url` and `notebook_id`
-- Aggregate results from all active notebooks into the context
-- If zero passages are returned from all notebooks, the system prompt already instructs the model to fall back to general expertise -- no additional logic needed
-
-**Key logic:**
-
-```text
-1. Create Supabase service-role client
-2. SELECT api_url, notebook_id, name FROM admin_notebook_connections WHERE is_active = true
-3. For each connection:
-   a. POST to {api_url}/api/search with { query, notebook_id }
-   b. Collect up to 3 passages per notebook (cap total at ~8 passages across all)
-   c. Label passages with the connection name for attribution
-   d. Use shared OPEN_NOTEBOOK_PASSWORD secret for auth (same VPS host)
-4. If all searches fail or return nothing, notebookContext stays empty
-5. System prompt already handles the fallback: "If no knowledge base content matches, use your general esports expertise"
-```
-
-**Error handling:**
-- Each notebook search is wrapped in its own try/catch so one failing connection does not block others
-- Health status is not updated during coach queries (that remains an admin-panel action)
-
-### 2. No database or frontend changes needed
-
-- The `admin_notebook_connections` table and admin UI already exist
-- The system prompt already contains fallback instructions
-- The shared credential architecture (single `OPEN_NOTEBOOK_PASSWORD` secret) is already in place
-
-## Technical Details
-
-The edge function will use the service role key to bypass RLS and read the connections table:
-
-```typescript
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+```sql
+CREATE TABLE public.access_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email text NOT NULL,
+  display_name text,
+  zip_code text NOT NULL,
+  status text NOT NULL DEFAULT 'pending',  -- pending, approved, denied
+  reviewed_by uuid REFERENCES auth.users(id),
+  reviewed_at timestamptz,
+  admin_notes text,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
-const { data: connections } = await supabase
-  .from("admin_notebook_connections")
-  .select("api_url, notebook_id, name")
-  .eq("is_active", true);
+ALTER TABLE public.access_requests ENABLE ROW LEVEL SECURITY;
+
+-- Admins can manage all requests
+CREATE POLICY "Admins can manage access requests"
+  ON public.access_requests FOR ALL
+  TO authenticated
+  USING (has_role(auth.uid(), 'admin'))
+  WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- Anyone can insert (unauthenticated users submitting requests)
+CREATE POLICY "Anyone can submit access requests"
+  ON public.access_requests FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
 ```
 
-Passages will be capped per-connection (3 each) and globally (8 total) to keep the context window manageable. Each passage will be prefixed with `[Source: {connection.name}]` for traceability.
+### 2. Update `useRegistrationZipCheck` hook
+
+- Change the result logic: when ZIP is valid but providers list is empty, return `valid: false` (blocks proceeding) with a new flag `noProviders: true`
+- This signals the UI to show the invite code / access request step
+
+### 3. Update `ZipCheckStep.tsx` UI
+
+Add a new state after ZIP check returns valid-but-no-providers:
+- Show the admin `noProvidersMessage` if configured
+- Show an invite code input field (reuses existing bypass code validation via `validate_bypass_code` RPC)
+- Show a "Request Access" button that collects name + email and inserts into `access_requests`
+- On successful request submission, show a confirmation message: "Your request has been submitted. You'll receive an email when approved."
+
+### 4. Notify Super Admins on new access request
+
+Create a database trigger on `access_requests` INSERT that:
+- Inserts an in-app notification for all users with the `admin` role
+- Sends an email notification via the existing `send-notification-email` edge function
+
+### 5. Admin UI: Access Requests management page
+
+Add a new page `src/pages/admin/AdminAccessRequests.tsx`:
+- Table listing pending/approved/denied requests
+- Approve button: updates status to `approved`, generates a single-use bypass code, and emails the user with the code
+- Deny button: updates status to `denied`, optionally emails the user
+
+Add a sidebar link in `AdminSidebar.tsx` and route in `App.tsx`.
+
+### 6. Edge function update for approval email
+
+Extend `send-notification-email` to handle a new type `access_request_approved` that sends the generated bypass code to the user's email.
+
+## Flow Diagram
+
+```text
+[Enter ZIP] --> [Smarty validates] --> [Providers found?]
+                                          |
+                              Yes         |        No
+                               |                    |
+                     [Show providers,        [Show "no providers" message]
+                      Continue button]        [Show invite code input]
+                                                |
+                                     [Has code?] --> Yes --> [Validate] --> [Proceed]
+                                         |
+                                        No
+                                         |
+                                  [Request Access form]
+                                  [Name + Email + ZIP]
+                                         |
+                                  [Submit request]
+                                         |
+                              [Notify admins]
+                              [Show confirmation]
+                                         |
+                              [Admin approves --> generates bypass code --> emails user]
+                              [User returns, enters code, proceeds]
+```
+
+## Files to Create
+- `src/pages/admin/AdminAccessRequests.tsx` -- Admin review UI
+
+## Files to Modify
+- `src/hooks/useRegistrationZipCheck.ts` -- Add `noProviders` flag, block proceed when no providers
+- `src/components/auth/ZipCheckStep.tsx` -- Add invite code fallback UI + access request form
+- `src/pages/Auth.tsx` -- Wire up new state for access request submission
+- `src/components/admin/AdminSidebar.tsx` -- Add Access Requests link
+- `src/App.tsx` -- Add route for AdminAccessRequests
+- `supabase/functions/send-notification-email/index.ts` -- Handle `access_request_approved` email type
+
+## Database Changes
+- New table: `access_requests` with RLS policies
+- New trigger: `notify_admins_on_access_request` (INSERT on access_requests, notifies admin users)
 
