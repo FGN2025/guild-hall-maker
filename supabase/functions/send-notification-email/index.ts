@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface Payload {
-  type: "redemption_update" | "new_challenge" | "tournament_starting" | "match_completed" | "achievement_earned";
+  type: "redemption_update" | "new_challenge" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed";
   record: Record<string, unknown>;
   old_record?: Record<string, unknown>;
   target_email?: string; // For per-user sends (preference-aware triggers)
@@ -165,6 +165,23 @@ Deno.serve(async (req) => {
               <p>You've earned the <strong>${achievementTier.charAt(0).toUpperCase() + achievementTier.slice(1)}</strong> achievement:</p>
               <p style="font-size: 18px; font-weight: bold;">${tierEmoji} ${achievementName}</p>
               <p>Visit your profile to see all your achievements.</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
+      }
+    } else if (type === "registration_confirmed") {
+      const tournamentName = (payload as any).tournament_name as string ?? "a tournament";
+
+      if (target_email) {
+        emails.push({
+          to: target_email,
+          subject: `✅ Registration Confirmed — ${tournamentName}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">✅ Registration Confirmed!</h1>
+              <p>You are now registered for <strong>"${tournamentName}"</strong>.</p>
+              <p>Keep an eye out for updates — we'll notify you when the tournament goes live!</p>
+              <p>Good luck! 🎮</p>
               <p style="color: #888; font-size: 12px;">— FGN Platform</p>
             </div>`,
         });
