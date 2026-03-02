@@ -1,46 +1,53 @@
 
 
-# Admin-Controlled AI Image Generation Model
+# Add Game-Level Stats to the Stats Page
 
-Upgrade the default model to `google/gemini-3-pro-image-preview` (higher quality) and let admins choose between the built-in Lovable AI models or a custom external API.
+Currently the Stats menu only shows season-level statistics. This plan adds a **Game Stats** tab so players can see performance data broken down by individual game.
+
+## Overview
+
+Add a tabbed interface to the Stats page with two tabs: **Season Stats** (existing) and **Game Stats** (new). The Game Stats tab lets users pick a game and see aggregated match/tournament data for that game.
+
+## Data Model
+
+No database changes needed. Game stats are derived from existing tables:
+- `tournaments` (linked to games by `game` column matching `games.name`)
+- `match_results` (linked to tournaments by `tournament_id`)
+- `profiles` (for player display names)
+
+The query chain: games -> tournaments (by game name) -> match_results (by tournament_id) -> aggregate wins, losses, matches per player.
 
 ## Changes
 
-### 1. Add `ai_image_config` setting to `app_settings`
-Insert a new row with key `ai_image_config` containing a JSON value:
-```json
-{
-  "provider": "lovable",
-  "model": "google/gemini-3-pro-image-preview",
-  "custom_api_url": "",
-  "custom_api_key": "",
-  "custom_model": ""
-}
-```
-- `provider`: `"lovable"` (default) or `"custom"`
-- When `"lovable"`, use the selected model from a dropdown of supported image models
-- When `"custom"`, use the admin-provided API URL, API key, and model name
+### 1. Create `src/hooks/useGameStats.ts`
+A new hook that, given a game name:
+- Fetches all tournaments for that game
+- Fetches all match_results for those tournaments
+- Aggregates per-player stats: total matches, wins, losses, win rate
+- Returns summary cards (total tournaments, total matches, total unique players) and a top players list
+- Also provides an "all games overview" query that shows total tournaments and matches per game for a summary view
 
-### 2. Update edge function `supabase/functions/generate-media-image/index.ts`
-- Read `ai_image_config` from `app_settings` using the service role client
-- If provider is `"lovable"`: call the Lovable AI Gateway with the configured model (default: `google/gemini-3-pro-image-preview`)
-- If provider is `"custom"`: call the custom API URL with the custom API key and model, using the same OpenAI-compatible chat completions format
-- Keep existing error handling (429, 402) and image extraction logic
-- For custom providers, also try standard `b64_json` response format as fallback
+### 2. Create `src/components/stats/GameStatsView.tsx`
+A new component rendering:
+- A game selector dropdown (populated from the games list)
+- Summary stat cards (Total Tournaments, Total Matches, Unique Players)
+- Top Players bar chart (reusing the same Recharts pattern as season stats)
+- Most Active Players table (same pattern as season stats)
+- When no game is selected, show an overview grid of all games with their tournament/match counts
 
-### 3. Add AI Image Config section to `src/pages/admin/AdminSettings.tsx`
-New card with:
-- **Provider toggle**: Radio group choosing "Lovable AI (Built-in)" or "Custom API"
-- **Lovable mode**: Dropdown to pick between `google/gemini-2.5-flash-image` (faster, lower quality) and `google/gemini-3-pro-image-preview` (higher quality, default)
-- **Custom mode**: Three fields appear -- API Endpoint URL, API Key (password input), and Model Name
-- Save button persisting to `app_settings` as JSON
-
-### 4. No changes to the frontend `AIImageGenerator` component
-The admin config is read server-side in the edge function. The generate dialog remains unchanged for end users.
+### 3. Update `src/pages/SeasonStats.tsx`
+- Wrap the existing content and the new GameStatsView in a `Tabs` component
+- Tab 1: "Season Stats" (existing content, unchanged)
+- Tab 2: "Game Stats" (new GameStatsView)
+- The page title changes from "Season Statistics" to just "Statistics"
+- The PageHero and PageBackground remain shared above the tabs
 
 ## Technical Details
 
-- The custom API key is stored in `app_settings.value` JSON (not as a Supabase secret) since it needs to be admin-editable without developer intervention. The `app_settings` table is already protected by RLS (admin-only write, public read). However, since the API key would be visible via public read, we will mask it in the admin UI and the edge function will read it server-side only.
-- Note: The `app_settings` table has a public SELECT policy. To avoid leaking the custom API key, the edge function will read it with the service role key. The frontend admin UI will show a masked version and only send the key when explicitly changed.
-- The edge function already uses the service role client, so reading from `app_settings` is straightforward.
+- The game stats hook will use `Promise.all` to fetch tournaments and then batch-fetch match results for efficiency
+- Player aggregation is done client-side since the data volume per game is manageable (bounded by tournament count)
+- The hook uses `useQuery` with `["game-stats", gameName]` as the query key
+- The overview query uses `["game-stats-overview"]` and fetches tournament counts grouped by game name
+- No new database tables, migrations, or RLS policies required
+- Reuses existing UI patterns (StatCard, charts, tables) from SeasonStats for visual consistency
 
