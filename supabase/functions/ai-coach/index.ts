@@ -1,9 +1,168 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+interface NotebookConnection {
+  api_url: string;
+  notebook_id: string;
+  name: string;
+}
+
+async function fetchActiveConnections(): Promise<NotebookConnection[]> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+  const { data, error } = await supabase
+    .from("admin_notebook_connections")
+    .select("api_url, notebook_id, name")
+    .eq("is_active", true);
+  if (error) {
+    console.warn("Failed to fetch notebook connections:", error.message);
+    return [];
+  }
+  return (data ?? []) as NotebookConnection[];
+}
+
+async function searchNotebooks(query: string): Promise<string> {
+  const connections = await fetchActiveConnections();
+  if (connections.length === 0) return "";
+
+  const NOTEBOOK_PASS = Deno.env.get("OPEN_NOTEBOOK_PASSWORD");
+  const allPassages: string[] = [];
+  const MAX_TOTAL = 8;
+  const MAX_PER_NOTEBOOK = 3;
+
+  await Promise.all(
+    connections.map(async (conn) => {
+      if (allPassages.length >= MAX_TOTAL) return;
+      try {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (NOTEBOOK_PASS) headers["Authorization"] = `Bearer ${NOTEBOOK_PASS}`;
+
+        const res = await fetch(`${conn.api_url.replace(/\/$/, "")}/api/search`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ query, notebook_id: conn.notebook_id }),
+        });
+
+        if (!res.ok) {
+          console.warn(`Notebook search failed for "${conn.name}":`, res.status);
+          await res.text(); // consume body
+          return;
+        }
+
+        const data = await res.json();
+        const items = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.results)
+          ? data.results
+          : [];
+
+        for (const item of items.slice(0, MAX_PER_NOTEBOOK)) {
+          if (allPassages.length >= MAX_TOTAL) break;
+          const text = item.content || item.text || item.snippet || JSON.stringify(item);
+          if (text) allPassages.push(`[Source: ${conn.name}]: ${text}`);
+        }
+      } catch (e) {
+        console.warn(`Notebook search error for "${conn.name}":`, e);
+      }
+    })
+  );
+
+  if (allPassages.length === 0) return "";
+  return "\n\n## Relevant Knowledge Base Content:\n" + allPassages.join("\n\n");
+}
+
+// Category-specific coaching frameworks
+const categoryCoaching: Record<string, string> = {
+  "Shooter": `### Shooter Coaching Framework
+- **Aim Training**: Crosshair placement at head height, pre-aiming common angles, tracking vs flicking practice routines
+- **Movement**: Counter-strafing, jiggle-peeking, bunny-hopping, slide-canceling (game-dependent)
+- **Game Sense**: Map control, spawn awareness, economy management, utility usage timing
+- **Positioning**: Off-angles, trading positions, site anchoring, rotation timing
+- **Team Play**: Callouts, trading kills, execute coordination, default setups vs rushes
+- **Mental Game**: Dealing with tilt after losing rounds, warm-up routines, VOD review habits`,
+
+  "MOBA": `### MOBA Coaching Framework
+- **Laning Phase**: Last-hitting/CS optimization, trading patterns, wave manipulation (freezing, slow push, fast push)
+- **Map Awareness**: Ward placement, jungle tracking, roam timings, objective control windows
+- **Champion/Hero Mastery**: Power spikes, combo execution, matchup knowledge, itemization paths
+- **Macro Strategy**: Split pushing, objective sequencing (drake/baron/roshan priority), team fight positioning
+- **Draft & Composition**: Counter-picking, team comp synergy (poke, dive, protect-the-carry, split)
+- **Mental Game**: Avoiding blame, adapting to losing lanes, shotcalling basics`,
+
+  "Fighting": `### Fighting Game Coaching Framework
+- **Fundamentals**: Spacing/footsies, whiff punishing, anti-airs, throw teching
+- **Combo Execution**: Bread-and-butter combos, hit-confirming, optimal damage routes, combo scaling
+- **Neutral Game**: Poke ranges, movement options, controlling space, conditioning opponents
+- **Defense**: Blocking mixups (high/low/left/right), wake-up options, burst/escape mechanics
+- **Frame Data**: Understanding plus/minus on block, punishable moves, frame traps, tick throws
+- **Matchup Knowledge**: Character-specific counterplay, problematic moves to watch for, adaptation strategies`,
+
+  "Sports": `### Sports Game Coaching Framework
+- **Offense**: Play calling/formation selection, reading defenses, timing mechanics, skill moves
+- **Defense**: Coverage schemes, user-controlled defense, AI adjustments, pressure tactics
+- **Player Management**: Lineup optimization, stamina management, substitution timing, build strategies
+- **Game Management**: Clock management, momentum shifts, adaptive strategy mid-game
+- **Online Play**: Dealing with lag compensation, meta formations, cheese play counters
+- **Career/Franchise**: Draft strategies, cap management, player development paths`,
+
+  "MMORPG": `### MMORPG Coaching Framework
+- **Character Building**: Stat allocation, talent/skill trees, gear optimization, BiS (Best in Slot) planning
+- **PvE Content**: Dungeon mechanics, raid positioning, DPS rotations, healing priorities, tank cooldown management
+- **PvP**: Arena composition, battleground strategy, open-world PvP tactics, crowd control chains
+- **Economy**: Auction house strategies, crafting profitability, farming routes, gold-making methods
+- **Progression**: Efficient leveling paths, daily/weekly priority lists, reputation grinds, catch-up mechanics
+- **Social**: Guild management, group-finding tips, raid leading, communication in voice chat`,
+
+  "RPG": `### RPG Coaching Framework
+- **Character Builds**: Stat allocation, skill synergies, class/subclass optimization
+- **Combat Strategy**: Elemental weaknesses, party composition, boss phase recognition, resource management
+- **Exploration**: Efficient area clearing, secret/hidden content locations, quest ordering
+- **Gear & Items**: Equipment upgrade priorities, crafting systems, consumable usage timing
+- **Story/Progression**: Efficient leveling, side quest value assessment, difficulty scaling tips`,
+
+  "Racing": `### Racing Coaching Framework
+- **Driving Technique**: Racing lines, braking points, trail braking, throttle control, cornering speed
+- **Car Setup**: Suspension tuning, gear ratios, tire compounds, aero balance, differential settings
+- **Race Strategy**: Tire management, fuel strategy, pit stop timing, weather adaptation
+- **Track Knowledge**: Turn-by-turn breakdowns, reference points, elevation changes, surface types
+- **Racecraft**: Overtaking windows, defensive driving, slipstream usage, clean racing etiquette
+- **Online Racing**: SR/DR rating improvement, qualifying laps, race-start positioning`,
+
+  "Simulation": `### Simulation Coaching Framework
+- **Core Mechanics**: Economy management, resource chains, production optimization, efficiency metrics
+- **Progression**: Unlock order priorities, milestone planning, technology/research trees
+- **Advanced Strategies**: Min-maxing outputs, automation setups, supply chain optimization
+- **Real-World Knowledge**: How real-world parallels apply (farming seasons, construction physics, truck routes)
+- **Mods & Customization**: Popular quality-of-life mods, map recommendations, community resources`,
+
+  "Strategy": `### Strategy Coaching Framework
+- **Build Orders**: Opening sequences, economic vs military balance, timing attacks
+- **Macro Management**: Resource gathering, expansion timing, production cycles, supply management
+- **Micro Management**: Unit control, ability usage, kiting, focus-firing priorities
+- **Scouting**: Information gathering, reading opponent builds, adapting strategies
+- **Map Control**: Key positions, chokepoints, vision control, flanking routes`,
+
+  "Card Game": `### Card Game Coaching Framework
+- **Deck Building**: Mana/cost curves, win conditions, synergy identification, tech choices vs meta
+- **Mulligan Strategy**: Keep/toss decisions based on matchup and role (aggro/control/combo)
+- **Resource Management**: Mana efficiency, card advantage, tempo vs value trades
+- **Game Reading**: Tracking opponent's played/unplayed cards, predicting their hand, playing around answers
+- **Meta Knowledge**: Tier lists, popular archetypes, counter-deck selection, sideboard strategies
+- **Advanced Play**: Lethal calculation, order of operations, bluffing, information denial`,
+
+  "Party": `### Party Game Coaching Framework
+- **Core Skills**: Minigame pattern recognition, timing mechanics, adapting to random events
+- **Strategy**: Risk assessment, resource/item management, board positioning
+- **Multiplayer Tactics**: Reading opponents, alliance management, when to play aggressive vs safe
+- **Consistency**: Building reliable execution across varied minigame types`,
 };
 
 serve(async (req) => {
@@ -14,142 +173,13 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const NOTEBOOK_URL = Deno.env.get("OPEN_NOTEBOOK_URL");
-    const NOTEBOOK_PASS = Deno.env.get("OPEN_NOTEBOOK_PASSWORD");
-
     // Extract latest user question for notebook search
     const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user");
     const query = lastUserMsg?.content || "";
 
-    // Search the Open Notebook for relevant context
-    let notebookContext = "";
-    if (NOTEBOOK_URL && query) {
-      try {
-        const nbHeaders: Record<string, string> = { "Content-Type": "application/json" };
-        if (NOTEBOOK_PASS) nbHeaders["Authorization"] = `Bearer ${NOTEBOOK_PASS}`;
-
-        const searchQuery = game ? `${game.name}: ${query}` : query;
-
-        const searchRes = await fetch(`${NOTEBOOK_URL.replace(/\/$/, "")}/api/search`, {
-          method: "POST",
-          headers: nbHeaders,
-          body: JSON.stringify({
-            query: searchQuery,
-            notebook_id: "notebook:f8y4zed28cky7uibdoia",
-          }),
-        });
-
-        if (searchRes.ok) {
-          const searchData = await searchRes.json();
-          const passages: string[] = [];
-          if (Array.isArray(searchData)) {
-            for (const item of searchData.slice(0, 5)) {
-              const text = item.content || item.text || item.snippet || JSON.stringify(item);
-              if (text) passages.push(text);
-            }
-          } else if (searchData?.results && Array.isArray(searchData.results)) {
-            for (const item of searchData.results.slice(0, 5)) {
-              const text = item.content || item.text || item.snippet || JSON.stringify(item);
-              if (text) passages.push(text);
-            }
-          }
-          if (passages.length > 0) {
-            notebookContext = "\n\n## Relevant Knowledge Base Content:\n" +
-              passages.map((p, i) => `[Source ${i + 1}]: ${p}`).join("\n\n");
-          }
-        } else {
-          console.warn("Notebook search failed:", searchRes.status, await searchRes.text());
-        }
-      } catch (e) {
-        console.warn("Notebook search error:", e);
-      }
-    }
-
-    // Category-specific coaching frameworks
-    const categoryCoaching: Record<string, string> = {
-      "Shooter": `### Shooter Coaching Framework
-- **Aim Training**: Crosshair placement at head height, pre-aiming common angles, tracking vs flicking practice routines
-- **Movement**: Counter-strafing, jiggle-peeking, bunny-hopping, slide-canceling (game-dependent)
-- **Game Sense**: Map control, spawn awareness, economy management, utility usage timing
-- **Positioning**: Off-angles, trading positions, site anchoring, rotation timing
-- **Team Play**: Callouts, trading kills, execute coordination, default setups vs rushes
-- **Mental Game**: Dealing with tilt after losing rounds, warm-up routines, VOD review habits`,
-
-      "MOBA": `### MOBA Coaching Framework
-- **Laning Phase**: Last-hitting/CS optimization, trading patterns, wave manipulation (freezing, slow push, fast push)
-- **Map Awareness**: Ward placement, jungle tracking, roam timings, objective control windows
-- **Champion/Hero Mastery**: Power spikes, combo execution, matchup knowledge, itemization paths
-- **Macro Strategy**: Split pushing, objective sequencing (drake/baron/roshan priority), team fight positioning
-- **Draft & Composition**: Counter-picking, team comp synergy (poke, dive, protect-the-carry, split)
-- **Mental Game**: Avoiding blame, adapting to losing lanes, shotcalling basics`,
-
-      "Fighting": `### Fighting Game Coaching Framework
-- **Fundamentals**: Spacing/footsies, whiff punishing, anti-airs, throw teching
-- **Combo Execution**: Bread-and-butter combos, hit-confirming, optimal damage routes, combo scaling
-- **Neutral Game**: Poke ranges, movement options, controlling space, conditioning opponents
-- **Defense**: Blocking mixups (high/low/left/right), wake-up options, burst/escape mechanics
-- **Frame Data**: Understanding plus/minus on block, punishable moves, frame traps, tick throws
-- **Matchup Knowledge**: Character-specific counterplay, problematic moves to watch for, adaptation strategies`,
-
-      "Sports": `### Sports Game Coaching Framework
-- **Offense**: Play calling/formation selection, reading defenses, timing mechanics, skill moves
-- **Defense**: Coverage schemes, user-controlled defense, AI adjustments, pressure tactics
-- **Player Management**: Lineup optimization, stamina management, substitution timing, build strategies
-- **Game Management**: Clock management, momentum shifts, adaptive strategy mid-game
-- **Online Play**: Dealing with lag compensation, meta formations, cheese play counters
-- **Career/Franchise**: Draft strategies, cap management, player development paths`,
-
-      "MMORPG": `### MMORPG Coaching Framework
-- **Character Building**: Stat allocation, talent/skill trees, gear optimization, BiS (Best in Slot) planning
-- **PvE Content**: Dungeon mechanics, raid positioning, DPS rotations, healing priorities, tank cooldown management
-- **PvP**: Arena composition, battleground strategy, open-world PvP tactics, crowd control chains
-- **Economy**: Auction house strategies, crafting profitability, farming routes, gold-making methods
-- **Progression**: Efficient leveling paths, daily/weekly priority lists, reputation grinds, catch-up mechanics
-- **Social**: Guild management, group-finding tips, raid leading, communication in voice chat`,
-
-      "RPG": `### RPG Coaching Framework
-- **Character Builds**: Stat allocation, skill synergies, class/subclass optimization
-- **Combat Strategy**: Elemental weaknesses, party composition, boss phase recognition, resource management
-- **Exploration**: Efficient area clearing, secret/hidden content locations, quest ordering
-- **Gear & Items**: Equipment upgrade priorities, crafting systems, consumable usage timing
-- **Story/Progression**: Efficient leveling, side quest value assessment, difficulty scaling tips`,
-
-      "Racing": `### Racing Coaching Framework
-- **Driving Technique**: Racing lines, braking points, trail braking, throttle control, cornering speed
-- **Car Setup**: Suspension tuning, gear ratios, tire compounds, aero balance, differential settings
-- **Race Strategy**: Tire management, fuel strategy, pit stop timing, weather adaptation
-- **Track Knowledge**: Turn-by-turn breakdowns, reference points, elevation changes, surface types
-- **Racecraft**: Overtaking windows, defensive driving, slipstream usage, clean racing etiquette
-- **Online Racing**: SR/DR rating improvement, qualifying laps, race-start positioning`,
-
-      "Simulation": `### Simulation Coaching Framework
-- **Core Mechanics**: Economy management, resource chains, production optimization, efficiency metrics
-- **Progression**: Unlock order priorities, milestone planning, technology/research trees
-- **Advanced Strategies**: Min-maxing outputs, automation setups, supply chain optimization
-- **Real-World Knowledge**: How real-world parallels apply (farming seasons, construction physics, truck routes)
-- **Mods & Customization**: Popular quality-of-life mods, map recommendations, community resources`,
-
-      "Strategy": `### Strategy Coaching Framework
-- **Build Orders**: Opening sequences, economic vs military balance, timing attacks
-- **Macro Management**: Resource gathering, expansion timing, production cycles, supply management
-- **Micro Management**: Unit control, ability usage, kiting, focus-firing priorities
-- **Scouting**: Information gathering, reading opponent builds, adapting strategies
-- **Map Control**: Key positions, chokepoints, vision control, flanking routes`,
-
-      "Card Game": `### Card Game Coaching Framework
-- **Deck Building**: Mana/cost curves, win conditions, synergy identification, tech choices vs meta
-- **Mulligan Strategy**: Keep/toss decisions based on matchup and role (aggro/control/combo)
-- **Resource Management**: Mana efficiency, card advantage, tempo vs value trades
-- **Game Reading**: Tracking opponent's played/unplayed cards, predicting their hand, playing around answers
-- **Meta Knowledge**: Tier lists, popular archetypes, counter-deck selection, sideboard strategies
-- **Advanced Play**: Lethal calculation, order of operations, bluffing, information denial`,
-
-      "Party": `### Party Game Coaching Framework
-- **Core Skills**: Minigame pattern recognition, timing mechanics, adapting to random events
-- **Strategy**: Risk assessment, resource/item management, board positioning
-- **Multiplayer Tactics**: Reading opponents, alliance management, when to play aggressive vs safe
-- **Consistency**: Building reliable execution across varied minigame types`,
-    };
+    // Build search query with game context
+    const searchQuery = game ? `${game.name}: ${query}` : query;
+    const notebookContext = searchQuery ? await searchNotebooks(searchQuery) : "";
 
     // Build game-specific context from local guide content
     let gameContext = "";
@@ -158,7 +188,7 @@ serve(async (req) => {
       if (game.category) gameContext += ` (${game.category})`;
       if (game.description) gameContext += `\nGame Description: ${game.description}`;
       if (game.guide_content) gameContext += `\n\n## Local Game Guide:\n${game.guide_content}`;
-      
+
       // Inject category-specific coaching tips
       const coaching = categoryCoaching[game.category];
       if (coaching) gameContext += `\n\n${coaching}`;
