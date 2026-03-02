@@ -1,19 +1,35 @@
 
+# Add Password Visibility Toggle
 
-## Test: Notification Preferences Suppression for Redemption Updates
+Add an eye/eye-off toggle button to all password input fields across the app, allowing users to show or hide their password.
 
-This is a browser-based end-to-end verification with no code changes needed. The database triggers already use the `should_notify()` function to check user preferences before creating notifications.
+## Approach
 
-### Test Steps
+Create a reusable `PasswordInput` component that wraps the existing `Input` component with a visibility toggle button (eye icon). Then replace all password `Input` usages with this new component.
 
-1. **Navigate to Profile Settings** and find the Notification Preferences section
-2. **Disable the "Prize Redemption Updates" in-app toggle** -- this sets `in_app_enabled = false` for `redemption_update` in the `notification_preferences` table
-3. **Navigate to the Prize Shop** and submit a new prize redemption (award points first if needed via Moderator Points)
-4. **Navigate to Moderator Redemptions** and approve or deny the new request
-5. **Verify no in-app notification appears** in the notification bell -- the `notify_redemption_status` trigger checks `should_notify(user_id, 'redemption_update', 'in_app')` and skips the INSERT when disabled
-6. **Re-enable the toggle** and repeat to confirm notifications resume
+## Changes
 
-### How It Works (Technical)
+### 1. Create `src/components/ui/password-input.tsx`
+A new reusable component that:
+- Wraps the standard `Input` with `type` toggling between `"password"` and `"text"`
+- Renders an `Eye` / `EyeOff` icon button on the right side of the input
+- Forwards all standard input props (className, placeholder, ref, etc.)
+- Uses `lucide-react` icons (`Eye`, `EyeOff`)
 
-The `should_notify()` database function queries `notification_preferences` for the user + type + channel. If a row exists with `in_app_enabled = false`, it returns `false` and the trigger skips the notification INSERT. If no row exists, it defaults to `true` (opt-in by default).
+### 2. Update `src/pages/Auth.tsx`
+- Import `PasswordInput` and replace the password `<Input>` with `<PasswordInput>`
 
+### 3. Update `src/pages/ResetPassword.tsx`
+- Replace both password fields (new password + confirm password) with `<PasswordInput>`
+
+### 4. Update `src/components/tenant/NISCConfigDialog.tsx` and `BillingConfigDialog.tsx`
+- Replace API key password fields with `<PasswordInput>` for consistency
+
+## Technical Details
+
+The `PasswordInput` component will:
+- Manage internal `showPassword` state
+- Toggle `type` between `"password"` and `"text"`
+- Render the toggle button with `absolute right-3` positioning
+- Accept all props that `Input` accepts via `React.ComponentProps<typeof Input>`
+- Add `pr-10` padding to avoid text overlapping the icon
