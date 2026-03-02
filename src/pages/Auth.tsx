@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Gamepad2, Mail, Lock, User, ArrowLeft, CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -241,6 +242,7 @@ const Auth = () => {
                     required
                   />
                 </div>
+                {!isLogin && <PasswordStrengthIndicator password={password} />}
                 {isLogin && (
                   <button
                     type="button"
