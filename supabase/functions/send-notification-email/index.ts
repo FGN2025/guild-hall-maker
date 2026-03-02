@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface Payload {
-  type: "redemption_update" | "new_challenge" | "tournament_starting";
+  type: "redemption_update" | "new_challenge" | "tournament_starting" | "match_completed";
   record: Record<string, unknown>;
   old_record?: Record<string, unknown>;
   target_email?: string; // For per-user sends (preference-aware triggers)
@@ -126,6 +126,26 @@ Deno.serve(async (req) => {
               <h1 style="color: #00f0ff;">🏁 Tournament Starting!</h1>
               <p>The tournament <strong>"${tournamentName}"</strong> is now live!</p>
               <p>Head over to the bracket page to see your first match and get ready to compete!</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
+      }
+    } else if (type === "match_completed") {
+      const tournamentName = (payload as any).tournament_name as string ?? "a tournament";
+      const winnerId = record.winner_id as string | null;
+      const round = record.round as number;
+
+      if (target_email) {
+        const isWinner = target_email ? true : false; // trigger sends per-player
+        emails.push({
+          to: target_email,
+          subject: `📊 Match Result — Round ${round} in ${tournamentName}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">📊 Match Result</h1>
+              <p>A Round ${round} match in <strong>"${tournamentName}"</strong> has been completed.</p>
+              <p><strong>Score:</strong> ${record.player1_score ?? "—"} vs ${record.player2_score ?? "—"}</p>
+              <p>Check the bracket page for your next match details.</p>
               <p style="color: #888; font-size: 12px;">— FGN Platform</p>
             </div>`,
         });
