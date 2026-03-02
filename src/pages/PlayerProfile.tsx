@@ -1,18 +1,22 @@
 import { useParams, Link } from "react-router-dom";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
 import { usePlayerAchievements } from "@/hooks/usePlayerAchievements";
+import { usePlayerGameBreakdown } from "@/hooks/usePlayerGameBreakdown";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
 import PlayerStatsGrid from "@/components/player/PlayerStatsGrid";
 import MatchHistoryTable from "@/components/player/MatchHistoryTable";
 import HeadToHeadList from "@/components/player/HeadToHeadList";
 import RankProgressionChart from "@/components/player/RankProgressionChart";
 import PlayerAchievements from "@/components/player/PlayerAchievements";
-import { ArrowLeft, User } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, User, Gamepad2 } from "lucide-react";
 
 const PlayerProfile = () => {
   const { id } = useParams<{ id: string }>();
   const { profile, stats, matchHistory, headToHead, rankProgression, isLoading } = usePlayerProfile(id);
   const { data: achievements, isLoading: achievementsLoading } = usePlayerAchievements(id);
+  const { data: gameBreakdown } = usePlayerGameBreakdown(id);
 
   return (
     <div className="min-h-screen bg-background grid-bg">
@@ -49,6 +53,49 @@ const PlayerProfile = () => {
               <RankProgressionChart data={rankProgression ?? []} />
               <HeadToHeadList records={headToHead ?? []} />
             </div>
+
+            {/* Per-game breakdown */}
+            {gameBreakdown && gameBreakdown.length > 0 && (
+              <div className="rounded-xl border border-border bg-card p-6">
+                <h3 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Gamepad2 className="h-5 w-5 text-primary" />
+                  Stats by Game
+                </h3>
+                <Accordion type="single" collapsible className="w-full">
+                  {gameBreakdown.map((g) => (
+                    <AccordionItem key={g.game_name} value={g.game_name}>
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center gap-3">
+                          <span className="font-heading font-semibold text-foreground">{g.game_name}</span>
+                          <Badge variant="outline" className="text-xs">{g.category}</Badge>
+                          <span className="text-xs text-muted-foreground">{g.matches} matches</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground font-heading uppercase">Wins</p>
+                            <p className="font-display text-xl font-bold text-green-500">{g.wins}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground font-heading uppercase">Losses</p>
+                            <p className="font-display text-xl font-bold text-destructive">{g.losses}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground font-heading uppercase">Win Rate</p>
+                            <p className="font-display text-xl font-bold text-primary">{g.win_rate}%</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground font-heading uppercase">Tournaments</p>
+                            <p className="font-display text-xl font-bold text-foreground">{g.tournaments_played}</p>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            )}
 
             <MatchHistoryTable matches={matchHistory ?? []} />
           </div>

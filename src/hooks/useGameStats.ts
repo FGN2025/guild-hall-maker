@@ -25,15 +25,21 @@ export interface GameOverviewItem {
   match_count: number;
 }
 
-export const useGameStats = (gameName: string | null) => {
+export const useGameStats = (gameName: string | null, seasonRange?: { start: string; end: string }) => {
   return useQuery({
-    queryKey: ["game-stats", gameName],
+    queryKey: ["game-stats", gameName, seasonRange?.start, seasonRange?.end],
     queryFn: async (): Promise<GameStatsData> => {
-      // 1. Fetch tournaments for this game
-      const { data: tournaments, error: tErr } = await supabase
+      // 1. Fetch tournaments for this game, optionally filtered by season date range
+      let query = supabase
         .from("tournaments")
         .select("id")
         .eq("game", gameName!);
+      
+      if (seasonRange) {
+        query = query.gte("start_date", seasonRange.start).lte("start_date", seasonRange.end);
+      }
+
+      const { data: tournaments, error: tErr } = await query;
       if (tErr) throw tErr;
       if (!tournaments || tournaments.length === 0) {
         return { totalTournaments: 0, totalMatches: 0, uniquePlayers: 0, topPlayers: [] };
