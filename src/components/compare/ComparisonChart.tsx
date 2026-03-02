@@ -8,54 +8,42 @@ import {
   Legend,
 } from "recharts";
 import type { PlayerComparisonData } from "@/hooks/usePlayerComparison";
+import { useComparisonReport } from "@/hooks/useComparisonReport";
 
 interface ComparisonChartProps {
   playerA: PlayerComparisonData;
   playerB: PlayerComparisonData;
+  playerAId: string | null;
+  playerBId: string | null;
 }
 
-const ComparisonChart = ({ playerA, playerB }: ComparisonChartProps) => {
-  const maxPts = Math.max(playerA.totals.points, playerB.totals.points, 1);
-  const maxWins = Math.max(playerA.totals.wins, playerB.totals.wins, 1);
-  const maxTournaments = Math.max(playerA.totals.tournaments_played, playerB.totals.tournaments_played, 1);
-  const maxSeasons = Math.max(playerA.totals.seasonsPlayed, playerB.totals.seasonsPlayed, 1);
+const ComparisonChart = ({ playerA, playerB, playerAId, playerBId }: ComparisonChartProps) => {
+  const { data: report, isLoading } = useComparisonReport(playerAId, playerBId);
 
-  const data = [
-    {
-      stat: "Points",
-      A: Math.round((playerA.totals.points / maxPts) * 100),
-      B: Math.round((playerB.totals.points / maxPts) * 100),
-    },
-    {
-      stat: "Wins",
-      A: Math.round((playerA.totals.wins / maxWins) * 100),
-      B: Math.round((playerB.totals.wins / maxWins) * 100),
-    },
-    {
-      stat: "Win Rate",
-      A: playerA.totals.winRate,
-      B: playerB.totals.winRate,
-    },
-    {
-      stat: "Tournaments",
-      A: Math.round((playerA.totals.tournaments_played / maxTournaments) * 100),
-      B: Math.round((playerB.totals.tournaments_played / maxTournaments) * 100),
-    },
-    {
-      stat: "Seasons",
-      A: Math.round((playerA.totals.seasonsPlayed / maxSeasons) * 100),
-      B: Math.round((playerB.totals.seasonsPlayed / maxSeasons) * 100),
-    },
-  ];
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-6 flex items-center justify-center min-h-[380px]">
+        <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!report || report.radarData.length === 0) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-6 text-center text-muted-foreground text-sm min-h-[380px] flex items-center justify-center">
+        No match data available for skills comparison.
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card p-6">
-      <h3 className="font-display text-lg font-bold text-foreground mb-4 text-center">Performance Comparison</h3>
+      <h3 className="font-display text-lg font-bold text-foreground mb-4 text-center">Skills Comparison</h3>
       <ResponsiveContainer width="100%" height={320}>
-        <RadarChart data={data}>
+        <RadarChart data={report.radarData}>
           <PolarGrid stroke="hsl(var(--border))" />
           <PolarAngleAxis
-            dataKey="stat"
+            dataKey="dimension"
             tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
           />
           <PolarRadiusAxis
@@ -66,7 +54,7 @@ const ComparisonChart = ({ playerA, playerB }: ComparisonChartProps) => {
           />
           <Radar
             name={playerA.display_name}
-            dataKey="A"
+            dataKey="scoreA"
             stroke="hsl(var(--primary))"
             fill="hsl(var(--primary))"
             fillOpacity={0.25}
@@ -74,7 +62,7 @@ const ComparisonChart = ({ playerA, playerB }: ComparisonChartProps) => {
           />
           <Radar
             name={playerB.display_name}
-            dataKey="B"
+            dataKey="scoreB"
             stroke="hsl(var(--destructive))"
             fill="hsl(var(--destructive))"
             fillOpacity={0.2}
