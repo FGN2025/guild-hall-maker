@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, KeyRound, Building2, CheckCircle2, AlertCircle, Info, Send, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Provider {
   tenant_id: string;
@@ -30,7 +37,7 @@ interface ZipCheckStepProps {
   result: ZipCheckResult | null;
   loading: boolean;
   onCheck: () => void;
-  onProceed: () => void;
+  onProceed: (selectedTenantId?: string) => void;
 }
 
 const ZipCheckStep = ({
@@ -46,6 +53,18 @@ const ZipCheckStep = ({
   const checked = result !== null;
   const canProceed = checked && (result.valid || result.bypassed);
   const showNoProviderFallback = checked && result.noProviders && !result.bypassed && !result.valid;
+
+  // ISP selection state
+  const [selectedProvider, setSelectedProvider] = useState<string>("");
+
+  // Auto-select if single provider
+  useEffect(() => {
+    if (result?.providers?.length === 1) {
+      setSelectedProvider(result.providers[0].tenant_id);
+    } else if (!result?.providers?.length) {
+      setSelectedProvider("");
+    }
+  }, [result?.providers]);
 
   // Fallback invite code state
   const [fallbackCode, setFallbackCode] = useState("");
@@ -69,7 +88,6 @@ const ZipCheckStep = ({
       });
       if (error) throw error;
       if (data) {
-        // Code is valid — allow proceeding
         onProceed();
       } else {
         setFallbackError("Invalid or expired invite code.");
@@ -101,6 +119,10 @@ const ZipCheckStep = ({
     } finally {
       setReqSubmitting(false);
     }
+  };
+
+  const handleContinue = () => {
+    onProceed(selectedProvider || undefined);
   };
 
   return (
@@ -146,7 +168,7 @@ const ZipCheckStep = ({
         </div>
       )}
 
-      {/* Result display */}
+      {/* Result display with ISP selection */}
       {result && !showNoProviderFallback && (
         <div
           className={`rounded-lg p-4 text-sm border ${
@@ -164,28 +186,52 @@ const ZipCheckStep = ({
             <span>{result.message}</span>
           </div>
 
-          {result.providers.length > 0 && (
+          {/* ISP Selection dropdown */}
+          {result.providers.length > 1 && (
             <div className="mt-3 space-y-2">
               <p className="text-xs text-muted-foreground font-heading uppercase tracking-wider">
-                Providers in your area
+                Select your provider
               </p>
-              {result.providers.map((p) => (
-                <div
-                  key={p.tenant_id}
-                  className="flex items-center gap-3 p-2 rounded-md bg-card border border-border"
-                >
-                  {p.logo_url ? (
-                    <img
-                      src={p.logo_url}
-                      alt={p.tenant_name}
-                      className="h-8 w-8 rounded object-contain"
-                    />
-                  ) : (
-                    <Building2 className="h-8 w-8 text-muted-foreground p-1" />
-                  )}
-                  <span className="font-heading text-sm">{p.tenant_name}</span>
-                </div>
-              ))}
+              <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+                <SelectTrigger className="bg-card border-border">
+                  <SelectValue placeholder="Choose your internet provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {result.providers.map((p) => (
+                    <SelectItem key={p.tenant_id} value={p.tenant_id}>
+                      <div className="flex items-center gap-2">
+                        {p.logo_url ? (
+                          <img src={p.logo_url} alt={p.tenant_name} className="h-5 w-5 rounded object-contain" />
+                        ) : (
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
+                        )}
+                        <span>{p.tenant_name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Single provider auto-selected display */}
+          {result.providers.length === 1 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-muted-foreground font-heading uppercase tracking-wider">
+                Your provider
+              </p>
+              <div className="flex items-center gap-3 p-2 rounded-md bg-card border border-border">
+                {result.providers[0].logo_url ? (
+                  <img
+                    src={result.providers[0].logo_url}
+                    alt={result.providers[0].tenant_name}
+                    className="h-8 w-8 rounded object-contain"
+                  />
+                ) : (
+                  <Building2 className="h-8 w-8 text-muted-foreground p-1" />
+                )}
+                <span className="font-heading text-sm">{result.providers[0].tenant_name}</span>
+              </div>
             </div>
           )}
         </div>
@@ -340,10 +386,11 @@ const ZipCheckStep = ({
           ) : (
             <Button
               type="button"
-              onClick={onProceed}
+              onClick={handleContinue}
+              disabled={result.providers.length > 0 && !selectedProvider}
               className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5"
             >
-              Continue to Create Account
+              Continue
             </Button>
           )}
         </>

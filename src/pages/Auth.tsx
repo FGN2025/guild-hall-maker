@@ -11,8 +11,11 @@ import { Gamepad2, Mail, Lock, User, ArrowLeft, CheckCircle2, XCircle, Loader2 }
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import ZipCheckStep from "@/components/auth/ZipCheckStep";
+import SubscriberVerifyStep from "@/components/auth/SubscriberVerifyStep";
 import { useRegistrationZipCheck } from "@/hooks/useRegistrationZipCheck";
 import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
+
+type SignupStep = "zip" | "subscriber-verify" | "account";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,17 +28,42 @@ const Auth = () => {
   // ZIP check state (signup only)
   const [zipCode, setZipCode] = useState("");
   const [bypassCode, setBypassCode] = useState("");
-  const [zipVerified, setZipVerified] = useState(false);
+  const [signupStep, setSignupStep] = useState<SignupStep>("zip");
+  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { checkZip, loading: zipLoading, result: zipResult, reset: resetZip } = useRegistrationZipCheck();
-  const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && zipVerified);
+  const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && signupStep === "account");
 
   const handleZipCheck = async () => {
     await checkZip(zipCode, bypassCode || undefined);
   };
 
-  const handleZipProceed = () => {
-    setZipVerified(true);
+  const handleZipProceed = async (tenantId?: string) => {
+    setSelectedTenantId(tenantId || null);
+
+    // If a provider was selected, check if it requires subscriber validation
+    if (tenantId) {
+      try {
+        const { data } = await supabase
+          .from("tenants")
+          .select("require_subscriber_validation")
+          .eq("id", tenantId)
+          .single();
+
+        if (data?.require_subscriber_validation) {
+          setSignupStep("subscriber-verify");
+          return;
+        }
+      } catch {
+        // If lookup fails, skip validation
+      }
+    }
+
+    setSignupStep("account");
+  };
+
+  const handleSubscriberVerified = () => {
+    setSignupStep("account");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,16 +119,22 @@ const Auth = () => {
       if (error) {
         toast.error(error.message);
       } else {
-        // Store ZIP in profile and create service interest leads
         if (data.user) {
-          // Update profile with zip_code
           await supabase
             .from("profiles")
             .update({ zip_code: zipCode })
             .eq("user_id", data.user.id);
 
-          // Create leads for matched providers
-          if (zipResult?.providers && zipResult.providers.length > 0) {
+          // Create lead only for the selected provider (not all)
+          if (selectedTenantId) {
+            await supabase.from("user_service_interests").insert({
+              user_id: data.user.id,
+              tenant_id: selectedTenantId,
+              zip_code: zipCode,
+              status: "new",
+            });
+          } else if (zipResult?.providers && zipResult.providers.length > 0) {
+            // Bypass flow — link all providers
             const interests = zipResult.providers.map((p) => ({
               user_id: data.user!.id,
               tenant_id: p.tenant_id,
@@ -119,15 +153,27 @@ const Auth = () => {
 
   const switchMode = () => {
     setIsLogin(!isLogin);
-    setZipVerified(false);
+    setSignupStep("zip");
+    setSelectedTenantId(null);
     setZipCode("");
     setBypassCode("");
     setTermsAccepted(false);
     resetZip();
   };
 
-  // For signup: show ZIP check step first, then account form
-  const showAccountForm = isLogin || zipVerified;
+  const getTitle = () => {
+    if (isLogin) return "Welcome Back";
+    if (signupStep === "zip") return "Verify Location";
+    if (signupStep === "subscriber-verify") return "Verify Subscriber";
+    return "Create Account";
+  };
+
+  const getSubtitle = () => {
+    if (isLogin) return "Sign in to your account";
+    if (signupStep === "zip") return "Enter your ZIP code to get started";
+    if (signupStep === "subscriber-verify") return "Confirm your service provider account";
+    return "Complete your registration";
+  };
 
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center p-4">
@@ -143,20 +189,12 @@ const Auth = () => {
               <Gamepad2 className="h-8 w-8 text-primary" />
               <span className="font-display text-2xl font-bold text-foreground">FGN</span>
             </div>
-            <h1 className="font-display text-xl font-bold text-foreground">
-              {isLogin ? "Welcome Back" : zipVerified ? "Create Account" : "Verify Location"}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isLogin
-                ? "Sign in to your account"
-                : zipVerified
-                ? "Complete your registration"
-                : "Enter your ZIP code to get started"}
-            </p>
+            <h1 className="font-display text-xl font-bold text-foreground">{getTitle()}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{getSubtitle()}</p>
           </div>
 
           {/* Signup: ZIP check step */}
-          {!isLogin && !zipVerified && (
+          {!isLogin && signupStep === "zip" && (
             <ZipCheckStep
               zipCode={zipCode}
               setZipCode={setZipCode}
@@ -169,8 +207,21 @@ const Auth = () => {
             />
           )}
 
-          {/* Login form or signup account form (after ZIP verified) */}
-          {showAccountForm && (
+          {/* Signup: Subscriber verification step */}
+          {!isLogin && signupStep === "subscriber-verify" && selectedTenantId && (
+            <SubscriberVerifyStep
+              tenantId={selectedTenantId}
+              zipCode={zipCode}
+              onVerified={handleSubscriberVerified}
+              onBack={() => {
+                setSignupStep("zip");
+                setSelectedTenantId(null);
+              }}
+            />
+          )}
+
+          {/* Login form or signup account form */}
+          {(isLogin || signupStep === "account") && (
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
@@ -292,7 +343,10 @@ const Auth = () => {
               {!isLogin && (
                 <button
                   type="button"
-                  onClick={() => { setZipVerified(false); }}
+                  onClick={() => {
+                    setSignupStep("zip");
+                    setSelectedTenantId(null);
+                  }}
                   className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   ← Back to location check
