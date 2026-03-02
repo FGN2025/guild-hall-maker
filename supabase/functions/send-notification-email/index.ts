@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface Payload {
-  type: "redemption_update" | "new_challenge" | "tournament_starting" | "match_completed";
+  type: "redemption_update" | "new_challenge" | "tournament_starting" | "match_completed" | "achievement_earned";
   record: Record<string, unknown>;
   old_record?: Record<string, unknown>;
   target_email?: string; // For per-user sends (preference-aware triggers)
@@ -146,6 +146,25 @@ Deno.serve(async (req) => {
               <p>A Round ${round} match in <strong>"${tournamentName}"</strong> has been completed.</p>
               <p><strong>Score:</strong> ${record.player1_score ?? "—"} vs ${record.player2_score ?? "—"}</p>
               <p>Check the bracket page for your next match details.</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
+      }
+    } else if (type === "achievement_earned") {
+      const achievementName = (payload as any).achievement_name as string ?? "an achievement";
+      const achievementTier = (payload as any).achievement_tier as string ?? "bronze";
+      const tierEmoji = achievementTier === "platinum" ? "💎" : achievementTier === "gold" ? "🥇" : achievementTier === "silver" ? "🥈" : "🥉";
+
+      if (target_email) {
+        emails.push({
+          to: target_email,
+          subject: `${tierEmoji} Achievement Unlocked — ${achievementName}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">🏆 Achievement Unlocked!</h1>
+              <p>You've earned the <strong>${achievementTier.charAt(0).toUpperCase() + achievementTier.slice(1)}</strong> achievement:</p>
+              <p style="font-size: 18px; font-weight: bold;">${tierEmoji} ${achievementName}</p>
+              <p>Visit your profile to see all your achievements.</p>
               <p style="color: #888; font-size: 12px;">— FGN Platform</p>
             </div>`,
         });
