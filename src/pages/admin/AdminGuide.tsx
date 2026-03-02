@@ -35,6 +35,9 @@ import {
   CalendarDays,
   Moon,
   Scale,
+  Activity,
+  Radar,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -44,9 +47,11 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Admin vs Manager Roles",
     bullets: [
       "Super Admin / Admin — Full access to the Admin Panel, all settings, user management, tournament control, badge awarding, tenant configuration, and ecosystem tools.",
-      "Tenant Admin — Full access within their specific Tenant portal including subscribers, ZIP codes, integrations, and team management.",
-      "Tenant Manager — Scoped access within a Tenant portal. Managers can view leads and the tenant dashboard but cannot manage ZIP codes, subscribers, integrations, or team settings.",
-      "Moderator — Limited elevated privileges for community moderation and basic oversight tasks.",
+      "Marketing — Access to Admin → Marketing campaigns and creative asset management. Can also view the Tenant sidebar's 'My Assets' library.",
+      "Tenant Admin — Full access within their specific Tenant portal including subscribers, ZIP codes, integrations, events, marketing assets, and team management.",
+      "Tenant Manager — Scoped access within a Tenant portal. Managers can view leads, events, marketing assets, and the tenant dashboard but cannot manage ZIP codes, subscribers, integrations, or team settings.",
+      "Tenant Marketing — Scoped access to tenant events and marketing assets only.",
+      "Moderator — Elevated privileges for community moderation, challenge management, prize/redemption review, ladder management, and point adjustments.",
       "Roles are assigned via the Admin → Users panel or Tenant → Team page. A user can hold both an app-level role and a tenant role simultaneously.",
     ],
   },
@@ -187,11 +192,29 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Leaderboard & Player Stats",
     bullets: [
       "The public Leaderboard (/leaderboard) displays all-time and seasonal rankings.",
-      "Sort Options — Sort by points, wins, or win rate.",
-      "Player Profiles — Click any player to view their full profile with stats grid, match history, rank progression chart, and achievements.",
-      "Player Comparison — The /compare page lets any two players be compared side-by-side with stats, charts, and head-to-head match history.",
+      "Sort Options — Sort by points, wins, or win rate. Filter by time period (7/30/90 days), game, or tournament.",
+      "Player Profiles — Click any player to view their full profile with stats grid, skills radar, match history, game breakdown, rank progression chart, and achievements.",
+      "Skills Report — Each player profile includes a Skills Overview Radar showing Win Rate, Score Margin, Consistency, Experience, and per-genre mastery benchmarked against the top 10%.",
+      "Player Comparison — The /compare page lets any two players be compared side-by-side with a dual-overlay skills radar chart, per-game breakdown table, season stats, and head-to-head match history.",
+      "Per-Game Breakdown — The Compare page includes a table showing win rate, score margin, and match count for every game both players have competed in.",
       "Season Stats — Dedicated /season-stats page shows current season performance with visual charts and historical data.",
       "Shareable Links — Comparison URLs can be copied and shared on the community forum.",
+    ],
+  },
+  {
+    id: "deep-stats",
+    icon: Activity,
+    title: "Deep Stats & Skill Insights",
+    bullets: [
+      "The Deep Stats hub (/stats) provides advanced analytics beyond simple win/loss records.",
+      "Game Filter — Players can filter performance metrics by specific game title.",
+      "Season Filter — Narrow results to any season's date range for focused trend analysis.",
+      "Skill Insights Engine — Benchmarks each player's Win Rate, Score Margin, Consistency, and Experience against the top 10% of the community.",
+      "Skills Overview Radar — A radar chart maps proficiency across core dimensions and per-genre mastery (Fighting, Shooters, MOBA, etc.).",
+      "Genre Insights — Categorizes player performance per game category as Strength, Average, or Needs Improvement.",
+      "Actionable Tips — Each game benchmark includes a personalized tip based on the player's gap vs top performers.",
+      "My Stats — A personalized dashboard aggregating performance across all games and seasons.",
+      "Admin Impact — The quality of skill insights improves as more tournaments and matches are recorded. Encourage tournament creation and score entry for richer data.",
     ],
   },
   {
@@ -215,9 +238,11 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Upload and manage images from Admin → Media Library.",
       "Upload — Drag-and-drop or browse. Files are stored in the app-media storage bucket.",
       "Categories & Tags — Organize media for easy discovery and filtering.",
-      "AI Image Generation — Generate images using built-in AI capabilities.",
+      "AI Image Generation — Generate images using built-in AI capabilities. The default model is google/gemini-3-pro-image-preview via the Lovable AI Gateway.",
+      "AI Image Config — Admins can switch between the default AI provider and a Custom API (OpenAI-compatible) from Admin → Settings → AI Image Config. Custom endpoints support masked API keys for security.",
       "Usage — Select media for tournament hero images, game covers, page heroes, and page backgrounds.",
       "File Details — Track file name, type, size, and MIME type for each upload.",
+      "Media Picker — A reusable media picker dialog is available throughout the platform when selecting images.",
     ],
   },
   {
@@ -456,35 +481,37 @@ const sections = sectionData.map((s) => ({
 }));
 
 const permissionRows = [
-  { feature: "Admin Dashboard", admin: true, manager: false },
-  { feature: "User Management", admin: true, manager: false },
-  { feature: "Tournament Management", admin: true, manager: false },
-  { feature: "Badge / Achievement System", admin: true, manager: false },
-  { feature: "Games Management", admin: true, manager: false },
-  { feature: "Season Management", admin: true, manager: false },
-  { feature: "Media Library", admin: true, manager: false },
-  { feature: "Page Appearance & Backgrounds", admin: true, manager: false },
-  { feature: "Bypass Codes", admin: true, manager: false },
-  { feature: "App Settings", admin: true, manager: false },
-  { feature: "AI Coach Configuration", admin: true, manager: false },
-  { feature: "Notebook Connections", admin: true, manager: false },
-  { feature: "Community Moderation", admin: true, manager: false },
-  { feature: "Ecosystem Navigation", admin: true, manager: false },
-  { feature: "Marketing Campaigns", admin: true, manager: false },
-  { feature: "Legal Pages (view)", admin: true, manager: true },
-  { feature: "Challenges", admin: true, manager: true },
-  { feature: "Prize Shop (Manage Prizes)", admin: true, manager: true },
-  { feature: "Prize Redemptions (Review)", admin: true, manager: true },
-  { feature: "Notification System (Auto)", admin: true, manager: true },
-  { feature: "Ranked Ladders (Manage)", admin: true, manager: true },
-  { feature: "Tenant Dashboard", admin: true, manager: true },
-  { feature: "Tenant Leads", admin: true, manager: true },
-  { feature: "Tenant Events", admin: true, manager: true },
-  { feature: "Tenant Marketing Assets", admin: true, manager: true },
-  { feature: "Tenant ZIP Codes", admin: true, manager: false },
-  { feature: "Tenant Subscribers", admin: true, manager: false },
-  { feature: "Tenant Integrations", admin: true, manager: false },
-  { feature: "Tenant Team Management", admin: true, manager: false },
+  { feature: "Admin Dashboard", admin: true, marketing: false, manager: false },
+  { feature: "User Management", admin: true, marketing: false, manager: false },
+  { feature: "Tournament Management", admin: true, marketing: false, manager: false },
+  { feature: "Badge / Achievement System", admin: true, marketing: false, manager: false },
+  { feature: "Games Management", admin: true, marketing: false, manager: false },
+  { feature: "Season Management", admin: true, marketing: false, manager: false },
+  { feature: "Media Library", admin: true, marketing: false, manager: false },
+  { feature: "AI Image Config", admin: true, marketing: false, manager: false },
+  { feature: "Page Appearance & Backgrounds", admin: true, marketing: false, manager: false },
+  { feature: "Bypass Codes", admin: true, marketing: false, manager: false },
+  { feature: "App Settings", admin: true, marketing: false, manager: false },
+  { feature: "AI Coach Configuration", admin: true, marketing: false, manager: false },
+  { feature: "Notebook Connections", admin: true, marketing: false, manager: false },
+  { feature: "Deep Stats & Skill Insights", admin: true, marketing: false, manager: true },
+  { feature: "Community Moderation", admin: true, marketing: false, manager: false },
+  { feature: "Ecosystem Navigation", admin: true, marketing: false, manager: false },
+  { feature: "Marketing Campaigns", admin: true, marketing: true, manager: false },
+  { feature: "Legal Pages (view)", admin: true, marketing: true, manager: true },
+  { feature: "Challenges", admin: true, marketing: false, manager: true },
+  { feature: "Prize Shop (Manage Prizes)", admin: true, marketing: false, manager: true },
+  { feature: "Prize Redemptions (Review)", admin: true, marketing: false, manager: true },
+  { feature: "Notification System (Auto)", admin: true, marketing: false, manager: true },
+  { feature: "Ranked Ladders (Manage)", admin: true, marketing: false, manager: true },
+  { feature: "Tenant Dashboard", admin: true, marketing: false, manager: true },
+  { feature: "Tenant Leads", admin: true, marketing: false, manager: true },
+  { feature: "Tenant Events", admin: true, marketing: true, manager: true },
+  { feature: "Tenant Marketing Assets", admin: true, marketing: true, manager: true },
+  { feature: "Tenant ZIP Codes", admin: true, marketing: false, manager: false },
+  { feature: "Tenant Subscribers", admin: true, marketing: false, manager: false },
+  { feature: "Tenant Integrations", admin: true, marketing: false, manager: false },
+  { feature: "Tenant Team Management", admin: true, marketing: false, manager: false },
 ];
 
 const AdminGuide = () => {
@@ -499,7 +526,7 @@ const AdminGuide = () => {
 
   const handlePrint = () => {
     const permRows = permissionRows
-      .map((r) => `<tr><td>${r.feature}</td><td style="text-align:center">${r.admin ? "✅" : "—"}</td><td style="text-align:center">${r.manager ? "✅" : "—"}</td></tr>`)
+      .map((r) => `<tr><td>${r.feature}</td><td style="text-align:center">${r.admin ? "✅" : "—"}</td><td style="text-align:center">${r.marketing ? "✅" : "—"}</td><td style="text-align:center">${r.manager ? "✅" : "—"}</td></tr>`)
       .join("");
 
     const sectionBlocks = sectionData
@@ -522,7 +549,7 @@ const AdminGuide = () => {
 <h1>Admin &amp; Manager Guide</h1>
 <p style="color:#888;font-size:12px">Reference documentation for platform administrators and tenant managers.</p>
 <h2>Quick-Reference Permissions</h2>
-<table><thead><tr><th>Feature</th><th style="text-align:center">Admin</th><th style="text-align:center">Manager</th></tr></thead><tbody>${permRows}</tbody></table>
+<table><thead><tr><th>Feature</th><th style="text-align:center">Admin</th><th style="text-align:center">Marketing</th><th style="text-align:center">Manager</th></tr></thead><tbody>${permRows}</tbody></table>
 ${sectionBlocks}
 </body></html>`;
 
@@ -605,6 +632,7 @@ ${sectionBlocks}
               <tr className="border-b border-border text-muted-foreground">
                 <th className="text-left px-4 py-2 font-heading font-medium">Feature</th>
                 <th className="text-center px-4 py-2 font-heading font-medium">Admin</th>
+                <th className="text-center px-4 py-2 font-heading font-medium">Marketing</th>
                 <th className="text-center px-4 py-2 font-heading font-medium">Manager</th>
               </tr>
             </thead>
@@ -613,6 +641,7 @@ ${sectionBlocks}
                 <tr key={row.feature} className="border-b border-border/50 last:border-0">
                   <td className="px-4 py-2">{row.feature}</td>
                   <td className="text-center px-4 py-2">{row.admin ? "✅" : "—"}</td>
+                  <td className="text-center px-4 py-2">{row.marketing ? "✅" : "—"}</td>
                   <td className="text-center px-4 py-2">{row.manager ? "✅" : "—"}</td>
                 </tr>
               ))}
