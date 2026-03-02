@@ -1,126 +1,96 @@
 
 
-# No-Provider Fallback: Invite Code + Admin Approval Request
+# Verified Provider Registration -- Full Workflow Implementation
 
 ## Overview
 
-When a user's ZIP code is valid but no providers are found, instead of allowing them to register freely, the UI will prompt them to enter an invite code. If they don't have one, they can submit an "access request" that notifies Super Admins for review and approval.
+Complete the provider-found registration path by adding ISP selection, address collection, and optional subscriber validation (toggled per tenant by Super Admin).
 
-## Current Behavior
-- Valid ZIP + providers found --> proceed to registration
-- Valid ZIP + no providers --> user sees admin message but can still proceed
-- Bypass code entered upfront --> skips ZIP check entirely
+## What Already Works
+- ZIP validated via Smarty, providers looked up from `tenant_zip_codes`
+- Providers displayed as a list, user proceeds to account creation
+- All matched providers auto-linked as leads in `user_service_interests`
 
-## New Behavior
-- Valid ZIP + providers found --> proceed (unchanged)
-- Valid ZIP + no providers --> show invite code input. Two paths:
-  - **Has invite code**: validate it, proceed if valid
-  - **No invite code**: submit an access request (name + email + ZIP). Super Admins are notified. User sees "Your request has been submitted" confirmation and cannot proceed until approved.
-- Bypass code upfront still works as before
+## What Needs to Be Built
 
-## Changes
-
-### 1. Database: New `access_requests` table
+### 1. Database: Add subscriber validation toggle to `tenants`
 
 ```sql
-CREATE TABLE public.access_requests (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text NOT NULL,
-  display_name text,
-  zip_code text NOT NULL,
-  status text NOT NULL DEFAULT 'pending',  -- pending, approved, denied
-  reviewed_by uuid REFERENCES auth.users(id),
-  reviewed_at timestamptz,
-  admin_notes text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.access_requests ENABLE ROW LEVEL SECURITY;
-
--- Admins can manage all requests
-CREATE POLICY "Admins can manage access requests"
-  ON public.access_requests FOR ALL
-  TO authenticated
-  USING (has_role(auth.uid(), 'admin'))
-  WITH CHECK (has_role(auth.uid(), 'admin'));
-
--- Anyone can insert (unauthenticated users submitting requests)
-CREATE POLICY "Anyone can submit access requests"
-  ON public.access_requests FOR INSERT
-  TO anon, authenticated
-  WITH CHECK (true);
+ALTER TABLE public.tenants
+ADD COLUMN require_subscriber_validation boolean NOT NULL DEFAULT false;
 ```
 
-### 2. Update `useRegistrationZipCheck` hook
+### 2. Update `ZipCheckStep.tsx` -- ISP Selection Dropdown
 
-- Change the result logic: when ZIP is valid but providers list is empty, return `valid: false` (blocks proceeding) with a new flag `noProviders: true`
-- This signals the UI to show the invite code / access request step
+- Replace the passive provider list with a selectable dropdown (or radio group if few providers)
+- If only one provider matches, auto-select it
+- Store the selected `tenant_id` in component state and pass it up to `Auth.tsx`
 
-### 3. Update `ZipCheckStep.tsx` UI
+### 3. New Component: `SubscriberVerifyStep.tsx`
 
-Add a new state after ZIP check returns valid-but-no-providers:
-- Show the admin `noProvidersMessage` if configured
-- Show an invite code input field (reuses existing bypass code validation via `validate_bypass_code` RPC)
-- Show a "Request Access" button that collects name + email and inserts into `access_requests`
-- On successful request submission, show a confirmation message: "Your request has been submitted. You'll receive an email when approved."
+Shown after ISP selection only when the selected tenant has `require_subscriber_validation = true`.
 
-### 4. Notify Super Admins on new access request
+- Collects: First Name, Last Name, and optionally Account Number
+- Calls a new `validate-subscriber` edge function
+- On success, allows proceeding to the account creation form
+- On failure, shows an error with retry option
 
-Create a database trigger on `access_requests` INSERT that:
-- Inserts an in-app notification for all users with the `admin` role
-- Sends an email notification via the existing `send-notification-email` edge function
+### 4. New Edge Function: `validate-subscriber`
 
-### 5. Admin UI: Access Requests management page
+- Accepts `{ tenant_id, first_name, last_name, zip_code, account_number? }`
+- Queries `tenant_subscribers` table for a matching record (case-insensitive name + ZIP within that tenant)
+- If no local match and the tenant has an active NISC or GLDS integration in `tenant_integrations`, calls the billing API for a real-time lookup
+- Returns `{ valid: boolean, message: string }`
 
-Add a new page `src/pages/admin/AdminAccessRequests.tsx`:
-- Table listing pending/approved/denied requests
-- Approve button: updates status to `approved`, generates a single-use bypass code, and emails the user with the code
-- Deny button: updates status to `denied`, optionally emails the user
+### 5. Update `Auth.tsx` -- Multi-Step Flow
 
-Add a sidebar link in `AdminSidebar.tsx` and route in `App.tsx`.
+Current flow: ZIP Check --> Account Form
 
-### 6. Edge function update for approval email
+New flow: ZIP Check (with ISP select) --> Subscriber Verify (conditional) --> Account Form
 
-Extend `send-notification-email` to handle a new type `access_request_approved` that sends the generated bypass code to the user's email.
+- Track `selectedTenantId` in state
+- After ZIP step, check if the selected tenant requires validation by querying `tenants` table
+- If yes, show `SubscriberVerifyStep` before the account form
+- On signup, create a lead only for the **selected** tenant (not all matched providers)
+
+### 6. Admin Toggle in Tenant Management
+
+- Add a "Require Subscriber Validation" switch in the tenant edit UI (`AdminTenants.tsx`)
+- Updates the new `require_subscriber_validation` column
 
 ## Flow Diagram
 
 ```text
-[Enter ZIP] --> [Smarty validates] --> [Providers found?]
-                                          |
-                              Yes         |        No
-                               |                    |
-                     [Show providers,        [Show "no providers" message]
-                      Continue button]        [Show invite code input]
-                                                |
-                                     [Has code?] --> Yes --> [Validate] --> [Proceed]
-                                         |
-                                        No
-                                         |
-                                  [Request Access form]
-                                  [Name + Email + ZIP]
-                                         |
-                                  [Submit request]
-                                         |
-                              [Notify admins]
-                              [Show confirmation]
-                                         |
-                              [Admin approves --> generates bypass code --> emails user]
-                              [User returns, enters code, proceeds]
+[Enter ZIP] --> [Smarty validates] --> [Providers found]
+                                            |
+                                   [Select ISP from dropdown]
+                                            |
+                              [Tenant requires validation?]
+                                    |              |
+                                   Yes            No
+                                    |              |
+                          [Enter Name/Acct#]  [Skip to account form]
+                                    |
+                          [validate-subscriber]
+                                    |
+                              [Match?]
+                               |      |
+                              Yes    No
+                               |      |
+                        [Continue] [Error, retry]
 ```
 
 ## Files to Create
-- `src/pages/admin/AdminAccessRequests.tsx` -- Admin review UI
+- `src/components/auth/SubscriberVerifyStep.tsx` -- Name/account verification form
+- `supabase/functions/validate-subscriber/index.ts` -- Backend subscriber lookup
+- `src/hooks/useSubscriberValidation.ts` -- Hook wrapping the edge function call
 
 ## Files to Modify
-- `src/hooks/useRegistrationZipCheck.ts` -- Add `noProviders` flag, block proceed when no providers
-- `src/components/auth/ZipCheckStep.tsx` -- Add invite code fallback UI + access request form
-- `src/pages/Auth.tsx` -- Wire up new state for access request submission
-- `src/components/admin/AdminSidebar.tsx` -- Add Access Requests link
-- `src/App.tsx` -- Add route for AdminAccessRequests
-- `supabase/functions/send-notification-email/index.ts` -- Handle `access_request_approved` email type
+- `src/components/auth/ZipCheckStep.tsx` -- Add ISP selection dropdown, pass selected tenant up
+- `src/pages/Auth.tsx` -- Add subscriber verification step, track selected tenant, update lead creation
+- `src/pages/admin/AdminTenants.tsx` -- Add subscriber validation toggle
+- `src/hooks/useRegistrationZipCheck.ts` -- Minor: expose selected provider info
 
 ## Database Changes
-- New table: `access_requests` with RLS policies
-- New trigger: `notify_admins_on_access_request` (INSERT on access_requests, notifies admin users)
+- Add `require_subscriber_validation` boolean column to `tenants` table
 
