@@ -100,14 +100,32 @@ const ZipCheckStep = ({
   };
 
   const handleAccessRequest = async () => {
-    if (!reqEmail.trim()) {
+    const trimmedEmail = reqEmail.trim().toLowerCase();
+    if (!trimmedEmail) {
       toast.error("Email is required to request access.");
       return;
     }
     setReqSubmitting(true);
     try {
+      // Check for existing pending or approved request with same email
+      const { data: existing, error: checkError } = await supabase
+        .from("access_requests" as any)
+        .select("id, status")
+        .eq("email", trimmedEmail)
+        .in("status", ["pending", "approved"]) as any;
+      if (checkError) throw checkError;
+      if (existing && existing.length > 0) {
+        const status = existing[0].status;
+        if (status === "pending") {
+          toast.error("You already have a pending access request. An admin will review it soon.");
+        } else {
+          toast.error("Your request was already approved. Check your email for the invite code.");
+        }
+        return;
+      }
+
       const { error } = await supabase.from("access_requests" as any).insert({
-        email: reqEmail.trim(),
+        email: trimmedEmail,
         display_name: reqName.trim() || null,
         zip_code: zipCode,
       } as any);
