@@ -132,7 +132,7 @@ const PlayerComparison = () => {
                 <ComparisonStatRow label="Seasons" valueA={playerA.totals.seasonsPlayed} valueB={playerB.totals.seasonsPlayed} />
               </div>
 
-              <ComparisonChart playerA={playerA} playerB={playerB} />
+              <ComparisonChart playerA={playerA} playerB={playerB} playerAId={playerAId} playerBId={playerBId} />
             </div>
 
             {/* Season-by-Season Breakdown */}
