@@ -9,6 +9,7 @@ import { Settings, Save, Loader2, ImageIcon, Code } from "lucide-react";
 import { IMAGE_PRESETS } from "@/lib/imageValidation";
 import { Checkbox } from "@/components/ui/checkbox";
 import HeroLogoSettings from "@/components/admin/HeroLogoSettings";
+import AIImageConfigCard from "@/components/admin/AIImageConfigCard";
 
 interface LimitEntry {
   enabled: boolean;
@@ -250,6 +251,9 @@ const AdminSettings = () => {
           Save Changes
         </Button>
       </div>
+
+      {/* AI Image Generation */}
+      <AIImageConfigCard loading={loading} />
 
       {/* Image Upload Limits */}
       <div className="rounded-lg border border-border bg-card p-6 space-y-4">
