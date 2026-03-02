@@ -1,133 +1,109 @@
 
 
-# Deep Stats Overhaul: Personal + Game-Level Analytics with Skill Insights
+# Skills Overview Radar Chart + Player Stats Report
 
 ## Goal
-Transform the Statistics page into a comprehensive analytics hub where players can view stats filtered by both season and game, see their own personal performance dashboard, and get actionable skill improvement suggestions based on how top players perform in each game/genre.
 
----
+Replace the planned grid-based heat map with a **radar/spider chart** matching the reference image style -- a polygon chart with labeled skill dimensions around the perimeter and concentric guide rings showing score levels (0, 25, 50, 75, 100).
 
-## Current State
+## What It Looks Like
 
-- **Season Stats tab**: Shows global leaderboard, tier distribution, and progression across seasons
-- **Game Stats tab**: Shows per-game tournament/match counts and top players by wins
-- **Player Profile page**: Shows overall stats (wins, losses, tournaments) but not broken down by game or season
-- No mechanism for players to compare their performance to top performers or get skill improvement insights
+A "Skills Overview" card displaying a Recharts `RadarChart` with:
+- Skill dimensions as spokes: **Win Rate**, **Score Margin**, **Consistency**, **Experience**, and one spoke per genre the player competes in
+- A filled polygon showing the player's percentile scores (0-100)
+- Concentric grid rings at 25, 50, 75, 100
+- Dark card background matching the cyberpunk aesthetic (semi-transparent fill, cyan/primary stroke)
 
----
+Below the radar chart, the existing game-by-game insight cards and genre badges remain.
 
-## Proposed Changes
+## Changes
 
-### 1. Add "My Stats" Tab to the Statistics Page
+### 1. Create `src/hooks/usePlayerReport.ts`
 
-A new third tab ("My Stats") visible to logged-in users, showing:
+Computes percentile-based scores (0-100) for the player across dimensions:
 
-- **Overall summary cards**: Total wins, losses, win rate, tournaments played, points earned (across all time)
-- **Per-game breakdown table**: Each game the player has competed in, with columns for matches, wins, losses, win rate, and a sparkline trend
-- **Per-season breakdown**: A table showing how the player performed in each season (points, rank, tier earned)
-- **Skill Gap Analysis panel** (see item 4 below)
+| Dimension | Calculation |
+|-----------|------------|
+| Win Rate | Percentile rank of player's overall win rate vs. all players |
+| Score Margin | Percentile rank of average score margin vs. all players |
+| Consistency | Inverse percentile of score margin standard deviation (lower variance = higher score) |
+| Experience | `min(100, playerTotalMatches / maxPlayerMatches * 100)` |
+| Per-Genre scores | Average win rate percentile across games in that genre |
 
-**New files:**
-- `src/components/stats/MyStatsView.tsx` -- main container for the personal stats tab
-- `src/hooks/useMyStats.ts` -- hook that fetches the logged-in user's match_results across all games/seasons and aggregates them
+Returns an array of `{ dimension: string, score: number, fullMark: 100 }` for direct use in Recharts RadarChart.
 
-**Modified files:**
-- `src/pages/SeasonStats.tsx` -- add third tab "My Stats" (conditionally shown when user is authenticated)
+### 2. Create `src/components/stats/PlayerStatsReport.tsx`
 
-### 2. Combine Season + Game Filtering on Game Stats Tab
+The main report component containing:
 
-Update the Game Stats tab to also allow filtering by season, so users can see game performance within a specific season:
+- **"Skills Overview" header** matching the reference image style
+- **Recharts `RadarChart`** with `PolarGrid`, `PolarAngleAxis` (dimension labels around the outside), `PolarRadiusAxis` (concentric rings), and a single `Radar` area with:
+  - `stroke="hsl(var(--primary))"` (cyan in dark mode)
+  - `fill="hsl(var(--primary))"` with low opacity (0.2-0.3)
+  - `dot` markers on each vertex
+- **Overall Player Rating** -- a single weighted average score displayed prominently
+- **Strengths and Weaknesses** -- auto-generated list from highest/lowest scoring dimensions
+- **Improvement Tips** -- contextual advice for the weakest 2-3 dimensions
 
-- Add a season selector dropdown alongside the existing game selector
-- When both are selected, filter tournaments by date range of the selected season AND game name
-- Stat cards and player tables update accordingly
+The chart uses the existing `recharts` dependency (already installed) -- specifically `RadarChart`, `Radar`, `PolarGrid`, `PolarAngleAxis`, `PolarRadiusAxis` from `recharts`.
 
-**Modified files:**
-- `src/components/stats/GameStatsView.tsx` -- add season selector, pass season date range to the hook
-- `src/hooks/useGameStats.ts` -- accept optional season date range to filter tournaments by `start_date` within that range
+### 3. Update `src/components/stats/MyStatsView.tsx`
 
-### 3. Add Per-Game Stats to Player Profile Page
-
-Enhance the existing Player Profile page with a "Stats by Game" section:
-
-- A collapsible accordion listing each game the player has competed in
-- For each game: matches, wins, losses, win rate, best tournament finish
-- Reuses data from match_results joined to tournaments.game
-
-**Modified files:**
-- `src/pages/PlayerProfile.tsx` -- add the new section
-- `src/hooks/usePlayerProfile.ts` -- add a new query `usePlayerGameBreakdown(userId)` that groups the player's match_results by game
-
-### 4. Skill Insights / Improvement Suggestions
-
-A "Skill Insights" panel on the My Stats tab that compares the player's per-game stats to the top 10% of players for that game:
-
-- For each game the player has played, calculate:
-  - Player's win rate vs. top-10% average win rate
-  - Player's average score margin vs. top-10% average score margin
-  - Player's tournament participation rate
-- Display a simple card per game with:
-  - A "strength" badge if they're above average
-  - An "area to improve" note if below average, with actionable text like "Your win rate in [Game] is 45% vs. top players at 72%. Focus on consistency."
-- Genre-level aggregation: Group games by category and show genre-wide insights (e.g., "You perform best in Fighting games but struggle in Shooters")
-
-**New files:**
-- `src/components/stats/SkillInsightsPanel.tsx` -- renders the comparison cards and genre summary
-- `src/hooks/useSkillInsights.ts` -- fetches the player's stats and top-player benchmarks per game, computes gaps
-
-**Data source**: All derived from existing `match_results`, `tournaments`, and `games` tables. No new database tables needed.
-
----
+- Import and render `PlayerStatsReport` between the summary stat cards and the "Performance by Game" bar chart
+- The radar chart is always visible (not collapsed), as it serves as the primary visual summary
+- It sits in its own card with the "Skills Overview" heading
 
 ## Technical Details
 
-### Data Flow (no schema changes needed)
+### Data source
 
-All stats are computed client-side from existing tables:
+Reuses the same data already fetched by `useSkillInsights` -- the `usePlayerReport` hook will call `useSkillInsights` internally and transform its output into radar-compatible dimensions. No additional database queries needed.
+
+### Percentile calculation
 
 ```
-games.name <-> tournaments.game <-> match_results.tournament_id
-seasons (date range) filters tournaments by start_date
-profiles for display names
-season_scores / season_snapshots for season-specific points
+percentileRank(value, sortedArray) = 
+  (count of values <= playerValue) / totalCount * 100
 ```
 
-### New Hooks Summary
+### Consistency score
 
-| Hook | Purpose |
-|------|---------|
-| `useMyStats(userId)` | Player's overall + per-game + per-season stats |
-| `useSkillInsights(userId)` | Compares player to top performers per game/genre |
-| `usePlayerGameBreakdown(userId)` | Per-game stats for the player profile page |
+Standard deviation of all the player's score margins across all games. Lower std dev = more consistent = higher score. Computed as:
 
-### useGameStats changes
-- Accept optional `seasonId` parameter
-- When provided, fetch the season's date range and add `.gte('start_date', seasonStart).lte('start_date', seasonEnd)` to the tournaments query
+```
+consistencyScore = (1 - percentileRank(playerStdDev, allStdDevs)) * 100
+```
 
-### Performance considerations
-- All hooks use `useQuery` with specific query keys for caching
-- Skill insights hook fetches top-player benchmarks once and caches them
-- Match results queries are bounded (player-specific queries return manageable row counts)
+### Radar data shape
 
-### Authentication gating
-- "My Stats" tab only renders when `useAuth()` returns a valid user
-- If not logged in, show a prompt to sign in to view personal stats
+```typescript
+[
+  { dimension: "Win Rate", score: 72, fullMark: 100 },
+  { dimension: "Score Margin", score: 58, fullMark: 100 },
+  { dimension: "Consistency", score: 85, fullMark: 100 },
+  { dimension: "Experience", score: 45, fullMark: 100 },
+  { dimension: "Fighting", score: 80, fullMark: 100 },  // genre
+  { dimension: "Shooters", score: 35, fullMark: 100 },  // genre
+]
+```
 
----
+### Styling
 
-## File Change Summary
+- Card: `rounded-xl border border-border bg-card p-6`
+- Radar fill: `hsl(var(--primary))` at 20% opacity
+- Radar stroke: `hsl(var(--primary))` solid
+- Grid lines: `hsl(var(--border))` or `hsl(var(--muted-foreground))` at reduced opacity
+- Axis labels: `fill="hsl(var(--muted-foreground))"` with small font size
+- Matches the dark cyberpunk aesthetic of the platform
+
+### No new dependencies
+
+Uses `recharts` (already installed). No external radar or chart library needed.
+
+## File Summary
 
 | Action | File |
 |--------|------|
-| Create | `src/components/stats/MyStatsView.tsx` |
-| Create | `src/hooks/useMyStats.ts` |
-| Create | `src/components/stats/SkillInsightsPanel.tsx` |
-| Create | `src/hooks/useSkillInsights.ts` |
-| Modify | `src/pages/SeasonStats.tsx` (add My Stats tab) |
-| Modify | `src/components/stats/GameStatsView.tsx` (add season filter) |
-| Modify | `src/hooks/useGameStats.ts` (accept season filter) |
-| Modify | `src/pages/PlayerProfile.tsx` (add per-game breakdown) |
-| Modify | `src/hooks/usePlayerProfile.ts` (add game breakdown query) |
-
-No database migrations, no new tables, no RLS changes required.
-
+| Create | `src/hooks/usePlayerReport.ts` |
+| Create | `src/components/stats/PlayerStatsReport.tsx` |
+| Modify | `src/components/stats/MyStatsView.tsx` (add radar chart section) |
