@@ -2,6 +2,8 @@ import { useState } from "react";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 import { useSeasons, useSeasonStats, useSeasonProgression } from "@/hooks/useSeasonStats";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import GameStatsView from "@/components/stats/GameStatsView";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -64,8 +66,16 @@ const SeasonStats = () => {
         {/* Header */}
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Analytics</p>
-          <h1 className="font-display text-4xl font-bold text-foreground">Season Statistics</h1>
+          <h1 className="font-display text-4xl font-bold text-foreground">Statistics</h1>
         </div>
+
+        <Tabs defaultValue="season" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="season">Season Stats</TabsTrigger>
+            <TabsTrigger value="game">Game Stats</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="season">
 
         {/* Season selector */}
         <div className="flex flex-wrap items-center gap-3 mb-8 p-4 rounded-xl border border-border bg-card">
@@ -360,6 +370,12 @@ const SeasonStats = () => {
             </div>
           </>
         )}
+          </TabsContent>
+
+          <TabsContent value="game">
+            <GameStatsView />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
