@@ -45,6 +45,7 @@ interface UpdateTenantInput {
   primary_color?: string | null;
   accent_color?: string | null;
   status?: string;
+  require_subscriber_validation?: boolean;
 }
 
 export function useTenants() {

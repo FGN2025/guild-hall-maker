@@ -1,0 +1,1 @@
+ALTER TABLE public.tenants ADD COLUMN require_subscriber_validation boolean NOT NULL DEFAULT false;

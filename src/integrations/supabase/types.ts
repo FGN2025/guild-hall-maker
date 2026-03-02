@@ -1739,6 +1739,7 @@ export type Database = {
           logo_url: string | null
           name: string
           primary_color: string | null
+          require_subscriber_validation: boolean
           slug: string
           status: string
           updated_at: string
@@ -1751,6 +1752,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           primary_color?: string | null
+          require_subscriber_validation?: boolean
           slug: string
           status?: string
           updated_at?: string
@@ -1763,6 +1765,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           primary_color?: string | null
+          require_subscriber_validation?: boolean
           slug?: string
           status?: string
           updated_at?: string

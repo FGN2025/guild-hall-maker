@@ -261,6 +261,9 @@ const AdminTenants = () => {
                 onLogoUpdated={(url) => handleInlineLogoUpdate(t.id, url)}
                 onOpenAdmins={() => setSelectedTenantId(t.id)}
                 onDelete={() => deleteTenant.mutate(t.id)}
+                onToggleSubscriberValidation={(checked) =>
+                  updateTenant.mutate({ id: t.id, require_subscriber_validation: checked })
+                }
               />
             ))}
           </div>
@@ -291,50 +294,64 @@ function TenantCard({
   onLogoUpdated,
   onOpenAdmins,
   onDelete,
+  onToggleSubscriberValidation,
 }: {
-  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null };
+  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean };
   onToggleStatus: (checked: boolean) => void;
   onLogoUpdated: (url: string) => void;
   onOpenAdmins: () => void;
   onDelete: () => void;
+  onToggleSubscriberValidation: (checked: boolean) => void;
 }) {
   const [uploading, setUploading] = useState(false);
 
   return (
-    <div className="border border-border rounded-lg p-4 flex items-center justify-between bg-card">
-      <div className="flex items-center gap-4">
-        <LogoPicker
-          logoUrl={t.logo_url}
-          onUploaded={onLogoUpdated}
-          uploading={uploading}
-          setUploading={setUploading}
-          tenantId={t.id}
-        />
-        <div>
-          <h3 className="font-heading font-semibold text-foreground">{t.name}</h3>
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-            /{t.slug}
-            {t.contact_email && ` · ${t.contact_email}`}
-            {(t.primary_color || t.accent_color) && (
-              <span className="inline-flex gap-1 ml-1">
-                {t.primary_color && <span className="h-3 w-3 rounded-full border border-border inline-block" style={{ backgroundColor: t.primary_color }} />}
-                {t.accent_color && <span className="h-3 w-3 rounded-full border border-border inline-block" style={{ backgroundColor: t.accent_color }} />}
-              </span>
-            )}
-          </p>
+    <div className="border border-border rounded-lg p-4 bg-card space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <LogoPicker
+            logoUrl={t.logo_url}
+            onUploaded={onLogoUpdated}
+            uploading={uploading}
+            setUploading={setUploading}
+            tenantId={t.id}
+          />
+          <div>
+            <h3 className="font-heading font-semibold text-foreground">{t.name}</h3>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              /{t.slug}
+              {t.contact_email && ` · ${t.contact_email}`}
+              {(t.primary_color || t.accent_color) && (
+                <span className="inline-flex gap-1 ml-1">
+                  {t.primary_color && <span className="h-3 w-3 rounded-full border border-border inline-block" style={{ backgroundColor: t.primary_color }} />}
+                  {t.accent_color && <span className="h-3 w-3 rounded-full border border-border inline-block" style={{ backgroundColor: t.accent_color }} />}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge variant={t.status === "active" ? "default" : "secondary"}>
+            {t.status}
+          </Badge>
+          <Switch checked={t.status === "active"} onCheckedChange={onToggleStatus} />
+          <Button variant="outline" size="sm" className="gap-1" onClick={onOpenAdmins}>
+            <Users className="h-4 w-4" /> Admins
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onDelete}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <Badge variant={t.status === "active" ? "default" : "secondary"}>
-          {t.status}
-        </Badge>
-        <Switch checked={t.status === "active"} onCheckedChange={onToggleStatus} />
-        <Button variant="outline" size="sm" className="gap-1" onClick={onOpenAdmins}>
-          <Users className="h-4 w-4" /> Admins
-        </Button>
-        <Button variant="ghost" size="icon" onClick={onDelete}>
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
+      <div className="flex items-center gap-2 pl-1 border-t border-border pt-2">
+        <Switch
+          id={`sub-val-${t.id}`}
+          checked={!!t.require_subscriber_validation}
+          onCheckedChange={onToggleSubscriberValidation}
+        />
+        <Label htmlFor={`sub-val-${t.id}`} className="text-xs text-muted-foreground cursor-pointer">
+          Require subscriber validation on signup
+        </Label>
       </div>
     </div>
   );
