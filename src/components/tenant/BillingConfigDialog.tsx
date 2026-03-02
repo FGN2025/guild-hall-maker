@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -162,9 +163,8 @@ const BillingConfigDialog = ({
             <Label htmlFor="billing-api-key">
               API Key {isEdit ? "(leave blank to keep current)" : ""}
             </Label>
-            <Input
+            <PasswordInput
               id="billing-api-key"
-              type="password"
               placeholder={isEdit ? "••••••••" : "Enter API key"}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
