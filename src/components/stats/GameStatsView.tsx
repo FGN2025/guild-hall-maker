@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useGames } from "@/hooks/useGames";
 import { useGameStats, useGameStatsOverview } from "@/hooks/useGameStats";
+import { useSeasons } from "@/hooks/useSeasonStats";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
@@ -18,7 +19,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Gamepad2, Users, Target, Trophy, Crown, Star } from "lucide-react";
+import { Gamepad2, Users, Target, Trophy, Crown, Star, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const StatCard = ({
@@ -45,8 +46,17 @@ const StatCard = ({
 
 const GameStatsView = () => {
   const { data: games } = useGames();
+  const { data: seasons } = useSeasons();
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
-  const { data: stats, isLoading } = useGameStats(selectedGame);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+
+  // Find the season date range for filtering
+  const selectedSeason = seasons?.find((s) => s.id === selectedSeasonId);
+  const seasonRange = selectedSeason
+    ? { start: selectedSeason.start_date, end: selectedSeason.end_date }
+    : undefined;
+
+  const { data: stats, isLoading } = useGameStats(selectedGame, seasonRange);
   const { data: overview } = useGameStatsOverview();
 
   return (
@@ -66,6 +76,25 @@ const GameStatsView = () => {
             {(games ?? []).map((g) => (
               <SelectItem key={g.id} value={g.name}>
                 {g.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Calendar className="h-4 w-4 text-muted-foreground shrink-0 ml-4" />
+        <span className="text-sm font-heading text-muted-foreground mr-1">Season:</span>
+        <Select
+          value={selectedSeasonId ?? "all"}
+          onValueChange={(v) => setSelectedSeasonId(v === "all" ? null : v)}
+        >
+          <SelectTrigger className="w-[220px] h-9 text-sm bg-background border-border">
+            <SelectValue placeholder="All seasons" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Seasons</SelectItem>
+            {(seasons ?? []).map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name} {s.status === "active" ? "(Current)" : ""}
               </SelectItem>
             ))}
           </SelectContent>

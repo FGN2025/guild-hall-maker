@@ -4,6 +4,8 @@ import PageBackground from "@/components/PageBackground";
 import { useSeasons, useSeasonStats, useSeasonProgression } from "@/hooks/useSeasonStats";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GameStatsView from "@/components/stats/GameStatsView";
+import MyStatsView from "@/components/stats/MyStatsView";
+import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -49,6 +51,7 @@ const tierLabels: Record<string, string> = {
 };
 
 const SeasonStats = () => {
+  const { user } = useAuth();
   const { data: seasons } = useSeasons();
   const activeSeason = seasons?.find((s) => s.status === "active");
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
@@ -73,6 +76,7 @@ const SeasonStats = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="season">Season Stats</TabsTrigger>
             <TabsTrigger value="game">Game Stats</TabsTrigger>
+            <TabsTrigger value="my-stats">My Stats</TabsTrigger>
           </TabsList>
 
           <TabsContent value="season">
@@ -374,6 +378,10 @@ const SeasonStats = () => {
 
           <TabsContent value="game">
             <GameStatsView />
+          </TabsContent>
+
+          <TabsContent value="my-stats">
+            <MyStatsView />
           </TabsContent>
         </Tabs>
       </div>
