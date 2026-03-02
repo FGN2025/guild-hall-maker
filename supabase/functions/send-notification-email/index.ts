@@ -10,6 +10,7 @@ interface Payload {
   type: "redemption_update" | "new_challenge";
   record: Record<string, unknown>;
   old_record?: Record<string, unknown>;
+  target_email?: string; // For per-user sends (preference-aware triggers)
 }
 
 Deno.serve(async (req) => {
@@ -31,7 +32,7 @@ Deno.serve(async (req) => {
     );
 
     const payload: Payload = await req.json();
-    const { type, record, old_record } = payload;
+    const { type, record, old_record, target_email } = payload;
 
     const emails: { to: string; subject: string; html: string }[] = [];
 
@@ -76,28 +77,40 @@ Deno.serve(async (req) => {
       const challengeName = record.name as string;
       const pointsReward = record.points_reward as number;
 
-      // Get all user emails
-      const { data: userData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-      if (!userData?.users) {
-        return new Response(JSON.stringify({ success: true, message: "No users" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // If target_email is provided, send to just that user (preference-aware trigger)
+      if (target_email) {
+        emails.push({
+          to: target_email,
+          subject: `🎯 New Challenge Available — FGN`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">New Challenge Available!</h1>
+              <p>A new challenge <strong>"${challengeName}"</strong> is now live!</p>
+              <p>Complete it to earn <strong>${pointsReward} points</strong>.</p>
+              <p>Log in to FGN and check the Challenges page to get started.</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
         });
-      }
-
-      for (const u of userData.users) {
-        if (u.email) {
-          emails.push({
-            to: u.email,
-            subject: `🎯 New Challenge Available — FGN`,
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
-                <h1 style="color: #00f0ff;">New Challenge Available!</h1>
-                <p>A new challenge <strong>"${challengeName}"</strong> is now live!</p>
-                <p>Complete it to earn <strong>${pointsReward} points</strong>.</p>
-                <p>Log in to FGN and check the Challenges page to get started.</p>
-                <p style="color: #888; font-size: 12px;">— FGN Platform</p>
-              </div>`,
-          });
+      } else {
+        // Legacy: send to all users (no preference check)
+        const { data: userData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        if (userData?.users) {
+          for (const u of userData.users) {
+            if (u.email) {
+              emails.push({
+                to: u.email,
+                subject: `🎯 New Challenge Available — FGN`,
+                html: `
+                  <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+                    <h1 style="color: #00f0ff;">New Challenge Available!</h1>
+                    <p>A new challenge <strong>"${challengeName}"</strong> is now live!</p>
+                    <p>Complete it to earn <strong>${pointsReward} points</strong>.</p>
+                    <p>Log in to FGN and check the Challenges page to get started.</p>
+                    <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+                  </div>`,
+              });
+            }
+          }
         }
       }
     }
