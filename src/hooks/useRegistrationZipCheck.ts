@@ -14,6 +14,7 @@ interface ZipCheckResult {
   bypassed: boolean;
   message: string;
   noProvidersMessage?: string | null;
+  noProviders?: boolean;
 }
 
 export function useRegistrationZipCheck() {
@@ -68,13 +69,15 @@ export function useRegistrationZipCheck() {
       }
 
       const providerList = (data.providers as Provider[]) || [];
+      const hasProviders = providerList.length > 0;
 
       const res: ZipCheckResult = {
-        valid: true,
+        valid: hasProviders,
         providers: providerList,
         bypassed: false,
+        noProviders: !hasProviders,
         message: data.message || (
-          providerList.length > 0
+          hasProviders
             ? `Found ${providerList.length} provider(s) in your area!`
             : "Your ZIP is valid, but no broadband providers currently serve your area."
         ),
