@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 import { Label } from "@/components/ui/label";
 import { Gamepad2, Lock, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -115,6 +116,7 @@ const ResetPassword = () => {
                   required
                 />
               </div>
+              <PasswordStrengthIndicator password={password} />
             </div>
 
             <div className="space-y-2">
