@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface Payload {
-  type: "redemption_update" | "new_challenge";
+  type: "redemption_update" | "new_challenge" | "tournament_starting";
   record: Record<string, unknown>;
   old_record?: Record<string, unknown>;
   target_email?: string; // For per-user sends (preference-aware triggers)
@@ -112,6 +112,23 @@ Deno.serve(async (req) => {
             }
           }
         }
+      }
+    } else if (type === "tournament_starting") {
+      const tournamentName = record.name as string;
+      const tournamentId = record.id as string;
+
+      if (target_email) {
+        emails.push({
+          to: target_email,
+          subject: `🏁 Tournament Starting Now — ${tournamentName}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">🏁 Tournament Starting!</h1>
+              <p>The tournament <strong>"${tournamentName}"</strong> is now live!</p>
+              <p>Head over to the bracket page to see your first match and get ready to compete!</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
       }
     }
 
