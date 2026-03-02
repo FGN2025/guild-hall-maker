@@ -4,6 +4,7 @@ import PlayerSelector from "@/components/compare/PlayerSelector";
 import ComparisonStatRow from "@/components/compare/ComparisonStatRow";
 import ComparisonChart from "@/components/compare/ComparisonChart";
 import HeadToHeadHistory from "@/components/compare/HeadToHeadHistory";
+import GameBreakdownTable from "@/components/compare/GameBreakdownTable";
 import { useAllPlayers, usePlayerComparisonData } from "@/hooks/usePlayerComparison";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Swords, Trophy, Target, TrendingUp, Calendar, Link2, Check } from "lucide-react";
@@ -190,6 +191,14 @@ const PlayerComparison = () => {
                 </div>
               );
             })()}
+
+            {/* Per-Game Breakdown */}
+            <GameBreakdownTable
+              playerAId={playerAId}
+              playerBId={playerBId}
+              playerAName={playerA.display_name}
+              playerBName={playerB.display_name}
+            />
 
             {/* Head-to-Head Match History */}
             <div className="mt-8">
