@@ -7,10 +7,11 @@ const corsHeaders = {
 };
 
 interface Payload {
-  type: "redemption_update" | "new_challenge" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed";
-  record: Record<string, unknown>;
+  type: "redemption_update" | "new_challenge" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed" | "access_request_approved" | "access_request_new";
+  record?: Record<string, unknown>;
   old_record?: Record<string, unknown>;
-  target_email?: string; // For per-user sends (preference-aware triggers)
+  target_email?: string;
+  bypass_code?: string;
 }
 
 Deno.serve(async (req) => {
@@ -185,6 +186,55 @@ Deno.serve(async (req) => {
               <p style="color: #888; font-size: 12px;">— FGN Platform</p>
             </div>`,
         });
+      }
+    } else if (type === "access_request_approved") {
+      if (target_email && bypass_code) {
+        emails.push({
+          to: target_email,
+          subject: `✅ Your FGN Access Request Has Been Approved!`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">Access Request Approved!</h1>
+              <p>Great news! Your request to join the FGN platform has been approved.</p>
+              <p>Use the following invite code to complete your registration:</p>
+              <div style="background: #f0f0f0; padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0;">
+                <span style="font-size: 24px; font-weight: bold; letter-spacing: 2px; font-family: monospace;">${bypass_code}</span>
+              </div>
+              <p>Go to the <a href="https://guild-hall-maker.lovable.app/auth" style="color: #00f0ff;">FGN registration page</a> and enter this code to get started.</p>
+              <p style="color: #888; font-size: 12px;">This code is single-use. — FGN Platform</p>
+            </div>`,
+        });
+      }
+    } else if (type === "access_request_new") {
+      // Notify all admins about new access request
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      if (adminRoles) {
+        for (const role of adminRoles) {
+          const { data: userData } = await supabase.auth.admin.getUserById(role.user_id);
+          if (userData?.user?.email) {
+            const rec = record || {};
+            emails.push({
+              to: userData.user.email,
+              subject: `📋 New Access Request — FGN`,
+              html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+                  <h1 style="color: #00f0ff;">New Access Request</h1>
+                  <p>A new user is requesting access to the FGN platform:</p>
+                  <ul>
+                    <li><strong>Name:</strong> ${rec.display_name || "Not provided"}</li>
+                    <li><strong>Email:</strong> ${rec.email || "Unknown"}</li>
+                    <li><strong>ZIP Code:</strong> ${rec.zip_code || "Unknown"}</li>
+                  </ul>
+                  <p>Review this request in the <a href="https://guild-hall-maker.lovable.app/admin/access-requests" style="color: #00f0ff;">Admin Panel</a>.</p>
+                  <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+                </div>`,
+            });
+          }
+        }
       }
     }
 

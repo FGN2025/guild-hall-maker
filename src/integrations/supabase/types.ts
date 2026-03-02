@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          zip_code: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          zip_code: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          zip_code?: string
+        }
+        Relationships: []
+      }
       achievement_definitions: {
         Row: {
           auto_criteria: Json | null
