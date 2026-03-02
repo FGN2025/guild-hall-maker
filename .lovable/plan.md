@@ -1,84 +1,62 @@
 
 
-# Enhance Player Comparison with Full Skills Radar
+# Dynamic Notebook Connections for AI Coach
 
-## Goal
+## Overview
 
-Add Score Margin, Consistency, Experience, and per-genre dimensions to the Compare page so both players get a full side-by-side radar chart (matching the Skills Overview style from `PlayerStatsReport`).
+Update the `ai-coach` edge function to dynamically query all active notebook connections from the `admin_notebook_connections` table instead of using a hardcoded notebook ID. When notebook results are empty or irrelevant, the AI model's general knowledge will serve as the fallback (this already happens naturally since the system prompt instructs it to "use your general esports expertise" when no knowledge base content matches).
 
 ## Changes
 
-### 1. Create `src/hooks/useComparisonReport.ts`
+### 1. Update `supabase/functions/ai-coach/index.ts`
 
-A new hook that calls `useSkillInsights` for both player IDs and returns radar-compatible data for each. It will:
+**What changes:**
+- Import the Supabase client (service role) to query the `admin_notebook_connections` table
+- Replace the hardcoded notebook ID (`notebook:f8y4zed28cky7uibdoia`) with a dynamic lookup
+- Query all rows where `is_active = true` from `admin_notebook_connections`
+- For each active connection, search using the connection's `api_url` and `notebook_id`
+- Aggregate results from all active notebooks into the context
+- If zero passages are returned from all notebooks, the system prompt already instructs the model to fall back to general expertise -- no additional logic needed
 
-- Accept `playerAId` and `playerBId`
-- Internally call `useSkillInsights(playerAId)` and `useSkillInsights(playerBId)`
-- For each player, compute the same dimensions as `usePlayerReport`: Win Rate, Score Margin, Consistency, Experience, plus per-genre scores
-- Merge both players' genre lists so the radar uses the **union** of all genres (missing genres default to 0)
-- Return `{ radarData: { dimension, scoreA, scoreB, fullMark }[], isLoading }`
+**Key logic:**
 
-### 2. Create `src/components/compare/ComparisonRadarChart.tsx`
+```text
+1. Create Supabase service-role client
+2. SELECT api_url, notebook_id, name FROM admin_notebook_connections WHERE is_active = true
+3. For each connection:
+   a. POST to {api_url}/api/search with { query, notebook_id }
+   b. Collect up to 3 passages per notebook (cap total at ~8 passages across all)
+   c. Label passages with the connection name for attribution
+   d. Use shared OPEN_NOTEBOOK_PASSWORD secret for auth (same VPS host)
+4. If all searches fail or return nothing, notebookContext stays empty
+5. System prompt already handles the fallback: "If no knowledge base content matches, use your general esports expertise"
+```
 
-A new dual-overlay radar chart component (similar to existing `ComparisonChart` but with the enhanced dimensions):
+**Error handling:**
+- Each notebook search is wrapped in its own try/catch so one failing connection does not block others
+- Health status is not updated during coach queries (that remains an admin-panel action)
 
-- Uses Recharts `RadarChart` with two `Radar` layers (Player A in primary, Player B in destructive)
-- Dimensions: Win Rate, Score Margin, Consistency, Experience, and all genre spokes
-- Styled to match the existing cyberpunk aesthetic (same as `PlayerStatsReport`)
-- Shows a legend with both player names
-- Card title: "Skills Comparison"
+### 2. No database or frontend changes needed
 
-### 3. Update `src/components/compare/ComparisonChart.tsx`
-
-Replace the current basic 5-spoke radar (Points, Wins, Win Rate, Tournaments, Seasons) with the new enhanced chart. Two options:
-
-- **Option chosen**: Replace the existing `ComparisonChart` contents to use data from the new `useComparisonReport` hook, keeping the same component name and import path so `PlayerComparison.tsx` needs minimal changes.
-- Pass `playerAId` and `playerBId` as additional props (alongside existing `playerA`/`playerB` for display names)
-
-### 4. Update `src/pages/PlayerComparison.tsx`
-
-- Pass `playerAId` and `playerBId` to `ComparisonChart` so it can fetch skill insights
-- Add new stat rows to the Career Stats card: Score Margin, Consistency, Experience (computed from the hook data)
+- The `admin_notebook_connections` table and admin UI already exist
+- The system prompt already contains fallback instructions
+- The shared credential architecture (single `OPEN_NOTEBOOK_PASSWORD` secret) is already in place
 
 ## Technical Details
 
-### Score Computation (per player)
+The edge function will use the service role key to bypass RLS and read the connections table:
 
-Reuses the exact same logic from `usePlayerReport.ts`:
+```typescript
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
 
-| Dimension | Formula |
-|-----------|---------|
-| Win Rate | `min(100, overallWinRate)` |
-| Score Margin | Percentile rank of avg margin across player's games |
-| Consistency | `max(0, 100 - stdDev(winRates) * 2)` |
-| Experience | `min(100, totalMatches / 50 * 100)` |
-| Genre (each) | `round(avgWinRate)` for that genre |
-
-### Merged Dimensions
-
-Both players' genres are unioned. If Player A plays "Fighting" but Player B does not, Player B scores 0 for "Fighting". This ensures both polygons share the same spoke set.
-
-### Data Flow
-
-```text
-PlayerComparison.tsx
-  |-- passes playerAId, playerBId to ComparisonChart
-  |-- ComparisonChart internally calls useComparisonReport(playerAId, playerBId)
-  |     |-- useSkillInsights(playerAId)
-  |     |-- useSkillInsights(playerBId)
-  |     |-- builds merged radar data
-  |-- Renders dual-Radar chart
+const { data: connections } = await supabase
+  .from("admin_notebook_connections")
+  .select("api_url, notebook_id, name")
+  .eq("is_active", true);
 ```
 
-### No new dependencies
-
-Uses existing `recharts` and `useSkillInsights`.
-
-## File Summary
-
-| Action | File |
-|--------|------|
-| Create | `src/hooks/useComparisonReport.ts` |
-| Modify | `src/components/compare/ComparisonChart.tsx` (use enhanced dimensions) |
-| Modify | `src/pages/PlayerComparison.tsx` (pass player IDs, add stat rows) |
+Passages will be capped per-connection (3 each) and globally (8 total) to keep the context window manageable. Each passage will be prefixed with `[Source: {connection.name}]` for traceability.
 
