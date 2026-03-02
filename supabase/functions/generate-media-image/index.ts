@@ -7,6 +7,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface AiImageConfig {
+  provider: "lovable" | "custom";
+  model: string;
+  custom_api_url: string;
+  custom_api_key: string;
+  custom_model: string;
+}
+
+const DEFAULT_CONFIG: AiImageConfig = {
+  provider: "lovable",
+  model: "google/gemini-3-pro-image-preview",
+  custom_api_url: "",
+  custom_api_key: "",
+  custom_model: "",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,13 +40,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!lovableApiKey) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Verify user
     const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
@@ -52,18 +61,61 @@ serve(async (req) => {
       });
     }
 
-    // Call Lovable AI for image generation
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
+    // Read AI image config from app_settings using service role
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    let config: AiImageConfig = { ...DEFAULT_CONFIG };
+    const { data: configRow } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "ai_image_config")
+      .maybeSingle();
+
+    if (configRow?.value) {
+      try {
+        config = { ...DEFAULT_CONFIG, ...JSON.parse(configRow.value) };
+      } catch { /* use defaults */ }
+    }
+
+    let apiUrl: string;
+    let apiKey: string;
+    let model: string;
+    let requestBody: Record<string, unknown>;
+
+    if (config.provider === "custom" && config.custom_api_url && config.custom_api_key && config.custom_model) {
+      apiUrl = config.custom_api_url;
+      apiKey = config.custom_api_key;
+      model = config.custom_model;
+      requestBody = {
+        model,
         messages: [{ role: "user", content: prompt }],
         modalities: ["image", "text"],
-      }),
+      };
+    } else {
+      // Lovable AI (default)
+      if (!lovableApiKey) {
+        return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      apiUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
+      apiKey = lovableApiKey;
+      model = config.model || DEFAULT_CONFIG.model;
+      requestBody = {
+        model,
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["image", "text"],
+      };
+    }
+
+    // Call AI API
+    const aiResponse = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     });
 
     if (!aiResponse.ok) {
@@ -89,7 +141,17 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+    // Try Lovable gateway format first, then standard b64_json format
+    let imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+    if (!imageData) {
+      // Try standard OpenAI b64_json response format
+      const b64 = aiData.data?.[0]?.b64_json;
+      if (b64) {
+        imageData = `data:image/png;base64,${b64}`;
+      }
+    }
 
     if (!imageData) {
       return new Response(JSON.stringify({ error: "No image was generated" }), {
@@ -116,7 +178,6 @@ serve(async (req) => {
     }
 
     // Upload to storage
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const fileName = `ai-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
     const filePath = `${category}/${fileName}`;
 
