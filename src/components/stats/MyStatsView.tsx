@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMyStats } from "@/hooks/useMyStats";
 import { useSkillInsights } from "@/hooks/useSkillInsights";
 import SkillInsightsPanel from "@/components/stats/SkillInsightsPanel";
+import PlayerStatsReport from "@/components/stats/PlayerStatsReport";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import {
@@ -90,6 +91,9 @@ const MyStatsView = () => {
         <StatCard icon={TrendingUp} label="Win Rate" value={`${stats.winRate}%`} accent />
         <StatCard icon={Zap} label="Total Points" value={stats.totalPoints} />
       </div>
+
+      {/* Skills Overview Radar Chart */}
+      <PlayerStatsReport userId={user.id} />
 
       {/* Per-game breakdown chart */}
       {stats.gameBreakdown.length > 0 && (
