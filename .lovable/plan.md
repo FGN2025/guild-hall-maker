@@ -1,112 +1,168 @@
 
 
-# Test Plan: New User Registration Workflows
+# Legacy User Import + Tenant Creation Plan
 
-This plan covers end-to-end testing of the three onboarding paths built so far. No code changes are needed -- this is a manual QA checklist to execute against the live preview.
+## Summary
 
----
-
-## Prerequisites (Setup Before Testing)
-
-Before running the tests, ensure the following data exists in the backend:
-
-1. **At least one active tenant** with ZIP codes assigned in `tenant_zip_codes` (e.g., ZIP `12345` mapped to "Acme Broadband").
-2. **A second tenant** mapped to the same ZIP (to test the multi-provider dropdown).
-3. **One tenant with `require_subscriber_validation = true`** (toggle via Admin > Tenants).
-4. **A matching subscriber record** in `tenant_subscribers` for that tenant (e.g., first_name: "Jane", last_name: "Doe", zip_code: "12345").
-5. **An active bypass code** in `bypass_codes` (e.g., code `TEST2026`).
-6. **A ZIP code with no tenant coverage** (e.g., `99999` or any valid US ZIP not in `tenant_zip_codes`).
+Create a `legacy_users` table to store 4,740 historical user records, create real tenant records for each unique provider from the CSV, build a CSV import edge function, and add an admin UI for importing and browsing legacy data.
 
 ---
 
-## Test 1: Happy Path -- Single Provider, No Subscriber Validation
+## Phase 1: Create Tenants from CSV Provider Names
 
-1. Navigate to `/auth` and click "Don't have an account? Sign up."
-2. Enter a ZIP code that maps to exactly **one** tenant (with `require_subscriber_validation = false`).
-3. Click **Verify Location**.
-4. **Expected**: Green success message appears. The single provider is auto-selected and displayed (name + logo).
-5. Click **Continue**.
-6. **Expected**: Account creation form appears (Display Name, Email, Password, Terms).
-7. Fill in valid details and submit.
-8. **Expected**: "Check your email to confirm your account!" toast. A lead is created in `user_service_interests` for that tenant only.
+From the CSV, I identified **~60 unique provider names**. After filtering out non-ISP entries (`No Provider`, `WTFast`, `Fiber Gaming Network`, `HSEL`, `IAHSEA`), there are approximately **50 real broadband providers** to create as tenants. The existing 2 test tenants ("Acme Broadband", "Fiber Fast") do not match any CSV providers.
 
-## Test 2: Happy Path -- Multiple Providers, Select ISP
+**Real providers to create** (slug auto-generated from name):
 
-1. Enter a ZIP code that maps to **two or more** tenants.
-2. Click **Verify Location**.
-3. **Expected**: Green success message + a dropdown labeled "Select your provider" appears.
-4. Try clicking **Continue** without selecting a provider.
-5. **Expected**: Button is disabled (providers exist but none selected).
-6. Select a provider from the dropdown.
-7. Click **Continue**.
-8. **Expected**: Proceeds to account form (or subscriber verification if that tenant requires it).
+| Provider Name | Slug |
+|---|---|
+| NineStar Connect | ninestar-connect |
+| Huxley Communications | huxley-communications |
+| Consolidated | consolidated |
+| HCTC | hctc |
+| Forked Deer Connect | forked-deer-connect |
+| Adams Fiber | adams-fiber |
+| Wabash Communications | wabash-communications |
+| Paul Bunyan Communications | paul-bunyan-communications |
+| Bristol Tennessee Essential Services | bristol-tennessee-essential-services |
+| Alpine Communications | alpine-communications |
+| DRN | drn |
+| Valley TeleCom | valley-telecom |
+| Mountain Telephone | mountain-telephone |
+| Coast Connect | coast-connect |
+| Taylor Telecom | taylor-telecom |
+| Copper Valley Telecom | copper-valley-telecom |
+| SC Broadband | sc-broadband |
+| NEMR | nemr |
+| Greenlight Community Broadband | greenlight-community-broadband |
+| DTC Communications | dtc-communications |
+| Mi-Fiber | mi-fiber |
+| PVT | pvt |
+| GRM Networks | grm-networks |
+| Twin Valley | twin-valley |
+| VNET Fiber | vnet-fiber |
+| Nex-Tech | nex-tech |
+| South Slope | south-slope |
+| Haviland Broadband | haviland-broadband |
+| Cleveland Utilities | cleveland-utilities |
+| VTX1 | vtx1 |
+| Dumont Telephone | dumont-telephone |
+| Sprout Fiber Internet | sprout-fiber-internet |
+| Cumberland Telephone Company | cumberland-telephone-company |
+| Mid Century Fiber | mid-century-fiber |
+| TCT | tct |
+| Cunningham Fiber | cunningham-fiber |
+| La Motte & Andrew Telephone Company | la-motte-andrew-telephone-company |
+| RTC Fiber Communications | rtc-fiber-communications |
+| Pioneer Communications | pioneer-communications |
+| Premier Communications | premier-communications |
+| SCTelcom | sctelcom |
+| Kanokla | kanokla |
+| Blue Valley Technologies | blue-valley-technologies |
+| WCTA Fiber Internet | wcta-fiber-internet |
+| Minburn Communications | minburn-communications |
+| CTC | ctc |
+| Intelecyn Powered by RTC Communications | intelecyn-powered-by-rtc-communications |
+| CASSCOMM | casscomm |
+| Bluepeak | bluepeak |
+| GoSEMO Fiber | gosemo-fiber |
+| Giant Communications | giant-communications |
+| JBN Telephone Company | jbn-telephone-company |
+| ASTAC | astac |
+| DFN | dfn |
+| WWest Communications | wwest-communications |
+| DirectLink | directlink |
+| WTC Fiber | wtc-fiber |
+| Lit Fiber - Medina | lit-fiber-medina |
+| PMT | pmt |
+| FPUAnet | fpuanet |
+| ISPN | ispn |
 
-## Test 3: Subscriber Verification -- Valid Match
-
-1. Enter a ZIP mapped to a tenant that has `require_subscriber_validation = true`.
-2. Verify location, select that provider, click Continue.
-3. **Expected**: "Verify Subscriber" step appears with First Name, Last Name, and optional Account Number fields.
-4. Enter the matching name from `tenant_subscribers` (e.g., "Jane" / "Doe").
-5. Click **Verify & Continue**.
-6. **Expected**: Proceeds to account creation form.
-
-## Test 4: Subscriber Verification -- No Match
-
-1. Repeat Test 3 setup but enter a **non-matching** name (e.g., "Fake" / "Person").
-2. Click **Verify & Continue**.
-3. **Expected**: Red error: "We couldn't find a matching subscriber record. Please check your information and try again."
-4. Click "Back to provider selection".
-5. **Expected**: Returns to the ZIP/provider step with prior data intact.
-
-## Test 5: No Providers -- Fallback Invite Code
-
-1. Enter a valid ZIP that has **no tenant coverage** (e.g., `90210` if not mapped).
-2. Click **Verify Location**.
-3. **Expected**: "No providers found in your area" info box. Invite code input + "Request Access" button appear. The **Continue** button is gone.
-4. Enter the active bypass code (e.g., `TEST2026`).
-5. Click **Verify**.
-6. **Expected**: Proceeds to account creation form. The bypass code's `times_used` increments by 1.
-
-## Test 6: No Providers -- Access Request Submission
-
-1. Repeat the no-provider ZIP check from Test 5.
-2. Instead of entering a code, click **Request Access**.
-3. **Expected**: Form expands with Name and Email fields.
-4. Enter an email and click **Submit Request**.
-5. **Expected**: Green confirmation: "Request Submitted!" with instructions to return later with an invite code.
-6. Verify in the backend that a new row exists in `access_requests` with status `pending`.
-7. Verify admin users received an in-app notification linking to `/admin/access-requests`.
-
-## Test 7: Admin Approves Access Request
-
-1. Log in as a Super Admin and navigate to **Admin > Access Requests**.
-2. **Expected**: The pending request from Test 6 appears in the table.
-3. Click **Approve**.
-4. **Expected**: A single-use bypass code is generated in `bypass_codes`. The request status changes to `approved`. An approval email is sent to the requester with the code.
-5. Log out. Return to `/auth`, sign up, enter the same no-coverage ZIP, and use the newly generated code.
-6. **Expected**: Code validates and user proceeds to account creation.
-
-## Test 8: Upfront Bypass Code (Pre-Check)
-
-1. On the signup ZIP step, enter any ZIP code **and** an invite code in the "Invite Code (optional)" field before clicking Verify Location.
-2. Click **Verify Location**.
-3. **Expected**: If the bypass code is valid, registration proceeds regardless of ZIP coverage. The provider selection and subscriber verification steps are skipped entirely.
-
-## Test 9: Admin Toggle for Subscriber Validation
-
-1. Log in as Super Admin, go to **Admin > Tenants**.
-2. Find a tenant and toggle "Require subscriber validation" **on**.
-3. **Expected**: The `require_subscriber_validation` column updates to `true`.
-4. Sign up as a new user selecting that tenant -- subscriber verify step should now appear.
-5. Toggle it **off** and repeat -- subscriber verify step should be skipped.
+**Implementation**: Use the database insert tool to batch-insert these as tenant records with `status = 'active'`.
 
 ---
 
-## Edge Cases to Verify
+## Phase 2: Create `legacy_users` Table
 
-- **Invalid ZIP** (e.g., `00000` or `ABCDE`): Smarty API should reject it with an error message.
-- **Expired bypass code**: Should return "Invalid or expired invite code."
-- **Maxed-out bypass code** (`times_used >= max_uses`): Should also fail validation.
-- **Duplicate access request**: Submitting the same email + ZIP twice should either succeed silently or show a clear message.
-- **Display name already taken**: The "Already taken" indicator should appear and block account creation.
+**Database migration** to create:
+
+```sql
+CREATE TABLE public.legacy_users (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  legacy_username text NOT NULL,
+  email text,
+  first_name text,
+  last_name text,
+  address text,
+  zip_code text,
+  discord_username text,
+  birthday date,
+  status text DEFAULT 'unknown',
+  profile_completed boolean DEFAULT false,
+  provider_name text,
+  tenant_id uuid REFERENCES public.tenants(id),
+  invite_code text,
+  legacy_created_at timestamptz,
+  matched_user_id uuid,
+  matched_at timestamptz,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.legacy_users ENABLE ROW LEVEL SECURITY;
+
+-- Admins can manage all legacy users
+CREATE POLICY "Admins can manage legacy users"
+  ON public.legacy_users FOR ALL TO authenticated
+  USING (has_role(auth.uid(), 'admin'))
+  WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- Moderators can view legacy users
+CREATE POLICY "Moderators can view legacy users"
+  ON public.legacy_users FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'moderator'));
+```
+
+The `tenant_id` column will be auto-populated during import by matching `provider_name` to `tenants.name`.
+
+---
+
+## Phase 3: CSV Import Edge Function
+
+Create `supabase/functions/import-legacy-users/index.ts`:
+
+- Accepts a JSON array of parsed CSV rows
+- For each row: extract ZIP from address, match `provider_name` to `tenants.name` to get `tenant_id`, parse birthday, insert into `legacy_users`
+- Returns summary: `{ inserted, skipped, errors }`
+- Uses service role key for admin-level access
+
+---
+
+## Phase 4: Admin Legacy Users Page
+
+Create `src/pages/admin/AdminLegacyUsers.tsx`:
+
+1. **Import tab**: File upload (CSV), client-side CSV parsing, preview of rows, "Import" button calling the edge function
+2. **Browse tab**: Searchable/filterable table of legacy users with columns: username, email, provider, status, matched status
+3. **Stats cards**: Total legacy users, matched count, unmatched count, provider distribution
+
+Add route `/admin/legacy-users` and sidebar link.
+
+---
+
+## Phase 5: Auto-Match on Registration (Future)
+
+Update the registration flow to check `legacy_users` by email on signup. If found:
+- Pre-fill `gamer_tag` from `legacy_username`
+- Set `matched_user_id` and `matched_at`
+- Show "Welcome back!" toast
+
+---
+
+## Implementation Order
+
+1. Create all tenant records via insert tool (~60 rows)
+2. Create `legacy_users` table via migration
+3. Build import edge function
+4. Build admin UI page with import + browse
+5. Wire auto-match into registration (optional follow-up)
 
