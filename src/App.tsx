@@ -64,6 +64,7 @@ import TenantSettings from "./pages/tenant/TenantSettings";
 import TenantMarketing from "./pages/tenant/TenantMarketing";
 import TenantMarketingDetail from "./pages/tenant/TenantMarketingDetail";
 import TenantMarketingAssets from "./pages/tenant/TenantMarketingAssets";
+import TenantPlayers from "./pages/tenant/TenantPlayers";
 import TenantEvents from "./pages/tenant/TenantEvents";
 import TenantEventPage from "./pages/TenantEventPage";
 import TenantEventDetail from "./pages/TenantEventDetail";
@@ -153,6 +154,7 @@ const App = () => (
 
             {/* Tenant routes */}
             <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
+            <Route path="/tenant/players" element={<TenantRoute><TenantPlayers /></TenantRoute>} />
             <Route path="/tenant/leads" element={<TenantRoute><TenantLeads /></TenantRoute>} />
             <Route path="/tenant/zip-codes" element={<TenantRoute><TenantZipCodes /></TenantRoute>} />
             <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
