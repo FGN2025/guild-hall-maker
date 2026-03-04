@@ -44,6 +44,7 @@ import AdminAchievements from "./pages/admin/AdminAchievements";
 import AdminGuide from "./pages/admin/AdminGuide";
 import AdminMarketing from "./pages/admin/AdminMarketing";
 import AdminAccessRequests from "./pages/admin/AdminAccessRequests";
+import AdminLegacyUsers from "./pages/admin/AdminLegacyUsers";
 import ModeratorRoute from "./components/moderator/ModeratorRoute";
 import ModeratorDashboard from "./pages/moderator/ModeratorDashboard";
 import ModeratorTournaments from "./pages/moderator/ModeratorTournaments";
@@ -138,6 +139,7 @@ const App = () => (
             <Route path="/admin/guide" element={<AdminRoute><AdminGuide /></AdminRoute>} />
             <Route path="/admin/marketing" element={<AdminRoute><AdminMarketing /></AdminRoute>} />
             <Route path="/admin/access-requests" element={<AdminRoute><AdminAccessRequests /></AdminRoute>} />
+            <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
 
             {/* Moderator routes */}
             <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />

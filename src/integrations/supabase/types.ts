@@ -597,6 +597,77 @@ export type Database = {
           },
         ]
       }
+      legacy_users: {
+        Row: {
+          address: string | null
+          birthday: string | null
+          created_at: string | null
+          discord_username: string | null
+          email: string | null
+          first_name: string | null
+          id: string
+          invite_code: string | null
+          last_name: string | null
+          legacy_created_at: string | null
+          legacy_username: string
+          matched_at: string | null
+          matched_user_id: string | null
+          profile_completed: boolean | null
+          provider_name: string | null
+          status: string | null
+          tenant_id: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          birthday?: string | null
+          created_at?: string | null
+          discord_username?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          invite_code?: string | null
+          last_name?: string | null
+          legacy_created_at?: string | null
+          legacy_username: string
+          matched_at?: string | null
+          matched_user_id?: string | null
+          profile_completed?: boolean | null
+          provider_name?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          birthday?: string | null
+          created_at?: string | null
+          discord_username?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          invite_code?: string | null
+          last_name?: string | null
+          legacy_created_at?: string | null
+          legacy_username?: string
+          matched_at?: string | null
+          matched_user_id?: string | null
+          profile_completed?: boolean | null
+          provider_name?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legacy_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       managed_pages: {
         Row: {
           created_at: string
