@@ -22,8 +22,7 @@ import {
 import { Plus, Trash2, Building2, Users, UserPlus, Upload, X } from "lucide-react";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
-import { validateAndToast } from "@/lib/imageValidation";
-import { useImageLimits } from "@/hooks/useImageLimits";
+import { resizeImageFile, LOGO_PRESET } from "@/lib/imageResize";
 
 /* ─── Logo upload helper ─── */
 async function uploadTenantLogo(file: File, tenantId: string): Promise<string> {
@@ -54,15 +53,13 @@ function LogoPicker({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { getPreset } = useImageLimits();
-
   const handleFile = async (file: File) => {
-    const ok = await validateAndToast(file, getPreset("avatar"));
-    if (!ok) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file."); return; }
     setUploading(true);
     try {
+      const resized = await resizeImageFile(file, LOGO_PRESET);
       const id = tenantId ?? crypto.randomUUID();
-      const url = await uploadTenantLogo(file, id);
+      const url = await uploadTenantLogo(resized, id);
       onUploaded(url);
     } catch (err: any) {
       toast.error(err.message || "Upload failed");

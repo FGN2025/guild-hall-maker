@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Upload, Loader2, Palette } from "lucide-react";
+import { resizeImageFile, LOGO_PRESET } from "@/lib/imageResize";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,13 +38,13 @@ const TenantSettings = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) { toast.error("Please select an image file."); return; }
-    if (file.size > 500 * 1024) { toast.error("Logo must be under 500KB."); return; }
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const resized = await resizeImageFile(file, LOGO_PRESET);
+      const ext = resized.name.split(".").pop();
       const path = `tenant-logos/${tenantInfo.tenantId}.${ext}`;
-      const { error: uploadErr } = await supabase.storage.from("app-media").upload(path, file, { upsert: true });
+      const { error: uploadErr } = await supabase.storage.from("app-media").upload(path, resized, { upsert: true });
       if (uploadErr) throw uploadErr;
       const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
       const logoUrl = urlData.publicUrl;
