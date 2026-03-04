@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ImageIcon, Upload, Loader2, RotateCcw } from "lucide-react";
+import { resizeImageFile, HERO_PRESET } from "@/lib/imageResize";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
 
 interface Props {
@@ -22,37 +23,38 @@ const HeroLogoSettings = ({ currentUrl, loading, onSaved }: Props) => {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) { toast({ title: "Error", description: "Please select an image file.", variant: "destructive" }); return; }
     setUploading(true);
 
-    const ext = file.name.split(".").pop() ?? "png";
-    const path = `hero/logo.${ext}`;
+    try {
+      const resized = await resizeImageFile(file, HERO_PRESET);
+      const ext = resized.name.split(".").pop() ?? "webp";
+      const path = `hero/logo.${ext}`;
 
-    const { error: uploadErr } = await supabase.storage
-      .from("app-media")
-      .upload(path, file, { upsert: true });
+      const { error: uploadErr } = await supabase.storage
+        .from("app-media")
+        .upload(path, resized, { upsert: true });
 
-    if (uploadErr) {
-      toast({ title: "Upload failed", description: uploadErr.message, variant: "destructive" });
-      setUploading(false);
-      return;
-    }
+      if (uploadErr) throw uploadErr;
 
-    const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
-    const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
-    const { error: saveErr } = await supabase
-      .from("app_settings")
-      .update({ value: publicUrl })
-      .eq("key", "hero_logo_url");
+      const { error: saveErr } = await supabase
+        .from("app_settings")
+        .update({ value: publicUrl })
+        .eq("key", "hero_logo_url");
 
-    if (saveErr) {
-      toast({ title: "Error", description: saveErr.message, variant: "destructive" });
-    } else {
+      if (saveErr) throw saveErr;
+
       toast({ title: "Saved", description: "Hero logo updated." });
       onSaved(publicUrl);
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = "";
   };
 
   const handleReset = async () => {
