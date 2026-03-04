@@ -143,8 +143,24 @@ const Auth = () => {
             }));
             await supabase.from("user_service_interests").insert(interests);
           }
+
+          // Auto-match legacy user by email
+          try {
+            const { data: matchResult } = await supabase.functions.invoke("match-legacy-user");
+            if (matchResult?.matched) {
+              toast.success(
+                `Welcome back, ${matchResult.legacy_username}! Your legacy account has been linked.`,
+                { duration: 6000 }
+              );
+            } else {
+              toast.success("Check your email to confirm your account!");
+            }
+          } catch {
+            toast.success("Check your email to confirm your account!");
+          }
+        } else {
+          toast.success("Check your email to confirm your account!");
         }
-        toast.success("Check your email to confirm your account!");
       }
     }
 
