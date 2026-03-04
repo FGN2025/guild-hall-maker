@@ -1,38 +1,62 @@
 
 
-# Auto-Resize Logo Uploads
+# Tenant Player Directory -- Plan
 
-## Problem
-Logo uploads currently reject images that exceed size/dimension limits (e.g., "Width 1310px exceeds maximum 1024px"). Instead, logos should be automatically resized and compressed to fit within the constraints.
+## Current State
 
-## Solution
-Create a client-side image processing utility that uses Canvas API to resize and compress images before upload. Apply it to all three logo upload locations.
+Tenants currently have two separate, incomplete views:
+- **Leads** (`user_service_interests`): New users who selected this tenant during registration. Shows display name, gamer tag, ZIP, and status.
+- **Subscribers** (`tenant_subscribers`): Billing records (name, account number, email). These are not platform user accounts.
 
-### New utility: `src/lib/imageResize.ts`
-- Takes a `File` and target constraints (max width/height, max file size in KB, output format)
-- Draws the image onto a `<canvas>`, scaling down proportionally if it exceeds max dimensions
-- Exports as WebP (or JPEG fallback) with quality reduction loop until file size is under the limit
-- Returns a new `File` object ready for upload
+**Missing**: There is no way for a tenant to see legacy users (`legacy_users` table has a `tenant_id` column) or to view a unified directory of all players (legacy + new) associated with their tenant.
 
-### Changes to upload flows
+## What to Build
 
-1. **`src/pages/admin/AdminTenants.tsx`** — `LogoPicker.handleFile`: Replace `validateAndToast` rejection with `resizeImageFile()` call. Remove validation gate; auto-fit the image instead.
+A new **"Players"** page in the tenant portal that combines:
 
-2. **`src/pages/tenant/TenantSettings.tsx`** — `handleLogoUpload`: Same pattern — replace the size/format rejection with auto-resize before upload.
+1. **New players** -- Queried from `user_service_interests` joined with `profiles` for users who registered under this tenant.
+2. **Legacy players** -- Queried from `legacy_users` where `tenant_id` matches the current tenant.
 
-3. **`src/components/admin/HeroLogoSettings.tsx`** — `handleUpload`: Apply auto-resize before uploading hero logo.
+Both sets displayed in a single searchable, filterable table with a badge indicating source ("New" vs "Legacy") and match status for legacy users.
 
-### Resize logic
-```text
-Input image (any size/format)
-  → Load into Image element
-  → Scale to fit within maxWidth × maxHeight (preserve aspect ratio)
-  → Draw on canvas
-  → Export as WebP at quality 0.9
-  → If > maxSizeKB, reduce quality in steps of 0.05
-  → Return resized File
+## Implementation
+
+### 1. Database: RLS policy for tenant access to legacy users
+
+Add a SELECT policy on `legacy_users` so tenant members can view records belonging to their tenant:
+
+```sql
+CREATE POLICY "Tenant members can view own legacy users"
+  ON public.legacy_users FOR SELECT TO authenticated
+  USING (is_tenant_member(tenant_id, auth.uid()));
 ```
 
-Default constraints for logos: 512×512 max, 500KB max, WebP output.
-For hero logos: 1920×1080 max, 800KB max, WebP output.
+### 2. New hook: `src/hooks/useTenantPlayers.ts`
+
+- Fetches from `user_service_interests` (joined with `profiles`) for new players
+- Fetches from `legacy_users` filtered by `tenant_id` for legacy players
+- Merges both into a unified list with a `source` field ("new" | "legacy")
+- Returns search/filter capabilities
+
+### 3. New page: `src/pages/tenant/TenantPlayers.tsx`
+
+- Stats cards: Total players, New players, Legacy players, Matched (legacy users with `matched_user_id`)
+- Search bar filtering by name, email, gamer tag, ZIP
+- Table columns: Name, Gamer Tag / Username, Email, ZIP, Source (badge), Status, Registered date
+- Legacy rows show `legacy_username` and whether they have been matched to a new account
+
+### 4. Sidebar + routing
+
+- Add "Players" link to `TenantSidebar.tsx` (visible to admin and manager roles)
+- Add route `/tenant/players` in `App.tsx`
+
+## File Changes
+
+| File | Action |
+|---|---|
+| Migration SQL | Add RLS policy on `legacy_users` for tenant members |
+| `src/hooks/useTenantPlayers.ts` | Create -- unified query hook |
+| `src/pages/tenant/TenantPlayers.tsx` | Create -- player directory page |
+| `src/components/tenant/TenantSidebar.tsx` | Add "Players" nav item |
+| `src/App.tsx` | Add `/tenant/players` route |
 
