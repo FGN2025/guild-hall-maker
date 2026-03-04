@@ -19,6 +19,7 @@ export interface TenantSidebarProps {
 
 const allSidebarItems = [
   { to: "/tenant", label: "Dashboard", icon: LayoutDashboard, roles: ['admin', 'manager'] },
+  { to: "/tenant/players", label: "Players", icon: Users, roles: ['admin', 'manager'] },
   { to: "/tenant/leads", label: "Leads", icon: Users, roles: ['admin', 'manager'] },
   { to: "/tenant/events", label: "Events", icon: Calendar, roles: ['admin', 'manager'] },
   { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin, roles: ['admin'] },
