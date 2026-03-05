@@ -105,6 +105,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
     onMouseDown,
     onMouseMove,
     onMouseUp,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
     exportCanvas,
     undo,
     redo,
@@ -193,6 +196,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
               onMouseMove={onMouseMove}
               onMouseUp={onMouseUp}
               onMouseLeave={onMouseUp}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
             />
           </div>
 
