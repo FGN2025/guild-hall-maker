@@ -231,6 +231,62 @@ export function useCanvasEditor(baseImageUrl?: string) {
     dragRef.current = null;
   }, [overlays, pushState, clearGuides]);
 
+  // Touch handlers for iPad/mobile
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      const touch = e.touches[0];
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect || !touch) return;
+      const mx = touch.clientX - rect.left;
+      const my = touch.clientY - rect.top;
+      const hit = hitTest(mx, my);
+      if (hit) {
+        e.preventDefault();
+        setSelectedId(hit.id);
+        dragRef.current = { overlayId: hit.id, offsetX: mx - hit.x, offsetY: my - hit.y };
+      } else {
+        setSelectedId(null);
+      }
+    },
+    [hitTest]
+  );
+
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      if (!dragRef.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect || !touch) return;
+      const mx = touch.clientX - rect.left;
+      const my = touch.clientY - rect.top;
+      const { overlayId, offsetX, offsetY } = dragRef.current;
+
+      setOverlaysLive((prev) => {
+        const idx = prev.findIndex((o) => o.id === overlayId);
+        if (idx === -1) return prev;
+        const dragged = { ...prev[idx], x: mx - offsetX, y: my - offsetY };
+        const ctx = canvasRef.current?.getContext("2d");
+        const { dx, dy, guides: newGuides } = snapOverlay(dragged as Overlay, prev, ctx);
+        dragged.x += dx;
+        dragged.y += dy;
+        setGuides(newGuides);
+        const next = [...prev];
+        next[idx] = dragged as Overlay;
+        return next;
+      });
+    },
+    [snapOverlay, setGuides, setOverlaysLive]
+  );
+
+  const onTouchEnd = useCallback(() => {
+    if (dragRef.current) {
+      pushState(overlays);
+      clearGuides();
+    }
+    dragRef.current = null;
+  }, [overlays, pushState, clearGuides]);
+
   // Add logo
   const addLogo = useCallback((file: File) => {
     const url = URL.createObjectURL(file);
@@ -381,6 +437,9 @@ export function useCanvasEditor(baseImageUrl?: string) {
     onMouseDown,
     onMouseMove,
     onMouseUp,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
     exportCanvas,
     setSelectedId,
     undo,
