@@ -1,31 +1,24 @@
 
 
-# Fix RLS Policy for Marketing Campaigns
+# Fix Touch Support for Canvas Editor on iPad
 
 ## Problem
-The `marketing_campaigns` table only has an RLS policy for `admin` role. Users with the `marketing` role can access the page (via `MarketingRoute`) but cannot insert/update/delete campaigns because the RLS policies block them.
-
-The same issue applies to `marketing_assets`.
+The canvas editor only uses `onMouseDown`, `onMouseMove`, and `onMouseUp` events. These do not fire on touch devices (iPad, phones). Touch devices use `onTouchStart`, `onTouchMove`, and `onTouchEnd` instead.
 
 ## Solution
-Add RLS policies on both `marketing_campaigns` and `marketing_assets` tables to allow users with the `marketing` platform role to perform all operations.
+Add touch event handlers in `useCanvasEditor.ts` that extract touch coordinates and delegate to the same drag logic. Bind them on the canvas in `AssetEditorDialog.tsx`.
 
-### Database Migration
-```sql
--- Allow marketing role users to manage campaigns
-CREATE POLICY "Marketing role can manage campaigns"
-  ON public.marketing_campaigns FOR ALL
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'marketing'))
-  WITH CHECK (public.has_role(auth.uid(), 'marketing'));
+### Changes
 
--- Allow marketing role users to manage assets
-CREATE POLICY "Marketing role can manage marketing assets"
-  ON public.marketing_assets FOR ALL
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'marketing'))
-  WITH CHECK (public.has_role(auth.uid(), 'marketing'));
-```
+**`src/hooks/useCanvasEditor.ts`**
+- Add `onTouchStart` handler: extract first touch point, call the same hit-test and drag-start logic as `onMouseDown`. Call `e.preventDefault()` to stop scroll/zoom while dragging.
+- Add `onTouchMove` handler: extract first touch point, run the same snap-and-move logic as `onMouseMove`.
+- Add `onTouchEnd` handler: delegate to `onMouseUp`.
+- Export all three new handlers.
 
-No code changes needed — only two new RLS policies.
+**`src/components/media/AssetEditorDialog.tsx`**
+- Destructure `onTouchStart`, `onTouchMove`, `onTouchEnd` from the hook.
+- Bind them on the `<canvas>` element alongside the existing mouse handlers.
+
+No other files affected. No database changes.
 
