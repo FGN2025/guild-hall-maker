@@ -19,7 +19,7 @@ interface Props {
   tenantId?: string | null;
 }
 
-const BASE_URL = window.location.origin;
+const BASE_URL = "https://play.fgn.gg";
 
 const CalendarPublishManager = ({ tenantId }: Props) => {
   const { user } = useAuth();
