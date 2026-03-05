@@ -162,7 +162,7 @@ const EmbedCalendar = () => {
             <div
               key={`pad-${i}`}
               className="min-h-[80px]"
-              style={{ backgroundColor: config.bg_image_url ? "rgba(0,0,0,0.55)" : "#f9fafb" }}
+              style={{ backgroundColor: config.bg_image_url ? "rgba(0,0,0,0.7)" : "#f9fafb" }}
             />
           ))}
           {days.map((day) => {
@@ -171,7 +171,7 @@ const EmbedCalendar = () => {
               <div
                 key={day.toISOString()}
                 className="min-h-[80px] p-1"
-                style={{ backgroundColor: config.bg_image_url ? "rgba(0,0,0,0.55)" : "#fff" }}
+                style={{ backgroundColor: config.bg_image_url ? "rgba(0,0,0,0.7)" : "#fff" }}
               >
                 <span
                   className="text-xs font-medium block mb-0.5"
