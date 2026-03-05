@@ -1,16 +1,16 @@
 
 
-# Improve Background Opacity for Embedded Calendar
+# Add Registration Button to Embedded Calendar
 
-The current background overlay in `EmbedCalendar.tsx` uses `bg-black/60` (60% black overlay). This can make the calendar cells hard to read depending on the background image. Increasing the overlay opacity and adjusting cell backgrounds will improve foreground clarity.
+## Overview
+Add a call-to-action button at the bottom of the embedded calendar that links users to the application's registration page.
 
 ## Changes
 
 ### `src/pages/EmbedCalendar.tsx`
+- Add a "Join Now" / "Sign Up" button below the calendar grid
+- Link opens `https://play.fgn.gg/auth` in a new tab (using `target="_blank"`) so it doesn't navigate inside the iframe
+- Style the button using the calendar's `primaryColor` for brand consistency
 
-1. Change the background overlay from `bg-black/60` to `bg-black/75` for stronger dimming
-2. Increase calendar cell backgrounds from `rgba(0,0,0,0.3)` to `rgba(0,0,0,0.55)` for better contrast
-3. Increase empty padding cells similarly
-
-These changes only affect the embed view when a background image is set — calendars without a background image are unaffected.
+The button will appear on all embedded calendars. No database or config changes needed — it uses the existing production base URL constant.
 
