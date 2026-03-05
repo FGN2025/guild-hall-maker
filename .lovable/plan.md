@@ -1,73 +1,40 @@
 
 
-# Challenges Overhaul: Work Order-Style with Evidence Tracking
+# Improve Evidence Gallery: Inline Video + Delete
 
-## Current State
-The existing challenges system is lightweight: moderators create a challenge (name, description, points, type, dates), and completions are recorded as a simple boolean by moderators. There is no mechanism for players to submit proof, no multi-step task tracking, no cover images, no difficulty/time metadata, and no game filtering on the player-facing page. The `challenges` table already has a `game_id` column but it is unused in the UI.
+## Changes
 
-## What We Need (Inspired by FGN.academy Work Orders)
+### 1. Database: Add DELETE RLS policy for `challenge_evidence`
+Currently players cannot delete evidence (no DELETE policy for own records). Add a policy allowing users to delete their own evidence only when their enrollment status is not yet `submitted` or `completed`.
 
-Based on the screenshot, the target experience includes:
-- **Game-linked challenges** with cover images, filtered by game category
-- **Difficulty levels** and estimated completion time
-- **Multi-step tasks** (sub-objectives within a challenge)
-- **Evidence submission** by players (screenshots/files proving task completion)
-- **Enrollment** before starting (opt-in tracking)
-- **Review workflow** where moderators verify submitted evidence
+**Migration SQL:**
+```sql
+CREATE POLICY "Users can delete own evidence before submission"
+ON public.challenge_evidence
+FOR DELETE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM challenge_enrollments ce
+    WHERE ce.id = challenge_evidence.enrollment_id
+      AND ce.user_id = auth.uid()
+      AND ce.status IN ('enrolled', 'in_progress', 'rejected')
+  )
+);
+```
 
-## Plan
+### 2. Hook: Add `deleteEvidence` mutation to `useChallengeEnrollment.ts`
+Add a new mutation that deletes a row from `challenge_evidence` by ID, invalidates the evidence query, and shows a toast.
 
-### 1. Database Changes (3 migrations)
+### 3. UI: Update evidence gallery in `ChallengeDetail.tsx`
+- **Video playback**: Render a `<video>` tag with `controls` for `file_type === "video"` instead of the placeholder icon.
+- **Delete button**: Show a small trash icon button on each evidence card when `canUpload` is true (i.e. enrollment is in an editable state). Clicking it calls `deleteEvidence`.
+- Pass `deleteEvidence` and `canUpload` down or handle inline since the gallery is already rendered directly in this file.
 
-**Migration A -- Extend `challenges` table** with new columns:
-- `cover_image_url` (text, nullable) -- hero image for the card
-- `difficulty` (text, default `'beginner'`) -- beginner, intermediate, advanced
-- `estimated_minutes` (integer, nullable) -- approximate time to complete
-- `requires_evidence` (boolean, default `true`) -- whether players must upload proof
-- `max_enrollments` (integer, nullable) -- optional cap
-
-**Migration B -- Create `challenge_tasks` table** for multi-step objectives:
-- `id`, `challenge_id` (FK to challenges), `title`, `description`, `display_order`, `created_at`
-- RLS: anyone can view tasks for active challenges; moderators/admins can manage
-
-**Migration C -- Create `challenge_enrollments` table** (players opt in):
-- `id`, `challenge_id`, `user_id`, `enrolled_at`, `status` (enrolled/in_progress/submitted/completed/rejected)
-- RLS: users can enroll themselves and view own; moderators can view all and update status
-
-**Migration D -- Create `challenge_evidence` table** (proof uploads):
-- `id`, `enrollment_id` (FK to challenge_enrollments), `task_id` (FK to challenge_tasks, nullable), `file_url`, `file_type`, `notes`, `submitted_at`
-- RLS: users can insert/view own evidence; moderators can view all
-
-### 2. Frontend Changes
-
-**Player-Facing (`/challenges` page rewrite)**:
-- Game filter tabs across the top (using existing games catalog)
-- Card-based grid layout with cover images, game badge, difficulty, time estimate, enrollment count
-- Challenge detail view (inline or dialog) showing: description, task checklist, enrollment button, evidence upload per task, submission status
-- Evidence upload using existing `app-media` storage bucket
-- Progress tracking per task within a challenge
-
-**Moderator-Facing (`/moderator/challenges` expansion)**:
-- Add fields to create dialog: cover image upload, difficulty select, estimated time, toggle for requires_evidence
-- Task builder: add/reorder sub-tasks within a challenge
-- Evidence review panel: view submitted evidence per enrollment, approve/reject with notes
-- Enrollment list per challenge with status management
-
-### 3. Storage
-- Reuse existing `app-media` bucket for cover images and evidence uploads
-
-### 4. File Summary
-
-| Area | Files |
-|------|-------|
-| Database | 4 new migrations |
-| Player UI | Rewrite `src/pages/Challenges.tsx`, new `src/components/challenges/ChallengeCard.tsx`, `ChallengeDetail.tsx`, `EvidenceUpload.tsx`, `TaskChecklist.tsx` |
-| Moderator UI | Extend `src/pages/moderator/ModeratorChallenges.tsx`, new `src/components/challenges/TaskBuilder.tsx`, `EvidenceReviewPanel.tsx`, `EnrollmentList.tsx` |
-| Hooks | New `src/hooks/useChallengeDetail.ts`, `src/hooks/useChallengeEnrollment.ts` |
-| Routes | Add `/challenges/:id` route in `App.tsx` |
-
-### 5. Scope Notes
-- No changes to the points/season scoring system -- existing `challenge_completions` and point award logic remains, triggered when moderator approves evidence
-- The existing AI description enhancer continues to work as-is
-- Notifications for new challenges continue unchanged
+### Files affected
+| File | Change |
+|------|--------|
+| New migration | DELETE RLS policy on `challenge_evidence` |
+| `src/hooks/useChallengeEnrollment.ts` | Add `deleteEvidence` mutation |
+| `src/pages/ChallengeDetail.tsx` | Inline video tag, delete button on evidence cards |
 
