@@ -191,6 +191,59 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_publish_configs: {
+        Row: {
+          accent_color: string | null
+          bg_image_url: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          primary_color: string | null
+          show_platform_tournaments: boolean
+          tenant_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          bg_image_url?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          primary_color?: string | null
+          show_platform_tournaments?: boolean
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          bg_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          primary_color?: string | null
+          show_platform_tournaments?: boolean
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_publish_configs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_completions: {
         Row: {
           awarded_points: number
