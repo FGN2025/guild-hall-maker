@@ -1,18 +1,30 @@
 import { useRef, useState } from "react";
-import { useCanvasEditor, TextOverlay } from "@/hooks/useCanvasEditor";
+import { useCanvasEditor, TextOverlay, CANVAS_FORMATS, CanvasFormat } from "@/hooks/useCanvasEditor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { ImagePlus, Type, Trash2, Download, Save, ExternalLink, LayoutTemplate, Undo2, Redo2, Layers } from "lucide-react";
+import { ImagePlus, Type, Trash2, Download, Save, ExternalLink, LayoutTemplate, Undo2, Redo2, Layers, Square, RectangleHorizontal, RectangleVertical, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+type TemplateText = {
+  text: string;
+  xPct: number;
+  yPct: number;
+  fontSize: number;
+  color: string;
+  fontFamily: string;
+  // Legacy absolute fields needed by Omit<TextOverlay, "id" | "type"> shape
+  x: number;
+  y: number;
+};
 
 type OverlayTemplate = {
   name: string;
   description: string;
-  texts: Array<Omit<TextOverlay, "id" | "type">>;
+  texts: TemplateText[];
 };
 
 const OVERLAY_TEMPLATES: OverlayTemplate[] = [
@@ -20,52 +32,60 @@ const OVERLAY_TEMPLATES: OverlayTemplate[] = [
     name: "Event Banner",
     description: "Title + date + tagline layout",
     texts: [
-      { text: "EVENT NAME", x: 40, y: 40, fontSize: 48, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "March 15, 2026", x: 40, y: 100, fontSize: 24, color: "#cccccc", fontFamily: "sans-serif" },
-      { text: "Register Now!", x: 40, y: 140, fontSize: 20, color: "#00ff88", fontFamily: "sans-serif" },
+      { text: "EVENT NAME", xPct: 0.05, yPct: 0.07, x: 40, y: 40, fontSize: 48, color: "#ffffff", fontFamily: "sans-serif" },
+      { text: "March 15, 2026", xPct: 0.05, yPct: 0.17, x: 40, y: 100, fontSize: 24, color: "#cccccc", fontFamily: "sans-serif" },
+      { text: "Register Now!", xPct: 0.05, yPct: 0.23, x: 40, y: 140, fontSize: 20, color: "#00ff88", fontFamily: "sans-serif" },
     ],
   },
   {
     name: "Tournament Promo",
     description: "Prize pool + game + CTA",
     texts: [
-      { text: "TOURNAMENT", x: 40, y: 30, fontSize: 52, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "$500 Prize Pool", x: 40, y: 95, fontSize: 28, color: "#ffd700", fontFamily: "sans-serif" },
-      { text: "Game Title Here", x: 40, y: 135, fontSize: 22, color: "#aaaaaa", fontFamily: "sans-serif" },
-      { text: "SIGN UP TODAY", x: 40, y: 180, fontSize: 20, color: "#00ccff", fontFamily: "sans-serif" },
+      { text: "TOURNAMENT", xPct: 0.05, yPct: 0.05, x: 40, y: 30, fontSize: 52, color: "#ffffff", fontFamily: "sans-serif" },
+      { text: "$500 Prize Pool", xPct: 0.05, yPct: 0.16, x: 40, y: 95, fontSize: 28, color: "#ffd700", fontFamily: "sans-serif" },
+      { text: "Game Title Here", xPct: 0.05, yPct: 0.23, x: 40, y: 135, fontSize: 22, color: "#aaaaaa", fontFamily: "sans-serif" },
+      { text: "SIGN UP TODAY", xPct: 0.05, yPct: 0.30, x: 40, y: 180, fontSize: 20, color: "#00ccff", fontFamily: "sans-serif" },
     ],
   },
   {
     name: "Social Media Post",
     description: "Headline + subtitle centered",
     texts: [
-      { text: "YOUR HEADLINE", x: 200, y: 150, fontSize: 44, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "Add your message here", x: 220, y: 210, fontSize: 22, color: "#dddddd", fontFamily: "sans-serif" },
+      { text: "YOUR HEADLINE", xPct: 0.25, yPct: 0.25, x: 200, y: 150, fontSize: 44, color: "#ffffff", fontFamily: "sans-serif" },
+      { text: "Add your message here", xPct: 0.28, yPct: 0.35, x: 220, y: 210, fontSize: 22, color: "#dddddd", fontFamily: "sans-serif" },
     ],
   },
   {
     name: "Branded Corner",
     description: "Organization name in bottom-right",
     texts: [
-      { text: "YOUR ORG NAME", x: 500, y: 520, fontSize: 24, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "Powered by FGN", x: 530, y: 555, fontSize: 14, color: "#999999", fontFamily: "sans-serif" },
+      { text: "YOUR ORG NAME", xPct: 0.63, yPct: 0.87, x: 500, y: 520, fontSize: 24, color: "#ffffff", fontFamily: "sans-serif" },
+      { text: "Powered by FGN", xPct: 0.66, yPct: 0.93, x: 530, y: 555, fontSize: 14, color: "#999999", fontFamily: "sans-serif" },
     ],
   },
   {
     name: "Winner Announcement",
     description: "Congrats + winner name",
     texts: [
-      { text: "🏆 CONGRATULATIONS", x: 150, y: 80, fontSize: 42, color: "#ffd700", fontFamily: "sans-serif" },
-      { text: "Player Name", x: 250, y: 140, fontSize: 36, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "Tournament Champion", x: 220, y: 190, fontSize: 22, color: "#cccccc", fontFamily: "sans-serif" },
+      { text: "🏆 CONGRATULATIONS", xPct: 0.19, yPct: 0.13, x: 150, y: 80, fontSize: 42, color: "#ffd700", fontFamily: "sans-serif" },
+      { text: "Player Name", xPct: 0.31, yPct: 0.23, x: 250, y: 140, fontSize: 36, color: "#ffffff", fontFamily: "sans-serif" },
+      { text: "Tournament Champion", xPct: 0.28, yPct: 0.32, x: 220, y: 190, fontSize: 22, color: "#cccccc", fontFamily: "sans-serif" },
     ],
   },
 ];
 
+const FORMAT_ICONS: Record<string, React.ReactNode> = {
+  original: <RectangleHorizontal className="h-4 w-4" />,
+  square: <Square className="h-4 w-4" />,
+  landscape: <RectangleHorizontal className="h-4 w-4" />,
+  portrait: <RectangleVertical className="h-4 w-4" />,
+  story: <Smartphone className="h-4 w-4" />,
+};
+
 interface AssetEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  baseImageUrl: string;
+  baseImageUrl?: string;
   onSave: (blob: Blob) => Promise<void>;
 }
 
@@ -90,6 +110,10 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
     redo,
     canUndo,
     canRedo,
+    activeFormat,
+    setFormat,
+    bgColor,
+    setBgColor,
   } = useCanvasEditor(baseImageUrl);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -121,7 +145,10 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
     if (!blob) return;
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `edited-asset-${Date.now()}.png`;
+    const formatLabel = activeFormat.key !== "original"
+      ? `${activeFormat.key}-${activeFormat.exportWidth}x${activeFormat.exportHeight}`
+      : "original";
+    a.download = `asset-${formatLabel}-${Date.now()}.png`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -132,6 +159,26 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
         <DialogHeader>
           <DialogTitle className="font-heading">Asset Editor</DialogTitle>
         </DialogHeader>
+
+        {/* Format Selector */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-heading uppercase tracking-wider text-muted-foreground mr-1">Format:</span>
+          {CANVAS_FORMATS.map((fmt) => (
+            <Button
+              key={fmt.key}
+              size="sm"
+              variant={activeFormat.key === fmt.key ? "default" : "outline"}
+              className="gap-1.5 text-xs"
+              onClick={() => setFormat(fmt)}
+            >
+              {FORMAT_ICONS[fmt.key]}
+              {fmt.label}
+              {fmt.key !== "original" && (
+                <span className="text-[10px] opacity-60">{fmt.exportWidth}×{fmt.exportHeight}</span>
+              )}
+            </Button>
+          ))}
+        </div>
 
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Canvas */}
@@ -188,6 +235,19 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Background Color (shown when no base image) */}
+            {!baseImageUrl && (
+              <div className="p-3 border border-border rounded-lg bg-card space-y-2">
+                <Label className="text-xs font-heading uppercase tracking-wider text-muted-foreground">Canvas Background</Label>
+                <input
+                  type="color"
+                  value={bgColor}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="w-full h-8 rounded border border-input cursor-pointer"
+                />
+              </div>
+            )}
 
             {/* Layers Panel */}
             {overlays.length > 0 && (

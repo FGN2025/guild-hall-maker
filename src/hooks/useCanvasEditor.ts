@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useCanvasHistory } from "./canvas/useCanvasHistory";
 import { useCanvasSnap } from "./canvas/useCanvasSnap";
-import type { Overlay, LogoOverlay, TextOverlay, SnapGuide } from "./canvas/canvasTypes";
+import type { Overlay, LogoOverlay, TextOverlay, SnapGuide, CanvasFormat } from "./canvas/canvasTypes";
+import { CANVAS_FORMATS } from "./canvas/canvasTypes";
 
-export type { Overlay, LogoOverlay, TextOverlay, SnapGuide };
+export type { Overlay, LogoOverlay, TextOverlay, SnapGuide, CanvasFormat };
+export { CANVAS_FORMATS };
 
 type DragState = {
   overlayId: string;
@@ -11,39 +13,105 @@ type DragState = {
   offsetY: number;
 } | null;
 
-export function useCanvasEditor(baseImageUrl: string) {
+/** Compute center-crop source rect from image into target aspect ratio */
+function centerCropRect(
+  imgW: number, imgH: number, targetW: number, targetH: number
+): { sx: number; sy: number; sw: number; sh: number } {
+  const targetAspect = targetW / targetH;
+  const imgAspect = imgW / imgH;
+  let sw: number, sh: number, sx: number, sy: number;
+  if (imgAspect > targetAspect) {
+    // image is wider — crop sides
+    sh = imgH;
+    sw = imgH * targetAspect;
+    sx = (imgW - sw) / 2;
+    sy = 0;
+  } else {
+    // image is taller — crop top/bottom
+    sw = imgW;
+    sh = imgW / targetAspect;
+    sx = 0;
+    sy = (imgH - sh) / 2;
+  }
+  return { sx, sy, sw, sh };
+}
+
+export function useCanvasEditor(baseImageUrl?: string) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { overlays, pushState, setOverlaysLive, undo, redo, canUndo, canRedo } = useCanvasHistory();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [activeFormat, setActiveFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]); // Original
+  const [bgColor, setBgColor] = useState("#1a1a2e");
   const dragRef = useRef<DragState>(null);
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
   // Load base image
   useEffect(() => {
+    if (!baseImageUrl) {
+      setBaseImage(null);
+      // Use format dimensions or default
+      if (activeFormat.key !== "original") {
+        setCanvasSize({ width: activeFormat.displayWidth, height: activeFormat.displayHeight });
+      }
+      return;
+    }
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       setBaseImage(img);
-      const maxW = 800;
-      const scale = Math.min(1, maxW / img.naturalWidth);
-      setCanvasSize({
-        width: Math.round(img.naturalWidth * scale),
-        height: Math.round(img.naturalHeight * scale),
-      });
+      if (activeFormat.key === "original") {
+        const maxW = 800;
+        const scale = Math.min(1, maxW / img.naturalWidth);
+        setCanvasSize({
+          width: Math.round(img.naturalWidth * scale),
+          height: Math.round(img.naturalHeight * scale),
+        });
+      }
     };
     img.src = baseImageUrl;
-  }, [baseImageUrl]);
+  }, [baseImageUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Set format
+  const setFormat = useCallback((format: CanvasFormat) => {
+    setActiveFormat(format);
+    if (format.key === "original" && baseImage) {
+      const maxW = 800;
+      const scale = Math.min(1, maxW / baseImage.naturalWidth);
+      setCanvasSize({
+        width: Math.round(baseImage.naturalWidth * scale),
+        height: Math.round(baseImage.naturalHeight * scale),
+      });
+    } else if (format.key !== "original") {
+      setCanvasSize({ width: format.displayWidth, height: format.displayHeight });
+    }
+  }, [baseImage]);
 
   // Render
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx || !baseImage) return;
+    if (!canvas || !ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+
+    if (baseImage) {
+      if (activeFormat.key !== "original") {
+        // Center-crop the image into the format
+        const { sx, sy, sw, sh } = centerCropRect(
+          baseImage.naturalWidth, baseImage.naturalHeight,
+          canvas.width, canvas.height
+        );
+        ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+      }
+    } else {
+      // Blank canvas — fill with bgColor
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     overlays.forEach((o) => {
       if (o.type === "logo") {
@@ -85,7 +153,7 @@ export function useCanvasEditor(baseImageUrl: string) {
       ctx.stroke();
       ctx.setLineDash([]);
     });
-  }, [overlays, baseImage, selectedId, guides]);
+  }, [overlays, baseImage, selectedId, guides, activeFormat, bgColor]);
 
   useEffect(() => {
     renderCanvas();
@@ -157,7 +225,6 @@ export function useCanvasEditor(baseImageUrl: string) {
 
   const onMouseUp = useCallback(() => {
     if (dragRef.current) {
-      // Commit to history on drop
       pushState(overlays);
       clearGuides();
     }
@@ -206,18 +273,23 @@ export function useCanvasEditor(baseImageUrl: string) {
     return overlay.id;
   }, [overlays, pushState]);
 
-  // Apply template
+  // Apply template (percentage-based positions)
   const applyTemplate = useCallback(
-    (texts: Array<Omit<TextOverlay, "id" | "type">>) => {
+    (texts: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>) => {
       const newOverlays: TextOverlay[] = texts.map((t) => ({
         id: crypto.randomUUID(),
         type: "text" as const,
-        ...t,
+        text: t.text,
+        x: t.xPct != null ? Math.round(t.xPct * canvasSize.width) : t.x,
+        y: t.yPct != null ? Math.round(t.yPct * canvasSize.height) : t.y,
+        fontSize: t.fontSize,
+        color: t.color,
+        fontFamily: t.fontFamily,
       }));
       pushState(newOverlays);
       if (newOverlays.length > 0) setSelectedId(newOverlays[0].id);
     },
-    [pushState]
+    [pushState, canvasSize]
   );
 
   // Update overlay
@@ -242,16 +314,43 @@ export function useCanvasEditor(baseImageUrl: string) {
   // Export
   const exportCanvas = useCallback(async (): Promise<Blob | null> => {
     const canvas = document.createElement("canvas");
-    if (!baseImage) return null;
-    canvas.width = baseImage.naturalWidth;
-    canvas.height = baseImage.naturalHeight;
+
+    let exportW: number;
+    let exportH: number;
+
+    if (activeFormat.key !== "original") {
+      exportW = activeFormat.exportWidth;
+      exportH = activeFormat.exportHeight;
+    } else if (baseImage) {
+      exportW = baseImage.naturalWidth;
+      exportH = baseImage.naturalHeight;
+    } else {
+      exportW = canvasSize.width;
+      exportH = canvasSize.height;
+    }
+
+    canvas.width = exportW;
+    canvas.height = exportH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    const scaleX = baseImage.naturalWidth / canvasSize.width;
-    const scaleY = baseImage.naturalHeight / canvasSize.height;
+    const scaleX = exportW / canvasSize.width;
+    const scaleY = exportH / canvasSize.height;
 
-    ctx.drawImage(baseImage, 0, 0);
+    if (baseImage) {
+      if (activeFormat.key !== "original") {
+        const { sx, sy, sw, sh } = centerCropRect(
+          baseImage.naturalWidth, baseImage.naturalHeight, exportW, exportH
+        );
+        ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, exportW, exportH);
+      } else {
+        ctx.drawImage(baseImage, 0, 0, exportW, exportH);
+      }
+    } else {
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, exportW, exportH);
+    }
+
     overlays.forEach((o) => {
       if (o.type === "logo") {
         ctx.drawImage(o.img, o.x * scaleX, o.y * scaleY, o.width * scaleX, o.height * scaleY);
@@ -264,7 +363,7 @@ export function useCanvasEditor(baseImageUrl: string) {
     });
 
     return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
-  }, [baseImage, overlays, canvasSize]);
+  }, [baseImage, overlays, canvasSize, activeFormat, bgColor]);
 
   const selectedOverlay = overlays.find((o) => o.id === selectedId) ?? null;
 
@@ -289,5 +388,9 @@ export function useCanvasEditor(baseImageUrl: string) {
     canUndo,
     canRedo,
     guides,
+    activeFormat,
+    setFormat,
+    bgColor,
+    setBgColor,
   };
 }
