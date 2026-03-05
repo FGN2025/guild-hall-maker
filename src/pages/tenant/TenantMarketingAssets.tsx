@@ -83,11 +83,18 @@ const TenantMarketingAssets = () => {
             <Card key={a.id} className="overflow-hidden">
               <img src={a.url} alt={a.label} className="w-full h-40 object-cover" />
               <CardContent className="pt-4 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="font-heading text-sm font-medium truncate">{a.label}</span>
-                  <Badge variant={a.is_published ? "default" : "secondary"}>
-                    {a.is_published ? "Published" : "Draft"}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {["Square", "Landscape", "Portrait", "Story", "Vertical", "Horizontal", "Banner"].includes(a.label) && (
+                      <Badge variant="outline" className="text-xs">
+                        {a.label}
+                      </Badge>
+                    )}
+                    <Badge variant={a.is_published ? "default" : "secondary"}>
+                      {a.is_published ? "Published" : "Draft"}
+                    </Badge>
+                  </div>
                 </div>
                 {a.notes && <p className="text-xs text-muted-foreground line-clamp-2">{a.notes}</p>}
                 <div className="flex items-center justify-between pt-1">
