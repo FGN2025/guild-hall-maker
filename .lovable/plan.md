@@ -1,62 +1,34 @@
 
 
-# Tenant Player Directory -- Plan
-
-## Current State
-
-Tenants currently have two separate, incomplete views:
-- **Leads** (`user_service_interests`): New users who selected this tenant during registration. Shows display name, gamer tag, ZIP, and status.
-- **Subscribers** (`tenant_subscribers`): Billing records (name, account number, email). These are not platform user accounts.
-
-**Missing**: There is no way for a tenant to see legacy users (`legacy_users` table has a `tenant_id` column) or to view a unified directory of all players (legacy + new) associated with their tenant.
+# AI-Enhanced Challenge Description
 
 ## What to Build
 
-A new **"Players"** page in the tenant portal that combines:
-
-1. **New players** -- Queried from `user_service_interests` joined with `profiles` for users who registered under this tenant.
-2. **Legacy players** -- Queried from `legacy_users` where `tenant_id` matches the current tenant.
-
-Both sets displayed in a single searchable, filterable table with a badge indicating source ("New" vs "Legacy") and match status for legacy users.
+Add a "✨ Enhance with AI" button next to the Description textarea in the Create Challenge dialog. When clicked, it sends the challenge name and current description to an edge function that uses Lovable AI to generate a polished, engaging description. The moderator can accept, regenerate, or edit the result.
 
 ## Implementation
 
-### 1. Database: RLS policy for tenant access to legacy users
+### 1. Edge Function: `supabase/functions/enhance-challenge-description/index.ts`
 
-Add a SELECT policy on `legacy_users` so tenant members can view records belonging to their tenant:
+- Accepts `{ name, description, challenge_type }` 
+- Calls Lovable AI Gateway (`google/gemini-3-flash-preview`) with a prompt like: "You are a gaming community manager. Rewrite this challenge description to be engaging, clear, and motivating for competitive gamers. Keep it concise (2-3 sentences max). Challenge name: {name}. Type: {type}. Draft description: {description}"
+- Returns `{ enhanced_description }` (non-streaming, simple invoke)
+- Handles 429/402 errors
 
-```sql
-CREATE POLICY "Tenant members can view own legacy users"
-  ON public.legacy_users FOR SELECT TO authenticated
-  USING (is_tenant_member(tenant_id, auth.uid()));
-```
+### 2. Update `src/pages/moderator/ModeratorChallenges.tsx`
 
-### 2. New hook: `src/hooks/useTenantPlayers.ts`
+- Add an "Enhance with AI" button (with Sparkles icon) below the Description textarea
+- Button is enabled when `form.name` is non-empty (description can be empty -- AI will generate from scratch using the name)
+- On click: call `supabase.functions.invoke('enhance-challenge-description', { body: { name, description, challenge_type } })`
+- While loading: show spinner on button, disable textarea
+- On success: populate description field with the enhanced text
+- On error: show toast with error message
+- User can freely edit the result or click enhance again
 
-- Fetches from `user_service_interests` (joined with `profiles`) for new players
-- Fetches from `legacy_users` filtered by `tenant_id` for legacy players
-- Merges both into a unified list with a `source` field ("new" | "legacy")
-- Returns search/filter capabilities
-
-### 3. New page: `src/pages/tenant/TenantPlayers.tsx`
-
-- Stats cards: Total players, New players, Legacy players, Matched (legacy users with `matched_user_id`)
-- Search bar filtering by name, email, gamer tag, ZIP
-- Table columns: Name, Gamer Tag / Username, Email, ZIP, Source (badge), Status, Registered date
-- Legacy rows show `legacy_username` and whether they have been matched to a new account
-
-### 4. Sidebar + routing
-
-- Add "Players" link to `TenantSidebar.tsx` (visible to admin and manager roles)
-- Add route `/tenant/players` in `App.tsx`
-
-## File Changes
+### Files Changed
 
 | File | Action |
 |---|---|
-| Migration SQL | Add RLS policy on `legacy_users` for tenant members |
-| `src/hooks/useTenantPlayers.ts` | Create -- unified query hook |
-| `src/pages/tenant/TenantPlayers.tsx` | Create -- player directory page |
-| `src/components/tenant/TenantSidebar.tsx` | Add "Players" nav item |
-| `src/App.tsx` | Add `/tenant/players` route |
+| `supabase/functions/enhance-challenge-description/index.ts` | Create -- edge function for AI enhancement |
+| `src/pages/moderator/ModeratorChallenges.tsx` | Update -- add enhance button + state |
 
