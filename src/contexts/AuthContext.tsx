@@ -43,12 +43,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchRoleAndDiscord = async (userId: string) => {
     setRoleLoading(true);
     const [roleResult, profileResult] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("profiles").select("discord_id").eq("user_id", userId).maybeSingle(),
     ]);
-    setIsAdmin(roleResult.data?.role === "admin");
-    setIsModerator(roleResult.data?.role === "moderator");
-    setIsMarketing(roleResult.data?.role === "marketing");
+    const roles = (roleResult.data ?? []).map((r) => r.role);
+    setIsAdmin(roles.includes("admin"));
+    setIsModerator(roles.includes("moderator"));
+    setIsMarketing(roles.includes("marketing"));
     setDiscordLinked(!!profileResult.data?.discord_id);
     setRoleLoading(false);
   };
