@@ -279,61 +279,191 @@ export type Database = {
           },
         ]
       }
+      challenge_enrollments: {
+        Row: {
+          challenge_id: string
+          enrolled_at: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          enrolled_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          enrolled_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_enrollments_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_evidence: {
+        Row: {
+          enrollment_id: string
+          file_type: string
+          file_url: string
+          id: string
+          notes: string | null
+          submitted_at: string
+          task_id: string | null
+        }
+        Insert: {
+          enrollment_id: string
+          file_type?: string
+          file_url: string
+          id?: string
+          notes?: string | null
+          submitted_at?: string
+          task_id?: string | null
+        }
+        Update: {
+          enrollment_id?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          notes?: string | null
+          submitted_at?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_evidence_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_evidence_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_tasks: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          title: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_tasks_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           challenge_type: string
+          cover_image_url: string | null
           created_at: string
           created_by: string
           description: string | null
+          difficulty: string
           end_date: string | null
+          estimated_minutes: number | null
           game_id: string | null
           id: string
           is_active: boolean
           max_completions: number | null
+          max_enrollments: number | null
           name: string
           points_first: number
           points_participation: number
           points_reward: number
           points_second: number
           points_third: number
+          requires_evidence: boolean
           start_date: string | null
           updated_at: string
         }
         Insert: {
           challenge_type?: string
+          cover_image_url?: string | null
           created_at?: string
           created_by: string
           description?: string | null
+          difficulty?: string
           end_date?: string | null
+          estimated_minutes?: number | null
           game_id?: string | null
           id?: string
           is_active?: boolean
           max_completions?: number | null
+          max_enrollments?: number | null
           name: string
           points_first?: number
           points_participation?: number
           points_reward?: number
           points_second?: number
           points_third?: number
+          requires_evidence?: boolean
           start_date?: string | null
           updated_at?: string
         }
         Update: {
           challenge_type?: string
+          cover_image_url?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
+          difficulty?: string
           end_date?: string | null
+          estimated_minutes?: number | null
           game_id?: string | null
           id?: string
           is_active?: boolean
           max_completions?: number | null
+          max_enrollments?: number | null
           name?: string
           points_first?: number
           points_participation?: number
           points_reward?: number
           points_second?: number
           points_third?: number
+          requires_evidence?: boolean
           start_date?: string | null
           updated_at?: string
         }
