@@ -321,6 +321,10 @@ export type Database = {
           file_url: string
           id: string
           notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
+          status: string
           submitted_at: string
           task_id: string | null
         }
@@ -330,6 +334,10 @@ export type Database = {
           file_url: string
           id?: string
           notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
           submitted_at?: string
           task_id?: string | null
         }
@@ -339,6 +347,10 @@ export type Database = {
           file_url?: string
           id?: string
           notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
           submitted_at?: string
           task_id?: string | null
         }

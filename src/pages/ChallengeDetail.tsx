@@ -146,35 +146,54 @@ const ChallengeDetail = () => {
                     Submitted Evidence ({evidence.length})
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {evidence.map((e: any) => (
-                      <div key={e.id} className="relative group">
-                        <a href={e.file_url} target="_blank" rel="noopener noreferrer">
-                          <div className="rounded-lg border border-border overflow-hidden aspect-video bg-muted">
-                            {e.file_type === "image" ? (
-                              <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                            ) : e.file_type === "video" ? (
-                              <video src={e.file_url} controls className="w-full h-full object-cover" onClick={(ev) => ev.preventDefault()} />
-                            ) : (
-                              <div className="flex items-center justify-center h-full">
-                                <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                              </div>
-                            )}
+                    {evidence.map((e: any) => {
+                      const evidenceStatus = e.status || "pending";
+                      const statusColor = evidenceStatus === "approved"
+                        ? "bg-green-500/20 text-green-400 border-green-500/30"
+                        : evidenceStatus === "rejected"
+                        ? "bg-red-500/20 text-red-400 border-red-500/30"
+                        : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+                      const taskForEvidence = tasks.find((t: any) => t.id === e.task_id);
+
+                      return (
+                        <div key={e.id} className="relative group space-y-1">
+                          <a href={e.file_url} target="_blank" rel="noopener noreferrer">
+                            <div className="rounded-lg border border-border overflow-hidden aspect-video bg-muted">
+                              {e.file_type === "image" ? (
+                                <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                              ) : e.file_type === "video" ? (
+                                <video src={e.file_url} controls className="w-full h-full object-cover" onClick={(ev) => ev.preventDefault()} />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                          </a>
+                          {canUpload && (
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1.5 right-1.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => deleteEvidence(e.id)}
+                              disabled={deletingEvidence}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Badge className={`text-[10px] px-1.5 py-0 ${statusColor}`}>{evidenceStatus}</Badge>
+                            {taskForEvidence && <span className="text-[10px] text-muted-foreground truncate">{taskForEvidence.title}</span>}
                           </div>
-                        </a>
-                        {canUpload && (
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-1.5 right-1.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => deleteEvidence(e.id)}
-                            disabled={deletingEvidence}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                        {e.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{e.notes}</p>}
-                      </div>
-                    ))}
+                          {e.notes && <p className="text-xs text-muted-foreground line-clamp-1">{e.notes}</p>}
+                          {e.reviewer_notes && (
+                            <p className="text-xs text-muted-foreground italic line-clamp-2">
+                              Feedback: {e.reviewer_notes}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

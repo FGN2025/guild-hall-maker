@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Target, Plus, Users, Sparkles, Loader2, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon } from "lucide-react";
+import { Target, Plus, Users, Sparkles, Loader2, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 const ModeratorChallenges = () => {
@@ -59,6 +59,21 @@ const ModeratorChallenges = () => {
       const counts: Record<string, number> = {};
       (data ?? []).forEach((e: any) => { counts[e.challenge_id] = (counts[e.challenge_id] || 0) + 1; });
       return counts;
+    },
+  });
+
+  // Tasks for review challenge
+  const { data: reviewTasks = [] } = useQuery({
+    queryKey: ["mod-review-tasks", reviewChallengeId],
+    enabled: !!reviewChallengeId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("challenge_tasks")
+        .select("id, title, display_order")
+        .eq("challenge_id", reviewChallengeId!)
+        .order("display_order");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -156,6 +171,28 @@ const ModeratorChallenges = () => {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const updateEvidenceStatusMutation = useMutation({
+    mutationFn: async ({ evidenceId, status, reviewer_notes }: { evidenceId: string; status: string; reviewer_notes?: string }) => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase.from("challenge_evidence")
+        .update({
+          status,
+          reviewer_notes: reviewer_notes || null,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user.id,
+        } as any)
+        .eq("id", evidenceId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mod-review-enrollments"] });
+      toast.success("Evidence status updated!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
 
   const addTask = () => setForm(f => ({ ...f, tasks: [...f.tasks, { title: "", description: "" }] }));
   const removeTask = (i: number) => setForm(f => ({ ...f, tasks: f.tasks.filter((_, idx) => idx !== i) }));
@@ -413,57 +450,119 @@ const ModeratorChallenges = () => {
             <Card><CardContent className="py-8 text-center text-muted-foreground">No enrollments yet.</CardContent></Card>
           )}
 
-          {reviewEnrollments.map((enrollment: any) => (
-            <Card key={enrollment.id}>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-foreground">{enrollment.display_name}</p>
-                    <p className="text-xs text-muted-foreground">Enrolled {new Date(enrollment.enrolled_at).toLocaleDateString()}</p>
-                  </div>
-                  <Badge variant="outline" className="capitalize">{enrollment.status}</Badge>
-                </div>
+          {reviewEnrollments.map((enrollment: any) => {
+            const taskMap: Record<string, any> = {};
+            (reviewTasks as any[]).forEach((t: any) => { taskMap[t.id] = t; });
 
-                {/* Evidence */}
-                {enrollment.challenge_evidence?.length > 0 && (
-                  <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                    {enrollment.challenge_evidence.map((e: any) => (
-                      <a key={e.id} href={e.file_url} target="_blank" rel="noopener noreferrer" className="group">
-                        <div className="rounded border border-border overflow-hidden aspect-video bg-muted">
-                          {e.file_type === "image" ? (
-                            <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="flex items-center justify-center h-full"><ImageIcon className="h-6 w-6 text-muted-foreground" /></div>
-                          )}
-                        </div>
-                        {e.notes && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{e.notes}</p>}
-                      </a>
-                    ))}
+            return (
+              <Card key={enrollment.id}>
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-foreground">{enrollment.display_name}</p>
+                      <p className="text-xs text-muted-foreground">Enrolled {new Date(enrollment.enrolled_at).toLocaleDateString()}</p>
+                    </div>
+                    <Badge variant="outline" className="capitalize">{enrollment.status}</Badge>
                   </div>
-                )}
 
-                {/* Actions */}
-                {enrollment.status === "submitted" && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm" className="gap-1"
-                      onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "completed" })}
-                      disabled={updateStatusMutation.isPending}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Approve
-                    </Button>
-                    <Button
-                      size="sm" variant="destructive" className="gap-1"
-                      onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "rejected" })}
-                      disabled={updateStatusMutation.isPending}
-                    >
-                      <XCircle className="h-3.5 w-3.5" /> Reject
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  {/* Per-evidence items */}
+                  {enrollment.challenge_evidence?.length > 0 && (
+                    <div className="space-y-3">
+                      {enrollment.challenge_evidence.map((e: any) => {
+                        const task = e.task_id ? taskMap[e.task_id] : null;
+                        const statusColor = e.status === "approved"
+                          ? "bg-green-500/20 text-green-400 border-green-500/30"
+                          : e.status === "rejected"
+                          ? "bg-red-500/20 text-red-400 border-red-500/30"
+                          : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+
+                        return (
+                          <div key={e.id} className="rounded-lg border border-border p-3 space-y-2 bg-card/50">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {task && <span className="text-xs font-medium text-muted-foreground truncate">Task: {task.title}</span>}
+                                {!task && <span className="text-xs text-muted-foreground">General evidence</span>}
+                              </div>
+                              <Badge className={`text-xs shrink-0 ${statusColor}`}>{e.status || "pending"}</Badge>
+                            </div>
+
+                            <div className="rounded border border-border overflow-hidden aspect-video max-w-xs bg-muted">
+                              {e.file_type === "image" ? (
+                                <a href={e.file_url} target="_blank" rel="noopener noreferrer">
+                                  <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
+                                </a>
+                              ) : e.file_type === "video" ? (
+                                <video src={e.file_url} controls className="w-full h-full object-cover" />
+                              ) : (
+                                <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
+                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                </a>
+                              )}
+                            </div>
+
+                            {e.notes && <p className="text-xs text-muted-foreground">{e.notes}</p>}
+                            {e.reviewer_notes && <p className="text-xs text-muted-foreground italic">Moderator: {e.reviewer_notes}</p>}
+
+                            {/* Per-evidence actions */}
+                            {e.status !== "approved" && enrollment.status === "submitted" && (
+                              <div className="flex items-center gap-2 pt-1">
+                                <Input
+                                  placeholder="Feedback notes (optional)..."
+                                  className="text-xs h-8 flex-1"
+                                  value={evidenceNotes[e.id] || ""}
+                                  onChange={(ev) => setEvidenceNotes(prev => ({ ...prev, [e.id]: ev.target.value }))}
+                                />
+                                <Button
+                                  size="sm" variant="outline" className="gap-1 h-8 text-xs"
+                                  onClick={() => {
+                                    updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "approved", reviewer_notes: evidenceNotes[e.id] });
+                                    setEvidenceNotes(prev => { const n = { ...prev }; delete n[e.id]; return n; });
+                                  }}
+                                  disabled={updateEvidenceStatusMutation.isPending}
+                                >
+                                  <CheckCircle2 className="h-3 w-3" /> Approve
+                                </Button>
+                                <Button
+                                  size="sm" variant="destructive" className="gap-1 h-8 text-xs"
+                                  onClick={() => {
+                                    updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "rejected", reviewer_notes: evidenceNotes[e.id] });
+                                    setEvidenceNotes(prev => { const n = { ...prev }; delete n[e.id]; return n; });
+                                  }}
+                                  disabled={updateEvidenceStatusMutation.isPending}
+                                >
+                                  <XCircle className="h-3 w-3" /> Reject
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Enrollment-level actions */}
+                  {enrollment.status === "submitted" && (
+                    <div className="flex gap-2 border-t border-border pt-3">
+                      <Button
+                        size="sm" className="gap-1"
+                        onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "completed" })}
+                        disabled={updateStatusMutation.isPending}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Approve All & Complete
+                      </Button>
+                      <Button
+                        size="sm" variant="destructive" className="gap-1"
+                        onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "rejected" })}
+                        disabled={updateStatusMutation.isPending}
+                      >
+                        <XCircle className="h-3.5 w-3.5" /> Reject Enrollment
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </TabsContent>
       </Tabs>
     </div>
