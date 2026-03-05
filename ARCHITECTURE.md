@@ -1,115 +1,497 @@
 # FGN Platform Architecture
 
+> **Last updated**: 2026-03-05
+> Comprehensive developer onboarding guide for the Fibre Gaming Network codebase.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Project Structure](#project-structure)
+- [Authentication & Registration Flow](#authentication--registration-flow)
+- [RBAC Implementation](#rbac-implementation)
+- [Route Architecture](#route-architecture)
+- [Multi-Tenant (ISP) System](#multi-tenant-isp-system)
+- [Tournament Lifecycle](#tournament-lifecycle)
+- [Challenge / Work Order System](#challenge--work-order-system)
+- [Seasonal Points & Leaderboard](#seasonal-points--leaderboard)
+- [AI Coach](#ai-coach)
+- [Notification System](#notification-system)
+- [Edge Functions Inventory](#edge-functions-inventory)
+- [Database Design](#database-design)
+- [Storage Buckets](#storage-buckets)
+- [Ecosystem Integration](#ecosystem-integration)
+- [Error Handling & Resilience](#error-handling--resilience)
+- [Design System & Theming](#design-system--theming)
+- [Naming Conventions](#naming-conventions)
+- [Key Patterns & Anti-Patterns](#key-patterns--anti-patterns)
+
+---
+
 ## Overview
 
 FGN (Fibre Gaming Network) is a React SPA backed by Lovable Cloud (Supabase). It serves as a competitive gaming portal for ISP-sponsored communities, supporting multiple tenants (ISPs), each with their own subscriber bases, events, and marketing capabilities.
 
+**Tech Stack**: React 18 · TypeScript · Vite · Tailwind CSS · shadcn/ui · TanStack React Query · React Router v6 · Supabase (Auth, PostgreSQL, Edge Functions, Storage, Realtime)
+
 ---
 
-## Authentication Flow
+## Project Structure
 
-1. **Registration**: ZIP code validation → ISP subscriber verification → email signup → Discord OAuth linking
-2. **Login**: Email/password → session stored in Supabase Auth → roles fetched from `user_roles` table
-3. **Discord Gate**: After auth, users must link Discord before accessing the main app (enforced by `ProtectedRoute`)
-4. **Ecosystem SSO**: Magic-link tokens for cross-app authentication via `ecosystem-magic-link` and `validate-ecosystem-token` edge functions
+```
+src/
+├── assets/               # Static images (game covers, hero backgrounds, logos)
+├── components/           # Reusable UI components, grouped by domain
+│   ├── admin/            # AdminLayout, AdminSidebar, AdminRoute, MarketingRoute
+│   ├── auth/             # ZipCheckStep, SubscriberVerifyStep
+│   ├── challenges/       # ChallengeCard, EvidenceUpload, TaskChecklist
+│   ├── coach/            # CoachHistoryPanel
+│   ├── community/        # CreateTopicDialog, TopicDetail
+│   ├── compare/          # ComparisonChart, PlayerSelector, HeadToHeadHistory
+│   ├── games/            # GameCard, AddGameDialog
+│   ├── media/            # MediaGrid, MediaUploader, AIImageGenerator, AssetEditorDialog
+│   ├── moderator/        # ModeratorLayout, ModeratorSidebar, ModeratorRoute
+│   ├── player/           # PlayerProfileHeader, PlayerStatsGrid, PlayerAchievements
+│   ├── stats/            # GameStatsView, MyStatsView, SkillInsightsPanel
+│   ├── tenant/           # TenantLayout, TenantSidebar, TenantRoute
+│   ├── tournaments/      # TournamentCard, BracketMatchCard, CreateTournamentDialog
+│   └── ui/               # shadcn/ui primitives (50+ components)
+├── contexts/
+│   ├── AuthContext.tsx    # Session, multi-role state (isAdmin/isModerator/isMarketing), Discord
+│   └── CoachContext.tsx   # AI coach conversation state & floating panel toggle
+├── hooks/                # 60+ custom hooks
+│   ├── canvas/           # Canvas editor types & history management
+│   ├── use*.ts           # Data fetching, mutations, business logic
+│   └── ...
+├── integrations/
+│   └── supabase/
+│       ├── client.ts     # ⚠️ AUTO-GENERATED — DO NOT EDIT
+│       └── types.ts      # ⚠️ AUTO-GENERATED — DO NOT EDIT
+├── lib/                  # Utility functions (export, image resize, notifications)
+├── pages/                # Route-level page components
+│   ├── admin/            # 15 admin pages
+│   ├── moderator/        # 8 moderator pages
+│   └── tenant/           # 11 ISP tenant portal pages
+└── main.tsx              # App entry point with ErrorBoundary wrapper
+
+supabase/
+├── config.toml           # ⚠️ AUTO-MANAGED — DO NOT EDIT
+├── functions/            # 20 Deno edge functions (auto-deployed)
+│   ├── _shared/          # Shared email templates (React TSX via @react-email)
+│   └── <function-name>/  # Each function has its own directory with index.ts
+└── migrations/           # ⚠️ AUTO-GENERATED — sequential SQL migration files
+```
+
+### Files You Must NOT Edit
+
+| File | Reason |
+|------|--------|
+| `src/integrations/supabase/client.ts` | Auto-generated Supabase client |
+| `src/integrations/supabase/types.ts` | Auto-generated TypeScript types from DB schema |
+| `supabase/config.toml` | Managed by Lovable Cloud |
+| `.env` | Auto-populated with Supabase credentials |
+| `supabase/migrations/*` | Generated by migration tool |
+
+---
+
+## Authentication & Registration Flow
+
+### Registration Funnel (Multi-Step)
+
+```
+ZIP Code Input
+    ↓ (validated via Smarty API — validate-zip edge function)
+Provider Selection (if multiple ISPs in that ZIP)
+    ↓
+Subscriber Verification (optional per-tenant toggle)
+    ↓ (validate-subscriber edge function checks tenant_subscribers table or live billing API)
+Email + Password Signup
+    ↓ (Supabase Auth creates user → handle_new_user trigger creates profile)
+Email Verification
+    ↓
+Discord OAuth Linking (mandatory gate via /link-discord)
+    ↓ (discord-oauth-callback edge function)
+Dashboard Access
+```
+
+### Bypass Path (No ISP Coverage)
+
+If no providers serve a ZIP code, users can:
+1. Enter a **bypass code** (validated via `validate_bypass_code()` DB function)
+2. Submit an **Access Request** for manual admin review
+   - Approved requests auto-generate single-use bypass codes (prefixed `AR-`)
+   - Duplicate prevention via partial unique index `uq_access_requests_email_active`
+
+### Session Management
+
+- Supabase Auth manages JWT sessions
+- `AuthContext` listens to `onAuthStateChange` and fetches roles + Discord status
+- `ProtectedRoute` component enforces authentication + Discord linking before app access
 
 ---
 
 ## RBAC Implementation
 
 ### Platform Roles
-Stored in `user_roles` table using `app_role` enum (`admin`, `moderator`, `marketing`, `user`).
 
-**Key pattern**: A user can hold **multiple** roles. `AuthContext` fetches all roles and derives `isAdmin`, `isModerator`, `isMarketing` from the array.
+Stored in `user_roles` table using `app_role` enum: `admin`, `moderator`, `marketing`, `user`.
+
+**Critical design**: A user can hold **multiple concurrent roles** (e.g., admin + moderator). `AuthContext` fetches **all** roles via `.select("role").eq("user_id", userId)` and derives boolean flags:
+
+```typescript
+const roles = (roleResult.data ?? []).map((r) => r.role);
+setIsAdmin(roles.includes("admin"));
+setIsModerator(roles.includes("moderator"));
+setIsMarketing(roles.includes("marketing"));
+```
 
 ### Tenant Roles
-Stored in `tenant_admins` table with a text `role` field (`admin`, `marketing`).
 
-### Server-Side Enforcement
-All RLS policies use `SECURITY DEFINER` helper functions to avoid recursive policy evaluation:
-- `has_role(user_id, role)` — platform role check
-- `is_tenant_member(tenant_id, user_id)` — any tenant role
-- `is_tenant_admin(tenant_id, user_id)` — tenant admin only
-- `is_tenant_marketing_member(tenant_id, user_id)` — tenant admin or marketing
+Stored in `tenant_admins` table with a text `role` field: `admin`, `manager`, `marketing`.
+
+### Server-Side Enforcement (RLS)
+
+All RLS policies use `SECURITY DEFINER` helper functions to prevent recursive policy evaluation:
+
+| Function | Purpose |
+|----------|---------|
+| `has_role(user_id, role)` | Check platform role (admin, moderator, marketing) |
+| `is_tenant_member(tenant_id, user_id)` | Any tenant role membership |
+| `is_tenant_admin(tenant_id, user_id)` | Tenant admin only |
+| `is_tenant_marketing_member(tenant_id, user_id)` | Tenant admin or marketing |
+| `should_notify(user_id, type, channel)` | Check notification opt-in before sending |
+| `validate_bypass_code(code)` | Validate + increment bypass code usage |
+| `lookup_providers_by_zip(zip)` | Find ISPs serving a ZIP code |
 
 ### Client-Side Route Guards
-- `AdminRoute` — requires `isAdmin`
-- `ModeratorRoute` — requires `isAdmin || isModerator`
-- `MarketingRoute` — requires `isAdmin || isMarketing`
-- `TenantRoute` — checks `tenant_admins` membership
+
+| Component | Access Rule |
+|-----------|------------|
+| `AdminRoute` | `isAdmin === true` |
+| `ModeratorRoute` | `isAdmin \|\| isModerator` |
+| `MarketingRoute` | `isAdmin \|\| isMarketing` |
+| `TenantRoute` | Checks `tenant_admins` membership via `useTenantAdmin` hook |
+| `ProtectedRoute` | Authenticated + Discord linked (except `/link-discord`) |
 
 ---
 
-## Multi-Tenant System
+## Route Architecture
 
-Each ISP tenant has:
-- **`tenants`** — org record with name, slug, logo, billing config
-- **`tenant_admins`** — user-role assignments scoped to tenant
-- **`tenant_subscribers`** — synced subscriber list (via NISC/GLDS or CSV upload)
-- **`tenant_events`** — local tournaments/events
-- **`tenant_integrations`** — billing system API connections
-- **`tenant_zip_codes`** — service area ZIP codes
-- **`tenant_marketing_assets`** — co-branded marketing materials
+### Public Routes (No Auth)
 
-### Subscriber Sync
-Two integration types:
-1. **NISC**: `nisc-sync` edge function pulls from NISC API
-2. **GLDS**: `glds-sync` edge function pulls from GLDS API
+| Path | Page | Description |
+|------|------|-------------|
+| `/` | Index | Landing page with hero, featured tournaments |
+| `/auth` | Auth | Login/register with multi-step onboarding |
+| `/terms` | Terms | Terms of Service |
+| `/privacy` | PrivacyPolicy | Privacy Policy |
+| `/acceptable-use` | AcceptableUsePolicy | Acceptable Use Policy |
+| `/disabled-users` | DisabledUsersNotice | Disability accommodations |
+| `/reset-password` | ResetPassword | Password reset flow |
+| `/events/:tenantSlug` | TenantEventPage | Public tenant event listing |
+| `/events/:tenantSlug/:eventId` | TenantEventDetail | Public event detail |
+| `/embed/calendar/:configId` | EmbedCalendar | Embeddable tournament calendar (iframe) |
 
-Both sync to `tenant_subscribers` table with deduplication via `external_id`.
+### Player Routes (Auth + Discord Required)
+
+| Path | Page |
+|------|------|
+| `/dashboard` | Dashboard (stats, upcoming tournaments, recent activity) |
+| `/tournaments` | Tournament list |
+| `/tournaments/:id` | Tournament detail + registration |
+| `/tournaments/:id/bracket` | Live bracket view |
+| `/tournaments/:id/manage` | Tournament management (creator only) |
+| `/calendar` | Tournament calendar |
+| `/community` | Community forum |
+| `/leaderboard` | Seasonal leaderboard |
+| `/season-stats` | Personal season statistics |
+| `/compare` | Head-to-head player comparison |
+| `/achievements` | Achievement gallery |
+| `/games` | Game library |
+| `/games/:slug` | Game detail + guides |
+| `/player/:id` | Player profile |
+| `/challenges` | Challenge list |
+| `/challenges/:id` | Challenge detail + evidence submission |
+| `/prize-shop` | Prize redemption shop |
+| `/guide` | Player guide |
+| `/ladders` | Ranked ladders |
+| `/profile` | Profile settings (avatar, gamertag, Discord) |
+
+### Admin Routes (`/admin/*`)
+
+15 pages: Dashboard, Users, Tournaments, Games, Media, Bypass Codes, Tenants, Settings, Notebooks, Seasons, Achievements, Guide, Marketing, Access Requests, Legacy Users.
+
+### Moderator Routes (`/moderator/*`)
+
+8 pages: Dashboard, Tournaments, Matches, Points, Challenges, Ladders, Redemptions, Guide.
+
+### Tenant Routes (`/tenant/*`)
+
+11 pages: Dashboard, Players, Leads, ZIP Codes, Subscribers, Team, Settings, Marketing, Marketing Assets, Marketing Detail, Events.
+
+---
+
+## Multi-Tenant (ISP) System
+
+Each broadband provider ("Tenant") operates as an isolated organizational unit within the platform.
+
+### Core Tables
+
+| Table | Purpose |
+|-------|---------|
+| `tenants` | Organization record: name, slug, logo, brand colors, billing config |
+| `tenant_admins` | User-role assignments scoped to a specific tenant |
+| `tenant_subscribers` | Synced subscriber list (name, email, account#, plan, status) |
+| `tenant_zip_codes` | Service area ZIP codes (used for registration gating) |
+| `tenant_events` | Local tournaments/events (isolated from platform tournaments) |
+| `tenant_event_assets` | Promotional images attached to events |
+| `tenant_event_registrations` | Event RSVPs |
+| `tenant_integrations` | Billing system API connections (NISC, GLDS, etc.) |
+| `tenant_sync_logs` | Audit log for subscriber sync operations |
+| `tenant_marketing_assets` | Co-branded marketing materials |
+
+### Subscriber Sync Pipeline
+
+```
+Billing System (NISC/GLDS) → Edge Function → tenant_subscribers table
+                                  ↓
+                         tenant_sync_logs (audit)
+```
+
+- **NISC**: `nisc-sync` edge function — pulls from NISC billing API
+- **GLDS**: `glds-sync` edge function — pulls from GLDS billing API
+- Both deduplicate via `external_id` field
+- CSV upload supported as manual alternative via `SubscriberUploader` component
+
+### Service Lead Generation
+
+When a user registers through a tenant's ZIP code, a `user_service_interests` record is created linking the user to that tenant. Tenant admins can view these leads and their status from the Tenant Dashboard.
+
+### Public Event Pages
+
+Tenant events can be published to unauthenticated public pages at `/events/:tenant-slug`. These pages dynamically apply the tenant's brand colors and logo via CSS custom properties.
 
 ---
 
 ## Tournament Lifecycle
 
-1. **Created** → Admin/Moderator creates tournament with game, format, dates, prizes
-2. **Registration Open** → Players register; capacity enforced
-3. **In Progress** → Bracket generated; matches scored round-by-round
-4. **Completed** → Final match triggers moderator notification for placement validation
-5. **Points Awarded** → `award-season-points` edge function updates `season_scores`
+```
+Created (draft)
+    ↓ (status: 'upcoming')
+Registration Open (status: 'open')
+    ↓ (players register; capacity enforced via max_participants)
+In Progress (status: 'in_progress')
+    ↓ (bracket generated; matches scored round-by-round)
+    ↓ (each match completion → email + in-app notifications to players)
+    ↓ (final match completion → notification to moderators for placement validation)
+Completed (status: 'completed')
+    ↓ (award-season-points edge function updates season_scores)
+```
+
+### Prize System
+
+Tournaments support three prize types:
+- **Points**: Season points awarded by placement (1st/2nd/3rd/participation)
+- **Prize Pool**: Cash/value pool split by percentage
+- **Catalog Prize**: Link to a prize from the `prizes` table
 
 ---
 
 ## Challenge / Work Order System
 
-1. **Created** by moderator with optional task checklist
-2. **Enrolled** by player
-3. **Evidence uploaded** per-task (images/videos to `app-media` storage bucket)
-4. **Per-evidence review**: Moderators approve/reject individual items with feedback
-5. **Submitted for review** → Moderator reviews full enrollment
-6. **Completed** or **Rejected** (player can revise and resubmit)
+Challenges are task-based activities (e.g., "Complete 5 matches", "Submit a highlight clip") that award points outside the tournament system.
+
+### Lifecycle
+
+1. **Created** by moderator — with optional task checklist (`challenge_tasks`), difficulty level, point values, and date range
+2. **Enrolled** by player — creates `challenge_enrollments` record
+3. **Evidence uploaded** per-task — images/videos stored in `app-media` bucket, metadata in `challenge_evidence`
+4. **Per-evidence review** — Moderators approve/reject individual evidence items with feedback notes
+5. **Completion** — When all required evidence is approved, player earns points
+
+### Evidence Management
+
+- Supported types: images and video files
+- Players can delete their own pending evidence
+- Moderators can add reviewer notes per evidence item
+- Evidence is linked to specific tasks via `task_id`
+
+---
+
+## Seasonal Points & Leaderboard
+
+### Tables
+
+| Table | Purpose |
+|-------|---------|
+| `seasons` | Season definitions with date ranges and status (active/completed) |
+| `season_scores` | Per-user per-season: points, points_available, wins, losses, tournaments_played |
+| `season_snapshots` | Frozen final standings archived when a season rotates |
+| `point_adjustments` | Manual point modifications by moderators (with reason + audit) |
+
+### Point Sources
+
+- Tournament placements (1st/2nd/3rd/participation) — via `award-season-points` edge function
+- Challenge completions — via `challenge_completions` table
+- Manual adjustments — via moderator `point_adjustments`
+
+### Season Rotation
+
+The `rotate-season` edge function:
+1. Snapshots all current `season_scores` into `season_snapshots` with tier assignments
+2. Marks current season as `completed`
+3. Creates and activates the next season
+4. Resets all player scores
+
+### Spendable Points
+
+`points_available` tracks spendable balance separately from total `points`. Prize redemptions deduct from `points_available` via the `deduct_points_on_approval()` trigger.
+
+---
+
+## AI Coach
+
+The AI Coach provides game-specific coaching via a floating chat panel accessible from any page.
+
+### Architecture (RAG)
+
+```
+User Message + Game Context
+    ↓
+ai-coach edge function
+    ↓ (concurrent multi-source search)
+    ├── Open Notebook connections (external knowledge bases)
+    └── Local markdown guides (from games.guide_content)
+    ↓
+Context aggregation with source attribution
+    ↓
+google/gemini-3-flash-preview (via Lovable AI Gateway)
+    ↓
+Streamed response with citations
+```
+
+### Persistence
+
+- `coach_conversations` — conversation metadata (title, game_id, user_id)
+- `coach_messages` — individual messages (content, role, conversation_id)
+- Session resumption across devices via conversation history panel
 
 ---
 
 ## Notification System
 
-### In-App
-PostgreSQL triggers insert into `notifications` table. Client polls via React Query.
+### Dual-Channel Architecture
 
-### Email
-Triggers call `send-notification-email` edge function which uses Resend API. Custom HTML templates in `supabase/functions/_shared/email-templates/`.
+| Channel | Mechanism | Delivery |
+|---------|-----------|----------|
+| **In-App** | PostgreSQL triggers → `notifications` table | Client polls via React Query |
+| **Email** | PostgreSQL triggers → `send-notification-email` edge function → Resend API | HTML templates in `_shared/email-templates/` |
+
+### Notification Types & Triggers
+
+| Event | In-App Trigger | Email Trigger |
+|-------|---------------|---------------|
+| Tournament starting | `notify_tournament_starting()` | `email_tournament_starting()` |
+| Registration confirmed | `notify_registration_confirmed()` | `email_registration_confirmed()` |
+| Match completed | `notify_match_completed()` | `email_match_completed()` |
+| Achievement earned | `notify_achievement_earned()` | `email_achievement_earned()` |
+| New challenge published | `notify_new_challenge()` | `email_new_challenge()` |
+| Prize redemption status | `notify_redemption_status()` | `email_redemption_status()` |
+| New access request | `notify_admins_access_request()` | (included in same trigger) |
+| Final match completed | `notify_moderators_tournament_complete()` | — |
 
 ### User Preferences
-`notification_preferences` table allows per-type opt-in/opt-out for both channels. `should_notify()` function checks before sending.
+
+The `notification_preferences` table stores per-user, per-type opt-in/opt-out for both channels. The `should_notify(user_id, type, channel)` function is called by every trigger before sending.
 
 ---
 
-## Seasonal System
+## Edge Functions Inventory
 
-- **`seasons`** — active/completed seasons with date ranges
-- **`season_scores`** — per-user per-season points, wins, losses
-- **`season_snapshots`** — frozen final standings when season rotates
-- **`rotate-season`** edge function handles the transition
+All edge functions are Deno-based, auto-deployed, and located in `supabase/functions/`.
+
+| Function | Trigger | Purpose | Key Secrets |
+|----------|---------|---------|-------------|
+| `ai-coach` | HTTP POST | AI coaching with RAG context aggregation | `LOVABLE_API_KEY`, `OPEN_NOTEBOOK_*` |
+| `auth-email-hook` | Auth hook | Custom email templates for auth events | — |
+| `award-season-points` | HTTP POST | Award points for tournament placements | `SUPABASE_SERVICE_ROLE_KEY` |
+| `discord-oauth-callback` | HTTP GET | Handle Discord OAuth redirect, link profile | `DISCORD_CLIENT_*`, `DISCORD_BOT_TOKEN` |
+| `ecosystem-magic-link` | HTTP POST | Generate cross-app SSO tokens | `SUPABASE_SERVICE_ROLE_KEY` |
+| `enhance-challenge-description` | HTTP POST | AI-enhance challenge descriptions | `LOVABLE_API_KEY` |
+| `generate-media-image` | HTTP POST | AI image generation for media library | `LOVABLE_API_KEY` |
+| `glds-sync` | HTTP POST | Sync subscribers from GLDS billing API | `SUPABASE_SERVICE_ROLE_KEY` |
+| `import-legacy-users` | HTTP POST | Bulk import legacy user records | `SUPABASE_SERVICE_ROLE_KEY` |
+| `match-legacy-user` | HTTP POST | Match current user to legacy account | `SUPABASE_SERVICE_ROLE_KEY` |
+| `nisc-sync` | HTTP POST | Sync subscribers from NISC billing API | `SUPABASE_SERVICE_ROLE_KEY` |
+| `notebook-proxy` | HTTP POST | Proxy requests to Open Notebook API | `OPEN_NOTEBOOK_*` |
+| `rotate-season` | HTTP POST | Snapshot scores, rotate to next season | `SUPABASE_SERVICE_ROLE_KEY` |
+| `send-notification-email` | HTTP POST | Send transactional emails via Resend | `RESEND_API_KEY` |
+| `send-tournament-email` | HTTP POST | Send tournament-specific emails | `RESEND_API_KEY` |
+| `tournament-reminders` | HTTP POST (cron) | Send upcoming tournament reminders | `RESEND_API_KEY` |
+| `validate-ecosystem-token` | HTTP POST | Validate cross-app SSO tokens | `SUPABASE_SERVICE_ROLE_KEY` |
+| `validate-subscriber` | HTTP POST | Verify subscriber against tenant records | `SUPABASE_SERVICE_ROLE_KEY` |
+| `validate-zip` | HTTP POST | Validate ZIP code via Smarty API | `SMARTY_AUTH_ID`, `SMARTY_AUTH_TOKEN` |
+
+### Shared Module: `_shared/email-templates/`
+
+React TSX email templates for: signup confirmation, password recovery, email change, magic link, invite, and reauthentication.
 
 ---
 
-## Database Conventions
+## Database Design
+
+### Key Conventions
 
 - All tables use `uuid` primary keys with `gen_random_uuid()` defaults
-- Timestamps use `timestamp with time zone` defaulting to `now()`
-- Soft references to `auth.users` via `user_id uuid` (no FK to auth schema)
-- RLS enabled on all tables
-- `SECURITY DEFINER` functions for cross-table role checks
+- Timestamps use `timestamptz` defaulting to `now()`
+- Soft references to `auth.users` via `user_id uuid` columns (**no FK** to `auth` schema — Supabase-reserved)
+- RLS enabled on **all** tables
+- `SECURITY DEFINER` functions for all cross-table role checks (prevents recursive RLS)
+- Validation triggers preferred over CHECK constraints (immutability issues)
+- `update_updated_at_column()` trigger on tables with `updated_at`
+
+### Table Groups (40+ tables)
+
+**Auth & Access**: `profiles`, `user_roles`, `access_requests`, `bypass_codes`, `ecosystem_auth_tokens`
+
+**Tournaments & Matches**: `tournaments`, `tournament_registrations`, `match_results`
+
+**Challenges**: `challenges`, `challenge_tasks`, `challenge_enrollments`, `challenge_evidence`, `challenge_completions`
+
+**Seasons & Points**: `seasons`, `season_scores`, `season_snapshots`, `point_adjustments`
+
+**Community**: `community_posts`, `community_likes`
+
+**Achievements**: `achievement_definitions`, `player_achievements`
+
+**Prizes**: `prizes`, `prize_redemptions`
+
+**Games & Ladders**: `games`, `ladders`, `ladder_entries`
+
+**AI Coach**: `coach_conversations`, `coach_messages`
+
+**Multi-Tenant**: `tenants`, `tenant_admins`, `tenant_subscribers`, `tenant_zip_codes`, `tenant_events`, `tenant_event_assets`, `tenant_event_registrations`, `tenant_integrations`, `tenant_sync_logs`, `tenant_marketing_assets`
+
+**Notifications**: `notifications`, `notification_preferences`
+
+**Media & Marketing**: `media_library`, `marketing_campaigns`, `marketing_assets`
+
+**Configuration**: `app_settings`, `managed_pages`, `page_backgrounds`, `page_hero_images`, `calendar_publish_configs`, `admin_notebook_connections`
+
+**Geography**: `national_zip_codes`, `user_service_interests`
+
+**Legacy**: `legacy_users`
+
+### Key DB Triggers
+
+| Trigger Function | Fires On | Purpose |
+|-----------------|----------|---------|
+| `handle_new_user()` | `auth.users` INSERT | Creates profile row |
+| `deduct_points_on_approval()` | `prize_redemptions` UPDATE | Deducts spendable points |
+| `decrement_prize_stock()` | `prize_redemptions` UPDATE | Reduces prize quantity |
+| `update_updated_at_column()` | Various UPDATE | Maintains `updated_at` timestamps |
+| `notify_*()` / `email_*()` | Various | Dual-channel notification dispatch |
 
 ---
 
@@ -118,14 +500,106 @@ Triggers call `send-notification-email` edge function which uses Resend API. Cus
 | Bucket | Public | Purpose |
 |--------|--------|---------|
 | `avatars` | Yes | User profile pictures |
-| `app-media` | Yes | Challenge evidence, media library uploads, marketing assets |
-| `email-assets` | Yes | Static assets for email templates |
+| `app-media` | Yes | Challenge evidence, media library uploads, marketing assets, tournament images |
+| `email-assets` | Yes | Static assets referenced in email templates |
 
 ---
 
-## Key Naming Conventions
+## Ecosystem Integration
 
-- **Pages**: PascalCase, one per route (`Dashboard.tsx`, `TournamentBracket.tsx`)
-- **Hooks**: `use` prefix, camelCase (`useTournaments.ts`, `useChallengeEnrollment.ts`)
-- **Components**: PascalCase, grouped by domain folder
-- **Edge Functions**: kebab-case directory names
+FGN operates as part of a three-app ecosystem:
+
+| App | URL | Purpose |
+|-----|-----|---------|
+| **FGN Play** | play.fgn.gg | Gaming platform (this app) |
+| **FGN Manage** | manage.fgn.gg | ISP subscriber verification portal |
+| **FGN Hub** | hub.fgn.gg | Partner hub for creative assets & marketing |
+
+### Cross-App SSO
+
+Authentication is independent per app, but admins/tenant admins can navigate between apps using magic-link SSO:
+1. `ecosystem-magic-link` generates a short-lived token stored in `ecosystem_auth_tokens`
+2. Target app calls `validate-ecosystem-token` to verify and auto-sign-in the user
+
+---
+
+## Error Handling & Resilience
+
+### Global Error Boundary
+
+The app is wrapped in a React `ErrorBoundary` component (`src/components/ErrorBoundary.tsx`) in `main.tsx`. Unhandled render errors display a recovery UI instead of a blank white screen.
+
+### Data Fetching
+
+All server-state is managed via TanStack React Query with:
+- Automatic retry (default 3 attempts)
+- Cache invalidation on mutations via `queryClient.invalidateQueries()`
+- Toast notifications (via `sonner`) for success/error feedback on all mutations
+
+### Cookie Consent
+
+A `CookieConsent` banner is rendered at the app root for GDPR compliance.
+
+---
+
+## Design System & Theming
+
+### Architecture
+
+- **Design tokens** defined as CSS custom properties in `src/index.css` (HSL format)
+- **Tailwind config** (`tailwind.config.ts`) maps tokens to utility classes
+- **shadcn/ui** components use semantic token classes (e.g., `bg-primary`, `text-muted-foreground`)
+- **Dark/Light mode** supported via `next-themes` class strategy
+
+### Key Tokens
+
+```
+--background, --foreground          # Base surface + text
+--primary, --primary-foreground     # Brand action color
+--secondary, --secondary-foreground # Secondary surfaces
+--muted, --muted-foreground         # Subdued elements
+--accent, --accent-foreground       # Highlights
+--destructive                       # Error/danger states
+--card, --card-foreground           # Card surfaces
+--sidebar-*                         # Sidebar-specific tokens
+```
+
+### Rule: Never Use Raw Colors in Components
+
+Always use semantic Tailwind classes (`bg-primary`, `text-foreground`, etc.) rather than raw values (`bg-blue-500`, `text-white`). All colors must flow through the design token system.
+
+---
+
+## Naming Conventions
+
+| Entity | Convention | Example |
+|--------|-----------|---------|
+| Pages | PascalCase, one per route | `TournamentBracket.tsx` |
+| Hooks | `use` prefix, camelCase | `useChallengeEnrollment.ts` |
+| Components | PascalCase, domain folder | `components/tournaments/BracketMatchCard.tsx` |
+| Edge Functions | kebab-case directory | `supabase/functions/award-season-points/` |
+| DB Tables | snake_case, plural | `tournament_registrations` |
+| DB Functions | snake_case, verb-led | `deduct_points_on_approval()` |
+| Contexts | PascalCase + `Context` suffix | `AuthContext.tsx` |
+
+---
+
+## Key Patterns & Anti-Patterns
+
+### ✅ Do
+
+- Use `SECURITY DEFINER` functions for cross-table RLS checks
+- Fetch all user roles as an array (not `.maybeSingle()`)
+- Apply layout wrappers (`AdminLayout`, `TenantLayout`) at route level, not inside pages
+- Use React Query for all server-state; Context only for auth & coach state
+- Validate ZIP codes server-side via edge function (never trust client)
+- Use `should_notify()` before every notification trigger
+
+### ❌ Don't
+
+- Add FK constraints to `auth.users` or modify `auth`/`storage`/`realtime` schemas
+- Edit auto-generated files (`client.ts`, `types.ts`, `config.toml`, `.env`, `migrations/`)
+- Store roles on the `profiles` table (use `user_roles` table only)
+- Use `as any` type casts — use proper Supabase generated types
+- Check admin status via `localStorage` or hardcoded credentials
+- Create CHECK constraints with `now()` — use validation triggers instead
