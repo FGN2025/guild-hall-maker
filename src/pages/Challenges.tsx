@@ -1,21 +1,24 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Target, CheckCircle2, Clock, Flame } from "lucide-react";
+import { Target, CheckCircle2 } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
+import ChallengeCard from "@/components/challenges/ChallengeCard";
 
 const Challenges = () => {
   const { user } = useAuth();
+  const [gameFilter, setGameFilter] = useState<string | null>(null);
 
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["player-challenges"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("challenges")
-        .select("*")
+        .select("*, games(name, slug, cover_image_url, category)")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -23,53 +26,58 @@ const Challenges = () => {
     },
   });
 
-  const { data: completions = [] } = useQuery({
-    queryKey: ["player-challenge-completions", user?.id],
+  const { data: enrollmentCounts = {} } = useQuery({
+    queryKey: ["challenge-enrollment-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("challenge_enrollments")
+        .select("challenge_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      (data ?? []).forEach((e: any) => {
+        counts[e.challenge_id] = (counts[e.challenge_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  const { data: myEnrollments = [] } = useQuery({
+    queryKey: ["my-challenge-enrollments", user?.id],
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("challenge_completions")
-        .select("challenge_id, completed_at, awarded_points")
+        .from("challenge_enrollments")
+        .select("challenge_id, status")
         .eq("user_id", user!.id);
       if (error) throw error;
       return data ?? [];
     },
   });
 
-  const completedIds = new Set(completions.map((c: any) => c.challenge_id));
+  const completedIds = new Set(myEnrollments.filter((e: any) => e.status === "completed").map((e: any) => e.challenge_id));
+  const enrolledIds = new Set(myEnrollments.map((e: any) => e.challenge_id));
 
-  const activeChallenges = challenges.filter((c: any) => !completedIds.has(c.id));
-  const completedChallenges = challenges.filter((c: any) => completedIds.has(c.id));
+  // Get unique game names for filter tabs
+  const gameNames = [...new Set(challenges.map((c: any) => c.games?.name).filter(Boolean))].sort();
 
-  const typeIcon = (type: string) => {
-    switch (type) {
-      case "daily": return <Flame className="h-4 w-4 text-orange-400" />;
-      case "weekly": return <Clock className="h-4 w-4 text-blue-400" />;
-      default: return <Target className="h-4 w-4 text-primary" />;
-    }
-  };
+  const filtered = gameFilter
+    ? challenges.filter((c: any) => c.games?.name === gameFilter)
+    : challenges;
 
-  const typeLabel = (type: string) => {
-    switch (type) {
-      case "daily": return "Daily";
-      case "weekly": return "Weekly";
-      default: return "One-Time";
-    }
-  };
-
-  const isExpired = (c: any) => c.end_date && new Date(c.end_date) < new Date();
+  const activeChallenges = filtered.filter((c: any) => !completedIds.has(c.id));
+  const completedChallenges = filtered.filter((c: any) => completedIds.has(c.id));
 
   return (
     <>
       <PageBackground pageSlug="challenges" />
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div>
           <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
             <Target className="h-8 w-8 text-primary" />
-            Challenges
+            Work Orders
           </h1>
           <p className="text-muted-foreground font-body mt-1">
-            Complete challenges to earn bonus points and rewards.
+            Complete work orders to earn points. Upload evidence to prove your work.
           </p>
         </div>
 
@@ -78,44 +86,67 @@ const Challenges = () => {
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold font-mono text-primary">{challenges.length}</p>
-              <p className="text-xs text-muted-foreground">Total Active</p>
+              <p className="text-xs text-muted-foreground">Available</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold font-mono text-green-400">{completedChallenges.length}</p>
+              <p className="text-2xl font-bold font-mono text-foreground">{enrolledIds.size}</p>
+              <p className="text-xs text-muted-foreground">Enrolled</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold font-mono text-green-400">{completedIds.size}</p>
               <p className="text-xs text-muted-foreground">Completed</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold font-mono text-foreground">{activeChallenges.length}</p>
-              <p className="text-xs text-muted-foreground">Remaining</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold font-mono text-accent-foreground">
-                {completions.reduce((sum: number, c: any) => sum + (c.awarded_points || 0), 0)}
+                {challenges.length > 0
+                  ? Math.round((completedIds.size / challenges.length) * 100)
+                  : 0}%
               </p>
-              <p className="text-xs text-muted-foreground">Points Earned</p>
+              <p className="text-xs text-muted-foreground">Progress</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Progress */}
+        {/* Progress bar */}
         {challenges.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground font-body">Overall Progress</span>
-              <span className="font-mono text-foreground">
-                {completedChallenges.length} / {challenges.length}
-              </span>
+              <span className="font-mono text-foreground">{completedIds.size} / {challenges.length}</span>
             </div>
             <Progress
-              value={challenges.length > 0 ? (completedChallenges.length / challenges.length) * 100 : 0}
+              value={challenges.length > 0 ? (completedIds.size / challenges.length) * 100 : 0}
               className="h-3"
             />
+          </div>
+        )}
+
+        {/* Game filter tabs */}
+        {gameNames.length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              variant={gameFilter === null ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setGameFilter(null)}
+            >
+              All Games
+            </Badge>
+            {gameNames.map((name) => (
+              <Badge
+                key={name}
+                variant={gameFilter === name ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setGameFilter(name === gameFilter ? null : name)}
+              >
+                {name}
+              </Badge>
+            ))}
           </div>
         )}
 
@@ -127,86 +158,41 @@ const Challenges = () => {
           <Card>
             <CardContent className="py-16 text-center">
               <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Active Challenges</h3>
-              <p className="text-muted-foreground font-body">Check back soon for new challenges!</p>
+              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Work Orders Available</h3>
+              <p className="text-muted-foreground font-body">Check back soon for new work orders!</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            {/* Active challenges */}
+          <div className="space-y-8">
             {activeChallenges.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-foreground">Active Challenges</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h2 className="font-display text-lg font-semibold text-foreground">Available Work Orders</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeChallenges.map((c: any) => (
-                    <Card key={c.id} className={`transition-colors ${isExpired(c) ? "opacity-50" : "hover:border-primary/40"}`}>
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            {typeIcon(c.challenge_type)}
-                            <Badge variant="outline" className="text-xs">{typeLabel(c.challenge_type)}</Badge>
-                          </div>
-                          <Badge variant="secondary" className="font-mono text-sm">
-                            +{c.points_reward} pts
-                          </Badge>
-                        </div>
-                        <h3 className="font-display font-semibold text-foreground mb-1">{c.name}</h3>
-                        {c.description && (
-                          <p className="text-sm text-muted-foreground font-body line-clamp-2">{c.description}</p>
-                        )}
-                        {(c.start_date || c.end_date) && (
-                          <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {c.start_date && <span>{new Date(c.start_date).toLocaleDateString()}</span>}
-                            {c.start_date && c.end_date && <span>→</span>}
-                            {c.end_date && <span>{new Date(c.end_date).toLocaleDateString()}</span>}
-                            {isExpired(c) && <Badge variant="destructive" className="text-xs ml-2">Expired</Badge>}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                    <ChallengeCard
+                      key={c.id}
+                      challenge={c}
+                      enrollmentCount={(enrollmentCounts as any)[c.id] || 0}
+                    />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Completed challenges */}
             {completedChallenges.length > 0 && (
               <div className="space-y-3">
                 <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-400" />
                   Completed
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {completedChallenges.map((c: any) => {
-                    const completion = completions.find((comp: any) => comp.challenge_id === c.id);
-                    return (
-                      <Card key={c.id} className="border-green-500/20 bg-green-500/5">
-                        <CardContent className="p-5">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-4 w-4 text-green-400" />
-                              <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">
-                                {typeLabel(c.challenge_type)}
-                              </Badge>
-                            </div>
-                            <Badge className="bg-green-500/20 text-green-400 font-mono text-sm">
-                              +{completion?.awarded_points || c.points_reward} pts
-                            </Badge>
-                          </div>
-                          <h3 className="font-display font-semibold text-foreground mb-1">{c.name}</h3>
-                          {c.description && (
-                            <p className="text-sm text-muted-foreground font-body line-clamp-2">{c.description}</p>
-                          )}
-                          {completion?.completed_at && (
-                            <p className="text-xs text-green-400/70 mt-3">
-                              Completed {new Date(completion.completed_at).toLocaleDateString()}
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {completedChallenges.map((c: any) => (
+                    <ChallengeCard
+                      key={c.id}
+                      challenge={c}
+                      enrollmentCount={(enrollmentCounts as any)[c.id] || 0}
+                    />
+                  ))}
                 </div>
               </div>
             )}

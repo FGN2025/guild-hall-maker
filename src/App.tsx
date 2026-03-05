@@ -24,6 +24,7 @@ import SeasonStats from "./pages/SeasonStats";
 import PlayerComparison from "./pages/PlayerComparison";
 import Achievements from "./pages/Achievements";
 import Challenges from "./pages/Challenges";
+import ChallengeDetail from "./pages/ChallengeDetail";
 import PrizeShop from "./pages/PrizeShop";
 import PlayerGuide from "./pages/PlayerGuide";
 import Games from "./pages/Games";
@@ -121,6 +122,7 @@ const App = () => (
               <Route path="/games/:slug" element={<GameDetail />} />
               <Route path="/player/:id" element={<PlayerProfile />} />
               <Route path="/challenges" element={<Challenges />} />
+              <Route path="/challenges/:id" element={<ChallengeDetail />} />
               <Route path="/prize-shop" element={<PrizeShop />} />
               <Route path="/guide" element={<PlayerGuide />} />
               <Route path="/ladders" element={<Ladders />} />
