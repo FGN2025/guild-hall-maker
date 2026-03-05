@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIcon, Library } from "lucide-react";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
+import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 import { toast } from "sonner";
 
 const CATEGORIES = [
@@ -44,6 +45,9 @@ const AdminMarketing = () => {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
+        {/* Calendar Embed Manager */}
+        <CalendarPublishManager />
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
