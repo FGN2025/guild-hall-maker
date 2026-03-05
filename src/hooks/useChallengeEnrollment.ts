@@ -89,6 +89,21 @@ export const useChallengeEnrollment = (challengeId: string | undefined) => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const deleteEvidenceMutation = useMutation({
+    mutationFn: async (evidenceId: string) => {
+      const { error } = await supabase
+        .from("challenge_evidence")
+        .delete()
+        .eq("id", evidenceId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["challenge-evidence", enrollment?.id] });
+      toast.success("Evidence removed");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return {
     enrollment,
     evidence,
@@ -99,5 +114,7 @@ export const useChallengeEnrollment = (challengeId: string | undefined) => {
     submittingEvidence: submitEvidenceMutation.isPending,
     submitForReview: submitForReviewMutation.mutate,
     submittingForReview: submitForReviewMutation.isPending,
+    deleteEvidence: deleteEvidenceMutation.mutate,
+    deletingEvidence: deleteEvidenceMutation.isPending,
   };
 };
