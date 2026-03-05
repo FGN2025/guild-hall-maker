@@ -11,13 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Target, Plus, Users } from "lucide-react";
+import { Target, Plus, Users, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const ModeratorChallenges = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", challenge_type: "one_time", start_date: "", end_date: "", points_first: "10", points_second: "5", points_third: "3", points_participation: "2" });
 
   const { data: challenges = [], isLoading } = useQuery({
@@ -101,7 +102,35 @@ const ModeratorChallenges = () => {
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What players need to do..." />
+                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What players need to do..." disabled={enhancing} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={enhancing || !form.name.trim()}
+                  onClick={async () => {
+                    setEnhancing(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke('enhance-challenge-description', {
+                        body: { name: form.name, description: form.description, challenge_type: form.challenge_type },
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      if (data?.enhanced_description) {
+                        setForm(f => ({ ...f, description: data.enhanced_description }));
+                        toast.success("Description enhanced!");
+                      }
+                    } catch (e: any) {
+                      toast.error(e.message || "Failed to enhance description");
+                    } finally {
+                      setEnhancing(false);
+                    }
+                  }}
+                >
+                  {enhancing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  {enhancing ? "Enhancing..." : "Enhance with AI"}
+                </Button>
               </div>
               <div className="space-y-2">
                 <Label>Type</Label>
