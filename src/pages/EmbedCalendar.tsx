@@ -99,7 +99,7 @@ const EmbedCalendar = () => {
             alt=""
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-black/75" />
         </div>
       )}
 
@@ -162,7 +162,7 @@ const EmbedCalendar = () => {
             <div
               key={`pad-${i}`}
               className="min-h-[80px]"
-              style={{ backgroundColor: config.bg_image_url ? "rgba(0,0,0,0.3)" : "#f9fafb" }}
+              style={{ backgroundColor: config.bg_image_url ? "rgba(0,0,0,0.55)" : "#f9fafb" }}
             />
           ))}
           {days.map((day) => {
@@ -171,7 +171,7 @@ const EmbedCalendar = () => {
               <div
                 key={day.toISOString()}
                 className="min-h-[80px] p-1"
-                style={{ backgroundColor: config.bg_image_url ? "rgba(0,0,0,0.3)" : "#fff" }}
+                style={{ backgroundColor: config.bg_image_url ? "rgba(0,0,0,0.55)" : "#fff" }}
               >
                 <span
                   className="text-xs font-medium block mb-0.5"
