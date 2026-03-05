@@ -201,6 +201,19 @@ const EmbedCalendar = () => {
             );
           })}
         </div>
+
+        {/* Registration CTA */}
+        <div className="mt-6 text-center">
+          <a
+            href="https://play.fgn.gg/auth"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: primaryColor }}
+          >
+            Join Now — Sign Up Free
+          </a>
+        </div>
       </div>
     </div>
   );
