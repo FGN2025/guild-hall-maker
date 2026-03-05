@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import PageBackground from "@/components/PageBackground";
 import TaskChecklist from "@/components/challenges/TaskChecklist";
 import EvidenceUpload from "@/components/challenges/EvidenceUpload";
-import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2 } from "lucide-react";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -33,6 +33,7 @@ const ChallengeDetail = () => {
     enroll, enrolling,
     submitEvidence, submittingEvidence,
     submitForReview, submittingForReview,
+    deleteEvidence, deletingEvidence,
   } = useChallengeEnrollment(id);
 
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -146,18 +147,33 @@ const ChallengeDetail = () => {
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {evidence.map((e: any) => (
-                      <a key={e.id} href={e.file_url} target="_blank" rel="noopener noreferrer" className="group">
-                        <div className="rounded-lg border border-border overflow-hidden aspect-video bg-muted">
-                          {e.file_type === "image" ? (
-                            <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
+                      <div key={e.id} className="relative group">
+                        <a href={e.file_url} target="_blank" rel="noopener noreferrer">
+                          <div className="rounded-lg border border-border overflow-hidden aspect-video bg-muted">
+                            {e.file_type === "image" ? (
+                              <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                            ) : e.file_type === "video" ? (
+                              <video src={e.file_url} controls className="w-full h-full object-cover" onClick={(ev) => ev.preventDefault()} />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        </a>
+                        {canUpload && (
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1.5 right-1.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => deleteEvidence(e.id)}
+                            disabled={deletingEvidence}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         {e.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{e.notes}</p>}
-                      </a>
+                      </div>
                     ))}
                   </div>
                 </CardContent>
