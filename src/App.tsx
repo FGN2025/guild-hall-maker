@@ -43,6 +43,7 @@ import AdminSeasons from "./pages/admin/AdminSeasons";
 import AdminAchievements from "./pages/admin/AdminAchievements";
 import AdminGuide from "./pages/admin/AdminGuide";
 import AdminMarketing from "./pages/admin/AdminMarketing";
+import MarketingRoute from "./components/admin/MarketingRoute";
 import AdminAccessRequests from "./pages/admin/AdminAccessRequests";
 import AdminLegacyUsers from "./pages/admin/AdminLegacyUsers";
 import ModeratorRoute from "./components/moderator/ModeratorRoute";
@@ -140,7 +141,7 @@ const App = () => (
             <Route path="/admin/seasons" element={<AdminRoute><AdminSeasons /></AdminRoute>} />
             <Route path="/admin/achievements" element={<AdminRoute><AdminAchievements /></AdminRoute>} />
             <Route path="/admin/guide" element={<AdminRoute><AdminGuide /></AdminRoute>} />
-            <Route path="/admin/marketing" element={<AdminRoute><AdminMarketing /></AdminRoute>} />
+            <Route path="/admin/marketing" element={<MarketingRoute><AdminMarketing /></MarketingRoute>} />
             <Route path="/admin/access-requests" element={<AdminRoute><AdminAccessRequests /></AdminRoute>} />
             <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
 
