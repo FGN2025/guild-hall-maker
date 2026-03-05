@@ -48,14 +48,14 @@ const AdminMarketing = () => {
         {/* Calendar Embed Manager */}
         <CalendarPublishManager />
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
               <Megaphone className="h-8 w-8 text-primary" /> Marketing Library
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Create and manage marketing campaigns for tenants</p>
           </div>
-          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> New Campaign</Button>
+          <Button onClick={openCreate} className="self-start sm:self-auto"><Plus className="h-4 w-4 mr-2" /> New Campaign</Button>
         </div>
 
         {isLoading ? (
@@ -157,12 +157,12 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
                 </SelectContent>
               </Select>
             </div>
-            <Label htmlFor="asset-upload" className="cursor-pointer">
-              <Button asChild disabled={uploadAsset.isPending}>
-                <span><Upload className="h-4 w-4 mr-2" /> Upload</span>
-              </Button>
-              <input id="asset-upload" type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-            </Label>
+            <Button asChild disabled={uploadAsset.isPending}>
+              <label htmlFor="asset-upload" className="cursor-pointer">
+                <Upload className="h-4 w-4 mr-2" /> Upload
+                <input id="asset-upload" type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+              </label>
+            </Button>
             <Button variant="outline" onClick={() => setMediaPickerOpen(true)} disabled={addAssetFromUrl.isPending}>
               <Library className="h-4 w-4 mr-2" /> Media Library
             </Button>
