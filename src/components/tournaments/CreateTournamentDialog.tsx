@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Upload, CalendarIcon, ImageIcon } from "lucide-react";
+import { Plus, Upload, CalendarIcon, ImageIcon, X } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +53,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [prizePool, setPrizePool] = useState("");
   const [prizeType, setPrizeType] = useState("none");
   const [prizeId, setPrizeId] = useState("");
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [startDates, setStartDates] = useState<Date[]>([]);
   const [startTime, setStartTime] = useState("12:00");
   const [rules, setRules] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -113,33 +113,41 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
       image_url = imagePreview;
     }
 
-    const combinedDate = new Date(startDate!);
-    const [hours, minutes] = startTime.split(":").map(Number);
-    combinedDate.setHours(hours, minutes, 0, 0);
+    const sortedDates = [...startDates].sort((a, b) => a.getTime() - b.getTime());
 
-    onCreate({
-      name: name.trim(),
-      game: game.trim(),
-      description: description.trim() || undefined,
-      format,
-      max_participants: parseInt(maxParticipants) || 16,
-      prize_pool: prizePool.trim() || undefined,
-      prize_type: prizeType,
-      prize_id: prizeType === "physical" && prizeId ? prizeId : undefined,
-      start_date: combinedDate.toISOString(),
-      rules: rules.trim() || undefined,
-      image_url,
-      points_first: parseInt(pointsFirst) || 10,
-      points_second: parseInt(pointsSecond) || 5,
-      points_third: parseInt(pointsThird) || 3,
-      points_participation: parseInt(pointsParticipation) || 2,
-      prize_pct_first: prizePctFirst,
-      prize_pct_second: prizePctSecond,
-      prize_pct_third: prizePctThird,
-    });
+    for (const date of sortedDates) {
+      const combinedDate = new Date(date);
+      const [hours, minutes] = startTime.split(":").map(Number);
+      combinedDate.setHours(hours, minutes, 0, 0);
+
+      const tournamentName = sortedDates.length > 1
+        ? `${name.trim()} - ${formatDate(date, "MMM d")}`
+        : name.trim();
+
+      onCreate({
+        name: tournamentName,
+        game: game.trim(),
+        description: description.trim() || undefined,
+        format,
+        max_participants: parseInt(maxParticipants) || 16,
+        prize_pool: prizePool.trim() || undefined,
+        prize_type: prizeType,
+        prize_id: prizeType === "physical" && prizeId ? prizeId : undefined,
+        start_date: combinedDate.toISOString(),
+        rules: rules.trim() || undefined,
+        image_url,
+        points_first: parseInt(pointsFirst) || 10,
+        points_second: parseInt(pointsSecond) || 5,
+        points_third: parseInt(pointsThird) || 3,
+        points_participation: parseInt(pointsParticipation) || 2,
+        prize_pct_first: prizePctFirst,
+        prize_pct_second: prizePctSecond,
+        prize_pct_third: prizePctThird,
+      });
+    }
     setOpen(false);
     setName(""); setGame(""); setDescription(""); setFormat("single_elimination");
-    setMaxParticipants("16"); setPrizePool(""); setPrizeType("none"); setPrizeId(""); setStartDate(undefined); setStartTime("12:00"); setRules("");
+    setMaxParticipants("16"); setPrizePool(""); setPrizeType("none"); setPrizeId(""); setStartDates([]); setStartTime("12:00"); setRules("");
     setImageFile(null); setImagePreview(null);
     setPointsFirst("10"); setPointsSecond("5"); setPointsThird("3"); setPointsParticipation("2");
     setPrizePctFirst(50); setPrizePctSecond(30); setPrizePctThird(20);
@@ -197,28 +205,45 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
           </div>
           <div className="grid grid-cols-2 gap-4">
            <div className="space-y-2">
-               <Label className="font-heading text-sm">Start Date *</Label>
+               <Label className="font-heading text-sm">Start Date(s) *</Label>
                <Popover>
                  <PopoverTrigger asChild>
                    <Button variant="outline" className={cn(
                      "w-full justify-start text-left font-body bg-card border-border",
-                     !startDate && "text-muted-foreground"
+                     startDates.length === 0 && "text-muted-foreground"
                    )}>
                      <CalendarIcon className="mr-2 h-4 w-4" />
-                     {startDate ? formatDate(startDate, "PPP") : "Pick a date"}
+                     {startDates.length === 0
+                       ? "Pick date(s)"
+                       : startDates.length === 1
+                         ? formatDate(startDates[0], "PPP")
+                         : `${startDates.length} dates selected`}
                    </Button>
                  </PopoverTrigger>
                  <PopoverContent className="w-auto p-0" align="start">
                    <Calendar
-                     mode="single"
-                     selected={startDate}
-                     onSelect={setStartDate}
+                     mode="multiple"
+                     selected={startDates}
+                     onSelect={(dates) => setStartDates(dates || [])}
                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                      initialFocus
                      className={cn("p-3 pointer-events-auto")}
                    />
                  </PopoverContent>
                </Popover>
+               {startDates.length > 0 && (
+                 <div className="flex flex-wrap gap-1.5 pt-1">
+                   {[...startDates].sort((a, b) => a.getTime() - b.getTime()).map((d, i) => (
+                     <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-medium text-primary">
+                       {formatDate(d, "MMM d")}
+                       <button type="button" onClick={() => setStartDates(prev => prev.filter((_, idx) => idx !== i))}
+                         className="hover:text-destructive transition-colors">
+                         <X className="h-3 w-3" />
+                       </button>
+                     </span>
+                   ))}
+                 </div>
+               )}
              </div>
             <div className="space-y-2">
               <Label className="font-heading text-sm">Start Time *</Label>
@@ -300,9 +325,9 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             <Textarea value={rules} onChange={(e) => setRules(e.target.value)} maxLength={2000}
               className="bg-card border-border font-body min-h-[80px]" placeholder="Tournament rules..." />
           </div>
-          <Button type="submit" disabled={isCreating || uploadingImage || !startDate}
+          <Button type="submit" disabled={isCreating || uploadingImage || startDates.length === 0}
             className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5">
-            {isCreating ? "Creating..." : "Create Tournament"}
+            {isCreating ? "Creating..." : startDates.length > 1 ? `Create ${startDates.length} Tournaments` : "Create Tournament"}
           </Button>
         </form>
       </DialogContent>
