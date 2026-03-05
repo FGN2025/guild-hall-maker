@@ -1,34 +1,48 @@
 
 
-# AI-Enhanced Challenge Description
+# Multi-Date Tournament Creation -- Assessment & Plan
 
-## What to Build
+## What the User Wants
+When creating a tournament, instead of picking a single start date, the creator can select multiple dates. Each date generates a separate tournament record in the database, sharing the same name (with a date suffix), game, format, rules, prizes, and settings.
 
-Add a "✨ Enhance with AI" button next to the Description textarea in the Create Challenge dialog. When clicked, it sends the challenge name and current description to an edge function that uses Lovable AI to generate a polished, engaging description. The moderator can accept, regenerate, or edit the result.
+## Level of Effort: **Low-Medium** (one file change, no database changes)
+
+The current `CreateTournamentDialog` already calls `onCreate()` with a single data payload. The simplest approach is to allow multiple date selection in the dialog and loop over each date, calling `onCreate()` once per date. No schema changes are needed -- each date simply produces an independent tournament row.
 
 ## Implementation
 
-### 1. Edge Function: `supabase/functions/enhance-challenge-description/index.ts`
+### Changes to `src/components/tournaments/CreateTournamentDialog.tsx`
 
-- Accepts `{ name, description, challenge_type }` 
-- Calls Lovable AI Gateway (`google/gemini-3-flash-preview`) with a prompt like: "You are a gaming community manager. Rewrite this challenge description to be engaging, clear, and motivating for competitive gamers. Keep it concise (2-3 sentences max). Challenge name: {name}. Type: {type}. Draft description: {description}"
-- Returns `{ enhanced_description }` (non-streaming, simple invoke)
-- Handles 429/402 errors
+1. **Replace single date picker with multi-date picker**
+   - Change `startDate` state from `Date | undefined` to `Date[]`
+   - Switch `Calendar` from `mode="single"` to `mode="multiple"`
+   - Display selected date count (e.g., "3 dates selected") in the trigger button
 
-### 2. Update `src/pages/moderator/ModeratorChallenges.tsx`
+2. **Add a visual list of selected dates** below the picker showing each date as a removable chip/tag so the creator can review and remove individual dates.
 
-- Add an "Enhance with AI" button (with Sparkles icon) below the Description textarea
-- Button is enabled when `form.name` is non-empty (description can be empty -- AI will generate from scratch using the name)
-- On click: call `supabase.functions.invoke('enhance-challenge-description', { body: { name, description, challenge_type } })`
-- While loading: show spinner on button, disable textarea
-- On success: populate description field with the enhanced text
-- On error: show toast with error message
-- User can freely edit the result or click enhance again
+3. **Update submit logic** to loop over each selected date:
+   ```text
+   for each date in selectedDates:
+     combinedDate = date + startTime
+     onCreate({ ...sharedFields, 
+       name: dates.length > 1 ? `${name} - ${formatDate(date)}` : name,
+       start_date: combinedDate 
+     })
+   ```
+
+4. **Update button label** to reflect count: "Create 3 Tournaments" vs "Create Tournament"
+
+5. **Validation**: Require at least one date selected; disable submit if none.
 
 ### Files Changed
 
 | File | Action |
 |---|---|
-| `supabase/functions/enhance-challenge-description/index.ts` | Create -- edge function for AI enhancement |
-| `src/pages/moderator/ModeratorChallenges.tsx` | Update -- add enhance button + state |
+| `src/components/tournaments/CreateTournamentDialog.tsx` | Update -- multi-date selection + loop submit |
+
+### What Does NOT Change
+- Database schema (no new tables or columns)
+- `useTournaments` hook (each `onCreate` call is identical to today)
+- Tournament detail/bracket pages
+- RLS policies
 
