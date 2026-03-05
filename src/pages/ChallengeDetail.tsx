@@ -25,6 +25,9 @@ const statusLabel: Record<string, { label: string; color: string }> = {
   rejected: { label: "Needs Revision", color: "bg-red-500/20 text-red-400" },
 };
 
+/** Shape returned by useChallengeDetail for a single challenge row joined with games */
+type ChallengeRow = NonNullable<ReturnType<typeof useChallengeDetail>["challenge"]>;
+
 const ChallengeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { challenge, tasks, isLoading } = useChallengeDetail(id);
@@ -56,17 +59,17 @@ const ChallengeDetail = () => {
     );
   }
 
-  const c = challenge as any;
+  const c = challenge as ChallengeRow;
   const gameName = c.games?.name;
   const coverUrl = c.cover_image_url || c.games?.cover_image_url || "/placeholder.svg";
-  const evidenceTaskIds = new Set(evidence.map((e: any) => e.task_id).filter(Boolean));
-  const tasksComplete = tasks.length > 0 ? tasks.filter((t: any) => evidenceTaskIds.has(t.id)).length : 0;
+  const evidenceTaskIds = new Set(evidence.map((e) => e.task_id).filter(Boolean));
+  const tasksComplete = tasks.length > 0 ? tasks.filter((t) => evidenceTaskIds.has(t.id)).length : 0;
   const progress = tasks.length > 0 ? (tasksComplete / tasks.length) * 100 : 0;
   const status = enrollment?.status ? statusLabel[enrollment.status] : null;
   const canUpload = enrollment && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
   const canSubmit = enrollment && evidence.length > 0 && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
 
-  const activeTask = tasks.find((t: any) => t.id === activeTaskId);
+  const activeTask = tasks.find((t) => t.id === activeTaskId);
 
   return (
     <>
@@ -146,14 +149,14 @@ const ChallengeDetail = () => {
                     Submitted Evidence ({evidence.length})
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {evidence.map((e: any) => {
+                    {evidence.map((e) => {
                       const evidenceStatus = e.status || "pending";
                       const statusColor = evidenceStatus === "approved"
                         ? "bg-green-500/20 text-green-400 border-green-500/30"
                         : evidenceStatus === "rejected"
                         ? "bg-red-500/20 text-red-400 border-red-500/30"
                         : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-                      const taskForEvidence = tasks.find((t: any) => t.id === e.task_id);
+                      const taskForEvidence = tasks.find((t) => t.id === e.task_id);
 
                       return (
                         <div key={e.id} className="relative group space-y-1">
