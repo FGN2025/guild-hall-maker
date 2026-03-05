@@ -10,6 +10,7 @@ import { IMAGE_PRESETS } from "@/lib/imageValidation";
 import { Checkbox } from "@/components/ui/checkbox";
 import HeroLogoSettings from "@/components/admin/HeroLogoSettings";
 import AIImageConfigCard from "@/components/admin/AIImageConfigCard";
+import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 
 interface LimitEntry {
   enabled: boolean;
@@ -338,6 +339,11 @@ const AdminSettings = () => {
             Reset to Defaults
           </Button>
         </div>
+      </div>
+
+      {/* Calendar Publish */}
+      <div className="rounded-lg border border-border bg-card p-6">
+        <CalendarPublishManager />
       </div>
     </div>
   );

@@ -6,6 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Megaphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 
@@ -14,6 +18,22 @@ const TenantMarketing = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Get the user's tenant_id
+  const { data: tenantAdmin } = useQuery({
+    queryKey: ["my_tenant_id", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tenant_admins")
+        .select("tenant_id")
+        .eq("user_id", user!.id)
+        .limit(1)
+        .maybeSingle();
+      return data?.tenant_id as string | null;
+    },
+  });
 
   const filtered = campaigns.filter((c) => {
     if (category !== "all" && c.category !== category) return false;
@@ -63,6 +83,13 @@ const TenantMarketing = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Calendar Publish for this tenant */}
+      {tenantAdmin && (
+        <div className="rounded-lg border border-border bg-card p-6">
+          <CalendarPublishManager tenantId={tenantAdmin} />
         </div>
       )}
     </div>
