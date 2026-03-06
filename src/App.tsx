@@ -35,6 +35,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMedia from "./pages/admin/AdminMedia";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTournaments from "./pages/admin/AdminTournaments";
+import AdminChallenges from "./pages/admin/AdminChallenges";
 import AdminBypassCodes from "./pages/admin/AdminBypassCodes";
 import AdminTenants from "./pages/admin/AdminTenants";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -137,6 +138,7 @@ const App = () => (
             <Route path="/admin/media" element={<AdminRoute><AdminMedia /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
+            <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
             <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
             <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />

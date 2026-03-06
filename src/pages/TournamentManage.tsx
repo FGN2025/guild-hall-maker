@@ -81,7 +81,7 @@ const TournamentManage = () => {
             <p className="text-sm text-muted-foreground font-body">
               You can only manage tournaments you created.
             </p>
-            <Button variant="outline" className="mt-4" onClick={() => navigate("/tournaments")}>
+            <Button variant="outline" className="mt-4" onClick={() => navigate(-1)}>
               Back to Tournaments
             </Button>
           </div>
@@ -104,7 +104,7 @@ const TournamentManage = () => {
         <Button
           variant="ghost"
           className="mb-6 text-muted-foreground hover:text-foreground font-heading"
-          onClick={() => navigate("/tournaments")}
+          onClick={() => navigate(-1)}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Tournaments
