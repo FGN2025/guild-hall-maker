@@ -1,0 +1,1 @@
+ALTER TABLE public.tenant_codes ADD COLUMN event_id uuid REFERENCES public.tenant_events(id) ON DELETE SET NULL;

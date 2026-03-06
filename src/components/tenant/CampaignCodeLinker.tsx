@@ -15,16 +15,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, KeyRound, Copy, Unlink, Link } from "lucide-react";
 import { toast } from "sonner";
 
-const CODE_TYPES = ["campaign", "override", "access", "tracking"] as const;
+const CODE_TYPES = ["campaign", "override", "access", "tracking", "verification"] as const;
 
 interface CampaignCodeLinkerProps {
-  campaignId: string;
-  campaignTitle: string;
+  campaignId?: string;
+  campaignTitle?: string;
+  eventId?: string;
+  eventTitle?: string;
   tenantId: string | null;
   readOnly?: boolean;
 }
 
-const CampaignCodeLinker = ({ campaignId, campaignTitle, tenantId, readOnly = false }: CampaignCodeLinkerProps) => {
+const CampaignCodeLinker = ({ campaignId, campaignTitle, eventId, eventTitle, tenantId, readOnly = false }: CampaignCodeLinkerProps) => {
+  const entityId = campaignId || eventId || "";
+  const entityTitle = campaignTitle || eventTitle || "";
+  const entityField = campaignId ? "campaign_id" : "event_id";
   const { codes, isLoading, createCode, updateCode } = useTenantCodes(tenantId);
   const [createOpen, setCreateOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
@@ -33,18 +38,19 @@ const CampaignCodeLinker = ({ campaignId, campaignTitle, tenantId, readOnly = fa
     max_uses: "", expires_at: "",
   });
 
-  const linkedCodes = codes.filter((c) => c.campaign_id === campaignId);
-  const unlinkableCodes = codes.filter((c) => !c.campaign_id && c.is_active);
+  const linkedCodes = codes.filter((c) => (entityField === "campaign_id" ? c.campaign_id === entityId : (c as any).event_id === entityId));
+  const unlinkableCodes = codes.filter((c) => !c.campaign_id && !(c as any).event_id && c.is_active);
 
   const handleCreate = () => {
     if (!form.code.trim()) { toast.error("Code is required."); return; }
     createCode.mutate({
       code: form.code,
-      description: form.description || `Code for ${campaignTitle}`,
+      description: form.description || `Code for ${entityTitle}`,
       code_type: form.code_type,
       max_uses: form.max_uses ? parseInt(form.max_uses) : null,
       expires_at: form.expires_at || null,
-      campaign_id: campaignId,
+      campaign_id: campaignId || null,
+      event_id: eventId || null,
     }, {
       onSuccess: () => {
         setForm({ code: "", description: "", code_type: "campaign", max_uses: "", expires_at: "" });
@@ -54,13 +60,14 @@ const CampaignCodeLinker = ({ campaignId, campaignTitle, tenantId, readOnly = fa
   };
 
   const handleLink = (codeId: string) => {
-    updateCode.mutate({ id: codeId, campaign_id: campaignId } as any);
+    updateCode.mutate({ id: codeId, [entityField]: entityId } as any);
     setLinkOpen(false);
   };
 
   const handleUnlink = (codeId: string) => {
-    updateCode.mutate({ id: codeId, campaign_id: null } as any);
+    updateCode.mutate({ id: codeId, [entityField]: null } as any);
   };
+
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -149,7 +156,7 @@ const CampaignCodeLinker = ({ campaignId, campaignTitle, tenantId, readOnly = fa
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-display">New Code for "{campaignTitle}"</DialogTitle>
+            <DialogTitle className="font-display">New Code for "{entityTitle}"</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">

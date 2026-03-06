@@ -83,15 +83,32 @@ const ZipCheckStep = ({
     setFallbackLoading(true);
     setFallbackError("");
     try {
+      // Try platform bypass code first
       const { data, error } = await supabase.rpc("validate_bypass_code", {
         _code: fallbackCode.trim(),
       });
       if (error) throw error;
       if (data) {
         onProceed();
-      } else {
-        setFallbackError("Invalid or expired invite code.");
+        return;
       }
+
+      // Fallback: try tenant code validation (dry run)
+      const { data: tcData, error: tcError } = await supabase.functions.invoke("validate-tenant-code", {
+        body: { code: fallbackCode.trim(), dry_run: true },
+      });
+      if (!tcError && tcData?.valid) {
+        if (tcData.code_type === "access") {
+          // Access code grants immediate entry
+          onProceed();
+        } else {
+          // Other types (campaign, tracking, verification, override) — allow proceed with attribution
+          onProceed();
+        }
+        return;
+      }
+
+      setFallbackError("Invalid or expired invite code.");
     } catch (err: any) {
       setFallbackError(err.message || "Error validating code.");
     } finally {

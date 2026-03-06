@@ -18,11 +18,11 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, KeyRound, Copy, Megaphone } from "lucide-react";
+import { Plus, Trash2, KeyRound, Copy, Megaphone, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const CODE_TYPES = ["campaign", "override", "access", "tracking"] as const;
+const CODE_TYPES = ["campaign", "override", "access", "tracking", "verification"] as const;
 
 const TenantCodes = () => {
   const { tenantInfo } = useTenantAdmin();
@@ -150,6 +150,7 @@ const TenantCodes = () => {
                 <TableHead>Code</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Campaign</TableHead>
+                <TableHead>Event</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="text-center">Usage</TableHead>
                 <TableHead>Expires</TableHead>
@@ -177,6 +178,16 @@ const TenantCodes = () => {
                       <span className="flex items-center gap-1 text-primary">
                         <Megaphone className="h-3 w-3" />
                         {campaignMap.get(c.campaign_id) || "Campaign"}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {(c as any).event_id ? (
+                      <span className="flex items-center gap-1 text-primary">
+                        <CalendarDays className="h-3 w-3" />
+                        Event
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
