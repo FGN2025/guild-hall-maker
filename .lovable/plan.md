@@ -1,20 +1,20 @@
 
 
-# Fix: Bulk Delete Not Working as Expected
+# Fix: Bulk Delete Action Bar Not Visible
 
 ## Problem
 
-When items are selected via checkboxes, the individual trash icon on each card still performs a single-item delete. The sticky "Delete Selected" action bar appears at the top of the grid, but the user is instead clicking the per-card trash icon, which only deletes that one image.
+The bulk action bar uses `sticky top-0`, but the media grid is nested inside the admin layout which has its own scrollable container. The `sticky` positioning only works relative to the nearest scroll ancestor. The bar sticks to the top of whatever scroll container wraps it, but the user has scrolled far down the page to select images — the bar is above the visible viewport or stuck at a position they can't see.
 
 ## Solution
 
-Two changes to `src/components/media/MediaGrid.tsx`:
+**File**: `src/components/media/MediaGrid.tsx`
 
-1. **Hide individual action overlay when in selection mode** -- When `selectedIds.size > 0`, suppress the hover overlay (copy/trash buttons) so the entire card acts as a selection toggle. This prevents confusion between single-delete and bulk-delete.
+Move the bulk action bar from `sticky top-0` to `fixed` positioning so it floats visibly at the bottom of the screen regardless of scroll position. This is a common pattern (like Gmail's bulk action bar).
 
-2. **Make the bulk action bar more prominent** -- Add stronger visual styling (larger text, more contrast) so the "Delete Selected" bar at the top is unmissable.
+- Change the bar to `fixed bottom-4 left-1/2 -translate-x-1/2 z-50` with a solid background, rounded corners, and shadow
+- This ensures the bar is always visible when items are selected, no matter where the user has scrolled
+- Add `w-auto` / `max-w-xl` so it's a floating pill at the bottom center
 
-This ensures that once the user starts selecting, the only delete path is the bulk "Delete Selected" button in the action bar. Clicking any card in selection mode simply toggles its checkbox.
-
-Single-file change, no backend modifications.
+Single-file, styling-only change.
 
