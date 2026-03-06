@@ -17,17 +17,7 @@ import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog
 const ModeratorChallenges = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [enhancing, setEnhancing] = useState(false);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: "", description: "", challenge_type: "one_time",
-    start_date: "", end_date: "",
-    points_first: "10", points_second: "5", points_third: "3", points_participation: "2",
-    difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
-    cover_image_url: "",
-    tasks: [] as { title: string; description: string }[],
-  });
 
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["mod-challenges"],
@@ -38,16 +28,16 @@ const ModeratorChallenges = () => {
     },
   });
 
-  const { data: games = [] } = useQuery({
-    queryKey: ["mod-games-list"],
+  const { data: enrollmentCounts = {} } = useQuery({
+    queryKey: ["mod-enrollment-counts"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("games").select("id, name").eq("is_active", true).order("name");
+      const { data, error } = await supabase.from("challenge_enrollments").select("challenge_id");
       if (error) throw error;
-      return data ?? [];
+      const counts: Record<string, number> = {};
+      (data ?? []).forEach((e: any) => { counts[e.challenge_id] = (counts[e.challenge_id] || 0) + 1; });
+      return counts;
     },
   });
-
-  const [selectedGameId, setSelectedGameId] = useState<string>("");
 
   const { data: enrollmentCounts = {} } = useQuery({
     queryKey: ["mod-enrollment-counts"],
