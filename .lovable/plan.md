@@ -1,13 +1,11 @@
 
 
-# Fix: Remove Duplicate Sidebar on Tenant Players Page
+# Add Helper Text to Career Path Mapping Form
 
-## Problem
-`TenantRoute` already wraps all tenant pages in `TenantLayout` (which renders the sidebar). `TenantPlayers.tsx` **also** wraps its content in `TenantLayout`, resulting in two sidebars.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-## Fix
-Remove the `TenantLayout` wrapper from `TenantPlayers.tsx` — return just the page content `<div>` directly, same pattern the other tenant pages should follow.
-
-## File Change
-- `src/pages/tenant/TenantPlayers.tsx` — Remove the `TenantLayout` import and wrapper; keep the inner `<div className="space-y-6">` as the top-level return.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
