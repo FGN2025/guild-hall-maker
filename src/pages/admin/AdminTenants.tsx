@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTenants, useTenantAdmins } from "@/hooks/useTenants";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
