@@ -40,16 +40,6 @@ const ModeratorChallenges = () => {
     },
   });
 
-  const { data: enrollmentCounts = {} } = useQuery({
-    queryKey: ["mod-enrollment-counts"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("challenge_enrollments").select("challenge_id");
-      if (error) throw error;
-      const counts: Record<string, number> = {};
-      (data ?? []).forEach((e: any) => { counts[e.challenge_id] = (counts[e.challenge_id] || 0) + 1; });
-      return counts;
-    },
-  });
 
   // Tasks for review challenge
   const { data: reviewTasks = [] } = useQuery({
