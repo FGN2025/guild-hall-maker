@@ -77,57 +77,6 @@ const ModeratorChallenges = () => {
     },
   });
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Not authenticated");
-      const { data: challenge, error } = await supabase.from("challenges").insert({
-        name: form.name,
-        description: form.description || null,
-        points_reward: parseInt(form.points_first) || 10,
-        challenge_type: form.challenge_type,
-        start_date: form.start_date || null,
-        end_date: form.end_date || null,
-        created_by: user.id,
-        points_first: parseInt(form.points_first) || 10,
-        points_second: parseInt(form.points_second) || 5,
-        points_third: parseInt(form.points_third) || 3,
-        points_participation: parseInt(form.points_participation) || 2,
-        difficulty: form.difficulty,
-        estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : null,
-        requires_evidence: form.requires_evidence,
-        cover_image_url: form.cover_image_url || null,
-        game_id: selectedGameId || null,
-      } as any).select().single();
-      if (error) throw error;
-
-      // Create tasks
-      if (form.tasks.length > 0 && challenge) {
-        const tasks = form.tasks.map((t, i) => ({
-          challenge_id: challenge.id,
-          title: t.title,
-          description: t.description || null,
-          display_order: i,
-        }));
-        const { error: taskError } = await supabase.from("challenge_tasks").insert(tasks);
-        if (taskError) throw taskError;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mod-challenges"] });
-      toast.success("Challenge created!");
-      setCreateOpen(false);
-      setForm({
-        name: "", description: "", challenge_type: "one_time",
-        start_date: "", end_date: "",
-        points_first: "10", points_second: "5", points_third: "3", points_participation: "2",
-        difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
-        cover_image_url: "", tasks: [],
-      });
-      setSelectedGameId("");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase.from("challenges").update({ is_active } as any).eq("id", id);
@@ -172,11 +121,6 @@ const ModeratorChallenges = () => {
   });
 
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
-
-  const addTask = () => setForm(f => ({ ...f, tasks: [...f.tasks, { title: "", description: "" }] }));
-  const removeTask = (i: number) => setForm(f => ({ ...f, tasks: f.tasks.filter((_, idx) => idx !== i) }));
-  const updateTask = (i: number, field: string, val: string) =>
-    setForm(f => ({ ...f, tasks: f.tasks.map((t, idx) => idx === i ? { ...t, [field]: val } : t) }));
 
   return (
     <div>
