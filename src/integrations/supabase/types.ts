@@ -244,6 +244,57 @@ export type Database = {
           },
         ]
       }
+      career_path_mappings: {
+        Row: {
+          challenge_id: string | null
+          created_at: string | null
+          credit_type: string | null
+          credit_value: number | null
+          external_module_id: string | null
+          external_path_id: string
+          game_id: string | null
+          id: string
+          target_app: string
+        }
+        Insert: {
+          challenge_id?: string | null
+          created_at?: string | null
+          credit_type?: string | null
+          credit_value?: number | null
+          external_module_id?: string | null
+          external_path_id: string
+          game_id?: string | null
+          id?: string
+          target_app: string
+        }
+        Update: {
+          challenge_id?: string | null
+          created_at?: string | null
+          credit_type?: string | null
+          credit_value?: number | null
+          external_module_id?: string | null
+          external_path_id?: string
+          game_id?: string | null
+          id?: string
+          target_app?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_path_mappings_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "career_path_mappings_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_completions: {
         Row: {
           awarded_points: number
@@ -659,6 +710,69 @@ export type Database = {
           token?: string
           used?: boolean
           user_id?: string
+        }
+        Relationships: []
+      }
+      ecosystem_sync_log: {
+        Row: {
+          created_at: string | null
+          data_type: string
+          error_message: string | null
+          id: string
+          last_synced_at: string
+          records_synced: number | null
+          status: string | null
+          target_app: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_type: string
+          error_message?: string | null
+          id?: string
+          last_synced_at?: string
+          records_synced?: number | null
+          status?: string | null
+          target_app: string
+        }
+        Update: {
+          created_at?: string | null
+          data_type?: string
+          error_message?: string | null
+          id?: string
+          last_synced_at?: string
+          records_synced?: number | null
+          status?: string | null
+          target_app?: string
+        }
+        Relationships: []
+      }
+      ecosystem_webhooks: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          is_active: boolean | null
+          secret_key: string
+          target_app: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          is_active?: boolean | null
+          secret_key: string
+          target_app: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          is_active?: boolean | null
+          secret_key?: string
+          target_app?: string
+          webhook_url?: string
         }
         Relationships: []
       }
