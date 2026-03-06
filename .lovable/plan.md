@@ -1,14 +1,15 @@
 
 
-# Plan: Add Delete Confirmation Dialog to Media Grid
+# Plan: Add Image Preview Dialog to Media Grid
 
 ## Change
 
 **File**: `src/components/media/MediaGrid.tsx`
 
-- Import `AlertDialog` components from `@/components/ui/alert-dialog`
-- Wrap the delete button in an `AlertDialog` that asks "Are you sure you want to delete this media item?" with Cancel and Delete actions
-- On confirm, call the existing `onDelete` handler
+- Add a state variable to track which media item is selected for preview
+- Add a `Dialog` component that displays the full image when an item is clicked
+- The dialog will show the image at full size with its filename as the title
+- Clicking the image thumbnail (not the hover overlay buttons) will open the preview dialog
 
-Single file change, no backend updates needed.
+This is a single-file UI change with no backend modifications needed.
 
