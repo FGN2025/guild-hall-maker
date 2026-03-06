@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMarketingCampaigns, useMarketingAssets } from "@/hooks/useMarketingCampaigns";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { ArrowLeft, Download, Copy, Check, BookmarkPlus, Pencil } from "lucide-r
 import { useState } from "react";
 import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
+import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 
 const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +17,7 @@ const TenantMarketingDetail = () => {
   const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(true);
   const { assets, isLoading: loadingAssets } = useMarketingAssets(id);
   const { saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
+  const { tenantInfo } = useTenantAdmin();
   const [copied, setCopied] = useState(false);
   const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
   const [editorAssetMeta, setEditorAssetMeta] = useState<{ id: string; label: string } | null>(null);
@@ -75,6 +78,20 @@ const TenantMarketingDetail = () => {
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Promo Codes linked to this campaign */}
+      {tenantInfo && campaign && (
+        <Card>
+          <CardContent className="pt-6">
+            <CampaignCodeLinker
+              campaignId={campaign.id}
+              campaignTitle={campaign.title}
+              tenantId={tenantInfo.tenantId}
+              readOnly={tenantInfo.tenantRole === "marketing"}
+            />
           </CardContent>
         </Card>
       )}

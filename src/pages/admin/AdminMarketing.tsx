@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMarketingCampaigns, useMarketingAssets, MarketingCampaign } from "@/hooks/useMarketingCampaigns";
+import AdminCampaignCodes from "@/components/admin/AdminCampaignCodes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIco
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
+import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { toast } from "sonner";
 
 const CATEGORIES = [
@@ -192,6 +194,9 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
               ))}
             </div>
           )}
+
+          {/* Linked promo codes across tenants */}
+          <AdminCampaignCodes campaignId={campaign.id} />
         </div>
 
         {editorAssetUrl && (

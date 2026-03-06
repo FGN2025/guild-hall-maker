@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTenantCodes, TenantCode } from "@/hooks/useTenantCodes";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useMarketingCampaigns } from "@/hooks/useMarketingCampaigns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, KeyRound, Copy } from "lucide-react";
+import { Plus, Trash2, KeyRound, Copy, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -28,7 +29,8 @@ const TenantCodes = () => {
   const tenantId = tenantInfo?.tenantId ?? null;
   const isReadOnly = tenantInfo?.tenantRole === "marketing";
   const { codes, isLoading, createCode, updateCode, deleteCode } = useTenantCodes(tenantId);
-
+  const { campaigns } = useMarketingCampaigns(true);
+  const campaignMap = new Map(campaigns.map((c) => [c.id, c.title]));
   const [typeFilter, setTypeFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({
@@ -147,6 +149,7 @@ const TenantCodes = () => {
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Campaign</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="text-center">Usage</TableHead>
                 <TableHead>Expires</TableHead>
@@ -168,6 +171,16 @@ const TenantCodes = () => {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">{c.code_type}</Badge>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {c.campaign_id ? (
+                      <span className="flex items-center gap-1 text-primary">
+                        <Megaphone className="h-3 w-3" />
+                        {campaignMap.get(c.campaign_id) || "Campaign"}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
                     {c.description || "—"}
