@@ -70,6 +70,18 @@ export const useMediaLibrary = (category?: string) => {
     onError: (err: Error) => toast.error(err.message || "Upload failed"),
   });
 
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ itemId, category }: { itemId: string; category: string }) => {
+      const { error } = await supabase.from("media_library").update({ category } as any).eq("id", itemId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Category updated");
+      queryClient.invalidateQueries({ queryKey: ["media-library"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Update failed"),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (item: MediaItem) => {
       const { error: storageErr } = await supabase.storage.from("app-media").remove([item.file_path]);
@@ -109,5 +121,7 @@ export const useMediaLibrary = (category?: string) => {
     isDeleting: deleteMutation.isPending,
     generateImage: generateMutation.mutateAsync,
     isGenerating: generateMutation.isPending,
+    updateCategory: updateCategoryMutation.mutate,
+    isUpdatingCategory: updateCategoryMutation.isPending,
   };
 };

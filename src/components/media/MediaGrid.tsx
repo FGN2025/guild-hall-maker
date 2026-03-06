@@ -1,17 +1,20 @@
 import { MediaItem } from "@/hooks/useMediaLibrary";
 import { Trash2, Copy, Image, Film, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Props {
   media: MediaItem[];
   onDelete: (item: MediaItem) => void;
   isDeleting: boolean;
+  onUpdateCategory?: (data: { itemId: string; category: string }) => void;
 }
 
+const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner"];
 const typeIcons: Record<string, typeof Image> = { image: Image, video: Film, audio: Music };
 
-const MediaGrid = ({ media, onDelete, isDeleting }: Props) => {
+const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => {
   if (media.length === 0) {
     return (
       <div className="text-center py-16">
@@ -53,9 +56,25 @@ const MediaGrid = ({ media, onDelete, isDeleting }: Props) => {
                 </Button>
               </div>
             </div>
-            <div className="p-2">
+            <div className="p-2 space-y-1">
               <p className="text-xs font-heading text-foreground truncate">{item.file_name}</p>
-              <p className="text-[10px] text-muted-foreground capitalize">{item.category}</p>
+              {onUpdateCategory ? (
+                <Select
+                  value={item.category}
+                  onValueChange={(val) => onUpdateCategory({ itemId: item.id, category: val })}
+                >
+                  <SelectTrigger className="h-6 text-[10px] bg-transparent border-border/50 px-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c} className="capitalize text-xs">{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-[10px] text-muted-foreground capitalize">{item.category}</p>
+              )}
             </div>
           </div>
         );
