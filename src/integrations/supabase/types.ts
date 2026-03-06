@@ -2430,6 +2430,10 @@ export type Database = {
         Returns: boolean
       }
       validate_bypass_code: { Args: { _code: string }; Returns: boolean }
+      validate_tenant_code: {
+        Args: { _code: string; _tenant_id?: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "marketing"
