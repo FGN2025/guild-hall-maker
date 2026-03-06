@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIco
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
+import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { toast } from "sonner";
 
 const CATEGORIES = [
