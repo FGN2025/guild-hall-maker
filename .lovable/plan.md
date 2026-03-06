@@ -1,12 +1,11 @@
 
 
-# Fix Duplicate Admin Sidebar on Access Requests Page
+# Add Helper Text to Career Path Mapping Form
 
-## Problem
-`AdminAccessRequests` wraps its content in `<AdminLayout>`, but it's rendered via `<AdminRoute>` which already wraps children in `<AdminLayout>`. This causes a double sidebar.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-## Fix
-**`src/pages/admin/AdminAccessRequests.tsx`**: Remove the `<AdminLayout>` wrapper. Replace it with a plain fragment or div, keeping just the page content. Remove the `AdminLayout` import.
-
-This is a one-line pattern fix — the page content stays identical, only the redundant layout wrapper is removed.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
