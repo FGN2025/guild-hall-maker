@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTenants, useTenantAdmins } from "@/hooks/useTenants";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -116,6 +116,7 @@ function LogoPicker({
 
 /* ─── Main page ─── */
 const AdminTenants = () => {
+  const queryClient = useQueryClient();
   const { tenants, isLoading, createTenant, updateTenant, deleteTenant } = useTenants();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
@@ -171,7 +172,7 @@ const AdminTenants = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <BulkZipImportDialog tenants={tenants} onComplete={() => {}} />
+            <BulkZipImportDialog tenants={tenants} onComplete={() => {}} refetchTenants={() => queryClient.invalidateQueries({ queryKey: ["tenants"] })} />
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
