@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Gamepad2, FileText, Eye, Shield,
+  Gamepad2, FileText, Eye, Shield, Plus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -116,6 +117,10 @@ const AdminChallenges = () => {
           Challenge Oversight
         </h1>
         <div className="flex items-center gap-2">
+          <CreateChallengeDialog
+            invalidateQueryKey={["admin-challenges"]}
+            trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> New Challenge</Button>}
+          />
           <Button variant={viewMode === "list" ? "default" : "outline"} size="icon" onClick={() => setViewMode("list")}>
             <List className="h-4 w-4" />
           </Button>

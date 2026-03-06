@@ -1,23 +1,11 @@
 
 
-# Add "Create Challenge" Button to Admin Challenges Page
+# Add Helper Text to Career Path Mapping Form
 
-## Summary
-Port the challenge creation dialog from `ModeratorChallenges.tsx` into `AdminChallenges.tsx`, giving admins the ability to create challenges directly without navigating to the moderator panel.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-## Changes
-
-### `src/pages/admin/AdminChallenges.tsx`
-- Add the same create challenge dialog that exists in `ModeratorChallenges.tsx`:
-  - Form state for name, description, difficulty, type, dates, points, cover image, estimated minutes, evidence toggle, and task builder
-  - Game selector dropdown (query `games` table)
-  - AI description enhancement button (calls `enhance-challenge-description` edge function)
-  - Task/objective builder with add/remove
-  - Create mutation that inserts into `challenges` and `challenge_tasks`
-- Add a "New Challenge" button next to the view toggle in the header
-- Reuse `useAuth` for `user.id` as `created_by`
-- Invalidate `admin-challenges` query key on success
-- Add required imports: `Textarea`, `Label`, `Switch`, `DialogTrigger`, `Plus`, `Sparkles`, `Loader2`, `useAuth`
-
-No database or RLS changes needed — admins already have full access via the existing "Moderators can manage challenges" policy which includes the admin role.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
