@@ -439,34 +439,38 @@ function TenantCard({
   );
 }
 
-/* ─── Admin panel (unchanged logic) ─── */
+/* ─── Admin panel with two-step search flow ─── */
 function TenantAdminPanel({ tenantId }: { tenantId: string }) {
   const { admins, isLoading, addAdmin, removeAdmin } = useTenantAdmins(tenantId);
-  const [email, setEmail] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
   const [addRole, setAddRole] = useState("admin");
+  const [foundUser, setFoundUser] = useState<{ user_id: string; display_name: string } | null>(null);
 
-  const handleAdd = async () => {
-    if (!email.trim()) {
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
       toast.error("Please enter a display name to search for.");
       return;
     }
     setSearching(true);
+    setFoundUser(null);
     try {
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select("user_id, display_name")
-        .or(`display_name.ilike.%${email.trim()}%`)
-        .limit(1);
+        .ilike("display_name", `%${searchTerm.trim()}%`)
+        .limit(5);
 
       if (error) throw error;
       if (!profiles || profiles.length === 0) {
         toast.error("No user found matching that name. They must have an account first.");
         return;
       }
-
-      addAdmin.mutate({ tenantId, userId: profiles[0].user_id, role: addRole });
-      setEmail("");
+      const exact = profiles.find(p => p.display_name?.toLowerCase() === searchTerm.trim().toLowerCase());
+      setFoundUser(exact || profiles[0]);
+      if (!exact && profiles.length > 1) {
+        toast.info(`Found ${profiles.length} matches — showing closest. Refine your search if needed.`);
+      }
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -474,33 +478,59 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
     }
   };
 
+  const handleConfirmAdd = () => {
+    if (!foundUser) return;
+    addAdmin.mutate(
+      { tenantId, userId: foundUser.user_id, role: addRole },
+      { onSuccess: () => { setFoundUser(null); setSearchTerm(""); } }
+    );
+  };
+
   return (
     <div className="mt-6 space-y-4">
       <div className="flex gap-2">
         <Input
           placeholder="Search by display name..."
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={searchTerm}
+          onChange={(e) => { setSearchTerm(e.target.value); setFoundUser(null); }}
           className="flex-1"
-          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
-        <select
-          value={addRole}
-          onChange={(e) => setAddRole(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="admin">Admin</option>
-          <option value="manager">Manager</option>
-          <option value="marketing">Marketing</option>
-        </select>
         <Button
           size="icon"
-          onClick={handleAdd}
-          disabled={searching || addAdmin.isPending}
+          onClick={handleSearch}
+          disabled={searching}
         >
-          <UserPlus className="h-4 w-4" />
+          {searching ? <Search className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
         </Button>
       </div>
+
+      {foundUser && (
+        <div className="flex items-center justify-between p-3 rounded-lg border border-primary/30 bg-primary/5">
+          <div>
+            <p className="text-sm font-medium text-foreground">{foundUser.display_name}</p>
+            <p className="text-xs text-muted-foreground">Ready to assign</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={addRole}
+              onChange={(e) => setAddRole(e.target.value)}
+              className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+            >
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="marketing">Marketing</option>
+            </select>
+            <Button size="sm" onClick={handleConfirmAdd} disabled={addAdmin.isPending} className="gap-1">
+              <UserPlus className="h-3.5 w-3.5" />
+              {addAdmin.isPending ? "Adding..." : "Add"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setFoundUser(null)}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
