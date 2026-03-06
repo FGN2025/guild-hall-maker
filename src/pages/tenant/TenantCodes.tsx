@@ -29,7 +29,8 @@ const TenantCodes = () => {
   const tenantId = tenantInfo?.tenantId ?? null;
   const isReadOnly = tenantInfo?.tenantRole === "marketing";
   const { codes, isLoading, createCode, updateCode, deleteCode } = useTenantCodes(tenantId);
-
+  const { campaigns } = useMarketingCampaigns(true);
+  const campaignMap = new Map(campaigns.map((c) => [c.id, c.title]));
   const [typeFilter, setTypeFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({
@@ -148,6 +149,7 @@ const TenantCodes = () => {
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Campaign</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="text-center">Usage</TableHead>
                 <TableHead>Expires</TableHead>
