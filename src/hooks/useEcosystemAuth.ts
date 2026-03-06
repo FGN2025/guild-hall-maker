@@ -2,12 +2,14 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-type TargetApp = "manage" | "hub" | "play";
+type TargetApp = "manage" | "hub" | "play" | "academy" | "broadband";
 
 const APP_LABELS: Record<TargetApp, string> = {
   play: "FGN Play",
   manage: "FGN Manage",
   hub: "FGN Hub",
+  academy: "FGN Academy",
+  broadband: "BroadbandWorkforce",
 };
 
 export function useEcosystemAuth() {

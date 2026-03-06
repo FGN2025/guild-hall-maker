@@ -27,3 +27,9 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.enhance-challenge-description]
     verify_jwt = false
+  [functions.ecosystem-data-api]
+    verify_jwt = false
+  [functions.ecosystem-calendar-feed]
+    verify_jwt = false
+  [functions.ecosystem-webhook-dispatch]
+    verify_jwt = false
