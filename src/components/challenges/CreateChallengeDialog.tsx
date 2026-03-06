@@ -9,8 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Sparkles, Loader2, Upload, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { validateAndToast } from "@/lib/imageValidation";
+import { useImageLimits } from "@/hooks/useImageLimits";
+import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 
 interface CreateChallengeDialogProps {
   invalidateQueryKey: string[];
@@ -29,10 +32,15 @@ const defaultForm = {
 const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeDialogProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { getPreset } = useImageLimits();
   const [open, setOpen] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [form, setForm] = useState({ ...defaultForm });
   const [selectedGameId, setSelectedGameId] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const { data: games = [] } = useQuery({
     queryKey: ["create-challenge-games"],
@@ -43,9 +51,40 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
     },
   });
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const valid = await validateAndToast(file, getPreset("cardCover"));
+    if (!valid) { e.target.value = ""; return; }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
+
+      let coverUrl = form.cover_image_url || null;
+
+      if (imageFile) {
+        setUploadingImage(true);
+        const ext = imageFile.name.split(".").pop() ?? "png";
+        const filePath = `challenges/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("app-media").upload(filePath, imageFile, { contentType: imageFile.type });
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(filePath);
+          coverUrl = urlData.publicUrl;
+          await supabase.from("media_library").insert({
+            user_id: user.id, file_name: imageFile.name, file_path: filePath,
+            file_type: "image", mime_type: imageFile.type, file_size: imageFile.size,
+            url: urlData.publicUrl, category: "general", tags: ["challenge", form.name.trim()],
+          } as any);
+        }
+        setUploadingImage(false);
+      } else if (imagePreview) {
+        coverUrl = imagePreview;
+      }
+
       const { data: challenge, error } = await supabase.from("challenges").insert({
         name: form.name,
         description: form.description || null,
@@ -61,7 +100,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         difficulty: form.difficulty,
         estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : null,
         requires_evidence: form.requires_evidence,
-        cover_image_url: form.cover_image_url || null,
+        cover_image_url: coverUrl,
         game_id: selectedGameId || null,
       } as any).select().single();
       if (error) throw error;
@@ -83,6 +122,8 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
       setOpen(false);
       setForm({ ...defaultForm });
       setSelectedGameId("");
+      setImageFile(null);
+      setImagePreview(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -176,8 +217,29 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
           </div>
 
           <div className="space-y-2">
-            <Label>Cover Image URL</Label>
-            <Input value={form.cover_image_url} onChange={(e) => setForm({ ...form, cover_image_url: e.target.value })} placeholder="https://..." />
+            <Label>Cover Image</Label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-card text-sm font-heading text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                <Upload className="h-4 w-4" />
+                {imageFile ? imageFile.name : "Upload image"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              </label>
+              <Button
+                type="button" variant="outline" size="sm"
+                className="font-heading gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                onClick={() => setMediaPickerOpen(true)}
+              >
+                <ImageIcon className="h-4 w-4" /> Media Library
+              </Button>
+              {imagePreview && (
+                <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover border border-border" />
+              )}
+            </div>
+            <MediaPickerDialog
+              open={mediaPickerOpen}
+              onOpenChange={setMediaPickerOpen}
+              onSelect={(url) => { setImageFile(null); setImagePreview(url); }}
+            />
           </div>
 
           <div className="flex items-center gap-3">
@@ -244,7 +306,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
             )}
           </div>
 
-          <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !form.name.trim()} className="w-full">
+          <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || uploadingImage || !form.name.trim()} className="w-full">
             {createMutation.isPending ? "Creating..." : "Create Challenge"}
           </Button>
         </div>
