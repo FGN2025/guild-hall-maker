@@ -1,26 +1,25 @@
 
 
-# Plan: Add Bulk Delete to Media Library
+# Fix: Delete Dialog Triggering Image Preview
 
-## Overview
-Add checkbox selection to media grid items with a bulk delete action bar that appears when items are selected.
+## Problem
 
-## Changes
+The delete button (trash icon) sits inside the hover overlay `div`, which itself is inside the clickable image container (line 126). When clicking the trash icon:
 
-### 1. `src/components/media/MediaGrid.tsx`
-- Add `selectedIds` state (`Set<string>`) to track selected items
-- Add a `Checkbox` overlay on each card (top-left corner, always visible when in selection mode or on hover)
-- Clicking the checkbox toggles selection (with `e.stopPropagation()` to avoid triggering preview)
-- When `selectedIds.size > 0`, render a sticky action bar above the grid with:
-  - "{N} selected" label
-  - "Select All" / "Deselect All" toggle button
-  - "Delete Selected" button wrapped in `AlertDialog` for confirmation
-- Add `onBulkDelete` prop to handle deleting multiple items
+1. The `AlertDialog` opens (correct)
+2. The click also bubbles up to the parent `div` on line 124-126, which calls `openPreview(item)` — opening the image preview dialog too
 
-### 2. `src/hooks/useMediaLibrary.ts`
-- Add `bulkDeleteMutation` that loops through items, deletes storage files and DB records
-- Expose `bulkDelete` and `isBulkDeleting` from the hook
+The copy button on line 144 has the same issue — no `e.stopPropagation()`.
 
-### 3. `src/pages/admin/AdminMedia.tsx`
-- Pass `onBulkDelete` and `isBulkDeleting` props to `MediaGrid`
+## Fix
+
+**File**: `src/components/media/MediaGrid.tsx`
+
+Two changes:
+
+1. **Add `e.stopPropagation()` to the hover overlay `div`** (line 139) — this prevents any click inside the overlay (copy, delete) from bubbling up to the parent container that triggers the image preview.
+
+2. **Add `e.stopPropagation()` to the copy button click handler** (line 144) as a safeguard.
+
+This is a single-file, two-line fix. No backend changes needed.
 
