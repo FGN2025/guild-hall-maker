@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -12,12 +13,51 @@ interface TenantAdminInfo {
   accentColor: string | null;
 }
 
-export function useTenantAdmin() {
-  const { user } = useAuth();
+interface TenantListItem {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  primary_color: string | null;
+  accent_color: string | null;
+}
 
-  const { data, isLoading } = useQuery({
+const SELECTED_TENANT_KEY = "fgn_selected_tenant_id";
+
+export function useTenantAdmin() {
+  const { user, isAdmin } = useAuth();
+  const [selectedTenantId, setSelectedTenantIdState] = useState<string | null>(
+    () => localStorage.getItem(SELECTED_TENANT_KEY)
+  );
+
+  const setSelectedTenantId = useCallback((id: string | null) => {
+    setSelectedTenantIdState(id);
+    if (id) {
+      localStorage.setItem(SELECTED_TENANT_KEY, id);
+    } else {
+      localStorage.removeItem(SELECTED_TENANT_KEY);
+    }
+  }, []);
+
+  // Fetch all active tenants for platform admins
+  const { data: allTenants } = useQuery({
+    queryKey: ["all-tenants-list"],
+    enabled: !!user?.id && isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tenants")
+        .select("id, name, slug, logo_url, primary_color, accent_color")
+        .eq("status", "active")
+        .order("name");
+      if (error) throw error;
+      return (data || []) as TenantListItem[];
+    },
+  });
+
+  // Original tenant admin check (for non-platform-admins)
+  const { data: tenantAdminData, isLoading: isTenantAdminLoading } = useQuery({
     queryKey: ["tenant-admin-check", user?.id],
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isAdmin,
     queryFn: async () => {
       const { data: adminRows, error } = await supabase
         .from("tenant_admins")
@@ -27,7 +67,6 @@ export function useTenantAdmin() {
       if (error) throw error;
       if (!adminRows || adminRows.length === 0) return null;
 
-      // Get tenant details
       const tenantIds = adminRows.map((r: any) => r.tenant_id);
       const { data: tenants, error: tErr } = await supabase
         .from("tenants")
@@ -38,7 +77,6 @@ export function useTenantAdmin() {
       if (tErr) throw tErr;
       if (!tenants || tenants.length === 0) return null;
 
-      // Return first active tenant (primary)
       const t = tenants[0];
       const matchingAdmin = adminRows.find((r: any) => r.tenant_id === t.id);
       return {
@@ -53,9 +91,44 @@ export function useTenantAdmin() {
     },
   });
 
+  // Auto-select first tenant for platform admins if none selected
+  useEffect(() => {
+    if (isAdmin && allTenants && allTenants.length > 0 && !selectedTenantId) {
+      setSelectedTenantId(allTenants[0].id);
+    }
+  }, [isAdmin, allTenants, selectedTenantId, setSelectedTenantId]);
+
+  // Build tenantInfo for platform admins from selected tenant
+  let tenantInfo: TenantAdminInfo | null = null;
+  let isPlatformAdminMode = false;
+
+  if (isAdmin && allTenants) {
+    const selected = allTenants.find((t) => t.id === selectedTenantId) || allTenants[0] || null;
+    if (selected) {
+      isPlatformAdminMode = true;
+      tenantInfo = {
+        tenantId: selected.id,
+        tenantName: selected.name,
+        tenantSlug: selected.slug,
+        tenantRole: 'admin',
+        logoUrl: selected.logo_url,
+        primaryColor: selected.primary_color,
+        accentColor: selected.accent_color,
+      };
+    }
+  } else if (tenantAdminData) {
+    tenantInfo = tenantAdminData;
+  }
+
+  const isLoading = isAdmin ? false : isTenantAdminLoading;
+
   return {
-    isTenantAdmin: !!data,
-    tenantInfo: data || null,
+    isTenantAdmin: !!tenantInfo,
+    tenantInfo,
     isLoading,
+    isPlatformAdminMode,
+    allTenants: allTenants || [],
+    selectedTenantId,
+    setSelectedTenantId,
   };
 }
