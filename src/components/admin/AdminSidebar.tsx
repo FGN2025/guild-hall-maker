@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, ExternalLink, Loader2, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target } from "lucide-react";
-import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target } from "lucide-react";
 
 const sidebarItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -22,15 +21,8 @@ const sidebarItems = [
   { to: "/admin/guide", label: "Admin Guide", icon: BookOpen },
 ];
 
-const ecosystemApps = [
-  { target: "play" as const, label: "Play" },
-  { target: "manage" as const, label: "Manage" },
-  { target: "hub" as const, label: "Hub" },
-];
-
 const AdminSidebar = () => {
   const location = useLocation();
-  const { requestMagicLink, loading } = useEcosystemAuth();
 
   return (
     <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
@@ -63,26 +55,6 @@ const AdminSidebar = () => {
           );
         })}
 
-        <div className="mt-6 mb-2 px-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading">
-            FGN Ecosystem
-          </p>
-        </div>
-        {ecosystemApps.map((app) => (
-          <button
-            key={app.target}
-            onClick={() => requestMagicLink(app.target)}
-            disabled={loading !== null}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide text-muted-foreground hover:text-foreground hover:bg-secondary transition-all disabled:opacity-50 w-full text-left"
-          >
-            {loading === app.target ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ExternalLink className="h-4 w-4" />
-            )}
-            {app.label}
-          </button>
-        ))}
       </nav>
       <div className="p-4 border-t border-border">
         <Link
