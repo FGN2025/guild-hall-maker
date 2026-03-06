@@ -89,8 +89,8 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete
   return (
     <>
     {selectionMode && onBulkDelete && (
-      <div className="sticky top-0 z-10 flex items-center gap-3 mb-4 p-3 rounded-lg border border-primary/30 bg-card">
-        <span className="text-sm font-heading text-foreground">{selectedIds.size} selected</span>
+      <div className="sticky top-0 z-10 flex items-center gap-3 mb-4 p-4 rounded-lg border-2 border-primary bg-primary/10 shadow-lg">
+        <span className="text-base font-heading font-bold text-foreground">{selectedIds.size} selected</span>
         <Button size="sm" variant="outline" onClick={selectedIds.size === media.length ? deselectAll : selectAll} className="font-heading">
           {selectedIds.size === media.length ? "Deselect All" : "Select All"}
         </Button>
@@ -136,7 +136,7 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete
               ) : (
                 <Icon className="h-10 w-10 text-muted-foreground" />
               )}
-              <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+              {!selectionMode && <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -174,7 +174,7 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </div>
+              </div>}
             </div>
             <div className="p-2 space-y-1">
               <p className="text-xs font-heading text-foreground truncate">{item.file_name}</p>
