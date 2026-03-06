@@ -2,6 +2,8 @@ import { useState, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
@@ -17,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, FileUp, CheckCircle2, AlertTriangle, MinusCircle, Loader2 } from "lucide-react";
+import { Upload, FileUp, CheckCircle2, AlertTriangle, MinusCircle, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface Tenant {
@@ -32,7 +34,6 @@ interface ParsedRow {
   matchedTenantId: string | null;
   matchedTenantName: string | null;
   status: "matched" | "unmatched" | "empty";
-  /** Admin override for unmatched rows */
   assignedTenantId: string | null;
   skip: boolean;
 }
@@ -40,9 +41,14 @@ interface ParsedRow {
 interface BulkZipImportDialogProps {
   tenants: Tenant[];
   onComplete: () => void;
+  refetchTenants?: () => void;
 }
 
-export function BulkZipImportDialog({ tenants, onComplete }: BulkZipImportDialogProps) {
+function slugify(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+export function BulkZipImportDialog({ tenants, onComplete, refetchTenants }: BulkZipImportDialogProps) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [step, setStep] = useState<"upload" | "review" | "importing" | "done">("upload");
@@ -50,18 +56,32 @@ export function BulkZipImportDialog({ tenants, onComplete }: BulkZipImportDialog
   const [importResult, setImportResult] = useState({ inserted: 0, skipped: 0 });
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Local tenants list that includes newly created ones
+  const [localTenants, setLocalTenants] = useState<Tenant[]>([]);
+  const allTenants = useMemo(() => {
+    const map = new Map<string, Tenant>();
+    tenants.forEach((t) => map.set(t.id, t));
+    localTenants.forEach((t) => map.set(t.id, t));
+    return Array.from(map.values());
+  }, [tenants, localTenants]);
+
+  // "Add as New" inline form state
+  const [addingIdx, setAddingIdx] = useState<number | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newSlug, setNewSlug] = useState("");
+  const [newActive, setNewActive] = useState(true);
+  const [creating, setCreating] = useState(false);
+
   const tenantMap = useMemo(() => {
     const map = new Map<string, Tenant>();
-    tenants.forEach((t) => map.set(t.name.trim().toLowerCase(), t));
+    allTenants.forEach((t) => map.set(t.name.trim().toLowerCase(), t));
     return map;
-  }, [tenants]);
+  }, [allTenants]);
 
   const parseCSV = (text: string) => {
     const lines = text.split("\n").filter((l) => l.trim());
-    // Skip header
     const dataLines = lines.slice(1);
     const parsed: ParsedRow[] = dataLines.map((line) => {
-      // Handle CSV with quoted fields
       const match = line.match(/^"?([^"]*?)"?\s*,\s*"?(.*?)"?\s*$/);
       const providerName = match ? match[1].trim() : line.split(",")[0].trim();
       const zipStr = match ? match[2].trim() : "";
@@ -122,6 +142,58 @@ export function BulkZipImportDialog({ tenants, onComplete }: BulkZipImportDialog
     );
   };
 
+  const openAddNew = (idx: number) => {
+    const row = rows[idx];
+    setAddingIdx(idx);
+    setNewName(row.providerName);
+    setNewSlug(slugify(row.providerName));
+    setNewActive(true);
+  };
+
+  const cancelAddNew = () => {
+    setAddingIdx(null);
+    setNewName("");
+    setNewSlug("");
+    setNewActive(true);
+  };
+
+  const confirmAddNew = async () => {
+    if (!newName.trim() || !newSlug.trim() || addingIdx === null) return;
+    setCreating(true);
+    try {
+      const { data, error } = await supabase
+        .from("tenants")
+        .insert({
+          name: newName.trim(),
+          slug: newSlug.trim(),
+          status: newActive ? "active" : "inactive",
+        } as any)
+        .select("id, name, slug")
+        .single();
+      if (error) throw error;
+
+      const newTenant: Tenant = { id: data.id, name: data.name, slug: data.slug };
+      setLocalTenants((prev) => [...prev, newTenant]);
+
+      // Update the row to matched
+      setRows((prev) =>
+        prev.map((r, i) =>
+          i === addingIdx
+            ? { ...r, matchedTenantId: newTenant.id, matchedTenantName: newTenant.name, status: "matched" as const, skip: false }
+            : r
+        )
+      );
+
+      refetchTenants?.();
+      toast.success(`Provider "${newTenant.name}" created.`);
+      cancelAddNew();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create provider.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const handleImport = async () => {
     setStep("importing");
     setProgress(0);
@@ -169,6 +241,8 @@ export function BulkZipImportDialog({ tenants, onComplete }: BulkZipImportDialog
     setStep("upload");
     setProgress(0);
     setImportResult({ inserted: 0, skipped: 0 });
+    setLocalTenants([]);
+    cancelAddNew();
   };
 
   return (
@@ -252,55 +326,114 @@ export function BulkZipImportDialog({ tenants, onComplete }: BulkZipImportDialog
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {rows.map((r, idx) => {
                     if (r.status !== "unmatched") return null;
+                    const isAdding = addingIdx === idx;
                     return (
-                      <div key={idx} className="flex items-center gap-2 px-2 py-1.5 bg-destructive/5 rounded border border-destructive/20">
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs font-medium text-foreground block truncate">
-                            {r.providerName}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">{r.zips.length} ZIPs</span>
-                        </div>
-                        {r.skip ? (
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-muted-foreground">Skipped</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-[10px] px-2"
-                              onClick={() =>
-                                setRows((prev) =>
-                                  prev.map((row, i) => (i === idx ? { ...row, skip: false } : row))
-                                )
-                              }
-                            >
-                              Undo
-                            </Button>
+                      <div key={idx} className="px-2 py-1.5 bg-destructive/5 rounded border border-destructive/20">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-medium text-foreground block truncate">
+                              {r.providerName}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">{r.zips.length} ZIPs</span>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <Select
-                              value={r.assignedTenantId || ""}
-                              onValueChange={(v) => handleAssign(idx, v)}
-                            >
-                              <SelectTrigger className="h-7 w-36 text-[10px]">
-                                <SelectValue placeholder="Assign to..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {tenants.map((t) => (
-                                  <SelectItem key={t.id} value={t.id} className="text-xs">
-                                    {t.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-[10px] px-2"
-                              onClick={() => handleSkip(idx)}
-                            >
-                              Skip
-                            </Button>
+                          {r.skip ? (
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground">Skipped</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] px-2"
+                                onClick={() =>
+                                  setRows((prev) =>
+                                    prev.map((row, i) => (i === idx ? { ...row, skip: false } : row))
+                                  )
+                                }
+                              >
+                                Undo
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <Select
+                                value={r.assignedTenantId || ""}
+                                onValueChange={(v) => handleAssign(idx, v)}
+                              >
+                                <SelectTrigger className="h-7 w-36 text-[10px]">
+                                  <SelectValue placeholder="Assign to..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {allTenants.map((t) => (
+                                    <SelectItem key={t.id} value={t.id} className="text-xs">
+                                      {t.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-[10px] px-2 gap-1"
+                                onClick={() => openAddNew(idx)}
+                              >
+                                <Plus className="h-3 w-3" /> Add New
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-[10px] px-2"
+                                onClick={() => handleSkip(idx)}
+                              >
+                                Skip
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Inline "Add as New" form */}
+                        {isAdding && (
+                          <div className="mt-2 p-2 bg-muted/50 rounded border border-border space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] text-muted-foreground">Name</label>
+                                <Input
+                                  value={newName}
+                                  onChange={(e) => {
+                                    setNewName(e.target.value);
+                                    setNewSlug(slugify(e.target.value));
+                                  }}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-muted-foreground">Slug</label>
+                                <Input
+                                  value={newSlug}
+                                  onChange={(e) => setNewSlug(e.target.value)}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Switch checked={newActive} onCheckedChange={setNewActive} />
+                                <span className="text-[10px] text-muted-foreground">
+                                  {newActive ? "Active" : "Inactive"}
+                                </span>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={cancelAddNew}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="h-6 text-[10px] px-3"
+                                  onClick={confirmAddNew}
+                                  disabled={creating || !newName.trim() || !newSlug.trim()}
+                                >
+                                  {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : "Create"}
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
