@@ -1,27 +1,27 @@
 
 
-# Plan: Increase Image Upload File Size Limits
+# Plan: Add Category Editing to Media Library
 
-## Current Limits
-- Card Cover: 500 KB
-- Hero Banner: 800 KB
-- Avatar: 100 KB
-- Tournament Hero: 500 KB
-- General: 800 KB
-
-## Proposed Limits
-Increase all presets significantly to accommodate higher-quality images:
-
-| Preset | Current | New |
-|---|---|---|
-| Card Cover | 500 KB | 5 MB (5120 KB) |
-| Hero Banner | 800 KB | 8 MB (8192 KB) |
-| Avatar | 100 KB | 2 MB (2048 KB) |
-| Tournament Hero | 500 KB | 5 MB (5120 KB) |
-| General | 800 KB | 10 MB (10240 KB) |
+## Problem
+The uploader already has a category selector, but there's no way to **change** a media item's category after upload. The "games" category is also missing from the uploader's category list (it exists as a tab filter but can't be selected during upload).
 
 ## Changes
-**Single file**: `src/lib/imageValidation.ts` -- update `maxSizeKB` values in each preset within `IMAGE_PRESETS`.
 
-No database or other file changes needed. The Admin Settings page already allows dynamic overrides via `app_settings`, so these new defaults serve as the baseline.
+### 1. Fix missing "games" category in uploader
+**File**: `src/components/media/MediaUploader.tsx`
+- Add `"games"` to the `CATEGORIES` array so it matches the tab filters.
+
+### 2. Add inline category editing to MediaGrid
+**File**: `src/components/media/MediaGrid.tsx`
+- Add a category dropdown (Select) to each media card's hover overlay or footer area, allowing admins to change the category directly from the grid.
+- On change, call a new `onUpdateCategory` callback prop.
+
+### 3. Add update mutation to useMediaLibrary hook
+**File**: `src/hooks/useMediaLibrary.ts`
+- Add an `updateCategory` mutation that runs `supabase.from("media_library").update({ category }).eq("id", itemId)` and invalidates the query cache.
+- Expose it in the return object.
+
+### 4. Wire it up in AdminMedia and MediaLibrary pages
+**Files**: `src/pages/admin/AdminMedia.tsx`, `src/pages/MediaLibrary.tsx`
+- Pass the new `onUpdateCategory` handler from the hook into `MediaGrid`.
 
