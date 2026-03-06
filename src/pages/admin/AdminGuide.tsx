@@ -237,7 +237,10 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Upload and manage images from Admin → Media Library.",
       "Upload — Drag-and-drop or browse. Files are stored in the app-media storage bucket.",
-      "Categories & Tags — Organize media for easy discovery and filtering.",
+      "Categories & Tags — Organize media with category selectors (general, games, tournament, badge, trophy, banner, challenges, marketing) and custom tags for easy discovery and filtering.",
+      "Bulk Selection & Delete — Click any image's checkbox to enter selection mode. Once in selection mode, clicking any card toggles its selection. A floating action bar appears at the bottom of the screen showing the count of selected items, Select All / Deselect All, and a Delete Selected button with confirmation dialog.",
+      "Image Preview — Click any image (when not in selection mode) to open a full-size preview dialog with zoom (scroll wheel or +/- buttons), pan (click and drag when zoomed), and reset controls.",
+      "Single Actions — Hover over any image card to reveal quick-action buttons for copying the URL to clipboard or deleting that individual item (with confirmation).",
       "AI Image Generation — Generate images using built-in AI capabilities. The default model is google/gemini-3-pro-image-preview via the Lovable AI Gateway.",
       "AI Image Config — Admins can switch between the default AI provider and a Custom API (OpenAI-compatible) from Admin → Settings → AI Image Config. Custom endpoints support masked API keys for security.",
       "Usage — Select media for tournament hero images, game covers, page heroes, and page backgrounds.",
