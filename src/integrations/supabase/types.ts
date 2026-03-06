@@ -1700,6 +1700,7 @@ export type Database = {
           created_at: string
           created_by: string
           description: string | null
+          event_id: string | null
           expires_at: string | null
           id: string
           is_active: boolean
@@ -1714,6 +1715,7 @@ export type Database = {
           created_at?: string
           created_by: string
           description?: string | null
+          event_id?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
@@ -1728,6 +1730,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           description?: string | null
+          event_id?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
@@ -1741,6 +1744,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_codes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_events"
             referencedColumns: ["id"]
           },
           {
