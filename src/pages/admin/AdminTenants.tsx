@@ -116,6 +116,7 @@ function LogoPicker({
 
 /* ─── Main page ─── */
 const AdminTenants = () => {
+  const queryClient = useQueryClient();
   const { tenants, isLoading, createTenant, updateTenant, deleteTenant } = useTenants();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
