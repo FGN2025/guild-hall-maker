@@ -8,8 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { validateAndToast } from "@/lib/imageValidation";
+import { useImageLimits } from "@/hooks/useImageLimits";
+import { useAuth } from "@/contexts/AuthContext";
+import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 
 interface EditChallengeDialogProps {
   challenge: any;
@@ -20,6 +24,8 @@ interface EditChallengeDialogProps {
 
 const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey }: EditChallengeDialogProps) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { getPreset } = useImageLimits();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -37,6 +43,10 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [maxEnrollments, setMaxEnrollments] = useState<number | "">("");
   const [isActive, setIsActive] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active"],
@@ -63,13 +73,45 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setEstimatedMinutes(challenge.estimated_minutes ?? "");
       setRequiresEvidence(challenge.requires_evidence ?? true);
       setCoverImageUrl(challenge.cover_image_url || "");
+      setImagePreview(challenge.cover_image_url || null);
+      setImageFile(null);
       setMaxEnrollments(challenge.max_enrollments ?? "");
       setIsActive(challenge.is_active ?? true);
     }
   }, [challenge, open]);
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const valid = await validateAndToast(file, getPreset("cardCover"));
+    if (!valid) { e.target.value = ""; return; }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   const editMutation = useMutation({
     mutationFn: async () => {
+      let finalCoverUrl = coverImageUrl || null;
+
+      if (imageFile && user) {
+        setUploadingImage(true);
+        const ext = imageFile.name.split(".").pop() ?? "png";
+        const filePath = `challenges/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("app-media").upload(filePath, imageFile, { contentType: imageFile.type });
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(filePath);
+          finalCoverUrl = urlData.publicUrl;
+          await supabase.from("media_library").insert({
+            user_id: user.id, file_name: imageFile.name, file_path: filePath,
+            file_type: "image", mime_type: imageFile.type, file_size: imageFile.size,
+            url: urlData.publicUrl, category: "general", tags: ["challenge", name.trim()],
+          } as any);
+        }
+        setUploadingImage(false);
+      } else if (imagePreview && imagePreview !== coverImageUrl) {
+        finalCoverUrl = imagePreview;
+      }
+
       const { error } = await supabase.from("challenges").update({
         name,
         description: description || null,
@@ -84,7 +126,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         end_date: endDate || null,
         estimated_minutes: estimatedMinutes || null,
         requires_evidence: requiresEvidence,
-        cover_image_url: coverImageUrl || null,
+        cover_image_url: finalCoverUrl,
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
       }).eq("id", challenge.id);
@@ -182,8 +224,29 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             </div>
           </div>
           <div>
-            <Label>Cover Image URL</Label>
-            <Input value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} placeholder="https://..." />
+            <Label>Cover Image</Label>
+            <div className="flex items-center gap-3 mt-1">
+              <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-card text-sm font-heading text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                <Upload className="h-4 w-4" />
+                {imageFile ? imageFile.name : "Upload image"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              </label>
+              <Button
+                type="button" variant="outline" size="sm"
+                className="font-heading gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                onClick={() => setMediaPickerOpen(true)}
+              >
+                <ImageIcon className="h-4 w-4" /> Media Library
+              </Button>
+              {imagePreview && (
+                <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover border border-border" />
+              )}
+            </div>
+            <MediaPickerDialog
+              open={mediaPickerOpen}
+              onOpenChange={setMediaPickerOpen}
+              onSelect={(url) => { setImageFile(null); setImagePreview(url); setCoverImageUrl(url); }}
+            />
           </div>
           <div>
             <Label>Max Enrollments</Label>
@@ -197,7 +260,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             <Label>Active</Label>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
-          <Button className="w-full" onClick={() => editMutation.mutate()} disabled={!name.trim() || editMutation.isPending}>
+          <Button className="w-full" onClick={() => editMutation.mutate()} disabled={!name.trim() || editMutation.isPending || uploadingImage}>
             {editMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
