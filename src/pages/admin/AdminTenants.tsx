@@ -439,13 +439,15 @@ function TenantCard({
   );
 }
 
-/* ─── Admin panel with two-step search flow ─── */
+/* ─── Admin panel with search + invite tabs ─── */
 function TenantAdminPanel({ tenantId }: { tenantId: string }) {
-  const { admins, isLoading, addAdmin, removeAdmin } = useTenantAdmins(tenantId);
+  const { admins, isLoading, invitations, addAdmin, removeAdmin, createInvitation, cancelInvitation } = useTenantAdmins(tenantId);
   const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
   const [addRole, setAddRole] = useState("admin");
   const [foundUser, setFoundUser] = useState<{ user_id: string; display_name: string } | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("admin");
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -463,13 +465,13 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
 
       if (error) throw error;
       if (!profiles || profiles.length === 0) {
-        toast.error("No user found matching that name. They must have an account first.");
+        toast.error("No user found matching that name.");
         return;
       }
       const exact = profiles.find(p => p.display_name?.toLowerCase() === searchTerm.trim().toLowerCase());
       setFoundUser(exact || profiles[0]);
       if (!exact && profiles.length > 1) {
-        toast.info(`Found ${profiles.length} matches — showing closest. Refine your search if needed.`);
+        toast.info(`Found ${profiles.length} matches — showing closest.`);
       }
     } catch (err: any) {
       toast.error(err.message);
@@ -486,58 +488,145 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
     );
   };
 
+  const handleInvite = () => {
+    const email = inviteEmail.trim();
+    if (!email || !email.includes("@")) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    createInvitation.mutate(
+      { tenantId, email, role: inviteRole },
+      { onSuccess: () => { setInviteEmail(""); } }
+    );
+  };
+
+  const RoleSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+    >
+      <option value="admin">Admin</option>
+      <option value="manager">Manager</option>
+      <option value="marketing">Marketing</option>
+    </select>
+  );
+
   return (
     <div className="mt-6 space-y-4">
-      <div className="flex gap-2">
-        <Input
-          placeholder="Search by display name..."
-          value={searchTerm}
-          onChange={(e) => { setSearchTerm(e.target.value); setFoundUser(null); }}
-          className="flex-1"
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
-        <Button
-          size="icon"
-          onClick={handleSearch}
-          disabled={searching}
-        >
-          {searching ? <Search className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-        </Button>
-      </div>
+      <Tabs defaultValue="invite" className="w-full">
+        <TabsList className="w-full">
+          <TabsTrigger value="invite" className="flex-1 gap-1">
+            <Mail className="h-3.5 w-3.5" /> Invite by Email
+          </TabsTrigger>
+          <TabsTrigger value="search" className="flex-1 gap-1">
+            <Search className="h-3.5 w-3.5" /> Search Existing
+          </TabsTrigger>
+        </TabsList>
 
-      {foundUser && (
-        <div className="flex items-center justify-between p-3 rounded-lg border border-primary/30 bg-primary/5">
-          <div>
-            <p className="text-sm font-medium text-foreground">{foundUser.display_name}</p>
-            <p className="text-xs text-muted-foreground">Ready to assign</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={addRole}
-              onChange={(e) => setAddRole(e.target.value)}
-              className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+        <TabsContent value="invite" className="space-y-3 pt-2">
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">
+              Enter an email address. If they haven't registered yet, the role will be assigned automatically when they sign up.
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="user@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="flex-1"
+                onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+              />
+              <RoleSelect value={inviteRole} onChange={setInviteRole} />
+            </div>
+            <Button
+              onClick={handleInvite}
+              disabled={createInvitation.isPending}
+              size="sm"
+              className="w-full gap-1"
             >
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="marketing">Marketing</option>
-            </select>
-            <Button size="sm" onClick={handleConfirmAdd} disabled={addAdmin.isPending} className="gap-1">
-              <UserPlus className="h-3.5 w-3.5" />
-              {addAdmin.isPending ? "Adding..." : "Add"}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setFoundUser(null)}>
-              <X className="h-3.5 w-3.5" />
+              {createInvitation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+              {createInvitation.isPending ? "Sending..." : "Invite"}
             </Button>
           </div>
+        </TabsContent>
+
+        <TabsContent value="search" className="space-y-3 pt-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Search by display name..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setFoundUser(null); }}
+              className="flex-1"
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <Button size="icon" onClick={handleSearch} disabled={searching}>
+              {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            </Button>
+          </div>
+
+          {foundUser && (
+            <div className="flex items-center justify-between p-3 rounded-lg border border-primary/30 bg-primary/5">
+              <div>
+                <p className="text-sm font-medium text-foreground">{foundUser.display_name}</p>
+                <p className="text-xs text-muted-foreground">Ready to assign</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <RoleSelect value={addRole} onChange={setAddRole} />
+                <Button size="sm" onClick={handleConfirmAdd} disabled={addAdmin.isPending} className="gap-1">
+                  <UserPlus className="h-3.5 w-3.5" />
+                  {addAdmin.isPending ? "Adding..." : "Add"}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setFoundUser(null)}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Pending invitations */}
+      {invitations.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending Invitations</h4>
+          {invitations.map((inv) => (
+            <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border border-dashed border-border bg-card">
+              <div>
+                <p className="text-sm text-foreground flex items-center gap-2">
+                  {inv.email}
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                    <Clock className="h-2.5 w-2.5" /> Pending
+                  </Badge>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    {inv.role}
+                  </Badge>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Invited {new Date(inv.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => cancelInvitation.mutate(inv.id)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
         </div>
       )}
 
+      {/* Current admins */}
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
-      ) : admins.length === 0 ? (
+      ) : admins.length === 0 && invitations.length === 0 ? (
         <p className="text-sm text-muted-foreground">No admins assigned yet.</p>
-      ) : (
+      ) : admins.length > 0 ? (
         <div className="space-y-2">
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Active Members</h4>
           {admins.map((a) => (
             <div
               key={a.id}
@@ -564,9 +653,8 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
-
 export default AdminTenants;
