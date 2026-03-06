@@ -68,6 +68,7 @@ import TenantMarketingDetail from "./pages/tenant/TenantMarketingDetail";
 import TenantMarketingAssets from "./pages/tenant/TenantMarketingAssets";
 import TenantPlayers from "./pages/tenant/TenantPlayers";
 import TenantEvents from "./pages/tenant/TenantEvents";
+import TenantGuide from "./pages/tenant/TenantGuide";
 import TenantEventPage from "./pages/TenantEventPage";
 import TenantEventDetail from "./pages/TenantEventDetail";
 import Terms from "./pages/Terms";
@@ -169,6 +170,7 @@ const App = () => (
             <Route path="/tenant/marketing/assets" element={<TenantRoute><TenantMarketingAssets /></TenantRoute>} />
             <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
             <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
+            <Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />
 
             <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<NotFound />} />

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 
 /** Convert hex color to rgba string */
@@ -29,6 +29,7 @@ const allSidebarItems = [
   { to: "/tenant/marketing/assets", label: "My Assets", icon: ImageIcon, roles: ['admin', 'marketing'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin'] },
+  { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];
 
 const ecosystemApps = [
