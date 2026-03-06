@@ -172,6 +172,16 @@ const TenantCodes = () => {
                   <TableCell>
                     <Badge variant="outline" className="capitalize">{c.code_type}</Badge>
                   </TableCell>
+                  <TableCell className="text-sm">
+                    {c.campaign_id ? (
+                      <span className="flex items-center gap-1 text-primary">
+                        <Megaphone className="h-3 w-3" />
+                        {campaignMap.get(c.campaign_id) || "Campaign"}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
                     {c.description || "—"}
                   </TableCell>
