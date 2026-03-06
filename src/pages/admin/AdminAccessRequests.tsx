@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -111,7 +110,7 @@ const AdminAccessRequests = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Access Requests</h1>
@@ -220,7 +219,7 @@ const AdminAccessRequests = () => {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </>
   );
 };
 
