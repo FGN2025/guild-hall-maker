@@ -20,7 +20,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin } from "lucide-react";
+import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BulkZipImportDialog } from "@/components/admin/BulkZipImportDialog";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
@@ -121,6 +122,28 @@ const AdminTenants = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
   const [logoUploading, setLogoUploading] = useState(false);
+  // Search and filter
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const activeCount = tenants.filter((t) => t.status === "active").length;
+  const inactiveCount = tenants.filter((t) => t.status !== "active").length;
+
+  const filteredTenants = tenants
+    .filter((t) => {
+      if (statusFilter === "active" && t.status !== "active") return false;
+      if (statusFilter === "inactive" && t.status === "active") return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.status === "active" && b.status !== "active") return -1;
+      if (a.status !== "active" && b.status === "active") return 1;
+      return 0;
+    });
 
   // Admin assignment sheet
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
@@ -245,6 +268,28 @@ const AdminTenants = () => {
           </div>
         </div>
 
+        {/* Search & Filter Bar */}
+        {!isLoading && tenants.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="relative flex-1 w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or slug..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList>
+                <TabsTrigger value="all">All ({tenants.length})</TabsTrigger>
+                <TabsTrigger value="active">Active ({activeCount})</TabsTrigger>
+                <TabsTrigger value="inactive">Inactive ({inactiveCount})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
+
         {isLoading ? (
           <p className="text-muted-foreground">Loading...</p>
         ) : tenants.length === 0 ? (
@@ -252,9 +297,13 @@ const AdminTenants = () => {
             <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No providers yet. Create your first one.</p>
           </div>
+        ) : filteredTenants.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No providers match your search.</p>
+          </div>
         ) : (
           <div className="grid gap-4">
-            {tenants.map((t) => (
+            {filteredTenants.map((t) => (
               <TenantCard
                 key={t.id}
                 tenant={t}
@@ -320,7 +369,7 @@ function TenantCard({
   });
 
   return (
-    <div className="border border-border rounded-lg p-4 bg-card space-y-3">
+    <div className={`border rounded-lg p-4 bg-card space-y-3 ${t.status !== "active" ? "border-dashed border-muted opacity-60" : "border-border"}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <LogoPicker
