@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { MediaItem } from "@/hooks/useMediaLibrary";
-import { Trash2, Copy, Image, Film, Music } from "lucide-react";
+import { Trash2, Copy, Image, Film, Music, ZoomIn, ZoomOut, RotateCcw, Move } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -19,6 +19,39 @@ const typeIcons: Record<string, typeof Image> = { image: Image, video: Film, aud
 
 const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => {
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const isPanning = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
+
+  const resetView = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }); }, []);
+
+  const openPreview = (item: MediaItem) => {
+    resetView();
+    setPreviewItem(item);
+  };
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom((z) => Math.min(5, Math.max(0.25, z - e.deltaY * 0.002)));
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    isPanning.current = true;
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning.current) return;
+    setPan((p) => ({
+      x: p.x + e.clientX - lastMouse.current.x,
+      y: p.y + e.clientY - lastMouse.current.y,
+    }));
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handleMouseUp = useCallback(() => { isPanning.current = false; }, []);
 
   if (media.length === 0) {
     return (
@@ -38,7 +71,7 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => 
           <div key={item.id} className="group rounded-xl border border-border bg-card overflow-hidden glow-card">
             <div
               className="aspect-square relative bg-muted flex items-center justify-center cursor-pointer"
-              onClick={() => item.file_type === "image" && setPreviewItem(item)}
+              onClick={() => item.file_type === "image" && openPreview(item)}
             >
               {item.file_type === "image" ? (
                 <img src={item.url} alt={item.file_name} className="w-full h-full object-cover" />
@@ -110,13 +143,48 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => 
       })}
     </div>
 
-    <Dialog open={!!previewItem} onOpenChange={(open) => !open && setPreviewItem(null)}>
-      <DialogContent className="max-w-3xl">
+    <Dialog open={!!previewItem} onOpenChange={(open) => { if (!open) setPreviewItem(null); }}>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>{previewItem?.file_name}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between pr-8">
+            <span className="truncate">{previewItem?.file_name}</span>
+            <div className="flex items-center gap-1 ml-4 shrink-0">
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setZoom((z) => Math.min(5, z + 0.25))}>
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground w-12 text-center">{Math.round(zoom * 100)}%</span>
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setZoom((z) => Math.max(0.25, z - 0.25))}>
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={resetView}>
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogTitle>
         </DialogHeader>
         {previewItem && (
-          <img src={previewItem.url} alt={previewItem.file_name} className="w-full h-auto rounded-md" />
+          <div
+            className="relative overflow-hidden rounded-md bg-muted flex-1 min-h-0 select-none"
+            style={{ cursor: zoom > 1 ? 'grab' : 'default' }}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            <img
+              src={previewItem.url}
+              alt={previewItem.file_name}
+              className="w-full h-auto transition-transform duration-100"
+              style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }}
+              draggable={false}
+            />
+          </div>
+        )}
+        {zoom > 1 && (
+          <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+            <Move className="h-3 w-3" /> Click and drag to pan
+          </p>
         )}
       </DialogContent>
     </Dialog>
