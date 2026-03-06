@@ -26,6 +26,7 @@ export function useRegistrationZipCheck() {
     try {
       // If bypass code provided, validate it
       if (bypassCode?.trim()) {
+        // Try platform bypass code first
         const { data, error } = await supabase.rpc("validate_bypass_code", {
           _code: bypassCode.trim(),
         });
@@ -40,11 +41,31 @@ export function useRegistrationZipCheck() {
           setResult(res);
           return res;
         }
+
+        // Fallback: try tenant code (dry run)
+        try {
+          const { data: tcData, error: tcError } = await supabase.functions.invoke('validate-tenant-code', {
+            body: { code: bypassCode.trim(), dry_run: true },
+          });
+          if (!tcError && tcData?.valid) {
+            const res: ZipCheckResult = {
+              valid: true,
+              providers: [],
+              bypassed: true,
+              message: `Code accepted (${tcData.code_type}).`,
+            };
+            setResult(res);
+            return res;
+          }
+        } catch {
+          // Tenant code validation failed, fall through
+        }
+
         const res: ZipCheckResult = {
           valid: false,
           providers: [],
           bypassed: false,
-          message: "Invalid or expired bypass code.",
+          message: "Invalid or expired code.",
         };
         setResult(res);
         return res;
