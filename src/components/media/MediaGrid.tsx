@@ -136,7 +136,7 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete
               ) : (
                 <Icon className="h-10 w-10 text-muted-foreground" />
               )}
-              <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button
                   size="icon"
                   variant="ghost"
