@@ -21,7 +21,7 @@ const AdminUsers = () => {
   // Legacy tab state
   const [legacySearch, setLegacySearch] = useState("");
   const { data: legacyUsers = [], isLoading: legacyLoading } = useLegacyUsers({ tenantId, search: legacySearch });
-  const { data: stats } = useLegacyUserStats();
+  const { data: stats } = useLegacyUserStats(tenantId);
 
   const roleBadge = (role: string | null) => {
     if (role === "admin") return <Badge className="bg-primary/20 text-primary border-primary/30">Admin</Badge>;
