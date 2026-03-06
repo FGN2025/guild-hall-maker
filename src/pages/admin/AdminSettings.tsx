@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Save, Loader2, ImageIcon, Code } from "lucide-react";
+import { Settings, Save, Loader2, ImageIcon, Code, FileText } from "lucide-react";
+import { exportReadmePdf, exportArchitecturePdf } from "@/lib/exportDocuments";
 import { IMAGE_PRESETS } from "@/lib/imageValidation";
 import { Checkbox } from "@/components/ui/checkbox";
 import HeroLogoSettings from "@/components/admin/HeroLogoSettings";
@@ -344,6 +345,27 @@ const AdminSettings = () => {
       {/* Calendar Publish */}
       <div className="rounded-lg border border-border bg-card p-6">
         <CalendarPublishManager />
+      </div>
+
+      {/* Documentation Downloads */}
+      <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <FileText className="h-5 w-5 text-primary" />
+          <Label className="font-heading text-sm">Documentation</Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Download formatted PDF versions of the platform documentation for offline reference or sharing.
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={exportReadmePdf} className="font-heading">
+            <FileText className="h-4 w-4 mr-2" />
+            Download README (PDF)
+          </Button>
+          <Button variant="outline" onClick={exportArchitecturePdf} className="font-heading">
+            <FileText className="h-4 w-4 mr-2" />
+            Download Architecture Guide (PDF)
+          </Button>
+        </div>
       </div>
     </div>
   );
