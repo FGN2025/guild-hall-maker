@@ -11,7 +11,7 @@ interface Props {
   onUpdateCategory?: (data: { itemId: string; category: string }) => void;
 }
 
-const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner"];
+const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner", "challenges", "marketing"];
 const typeIcons: Record<string, typeof Image> = { image: Image, video: Film, audio: Music };
 
 const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => {
