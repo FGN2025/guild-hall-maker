@@ -10,13 +10,35 @@ export interface AdminUser {
   avatar_url: string | null;
   created_at: string;
   role: string | null;
+  tenant_id: string | null;
+  tenant_name: string | null;
 }
 
-export const useAdminUsers = (search: string) => {
+interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export const useTenantsList = () => {
+  return useQuery({
+    queryKey: ["tenants-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tenants")
+        .select("id, name, slug")
+        .order("name");
+      if (error) throw error;
+      return data as Tenant[];
+    },
+  });
+};
+
+export const useAdminUsers = (search: string, tenantId?: string) => {
   const queryClient = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ["admin-users", search],
+    queryKey: ["admin-users", search, tenantId],
     queryFn: async () => {
       // Fetch all profiles
       let query = supabase.from("profiles").select("*").order("created_at", { ascending: false });
@@ -30,25 +52,48 @@ export const useAdminUsers = (search: string) => {
       const { data: roles, error: rolesError } = await supabase.from("user_roles").select("*");
       if (rolesError) throw rolesError;
 
+      // Fetch user_service_interests for tenant association
+      const { data: interests, error: intError } = await supabase
+        .from("user_service_interests")
+        .select("user_id, tenant_id");
+      if (intError) throw intError;
+
+      // Fetch tenants for name resolution
+      const { data: tenants, error: tError } = await supabase
+        .from("tenants")
+        .select("id, name");
+      if (tError) throw tError;
+
+      const tenantMap = new Map((tenants ?? []).map((t: any) => [t.id, t.name]));
+      const interestMap = new Map((interests ?? []).map((i: any) => [i.user_id, i.tenant_id]));
       const roleMap = new Map(roles?.map((r: any) => [r.user_id, r.role]) ?? []);
 
-      return (profiles ?? []).map((p: any) => ({
-        id: p.id,
-        user_id: p.user_id,
-        display_name: p.display_name,
-        gamer_tag: p.gamer_tag,
-        avatar_url: p.avatar_url,
-        created_at: p.created_at,
-        role: (roleMap.get(p.user_id) as string) ?? null,
-      })) as AdminUser[];
+      let result = (profiles ?? []).map((p: any) => {
+        const tId = interestMap.get(p.user_id) as string | undefined;
+        return {
+          id: p.id,
+          user_id: p.user_id,
+          display_name: p.display_name,
+          gamer_tag: p.gamer_tag,
+          avatar_url: p.avatar_url,
+          created_at: p.created_at,
+          role: (roleMap.get(p.user_id) as string) ?? null,
+          tenant_id: tId ?? null,
+          tenant_name: tId ? (tenantMap.get(tId) as string) ?? null : null,
+        };
+      }) as AdminUser[];
+
+      if (tenantId) {
+        result = result.filter((u) => u.tenant_id === tenantId);
+      }
+
+      return result;
     },
   });
 
   const setRole = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string | null }) => {
-      // Remove existing role first
       await supabase.from("user_roles").delete().eq("user_id", userId);
-      // Insert new role if not "user"
       if (role && role !== "user") {
         const { error } = await supabase.from("user_roles").insert({ user_id: userId, role } as any);
         if (error) throw error;

@@ -22,15 +22,26 @@ export interface LegacyUser {
   created_at: string;
 }
 
-export function useLegacyUsers() {
+export function useLegacyUsers(options?: { tenantId?: string; search?: string }) {
+  const { tenantId, search } = options ?? {};
   return useQuery({
-    queryKey: ["legacy-users"],
+    queryKey: ["legacy-users", tenantId, search],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from("legacy_users")
         .select("*")
-        .order("legacy_username", { ascending: true })
-        .limit(1000);
+        .order("legacy_username", { ascending: true });
+
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
+      if (search) {
+        query = query.or(
+          `legacy_username.ilike.%${search}%,email.ilike.%${search}%,provider_name.ilike.%${search}%`
+        );
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as LegacyUser[];
     },
