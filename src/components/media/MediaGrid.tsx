@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { MediaItem } from "@/hooks/useMediaLibrary";
 import { Trash2, Copy, Image, Film, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface Props {
@@ -16,6 +18,8 @@ const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner
 const typeIcons: Record<string, typeof Image> = { image: Image, video: Film, audio: Music };
 
 const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => {
+  const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
+
   if (media.length === 0) {
     return (
       <div className="text-center py-16">
@@ -26,12 +30,16 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => 
   }
 
   return (
+    <>
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {media.map((item) => {
         const Icon = typeIcons[item.file_type] ?? Image;
         return (
           <div key={item.id} className="group rounded-xl border border-border bg-card overflow-hidden glow-card">
-            <div className="aspect-square relative bg-muted flex items-center justify-center">
+            <div
+              className="aspect-square relative bg-muted flex items-center justify-center cursor-pointer"
+              onClick={() => item.file_type === "image" && setPreviewItem(item)}
+            >
               {item.file_type === "image" ? (
                 <img src={item.url} alt={item.file_name} className="w-full h-full object-cover" />
               ) : (
@@ -101,6 +109,18 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => 
         );
       })}
     </div>
+
+    <Dialog open={!!previewItem} onOpenChange={(open) => !open && setPreviewItem(null)}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{previewItem?.file_name}</DialogTitle>
+        </DialogHeader>
+        {previewItem && (
+          <img src={previewItem.url} alt={previewItem.file_name} className="w-full h-auto rounded-md" />
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
