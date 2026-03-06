@@ -1,20 +1,36 @@
 
 
-# Fix: Bulk Delete Action Bar Not Visible
+# Create Tenant Admin Guide
 
-## Problem
+## Overview
 
-The bulk action bar uses `sticky top-0`, but the media grid is nested inside the admin layout which has its own scrollable container. The `sticky` positioning only works relative to the nearest scroll ancestor. The bar sticks to the top of whatever scroll container wraps it, but the user has scrolled far down the page to select images — the bar is above the visible viewport or stuck at a position they can't see.
+Create a new `TenantGuide` page at `/tenant/guide` following the exact same pattern as the Moderator Guide and Admin Guide -- accordion sections with search, table of contents, export PDF, and back-to-top button.
 
-## Solution
+## Files to Create/Modify
 
-**File**: `src/components/media/MediaGrid.tsx`
+### 1. Create `src/pages/tenant/TenantGuide.tsx` (new file)
 
-Move the bulk action bar from `sticky top-0` to `fixed` positioning so it floats visibly at the bottom of the screen regardless of scroll position. This is a common pattern (like Gmail's bulk action bar).
+Follow the ModeratorGuide pattern exactly. Include these sections based on the tenant portal features:
 
-- Change the bar to `fixed bottom-4 left-1/2 -translate-x-1/2 z-50` with a solid background, rounded corners, and shadow
-- This ensures the bar is always visible when items are selected, no matter where the user has scrolled
-- Add `w-auto` / `max-w-xl` so it's a floating pill at the bottom center
+- **Roles Overview** -- Admin vs Manager vs Marketing roles and their access levels
+- **Dashboard** -- Quick stats (total leads, new leads, converted, ZIP codes covered)
+- **Player Directory** -- Unified view of new registered players and legacy records, searchable, source tagging
+- **Leads** -- Users who matched service area ZIP codes, status management (new/contacted/converted)
+- **Events** -- Create/edit/delete tenant events, publish publicly, attach hero images, status flow (draft/published/in_progress/completed/cancelled), public event pages at /events/:tenant-slug
+- **ZIP Codes** -- Manage service area ZIP codes (admin only)
+- **Subscribers** -- Manual entry, CSV upload, paginated/searchable table, status tracking
+- **Integrations** -- NISC/GLDS billing system connections, test connection, sync now, sync history with filtering/pagination/CSV export
+- **Marketing** -- Browse platform campaigns, filter by category, calendar embed publishing
+- **My Assets** -- Upload/manage tenant-specific marketing assets
+- **Team Management** -- Invite managers/marketing users by display name, role assignment, removal (admin only)
+- **Settings** -- Logo upload, contact email, brand colors (primary/accent)
+- **Notifications** -- Automated notifications for leads and events
 
-Single-file, styling-only change.
+### 2. Modify `src/App.tsx`
+
+Add route: `<Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />`
+
+### 3. Modify `src/components/tenant/TenantSidebar.tsx`
+
+Add a "Guide" sidebar link with `BookOpen` icon, available to all roles (admin, manager, marketing), positioned before "Back to App".
 
