@@ -1,25 +1,20 @@
 
 
-# Fix: Delete Dialog Triggering Image Preview
+# Fix: Bulk Delete Not Working as Expected
 
 ## Problem
 
-The delete button (trash icon) sits inside the hover overlay `div`, which itself is inside the clickable image container (line 126). When clicking the trash icon:
+When items are selected via checkboxes, the individual trash icon on each card still performs a single-item delete. The sticky "Delete Selected" action bar appears at the top of the grid, but the user is instead clicking the per-card trash icon, which only deletes that one image.
 
-1. The `AlertDialog` opens (correct)
-2. The click also bubbles up to the parent `div` on line 124-126, which calls `openPreview(item)` — opening the image preview dialog too
+## Solution
 
-The copy button on line 144 has the same issue — no `e.stopPropagation()`.
+Two changes to `src/components/media/MediaGrid.tsx`:
 
-## Fix
+1. **Hide individual action overlay when in selection mode** -- When `selectedIds.size > 0`, suppress the hover overlay (copy/trash buttons) so the entire card acts as a selection toggle. This prevents confusion between single-delete and bulk-delete.
 
-**File**: `src/components/media/MediaGrid.tsx`
+2. **Make the bulk action bar more prominent** -- Add stronger visual styling (larger text, more contrast) so the "Delete Selected" bar at the top is unmissable.
 
-Two changes:
+This ensures that once the user starts selecting, the only delete path is the bulk "Delete Selected" button in the action bar. Clicking any card in selection mode simply toggles its checkbox.
 
-1. **Add `e.stopPropagation()` to the hover overlay `div`** (line 139) — this prevents any click inside the overlay (copy, delete) from bubbling up to the parent container that triggers the image preview.
-
-2. **Add `e.stopPropagation()` to the copy button click handler** (line 144) as a safeguard.
-
-This is a single-file, two-line fix. No backend changes needed.
+Single-file change, no backend modifications.
 
