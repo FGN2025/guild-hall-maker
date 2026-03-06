@@ -57,6 +57,7 @@ export function useTenantCodes(tenantId: string | null) {
         max_uses: input.max_uses ?? null,
         expires_at: input.expires_at || null,
         campaign_id: input.campaign_id || null,
+        event_id: input.event_id || null,
         created_by: user!.id,
       } as any);
       if (error) throw error;
@@ -69,7 +70,7 @@ export function useTenantCodes(tenantId: string | null) {
   });
 
   const updateCode = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; is_active?: boolean; description?: string; campaign_id?: string | null }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; is_active?: boolean; description?: string; campaign_id?: string | null; event_id?: string | null }) => {
       const { error } = await supabase
         .from("tenant_codes" as any)
         .update(updates as any)
