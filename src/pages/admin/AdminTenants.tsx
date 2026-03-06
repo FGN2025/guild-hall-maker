@@ -304,6 +304,17 @@ function TenantCard({
   onToggleSubscriberValidation: (checked: boolean) => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const { data: zipCount } = useQuery({
+    queryKey: ["tenant-zip-count", t.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("tenant_zip_codes")
+        .select("*", { count: "exact", head: true })
+        .eq("tenant_id", t.id);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
 
   return (
     <div className="border border-border rounded-lg p-4 bg-card space-y-3">
@@ -338,6 +349,9 @@ function TenantCard({
           <Button variant="outline" size="sm" className="gap-1" onClick={onOpenAdmins}>
             <Users className="h-4 w-4" /> Admins
           </Button>
+          <Badge variant="outline" className="gap-1 text-xs">
+            <MapPin className="h-3 w-3" /> {zipCount ?? 0} ZIPs
+          </Badge>
           <Button variant="ghost" size="icon" onClick={onDelete}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
