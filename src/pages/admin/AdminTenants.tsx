@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTenants, useTenantAdmins } from "@/hooks/useTenants";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Trash2, Building2, Users, UserPlus, Upload, X } from "lucide-react";
+import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin } from "lucide-react";
+import { BulkZipImportDialog } from "@/components/admin/BulkZipImportDialog";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import { resizeImageFile, LOGO_PRESET } from "@/lib/imageResize";
@@ -168,75 +170,78 @@ const AdminTenants = () => {
               Manage broadband service providers and their admins.
             </p>
           </div>
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Add Provider
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="font-display">New Provider</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label>Company Logo</Label>
-                  <LogoPicker
-                    logoUrl={form.logo_url || null}
-                    onUploaded={(url) => setForm({ ...form, logo_url: url })}
-                    uploading={logoUploading}
-                    setUploading={setLogoUploading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Company Name</Label>
-                  <Input
-                    placeholder="Acme Broadband"
-                    value={form.name}
-                    onChange={(e) => autoSlug(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Slug</Label>
-                  <Input
-                    placeholder="acme-broadband"
-                    value={form.slug}
-                    onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">URL-friendly identifier</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Contact Email (optional)</Label>
-                  <Input
-                    type="email"
-                    placeholder="admin@acme.com"
-                    value={form.contact_email}
-                    onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Brand Colors (optional)</Label>
-                  <div className="flex gap-4">
-                    <div className="flex items-center gap-2">
-                      <ColorPicker value={form.primary_color || "#00e5ff"} onChange={(c) => setForm({ ...form, primary_color: c })} />
-                      <span className="text-xs text-muted-foreground">Primary</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ColorPicker value={form.accent_color || "#7c3aed"} onChange={(c) => setForm({ ...form, accent_color: c })} />
-                      <span className="text-xs text-muted-foreground">Accent</span>
+          <div className="flex items-center gap-2">
+            <BulkZipImportDialog tenants={tenants} onComplete={() => {}} />
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" /> Add Provider
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="font-display">New Provider</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <Label>Company Logo</Label>
+                    <LogoPicker
+                      logoUrl={form.logo_url || null}
+                      onUploaded={(url) => setForm({ ...form, logo_url: url })}
+                      uploading={logoUploading}
+                      setUploading={setLogoUploading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Company Name</Label>
+                    <Input
+                      placeholder="Acme Broadband"
+                      value={form.name}
+                      onChange={(e) => autoSlug(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Slug</Label>
+                    <Input
+                      placeholder="acme-broadband"
+                      value={form.slug}
+                      onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">URL-friendly identifier</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contact Email (optional)</Label>
+                    <Input
+                      type="email"
+                      placeholder="admin@acme.com"
+                      value={form.contact_email}
+                      onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Brand Colors (optional)</Label>
+                    <div className="flex gap-4">
+                      <div className="flex items-center gap-2">
+                        <ColorPicker value={form.primary_color || "#00e5ff"} onChange={(c) => setForm({ ...form, primary_color: c })} />
+                        <span className="text-xs text-muted-foreground">Primary</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ColorPicker value={form.accent_color || "#7c3aed"} onChange={(c) => setForm({ ...form, accent_color: c })} />
+                        <span className="text-xs text-muted-foreground">Accent</span>
+                      </div>
                     </div>
                   </div>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={createTenant.isPending || logoUploading}
+                    className="w-full"
+                  >
+                    {createTenant.isPending ? "Creating..." : "Create Provider"}
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleCreate}
-                  disabled={createTenant.isPending || logoUploading}
-                  className="w-full"
-                >
-                  {createTenant.isPending ? "Creating..." : "Create Provider"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {isLoading ? (
@@ -301,6 +306,17 @@ function TenantCard({
   onToggleSubscriberValidation: (checked: boolean) => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const { data: zipCount } = useQuery({
+    queryKey: ["tenant-zip-count", t.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("tenant_zip_codes")
+        .select("*", { count: "exact", head: true })
+        .eq("tenant_id", t.id);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
 
   return (
     <div className="border border-border rounded-lg p-4 bg-card space-y-3">
@@ -335,6 +351,9 @@ function TenantCard({
           <Button variant="outline" size="sm" className="gap-1" onClick={onOpenAdmins}>
             <Users className="h-4 w-4" /> Admins
           </Button>
+          <Badge variant="outline" className="gap-1 text-xs">
+            <MapPin className="h-3 w-3" /> {zipCount ?? 0} ZIPs
+          </Badge>
           <Button variant="ghost" size="icon" onClick={onDelete}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
