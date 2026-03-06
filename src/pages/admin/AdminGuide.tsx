@@ -326,6 +326,23 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     ],
   },
   {
+    id: "ecosystem-quickstart",
+    icon: Plug,
+    title: "Ecosystem Integration Quick-Start",
+    bullets: [
+      "This guide walks through connecting the FGN gaming platform to an external LMS (e.g. FGN Academy, SimuCDL, BroadbandWorkforce) so that gaming milestones automatically grant career-path credit.",
+      "Step 1 — Get your API Key: Go to Admin → Ecosystem. The API key is auto-generated on the first external API call, or click 'Regenerate' to create a new one. Share this key with your LMS administrator; external apps send it in the X-Ecosystem-Key header.",
+      "Step 2 — Identify your LMS Path & Module IDs: Log in to your external LMS and locate the career learning path you want to map. Copy its unique path identifier (e.g. 'cdl-class-a', 'fiber-tech-101'). If the path has sub-modules, note those IDs too (e.g. 'module-safety-101'). If the LMS doesn't expose IDs, agree on a naming convention with your LMS team (e.g. 'path-001', 'module-001') and configure both systems to use the same values.",
+      "Step 3 — Create a Career Path Mapping: In Admin → Ecosystem → Career Path Mappings, select the Target App (academy, simu-cdl, or broadband), optionally choose a Game and/or Challenge to scope the mapping, then enter the external_path_id and optional external_module_id from Step 2. Choose a credit type (Completion, Evidence, or Hours) and set the credit value.",
+      "Step 4 — Set up a Webhook: In Admin → Ecosystem → Outbound Webhooks, add a webhook for the relevant event (e.g. 'challenge.completed' or 'evidence.approved'). Enter the URL your LMS exposes to receive push notifications. The system generates an HMAC secret — share this with your LMS team so they can verify payload authenticity.",
+      "Step 5 — Test the integration: Click the 'Test' button (paper plane icon) next to your webhook to fire a test payload. Check the Sync Log section at the bottom of the Ecosystem page to confirm delivery status.",
+      "Step 6 — Calendar Feed (optional): Share the public calendar feed URL with external apps. It merges tournaments, tenant events, and challenge deadlines. Available in JSON and iCal formats — no authentication required.",
+      "Common LMS path ID locations: In Moodle, find Course ID in the URL (course/view.php?id=123). In Canvas, the course ID is in the URL path (/courses/456). For custom LMS platforms, check with your vendor for their API resource identifiers.",
+      "Tip: You can create multiple mappings for the same game or challenge targeting different LMS platforms. Each mapping fires independently when the linked event occurs.",
+      "Tip: If you change an LMS path ID later, update the mapping here and in the LMS to keep them in sync. Old mappings will stop granting credit until corrected.",
+    ],
+  },
+  {
     id: "registration-flow",
     icon: UserPlus,
     title: "Registration & ZIP Verification",
