@@ -33,7 +33,7 @@ const AdminMedia = () => {
   const [syncing, setSyncing] = useState(false);
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { media, isLoading, upload, isUploading, deleteMedia, isDeleting, generateImage, isGenerating } = useMediaLibrary(activeTab);
+  const { media, isLoading, upload, isUploading, deleteMedia, isDeleting, generateImage, isGenerating, updateCategory } = useMediaLibrary(activeTab);
 
   const handleSyncGameImages = async () => {
     if (!user) return;
@@ -211,7 +211,7 @@ const AdminMedia = () => {
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
         ) : (
-          <MediaGrid media={filtered} onDelete={deleteMedia} isDeleting={isDeleting} />
+          <MediaGrid media={filtered} onDelete={deleteMedia} isDeleting={isDeleting} onUpdateCategory={updateCategory} />
         )}
       </div>
     </div>

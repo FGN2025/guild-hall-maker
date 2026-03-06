@@ -13,7 +13,7 @@ const TABS = ["all", "games", "tournament", "badge", "trophy", "banner", "genera
 const MediaLibrary = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
-  const { media, isLoading, upload, isUploading, deleteMedia, isDeleting, generateImage, isGenerating } = useMediaLibrary(activeTab);
+  const { media, isLoading, upload, isUploading, deleteMedia, isDeleting, generateImage, isGenerating, updateCategory } = useMediaLibrary(activeTab);
 
   const filtered = search
     ? media.filter((m) => m.file_name.toLowerCase().includes(search.toLowerCase()) || m.tags?.some((t) => t.toLowerCase().includes(search.toLowerCase())))
@@ -64,7 +64,7 @@ const MediaLibrary = () => {
               <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
             </div>
           ) : (
-            <MediaGrid media={filtered} onDelete={deleteMedia} isDeleting={isDeleting} />
+            <MediaGrid media={filtered} onDelete={deleteMedia} isDeleting={isDeleting} onUpdateCategory={updateCategory} />
           )}
         </div>
       </div>
