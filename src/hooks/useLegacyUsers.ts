@@ -27,23 +27,35 @@ export function useLegacyUsers(options?: { tenantId?: string; search?: string })
   return useQuery({
     queryKey: ["legacy-users", tenantId, search],
     queryFn: async () => {
-      let query = (supabase as any)
-        .from("legacy_users")
-        .select("*")
-        .order("legacy_username", { ascending: true });
+      const allRows: LegacyUser[] = [];
+      let from = 0;
+      const pageSize = 1000;
 
-      if (tenantId) {
-        query = query.eq("tenant_id", tenantId);
-      }
-      if (search) {
-        query = query.or(
-          `legacy_username.ilike.%${search}%,email.ilike.%${search}%,provider_name.ilike.%${search}%`
-        );
+      while (true) {
+        let query = (supabase as any)
+          .from("legacy_users")
+          .select("*")
+          .order("legacy_username", { ascending: true })
+          .range(from, from + pageSize - 1);
+
+        if (tenantId) {
+          query = query.eq("tenant_id", tenantId);
+        }
+        if (search) {
+          query = query.or(
+            `legacy_username.ilike.%${search}%,email.ilike.%${search}%,provider_name.ilike.%${search}%`
+          );
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allRows.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as LegacyUser[];
+      return allRows as LegacyUser[];
     },
   });
 }
