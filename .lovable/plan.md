@@ -1,11 +1,15 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+# Add Marketing Role to Tenant Admin Panel
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+## Problem
+The TenantAdminPanel's role selector (line 487-494 in `AdminTenants.tsx`) only includes "Admin" and "Manager" options. The "Marketing" tenant role is missing, so platform admins cannot assign it from this page.
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+## Fix
+Add a third `<option value="marketing">Marketing</option>` to the `<select>` dropdown in the `TenantAdminPanel` component.
+
+## File Change
+- **`src/pages/admin/AdminTenants.tsx`** (line ~493): Add `<option value="marketing">Marketing</option>` after the Manager option.
+
+One-line change. No other files affected.
 
