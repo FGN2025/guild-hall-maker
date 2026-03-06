@@ -6,15 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Target, Plus, Users, Sparkles, Loader2, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, MessageSquare } from "lucide-react";
+import { Target, Plus, Users, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
 
 const ModeratorChallenges = () => {
   const { user } = useAuth();
