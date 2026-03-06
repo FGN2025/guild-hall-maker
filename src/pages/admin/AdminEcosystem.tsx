@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import {
   Globe, Loader2, Plus, Trash2, RefreshCw, Copy, Eye, EyeOff,
-  ArrowUpDown, Link as LinkIcon, Send, History
+  ArrowUpDown, Link as LinkIcon, Send, History, ExternalLink
 } from "lucide-react";
+import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -56,7 +57,14 @@ const EVENT_TYPES = [
 const TARGET_APPS = ["academy", "simu-cdl", "broadband"];
 
 /* ───────── component ───────── */
+const ecosystemApps = [
+  { target: "play" as const, label: "FGN Play", description: "Main gaming platform" },
+  { target: "manage" as const, label: "FGN Manage", description: "Management portal" },
+  { target: "hub" as const, label: "FGN Hub", description: "Community hub" },
+];
+
 const AdminEcosystem = () => {
+  const { requestMagicLink, loading: loadingApp } = useEcosystemAuth();
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [loadingKey, setLoadingKey] = useState(true);
@@ -234,6 +242,35 @@ const AdminEcosystem = () => {
       <div className="flex items-center gap-3">
         <Globe className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-display font-bold text-foreground">Ecosystem</h1>
+      </div>
+
+      {/* Ecosystem Apps */}
+      <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <ExternalLink className="h-5 w-5 text-primary" />
+          <Label className="font-heading text-sm">FGN Ecosystem Apps</Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Launch other FGN ecosystem applications. You'll be automatically authenticated via a secure magic link.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {ecosystemApps.map((app) => (
+            <Button
+              key={app.target}
+              variant="outline"
+              onClick={() => requestMagicLink(app.target)}
+              disabled={loadingApp !== null}
+              className="gap-2"
+            >
+              {loadingApp === app.target ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ExternalLink className="h-4 w-4" />
+              )}
+              {app.label}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* API Key */}
