@@ -1,6 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /** Convert hex color to rgba string */
 function hexToRgba(hex: string, alpha: number): string {
@@ -10,11 +17,24 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+interface TenantListItem {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  primary_color: string | null;
+  accent_color: string | null;
+}
+
 export interface TenantSidebarProps {
   tenantName: string;
   tenantRole: 'admin' | 'manager' | 'marketing';
   logoUrl?: string | null;
   brandColor?: string;
+  isPlatformAdmin?: boolean;
+  allTenants?: TenantListItem[];
+  selectedTenantId?: string | null;
+  onTenantChange?: (id: string | null) => void;
 }
 
 const allSidebarItems = [
@@ -39,7 +59,7 @@ const ecosystemApps = [
   { target: "hub" as const, label: "Hub" },
 ];
 
-const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor }: TenantSidebarProps) => {
+const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatformAdmin, allTenants, selectedTenantId, onTenantChange }: TenantSidebarProps) => {
   const location = useLocation();
   const { requestMagicLink, loading } = useEcosystemAuth();
 
@@ -47,22 +67,55 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor }: TenantSi
 
   return (
     <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
-      <div className="p-6 border-b border-border flex items-center gap-3">
-        {logoUrl ? (
-          <img src={logoUrl} alt={tenantName} className="h-10 w-10 rounded-lg object-contain shrink-0" />
-        ) : (
-          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-            <span className="font-display text-sm font-bold text-primary">{tenantName.charAt(0)}</span>
+      <div className="p-6 border-b border-border">
+        {/* Platform admin badge */}
+        {isPlatformAdmin && (
+          <div className="flex items-center gap-1.5 mb-3 px-1">
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+            <span className="text-[10px] uppercase tracking-widest font-heading text-primary font-semibold">Platform Admin</span>
           </div>
         )}
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading mb-0.5">
-            Tenant Admin
-          </p>
-          <h2 className="font-display text-sm font-bold tracking-wider truncate" style={brandColor ? { color: brandColor } : undefined}>
-            {tenantName}
-          </h2>
-        </div>
+
+        {/* Tenant switcher for platform admins */}
+        {isPlatformAdmin && allTenants && allTenants.length > 1 && onTenantChange ? (
+          <Select value={selectedTenantId || undefined} onValueChange={(val) => onTenantChange(val)}>
+            <SelectTrigger className="w-full mb-2 text-sm font-heading font-bold">
+              <SelectValue placeholder="Select tenant" />
+            </SelectTrigger>
+            <SelectContent>
+              {allTenants.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  <div className="flex items-center gap-2">
+                    {t.logo_url ? (
+                      <img src={t.logo_url} alt="" className="h-4 w-4 rounded object-contain" />
+                    ) : (
+                      <span className="h-4 w-4 rounded bg-muted flex items-center justify-center text-[9px] font-bold">{t.name.charAt(0)}</span>
+                    )}
+                    <span>{t.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <div className="flex items-center gap-3">
+            {logoUrl ? (
+              <img src={logoUrl} alt={tenantName} className="h-10 w-10 rounded-lg object-contain shrink-0" />
+            ) : (
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <span className="font-display text-sm font-bold text-primary">{tenantName.charAt(0)}</span>
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading mb-0.5">
+                Tenant Admin
+              </p>
+              <h2 className="font-display text-sm font-bold tracking-wider truncate" style={brandColor ? { color: brandColor } : undefined}>
+                {tenantName}
+              </h2>
+            </div>
+          </div>
+        )}
       </div>
       <nav className="flex-1 p-4 flex flex-col gap-1">
         {sidebarItems.map((item) => {
@@ -120,11 +173,11 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor }: TenantSi
       </nav>
       <div className="p-4 border-t border-border">
         <Link
-          to="/dashboard"
+          to={isPlatformAdmin ? "/admin" : "/dashboard"}
           className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to App
+          {isPlatformAdmin ? "Back to Admin" : "Back to App"}
         </Link>
       </div>
     </aside>

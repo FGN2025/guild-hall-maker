@@ -5,6 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import TenantSidebar from "./TenantSidebar";
 
+interface TenantListItem {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  primary_color: string | null;
+  accent_color: string | null;
+}
+
 interface TenantLayoutProps {
   children: ReactNode;
   tenantInfo: {
@@ -16,9 +25,13 @@ interface TenantLayoutProps {
     accentColor?: string | null;
   };
   tenantRole: 'admin' | 'manager' | 'marketing';
+  isPlatformAdmin?: boolean;
+  allTenants?: TenantListItem[];
+  selectedTenantId?: string | null;
+  onTenantChange?: (id: string | null) => void;
 }
 
-const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) => {
+const TenantLayout = ({ children, tenantInfo, tenantRole, isPlatformAdmin, allTenants, selectedTenantId, onTenantChange }: TenantLayoutProps) => {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
 
@@ -41,10 +54,21 @@ const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) =
 
   const brandAccent = tenantInfo.primaryColor || undefined;
 
+  const sidebarProps = {
+    tenantName: tenantInfo.tenantName,
+    tenantRole,
+    logoUrl: tenantInfo.logoUrl,
+    brandColor: brandAccent,
+    isPlatformAdmin,
+    allTenants,
+    selectedTenantId,
+    onTenantChange,
+  };
+
   if (!isMobile) {
     return (
       <div className="min-h-screen bg-background flex tenant-portal">
-        <TenantSidebar tenantName={tenantInfo.tenantName} tenantRole={tenantRole} logoUrl={tenantInfo.logoUrl} brandColor={brandAccent} />
+        <TenantSidebar {...sidebarProps} />
         <main className="flex-1 p-8 overflow-auto">{children}</main>
       </div>
     );
@@ -61,7 +85,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole }: TenantLayoutProps) =
           </SheetTrigger>
            <SheetContent side="left" className="p-0 w-64">
             <div onClick={() => setOpen(false)}>
-              <TenantSidebar tenantName={tenantInfo.tenantName} tenantRole={tenantRole} logoUrl={tenantInfo.logoUrl} brandColor={brandAccent} />
+              <TenantSidebar {...sidebarProps} />
             </div>
           </SheetContent>
         </Sheet>
