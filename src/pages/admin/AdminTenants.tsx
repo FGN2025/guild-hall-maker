@@ -20,7 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search } from "lucide-react";
+import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BulkZipImportDialog } from "@/components/admin/BulkZipImportDialog";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -368,6 +368,19 @@ function TenantCard({
     },
   });
 
+  const { data: codesCount } = useQuery({
+    queryKey: ["tenant-codes-count", t.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("tenant_codes" as any)
+        .select("*", { count: "exact", head: true })
+        .eq("tenant_id", t.id)
+        .eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   return (
     <div className={`border rounded-lg p-4 bg-card space-y-3 ${t.status !== "active" ? "border-dashed border-muted opacity-60" : "border-border"}`}>
       <div className="flex items-center justify-between">
@@ -403,6 +416,9 @@ function TenantCard({
           </Button>
           <Badge variant="outline" className="gap-1 text-xs">
             <MapPin className="h-3 w-3" /> {zipCount ?? 0} ZIPs
+          </Badge>
+          <Badge variant="outline" className="gap-1 text-xs">
+            <KeyRound className="h-3 w-3" /> {codesCount ?? 0} Codes
           </Badge>
           <Button variant="ghost" size="icon" onClick={onDelete}>
             <Trash2 className="h-4 w-4 text-destructive" />

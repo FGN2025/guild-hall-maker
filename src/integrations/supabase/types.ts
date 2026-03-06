@@ -1692,6 +1692,66 @@ export type Database = {
           },
         ]
       }
+      tenant_codes: {
+        Row: {
+          campaign_id: string | null
+          code: string
+          code_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          tenant_id: string
+          times_used: number
+        }
+        Insert: {
+          campaign_id?: string | null
+          code: string
+          code_type?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          tenant_id: string
+          times_used?: number
+        }
+        Update: {
+          campaign_id?: string | null
+          code?: string
+          code_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          tenant_id?: string
+          times_used?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_codes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_codes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_event_assets: {
         Row: {
           asset_url: string
