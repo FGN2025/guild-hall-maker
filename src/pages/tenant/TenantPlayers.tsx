@@ -1,6 +1,5 @@
 import { useTenantPlayers } from "@/hooks/useTenantPlayers";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-import TenantLayout from "@/components/tenant/TenantLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +20,6 @@ const TenantPlayers = () => {
   ];
 
   return (
-    <TenantLayout tenantInfo={tenantInfo!} tenantRole={tenantRole}>
       <div className="space-y-6">
         <h1 className="text-2xl font-display font-bold tracking-wider">Players</h1>
 
@@ -95,7 +93,6 @@ const TenantPlayers = () => {
           </Table>
         </div>
       </div>
-    </TenantLayout>
   );
 };
 
