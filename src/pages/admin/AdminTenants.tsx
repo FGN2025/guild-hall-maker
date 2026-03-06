@@ -178,69 +178,70 @@ const AdminTenants = () => {
                   <Plus className="h-4 w-4" /> Add Provider
                 </Button>
               </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="font-display">New Provider</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label>Company Logo</Label>
-                  <LogoPicker
-                    logoUrl={form.logo_url || null}
-                    onUploaded={(url) => setForm({ ...form, logo_url: url })}
-                    uploading={logoUploading}
-                    setUploading={setLogoUploading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Company Name</Label>
-                  <Input
-                    placeholder="Acme Broadband"
-                    value={form.name}
-                    onChange={(e) => autoSlug(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Slug</Label>
-                  <Input
-                    placeholder="acme-broadband"
-                    value={form.slug}
-                    onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">URL-friendly identifier</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Contact Email (optional)</Label>
-                  <Input
-                    type="email"
-                    placeholder="admin@acme.com"
-                    value={form.contact_email}
-                    onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Brand Colors (optional)</Label>
-                  <div className="flex gap-4">
-                    <div className="flex items-center gap-2">
-                      <ColorPicker value={form.primary_color || "#00e5ff"} onChange={(c) => setForm({ ...form, primary_color: c })} />
-                      <span className="text-xs text-muted-foreground">Primary</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ColorPicker value={form.accent_color || "#7c3aed"} onChange={(c) => setForm({ ...form, accent_color: c })} />
-                      <span className="text-xs text-muted-foreground">Accent</span>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="font-display">New Provider</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <Label>Company Logo</Label>
+                    <LogoPicker
+                      logoUrl={form.logo_url || null}
+                      onUploaded={(url) => setForm({ ...form, logo_url: url })}
+                      uploading={logoUploading}
+                      setUploading={setLogoUploading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Company Name</Label>
+                    <Input
+                      placeholder="Acme Broadband"
+                      value={form.name}
+                      onChange={(e) => autoSlug(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Slug</Label>
+                    <Input
+                      placeholder="acme-broadband"
+                      value={form.slug}
+                      onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">URL-friendly identifier</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contact Email (optional)</Label>
+                    <Input
+                      type="email"
+                      placeholder="admin@acme.com"
+                      value={form.contact_email}
+                      onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Brand Colors (optional)</Label>
+                    <div className="flex gap-4">
+                      <div className="flex items-center gap-2">
+                        <ColorPicker value={form.primary_color || "#00e5ff"} onChange={(c) => setForm({ ...form, primary_color: c })} />
+                        <span className="text-xs text-muted-foreground">Primary</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ColorPicker value={form.accent_color || "#7c3aed"} onChange={(c) => setForm({ ...form, accent_color: c })} />
+                        <span className="text-xs text-muted-foreground">Accent</span>
+                      </div>
                     </div>
                   </div>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={createTenant.isPending || logoUploading}
+                    className="w-full"
+                  >
+                    {createTenant.isPending ? "Creating..." : "Create Provider"}
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleCreate}
-                  disabled={createTenant.isPending || logoUploading}
-                  className="w-full"
-                >
-                  {createTenant.isPending ? "Creating..." : "Create Provider"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {isLoading ? (
