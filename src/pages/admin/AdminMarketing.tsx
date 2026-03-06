@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMarketingCampaigns, useMarketingAssets, MarketingCampaign } from "@/hooks/useMarketingCampaigns";
+import AdminCampaignCodes from "@/components/admin/AdminCampaignCodes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -193,6 +194,9 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
               ))}
             </div>
           )}
+
+          {/* Linked promo codes across tenants */}
+          <AdminCampaignCodes campaignId={campaign.id} />
         </div>
 
         {editorAssetUrl && (
