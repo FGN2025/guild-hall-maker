@@ -172,7 +172,7 @@ const AdminTenants = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <BulkZipImportDialog tenants={tenants} onComplete={() => {}} />
+            <BulkZipImportDialog tenants={tenants} onComplete={() => {}} refetchTenants={() => queryClient.invalidateQueries({ queryKey: ["tenants"] })} />
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
