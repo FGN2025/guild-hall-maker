@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTenantCodes, TenantCode } from "@/hooks/useTenantCodes";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useMarketingCampaigns } from "@/hooks/useMarketingCampaigns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, KeyRound, Copy } from "lucide-react";
+import { Plus, Trash2, KeyRound, Copy, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
