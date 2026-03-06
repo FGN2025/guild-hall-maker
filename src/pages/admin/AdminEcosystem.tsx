@@ -361,8 +361,8 @@ const AdminEcosystem = () => {
           </Select>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-          <Input placeholder="external_path_id" value={newMap.external_path_id} onChange={(e) => setNewMap((p) => ({ ...p, external_path_id: e.target.value }))} className="bg-background font-mono text-xs" />
-          <Input placeholder="external_module_id" value={newMap.external_module_id} onChange={(e) => setNewMap((p) => ({ ...p, external_module_id: e.target.value }))} className="bg-background font-mono text-xs" />
+          <Input placeholder="e.g. cdl-class-a or path-001" value={newMap.external_path_id} onChange={(e) => setNewMap((p) => ({ ...p, external_path_id: e.target.value }))} className="bg-background font-mono text-xs" />
+          <Input placeholder="e.g. module-safety-101 (optional)" value={newMap.external_module_id} onChange={(e) => setNewMap((p) => ({ ...p, external_module_id: e.target.value }))} className="bg-background font-mono text-xs" />
           <Select value={newMap.credit_type} onValueChange={(v) => setNewMap((p) => ({ ...p, credit_type: v }))}>
             <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -375,6 +375,9 @@ const AdminEcosystem = () => {
             {addingMap ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Add Mapping
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Use the learning-path and module IDs from your external LMS. If none exist yet, create a shared naming convention (e.g. <code className="bg-muted px-1 rounded">path-001</code>) and use the same IDs in both systems.
+        </p>
 
         {loadingMappings ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
