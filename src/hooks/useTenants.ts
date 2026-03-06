@@ -162,7 +162,7 @@ export function useTenantAdmins(tenantId: string | null) {
         .is("claimed_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as TenantInvitation[];
+      return (data || []) as unknown as TenantInvitation[];
     },
   });
 

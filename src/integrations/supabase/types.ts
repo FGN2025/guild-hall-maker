@@ -1956,6 +1956,44 @@ export type Database = {
           },
         ]
       }
+      tenant_invitations: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          role: string
+          tenant_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          role?: string
+          tenant_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          role?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_invitations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_marketing_assets: {
         Row: {
           campaign_id: string | null
