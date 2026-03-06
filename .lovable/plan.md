@@ -1,14 +1,14 @@
 
 
-# Plan: Add "Challenges" and "Marketing" Categories to Media Library
+# Plan: Add Delete Confirmation Dialog to Media Grid
 
-## Changes
+## Change
 
-Update the category lists in three files to include `"challenges"` and `"marketing"`:
+**File**: `src/components/media/MediaGrid.tsx`
 
-1. **`src/components/media/MediaUploader.tsx`** — Add to `CATEGORIES` array
-2. **`src/components/media/MediaGrid.tsx`** — Add to `CATEGORIES` array
-3. **`src/pages/admin/AdminMedia.tsx`** — Add to `TABS` array
+- Import `AlertDialog` components from `@/components/ui/alert-dialog`
+- Wrap the delete button in an `AlertDialog` that asks "Are you sure you want to delete this media item?" with Cancel and Delete actions
+- On confirm, call the existing `onDelete` handler
 
-All three files have hardcoded category arrays that need the two new entries added.
+Single file change, no backend updates needed.
 
