@@ -110,6 +110,16 @@ export function useTenants() {
   return { tenants, isLoading, createTenant, updateTenant, deleteTenant };
 }
 
+export interface TenantInvitation {
+  id: string;
+  tenant_id: string;
+  email: string;
+  role: string;
+  invited_by: string;
+  claimed_at: string | null;
+  created_at: string;
+}
+
 export function useTenantAdmins(tenantId: string | null) {
   const queryClient = useQueryClient();
 
@@ -138,6 +148,21 @@ export function useTenantAdmins(tenantId: string | null) {
         ...row,
         profile: profileMap.get(row.user_id) || null,
       })) as TenantAdmin[];
+    },
+  });
+
+  const { data: invitations = [], isLoading: invitationsLoading } = useQuery({
+    queryKey: ["tenant-invitations", tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tenant_invitations" as any)
+        .select("*")
+        .eq("tenant_id", tenantId!)
+        .is("claimed_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as TenantInvitation[];
     },
   });
 
@@ -181,5 +206,36 @@ export function useTenantAdmins(tenantId: string | null) {
     onError: (err: any) => toast.error(err.message),
   });
 
-  return { admins, isLoading, addAdmin, removeAdmin, updateRole };
+  const createInvitation = useMutation({
+    mutationFn: async ({ tenantId, email, role }: { tenantId: string; email: string; role: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase.from("tenant_invitations" as any).insert({
+        tenant_id: tenantId,
+        email: email.toLowerCase().trim(),
+        role,
+        invited_by: user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-invitations", tenantId] });
+      toast.success("Invitation created. Role will be assigned when they register.");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const cancelInvitation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tenant_invitations" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-invitations", tenantId] });
+      toast.success("Invitation cancelled.");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  return { admins, isLoading, invitations, invitationsLoading, addAdmin, removeAdmin, updateRole, createInvitation, cancelInvitation };
 }
