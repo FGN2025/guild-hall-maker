@@ -96,6 +96,24 @@ export const useMediaLibrary = (category?: string) => {
     onError: () => toast.error("Delete failed"),
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (items: MediaItem[]) => {
+      const paths = items.map((i) => i.file_path);
+      if (paths.length > 0) {
+        const { error: storageErr } = await supabase.storage.from("app-media").remove(paths);
+        if (storageErr) console.warn("Bulk storage delete warning:", storageErr);
+      }
+      const ids = items.map((i) => i.id);
+      const { error } = await supabase.from("media_library").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, items) => {
+      toast.success(`Deleted ${items.length} items`);
+      queryClient.invalidateQueries({ queryKey: ["media-library"] });
+    },
+    onError: () => toast.error("Bulk delete failed"),
+  });
+
   const generateMutation = useMutation({
     mutationFn: async ({ prompt, category: cat = "general", tags = [] }: { prompt: string; category?: string; tags?: string[] }) => {
       const { data, error } = await supabase.functions.invoke("generate-media-image", {
@@ -119,6 +137,8 @@ export const useMediaLibrary = (category?: string) => {
     isUploading: uploadMutation.isPending,
     deleteMedia: deleteMutation.mutate,
     isDeleting: deleteMutation.isPending,
+    bulkDelete: bulkDeleteMutation.mutate,
+    isBulkDeleting: bulkDeleteMutation.isPending,
     generateImage: generateMutation.mutateAsync,
     isGenerating: generateMutation.isPending,
     updateCategory: updateCategoryMutation.mutate,
