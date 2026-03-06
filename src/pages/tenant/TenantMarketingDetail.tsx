@@ -17,6 +17,7 @@ const TenantMarketingDetail = () => {
   const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(true);
   const { assets, isLoading: loadingAssets } = useMarketingAssets(id);
   const { saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
+  const { tenantInfo } = useTenantAdmin();
   const [copied, setCopied] = useState(false);
   const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
   const [editorAssetMeta, setEditorAssetMeta] = useState<{ id: string; label: string } | null>(null);
