@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMarketingCampaigns, useMarketingAssets } from "@/hooks/useMarketingCampaigns";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { ArrowLeft, Download, Copy, Check, BookmarkPlus, Pencil } from "lucide-r
 import { useState } from "react";
 import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
+import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 
 const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
