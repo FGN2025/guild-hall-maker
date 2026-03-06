@@ -82,6 +82,20 @@ const TenantMarketingDetail = () => {
         </Card>
       )}
 
+      {/* Promo Codes linked to this campaign */}
+      {tenantInfo && campaign && (
+        <Card>
+          <CardContent className="pt-6">
+            <CampaignCodeLinker
+              campaignId={campaign.id}
+              campaignTitle={campaign.title}
+              tenantId={tenantInfo.tenantId}
+              readOnly={tenantInfo.tenantRole === "marketing"}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       <div>
         <h2 className="font-heading text-lg font-semibold mb-4">Asset Variants</h2>
         {loadingAssets ? (
