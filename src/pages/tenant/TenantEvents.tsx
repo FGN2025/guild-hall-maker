@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Plus, Calendar, Users, Trash2, Eye, EyeOff, Pencil, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -147,6 +148,13 @@ const TenantEvents = () => {
                 </div>
                 <div><Label>Rules</Label><Textarea value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} rows={3} /></div>
                 <div><Label>Social Copy</Label><Textarea value={form.social_copy} onChange={(e) => setForm({ ...form, social_copy: e.target.value })} rows={2} placeholder="Pre-written social media text..." /></div>
+                {editingEvent && (
+                  <CampaignCodeLinker
+                    eventId={editingEvent.id}
+                    eventTitle={editingEvent.name}
+                    tenantId={tenantInfo?.tenantId ?? null}
+                  />
+                )}
                 <div className="flex items-center justify-between">
                   <Label>Registration Open</Label>
                   <Switch checked={form.registration_open} onCheckedChange={(c) => setForm({ ...form, registration_open: c })} />
@@ -194,7 +202,13 @@ const TenantEvents = () => {
                   {event.prize_pool && <span className="ml-2">• {event.prize_pool}</span>}
                 </div>
                 {event.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>}
-                <div className="flex gap-2 flex-wrap">
+                <CampaignCodeLinker
+                  eventId={event.id}
+                  eventTitle={event.name}
+                  tenantId={tenantInfo?.tenantId ?? null}
+                  readOnly
+                />
+                <div className="flex gap-2 flex-wrap mt-3">
                   <Button size="sm" variant="outline" onClick={() => openEdit(event)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</Button>
                   <Button size="sm" variant="outline" onClick={() => togglePublish(event)}>
                     {event.status === "published" ? <><EyeOff className="h-3.5 w-3.5 mr-1" /> Unpublish</> : <><Eye className="h-3.5 w-3.5 mr-1" /> Publish</>}
