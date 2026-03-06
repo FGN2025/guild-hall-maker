@@ -68,9 +68,6 @@ const CampaignCodeLinker = ({ campaignId, campaignTitle, eventId, eventTitle, te
     updateCode.mutate({ id: codeId, [entityField]: null } as any);
   };
 
-  const handleUnlink = (codeId: string) => {
-    updateCode.mutate({ id: codeId, campaign_id: null } as any);
-  };
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);

@@ -14,6 +14,7 @@ export interface TenantCode {
   expires_at: string | null;
   is_active: boolean;
   campaign_id: string | null;
+  event_id: string | null;
   created_by: string;
   created_at: string;
 }
@@ -25,6 +26,7 @@ interface CreateCodeInput {
   max_uses?: number | null;
   expires_at?: string | null;
   campaign_id?: string | null;
+  event_id?: string | null;
 }
 
 export function useTenantCodes(tenantId: string | null) {
