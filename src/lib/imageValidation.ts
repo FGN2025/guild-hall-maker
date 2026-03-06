@@ -12,7 +12,7 @@ export interface ImageValidationRules {
 
 export const IMAGE_PRESETS: Record<string, ImageValidationRules> = {
   cardCover: {
-    maxSizeKB: 500,
+    maxSizeKB: 5120,
     minWidth: 640,
     minHeight: 360,
     maxWidth: 3840,
@@ -21,7 +21,7 @@ export const IMAGE_PRESETS: Record<string, ImageValidationRules> = {
     label: "Card Cover",
   },
   heroBanner: {
-    maxSizeKB: 800,
+    maxSizeKB: 8192,
     minWidth: 1280,
     minHeight: 720,
     maxWidth: 3840,
@@ -30,7 +30,7 @@ export const IMAGE_PRESETS: Record<string, ImageValidationRules> = {
     label: "Hero Banner",
   },
   avatar: {
-    maxSizeKB: 100,
+    maxSizeKB: 2048,
     minWidth: 128,
     minHeight: 128,
     maxWidth: 1024,
@@ -39,7 +39,7 @@ export const IMAGE_PRESETS: Record<string, ImageValidationRules> = {
     label: "Avatar",
   },
   tournamentHero: {
-    maxSizeKB: 500,
+    maxSizeKB: 5120,
     minWidth: 640,
     minHeight: 360,
     maxWidth: 3840,
@@ -48,7 +48,7 @@ export const IMAGE_PRESETS: Record<string, ImageValidationRules> = {
     label: "Tournament Hero",
   },
   general: {
-    maxSizeKB: 800,
+    maxSizeKB: 10240,
     allowedFormats: ["image/jpeg", "image/png", "image/webp", "image/gif"],
     label: "Image",
   },
