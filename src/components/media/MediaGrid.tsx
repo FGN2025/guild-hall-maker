@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { MediaItem } from "@/hooks/useMediaLibrary";
-import { Trash2, Copy, Image, Film, Music, ZoomIn, ZoomOut, RotateCcw, Move } from "lucide-react";
+import { Trash2, Copy, Image, Film, Music, ZoomIn, ZoomOut, RotateCcw, Move, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,15 +13,18 @@ interface Props {
   onDelete: (item: MediaItem) => void;
   isDeleting: boolean;
   onUpdateCategory?: (data: { itemId: string; category: string }) => void;
+  onBulkDelete?: (items: MediaItem[]) => void;
+  isBulkDeleting?: boolean;
 }
 
 const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner", "challenges", "marketing"];
 const typeIcons: Record<string, typeof Image> = { image: Image, video: Film, audio: Music };
 
-const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => {
+const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete, isBulkDeleting }: Props) => {
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isPanning = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
 
@@ -29,6 +33,24 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => 
   const openPreview = (item: MediaItem) => {
     resetView();
     setPreviewItem(item);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedIds(new Set(media.map((m) => m.id)));
+  const deselectAll = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = () => {
+    if (!onBulkDelete) return;
+    const items = media.filter((m) => selectedIds.has(m.id));
+    onBulkDelete(items);
+    setSelectedIds(new Set());
   };
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -62,17 +84,53 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory }: Props) => 
     );
   }
 
+  const selectionMode = selectedIds.size > 0;
+
   return (
     <>
+    {selectionMode && onBulkDelete && (
+      <div className="sticky top-0 z-10 flex items-center gap-3 mb-4 p-3 rounded-lg border border-primary/30 bg-card">
+        <span className="text-sm font-heading text-foreground">{selectedIds.size} selected</span>
+        <Button size="sm" variant="outline" onClick={selectedIds.size === media.length ? deselectAll : selectAll} className="font-heading">
+          {selectedIds.size === media.length ? "Deselect All" : "Select All"}
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="sm" variant="destructive" disabled={isBulkDeleting} className="font-heading gap-1">
+              {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              Delete Selected
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {selectedIds.size} items?</AlertDialogTitle>
+              <AlertDialogDescription>This will permanently delete the selected media files. This action cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <Button size="sm" variant="ghost" onClick={deselectAll} className="ml-auto font-heading text-muted-foreground">Cancel</Button>
+      </div>
+    )}
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {media.map((item) => {
+        const isSelected = selectedIds.has(item.id);
         const Icon = typeIcons[item.file_type] ?? Image;
         return (
-          <div key={item.id} className="group rounded-xl border border-border bg-card overflow-hidden glow-card">
+          <div key={item.id} className={`group rounded-xl border bg-card overflow-hidden glow-card ${isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border'}`}>
             <div
               className="aspect-square relative bg-muted flex items-center justify-center cursor-pointer"
-              onClick={() => item.file_type === "image" && openPreview(item)}
+              onClick={() => selectionMode ? toggleSelect(item.id) : (item.file_type === "image" && openPreview(item))}
             >
+              <div
+                className={`absolute top-2 left-2 z-10 transition-opacity ${selectionMode || isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
+              >
+                <Checkbox checked={isSelected} className="h-5 w-5 bg-background/80 backdrop-blur-sm" />
+              </div>
               {item.file_type === "image" ? (
                 <img src={item.url} alt={item.file_name} className="w-full h-full object-cover" />
               ) : (
