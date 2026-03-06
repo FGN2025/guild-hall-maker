@@ -169,12 +169,14 @@ const AdminTenants = () => {
               Manage broadband service providers and their admins.
             </p>
           </div>
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Add Provider
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <BulkZipImportDialog tenants={tenants} onComplete={() => {}} />
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" /> Add Provider
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle className="font-display">New Provider</DialogTitle>
