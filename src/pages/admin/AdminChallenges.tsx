@@ -117,6 +117,10 @@ const AdminChallenges = () => {
           Challenge Oversight
         </h1>
         <div className="flex items-center gap-2">
+          <CreateChallengeDialog
+            invalidateQueryKey={["admin-challenges"]}
+            trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> New Challenge</Button>}
+          />
           <Button variant={viewMode === "list" ? "default" : "outline"} size="icon" onClick={() => setViewMode("list")}>
             <List className="h-4 w-4" />
           </Button>
