@@ -491,6 +491,7 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
         >
           <option value="admin">Admin</option>
           <option value="manager">Manager</option>
+          <option value="marketing">Marketing</option>
         </select>
         <Button
           size="icon"
