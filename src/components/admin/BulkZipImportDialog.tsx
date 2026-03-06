@@ -1,0 +1,353 @@
+import { useState, useRef, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Upload, FileUp, CheckCircle2, AlertTriangle, MinusCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface ParsedRow {
+  providerName: string;
+  zips: string[];
+  matchedTenantId: string | null;
+  matchedTenantName: string | null;
+  status: "matched" | "unmatched" | "empty";
+  /** Admin override for unmatched rows */
+  assignedTenantId: string | null;
+  skip: boolean;
+}
+
+interface BulkZipImportDialogProps {
+  tenants: Tenant[];
+  onComplete: () => void;
+}
+
+export function BulkZipImportDialog({ tenants, onComplete }: BulkZipImportDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [step, setStep] = useState<"upload" | "review" | "importing" | "done">("upload");
+  const [progress, setProgress] = useState(0);
+  const [importResult, setImportResult] = useState({ inserted: 0, skipped: 0 });
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const tenantMap = useMemo(() => {
+    const map = new Map<string, Tenant>();
+    tenants.forEach((t) => map.set(t.name.trim().toLowerCase(), t));
+    return map;
+  }, [tenants]);
+
+  const parseCSV = (text: string) => {
+    const lines = text.split("\n").filter((l) => l.trim());
+    // Skip header
+    const dataLines = lines.slice(1);
+    const parsed: ParsedRow[] = dataLines.map((line) => {
+      // Handle CSV with quoted fields
+      const match = line.match(/^"?([^"]*?)"?\s*,\s*"?(.*?)"?\s*$/);
+      const providerName = match ? match[1].trim() : line.split(",")[0].trim();
+      const zipStr = match ? match[2].trim() : "";
+      const zips = zipStr
+        ? zipStr.split(/[,\s]+/).map((z) => z.trim()).filter((z) => /^\d{4,5}$/.test(z))
+        : [];
+
+      const key = providerName.toLowerCase();
+      const tenant = tenantMap.get(key);
+
+      return {
+        providerName,
+        zips,
+        matchedTenantId: tenant?.id ?? null,
+        matchedTenantName: tenant?.name ?? null,
+        status: zips.length === 0 ? "empty" : tenant ? "matched" : "unmatched",
+        assignedTenantId: null,
+        skip: zips.length === 0,
+      };
+    });
+    return parsed;
+  };
+
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const parsed = parseCSV(text);
+      setRows(parsed);
+      setStep("review");
+    };
+    reader.readAsText(file);
+  };
+
+  const matched = rows.filter((r) => r.status === "matched");
+  const unmatched = rows.filter((r) => r.status === "unmatched");
+  const empty = rows.filter((r) => r.status === "empty");
+
+  const totalZips = rows.reduce((sum, r) => {
+    if (r.skip) return sum;
+    const tid = r.matchedTenantId || r.assignedTenantId;
+    return tid ? sum + r.zips.length : sum;
+  }, 0);
+
+  const handleAssign = (idx: number, tenantId: string) => {
+    setRows((prev) =>
+      prev.map((r, i) =>
+        i === idx ? { ...r, assignedTenantId: tenantId, skip: false } : r
+      )
+    );
+  };
+
+  const handleSkip = (idx: number) => {
+    setRows((prev) =>
+      prev.map((r, i) =>
+        i === idx ? { ...r, skip: true, assignedTenantId: null } : r
+      )
+    );
+  };
+
+  const handleImport = async () => {
+    setStep("importing");
+    setProgress(0);
+
+    const toInsert: { tenant_id: string; zip_code: string }[] = [];
+    rows.forEach((r) => {
+      if (r.skip) return;
+      const tid = r.matchedTenantId || r.assignedTenantId;
+      if (!tid) return;
+      r.zips.forEach((z) => toInsert.push({ tenant_id: tid, zip_code: z }));
+    });
+
+    if (toInsert.length === 0) {
+      toast.error("No ZIP codes to import.");
+      setStep("review");
+      return;
+    }
+
+    let inserted = 0;
+    let skipped = 0;
+    const chunkSize = 50;
+
+    for (let i = 0; i < toInsert.length; i += chunkSize) {
+      const chunk = toInsert.slice(i, i + chunkSize);
+      const { error } = await supabase
+        .from("tenant_zip_codes")
+        .upsert(chunk as any, { onConflict: "tenant_id,zip_code", ignoreDuplicates: true });
+
+      if (error) {
+        toast.error(`Import error: ${error.message}`);
+        skipped += chunk.length;
+      } else {
+        inserted += chunk.length;
+      }
+      setProgress(Math.round(((i + chunk.length) / toInsert.length) * 100));
+    }
+
+    setImportResult({ inserted, skipped });
+    setStep("done");
+    onComplete();
+  };
+
+  const reset = () => {
+    setRows([]);
+    setStep("upload");
+    setProgress(0);
+    setImportResult({ inserted: 0, skipped: 0 });
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) reset();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <FileUp className="h-4 w-4" /> Bulk Import ZIPs
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display">Bulk ZIP Code Import</DialogTitle>
+        </DialogHeader>
+
+        {step === "upload" && (
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Upload a CSV with columns: <code className="text-xs bg-muted px-1 py-0.5 rounded">Provider Name, Zipcodes</code>.
+              ZIP codes can be comma-separated within the cell.
+            </p>
+            <div
+              className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => fileRef.current?.click()}
+            >
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Click to select CSV file</p>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+                e.target.value = "";
+              }}
+            />
+          </div>
+        )}
+
+        {step === "review" && (
+          <div className="space-y-4 py-2">
+            <div className="flex gap-3 text-sm">
+              <Badge variant="default" className="gap-1">
+                <CheckCircle2 className="h-3 w-3" /> {matched.length} Matched
+              </Badge>
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="h-3 w-3" /> {unmatched.length} Unmatched
+              </Badge>
+              <Badge variant="secondary" className="gap-1">
+                <MinusCircle className="h-3 w-3" /> {empty.length} No ZIPs
+              </Badge>
+            </div>
+
+            {/* Matched providers */}
+            {matched.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">✅ Matched Providers</h4>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {matched.map((r, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs px-2 py-1 bg-muted/50 rounded">
+                      <span className="text-foreground">{r.providerName}</span>
+                      <span className="text-muted-foreground">{r.zips.length} ZIPs</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Unmatched providers */}
+            {unmatched.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">⚠️ Unmatched Providers</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {rows.map((r, idx) => {
+                    if (r.status !== "unmatched") return null;
+                    return (
+                      <div key={idx} className="flex items-center gap-2 px-2 py-1.5 bg-destructive/5 rounded border border-destructive/20">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-medium text-foreground block truncate">
+                            {r.providerName}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">{r.zips.length} ZIPs</span>
+                        </div>
+                        {r.skip ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-muted-foreground">Skipped</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-[10px] px-2"
+                              onClick={() =>
+                                setRows((prev) =>
+                                  prev.map((row, i) => (i === idx ? { ...row, skip: false } : row))
+                                )
+                              }
+                            >
+                              Undo
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Select
+                              value={r.assignedTenantId || ""}
+                              onValueChange={(v) => handleAssign(idx, v)}
+                            >
+                              <SelectTrigger className="h-7 w-36 text-[10px]">
+                                <SelectValue placeholder="Assign to..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {tenants.map((t) => (
+                                  <SelectItem key={t.id} value={t.id} className="text-xs">
+                                    {t.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-[10px] px-2"
+                              onClick={() => handleSkip(idx)}
+                            >
+                              Skip
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-border flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Ready to import <strong className="text-foreground">{totalZips}</strong> ZIP codes
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={reset}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleImport} disabled={totalZips === 0}>
+                  Import ZIPs
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === "importing" && (
+          <div className="space-y-4 py-8 text-center">
+            <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Importing ZIP codes...</p>
+            <Progress value={progress} className="h-2" />
+            <p className="text-xs text-muted-foreground">{progress}%</p>
+          </div>
+        )}
+
+        {step === "done" && (
+          <div className="space-y-4 py-8 text-center">
+            <CheckCircle2 className="h-10 w-10 mx-auto text-green-500" />
+            <p className="text-sm text-foreground font-medium">Import Complete</p>
+            <p className="text-xs text-muted-foreground">
+              {importResult.inserted} ZIP codes processed · {importResult.skipped} errors
+            </p>
+            <Button size="sm" onClick={() => { setOpen(false); reset(); }}>
+              Close
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
