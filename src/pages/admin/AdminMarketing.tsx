@@ -15,6 +15,7 @@ import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
+import { PromoPickerDialog } from "@/components/marketing/EventPromoEditor";
 import { toast } from "sonner";
 
 const CATEGORIES = [
@@ -128,6 +129,7 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
   const [label, setLabel] = useState("Square");
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
+  const [promoPickerOpen, setPromoPickerOpen] = useState(false);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -167,6 +169,9 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
             </Button>
             <Button variant="outline" onClick={() => setMediaPickerOpen(true)} disabled={addAssetFromUrl.isPending}>
               <Library className="h-4 w-4 mr-2" /> Media Library
+            </Button>
+            <Button variant="outline" onClick={() => setPromoPickerOpen(true)}>
+              <Megaphone className="h-4 w-4 mr-2" /> From Event
             </Button>
           </div>
 
