@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { MediaItem } from "@/hooks/useMediaLibrary";
-import { Trash2, Copy, Image, Film, Music, ZoomIn, ZoomOut, RotateCcw, Move, Loader2 } from "lucide-react";
+import { Trash2, Copy, Image, Film, Music, Code2, ZoomIn, ZoomOut, RotateCcw, Move, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,8 +17,8 @@ interface Props {
   isBulkDeleting?: boolean;
 }
 
-const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner", "challenges", "marketing"];
-const typeIcons: Record<string, typeof Image> = { image: Image, video: Film, audio: Music };
+const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner", "challenges", "marketing", "widget"];
+const typeIcons: Record<string, typeof Image> = { image: Image, video: Film, audio: Music, embed: Code2 };
 
 const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete, isBulkDeleting }: Props) => {
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);

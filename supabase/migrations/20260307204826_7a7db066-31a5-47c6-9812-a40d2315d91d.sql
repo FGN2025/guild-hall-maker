@@ -1,0 +1,1 @@
+ALTER TABLE public.media_library ADD COLUMN embed_code text;

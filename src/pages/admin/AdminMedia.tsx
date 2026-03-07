@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Image, Search, Save, Loader2, Video, RefreshCw } from "lucide-react";
+import AddEmbedDialog from "@/components/media/AddEmbedDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,7 +23,7 @@ function extractYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-const TABS = ["all", "games", "tournament", "badge", "trophy", "banner", "general", "challenges", "marketing"];
+const TABS = ["all", "games", "tournament", "badge", "trophy", "banner", "general", "challenges", "marketing", "widget"];
 
 const AdminMedia = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -136,6 +137,7 @@ const AdminMedia = () => {
             Sync Game Images
           </Button>
           <AIImageGenerator onGenerate={generateImage} isGenerating={isGenerating} />
+          <AddEmbedDialog />
         </div>
       </div>
 
