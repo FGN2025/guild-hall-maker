@@ -24,14 +24,20 @@ const ModeratorPoints = () => {
   const [adjustType, setAdjustType] = useState<"award" | "deduct">("award");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Get active season
-  const { data: activeSeason } = useQuery({
-    queryKey: ["mod-active-season"],
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+
+  // Get active seasons (multiple per game)
+  const { data: activeSeasons = [] } = useQuery({
+    queryKey: ["mod-active-seasons"],
     queryFn: async () => {
-      const { data } = await supabase.from("seasons").select("*").eq("status", "active").maybeSingle();
-      return data;
+      const { data } = await supabase.from("seasons").select("*").eq("status", "active").order("name");
+      return data ?? [];
     },
   });
+
+  const activeSeason = selectedSeasonId
+    ? activeSeasons.find((s: any) => s.id === selectedSeasonId)
+    : activeSeasons[0] ?? null;
 
   // Get all players with their season scores
   const { data: players = [], isLoading } = useQuery({
