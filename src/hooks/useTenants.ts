@@ -207,7 +207,7 @@ export function useTenantAdmins(tenantId: string | null) {
   });
 
   const createInvitation = useMutation({
-    mutationFn: async ({ tenantId, email, role }: { tenantId: string; email: string; role: string }) => {
+    mutationFn: async ({ tenantId, email, role, tenantName }: { tenantId: string; email: string; role: string; tenantName?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       const { error } = await supabase.from("tenant_invitations" as any).insert({
@@ -217,6 +217,21 @@ export function useTenantAdmins(tenantId: string | null) {
         invited_by: user.id,
       });
       if (error) throw error;
+
+      // Send invitation email
+      try {
+        await supabase.functions.invoke("send-tenant-invite", {
+          body: {
+            email: email.toLowerCase().trim(),
+            tenantName: tenantName || "a provider",
+            role,
+            invitedBy: user.email,
+          },
+        });
+      } catch (emailErr) {
+        console.error("Failed to send invite email:", emailErr);
+        // Don't fail the mutation if email fails — invitation is still created
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-invitations", tenantId] });
