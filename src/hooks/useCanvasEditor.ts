@@ -89,6 +89,7 @@ export function useCanvasEditor(baseImageUrl?: string) {
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [activeFormat, setActiveFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [bgColor, setBgColor] = useState("#1a1a2e");
+  const [cursorStyle, setCursorStyle] = useState<"default" | "grab" | "grabbing" | "not-allowed">("default");
   const dragRef = useRef<DragState>(null);
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
@@ -244,6 +245,7 @@ export function useCanvasEditor(baseImageUrl?: string) {
         setSelectedId(hit.id);
         if (!hit.locked) {
           dragRef.current = { overlayId: hit.id, offsetX: mx - hit.x, offsetY: my - hit.y };
+          setCursorStyle("grabbing");
         }
       } else {
         setSelectedId(null);
@@ -254,11 +256,20 @@ export function useCanvasEditor(baseImageUrl?: string) {
 
   const onMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!dragRef.current) return;
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
+
+      if (!dragRef.current) {
+        const hover = hitTest(mx, my);
+        if (hover) {
+          setCursorStyle(hover.locked ? "not-allowed" : "grab");
+        } else {
+          setCursorStyle("default");
+        }
+        return;
+      }
       const { overlayId, offsetX, offsetY } = dragRef.current;
 
       setOverlaysLive((prev) => {
@@ -286,6 +297,7 @@ export function useCanvasEditor(baseImageUrl?: string) {
       clearGuides();
     }
     dragRef.current = null;
+    setCursorStyle("default");
   }, [overlays, pushState, clearGuides]);
 
   // Touch handlers
@@ -590,5 +602,6 @@ export function useCanvasEditor(baseImageUrl?: string) {
     setFormat,
     bgColor,
     setBgColor,
+    cursorStyle,
   };
 }

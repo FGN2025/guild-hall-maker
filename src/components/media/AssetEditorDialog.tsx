@@ -64,6 +64,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     setFormat,
     bgColor,
     setBgColor,
+    cursorStyle,
   } = useCanvasEditor(baseImageUrl);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -167,7 +168,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               ref={canvasRef}
               width={canvasSize.width}
               height={canvasSize.height}
-              className="cursor-crosshair max-w-full"
+              className={`max-w-full ${cursorStyle === "grabbing" ? "cursor-grabbing" : cursorStyle === "grab" ? "cursor-grab" : cursorStyle === "not-allowed" ? "cursor-not-allowed" : "cursor-default"}`}
               style={{ maxHeight: "60vh" }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
