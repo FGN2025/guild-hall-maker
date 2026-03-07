@@ -6,12 +6,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Loader2, Check } from "lucide-react";
 import { useMediaLibrary, type MediaItem } from "@/hooks/useMediaLibrary";
 
-const TABS = ["all", "games", "general", "tournament", "badge", "trophy", "banner"];
+const ALL_TABS = ["all", "games", "general", "tournament", "badge", "trophy", "banner"];
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (url: string, filePath?: string) => void;
+  excludeCategories?: string[];
 }
 
 const MediaPickerDialog = ({ open, onOpenChange, onSelect }: Props) => {
