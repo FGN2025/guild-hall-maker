@@ -3,10 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Check } from "lucide-react";
+import { Search, Loader2, Check, Code2 } from "lucide-react";
 import { useMediaLibrary, type MediaItem } from "@/hooks/useMediaLibrary";
 
-const ALL_TABS = ["all", "games", "general", "tournament", "badge", "trophy", "banner"];
+const ALL_TABS = ["all", "games", "general", "tournament", "badge", "trophy", "banner", "widget"];
 
 interface Props {
   open: boolean;
@@ -87,7 +87,7 @@ const MediaPickerDialog = ({ open, onOpenChange, onSelect, excludeCategories = [
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {filtered
-                .filter((m) => m.file_type === "image")
+                .filter((m) => m.file_type === "image" || m.file_type === "embed")
                 .map((item) => (
                   <button
                     key={item.id}
@@ -99,12 +99,19 @@ const MediaPickerDialog = ({ open, onOpenChange, onSelect, excludeCategories = [
                         : "border-border"
                     }`}
                   >
-                    <img
-                      src={item.url}
-                      alt={item.file_name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+                    {item.file_type === "embed" ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-muted gap-2 p-2">
+                        <Code2 className="h-8 w-8 text-primary" />
+                        <span className="text-[10px] text-muted-foreground font-heading text-center leading-tight">Embed Widget</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={item.url}
+                        alt={item.file_name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    )}
                     {selected === item.url && (
                       <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                         <Check className="h-6 w-6 text-primary-foreground drop-shadow" />

@@ -15,6 +15,7 @@ export interface MediaItem {
   category: string;
   tags: string[];
   created_at: string;
+  embed_code: string | null;
 }
 
 export const useMediaLibrary = (category?: string) => {

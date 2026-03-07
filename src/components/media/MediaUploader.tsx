@@ -12,7 +12,7 @@ interface Props {
   isUploading: boolean;
 }
 
-const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner", "challenges", "marketing"];
+const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner", "challenges", "marketing", "widget"];
 const MAX_TAGS = 10;
 
 const MediaUploader = ({ onUpload, isUploading }: Props) => {
