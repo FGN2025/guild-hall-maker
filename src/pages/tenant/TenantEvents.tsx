@@ -230,9 +230,6 @@ const TenantEvents = () => {
           ))}
         </div>
       )}
-    </div>
-  );
-};
 
       {promoData && (
         <AssetEditorDialog
@@ -250,4 +247,5 @@ const TenantEvents = () => {
   );
 };
 
+export default TenantEvents;
 export default TenantEvents;
