@@ -54,7 +54,22 @@ const tierLabels: Record<string, string> = {
 
 const SeasonStats = () => {
   const { user } = useAuth();
-  const { data: seasons } = useSeasons();
+  const [filterGameId, setFilterGameId] = useState<string>("all");
+
+  const { data: games = [] } = useQuery({
+    queryKey: ["stats-games-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("games")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: seasons } = useSeasons(filterGameId !== "all" ? filterGameId : undefined);
   const activeSeason = seasons?.find((s) => s.status === "active");
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const effectiveSeasonId = selectedSeasonId || activeSeason?.id || null;
