@@ -1,78 +1,21 @@
 import { useRef, useState, useEffect } from "react";
-import { useCanvasEditor, TextOverlay, CANVAS_FORMATS, CanvasFormat } from "@/hooks/useCanvasEditor";
+import { useCanvasEditor, TextOverlay, ShapeOverlay, CANVAS_FORMATS, CanvasFormat } from "@/hooks/useCanvasEditor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { ImagePlus, Type, Trash2, Download, Save, ExternalLink, LayoutTemplate, Undo2, Redo2, Layers, Square, RectangleHorizontal, RectangleVertical, Smartphone } from "lucide-react";
+import {
+  ImagePlus, Type, Trash2, Download, Save, ExternalLink,
+  LayoutTemplate, Undo2, Redo2, Layers, Square, RectangleHorizontal,
+  RectangleVertical, Smartphone, Circle, Minus, ChevronUp, ChevronDown,
+  Lock, Unlock, Library, ChevronsUp, ChevronsDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-type TemplateText = {
-  text: string;
-  xPct: number;
-  yPct: number;
-  fontSize: number;
-  color: string;
-  fontFamily: string;
-  // Legacy absolute fields needed by Omit<TextOverlay, "id" | "type"> shape
-  x: number;
-  y: number;
-};
-
-type OverlayTemplate = {
-  name: string;
-  description: string;
-  texts: TemplateText[];
-};
-
-const OVERLAY_TEMPLATES: OverlayTemplate[] = [
-  {
-    name: "Event Banner",
-    description: "Title + date + tagline layout",
-    texts: [
-      { text: "EVENT NAME", xPct: 0.05, yPct: 0.07, x: 40, y: 40, fontSize: 48, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "March 15, 2026", xPct: 0.05, yPct: 0.17, x: 40, y: 100, fontSize: 24, color: "#cccccc", fontFamily: "sans-serif" },
-      { text: "Register Now!", xPct: 0.05, yPct: 0.23, x: 40, y: 140, fontSize: 20, color: "#00ff88", fontFamily: "sans-serif" },
-    ],
-  },
-  {
-    name: "Tournament Promo",
-    description: "Prize pool + game + CTA",
-    texts: [
-      { text: "TOURNAMENT", xPct: 0.05, yPct: 0.05, x: 40, y: 30, fontSize: 52, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "$500 Prize Pool", xPct: 0.05, yPct: 0.16, x: 40, y: 95, fontSize: 28, color: "#ffd700", fontFamily: "sans-serif" },
-      { text: "Game Title Here", xPct: 0.05, yPct: 0.23, x: 40, y: 135, fontSize: 22, color: "#aaaaaa", fontFamily: "sans-serif" },
-      { text: "SIGN UP TODAY", xPct: 0.05, yPct: 0.30, x: 40, y: 180, fontSize: 20, color: "#00ccff", fontFamily: "sans-serif" },
-    ],
-  },
-  {
-    name: "Social Media Post",
-    description: "Headline + subtitle centered",
-    texts: [
-      { text: "YOUR HEADLINE", xPct: 0.25, yPct: 0.25, x: 200, y: 150, fontSize: 44, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "Add your message here", xPct: 0.28, yPct: 0.35, x: 220, y: 210, fontSize: 22, color: "#dddddd", fontFamily: "sans-serif" },
-    ],
-  },
-  {
-    name: "Branded Corner",
-    description: "Organization name in bottom-right",
-    texts: [
-      { text: "YOUR ORG NAME", xPct: 0.63, yPct: 0.87, x: 500, y: 520, fontSize: 24, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "Powered by FGN", xPct: 0.66, yPct: 0.93, x: 530, y: 555, fontSize: 14, color: "#999999", fontFamily: "sans-serif" },
-    ],
-  },
-  {
-    name: "Winner Announcement",
-    description: "Congrats + winner name",
-    texts: [
-      { text: "🏆 CONGRATULATIONS", xPct: 0.19, yPct: 0.13, x: 150, y: 80, fontSize: 42, color: "#ffd700", fontFamily: "sans-serif" },
-      { text: "Player Name", xPct: 0.31, yPct: 0.23, x: 250, y: 140, fontSize: 36, color: "#ffffff", fontFamily: "sans-serif" },
-      { text: "Tournament Champion", xPct: 0.28, yPct: 0.32, x: 220, y: 190, fontSize: 22, color: "#cccccc", fontFamily: "sans-serif" },
-    ],
-  },
-];
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import TemplateGalleryPanel from "./TemplateGalleryPanel";
+import MediaPickerDialog from "./MediaPickerDialog";
 
 const FORMAT_ICONS: Record<string, React.ReactNode> = {
   original: <RectangleHorizontal className="h-4 w-4" />,
@@ -99,10 +42,13 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     selectedOverlay,
     setSelectedId,
     addLogo,
+    addLogoFromUrl,
     addText,
+    addShape,
     applyTemplate,
     updateOverlay,
     deleteOverlay,
+    reorderOverlay,
     onMouseDown,
     onMouseMove,
     onMouseUp,
@@ -122,9 +68,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const appliedInitialRef = useRef(false);
 
-  // Apply initial texts once when editor opens with them
   useEffect(() => {
     if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0) {
       appliedInitialRef.current = true;
@@ -132,7 +78,6 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     }
   }, [initialTexts, canvasSize.width, applyTemplate]);
 
-  // Reset ref when dialog closes
   useEffect(() => {
     if (!open) appliedInitialRef.current = false;
   }, [open]);
@@ -169,6 +114,23 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     a.download = `asset-${formatLabel}-${Date.now()}.png`;
     a.click();
     URL.revokeObjectURL(a.href);
+  };
+
+  const getOverlayLabel = (o: typeof overlays[number]) => {
+    if (o.type === "logo") return "Logo";
+    if (o.type === "shape") return o.shape.charAt(0).toUpperCase() + o.shape.slice(1);
+    const txt = o.text;
+    return txt.length > 16 ? txt.slice(0, 16) + "…" : txt;
+  };
+
+  const getOverlayIcon = (o: typeof overlays[number]) => {
+    if (o.type === "logo") return <ImagePlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
+    if (o.type === "shape") {
+      if (o.shape === "circle") return <Circle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
+      if (o.shape === "line") return <Minus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
+      return <Square className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
+    }
+    return <Type className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
   };
 
   return (
@@ -230,29 +192,46 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                 <ImagePlus className="h-4 w-4 mr-1" /> Logo
               </Button>
               <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+              <Button size="sm" variant="outline" onClick={() => setMediaPickerOpen(true)}>
+                <Library className="h-4 w-4 mr-1" /> Library
+              </Button>
               <Button size="sm" variant="outline" onClick={() => addText()}>
                 <Type className="h-4 w-4 mr-1" /> Text
               </Button>
+
+              {/* Shape dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Square className="h-4 w-4 mr-1" /> Shape
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={() => addShape("rect")}>
+                    <Square className="h-4 w-4 mr-2" /> Rectangle
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("circle")}>
+                    <Circle className="h-4 w-4 mr-2" /> Circle
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("line")}>
+                    <Minus className="h-4 w-4 mr-2" /> Line
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Templates */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button size="sm" variant="outline">
                     <LayoutTemplate className="h-4 w-4 mr-1" /> Templates
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-2" align="start">
-                  <p className="text-xs font-heading uppercase tracking-wider text-muted-foreground px-2 pb-2">Quick Templates</p>
-                  <div className="space-y-1">
-                    {OVERLAY_TEMPLATES.map((tpl) => (
-                      <button
-                        key={tpl.name}
-                        className="w-full text-left px-3 py-2 rounded-md hover:bg-accent transition-colors"
-                        onClick={() => applyTemplate(tpl.texts)}
-                      >
-                        <span className="text-sm font-medium text-foreground">{tpl.name}</span>
-                        <span className="block text-xs text-muted-foreground">{tpl.description}</span>
-                      </button>
-                    ))}
-                  </div>
+                <PopoverContent className="w-72 p-3" align="start">
+                  <TemplateGalleryPanel
+                    canvasWidth={canvasSize.width}
+                    canvasHeight={canvasSize.height}
+                    onApply={applyTemplate}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -276,33 +255,81 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                 <span className="text-xs font-heading uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                   <Layers className="h-3 w-3" /> Layers
                 </span>
-                <div className="space-y-0.5 max-h-40 overflow-y-auto">
-                  {overlays.map((o) => (
-                    <button
-                      key={o.id}
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left transition-colors group ${
-                        o.id === selectedId
-                          ? "bg-accent ring-2 ring-primary"
-                          : "hover:bg-accent/50"
-                      }`}
-                      onClick={() => setSelectedId(o.id)}
-                    >
-                      {o.type === "logo" ? (
-                        <ImagePlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      ) : (
-                        <Type className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      )}
-                      <span className="text-sm truncate flex-1 text-foreground">
-                        {o.type === "logo" ? "Logo" : (o.text.length > 18 ? o.text.slice(0, 18) + "…" : o.text)}
-                      </span>
-                      <button
-                        className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-destructive hover:text-destructive/80"
-                        onClick={(e) => { e.stopPropagation(); deleteOverlay(o.id); }}
+                <div className="space-y-0.5 max-h-48 overflow-y-auto">
+                  {[...overlays].reverse().map((o, revIdx) => {
+                    const realIdx = overlays.length - 1 - revIdx;
+                    return (
+                      <div
+                        key={o.id}
+                        className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors group ${
+                          o.id === selectedId
+                            ? "bg-accent ring-2 ring-primary"
+                            : "hover:bg-accent/50"
+                        }`}
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </button>
-                  ))}
+                        <button className="flex items-center gap-1.5 flex-1 min-w-0 text-left" onClick={() => setSelectedId(o.id)}>
+                          {getOverlayIcon(o)}
+                          <span className="text-sm truncate flex-1 text-foreground">
+                            {getOverlayLabel(o)}
+                          </span>
+                        </button>
+
+                        {/* Lock toggle */}
+                        <button
+                          className="h-5 w-5 shrink-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={() => updateOverlay(o.id, { locked: !o.locked })}
+                          title={o.locked ? "Unlock" : "Lock"}
+                        >
+                          {o.locked ? <Lock className="h-3 w-3 text-destructive" /> : <Unlock className="h-3 w-3" />}
+                        </button>
+
+                        {/* Z-order controls */}
+                        <div className="flex flex-col shrink-0">
+                          <button
+                            className="h-3.5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"
+                            onClick={() => reorderOverlay(o.id, "up")}
+                            disabled={realIdx === overlays.length - 1}
+                            title="Bring Forward"
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </button>
+                          <button
+                            className="h-3.5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"
+                            onClick={() => reorderOverlay(o.id, "down")}
+                            disabled={realIdx === 0}
+                            title="Send Backward"
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        {/* Bring to front / send to back */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-muted-foreground hover:text-foreground">
+                              <Layers className="h-3 w-3" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="min-w-[140px]">
+                            <DropdownMenuItem onClick={() => reorderOverlay(o.id, "front")} disabled={realIdx === overlays.length - 1}>
+                              <ChevronsUp className="h-3.5 w-3.5 mr-2" /> Bring to Front
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => reorderOverlay(o.id, "back")} disabled={realIdx === 0}>
+                              <ChevronsDown className="h-3.5 w-3.5 mr-2" /> Send to Back
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {/* Delete */}
+                        <button
+                          className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-destructive hover:text-destructive/80"
+                          onClick={(e) => { e.stopPropagation(); deleteOverlay(o.id); }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -312,12 +339,18 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               <div className="space-y-3 p-3 border border-border rounded-lg bg-card">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-heading uppercase tracking-wider text-muted-foreground">
-                    {selectedOverlay.type === "logo" ? "Logo" : "Text"} Properties
+                    {selectedOverlay.type === "logo" ? "Logo" : selectedOverlay.type === "shape" ? "Shape" : "Text"} Properties
                   </span>
                   <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => deleteOverlay(selectedOverlay.id)}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
+
+                {selectedOverlay.locked && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1">
+                    <Lock className="h-3 w-3" /> Locked — position fixed
+                  </p>
+                )}
 
                 {selectedOverlay.type === "text" && (
                   <>
@@ -366,6 +399,73 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                     />
                   </div>
                 )}
+
+                {selectedOverlay.type === "shape" && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Width: {selectedOverlay.width}</Label>
+                        <Slider
+                          value={[selectedOverlay.width]}
+                          onValueChange={([v]) => updateOverlay(selectedOverlay.id, { width: v })}
+                          min={10}
+                          max={600}
+                          step={1}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Height: {selectedOverlay.height}</Label>
+                        <Slider
+                          value={[selectedOverlay.height]}
+                          onValueChange={([v]) => updateOverlay(selectedOverlay.id, { height: v })}
+                          min={0}
+                          max={600}
+                          step={1}
+                        />
+                      </div>
+                    </div>
+                    {selectedOverlay.shape !== "line" && (
+                      <div>
+                        <Label className="text-xs">Fill Color</Label>
+                        <input
+                          type="color"
+                          value={selectedOverlay.fillColor || "#3b82f6"}
+                          onChange={(e) => updateOverlay(selectedOverlay.id, { fillColor: e.target.value })}
+                          className="w-full h-8 rounded border border-input cursor-pointer"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <Label className="text-xs">Stroke Color</Label>
+                      <input
+                        type="color"
+                        value={selectedOverlay.strokeColor || "#ffffff"}
+                        onChange={(e) => updateOverlay(selectedOverlay.id, { strokeColor: e.target.value })}
+                        className="w-full h-8 rounded border border-input cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Stroke Width: {selectedOverlay.strokeWidth}px</Label>
+                      <Slider
+                        value={[selectedOverlay.strokeWidth]}
+                        onValueChange={([v]) => updateOverlay(selectedOverlay.id, { strokeWidth: v })}
+                        min={0}
+                        max={20}
+                        step={1}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Opacity: {Math.round(selectedOverlay.opacity * 100)}%</Label>
+                      <Slider
+                        value={[selectedOverlay.opacity]}
+                        onValueChange={([v]) => updateOverlay(selectedOverlay.id, { opacity: v })}
+                        min={0}
+                        max={1}
+                        step={0.05}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -385,6 +485,13 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Media Picker for overlay images */}
+      <MediaPickerDialog
+        open={mediaPickerOpen}
+        onOpenChange={setMediaPickerOpen}
+        onSelect={(url) => addLogoFromUrl(url)}
+      />
     </Dialog>
   );
 };

@@ -7,6 +7,7 @@ type Rect = { x: number; y: number; w: number; h: number };
 
 function getRect(o: Overlay, ctx?: CanvasRenderingContext2D | null): Rect {
   if (o.type === "logo") return { x: o.x, y: o.y, w: o.width, h: o.height };
+  if (o.type === "shape") return { x: o.x, y: o.y, w: o.width, h: o.height };
   const w = ctx ? ctx.measureText(o.text).width : o.fontSize * o.text.length * 0.6;
   return { x: o.x, y: o.y, w, h: o.fontSize };
 }
@@ -26,7 +27,6 @@ export function useCanvasSnap(canvasWidth: number, canvasHeight: number) {
       const rightX = r.x + r.w;
       const bottomY = r.y + r.h;
 
-      // Candidate snap points: canvas edges + center + other overlay edges/centers
       const xAnchors: number[] = [0, canvasWidth / 2, canvasWidth];
       const yAnchors: number[] = [0, canvasHeight / 2, canvasHeight];
 
@@ -41,7 +41,6 @@ export function useCanvasSnap(canvasWidth: number, canvasHeight: number) {
       let bestDistX = Infinity;
       let snapXPos: number | null = null;
 
-      // Check left, center, right of dragged rect against each anchor
       for (const anchor of xAnchors) {
         for (const edge of [r.x, centerX, rightX]) {
           const dist = Math.abs(edge - anchor);

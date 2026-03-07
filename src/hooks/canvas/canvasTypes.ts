@@ -7,6 +7,7 @@ export type LogoOverlay = {
   y: number;
   width: number;
   height: number;
+  locked?: boolean;
 };
 
 export type TextOverlay = {
@@ -18,9 +19,25 @@ export type TextOverlay = {
   fontSize: number;
   color: string;
   fontFamily: string;
+  locked?: boolean;
 };
 
-export type Overlay = LogoOverlay | TextOverlay;
+export type ShapeOverlay = {
+  id: string;
+  type: "shape";
+  shape: "rect" | "circle" | "line";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fillColor: string;
+  strokeColor: string;
+  strokeWidth: number;
+  opacity: number;
+  locked?: boolean;
+};
+
+export type Overlay = LogoOverlay | TextOverlay | ShapeOverlay;
 
 export type SnapGuide = {
   orientation: "horizontal" | "vertical";
@@ -43,3 +60,29 @@ export const CANVAS_FORMATS: CanvasFormat[] = [
   { key: "portrait", label: "Portrait", displayWidth: 400, displayHeight: 500, exportWidth: 1080, exportHeight: 1350 },
   { key: "story", label: "Story", displayWidth: 270, displayHeight: 480, exportWidth: 1080, exportHeight: 1920 },
 ];
+
+export type TemplateZone = {
+  label: string;
+  xPct: number;
+  yPct: number;
+  fontSize: number;
+  color: string;
+  fontFamily: string;
+  locked?: boolean;
+};
+
+export type TemplateDefinition = {
+  key: string;
+  name: string;
+  description: string;
+  zones: TemplateZone[];
+  bgShape?: {
+    shape: "rect";
+    xPct: number;
+    yPct: number;
+    wPct: number;
+    hPct: number;
+    fillColor: string;
+    opacity: number;
+  };
+};
