@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Calendar, Megaphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Calendar, Megaphone, Zap, Pencil } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import type { TextOverlay } from "@/hooks/canvas/canvasTypes";
 import type { TenantEvent } from "@/hooks/useTenantEvents";
@@ -31,6 +33,66 @@ export function buildTenantEventPromo(e: TenantEvent): PromoData {
   return { imageUrl, texts };
 }
 
+/** Renders promo data onto an offscreen canvas and returns a PNG blob */
+export async function renderPromoToBlob(promo: PromoData, width = 1200, height = 628): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d")!;
+
+  // Draw background image or solid dark fill
+  if (promo.imageUrl) {
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image();
+        i.crossOrigin = "anonymous";
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = promo.imageUrl;
+      });
+      // Cover-fit the image
+      const scale = Math.max(width / img.width, height / img.height);
+      const sw = img.width * scale;
+      const sh = img.height * scale;
+      ctx.drawImage(img, (width - sw) / 2, (height - sh) / 2, sw, sh);
+    } catch {
+      ctx.fillStyle = "#1a1a2e";
+      ctx.fillRect(0, 0, width, height);
+    }
+  } else {
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  // Dark gradient overlay for text readability
+  const grad = ctx.createLinearGradient(0, height * 0.4, 0, height);
+  grad.addColorStop(0, "rgba(0,0,0,0)");
+  grad.addColorStop(1, "rgba(0,0,0,0.85)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Draw text overlays
+  for (const t of promo.texts) {
+    const x = t.xPct != null ? t.xPct * width : t.x;
+    const y = t.yPct != null ? t.yPct * height : t.y;
+    const fontSize = Math.round(t.fontSize * (width / 800));
+    ctx.font = `bold ${fontSize}px ${t.fontFamily}`;
+    ctx.fillStyle = t.color;
+    ctx.textBaseline = "top";
+    // Shadow for readability
+    ctx.shadowColor = "rgba(0,0,0,0.6)";
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    ctx.fillText(t.text, x, y);
+    ctx.shadowColor = "transparent";
+  }
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Failed to create blob"))), "image/png");
+  });
+}
+
 interface TenantPromoPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,6 +103,7 @@ interface TenantPromoPickerDialogProps {
 export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }: TenantPromoPickerDialogProps) {
   const [search, setSearch] = useState("");
   const [selectedPromo, setSelectedPromo] = useState<PromoData | null>(null);
+  const [quickCreating, setQuickCreating] = useState<string | null>(null);
 
   const { data: events = [] } = useQuery({
     queryKey: ["tenant-events-promo", tenantId],
@@ -62,6 +125,21 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }
     const q = search.toLowerCase();
     return e.name.toLowerCase().includes(q) || (e.game || "").toLowerCase().includes(q);
   });
+
+  const handleQuickCreate = async (evt: TenantEvent) => {
+    setQuickCreating(evt.id);
+    try {
+      const promo = buildTenantEventPromo(evt);
+      const blob = await renderPromoToBlob(promo);
+      await onSave(blob);
+      toast.success("Promo created and saved!");
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate promo");
+    } finally {
+      setQuickCreating(null);
+    }
+  };
 
   if (selectedPromo) {
     return (
@@ -93,10 +171,9 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No events found</p>
           ) : filtered.map((evt) => (
-            <button
+            <div
               key={evt.id}
-              className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/40 bg-card transition-colors text-left"
-              onClick={() => setSelectedPromo(buildTenantEventPromo(evt))}
+              className="w-full flex items-center gap-3 p-3 rounded-lg border border-border bg-card"
             >
               <div className="w-16 h-12 rounded bg-muted overflow-hidden shrink-0">
                 {evt.image_url ? (
@@ -115,7 +192,27 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }
                 {evt.prize_pool && <Badge variant="outline" className="text-xs">{evt.prize_pool}</Badge>}
                 <Badge variant="secondary" className="text-xs">{evt.status}</Badge>
               </div>
-            </button>
+              <div className="flex gap-1 shrink-0">
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={quickCreating === evt.id}
+                  onClick={() => handleQuickCreate(evt)}
+                  title="Quick create — auto-generate promo"
+                >
+                  <Zap className="h-3.5 w-3.5 mr-1" />
+                  {quickCreating === evt.id ? "Creating…" : "Quick"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedPromo(buildTenantEventPromo(evt))}
+                  title="Open in editor"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       </DialogContent>
