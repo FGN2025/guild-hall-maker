@@ -136,12 +136,12 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete
               ) : (
                 <Icon className="h-10 w-10 text-muted-foreground" />
               )}
-              {!selectionMode && <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+              {!selectionMode && <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <Button
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8 text-foreground hover:text-primary"
-                  onClick={() => { navigator.clipboard.writeText(item.url); toast.success("URL copied"); }}
+                  onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(item.url); toast.success("URL copied"); }}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -152,6 +152,7 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete
                       variant="ghost"
                       className="h-8 w-8 text-foreground hover:text-destructive"
                       disabled={isDeleting}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
