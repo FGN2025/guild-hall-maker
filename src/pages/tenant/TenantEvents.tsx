@@ -10,9 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Calendar, Users, Trash2, Eye, EyeOff, Pencil, ExternalLink } from "lucide-react";
+import { Plus, Calendar, Users, Trash2, Eye, EyeOff, Pencil, ExternalLink, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
+import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
+import { buildTenantEventPromo } from "@/components/marketing/TenantPromoPickerDialog";
+import AssetEditorDialog from "@/components/media/AssetEditorDialog";
+
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -25,8 +29,11 @@ const statusColors: Record<string, string> = {
 const TenantEvents = () => {
   const { tenantInfo } = useTenantAdmin();
   const { events, isLoading, createEvent, updateEvent, deleteEvent } = useTenantEvents(tenantInfo?.tenantId);
+  const { uploadAsset } = useTenantMarketingAssets();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<TenantEvent | null>(null);
+  const [promoEvent, setPromoEvent] = useState<TenantEvent | null>(null);
+  const promoData = promoEvent ? buildTenantEventPromo(promoEvent) : null;
 
   const [form, setForm] = useState({
     name: "",
@@ -209,6 +216,7 @@ const TenantEvents = () => {
                   readOnly
                 />
                 <div className="flex gap-2 flex-wrap mt-3">
+                  <Button size="sm" variant="outline" onClick={() => setPromoEvent(event)}><Megaphone className="h-3.5 w-3.5 mr-1" /> Promo</Button>
                   <Button size="sm" variant="outline" onClick={() => openEdit(event)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</Button>
                   <Button size="sm" variant="outline" onClick={() => togglePublish(event)}>
                     {event.status === "published" ? <><EyeOff className="h-3.5 w-3.5 mr-1" /> Unpublish</> : <><Eye className="h-3.5 w-3.5 mr-1" /> Publish</>}
@@ -221,6 +229,19 @@ const TenantEvents = () => {
             </Card>
           ))}
         </div>
+      )}
+
+      {promoData && (
+        <AssetEditorDialog
+          open={!!promoEvent}
+          onOpenChange={(o) => { if (!o) setPromoEvent(null); }}
+          baseImageUrl={promoData.imageUrl}
+          initialTexts={promoData.texts}
+          onSave={async (blob) => {
+            const file = new File([blob], `event-promo-${Date.now()}.png`, { type: "image/png" });
+            await uploadAsset.mutateAsync({ file, label: `${promoEvent!.name} Promo` });
+          }}
+        />
       )}
     </div>
   );

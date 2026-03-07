@@ -1,23 +1,32 @@
 import { useState, useRef } from "react";
 import { useTenantMarketingAssets, TenantMarketingAsset } from "@/hooks/useTenantMarketingAssets";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Upload, Trash2, Image as ImageIcon, Pencil } from "lucide-react";
+import { Upload, Trash2, Image as ImageIcon, Pencil, Megaphone } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
+import { TenantPromoPickerDialog } from "@/components/marketing/TenantPromoPickerDialog";
 
 const TenantMarketingAssets = () => {
+  const { tenantInfo } = useTenantAdmin();
   const { assets, isLoading, uploadAsset, togglePublish, deleteAsset } = useTenantMarketingAssets();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [promoPickerOpen, setPromoPickerOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [editorAsset, setEditorAsset] = useState<TenantMarketingAsset | null>(null);
+
+  const handlePromoSave = async (blob: Blob) => {
+    const file = new File([blob], `event-promo-${Date.now()}.png`, { type: "image/png" });
+    await uploadAsset.mutateAsync({ file, label: "Event Promo" });
+  };
 
   const handleUpload = () => {
     const file = fileRef.current?.files?.[0];
@@ -39,10 +48,14 @@ const TenantMarketingAssets = () => {
           <h1 className="font-display text-2xl font-bold text-foreground">My Assets</h1>
           <p className="text-sm text-muted-foreground mt-1">Your branded marketing assets</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button><Upload className="h-4 w-4 mr-2" /> Upload Asset</Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setPromoPickerOpen(true)}>
+            <Megaphone className="h-4 w-4 mr-2" /> From Event
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button><Upload className="h-4 w-4 mr-2" /> Upload Asset</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Upload Marketing Asset</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-2">
@@ -63,8 +76,18 @@ const TenantMarketingAssets = () => {
               </Button>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
+
+      {tenantInfo?.tenantId && (
+        <TenantPromoPickerDialog
+          open={promoPickerOpen}
+          onOpenChange={setPromoPickerOpen}
+          tenantId={tenantInfo.tenantId}
+          onSave={handlePromoSave}
+        />
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-16">
