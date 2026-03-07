@@ -153,6 +153,21 @@ const ModeratorPoints = () => {
         <Star className="h-8 w-8 text-primary" />
         Points Management
       </h1>
+      {activeSeasons.length > 1 && (
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-sm text-muted-foreground font-heading">Season:</span>
+          <Select value={activeSeason?.id ?? ""} onValueChange={setSelectedSeasonId}>
+            <SelectTrigger className="w-[260px]">
+              <SelectValue placeholder="Select season" />
+            </SelectTrigger>
+            <SelectContent>
+              {activeSeasons.map((s: any) => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <p className="text-muted-foreground font-body mb-8">
         {activeSeason ? `Active Season: ${activeSeason.name}` : "No active season found."}
       </p>
