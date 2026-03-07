@@ -118,6 +118,7 @@ function LogoPicker({
 
 /* ─── Main page ─── */
 const AdminTenants = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { tenants, isLoading, createTenant, updateTenant, deleteTenant } = useTenants();
   const [createOpen, setCreateOpen] = useState(false);
@@ -317,6 +318,10 @@ const AdminTenants = () => {
                 onToggleSubscriberValidation={(checked) =>
                   updateTenant.mutate({ id: t.id, require_subscriber_validation: checked })
                 }
+                onManage={() => {
+                  localStorage.setItem("fgn_selected_tenant_id", t.id);
+                  navigate("/tenant");
+                }}
               />
             ))}
           </div>
