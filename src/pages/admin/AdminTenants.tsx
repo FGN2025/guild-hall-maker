@@ -21,8 +21,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound, Mail, Clock, Loader2, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound, Mail, Clock, Loader2, ExternalLink, ArrowUpDown } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BulkZipImportDialog } from "@/components/admin/BulkZipImportDialog";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
@@ -124,9 +125,10 @@ const AdminTenants = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
   const [logoUploading, setLogoUploading] = useState(false);
-  // Search and filter
+  // Search, filter, and sort
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortOption, setSortOption] = useState("name-asc");
 
   const activeCount = tenants.filter((t) => t.status === "active").length;
   const inactiveCount = tenants.filter((t) => t.status !== "active").length;
@@ -142,9 +144,18 @@ const AdminTenants = () => {
       return true;
     })
     .sort((a, b) => {
-      if (a.status === "active" && b.status !== "active") return -1;
-      if (a.status !== "active" && b.status === "active") return 1;
-      return 0;
+      switch (sortOption) {
+        case "name-asc": return a.name.localeCompare(b.name);
+        case "name-desc": return b.name.localeCompare(a.name);
+        case "created-desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "created-asc": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "status": {
+          if (a.status === "active" && b.status !== "active") return -1;
+          if (a.status !== "active" && b.status === "active") return 1;
+          return a.name.localeCompare(b.name);
+        }
+        default: return 0;
+      }
     });
 
   // Admin assignment sheet
@@ -289,6 +300,19 @@ const AdminTenants = () => {
                 <TabsTrigger value="inactive">Inactive ({inactiveCount})</TabsTrigger>
               </TabsList>
             </Tabs>
+            <Select value={sortOption} onValueChange={setSortOption}>
+              <SelectTrigger className="w-[160px] gap-1">
+                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name A–Z</SelectItem>
+                <SelectItem value="name-desc">Name Z–A</SelectItem>
+                <SelectItem value="created-desc">Newest</SelectItem>
+                <SelectItem value="created-asc">Oldest</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )}
 

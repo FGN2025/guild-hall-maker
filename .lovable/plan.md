@@ -1,41 +1,11 @@
 
 
-# Sortable Tenant List with Sort Dropdown
+# Add Helper Text to Career Path Mapping Form
 
-## Current State
-The tenant list currently sorts active tenants first, inactive last -- no other sorting. There's a search bar and status filter tabs already in the toolbar area.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-## Plan
-
-### Add sort state and dropdown to `AdminTenants.tsx`
-
-**New state:** `sortField` (default: `"name"`) and `sortDirection` (default: `"asc"`).
-
-**Sort options:**
-- Name (A-Z / Z-A)
-- Created Date (Newest / Oldest)  
-- Status (Active first / Inactive first)
-
-**UI:** Add a `Select` dropdown next to the existing search bar and status filter tabs. The dropdown shows the current sort choice. Active-first grouping becomes one of the sort options rather than always-on.
-
-**Sort logic:** Replace the current `.sort()` on `filteredTenants` with a dynamic comparator based on `sortField` + `sortDirection`:
-
-```text
-┌─────────────────────────────────────────────────────┐
-│ [🔍 Search...]  [All | Active | Inactive]  [Sort ▾] │
-│                                          Name A-Z   │
-│                                          Name Z-A   │
-│                                          Newest     │
-│                                          Oldest     │
-│                                          Status     │
-└─────────────────────────────────────────────────────┘
-```
-
-### File changes
-
-| File | Change |
-|---|---|
-| `src/pages/admin/AdminTenants.tsx` | Add `sortField`/`sortDirection` state, a `Select` dropdown in the filter bar, replace the `.sort()` comparator |
-
-Single file edit, no database changes needed.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
