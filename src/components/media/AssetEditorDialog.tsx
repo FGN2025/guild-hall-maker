@@ -492,6 +492,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
         open={mediaPickerOpen}
         onOpenChange={setMediaPickerOpen}
         onSelect={(url) => addLogoFromUrl(url)}
+        excludeCategories={["tournament", "games", "challenges"]}
       />
     </Dialog>
   );
