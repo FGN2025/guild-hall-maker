@@ -87,9 +87,10 @@ interface AssetEditorDialogProps {
   onOpenChange: (open: boolean) => void;
   baseImageUrl?: string;
   onSave: (blob: Blob) => Promise<void>;
+  initialTexts?: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>;
 }
 
-const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEditorDialogProps) => {
+const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTexts }: AssetEditorDialogProps) => {
   const {
     canvasRef,
     canvasSize,
