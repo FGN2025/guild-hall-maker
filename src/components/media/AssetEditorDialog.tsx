@@ -64,6 +64,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     setFormat,
     bgColor,
     setBgColor,
+    cursorStyle,
   } = useCanvasEditor(baseImageUrl);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
