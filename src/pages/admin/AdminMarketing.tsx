@@ -215,6 +215,15 @@ function CampaignAssetsDialog({ campaign, onClose }: { campaign: MarketingCampai
             }}
           />
         )}
+
+        <PromoPickerDialog
+          open={promoPickerOpen}
+          onOpenChange={setPromoPickerOpen}
+          onSave={async (blob) => {
+            const file = new File([blob], `promo-${Date.now()}.png`, { type: "image/png" });
+            await uploadAsset.mutateAsync({ file, label });
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
