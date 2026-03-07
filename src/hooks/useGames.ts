@@ -144,6 +144,22 @@ export const useDeleteGame = () => {
   });
 };
 
+export const useBulkDeleteGames = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("games" as any).delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_data, ids) => {
+      qc.invalidateQueries({ queryKey: ["games"] });
+      qc.invalidateQueries({ queryKey: ["admin-games"] });
+      toast({ title: `${ids.length} game(s) deleted` });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+};
+
 export const useReorderGames = () => {
   const qc = useQueryClient();
   return useMutation({
