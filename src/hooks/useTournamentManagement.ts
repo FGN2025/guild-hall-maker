@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -381,7 +381,31 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: () => toast.error("Failed to update tournament details"),
   });
 
-  const isOwner = !!(user && tournamentQuery.data && tournamentQuery.data.created_by === user.id);
+  // Platform admins and moderators can manage any tournament; others only their own
+  const [canManage, setCanManage] = useState(false);
+
+  useEffect(() => {
+    if (!user || !tournamentQuery.data) {
+      setCanManage(false);
+      return;
+    }
+    const isCreator = tournamentQuery.data.created_by === user.id;
+    if (isCreator) {
+      setCanManage(true);
+      return;
+    }
+    // Check for admin or moderator role
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["admin", "moderator"])
+      .then(({ data }) => {
+        setCanManage(!!data && data.length > 0);
+      });
+  }, [user, tournamentQuery.data]);
+
+  const isOwner = canManage;
 
   // Real-time subscription for live match updates
   useEffect(() => {
