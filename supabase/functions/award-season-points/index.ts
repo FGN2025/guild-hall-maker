@@ -17,19 +17,34 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { winner_id, loser_id, points_winner, points_loser } = await req.json();
+    const { winner_id, loser_id, points_winner, points_loser, game } = await req.json();
     if (!winner_id) throw new Error("winner_id required");
 
     // Use provided points or fall back to defaults
     const winnerPoints = typeof points_winner === "number" ? points_winner : 10;
     const loserPoints = typeof points_loser === "number" ? points_loser : 2;
 
-    // Get active season
-    const { data: season } = await supabase
+    // Find the active season — optionally scoped to a game
+    let seasonQuery = supabase
       .from("seasons")
       .select("id")
-      .eq("status", "active")
-      .maybeSingle();
+      .eq("status", "active");
+
+    if (game) {
+      // Look up game_id from game name
+      const { data: gameRow } = await supabase
+        .from("games")
+        .select("id")
+        .eq("name", game)
+        .maybeSingle();
+
+      if (gameRow) {
+        seasonQuery = seasonQuery.eq("game_id", gameRow.id);
+      }
+      // If game not found in DB, fall back to any active season (legacy)
+    }
+
+    const { data: season } = await seasonQuery.maybeSingle();
 
     if (!season) {
       return new Response(
