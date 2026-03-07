@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, GripVertical, Eye, Settings, ChevronUp, ChevronDown, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, GripVertical, Eye, Settings, ChevronUp, ChevronDown, Save, Loader2, Download } from "lucide-react";
 import SectionEditor from "./SectionEditor";
 import SectionPreview from "./SectionPreview";
 import AddSectionDialog from "./AddSectionDialog";
 import { toast } from "sonner";
+import { exportPageAsHtml } from "@/lib/exportWebPage";
 
 interface Props {
   pageId: string;
@@ -65,6 +66,14 @@ const WebPageEditor = ({ pageId, tenantId, onBack }: Props) => {
           <p className="text-sm text-muted-foreground">/{page.slug}</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportPageAsHtml(page.title, sections.map((s) => ({ ...s, config: pendingConfigs[s.id] || s.config })))}
+            disabled={sections.length === 0}
+          >
+            <Download className="h-4 w-4 mr-1" /> Export HTML
+          </Button>
           <Label className="text-sm font-heading">Published</Label>
           <Switch
             checked={page.is_published}

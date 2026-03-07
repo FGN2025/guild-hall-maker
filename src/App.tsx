@@ -83,6 +83,7 @@ import DisabledUsersNotice from "./pages/DisabledUsersNotice";
 import CookieConsent from "./components/CookieConsent";
 import ResetPassword from "./pages/ResetPassword";
 import EmbedCalendar from "./pages/EmbedCalendar";
+import WebPageView from "./pages/WebPageView";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +106,7 @@ const App = () => (
             <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
             <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
             <Route path="/embed/calendar/:configId" element={<EmbedCalendar />} />
+            <Route path="/pages/:tenantSlug/:pageSlug" element={<WebPageView />} />
 
             {/* Authenticated but Discord-exempt */}
             <Route element={<ProtectedRoute />}>
