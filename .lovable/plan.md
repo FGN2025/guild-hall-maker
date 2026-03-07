@@ -1,11 +1,25 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+# Surface Event Promo Editor on the Marketing Library Top Level
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+## Problem
+The "From Event" promo button is currently buried inside the `CampaignAssetsDialog` (only visible after clicking into a specific campaign). Users expect to see an event-based promo creation option at the top level of the Marketing Library page.
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+## Plan
+
+### Add a top-level "Event Promo" button next to "New Campaign"
+In `src/pages/admin/AdminMarketing.tsx`:
+
+1. Add a `promoPickerOpen` state at the top-level component (not just inside `CampaignAssetsDialog`)
+2. Add a "From Event" button in the header bar next to "New Campaign"
+3. Wire `PromoPickerDialog` at the top level with an `onSave` handler that uploads the generated blob directly to the media library (same logic as `EventPromoEditorDialog.handleSave` in the existing `EventPromoEditor.tsx`)
+4. Show a success toast after save
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `src/pages/admin/AdminMarketing.tsx` | Add top-level `promoPickerOpen` state, "Event Promo" button in header, and `PromoPickerDialog` instance with direct-to-media-library save handler |
+
+No database or backend changes needed.
 
