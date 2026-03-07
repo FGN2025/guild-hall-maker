@@ -362,7 +362,7 @@ const AdminTenants = () => {
             </SheetTitle>
           </SheetHeader>
           {selectedTenantId && (
-            <TenantAdminPanel tenantId={selectedTenantId} />
+            <TenantAdminPanel tenantId={selectedTenantId} tenantName={selectedTenant?.name || "a provider"} />
           )}
         </SheetContent>
       </Sheet>
@@ -486,7 +486,7 @@ function TenantCard({
 }
 
 /* ─── Admin panel with search + invite tabs ─── */
-function TenantAdminPanel({ tenantId }: { tenantId: string }) {
+function TenantAdminPanel({ tenantId, tenantName }: { tenantId: string; tenantName: string }) {
   const { admins, isLoading, invitations, addAdmin, removeAdmin, createInvitation, cancelInvitation } = useTenantAdmins(tenantId);
   const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
@@ -541,7 +541,7 @@ function TenantAdminPanel({ tenantId }: { tenantId: string }) {
       return;
     }
     createInvitation.mutate(
-      { tenantId, email, role: inviteRole },
+      { tenantId, email, role: inviteRole, tenantName },
       { onSuccess: () => { setInviteEmail(""); } }
     );
   };
