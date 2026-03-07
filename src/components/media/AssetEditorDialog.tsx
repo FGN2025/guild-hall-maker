@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useCanvasEditor, TextOverlay, CANVAS_FORMATS, CanvasFormat } from "@/hooks/useCanvasEditor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -87,9 +87,10 @@ interface AssetEditorDialogProps {
   onOpenChange: (open: boolean) => void;
   baseImageUrl?: string;
   onSave: (blob: Blob) => Promise<void>;
+  initialTexts?: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>;
 }
 
-const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEditorDialogProps) => {
+const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTexts }: AssetEditorDialogProps) => {
   const {
     canvasRef,
     canvasSize,
@@ -121,6 +122,20 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave }: AssetEd
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const appliedInitialRef = useRef(false);
+
+  // Apply initial texts once when editor opens with them
+  useEffect(() => {
+    if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0) {
+      appliedInitialRef.current = true;
+      applyTemplate(initialTexts);
+    }
+  }, [initialTexts, canvasSize.width, applyTemplate]);
+
+  // Reset ref when dialog closes
+  useEffect(() => {
+    if (!open) appliedInitialRef.current = false;
+  }, [open]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -10,12 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Trophy, Trash2, LayoutGrid, List, Search, Calendar, Users, GitBranch, Settings,
-  Gamepad2, FileText,
+  Gamepad2, FileText, Megaphone,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
+import { EventPromoEditorDialog, buildTournamentPromo } from "@/components/marketing/EventPromoEditor";
+import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -39,6 +41,7 @@ const AdminTournaments = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [detailTournament, setDetailTournament] = useState<any | null>(null);
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["admin-tournaments"],
@@ -275,6 +278,9 @@ const AdminTournaments = () => {
                   <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
                     <Settings className="h-3.5 w-3.5 mr-1" /> Manage
                   </Button>
+                  <Button variant="outline" size="sm" onClick={() => setPromoData(buildTournamentPromo(t))}>
+                    <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -392,6 +398,16 @@ const AdminTournaments = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Promo Editor */}
+      {promoData && (
+        <EventPromoEditorDialog
+          open={!!promoData}
+          onOpenChange={(o) => { if (!o) setPromoData(null); }}
+          imageUrl={promoData.imageUrl}
+          initialTexts={promoData.texts}
+        />
+      )}
     </div>
   );
 };
