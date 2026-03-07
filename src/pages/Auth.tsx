@@ -281,7 +281,7 @@ const Auth = () => {
                 <Label htmlFor="email" className="font-heading text-sm text-foreground">
                   Email
                 </Label>
-                <div className="relative">
+              <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
@@ -292,6 +292,7 @@ const Auth = () => {
                     className="pl-10 bg-card border-border font-body"
                     maxLength={255}
                     required
+                    readOnly={isInviteFlow && !isLogin}
                   />
                 </div>
               </div>
@@ -360,7 +361,7 @@ const Auth = () => {
                 {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
               </Button>
 
-              {!isLogin && (
+              {!isLogin && !isInviteFlow && (
                 <button
                   type="button"
                   onClick={() => {
