@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTenants, useTenantAdmins, type TenantInvitation } from "@/hooks/useTenants";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +21,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound, Mail, Clock, Loader2 } from "lucide-react";
+import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound, Mail, Clock, Loader2, ExternalLink } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BulkZipImportDialog } from "@/components/admin/BulkZipImportDialog";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -347,6 +348,7 @@ function TenantCard({
   onOpenAdmins,
   onDelete,
   onToggleSubscriberValidation,
+  onManage,
 }: {
   tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean };
   onToggleStatus: (checked: boolean) => void;
@@ -354,6 +356,7 @@ function TenantCard({
   onOpenAdmins: () => void;
   onDelete: () => void;
   onToggleSubscriberValidation: (checked: boolean) => void;
+  onManage: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const { data: zipCount } = useQuery({
@@ -411,6 +414,9 @@ function TenantCard({
             {t.status}
           </Badge>
           <Switch checked={t.status === "active"} onCheckedChange={onToggleStatus} />
+          <Button variant="outline" size="sm" className="gap-1" onClick={onManage}>
+            <ExternalLink className="h-4 w-4" /> Manage
+          </Button>
           <Button variant="outline" size="sm" className="gap-1" onClick={onOpenAdmins}>
             <Users className="h-4 w-4" /> Admins
           </Button>
