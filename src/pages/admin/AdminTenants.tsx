@@ -21,7 +21,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound, Mail, Clock, Loader2, ExternalLink, ArrowUpDown } from "lucide-react";
+import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound, Mail, Clock, Loader2, ExternalLink, ArrowUpDown, Info } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BulkZipImportDialog } from "@/components/admin/BulkZipImportDialog";
@@ -469,6 +470,16 @@ function TenantCard({
         <Label htmlFor={`sub-val-${t.id}`} className="text-xs text-muted-foreground cursor-pointer">
           Require subscriber validation on signup
         </Label>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs">
+              When enabled, new users selecting this provider during signup must verify their identity against the subscriber registry (name + account number) before completing registration.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );
