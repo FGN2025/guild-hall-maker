@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useMarketingCampaigns, useMarketingAssets, MarketingCampaign } from "@/hooks/useMarketingCampaigns";
 import AdminCampaignCodes from "@/components/admin/AdminCampaignCodes";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,27 @@ const AdminMarketing = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarketingCampaign | null>(null);
   const [detailCampaign, setDetailCampaign] = useState<MarketingCampaign | null>(null);
+  const [promoPickerOpen, setPromoPickerOpen] = useState(false);
 
   const [form, setForm] = useState({ title: "", description: "", social_copy: "", category: "social_media" });
+
+  const handlePromoSave = async (blob: Blob) => {
+    const path = `media/promo-${crypto.randomUUID()}.png`;
+    const { error: upErr } = await supabase.storage.from("app-media").upload(path, blob);
+    if (upErr) { toast.error("Upload failed"); throw upErr; }
+    const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from("media_library").insert({
+      file_name: `promo-${Date.now()}.png`,
+      file_path: path,
+      file_type: "image",
+      mime_type: "image/png",
+      url: urlData.publicUrl,
+      user_id: userData.user!.id,
+      category: "marketing",
+    });
+    toast.success("Promo saved to Media Library");
+  };
 
   const openCreate = () => { setEditing(null); setForm({ title: "", description: "", social_copy: "", category: "social_media" }); setDialogOpen(true); };
   const openEdit = (c: MarketingCampaign) => { setEditing(c); setForm({ title: c.title, description: c.description ?? "", social_copy: c.social_copy ?? "", category: c.category }); setDialogOpen(true); };
@@ -58,7 +78,10 @@ const AdminMarketing = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Create and manage marketing campaigns for tenants</p>
           </div>
-          <Button onClick={openCreate} className="self-start sm:self-auto"><Plus className="h-4 w-4 mr-2" /> New Campaign</Button>
+          <div className="flex gap-2 self-start sm:self-auto">
+            <Button variant="outline" onClick={() => setPromoPickerOpen(true)}><Megaphone className="h-4 w-4 mr-2" /> From Event</Button>
+            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> New Campaign</Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -114,6 +137,8 @@ const AdminMarketing = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <PromoPickerDialog open={promoPickerOpen} onOpenChange={setPromoPickerOpen} onSave={handlePromoSave} />
 
         {/* Campaign detail / asset manager */}
         {detailCampaign && (
