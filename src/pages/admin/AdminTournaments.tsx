@@ -398,6 +398,16 @@ const AdminTournaments = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Promo Editor */}
+      {promoData && (
+        <EventPromoEditorDialog
+          open={!!promoData}
+          onOpenChange={(o) => { if (!o) setPromoData(null); }}
+          imageUrl={promoData.imageUrl}
+          initialTexts={promoData.texts}
+        />
+      )}
     </div>
   );
 };

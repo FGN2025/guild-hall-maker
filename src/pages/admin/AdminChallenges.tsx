@@ -14,13 +14,15 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon,
+  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
+import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
+import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -54,7 +56,7 @@ const AdminChallenges = () => {
   const [editChallenge, setEditChallenge] = useState<any | null>(null);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
-
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["admin-challenges"],
     queryFn: async () => {
@@ -376,6 +378,9 @@ const AdminChallenges = () => {
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => navigate(`/challenges/${c.id}`)}>
                         <Eye className="h-3.5 w-3.5 mr-1" /> View
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setPromoData(buildChallengePromo(c))}>
+                        <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
                       </Button>
                       <Button
                         variant="ghost" size="sm"
