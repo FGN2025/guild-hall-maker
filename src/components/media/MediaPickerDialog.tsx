@@ -15,21 +15,27 @@ interface Props {
   excludeCategories?: string[];
 }
 
-const MediaPickerDialog = ({ open, onOpenChange, onSelect }: Props) => {
+const MediaPickerDialog = ({ open, onOpenChange, onSelect, excludeCategories = [] }: Props) => {
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+
+  const TABS = ALL_TABS.filter((t) => !excludeCategories.includes(t));
   const { media, isLoading } = useMediaLibrary(tab);
 
   const filtered = useMemo(() => {
-    if (!search) return media;
+    let items = media;
+    if (excludeCategories.length > 0 && tab === "all") {
+      items = items.filter((m) => !excludeCategories.includes(m.category));
+    }
+    if (!search) return items;
     const q = search.toLowerCase();
-    return media.filter(
+    return items.filter(
       (m) =>
         m.file_name.toLowerCase().includes(q) ||
         m.tags?.some((t) => t.toLowerCase().includes(q))
     );
-  }, [media, search]);
+  }, [media, search, tab, excludeCategories]);
 
   const handleConfirm = () => {
     if (selected) {
