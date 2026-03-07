@@ -68,13 +68,26 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
   return (
     <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
-        {/* Platform admin badge */}
-        {isPlatformAdmin && (
-          <div className="flex items-center gap-1.5 mb-3 px-1">
-            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[10px] uppercase tracking-widest font-heading text-primary font-semibold">Platform Admin</span>
-          </div>
-        )}
+        {/* Access mode indicator */}
+        <div className={`flex items-center gap-1.5 mb-3 px-2 py-1.5 rounded-md ${
+          isPlatformAdmin
+            ? "bg-primary/10 border border-primary/20"
+            : "bg-accent/50 border border-border"
+        }`}>
+          {isPlatformAdmin ? (
+            <>
+              <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-[10px] uppercase tracking-widest font-heading text-primary font-semibold">Viewing as Platform Admin</span>
+            </>
+          ) : (
+            <>
+              <UserCog className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-[10px] uppercase tracking-widest font-heading text-muted-foreground font-semibold">
+                {tenantRole === 'admin' ? 'Tenant Admin' : tenantRole === 'manager' ? 'Tenant Manager' : 'Tenant Marketing'}
+              </span>
+            </>
+          )}
+        </div>
 
         {/* Tenant switcher for platform admins */}
         {isPlatformAdmin && allTenants && allTenants.length > 1 && onTenantChange ? (
@@ -107,9 +120,6 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading mb-0.5">
-                Tenant Admin
-              </p>
               <h2 className="font-display text-sm font-bold tracking-wider truncate" style={brandColor ? { color: brandColor } : undefined}>
                 {tenantName}
               </h2>
