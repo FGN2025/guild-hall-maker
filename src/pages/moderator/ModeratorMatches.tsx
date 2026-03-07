@@ -18,7 +18,7 @@ const ModeratorMatches = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status")
+        .select("id, name, status, game")
         .in("status", ["open", "in_progress"])
         .order("start_date", { ascending: false });
       if (error) throw error;
