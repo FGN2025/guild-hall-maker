@@ -1,11 +1,24 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+# Filter Background Assets from Overlay Picker
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+## Problem
+After a user selects a tournament or challenge as the promo background, the "From Library" overlay picker still shows tournament, game, and challenge assets. These are background-sized images not suitable as overlays.
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+## Changes
+
+**`MediaPickerDialog.tsx`**
+- Add optional `excludeCategories?: string[]` prop
+- Filter those categories from the `TABS` array
+- When `tab === "all"`, also filter results whose `category` matches any excluded value
+
+**`AssetEditorDialog.tsx`** (line ~491)
+- Pass `excludeCategories={["tournament", "games", "challenges"]}` to `MediaPickerDialog`
+
+| File | Change |
+|---|---|
+| `src/components/media/MediaPickerDialog.tsx` | Add `excludeCategories` prop, filter tabs and results |
+| `src/components/media/AssetEditorDialog.tsx` | Pass `excludeCategories` to picker |
+
+No database changes.
 
