@@ -16,7 +16,7 @@ import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { buildTenantEventPromo } from "@/components/marketing/TenantPromoPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
-import type { TenantEvent } from "@/hooks/useTenantEvents";
+
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -247,5 +247,4 @@ const TenantEvents = () => {
   );
 };
 
-export default TenantEvents;
 export default TenantEvents;
