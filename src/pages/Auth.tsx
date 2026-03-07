@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,12 @@ import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
 type SignupStep = "zip" | "subscriber-verify" | "account";
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
+  const [searchParams] = useSearchParams();
+  const isInviteFlow = searchParams.get("invite") === "true";
+  const inviteEmail = searchParams.get("email") || "";
+
+  const [isLogin, setIsLogin] = useState(!isInviteFlow);
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +32,7 @@ const Auth = () => {
   // ZIP check state (signup only)
   const [zipCode, setZipCode] = useState("");
   const [bypassCode, setBypassCode] = useState("");
-  const [signupStep, setSignupStep] = useState<SignupStep>("zip");
+  const [signupStep, setSignupStep] = useState<SignupStep>(isInviteFlow ? "account" : "zip");
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { checkZip, loading: zipLoading, result: zipResult, reset: resetZip } = useRegistrationZipCheck();
@@ -277,7 +281,7 @@ const Auth = () => {
                 <Label htmlFor="email" className="font-heading text-sm text-foreground">
                   Email
                 </Label>
-                <div className="relative">
+              <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
@@ -288,6 +292,7 @@ const Auth = () => {
                     className="pl-10 bg-card border-border font-body"
                     maxLength={255}
                     required
+                    readOnly={isInviteFlow && !isLogin}
                   />
                 </div>
               </div>
@@ -356,7 +361,7 @@ const Auth = () => {
                 {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
               </Button>
 
-              {!isLogin && (
+              {!isLogin && !isInviteFlow && (
                 <button
                   type="button"
                   onClick={() => {

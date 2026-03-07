@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
         <p style="font-size: 15px; color: #444; line-height: 1.6; margin: 0 25px 20px;">
           Create an account or log in with the email address <strong>${email}</strong> to get started. Your role will be assigned automatically.
         </p>
-        <a href="${siteUrl}/auth" style="display: block; background-color: #00e6e6; color: #0a0d14; font-size: 15px; font-weight: bold; font-family: 'Orbitron', 'Rajdhani', Arial, sans-serif; border-radius: 8px; padding: 14px 28px; text-decoration: none; text-align: center; margin: 8px 25px 28px;">
+        <a href="${siteUrl}/auth?invite=true&email=${encodeURIComponent(email)}" style="display: block; background-color: #00e6e6; color: #0a0d14; font-size: 15px; font-weight: bold; font-family: 'Orbitron', 'Rajdhani', Arial, sans-serif; border-radius: 8px; padding: 14px 28px; text-decoration: none; text-align: center; margin: 8px 25px 28px;">
           Sign Up &amp; Join
         </a>
         <p style="font-size: 12px; color: #999; margin: 0 25px 24px;">
