@@ -470,6 +470,16 @@ function TenantCard({
         <Label htmlFor={`sub-val-${t.id}`} className="text-xs text-muted-foreground cursor-pointer">
           Require subscriber validation on signup
         </Label>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs">
+              When enabled, new users selecting this provider during signup must verify their identity against the subscriber registry (name + account number) before completing registration.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );
