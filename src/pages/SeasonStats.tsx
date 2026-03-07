@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 import { useSeasons, useSeasonStats, useSeasonProgression } from "@/hooks/useSeasonStats";
@@ -30,7 +32,7 @@ import {
   Line,
   Legend,
 } from "recharts";
-import { Calendar, Users, Zap, Target, TrendingUp, Award, Crown, Star, Shield, Download, FileText } from "lucide-react";
+import { Calendar, Users, Zap, Target, TrendingUp, Award, Crown, Star, Shield, Download, FileText, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { exportCsv, exportPdf } from "@/lib/exportSeasonStats";
