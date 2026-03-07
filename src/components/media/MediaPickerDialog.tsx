@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Loader2, Check, Code2 } from "lucide-react";
 import { useMediaLibrary, type MediaItem } from "@/hooks/useMediaLibrary";
 
-const ALL_TABS = ["all", "games", "general", "tournament", "badge", "trophy", "banner", "widget"];
+const ALL_TABS = ["all", "games", "general", "tournament", "badge", "trophy", "banner", "widget", "gaming_web_page", "cta", "logo"];
 
 interface Props {
   open: boolean;

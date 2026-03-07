@@ -17,7 +17,7 @@ interface Props {
   isBulkDeleting?: boolean;
 }
 
-const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner", "challenges", "marketing", "widget"];
+const CATEGORIES = ["general", "games", "tournament", "badge", "trophy", "banner", "challenges", "marketing", "widget", "gaming_web_page", "cta", "logo"];
 const typeIcons: Record<string, typeof Image> = { image: Image, video: Film, audio: Music, embed: Code2 };
 
 const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete, isBulkDeleting }: Props) => {
