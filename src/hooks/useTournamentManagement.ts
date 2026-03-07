@@ -20,10 +20,10 @@ const sendTournamentEmail = async (payload: {
   }
 };
 
-const awardSeasonPoints = async (winnerId: string, loserId: string | null, pointsWinner?: number, pointsLoser?: number) => {
+const awardSeasonPoints = async (winnerId: string, loserId: string | null, pointsWinner?: number, pointsLoser?: number, game?: string) => {
   try {
     const { error } = await supabase.functions.invoke("award-season-points", {
-      body: { winner_id: winnerId, loser_id: loserId, points_winner: pointsWinner, points_loser: pointsLoser },
+      body: { winner_id: winnerId, loser_id: loserId, points_winner: pointsWinner, points_loser: pointsLoser, game },
     });
     if (error) console.error("Season points failed:", error);
   } catch (err) {
@@ -270,7 +270,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         const t = tournamentQuery.data;
         const participationPts = t?.points_participation ?? 2;
         // During regular matches, award participation points to both players
-        awardSeasonPoints(winnerId, loserId, participationPts, participationPts);
+        awardSeasonPoints(winnerId, loserId, participationPts, participationPts, t?.game);
       }
 
       // Send score posted email

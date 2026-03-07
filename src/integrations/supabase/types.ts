@@ -479,6 +479,7 @@ export type Database = {
           points_second: number
           points_third: number
           requires_evidence: boolean
+          season_id: string | null
           start_date: string | null
           updated_at: string
         }
@@ -503,6 +504,7 @@ export type Database = {
           points_second?: number
           points_third?: number
           requires_evidence?: boolean
+          season_id?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -527,6 +529,7 @@ export type Database = {
           points_second?: number
           points_third?: number
           requires_evidence?: boolean
+          season_id?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -536,6 +539,13 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -1637,6 +1647,7 @@ export type Database = {
         Row: {
           created_at: string
           end_date: string
+          game_id: string | null
           id: string
           name: string
           start_date: string
@@ -1645,6 +1656,7 @@ export type Database = {
         Insert: {
           created_at?: string
           end_date: string
+          game_id?: string | null
           id?: string
           name: string
           start_date: string
@@ -1653,12 +1665,21 @@ export type Database = {
         Update: {
           created_at?: string
           end_date?: string
+          game_id?: string | null
           id?: string
           name?: string
           start_date?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "seasons_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenant_admins: {
         Row: {
@@ -2316,6 +2337,7 @@ export type Database = {
           prize_pool: string | null
           prize_type: string
           rules: string | null
+          season_id: string | null
           start_date: string
           status: Database["public"]["Enums"]["tournament_status"]
           updated_at: string
@@ -2343,6 +2365,7 @@ export type Database = {
           prize_pool?: string | null
           prize_type?: string
           rules?: string | null
+          season_id?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["tournament_status"]
           updated_at?: string
@@ -2370,6 +2393,7 @@ export type Database = {
           prize_pool?: string | null
           prize_type?: string
           rules?: string | null
+          season_id?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["tournament_status"]
           updated_at?: string
@@ -2380,6 +2404,13 @@ export type Database = {
             columns: ["prize_id"]
             isOneToOne: false
             referencedRelation: "prizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournaments_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
         ]

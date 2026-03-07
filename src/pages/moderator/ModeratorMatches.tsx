@@ -18,7 +18,7 @@ const ModeratorMatches = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status")
+        .select("id, name, status, game")
         .in("status", ["open", "in_progress"])
         .order("start_date", { ascending: false });
       if (error) throw error;
@@ -106,10 +106,11 @@ const ModeratorMatches = () => {
         }
       }
 
-      // Award season points
+      // Award season points — pass game name for game-specific season lookup
       const loserId = winnerId === match.player1_id ? match.player2_id : match.player1_id;
+      const selectedT = tournaments.find((t: any) => t.id === selectedTournament);
       await supabase.functions.invoke("award-season-points", {
-        body: { winner_id: winnerId, loser_id: loserId },
+        body: { winner_id: winnerId, loser_id: loserId, game: selectedT?.game },
       });
     }
 

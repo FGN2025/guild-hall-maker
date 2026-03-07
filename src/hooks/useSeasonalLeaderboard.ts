@@ -22,14 +22,18 @@ export interface SeasonalPlayer {
   tier: string;
 }
 
-export const useSeasons = () => {
+export const useSeasons = (gameId?: string | null) => {
   return useQuery({
-    queryKey: ["seasons"],
+    queryKey: ["seasons", gameId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("seasons")
         .select("*")
         .order("start_date", { ascending: false });
+      if (gameId) {
+        query = query.eq("game_id", gameId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Season[];
     },

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 import { useSeasons, useSeasonStats, useSeasonProgression } from "@/hooks/useSeasonStats";
@@ -30,7 +32,7 @@ import {
   Line,
   Legend,
 } from "recharts";
-import { Calendar, Users, Zap, Target, TrendingUp, Award, Crown, Star, Shield, Download, FileText } from "lucide-react";
+import { Calendar, Users, Zap, Target, TrendingUp, Award, Crown, Star, Shield, Download, FileText, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { exportCsv, exportPdf } from "@/lib/exportSeasonStats";
@@ -52,7 +54,22 @@ const tierLabels: Record<string, string> = {
 
 const SeasonStats = () => {
   const { user } = useAuth();
-  const { data: seasons } = useSeasons();
+  const [filterGameId, setFilterGameId] = useState<string>("all");
+
+  const { data: games = [] } = useQuery({
+    queryKey: ["stats-games-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("games")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: seasons } = useSeasons(filterGameId !== "all" ? filterGameId : undefined);
   const activeSeason = seasons?.find((s) => s.status === "active");
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const effectiveSeasonId = selectedSeasonId || activeSeason?.id || null;
@@ -81,8 +98,20 @@ const SeasonStats = () => {
 
           <TabsContent value="season">
 
-        {/* Season selector */}
+        {/* Game + Season selector */}
         <div className="flex flex-wrap items-center gap-3 mb-8 p-4 rounded-xl border border-border bg-card">
+          <Gamepad2 className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Select value={filterGameId} onValueChange={(v) => { setFilterGameId(v); setSelectedSeasonId(null); }}>
+            <SelectTrigger className="w-[180px] h-9 text-sm bg-background border-border">
+              <SelectValue placeholder="All Games" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Games</SelectItem>
+              {games.map((g: any) => (
+                <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
           <span className="text-sm font-heading text-muted-foreground mr-1">Season:</span>
           <Select

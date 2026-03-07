@@ -16,24 +16,27 @@ const PrizeShop = () => {
   const queryClient = useQueryClient();
   const [confirmPrize, setConfirmPrize] = useState<any>(null);
 
-  // Active season scores for current user
+  // Aggregate available points across ALL active game seasons
   const { data: seasonScore } = useQuery({
     queryKey: ["player-season-score", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data: season } = await supabase
+      const { data: activeSeasons } = await supabase
         .from("seasons")
         .select("id")
-        .eq("status", "active")
-        .single();
-      if (!season) return null;
-      const { data } = await supabase
+        .eq("status", "active");
+      if (!activeSeasons || activeSeasons.length === 0) return null;
+      const seasonIds = activeSeasons.map((s: any) => s.id);
+      const { data: scores } = await supabase
         .from("season_scores")
         .select("points, points_available")
         .eq("user_id", user!.id)
-        .eq("season_id", season.id)
-        .single();
-      return data;
+        .in("season_id", seasonIds);
+      if (!scores || scores.length === 0) return null;
+      return {
+        points: scores.reduce((sum: number, s: any) => sum + (s.points ?? 0), 0),
+        points_available: scores.reduce((sum: number, s: any) => sum + (s.points_available ?? 0), 0),
+      };
     },
   });
 
