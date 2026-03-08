@@ -29,8 +29,9 @@ const TournamentCard = ({
   isRegistering,
 }: TournamentCardProps) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const isFull = t.registrations_count >= t.max_participants;
+  const showRegCount = isAdmin || isModerator;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const dateStr = format(new Date(t.start_date), "MMM d, yyyy");
   const showBracket = t.status === "in_progress" || t.status === "completed";
