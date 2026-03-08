@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Trophy, Gamepad2, FileText, GitBranch, Settings } from "lucide-react";
+import { Calendar, Users, Trophy, Gamepad2, FileText, GitBranch, Settings, ExternalLink } from "lucide-react";
 import { Tournament } from "@/hooks/useTournaments";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
