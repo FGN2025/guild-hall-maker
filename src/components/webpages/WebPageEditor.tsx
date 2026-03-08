@@ -26,7 +26,7 @@ interface Props {
   tenantBranding?: TenantBranding;
 }
 
-const WebPageEditor = ({ pageId, tenantId, onBack }: Props) => {
+const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
   const { pages, useSections, updatePage, addSection, updateSection, deleteSection, reorderSections } = useWebPages(tenantId);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(pageId);
   const page = pages.find((p) => p.id === pageId);
