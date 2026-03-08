@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, CSSProperties } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
 import {
