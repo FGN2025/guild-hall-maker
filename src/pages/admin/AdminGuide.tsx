@@ -118,7 +118,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: BarChart3,
     title: "Tenant Portal",
     bullets: [
-      "Access the Tenant Panel from the main sidebar (visible to Tenant Admins and Managers).",
+      "Access the Tenant Dashboard from the main sidebar (visible to Tenant Admins and Managers).",
       "Dashboard — Overview of leads, subscribers, and key metrics at a glance.",
       "Leads — View and manage user service interests. Update lead status (new → contacted → converted).",
       "ZIP Codes (Admin only) — Add or remove ZIP codes defining the tenant's service area.",
