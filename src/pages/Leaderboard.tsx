@@ -225,7 +225,7 @@ const Leaderboard = () => {
                 value={effectiveSeasonId ?? ""}
                 onValueChange={(v) => setSelectedSeasonId(v)}
               >
-                <SelectTrigger className="w-[220px] h-9 text-sm bg-background border-border">
+                <SelectTrigger className="w-full sm:w-[220px] h-9 text-sm bg-background border-border">
                   <SelectValue placeholder="Select season" />
                 </SelectTrigger>
                 <SelectContent>

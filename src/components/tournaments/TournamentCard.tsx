@@ -80,8 +80,8 @@ const TournamentCard = ({
               </>
             ) : (
               <>
-                <info.icon className="h-4 w-4 text-primary mx-auto mb-1" />
-                <p className="font-heading text-sm font-semibold text-foreground">{info.value}</p>
+                <info.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mx-auto mb-1" />
+                <p className="font-heading text-xs sm:text-sm font-semibold text-foreground truncate">{info.value}</p>
                 <p className="text-[10px] text-muted-foreground">{info.label}</p>
               </>
             )}
