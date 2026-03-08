@@ -84,7 +84,7 @@ const AdminMarketing = () => {
             <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
               <Megaphone className="h-8 w-8 text-primary" /> Marketing Library
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Create and manage marketing campaigns for tenants</p>
+            <p className="text-sm text-muted-foreground mt-1">Where Tenant marketers Create and manage brand, campaigns, custom web pages and calendars</p>
           </div>
           <div className="flex gap-2 self-start sm:self-auto">
             <Button variant="outline" onClick={() => setPromoPickerOpen(true)}><Megaphone className="h-4 w-4 mr-2" /> From Event</Button>
