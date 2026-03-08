@@ -1,26 +1,11 @@
 
 
-## Fix: Always Show Marketing Sidebar on Marketing Routes
+# Add Helper Text to Career Path Mapping Form
 
-### Problem
-`MarketingRoute` currently checks `isAdmin` and renders `AdminLayout` (full 17-item sidebar) for admin users. Since you're an admin, you see the full admin sidebar instead of the scoped marketing sidebar when on `/admin/marketing`.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-### Solution
-Change `MarketingRoute` to **always** use `MarketingLayout` regardless of whether the user is an admin or marketing-only. When an admin navigates to the marketing section, they should see the marketing-scoped sidebar — just like how the Moderator and Tenant panels show their own scoped sidebars even for admins.
-
-### Change
-**`src/components/admin/MarketingRoute.tsx`** — Remove the `isAdmin` branch and always render `MarketingLayout`:
-
-```tsx
-// Before:
-if (isAdmin) return <AdminLayout>{children}</AdminLayout>;
-return <MarketingLayout>{children}</MarketingLayout>;
-
-// After:
-return <MarketingLayout>{children}</MarketingLayout>;
-```
-
-Also remove the unused `AdminLayout` import.
-
-Single file, 3-line change.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
