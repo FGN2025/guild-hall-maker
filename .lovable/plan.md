@@ -1,21 +1,11 @@
 
 
-## Phase: Move Calendar Publish Manager to Its Own Tab
+# Add Helper Text to Career Path Mapping Form
 
-### Problem
-The "Publish Calendar" section currently sits above the campaign cards inside the Campaigns tab, breaking visual consistency. Making it a dedicated tab aligns with the existing tab pattern (Campaigns, Web Pages).
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-### Changes
-
-#### `src/pages/admin/AdminMarketing.tsx`
-
-1. Add a third tab trigger "Calendars" (with a calendar icon) to the `TabsList`, between Campaigns and Web Pages.
-
-2. Create a new `TabsContent value="calendars"` that renders `<CalendarPublishManager />`.
-
-3. Remove the `<CalendarPublishManager />` call from inside the Campaigns `TabsContent`.
-
-Result: three clean tabs — **Campaigns** | **Calendars** | **Web Pages**.
-
-No other files or backend changes needed.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 

@@ -73,12 +73,11 @@ const AdminMarketing = () => {
       <Tabs defaultValue="campaigns" className="w-full">
         <TabsList>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="calendars">Calendars</TabsTrigger>
           <TabsTrigger value="web-pages">Web Pages</TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaigns" className="space-y-6 mt-4">
-        {/* Calendar Embed Manager */}
-        <CalendarPublishManager />
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -153,6 +152,10 @@ const AdminMarketing = () => {
         {detailCampaign && (
           <CampaignAssetsDialog campaign={detailCampaign} onClose={() => setDetailCampaign(null)} />
         )}
+        </TabsContent>
+
+        <TabsContent value="calendars" className="mt-4">
+          <CalendarPublishManager />
         </TabsContent>
 
         <TabsContent value="web-pages" className="mt-4">
