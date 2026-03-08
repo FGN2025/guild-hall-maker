@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import AdminLayout from "./AdminLayout";
 import MarketingLayout from "./MarketingLayout";
 import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -24,6 +25,8 @@ const MarketingRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) return <Navigate to="/auth" replace />;
   if (!isAdmin && !isMarketing) return <Navigate to="/dashboard" replace />;
 
+  // Admins see full admin sidebar; marketing-only users see scoped marketing sidebar
+  if (isAdmin) return <AdminLayout>{children}</AdminLayout>;
   return <MarketingLayout>{children}</MarketingLayout>;
 };
 
