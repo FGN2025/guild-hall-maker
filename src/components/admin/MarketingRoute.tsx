@@ -24,7 +24,7 @@ const MarketingRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) return <Navigate to="/auth" replace />;
   if (!isAdmin && !isMarketing) return <Navigate to="/dashboard" replace />;
 
-  return <AdminLayout>{children}</AdminLayout>;
+  return <MarketingLayout>{children}</MarketingLayout>;
 };
 
 export default MarketingRoute;
