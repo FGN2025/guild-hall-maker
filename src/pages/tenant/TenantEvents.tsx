@@ -262,6 +262,16 @@ const TenantEvents = () => {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        title="Delete Event"
+        description="Are you sure you want to delete this event? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => { if (deleteTarget) deleteEvent.mutate(deleteTarget); setDeleteTarget(null); }}
+      />
     </div>
   );
 };
