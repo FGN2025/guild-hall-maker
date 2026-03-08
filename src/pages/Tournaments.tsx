@@ -177,7 +177,8 @@ const Tournaments = () => {
         ) : (
           <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedTournaments.map((t) => (
+              {paginatedTournaments.map((t, idx) => (
+                <div key={t.id} className="animate-fade-in" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: "both" } as CSSProperties}>
                 <TournamentCard
                   key={t.id}
                   tournament={t}
