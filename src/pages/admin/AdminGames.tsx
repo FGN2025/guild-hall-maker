@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 
 import {
   useAdminGames, useCreateGame, useUpdateGame, useDeleteGame,
