@@ -10,6 +10,7 @@ import PageBackground from "@/components/PageBackground";
 import ChallengeCard from "@/components/challenges/ChallengeCard";
 
 const Challenges = () => {
+  usePageTitle("Challenges");
   const { user } = useAuth();
   const [gameFilter, setGameFilter] = useState<string | null>(null);
 

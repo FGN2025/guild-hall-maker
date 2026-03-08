@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useGames } from "@/hooks/useGames";
 import GameCard from "@/components/games/GameCard";
 import { Input } from "@/components/ui/input";

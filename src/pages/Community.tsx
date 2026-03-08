@@ -17,6 +17,7 @@ const categoryColor: Record<string, string> = {
 };
 
 const Community = () => {
+  usePageTitle("Community");
   const { user, isAdmin } = useAuth();
   useCommunityRealtime();
   const { data: topics, isLoading } = useTopics();

@@ -14,6 +14,7 @@ const tierBadge = (label: string, count: number, color: string) =>
   ) : null;
 
 const Achievements = () => {
+  usePageTitle("Achievements");
   const { data: players, isLoading } = useGlobalAchievements();
 
   return (

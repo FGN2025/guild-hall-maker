@@ -8,6 +8,7 @@ import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 
 const Dashboard = () => {
+  usePageTitle("Dashboard");
   const { stats, registeredTournaments, recentMatches, isLoading } = useDashboard();
   const navigate = useNavigate();
 

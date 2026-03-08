@@ -3,8 +3,10 @@ import TickerEmbed from "@/components/TickerEmbed";
 import FeaturedVideo from "@/components/FeaturedVideo";
 import FeaturedTournaments from "@/components/FeaturedTournaments";
 import Navbar from "@/components/Navbar";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const Index = () => {
+  usePageTitle("Home");
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
