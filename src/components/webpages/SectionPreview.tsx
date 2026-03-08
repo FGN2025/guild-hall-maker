@@ -79,6 +79,9 @@ const SectionPreview = ({ section }: Props) => {
       return (
         <div className="p-4">
           {c.label && <p className="text-sm font-heading text-muted-foreground mb-2">{c.label}</p>}
+          {c.thumbnail_url && (
+            <img src={c.thumbnail_url} alt={c.label || "Widget"} className="h-24 rounded-md object-cover mb-3" />
+          )}
           {c.embed_code ? (
             <div dangerouslySetInnerHTML={{ __html: c.embed_code }} className="rounded-lg overflow-hidden" />
           ) : (
