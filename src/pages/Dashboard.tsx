@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const Dashboard = () => {
   usePageTitle("Dashboard");

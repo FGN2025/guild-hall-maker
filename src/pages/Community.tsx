@@ -9,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const categoryColor: Record<string, string> = {
   "Team Recruitment": "text-neon-accent",

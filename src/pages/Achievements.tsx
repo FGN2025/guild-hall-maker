@@ -5,6 +5,7 @@ import { Award, Trophy, Crown, Medal, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const tierBadge = (label: string, count: number, color: string) =>
   count > 0 ? (
