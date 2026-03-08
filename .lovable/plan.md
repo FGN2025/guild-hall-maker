@@ -1,30 +1,11 @@
 
 
-## Updated Requirement: Registration Count Visible to Platform Admins Only
+# Add Helper Text to Career Path Mapping Form
 
-The rule has changed: **only Platform Admins** (not Moderators) should see the registration count (e.g. `8/16`). Everyone else sees `"16 max"`.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-### Files to Update
-
-Six files display `registrations_count`. Two were already updated but need the `isModerator` check removed:
-
-| File | What changes |
-|------|-------------|
-| `src/components/tournaments/TournamentCard.tsx` | Change `showRegCount` from `isAdmin \|\| isModerator` to `isAdmin` only |
-| `src/components/FeaturedTournaments.tsx` | Same — remove `isModerator` from the check |
-| `src/pages/moderator/ModeratorTournaments.tsx` | Add `useAuth` check; conditionally show `max_participants + " max"` in list view (line 204), grid view (line 273), and detail dialog (line 331) |
-| `src/pages/admin/AdminTournaments.tsx` | Already admin-only page, but add the guard for consistency |
-| `src/pages/TournamentDetail.tsx` | Add conditional — show count only for admins, otherwise `"max_participants max"` (line 148) |
-| `src/components/tournaments/TournamentDetailsDialog.tsx` | Same conditional on line 50 |
-| `src/pages/Dashboard.tsx` | Same conditional on line 99 |
-
-### Logic
-All files use the same pattern:
-```typescript
-const { isAdmin } = useAuth();
-// Display value:
-isAdmin ? `${count}/${max}` : `${max} max`
-```
-
-Seven files, one-line change each (plus import if not already present). No database or backend changes.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 

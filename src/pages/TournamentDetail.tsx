@@ -22,7 +22,7 @@ const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { register, unregister, isRegistering } = useTournaments();
 
   const { data: tournament, isLoading } = useQuery({
@@ -145,7 +145,7 @@ const TournamentDetail = () => {
                   {
                     icon: Users,
                     label: "Players",
-                    value: `${t.registrations_count} / ${t.max_participants}`,
+                    value: isAdmin ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max`,
                   },
                   {
                     icon: Gamepad2,
