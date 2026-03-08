@@ -24,7 +24,7 @@ import { toast } from "sonner";
 
 const CODE_TYPES = ["campaign", "override", "access", "tracking", "verification"] as const;
 
-const TenantCodes = () => {
+const TenantCodes = ({ embedded }: { embedded?: boolean }) => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
   const isReadOnly = tenantInfo?.tenantRole === "marketing";
@@ -66,12 +66,15 @@ const TenantCodes = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Codes</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage promo, campaign, and tracking codes for your organization.
-          </p>
-        </div>
+        {!embedded && (
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Codes</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage promo, campaign, and tracking codes for your organization.
+            </p>
+          </div>
+        )}
+        {embedded && <div />}
         {!isReadOnly && (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
