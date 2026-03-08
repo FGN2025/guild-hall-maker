@@ -54,9 +54,11 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Navigate to Moderator → Tournaments to manage the tournament lifecycle.",
       "Creating — Set name, game, format, date/time, max participants, description, rules, prize configuration, entry fee, and hero image (sourced from the Media Library).",
+      "Multi-Date Scheduling — Create multiple tournament instances from a single dialog using the multi-date calendar picker. Each selected date generates a separate tournament with an auto-appended date suffix (e.g., 'Friday Night Fights — Mar 14').",
       "Prize Modes — Choose between 'None', 'Physical Prize' (linked to a Prize Shop item), or 'Value' (numeric points displayed as 'pts').",
       "Value Prizes — In Value mode, the prize pool is split among the top three finishers using configurable percentages (default 50 / 30 / 20) that must sum to 100%.",
       "Status Flow — Upcoming → Open (registration) → In Progress → Completed (or Cancelled).",
+      "View Modes — Toggle between List and Grid views for the tournament index. Your preference is persisted via URL history-based routing.",
       "Registrations — View registered players, approve or remove registrations before tournament start.",
       "Bracket Generation — Generate single-elimination brackets once registration closes. Players are seeded and matched automatically.",
       "Reset Bracket — Before any matches are completed, you can reset the bracket to delete all match data and return to Open status for re-registration.",
@@ -99,7 +101,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Navigate to Moderator → Challenges to create and manage work-order style challenges.",
       "Creating — Set name, description, point reward, game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (one-time or repeatable), and start/end dates.",
-      "Cover Images — Upload a cover image for each challenge to make it visually distinct on the player-facing cards.",
+      "Cover Images — Upload a cover image or select one from the Media Library to make each challenge visually distinct on the player-facing cards.",
+      "AI-Enhanced Descriptions — Click the AI enhance button to automatically improve challenge descriptions for clarity and engagement using the platform's AI capabilities.",
       "Tasks — Build multi-step task checklists within a challenge. Players must complete each task and upload evidence per step.",
       "Evidence Requirement — Toggle 'Requires Evidence' to mandate that players upload screenshots or video highlights as proof of completion.",
       "Evidence Review — Switch to the 'Evidence Review' tab to see all submitted enrollments. Each evidence item is shown individually with its task label, media preview (image or video), and current status.",
