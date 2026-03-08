@@ -21,6 +21,7 @@ const AppLayout = () => {
           </div>
         </div>
         <CoachFloatingButton />
+        <ScrollToTopButton />
       </SidebarProvider>
     </CoachProvider>
   );
