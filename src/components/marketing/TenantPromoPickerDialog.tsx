@@ -101,7 +101,7 @@ interface TenantPromoPickerDialogProps {
   tenantPrimaryColor?: string | null;
 }
 
-export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }: TenantPromoPickerDialogProps) {
+export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, tenantPrimaryColor }: TenantPromoPickerDialogProps) {
   const [search, setSearch] = useState("");
   const [selectedPromo, setSelectedPromo] = useState<PromoData | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
