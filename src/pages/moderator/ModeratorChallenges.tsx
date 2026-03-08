@@ -288,7 +288,7 @@ const ModeratorChallenges = () => {
                         <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{typeLabels[c.challenge_type] ?? c.challenge_type}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>
+                      {isAdmin && <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>}
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
                       </TableCell>
