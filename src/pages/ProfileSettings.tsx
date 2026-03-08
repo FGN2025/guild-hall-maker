@@ -298,8 +298,20 @@ const ProfileSettings = () => {
                     variant="destructive"
                     size="sm"
                     disabled={unlinking}
-                    onClick={async () => {
-                      if (!confirm("Unlinking Discord will block platform access until you re-link. Continue?")) return;
+                    onClick={() => setShowUnlinkConfirm(true)}
+                    className="gap-1 font-heading text-xs"
+                  >
+                    <Unlink className="h-3 w-3" /> {unlinking ? "Unlinking…" : "Unlink"}
+                  </Button>
+                  <ConfirmDialog
+                    open={showUnlinkConfirm}
+                    onOpenChange={setShowUnlinkConfirm}
+                    title="Unlink Discord"
+                    description="Unlinking Discord will block platform access until you re-link. Are you sure you want to continue?"
+                    confirmLabel="Unlink"
+                    variant="destructive"
+                    onConfirm={async () => {
+                      setShowUnlinkConfirm(false);
                       setUnlinking(true);
                       try {
                         const { error } = await supabase.functions.invoke("discord-oauth-callback", {
@@ -316,10 +328,7 @@ const ProfileSettings = () => {
                       }
                       setUnlinking(false);
                     }}
-                    className="gap-1 font-heading text-xs"
-                  >
-                    <Unlink className="h-3 w-3" /> {unlinking ? "Unlinking…" : "Unlink"}
-                  </Button>
+                  />
                 </div>
               </div>
             ) : (
