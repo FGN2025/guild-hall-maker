@@ -218,7 +218,7 @@ const Leaderboard = () => {
           {/* SEASONAL TAB */}
           <TabsContent value="seasonal" className="mt-6">
             {/* Season selector */}
-            <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
               <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm font-heading text-muted-foreground mr-1">Season:</span>
               <Select
