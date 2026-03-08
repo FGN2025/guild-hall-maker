@@ -13,10 +13,17 @@ import AddSectionDialog from "./AddSectionDialog";
 import { toast } from "sonner";
 import { exportPageAsHtml } from "@/lib/exportWebPage";
 
+interface TenantBranding {
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  accentColor?: string | null;
+}
+
 interface Props {
   pageId: string;
   tenantId?: string | null;
   onBack: () => void;
+  tenantBranding?: TenantBranding;
 }
 
 const WebPageEditor = ({ pageId, tenantId, onBack }: Props) => {
