@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import AdminLayout from "./AdminLayout";
+import MarketingLayout from "./MarketingLayout";
 import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 
