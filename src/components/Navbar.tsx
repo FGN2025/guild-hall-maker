@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2 } from "lucide-react";
+import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2, CalendarDays, Target, Gift, SwordIcon, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +7,7 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 
 const navItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/community", label: "Community", icon: Users },
@@ -14,6 +15,10 @@ const navItems = [
   { to: "/season-stats", label: "Stats", icon: BarChart3 },
   { to: "/compare", label: "Compare", icon: Swords },
   { to: "/achievements", label: "Badges", icon: Award },
+  { to: "/challenges", label: "Challenges", icon: Target },
+  { to: "/prize-shop", label: "Prize Shop", icon: Gift },
+  { to: "/ladders", label: "Ladders", icon: SwordIcon },
+  { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 
 const Navbar = () => {
