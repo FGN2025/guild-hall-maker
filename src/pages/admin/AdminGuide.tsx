@@ -46,7 +46,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: Shield,
     title: "Admin vs Manager Roles",
     bullets: [
-      "Super Admin / Admin — Full access to the Admin Panel, all settings, user management, tournament control, badge awarding, tenant configuration, and ecosystem tools.",
+      "Super Admin / Admin — Full access to the Admin Dashboard, all settings, user management, tournament control, badge awarding, tenant configuration, and ecosystem tools.",
       "Marketing — Access to Admin → Marketing campaigns and creative asset management. Can also view the Tenant sidebar's 'My Assets' library.",
       "Tenant Admin — Full access within their specific Tenant portal including subscribers, ZIP codes, integrations, events, marketing assets, and team management.",
       "Tenant Manager — Scoped access within a Tenant portal. Managers can view leads, events, marketing assets, and the tenant dashboard but cannot manage ZIP codes, subscribers, integrations, or team settings.",
