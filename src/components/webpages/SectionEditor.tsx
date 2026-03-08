@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Image, Plus, Trash2 } from "lucide-react";
+import { Image, Plus, Trash2, Code2 } from "lucide-react";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import type { MediaItem } from "@/hooks/useMediaLibrary";
 
 interface Props {
   section: WebPageSection;
@@ -179,9 +180,24 @@ const SectionEditor = ({ section, onUpdate }: Props) => {
             <Input value={c.label || ""} onChange={(e) => set("label", e.target.value)} className="text-sm" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-heading">Embed Code (HTML)</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-heading">Embed Code (HTML)</Label>
+              <Button type="button" variant="outline" size="sm" onClick={() => openPicker("embed_widget_pick")} className="gap-1.5">
+                <Code2 className="h-3.5 w-3.5" /> Pick from Widget Library
+              </Button>
+            </div>
             <Textarea value={c.embed_code || ""} onChange={(e) => set("embed_code", e.target.value)} rows={6} className="text-sm font-mono" />
           </div>
+          <MediaPickerDialog
+            open={mediaPicker.open && mediaPicker.field === "embed_widget_pick"}
+            onOpenChange={(o) => setMediaPicker({ ...mediaPicker, open: o })}
+            onSelect={(_url, _fp, item?: MediaItem) => {
+              if (item?.embed_code) {
+                set("embed_code", item.embed_code);
+                if (!c.label) set("label", item.file_name);
+              }
+            }}
+          />
         </div>
       );
 

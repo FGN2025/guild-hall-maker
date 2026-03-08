@@ -11,7 +11,7 @@ const ALL_TABS = ["all", "games", "general", "tournament", "badge", "trophy", "b
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (url: string, filePath?: string) => void;
+  onSelect: (url: string, filePath?: string, item?: MediaItem) => void;
   excludeCategories?: string[];
 }
 
@@ -40,7 +40,7 @@ const MediaPickerDialog = ({ open, onOpenChange, onSelect, excludeCategories = [
   const handleConfirm = () => {
     if (selected) {
       const item = filtered.find((m) => m.url === selected);
-      onSelect(selected, item?.file_path);
+      onSelect(selected, item?.file_path, item);
       setSelected(null);
       setSearch("");
       onOpenChange(false);
