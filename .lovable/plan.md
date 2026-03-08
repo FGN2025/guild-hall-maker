@@ -1,17 +1,11 @@
 
 
-## Update Calendar Page Header
+# Add Helper Text to Career Path Mapping Form
 
-### Changes
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-#### `src/components/admin/CalendarPublishManager.tsx`
-
-Replace the current small header (line ~72-75 area with `Calendar` icon + `h3` "Publish Calendar") with a header matching the Web Pages style:
-
-```tsx
-<h1 className="font-display text-3xl font-bold text-foreground">Calendars</h1>
-<p className="text-muted-foreground font-heading text-sm mt-1">Create custom branded monthly event calendars</p>
-```
-
-Keep the "New Calendar" button positioned the same way.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 

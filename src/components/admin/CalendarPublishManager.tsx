@@ -69,9 +69,9 @@ const CalendarPublishManager = ({ tenantId }: Props) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
-          <h3 className="font-heading text-sm font-semibold text-foreground">Publish Calendar</h3>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Calendars</h1>
+          <p className="text-sm text-muted-foreground">Create custom branded monthly event calendars</p>
         </div>
         {!editing && (
           <Button size="sm" onClick={startNew} className="font-heading">
