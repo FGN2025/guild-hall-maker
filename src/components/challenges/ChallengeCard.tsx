@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Signal, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ChallengeCardProps {
   challenge: any;
@@ -16,6 +17,7 @@ const difficultyColor: Record<string, string> = {
 
 const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) => {
   const c = challenge;
+  const { isAdmin } = useAuth();
   const gameName = c.games?.name;
   const gameCategory = c.games?.category;
   const coverUrl = c.cover_image_url || c.games?.cover_image_url || "/placeholder.svg";
@@ -62,10 +64,12 @@ const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) =
                   ~{c.estimated_minutes}m
                 </span>
               )}
-              <span className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {enrollmentCount} enrolled
-              </span>
+              {isAdmin && (
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {enrollmentCount} enrolled
+                </span>
+              )}
             </div>
             <Badge variant="secondary" className="font-mono text-xs">
               +{c.points_first} pts
