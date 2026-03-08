@@ -270,7 +270,7 @@ const ModeratorTournaments = () => {
                   </div>
                   <div className="bg-muted rounded-lg p-2">
                     <Users className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
-                    <p className="font-heading text-xs font-semibold text-foreground">{t.registrations_count}/{t.max_participants}</p>
+                    <p className="font-heading text-xs font-semibold text-foreground">{isAdmin ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max`}</p>
                   </div>
                   <div className="bg-muted rounded-lg p-2">
                     <div className="font-heading text-xs font-semibold text-foreground">
