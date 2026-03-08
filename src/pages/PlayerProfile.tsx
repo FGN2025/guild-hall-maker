@@ -12,6 +12,7 @@ import PlayerAchievements from "@/components/player/PlayerAchievements";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Gamepad2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PlayerProfile = () => {
   usePageTitle("Player Profile");

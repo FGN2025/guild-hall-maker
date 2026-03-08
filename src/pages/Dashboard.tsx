@@ -1,4 +1,5 @@
 import { Trophy, Target, Swords, TrendingUp, Calendar, Clock, Users, Gamepad2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useDashboard } from "@/hooks/useDashboard";
 import { format } from "date-fns";

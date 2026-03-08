@@ -1,4 +1,5 @@
 import { useGlobalAchievements } from "@/hooks/useGlobalAchievements";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Award, Trophy, Crown, Medal, Shield } from "lucide-react";
