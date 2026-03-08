@@ -1,0 +1,1 @@
+ALTER TABLE public.games ADD COLUMN tournament_rules_url text DEFAULT NULL;
