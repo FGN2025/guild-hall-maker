@@ -1,11 +1,19 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Problem
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+The "Pick from Widget Library" button in the embed_widget section opens the MediaPickerDialog showing **all** categories. It should be filtered to only show widget/embed items.
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+## Plan
+
+The `MediaPickerDialog` currently only supports `excludeCategories`. Rather than listing every non-widget category to exclude, we should add an `initialTab` prop to auto-select the "widget" tab when opened from the embed widget picker.
+
+### Changes
+
+| File | Change |
+|---|---|
+| `MediaPickerDialog.tsx` | Add optional `initialTab?: string` prop. Use it as the default value for the `tab` state, and reset tab to it when dialog opens. |
+| `SectionEditor.tsx` | Pass `initialTab="widget"` to the `MediaPickerDialog` in the `embed_widget` case. |
+
+This is a minimal two-line change that filters the picker to the widget category by default while still allowing the user to browse other tabs if needed.
 
