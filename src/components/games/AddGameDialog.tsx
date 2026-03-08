@@ -96,9 +96,11 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       setGuideContent(editGame.guide_content ?? "");
       setPlatformTags((editGame.platform_tags ?? []).join(", "));
       setIsActive(editGame.is_active);
+      setTournamentRulesUrl(editGame.tournament_rules_url ?? "");
     } else {
       setName(""); setSlug(""); setDescription(""); setCategory("General");
       setCoverImageUrl(""); setGuideContent(""); setPlatformTags(""); setIsActive(true);
+      setTournamentRulesUrl("");
     }
   }, [editGame, open]);
 
