@@ -105,8 +105,7 @@ const AdminWebPages = () => {
               <Button onClick={handleCreate} disabled={!newTitle || !newSlug || createPage.isPending}>Create</Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
-      </div>
+      </Dialog>
     </div>
   );
 };
