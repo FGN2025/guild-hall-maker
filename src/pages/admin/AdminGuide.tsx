@@ -387,10 +387,10 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Ranked Ladders",
     bullets: [
       "Ranked Ladders (/ladders) provide persistent ELO-based competitive rankings outside of tournaments.",
-      "Moderators create ladders from the Moderator Panel → Ladders, optionally linking them to a specific game.",
+      "Moderators create ladders from the Moderator Dashboard → Ladders, optionally linking them to a specific game.",
       "Players browse active ladders and join them with a single click.",
       "Each ladder displays a live leaderboard sorted by rating, showing wins, losses, and rank.",
-      "Moderators manage ladder entries (update ratings, record wins/losses) from the Moderator Panel.",
+      "Moderators manage ladder entries (update ratings, record wins/losses) from the Moderator Dashboard.",
       "Players can participate in multiple ladders simultaneously.",
     ],
   },
