@@ -69,8 +69,26 @@ const AdminUsers = () => {
           </div>
 
           {isLoading ? (
-            <div className="flex justify-center py-16">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Gamer Tag</TableHead>
+                    <TableHead>Tenant</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Set Role</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell colSpan={6} className="p-0">
+                      <TableSkeleton columns={6} rows={8} showAvatar />
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="rounded-lg border border-border overflow-hidden">
