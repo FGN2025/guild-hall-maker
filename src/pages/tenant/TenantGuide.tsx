@@ -36,7 +36,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "The Tenant Portal supports three roles: Admin, Manager, and Marketing.",
       "Admin — Full access to all features including ZIP codes, subscribers, integrations, team management, codes, web pages, and settings.",
-      "Manager — Access to Dashboard, Player Directory, Leads, Events, and Marketing campaigns. Cannot manage ZIP codes, subscribers, integrations, codes, team, or settings.",
+      "Manager — Access to Dashboard, Player Directory, Leads, Events, Marketing campaigns, ZIP Codes, Subscribers, Integrations (NISC, GLDS, Smarty), and Settings. Cannot manage codes, web pages, or team members.",
       "Marketing — Access to Marketing campaigns, My Assets, Web Pages, and read-only visibility of Tenant Codes. Ideal for team members focused on promotional content.",
       "Role Assignment — Admins invite team members by display name or email and assign roles from the Team page.",
     ],
