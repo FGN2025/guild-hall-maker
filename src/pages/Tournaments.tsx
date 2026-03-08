@@ -1,6 +1,7 @@
 import { useState, useMemo, CSSProperties } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Pagination,
   PaginationContent,
