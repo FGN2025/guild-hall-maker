@@ -291,12 +291,13 @@ const Leaderboard = () => {
                     <span className="col-span-2 text-center">Wins</span>
                     <span className="col-span-2 text-center">Matches</span>
                   </div>
-                  {paginatedSeasonal.map((p) => {
+                  {paginatedSeasonal.map((p, idx) => {
                     const totalMatches = p.wins + p.losses + (p.tournaments_played > 0 ? 0 : 0);
                     return (
                       <div
                         key={p.user_id}
                         className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                        style={staggerStyle(idx)}
                       >
                         <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
                           #{p.rank}
