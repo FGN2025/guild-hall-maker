@@ -3,6 +3,7 @@ import { useAdminUsers, useTenantsList } from "@/hooks/useAdminUsers";
 import { useLegacyUsers, useLegacyUserStats } from "@/hooks/useLegacyUsers";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import TableSkeleton from "@/components/ui/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Search, Users, UserCheck, UserX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,8 +69,26 @@ const AdminUsers = () => {
           </div>
 
           {isLoading ? (
-            <div className="flex justify-center py-16">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Gamer Tag</TableHead>
+                    <TableHead>Tenant</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Set Role</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell colSpan={6} className="p-0">
+                      <TableSkeleton columns={6} rows={8} showAvatar />
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="rounded-lg border border-border overflow-hidden">
@@ -85,8 +104,8 @@ const AdminUsers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u.id}>
+                  {users.map((u, idx) => (
+                    <TableRow key={u.id} className="animate-fade-in" style={{ animationDelay: `${idx * 50}ms`, animationFillMode: "both" }}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
@@ -159,8 +178,26 @@ const AdminUsers = () => {
           </div>
 
           {legacyLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full" />
+            <div className="rounded-md border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Provider</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Matched</TableHead>
+                    <TableHead>Created</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell colSpan={6} className="p-0">
+                      <TableSkeleton columns={6} rows={8} />
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="rounded-md border border-border overflow-hidden">

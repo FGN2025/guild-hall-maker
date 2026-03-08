@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, CSSProperties } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import {
   Pagination,
@@ -25,6 +25,12 @@ import {
 } from "@/components/ui/select";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
+import TableSkeleton from "@/components/ui/table-skeleton";
+
+const staggerStyle = (idx: number): CSSProperties => ({
+  animationDelay: `${idx * 50}ms`,
+  animationFillMode: "both",
+});
 
 type SortKey = "rank" | "total_matches" | "wins" | "points";
 type SortDir = "asc" | "desc";
@@ -255,8 +261,16 @@ const Leaderboard = () => {
             </div>
 
             {seasonalLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
+                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                  <span className="col-span-1">Rank</span>
+                  <span className="col-span-3">Player</span>
+                  <span className="col-span-2">Tier</span>
+                  <span className="col-span-2 text-center">Points</span>
+                  <span className="col-span-2 text-center">Wins</span>
+                  <span className="col-span-2 text-center">Matches</span>
+                </div>
+                <TableSkeleton columns={6} rows={10} showAvatar />
               </div>
             ) : !filteredSeasonalPlayers || filteredSeasonalPlayers.length === 0 ? (
               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm p-12 text-center">
@@ -277,12 +291,13 @@ const Leaderboard = () => {
                     <span className="col-span-2 text-center">Wins</span>
                     <span className="col-span-2 text-center">Matches</span>
                   </div>
-                  {paginatedSeasonal.map((p) => {
+                  {paginatedSeasonal.map((p, idx) => {
                     const totalMatches = p.wins + p.losses + (p.tournaments_played > 0 ? 0 : 0);
                     return (
                       <div
                         key={p.user_id}
                         className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                        style={staggerStyle(idx)}
                       >
                         <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
                           #{p.rank}
@@ -374,8 +389,16 @@ const Leaderboard = () => {
             </div>
 
             {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
+                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                  <span className="col-span-1">Rank</span>
+                  <span className="col-span-3">Player</span>
+                  <span className="col-span-2 text-center">Points</span>
+                  <span className="col-span-2 text-center">Wins</span>
+                  <span className="col-span-2 text-center">Matches</span>
+                  <span className="col-span-2" />
+                </div>
+                <TableSkeleton columns={6} rows={10} showAvatar />
               </div>
             ) : !players || players.length === 0 ? (
                <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm p-12 text-center">
@@ -449,10 +472,11 @@ const Leaderboard = () => {
                       No players match your search.
                     </div>
                   ) : (
-                    paginatedAllTime.map((p) => (
+                    paginatedAllTime.map((p, idx) => (
                     <div
                       key={p.user_id}
                       className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                      style={staggerStyle(idx)}
                     >
                       <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
                         #{p.rank}
