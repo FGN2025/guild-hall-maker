@@ -7,6 +7,7 @@ import { Calendar, Users, Trophy, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 
 const TenantEventPage = () => {
+  usePageTitle("Events");
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const { data: tenant, isLoading: tenantLoading } = usePublicTenantBySlug(tenantSlug);
   const { data: events, isLoading: eventsLoading } = usePublicTenantEvents(tenant?.id);

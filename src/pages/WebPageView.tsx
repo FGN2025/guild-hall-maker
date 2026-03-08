@@ -7,6 +7,7 @@ import SectionPreview from "@/components/webpages/SectionPreview";
 import type { WebPage, WebPageSection } from "@/hooks/useWebPages";
 
 const WebPageView = () => {
+  usePageTitle("Page");
   const { tenantSlug, pageSlug } = useParams<{ tenantSlug: string; pageSlug: string }>();
 
   const { data, isLoading, error } = useQuery({
