@@ -158,6 +158,48 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                  location.pathname.startsWith("/admin")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <ShieldCheck className="h-5 w-5" />
+                Admin
+              </Link>
+            )}
+            {(isModerator || isAdmin) && (
+              <Link
+                to="/moderator"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                  location.pathname.startsWith("/moderator")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <SwordIcon className="h-5 w-5" />
+                Moderator
+              </Link>
+            )}
+            {isTenantAdmin && (
+              <Link
+                to="/tenant"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                  location.pathname.startsWith("/tenant")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <Building2 className="h-5 w-5" />
+                Tenant
+              </Link>
+            )}
             <div className="flex gap-2 pt-2 border-t border-border/50 mt-2">
               {user ? (
                 <div className="flex flex-col gap-2">
