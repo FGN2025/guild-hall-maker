@@ -130,7 +130,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
   const handleQuickCreate = async (evt: TenantEvent) => {
     setQuickCreating(evt.id);
     try {
-      const promo = buildTenantEventPromo(evt);
+      const promo = buildTenantEventPromo(evt, tenantPrimaryColor);
       const blob = await renderPromoToBlob(promo);
       await onSave(blob);
       toast.success("Promo created and saved!");
