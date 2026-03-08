@@ -472,10 +472,11 @@ const Leaderboard = () => {
                       No players match your search.
                     </div>
                   ) : (
-                    paginatedAllTime.map((p) => (
+                    paginatedAllTime.map((p, idx) => (
                     <div
                       key={p.user_id}
                       className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                      style={staggerStyle(idx)}
                     >
                       <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
                         #{p.rank}

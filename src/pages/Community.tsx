@@ -81,7 +81,8 @@ const Community = () => {
               <div
                 key={t.id}
                 onClick={() => setSelectedTopic(t)}
-                className="p-4 border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer flex items-center justify-between"
+                className="p-4 border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer flex items-center justify-between animate-fade-in"
+                style={{ animationDelay: `${idx * 50}ms`, animationFillMode: "both" }}
               >
                 <div className="flex items-center gap-2">
                   {t.is_pinned && <Pin className="h-4 w-4 text-primary shrink-0" />}
