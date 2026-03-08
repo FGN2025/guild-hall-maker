@@ -27,6 +27,7 @@ const ProfileSettings = () => {
   const [discordAvatarHash, setDiscordAvatarHash] = useState<string | null>(null);
   const [discordId, setDiscordId] = useState<string | null>(null);
   const [unlinking, setUnlinking] = useState(false);
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
