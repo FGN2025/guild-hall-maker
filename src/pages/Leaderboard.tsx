@@ -421,7 +421,7 @@ const Leaderboard = () => {
 
             {isLoading ? (
               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                   <span className="col-span-1">Rank</span>
                   <span className="col-span-3">Player</span>
                   <span className="col-span-2 text-center">Points</span>
