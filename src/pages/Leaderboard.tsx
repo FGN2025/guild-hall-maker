@@ -504,38 +504,67 @@ const Leaderboard = () => {
                     </div>
                   ) : (
                     paginatedAllTime.map((p, idx) => (
-                    <div
-                      key={p.user_id}
-                      className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
-                      style={staggerStyle(idx)}
-                    >
-                      <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
-                        #{p.rank}
-                      </span>
-                      <div className="col-span-3 flex items-center gap-3 min-w-0">
+                    <div key={p.user_id}>
+                      {/* Mobile */}
+                      <div
+                        className="md:hidden flex items-center gap-3 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors animate-fade-in"
+                        style={staggerStyle(idx)}
+                      >
+                        <span className={`font-display font-bold text-lg w-8 shrink-0 ${rankColor(p.rank)}`}>
+                          #{p.rank}
+                        </span>
                         <Avatar className="h-8 w-8 shrink-0">
                           <AvatarImage src={p.avatar_url ?? undefined} />
                           <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
                             {p.display_name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
-                          {p.display_name}
-                        </Link>
-                      </div>
-                      <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
-                        {p.points}
-                      </span>
-                      <span className="col-span-2 font-display text-sm text-success font-bold text-center">
-                        {p.wins}
-                      </span>
-                      <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
-                        {p.total_matches}
-                      </span>
-                      <div className="col-span-2 flex justify-end">
+                        <div className="flex-1 min-w-0">
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate block hover:text-primary transition-colors">
+                            {p.display_name}
+                          </Link>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-display text-sm text-primary font-bold">{p.points} pts</p>
+                          <p className="text-xs text-muted-foreground">{p.wins}W / {p.total_matches}M</p>
+                        </div>
                         {p.rank <= 3 && (
-                          <Trophy className={`h-4 w-4 ${rankColor(p.rank)}`} />
+                          <Trophy className={`h-4 w-4 shrink-0 ${rankColor(p.rank)}`} />
                         )}
+                      </div>
+                      {/* Desktop */}
+                      <div
+                        className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                        style={staggerStyle(idx)}
+                      >
+                        <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
+                          #{p.rank}
+                        </span>
+                        <div className="col-span-3 flex items-center gap-3 min-w-0">
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarImage src={p.avatar_url ?? undefined} />
+                            <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
+                              {p.display_name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
+                            {p.display_name}
+                          </Link>
+                        </div>
+                        <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
+                          {p.points}
+                        </span>
+                        <span className="col-span-2 font-display text-sm text-success font-bold text-center">
+                          {p.wins}
+                        </span>
+                        <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
+                          {p.total_matches}
+                        </span>
+                        <div className="col-span-2 flex justify-end">
+                          {p.rank <= 3 && (
+                            <Trophy className={`h-4 w-4 ${rankColor(p.rank)}`} />
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
