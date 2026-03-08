@@ -203,8 +203,16 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Game *</Label>
-            <Input value={game} onChange={(e) => setGame(e.target.value)} required maxLength={100}
-              className="bg-card border-border font-body" />
+            <Select value={game} onValueChange={setGame} required>
+              <SelectTrigger className="bg-card border-border font-body">
+                <SelectValue placeholder="Select a game" />
+              </SelectTrigger>
+              <SelectContent>
+                {games.map((g) => (
+                  <SelectItem key={g.id} value={g.name}>{g.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Description</Label>
