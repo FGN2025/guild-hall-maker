@@ -40,7 +40,7 @@ const MediaPickerDialog = ({ open, onOpenChange, onSelect, excludeCategories = [
   const handleConfirm = () => {
     if (selected) {
       const item = filtered.find((m) => m.url === selected);
-      onSelect(selected, item?.file_path);
+      onSelect(selected, item?.file_path, item);
       setSelected(null);
       setSearch("");
       onOpenChange(false);
