@@ -25,7 +25,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isModerator } = useAuth();
   const { isTenantAdmin } = useTenantAdmin();
 
   const handleSignOut = async () => {
