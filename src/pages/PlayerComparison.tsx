@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useSearchParams } from "react-router-dom";
 import PlayerSelector from "@/components/compare/PlayerSelector";
 import ComparisonStatRow from "@/components/compare/ComparisonStatRow";

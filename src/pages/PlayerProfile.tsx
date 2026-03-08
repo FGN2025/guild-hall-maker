@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
 import { usePlayerAchievements } from "@/hooks/usePlayerAchievements";
 import { usePlayerGameBreakdown } from "@/hooks/usePlayerGameBreakdown";

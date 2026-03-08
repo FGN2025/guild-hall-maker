@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import {
   Accordion,
   AccordionContent,
