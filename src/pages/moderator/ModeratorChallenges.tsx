@@ -351,12 +351,14 @@ const ModeratorChallenges = () => {
                       <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>
                     )}
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-muted rounded-lg p-2">
-                        <Users className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
-                        <p className="font-heading text-xs font-semibold text-foreground">{c.enrollments_count}</p>
-                        <p className="text-[10px] text-muted-foreground">Enrolled</p>
-                      </div>
+                    <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-2 text-center`}>
+                      {isAdmin && (
+                        <div className="bg-muted rounded-lg p-2">
+                          <Users className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
+                          <p className="font-heading text-xs font-semibold text-foreground">{c.enrollments_count}</p>
+                          <p className="text-[10px] text-muted-foreground">Enrolled</p>
+                        </div>
+                      )}
                       <div className="bg-muted rounded-lg p-2">
                         <Star className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
                         <p className="font-heading text-xs font-semibold text-foreground">{c.points_first}</p>
