@@ -282,8 +282,12 @@ const ProfileSettings = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => {
+                      if (!discordClientId) {
+                        toast.error("Discord configuration not found. Contact an administrator.");
+                        return;
+                      }
                       const params = new URLSearchParams({
-                        client_id: discordClientId!,
+                        client_id: discordClientId,
                         redirect_uri: `${window.location.origin}/link-discord`,
                         response_type: "code",
                         scope: "identify guilds.members.read",
