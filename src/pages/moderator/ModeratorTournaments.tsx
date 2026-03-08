@@ -34,7 +34,7 @@ const statusColor: Record<string, string> = {
 const ALL_STATUSES = ["all", "open", "upcoming", "in_progress", "completed", "cancelled"];
 
 const ModeratorTournaments = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
