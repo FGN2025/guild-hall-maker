@@ -154,6 +154,10 @@ const AdminMarketing = () => {
         )}
         </TabsContent>
 
+        <TabsContent value="calendars" className="mt-4">
+          <CalendarPublishManager />
+        </TabsContent>
+
         <TabsContent value="web-pages" className="mt-4">
           <AdminWebPages />
         </TabsContent>
