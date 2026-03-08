@@ -482,7 +482,7 @@ const Leaderboard = () => {
 
                 {/* Full table */}
                 <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                  <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                  <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                     <button onClick={() => handleSort("rank")} className="col-span-1 flex items-center cursor-pointer hover:text-foreground transition-colors">
                       Rank <SortIcon col="rank" />
                     </button>
