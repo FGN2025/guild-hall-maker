@@ -8,8 +8,35 @@ import ParticlesBackground from "@/components/ParticlesBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
+const useHeroStats = () => {
+  return useQuery({
+    queryKey: ["hero-stats"],
+    queryFn: async () => {
+      const [tournamentsRes, regsRes, tenantsRes] = await Promise.all([
+        supabase.from("tournaments").select("id", { count: "exact", head: true }),
+        supabase.from("tournament_registrations").select("user_id", { count: "exact", head: true }),
+        supabase.from("tenants").select("id", { count: "exact", head: true }),
+      ]);
+
+      // For distinct player count, fetch user_ids and dedupe
+      const { data: regData } = await supabase
+        .from("tournament_registrations")
+        .select("user_id");
+      const distinctPlayers = new Set((regData ?? []).map((r: any) => r.user_id)).size;
+
+      return {
+        players: distinctPlayers,
+        tournaments: tournamentsRes.count ?? 0,
+        operators: tenantsRes.count ?? 0,
+      };
+    },
+    staleTime: 300_000,
+  });
+};
+
 const HeroSection = () => {
   const [logoUrl, setLogoUrl] = useState<string>(defaultLogo);
+  const { data: stats } = useHeroStats();
 
   useEffect(() => {
     supabase
