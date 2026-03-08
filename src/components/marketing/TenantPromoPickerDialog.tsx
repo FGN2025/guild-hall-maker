@@ -28,7 +28,7 @@ export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: strin
     texts.push({ text: dateStr, xPct: 0.05, yPct: 0.83, x: 40, y: 498, fontSize: 20, color: "#aaaaaa", fontFamily: "sans-serif" });
   }
   if (e.prize_pool) {
-    texts.push({ text: `Prize: ${e.prize_pool}`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: "#ffd700", fontFamily: "sans-serif" });
+    texts.push({ text: `Prize: ${e.prize_pool}`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: tenantPrimaryColor || "#ffd700", fontFamily: "sans-serif" });
   }
   return { imageUrl, texts };
 }
