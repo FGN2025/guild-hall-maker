@@ -42,7 +42,7 @@ const ALL_DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"];
 const ALL_STATUSES = ["all", "active", "inactive"];
 
 const ModeratorChallenges = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
