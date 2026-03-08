@@ -72,6 +72,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Browse — View all available tournaments with their game, format, prize pool, entry fee, and participant count.",
       "Search & Filter — Use the search bar and filters to find tournaments by game, status (Upcoming, Open, In Progress, Completed), or format.",
       "Register — Click on a tournament to view its full details (rules, description, prize pool), then hit Register to join. You can unregister before the tournament starts.",
+      "Multi-Date Events — Some tournaments run on multiple dates. Each date is listed as a separate event so you can pick the one that fits your schedule.",
       "Tournament Detail Pages — Each tournament has a dedicated page at /tournaments/:id with all information, registration controls, and bracket links. These URLs are shareable.",
       "Brackets — Once a tournament is in progress, view the live single-elimination bracket to see matchups, scores, and results. Winners advance automatically.",
       "Reset Bracket — Tournament creators can reset an existing bracket before any matches are completed. This deletes all match data, returns the tournament to Open status, and lets you modify registrations before regenerating.",
