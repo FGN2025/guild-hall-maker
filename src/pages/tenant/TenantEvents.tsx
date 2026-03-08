@@ -34,6 +34,7 @@ const TenantEvents = () => {
   const [editingEvent, setEditingEvent] = useState<TenantEvent | null>(null);
   const [promoEvent, setPromoEvent] = useState<TenantEvent | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const promoData = promoEvent ? buildTenantEventPromo(promoEvent, tenantInfo?.primaryColor) : null;
 
   const handleQuickCreate = async (event: TenantEvent) => {
