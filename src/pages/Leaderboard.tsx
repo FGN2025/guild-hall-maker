@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, CSSProperties } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import {
   Pagination,
