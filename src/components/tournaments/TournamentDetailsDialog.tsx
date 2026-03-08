@@ -41,7 +41,7 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
 
         <div className="space-y-5 mt-2">
           {t.description && (
-            <p className="text-sm text-muted-foreground font-body">{t.description}</p>
+            <p className="text-sm text-muted-foreground font-body whitespace-pre-line">{t.description}</p>
           )}
 
           <div className="grid grid-cols-2 gap-3">

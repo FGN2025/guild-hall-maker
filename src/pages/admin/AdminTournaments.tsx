@@ -315,7 +315,7 @@ const AdminTournaments = () => {
 
             <div className="space-y-4 mt-2">
               {detailTournament.description && (
-                <p className="text-sm text-muted-foreground">{detailTournament.description}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-line">{detailTournament.description}</p>
               )}
 
               <div className="grid grid-cols-2 gap-3">

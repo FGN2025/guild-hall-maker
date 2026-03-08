@@ -129,7 +129,7 @@ const TournamentDetail = () => {
             </div>
 
             {t.description && (
-              <p className="text-sm text-muted-foreground font-body">
+              <p className="text-sm text-muted-foreground font-body whitespace-pre-line">
                 {t.description}
               </p>
             )}

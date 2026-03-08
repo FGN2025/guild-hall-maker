@@ -61,9 +61,9 @@ const TournamentCard = ({
       </div>
       <h3 className="font-heading text-xl font-semibold text-foreground mb-1 line-clamp-1">{t.name}</h3>
       <p className="text-sm text-muted-foreground mb-2">{t.game}</p>
-      {t.description && (
-        <p className="text-xs text-muted-foreground mb-4 line-clamp-2">{t.description}</p>
-      )}
+      <div className="text-xs text-muted-foreground mb-4 h-[2.5rem] overflow-y-auto whitespace-pre-line">
+        {t.description || "\u00A0"}
+      </div>
       <div className="mt-auto grid grid-cols-3 gap-2 sm:gap-3 text-center">
         {[
           { icon: Calendar, label: "Date", value: dateStr },
