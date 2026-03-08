@@ -41,6 +41,9 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [tournamentRulesUrl, setTournamentRulesUrl] = useState("");
+  const [uploadingRules, setUploadingRules] = useState(false);
+  const rulesFileInputRef = useRef<HTMLInputElement>(null);
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
