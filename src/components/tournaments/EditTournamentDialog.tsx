@@ -11,6 +11,7 @@ import { Pencil, CalendarIcon, Upload, ImageIcon } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useGames } from "@/hooks/useGames";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
