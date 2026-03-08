@@ -257,6 +257,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Categories — Organize uploads by category: tournament banners, game covers, avatars, and more.",
       "Tags — Add searchable tags to your uploads for easy retrieval later.",
       "Media Picker — When creating tournaments or customizing your profile, use the built-in media picker to select from your uploaded library.",
+      "Widget Embeds — Interactive third-party widgets (e.g., Common Ninja) stored in the Widget Library can be embedded in web pages and marketing materials for dynamic content.",
       "AI Image Generation — Admins can generate images using AI directly within the media library for banners and promotional content.",
       "Tip: Upload high-quality images for tournament banners — they appear on tournament cards and detail pages.",
     ],
