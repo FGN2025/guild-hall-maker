@@ -12,21 +12,32 @@ const useHeroStats = () => {
   return useQuery({
     queryKey: ["hero-stats"],
     queryFn: async () => {
-      const [tournamentsRes, regsRes, tenantsRes] = await Promise.all([
+      const [tournamentsRes, tenantsRes, legacyRes, settingsRes] = await Promise.all([
         supabase.from("tournaments").select("id", { count: "exact", head: true }),
-        supabase.from("tournament_registrations").select("user_id", { count: "exact", head: true }),
         supabase.from("tenants").select("id", { count: "exact", head: true }),
+        supabase.from("legacy_users").select("id", { count: "exact", head: true }),
+        supabase.from("app_settings").select("key, value").in("key", [
+          "historical_tournament_count",
+          "historical_player_count_offset",
+        ]),
       ]);
 
-      // For distinct player count, fetch user_ids and dedupe
+      const settings = new Map((settingsRes.data ?? []).map((s: any) => [s.key, parseInt(s.value) || 0]));
+      const historicalTournaments = settings.get("historical_tournament_count") ?? 0;
+      const playerOffset = settings.get("historical_player_count_offset") ?? 0;
+
+      // Distinct current players from tournament registrations
       const { data: regData } = await supabase
         .from("tournament_registrations")
         .select("user_id");
       const distinctPlayers = new Set((regData ?? []).map((r: any) => r.user_id)).size;
 
+      // Legacy users who haven't been matched (avoid double-counting)
+      const unmatchedLegacy = (legacyRes.count ?? 0);
+
       return {
-        players: distinctPlayers,
-        tournaments: tournamentsRes.count ?? 0,
+        players: distinctPlayers + unmatchedLegacy + playerOffset,
+        tournaments: (tournamentsRes.count ?? 0) + historicalTournaments,
         operators: tenantsRes.count ?? 0,
       };
     },
