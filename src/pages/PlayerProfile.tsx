@@ -12,6 +12,7 @@ import PlayerAchievements from "@/components/player/PlayerAchievements";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Gamepad2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PlayerProfile = () => {
   usePageTitle("Player Profile");
@@ -31,8 +32,28 @@ const PlayerProfile = () => {
         </Link>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          <div className="space-y-8">
+            {/* Profile header skeleton */}
+            <div className="rounded-xl border border-border bg-card p-6 flex items-center gap-6 animate-pulse">
+              <Skeleton className="h-20 w-20 rounded-full shrink-0" />
+              <div className="space-y-3 flex-1">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+              </div>
+            </div>
+            {/* Stats grid skeleton */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-border bg-card p-5 animate-pulse" style={{ animationDelay: `${i * 75}ms` }}>
+                  <Skeleton className="h-8 w-16 mb-1" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : !profile ? (
           <div className="rounded-xl border border-border bg-card p-12 text-center">
