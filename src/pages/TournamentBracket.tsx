@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 
 import { useBracket } from "@/hooks/useBracket";
 import BracketMatchCard from "@/components/tournaments/BracketMatchCard";

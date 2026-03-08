@@ -1,4 +1,5 @@
 import { useState } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useParams, Link } from "react-router-dom";
 import { useChallengeDetail } from "@/hooks/useChallengeDetail";
 import { useChallengeEnrollment } from "@/hooks/useChallengeEnrollment";

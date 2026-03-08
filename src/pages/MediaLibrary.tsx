@@ -1,4 +1,5 @@
 import { useState } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 
 import { useMediaLibrary } from "@/hooks/useMediaLibrary";
 import MediaUploader from "@/components/media/MediaUploader";
