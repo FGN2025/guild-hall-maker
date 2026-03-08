@@ -443,7 +443,7 @@ const Leaderboard = () => {
               <>
                 {/* Top 3 podium */}
                 {topThree.length >= 3 && (
-                  <div className="grid grid-cols-3 gap-4 mb-10 max-w-2xl mx-auto">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-10 max-w-2xl mx-auto">
                     {podiumOrder.map((p, i) => {
                       const heights = ["h-28", "h-36", "h-24"];
                       const isFirst = p.rank === 1;
