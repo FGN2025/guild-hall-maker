@@ -67,7 +67,13 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
                 <FileText className="h-4 w-4 text-primary" />
                 <span className="font-heading text-sm text-foreground">Rules</span>
               </div>
-              <p className="text-xs text-muted-foreground font-body whitespace-pre-wrap">{t.rules}</p>
+              {/^https?:\/\/.+\.pdf(\?.*)?$/i.test(t.rules) ? (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => window.open(t.rules, '_blank')}>
+                  <FileText className="h-3 w-3" /> View Rules PDF
+                </Button>
+              ) : (
+                <p className="text-xs text-muted-foreground font-body whitespace-pre-wrap">{t.rules}</p>
+              )}
             </div>
           )}
 

@@ -211,6 +211,62 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
             <Textarea value={guideContent} onChange={e => setGuideContent(e.target.value)} rows={6} placeholder="Markdown or plain text..." />
           </div>
           <div>
+            <Label>Tournament Rules PDF</Label>
+            {tournamentRulesUrl && (
+              <div className="flex items-center gap-2 mt-1 mb-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <a href={tournamentRulesUrl} target="_blank" rel="noopener noreferrer"
+                  className="text-sm text-primary underline truncate max-w-[200px]">
+                  View current PDF
+                </a>
+                <button type="button" onClick={() => setTournamentRulesUrl("")}
+                  className="bg-background/80 rounded-full p-0.5 hover:bg-destructive/80 transition-colors">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => rulesFileInputRef.current?.click()}
+              disabled={uploadingRules}
+              className="gap-1"
+            >
+              {uploadingRules ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {uploadingRules ? "Uploading..." : "Upload PDF"}
+            </Button>
+            <input
+              ref={rulesFileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.type !== "application/pdf") {
+                  toast({ title: "Invalid file", description: "Only PDF files are allowed.", variant: "destructive" });
+                  if (rulesFileInputRef.current) rulesFileInputRef.current.value = "";
+                  return;
+                }
+                setUploadingRules(true);
+                try {
+                  const fileName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.pdf`;
+                  const path = `game-rules/${fileName}`;
+                  const { error } = await supabase.storage.from("app-media").upload(path, file, { contentType: file.type });
+                  if (error) throw error;
+                  const { data: { publicUrl } } = supabase.storage.from("app-media").getPublicUrl(path);
+                  setTournamentRulesUrl(publicUrl);
+                } catch (err: any) {
+                  toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                } finally {
+                  setUploadingRules(false);
+                  if (rulesFileInputRef.current) rulesFileInputRef.current.value = "";
+                }
+              }}
+            />
+          </div>
+          <div>
             <Label>Platform Tags (comma separated)</Label>
             <Input value={platformTags} onChange={e => setPlatformTags(e.target.value)} placeholder="PC, PS5, Xbox" />
           </div>
