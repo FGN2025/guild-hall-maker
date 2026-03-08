@@ -125,7 +125,17 @@ const TenantMarketing = () => {
                 const isUpdated = !isNew && now - updatedMs < 3 * 24 * 60 * 60 * 1000;
 
                 return (
-                  <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
+                  <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
+                    {assetMap[c.id]?.first_url && (
+                      <div className="h-12 w-full bg-muted">
+                        <img
+                          src={assetMap[c.id].first_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-lg font-heading">{c.title}</CardTitle>
@@ -140,6 +150,10 @@ const TenantMarketing = () => {
                     <CardContent>
                       <Badge variant="outline" className="mb-2 capitalize">{c.category.replace("_", " ")}</Badge>
                       {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        <span>{assetMap[c.id] ? `${assetMap[c.id].count} asset${assetMap[c.id].count !== 1 ? 's' : ''}` : 'No assets yet'}</span>
+                      </div>
                     </CardContent>
                   </Card>
                 );
