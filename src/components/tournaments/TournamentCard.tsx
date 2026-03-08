@@ -29,8 +29,9 @@ const TournamentCard = ({
   isRegistering,
 }: TournamentCardProps) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const isFull = t.registrations_count >= t.max_participants;
+  const showRegCount = isAdmin || isModerator;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const dateStr = format(new Date(t.start_date), "MMM d, yyyy");
   const showBracket = t.status === "in_progress" || t.status === "completed";
@@ -66,7 +67,7 @@ const TournamentCard = ({
       <div className="mt-auto grid grid-cols-3 gap-3 text-center">
         {[
           { icon: Calendar, label: "Date", value: dateStr },
-          { icon: Users, label: "Players", value: `${t.registrations_count}/${t.max_participants}` },
+          { icon: Users, label: "Players", value: showRegCount ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max` },
           { icon: null, label: "Prize", value: null, isPrize: true },
         ].map((info: any) => (
           <div key={info.label} className="bg-muted rounded-lg p-3">
