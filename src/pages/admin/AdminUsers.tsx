@@ -104,8 +104,8 @@ const AdminUsers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u.id}>
+                  {users.map((u, idx) => (
+                    <TableRow key={u.id} className="animate-fade-in" style={{ animationDelay: `${idx * 50}ms`, animationFillMode: "both" }}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
