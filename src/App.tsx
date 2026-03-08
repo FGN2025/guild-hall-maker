@@ -72,7 +72,6 @@ import TenantPlayers from "./pages/tenant/TenantPlayers";
 import TenantEvents from "./pages/tenant/TenantEvents";
 import TenantGuide from "./pages/tenant/TenantGuide";
 import TenantEventPage from "./pages/TenantEventPage";
-import TenantEventPage from "./pages/TenantEventPage";
 import TenantEventDetail from "./pages/TenantEventDetail";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
