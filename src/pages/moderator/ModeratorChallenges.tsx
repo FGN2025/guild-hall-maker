@@ -274,7 +274,7 @@ const ModeratorChallenges = () => {
                     <TableHead>Game</TableHead>
                     <TableHead>Difficulty</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Enrolled</TableHead>
+                    {isAdmin && <TableHead>Enrolled</TableHead>}
                     <TableHead>Active</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
