@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Trophy, Zap, Users } from "lucide-react";
+import { Trophy, Zap, Users, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const HeroSection = () => {
   const [logoUrl, setLogoUrl] = useState<string>(defaultLogo);
