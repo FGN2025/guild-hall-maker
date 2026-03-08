@@ -261,8 +261,16 @@ const Leaderboard = () => {
             </div>
 
             {seasonalLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
+                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                  <span className="col-span-1">Rank</span>
+                  <span className="col-span-3">Player</span>
+                  <span className="col-span-2">Tier</span>
+                  <span className="col-span-2 text-center">Points</span>
+                  <span className="col-span-2 text-center">Wins</span>
+                  <span className="col-span-2 text-center">Matches</span>
+                </div>
+                <TableSkeleton columns={6} rows={10} showAvatar />
               </div>
             ) : !filteredSeasonalPlayers || filteredSeasonalPlayers.length === 0 ? (
               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm p-12 text-center">
