@@ -17,7 +17,7 @@ type PromoData = {
   texts: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>;
 };
 
-export function buildTenantEventPromo(e: TenantEvent): PromoData {
+export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: string | null): PromoData {
   const imageUrl = e.image_url || "";
   const dateStr = e.start_date ? format(new Date(e.start_date), "MMMM d, yyyy") : "";
   const texts: PromoData["texts"] = [
