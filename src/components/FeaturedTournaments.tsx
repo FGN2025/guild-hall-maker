@@ -10,10 +10,11 @@ const FeaturedTournaments = () => {
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["featured-tournaments"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const query = supabase
         .from("tournaments")
-        .select("id, name, game, start_date, max_participants, prize_pool, format, status")
-        .eq("is_featured" as any, true)
+        .select("id, name, game, start_date, max_participants, prize_pool, format, status") as any;
+      const { data, error } = await query
+        .eq("is_featured", true)
         .order("start_date", { ascending: true })
         .limit(3);
 
