@@ -8,6 +8,7 @@ import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText } from "lucid
 import { useNavigate } from "react-router-dom";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import TenantMarketingAssets from "./TenantMarketingAssets";
