@@ -93,17 +93,33 @@ const TenantMarketing = () => {
             <Card><CardContent className="py-16 text-center text-muted-foreground">No campaigns available yet.</CardContent></Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((c) => (
-                <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-heading">{c.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Badge variant="outline" className="mb-2 capitalize">{c.category.replace("_", " ")}</Badge>
-                    {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
-                  </CardContent>
-                </Card>
-              ))}
+              {filtered.map((c) => {
+                const now = Date.now();
+                const createdMs = new Date(c.created_at).getTime();
+                const updatedMs = new Date(c.updated_at).getTime();
+                const isNew = now - createdMs < 7 * 24 * 60 * 60 * 1000;
+                const isUpdated = !isNew && now - updatedMs < 3 * 24 * 60 * 60 * 1000;
+
+                return (
+                  <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-lg font-heading">{c.title}</CardTitle>
+                        {isNew && (
+                          <Badge className="bg-primary text-primary-foreground text-[10px] shrink-0">New</Badge>
+                        )}
+                        {isUpdated && (
+                          <Badge variant="secondary" className="text-[10px] shrink-0">Updated</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Badge variant="outline" className="mb-2 capitalize">{c.category.replace("_", " ")}</Badge>
+                      {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
 
