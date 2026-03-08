@@ -24,7 +24,7 @@ interface Props {
 
 const BASE_URL = "https://play.fgn.gg";
 
-const CalendarPublishManager = ({ tenantId }: Props) => {
+const CalendarPublishManager = ({ tenantId, tenantLogoUrl, tenantPrimaryColor, tenantAccentColor }: Props) => {
   const { user } = useAuth();
   const { data: configs, isLoading } = useCalendarPublishConfigs(tenantId);
   const upsert = useUpsertCalendarConfig();
