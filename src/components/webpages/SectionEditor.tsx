@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Image, Plus, Trash2 } from "lucide-react";
+import { Image, Plus, Trash2, Code2 } from "lucide-react";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import type { MediaItem } from "@/hooks/useMediaLibrary";
 
 interface Props {
   section: WebPageSection;
