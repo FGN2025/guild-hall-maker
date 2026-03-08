@@ -16,7 +16,7 @@ type PromoData = {
   texts: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>;
 };
 
-function buildTournamentPromo(t: any): PromoData {
+function buildTournamentPromo(t: any, accentColor?: string | null): PromoData {
   const imageUrl = t.image_url || t.game_cover_url || "";
   const dateStr = t.start_date ? format(new Date(t.start_date), "MMMM d, yyyy") : "";
   const texts: PromoData["texts"] = [
@@ -27,7 +27,7 @@ function buildTournamentPromo(t: any): PromoData {
     texts.push({ text: dateStr, xPct: 0.05, yPct: 0.83, x: 40, y: 498, fontSize: 20, color: "#aaaaaa", fontFamily: "sans-serif" });
   }
   if (t.prize_pool) {
-    texts.push({ text: `Prize: ${t.prize_pool}`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: "#ffd700", fontFamily: "sans-serif" });
+    texts.push({ text: `Prize: ${t.prize_pool}`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: accentColor || "#ffd700", fontFamily: "sans-serif" });
   }
   return { imageUrl, texts };
 }
