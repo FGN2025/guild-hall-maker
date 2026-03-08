@@ -1,17 +1,17 @@
 
 
-## Phase: Add Helper Text to Career Path Mapping Form
-
-### Problem
-The Career Path mapping inputs in the Ecosystem settings lack clear guidance, making it hard for admins to know what values to enter for `external_path_id` and `external_module_id`.
+## Update Calendar Page Header
 
 ### Changes
 
-#### `src/pages/admin/AdminEcosystem.tsx`
+#### `src/components/admin/CalendarPublishManager.tsx`
 
-1. Update the `external_path_id` input placeholder to `"e.g. cdl-class-a or path-001"`.
-2. Update the `external_module_id` input placeholder to `"e.g. module-safety-101 (optional)"`.
-3. Add a small `<p>` helper paragraph below the mapping form inputs explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+Replace the current small header (line ~72-75 area with `Calendar` icon + `h3` "Publish Calendar") with a header matching the Web Pages style:
 
-No backend or migration changes needed.
+```tsx
+<h1 className="font-display text-3xl font-bold text-foreground">Calendars</h1>
+<p className="text-muted-foreground font-heading text-sm mt-1">Create custom branded monthly event calendars</p>
+```
+
+Keep the "New Calendar" button positioned the same way.
 
