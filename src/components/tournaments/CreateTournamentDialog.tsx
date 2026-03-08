@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Upload, CalendarIcon, ImageIcon, X } from "lucide-react";
+import { Plus, Upload, CalendarIcon, ImageIcon, X, FileText } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -332,8 +332,46 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Rules</Label>
-            <Textarea value={rules} onChange={(e) => setRules(e.target.value)} maxLength={2000}
-              className="bg-card border-border font-body min-h-[80px]" placeholder="Tournament rules..." />
+            {(() => {
+              const selectedGame = games.find((g) => g.name === game);
+              const hasGamePdf = selectedGame?.tournament_rules_url;
+              return (
+                <div className="space-y-2">
+                  {hasGamePdf && (
+                    <div className="flex items-center gap-2 p-2 rounded-md bg-primary/5 border border-primary/20">
+                      <FileText className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-xs text-muted-foreground">
+                        {selectedGame.name} has standard rules PDF
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="ml-auto text-xs h-7"
+                        onClick={() => setRules(selectedGame.tournament_rules_url!)}
+                      >
+                        Use Game Rules PDF
+                      </Button>
+                    </div>
+                  )}
+                  {rules && /^https?:\/\/.+\.pdf(\?.*)?$/i.test(rules) ? (
+                    <div className="flex items-center gap-2 p-3 rounded-md bg-muted border border-border">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <a href={rules} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline truncate">
+                        View Rules PDF
+                      </a>
+                      <Button type="button" variant="ghost" size="sm" className="ml-auto h-7 text-xs"
+                        onClick={() => setRules("")}>
+                        Switch to Freeform
+                      </Button>
+                    </div>
+                  ) : (
+                    <Textarea value={rules} onChange={(e) => setRules(e.target.value)} maxLength={2000}
+                      className="bg-card border-border font-body min-h-[80px]" placeholder="Tournament rules..." />
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <Button type="submit" disabled={isCreating || uploadingImage || startDates.length === 0}
             className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5">

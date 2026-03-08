@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Loader2, ImageIcon } from "lucide-react";
+import { Upload, X, Loader2, ImageIcon, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
@@ -41,6 +41,9 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [tournamentRulesUrl, setTournamentRulesUrl] = useState("");
+  const [uploadingRules, setUploadingRules] = useState(false);
+  const rulesFileInputRef = useRef<HTMLInputElement>(null);
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -93,9 +96,11 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       setGuideContent(editGame.guide_content ?? "");
       setPlatformTags((editGame.platform_tags ?? []).join(", "));
       setIsActive(editGame.is_active);
+      setTournamentRulesUrl(editGame.tournament_rules_url ?? "");
     } else {
       setName(""); setSlug(""); setDescription(""); setCategory("General");
       setCoverImageUrl(""); setGuideContent(""); setPlatformTags(""); setIsActive(true);
+      setTournamentRulesUrl("");
     }
   }, [editGame, open]);
 
@@ -111,6 +116,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       name, slug: slug || slugify(name), description: description || null,
       category, cover_image_url: coverImageUrl || null,
       guide_content: guideContent || null, platform_tags: tags, is_active: isActive,
+      tournament_rules_url: tournamentRulesUrl || null,
     };
     if (editGame) payload.id = editGame.id;
     onSubmit(payload);
@@ -203,6 +209,62 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
           <div>
             <Label>User Guide</Label>
             <Textarea value={guideContent} onChange={e => setGuideContent(e.target.value)} rows={6} placeholder="Markdown or plain text..." />
+          </div>
+          <div>
+            <Label>Tournament Rules PDF</Label>
+            {tournamentRulesUrl && (
+              <div className="flex items-center gap-2 mt-1 mb-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <a href={tournamentRulesUrl} target="_blank" rel="noopener noreferrer"
+                  className="text-sm text-primary underline truncate max-w-[200px]">
+                  View current PDF
+                </a>
+                <button type="button" onClick={() => setTournamentRulesUrl("")}
+                  className="bg-background/80 rounded-full p-0.5 hover:bg-destructive/80 transition-colors">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => rulesFileInputRef.current?.click()}
+              disabled={uploadingRules}
+              className="gap-1"
+            >
+              {uploadingRules ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {uploadingRules ? "Uploading..." : "Upload PDF"}
+            </Button>
+            <input
+              ref={rulesFileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.type !== "application/pdf") {
+                  toast({ title: "Invalid file", description: "Only PDF files are allowed.", variant: "destructive" });
+                  if (rulesFileInputRef.current) rulesFileInputRef.current.value = "";
+                  return;
+                }
+                setUploadingRules(true);
+                try {
+                  const fileName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.pdf`;
+                  const path = `game-rules/${fileName}`;
+                  const { error } = await supabase.storage.from("app-media").upload(path, file, { contentType: file.type });
+                  if (error) throw error;
+                  const { data: { publicUrl } } = supabase.storage.from("app-media").getPublicUrl(path);
+                  setTournamentRulesUrl(publicUrl);
+                } catch (err: any) {
+                  toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                } finally {
+                  setUploadingRules(false);
+                  if (rulesFileInputRef.current) rulesFileInputRef.current.value = "";
+                }
+              }}
+            />
           </div>
           <div>
             <Label>Platform Tags (comma separated)</Label>

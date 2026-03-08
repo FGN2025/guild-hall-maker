@@ -10,6 +10,7 @@ export interface Game {
   category: string;
   cover_image_url: string | null;
   guide_content: string | null;
+  tournament_rules_url: string | null;
   platform_tags: string[];
   is_active: boolean;
   display_order: number;

@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Trophy, Gamepad2, FileText, GitBranch, Settings } from "lucide-react";
+import { Calendar, Users, Trophy, Gamepad2, FileText, GitBranch, Settings, ExternalLink } from "lucide-react";
 import { Tournament } from "@/hooks/useTournaments";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -67,7 +67,13 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
                 <FileText className="h-4 w-4 text-primary" />
                 <span className="font-heading text-sm text-foreground">Rules</span>
               </div>
-              <p className="text-xs text-muted-foreground font-body whitespace-pre-wrap">{t.rules}</p>
+              {/^https?:\/\/.+\.pdf(\?.*)?$/i.test(t.rules) ? (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => window.open(t.rules, '_blank')}>
+                  <FileText className="h-3 w-3" /> View Rules PDF
+                </Button>
+              ) : (
+                <p className="text-xs text-muted-foreground font-body whitespace-pre-wrap">{t.rules}</p>
+              )}
             </div>
           )}
 
