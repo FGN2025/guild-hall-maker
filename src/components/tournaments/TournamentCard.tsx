@@ -67,7 +67,7 @@ const TournamentCard = ({
       <div className="mt-auto grid grid-cols-3 gap-3 text-center">
         {[
           { icon: Calendar, label: "Date", value: dateStr },
-          { icon: Users, label: "Players", value: `${t.registrations_count}/${t.max_participants}` },
+          { icon: Users, label: "Players", value: showRegCount ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max` },
           { icon: null, label: "Prize", value: null, isPrize: true },
         ].map((info: any) => (
           <div key={info.label} className="bg-muted rounded-lg p-3">
