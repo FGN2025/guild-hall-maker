@@ -2327,6 +2327,7 @@ export type Database = {
           game: string
           id: string
           image_url: string | null
+          is_featured: boolean
           max_participants: number
           name: string
           points_first: number
@@ -2355,6 +2356,7 @@ export type Database = {
           game: string
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           max_participants?: number
           name: string
           points_first?: number
@@ -2383,6 +2385,7 @@ export type Database = {
           game?: string
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           max_participants?: number
           name?: string
           points_first?: number
