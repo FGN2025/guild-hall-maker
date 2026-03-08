@@ -11,7 +11,7 @@ const ALL_TABS = ["all", "games", "general", "tournament", "badge", "trophy", "b
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (url: string, filePath?: string) => void;
+  onSelect: (url: string, filePath?: string, item?: MediaItem) => void;
   excludeCategories?: string[];
 }
 
