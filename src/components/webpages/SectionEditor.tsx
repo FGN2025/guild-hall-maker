@@ -194,11 +194,27 @@ const SectionEditor = ({ section, onUpdate }: Props) => {
             initialTab="widget"
             onSelect={(_url, _fp, item?: MediaItem) => {
               if (item?.embed_code) {
-                set("embed_code", item.embed_code);
-                if (!c.label) set("label", item.file_name);
+                onUpdate({ ...c, embed_code: item.embed_code, thumbnail_url: item.url, label: c.label || item.file_name });
               }
             }}
           />
+          {c.thumbnail_url && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-heading">Widget Thumbnail</Label>
+              <div className="relative inline-block">
+                <img src={c.thumbnail_url} alt="Widget thumbnail" className="h-20 rounded-md border border-border object-cover" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-5 w-5"
+                  onClick={() => set("thumbnail_url", "")}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       );
 
