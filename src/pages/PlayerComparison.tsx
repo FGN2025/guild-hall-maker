@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
 const PlayerComparison = () => {
+  usePageTitle("Player Comparison");
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: players, isLoading: loadingPlayers } = useAllPlayers();
 

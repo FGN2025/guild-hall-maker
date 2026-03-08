@@ -14,6 +14,7 @@ import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
 
 const ProfileSettings = () => {
+  usePageTitle("Profile Settings");
   const { user, discordLinked, refreshDiscordStatus } = useAuth();
   const discordClientId = useDiscordClientId();
   const fileInputRef = useRef<HTMLInputElement>(null);

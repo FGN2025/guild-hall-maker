@@ -18,6 +18,7 @@ import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
 type SignupStep = "zip" | "subscriber-verify" | "account";
 
 const Auth = () => {
+  usePageTitle("Sign In");
   const [searchParams] = useSearchParams();
   const isInviteFlow = searchParams.get("invite") === "true";
   const inviteEmail = searchParams.get("email") || "";

@@ -20,6 +20,7 @@ import { useTournaments } from "@/hooks/useTournaments";
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const TournamentCalendar = () => {
+  usePageTitle("Tournament Calendar");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { tournaments, isLoading } = useTournaments();
   const navigate = useNavigate();

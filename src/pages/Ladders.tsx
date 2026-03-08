@@ -32,6 +32,7 @@ interface LadderEntry {
 }
 
 const Ladders = () => {
+  usePageTitle("Ladders");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedLadderId, setSelectedLadderId] = useState<string | null>(null);

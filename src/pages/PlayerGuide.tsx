@@ -376,6 +376,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
 ];
 
 const PlayerGuide = () => {
+  usePageTitle("Player Guide");
   const [search, setSearch] = useState("");
   const [showTop, setShowTop] = useState(false);
 

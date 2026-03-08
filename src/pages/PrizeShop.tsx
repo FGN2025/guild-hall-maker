@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import PageBackground from "@/components/PageBackground";
 
 const PrizeShop = () => {
+  usePageTitle("Prize Shop");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [confirmPrize, setConfirmPrize] = useState<any>(null);
