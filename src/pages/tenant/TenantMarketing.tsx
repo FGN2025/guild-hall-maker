@@ -22,6 +22,7 @@ const TenantMarketing = () => {
   const [category, setCategory] = useState("all");
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { tenantInfo } = useTenantAdmin();
 
   // Fetch asset counts + first thumbnail per campaign in a single query
   const { data: assetSummaryRaw } = useQuery({
