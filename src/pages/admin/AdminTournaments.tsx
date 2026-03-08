@@ -248,9 +248,9 @@ const AdminTournaments = () => {
                   <p className="text-sm text-muted-foreground">{t.game}</p>
                 </div>
 
-                {t.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">{t.description}</p>
-                )}
+                <div className="text-xs text-muted-foreground h-[2.5rem] overflow-y-auto whitespace-pre-line">
+                  {t.description || "\u00A0"}
+                </div>
 
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-muted rounded-lg p-2">
@@ -315,7 +315,7 @@ const AdminTournaments = () => {
 
             <div className="space-y-4 mt-2">
               {detailTournament.description && (
-                <p className="text-sm text-muted-foreground">{detailTournament.description}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-line">{detailTournament.description}</p>
               )}
 
               <div className="grid grid-cols-2 gap-3">
