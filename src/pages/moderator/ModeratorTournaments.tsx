@@ -201,7 +201,7 @@ const ModeratorTournaments = () => {
                   <TableCell>
                     <Badge variant="outline" className={statusColor[t.status] ?? ""}>{t.status.replace("_", " ")}</Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{t.registrations_count}/{t.max_participants}</TableCell>
+                  <TableCell className="text-muted-foreground">{isAdmin ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max`}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {format(new Date(t.start_date), "MMM d, yyyy")}
                   </TableCell>
