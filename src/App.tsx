@@ -49,7 +49,7 @@ import MarketingRoute from "./components/admin/MarketingRoute";
 import AdminAccessRequests from "./pages/admin/AdminAccessRequests";
 import AdminLegacyUsers from "./pages/admin/AdminLegacyUsers";
 import AdminEcosystem from "./pages/admin/AdminEcosystem";
-import AdminWebPages from "./pages/admin/AdminWebPages";
+
 import ModeratorRoute from "./components/moderator/ModeratorRoute";
 import ModeratorDashboard from "./pages/moderator/ModeratorDashboard";
 import ModeratorTournaments from "./pages/moderator/ModeratorTournaments";
