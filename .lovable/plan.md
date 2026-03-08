@@ -1,11 +1,13 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Fix: `Can't find variable: isAdmin` in ModeratorTournaments
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+### Root Cause
+The saved file at `src/pages/moderator/ModeratorTournaments.tsx` is correct — line 37 already has `const { user, isAdmin } = useAuth()`. However, the browser's hot-reload is running a stale version (the error points to line 665, but the file is only 413 lines).
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+### Fix
+A trivial no-op edit (e.g., adding/removing a blank line) to `src/pages/moderator/ModeratorTournaments.tsx` will force a fresh HMR update and clear the stale module. This will resolve the runtime crash immediately.
+
+### Single file change
+**`src/pages/moderator/ModeratorTournaments.tsx`** — touch the file to trigger a rebuild. No logic changes needed; the code is already correct.
 
