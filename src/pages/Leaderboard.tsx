@@ -218,14 +218,14 @@ const Leaderboard = () => {
           {/* SEASONAL TAB */}
           <TabsContent value="seasonal" className="mt-6">
             {/* Season selector */}
-            <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
               <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm font-heading text-muted-foreground mr-1">Season:</span>
               <Select
                 value={effectiveSeasonId ?? ""}
                 onValueChange={(v) => setSelectedSeasonId(v)}
               >
-                <SelectTrigger className="w-[220px] h-9 text-sm bg-background border-border">
+                <SelectTrigger className="w-full sm:w-[220px] h-9 text-sm bg-background border-border">
                   <SelectValue placeholder="Select season" />
                 </SelectTrigger>
                 <SelectContent>
@@ -262,7 +262,7 @@ const Leaderboard = () => {
 
             {seasonalLoading ? (
               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                   <span className="col-span-1">Rank</span>
                   <span className="col-span-3">Player</span>
                   <span className="col-span-2">Tier</span>
@@ -283,7 +283,7 @@ const Leaderboard = () => {
             ) : (
               <>
                 <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                  <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                  <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                     <span className="col-span-1">Rank</span>
                     <span className="col-span-3">Player</span>
                     <span className="col-span-2">Tier</span>
@@ -292,39 +292,67 @@ const Leaderboard = () => {
                     <span className="col-span-2 text-center">Matches</span>
                   </div>
                   {paginatedSeasonal.map((p, idx) => {
-                    const totalMatches = p.wins + p.losses + (p.tournaments_played > 0 ? 0 : 0);
                     return (
-                      <div
-                        key={p.user_id}
-                        className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
-                        style={staggerStyle(idx)}
-                      >
-                        <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
-                          #{p.rank}
-                        </span>
-                        <div className="col-span-3 flex items-center gap-3 min-w-0">
+                      <div key={p.user_id}>
+                        {/* Mobile layout */}
+                        <div
+                          className="md:hidden flex items-center gap-3 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors animate-fade-in"
+                          style={staggerStyle(idx)}
+                        >
+                          <span className={`font-display font-bold text-lg w-8 shrink-0 ${rankColor(p.rank)}`}>
+                            #{p.rank}
+                          </span>
                           <Avatar className="h-8 w-8 shrink-0">
                             <AvatarImage src={p.avatar_url ?? undefined} />
                             <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
                               {p.display_name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
-                            {p.display_name}
-                          </Link>
+                          <div className="flex-1 min-w-0">
+                            <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate block hover:text-primary transition-colors">
+                              {p.display_name}
+                            </Link>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <TierBadge tier={p.tier} />
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="font-display text-sm text-primary font-bold">{p.points} pts</p>
+                            <p className="text-xs text-muted-foreground">{p.wins}W / {p.wins + p.losses}M</p>
+                          </div>
                         </div>
-                        <div className="col-span-2">
-                          <TierBadge tier={p.tier} />
+                        {/* Desktop layout */}
+                        <div
+                          className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                          style={staggerStyle(idx)}
+                        >
+                          <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
+                            #{p.rank}
+                          </span>
+                          <div className="col-span-3 flex items-center gap-3 min-w-0">
+                            <Avatar className="h-8 w-8 shrink-0">
+                              <AvatarImage src={p.avatar_url ?? undefined} />
+                              <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
+                                {p.display_name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
+                              {p.display_name}
+                            </Link>
+                          </div>
+                          <div className="col-span-2">
+                            <TierBadge tier={p.tier} />
+                          </div>
+                          <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
+                            {p.points}
+                          </span>
+                          <span className="col-span-2 font-display text-sm text-success font-bold text-center">
+                            {p.wins}
+                          </span>
+                          <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
+                            {p.wins + p.losses}
+                          </span>
                         </div>
-                        <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
-                          {p.points}
-                        </span>
-                        <span className="col-span-2 font-display text-sm text-success font-bold text-center">
-                          {p.wins}
-                        </span>
-                        <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
-                          {p.wins + p.losses}
-                        </span>
                       </div>
                     );
                   })}
@@ -337,12 +365,14 @@ const Leaderboard = () => {
           {/* ALL-TIME TAB */}
           <TabsContent value="alltime" className="mt-6">
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
-              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-heading text-muted-foreground mr-1">Filters:</span>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-sm font-heading text-muted-foreground">Filters:</span>
+              </div>
 
               <Select value={game} onValueChange={(v) => { setGame(v); setTournamentId("all"); }}>
-                <SelectTrigger className="w-[160px] h-9 text-sm bg-background border-border">
+                <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm bg-background border-border">
                   <SelectValue placeholder="All Games" />
                 </SelectTrigger>
                 <SelectContent>
@@ -354,7 +384,7 @@ const Leaderboard = () => {
               </Select>
 
               <Select value={tournamentId} onValueChange={setTournamentId}>
-                <SelectTrigger className="w-[200px] h-9 text-sm bg-background border-border">
+                <SelectTrigger className="w-full sm:w-[200px] h-9 text-sm bg-background border-border">
                   <SelectValue placeholder="All Tournaments" />
                 </SelectTrigger>
                 <SelectContent>
@@ -366,7 +396,7 @@ const Leaderboard = () => {
               </Select>
 
               <Select value={timePeriod} onValueChange={setTimePeriod}>
-                <SelectTrigger className="w-[150px] h-9 text-sm bg-background border-border">
+                <SelectTrigger className="w-full sm:w-[150px] h-9 text-sm bg-background border-border">
                   <SelectValue placeholder="All Time" />
                 </SelectTrigger>
                 <SelectContent>
@@ -390,7 +420,7 @@ const Leaderboard = () => {
 
             {isLoading ? (
               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                   <span className="col-span-1">Rank</span>
                   <span className="col-span-3">Player</span>
                   <span className="col-span-2 text-center">Points</span>
@@ -412,7 +442,7 @@ const Leaderboard = () => {
               <>
                 {/* Top 3 podium */}
                 {topThree.length >= 3 && (
-                  <div className="grid grid-cols-3 gap-4 mb-10 max-w-2xl mx-auto">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-10 max-w-2xl mx-auto">
                     {podiumOrder.map((p, i) => {
                       const heights = ["h-28", "h-36", "h-24"];
                       const isFirst = p.rank === 1;
@@ -424,7 +454,7 @@ const Leaderboard = () => {
                               {p.display_name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm text-center truncate max-w-[120px] hover:text-primary transition-colors">
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-xs sm:text-sm text-center truncate max-w-[80px] sm:max-w-[120px] hover:text-primary transition-colors">
                             {p.display_name}
                           </Link>
                           <p className="font-display text-xs text-primary">{p.points} Points</p>
@@ -451,7 +481,7 @@ const Leaderboard = () => {
 
                 {/* Full table */}
                 <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                  <div className="grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                  <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                     <button onClick={() => handleSort("rank")} className="col-span-1 flex items-center cursor-pointer hover:text-foreground transition-colors">
                       Rank <SortIcon col="rank" />
                     </button>
@@ -473,38 +503,67 @@ const Leaderboard = () => {
                     </div>
                   ) : (
                     paginatedAllTime.map((p, idx) => (
-                    <div
-                      key={p.user_id}
-                      className="grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
-                      style={staggerStyle(idx)}
-                    >
-                      <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
-                        #{p.rank}
-                      </span>
-                      <div className="col-span-3 flex items-center gap-3 min-w-0">
+                    <div key={p.user_id}>
+                      {/* Mobile */}
+                      <div
+                        className="md:hidden flex items-center gap-3 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors animate-fade-in"
+                        style={staggerStyle(idx)}
+                      >
+                        <span className={`font-display font-bold text-lg w-8 shrink-0 ${rankColor(p.rank)}`}>
+                          #{p.rank}
+                        </span>
                         <Avatar className="h-8 w-8 shrink-0">
                           <AvatarImage src={p.avatar_url ?? undefined} />
                           <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
                             {p.display_name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
-                          {p.display_name}
-                        </Link>
-                      </div>
-                      <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
-                        {p.points}
-                      </span>
-                      <span className="col-span-2 font-display text-sm text-success font-bold text-center">
-                        {p.wins}
-                      </span>
-                      <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
-                        {p.total_matches}
-                      </span>
-                      <div className="col-span-2 flex justify-end">
+                        <div className="flex-1 min-w-0">
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate block hover:text-primary transition-colors">
+                            {p.display_name}
+                          </Link>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-display text-sm text-primary font-bold">{p.points} pts</p>
+                          <p className="text-xs text-muted-foreground">{p.wins}W / {p.total_matches}M</p>
+                        </div>
                         {p.rank <= 3 && (
-                          <Trophy className={`h-4 w-4 ${rankColor(p.rank)}`} />
+                          <Trophy className={`h-4 w-4 shrink-0 ${rankColor(p.rank)}`} />
                         )}
+                      </div>
+                      {/* Desktop */}
+                      <div
+                        className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                        style={staggerStyle(idx)}
+                      >
+                        <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
+                          #{p.rank}
+                        </span>
+                        <div className="col-span-3 flex items-center gap-3 min-w-0">
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarImage src={p.avatar_url ?? undefined} />
+                            <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
+                              {p.display_name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
+                            {p.display_name}
+                          </Link>
+                        </div>
+                        <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
+                          {p.points}
+                        </span>
+                        <span className="col-span-2 font-display text-sm text-success font-bold text-center">
+                          {p.wins}
+                        </span>
+                        <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
+                          {p.total_matches}
+                        </span>
+                        <div className="col-span-2 flex justify-end">
+                          {p.rank <= 3 && (
+                            <Trophy className={`h-4 w-4 ${rankColor(p.rank)}`} />
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
