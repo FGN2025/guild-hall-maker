@@ -113,7 +113,7 @@ const FeaturedTournaments = () => {
                 <div className="mt-auto grid grid-cols-3 gap-3 text-center">
                   {[
                     { icon: Calendar, label: "Date", value: t.date },
-                    { icon: Users, label: "Players", value: t.players },
+                    { icon: Users, label: "Players", value: showRegCount ? t.players : t.playersMax },
                     { icon: Trophy, label: "Prize", value: t.prize },
                   ].map((info) => (
                     <div key={info.label} className="bg-muted rounded-lg p-3">
