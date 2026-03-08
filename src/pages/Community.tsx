@@ -77,7 +77,7 @@ const Community = () => {
               ))}
             </div>
           ) : topics && topics.length > 0 ? (
-            topics.map((t) => (
+            topics.map((t, idx) => (
               <div
                 key={t.id}
                 onClick={() => setSelectedTopic(t)}
