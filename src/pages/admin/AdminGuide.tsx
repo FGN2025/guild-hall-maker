@@ -403,7 +403,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "In-App Notifications — Players see a bell icon in the sidebar with an unread count badge. Clicking opens a slide-out panel with all notifications.",
       "Real-Time Delivery — Notifications are pushed instantly via real-time subscriptions — no page refresh needed.",
       "Prize Redemption Alerts — When a moderator approves, fulfills, or denies a redemption, the player is automatically notified with the prize name and new status.",
-      "New Challenge Alerts — When a new active challenge is created from the Moderator Panel, all registered players receive a notification with the challenge name and point reward.",
+      "New Challenge Alerts — When a new active challenge is created from the Moderator Dashboard, all registered players receive a notification with the challenge name and point reward.",
       "Tournament Starting — When a tournament status changes to 'In Progress', all registered players are notified that it's live.",
       "Upcoming Tournament Reminder — A scheduled job runs every hour and sends reminders ~24 hours before a tournament starts to all registered players. Duplicate reminders are automatically prevented.",
       "Registration Confirmed — Players receive instant confirmation when they register for a tournament.",
