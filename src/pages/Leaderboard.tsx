@@ -25,6 +25,12 @@ import {
 } from "@/components/ui/select";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
+import TableSkeleton from "@/components/ui/table-skeleton";
+
+const staggerStyle = (idx: number): CSSProperties => ({
+  animationDelay: `${idx * 50}ms`,
+  animationFillMode: "both",
+});
 
 type SortKey = "rank" | "total_matches" | "wins" | "points";
 type SortDir = "asc" | "desc";
