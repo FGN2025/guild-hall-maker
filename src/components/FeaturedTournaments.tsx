@@ -44,6 +44,7 @@ const FeaturedTournaments = () => {
         game: t.game,
         date: format(new Date(t.start_date), "MMM d, yyyy"),
         players: `${regCounts.get(t.id) || 0}/${t.max_participants}`,
+        playersMax: `${t.max_participants} max`,
         prize: t.prize_pool || "—",
         status: t.status === "open" ? "Open" : t.status === "in_progress" ? "Live" : "Upcoming",
         format: t.format?.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) || "",
