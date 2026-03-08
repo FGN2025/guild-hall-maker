@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import { TenantPromoPickerDialog } from "@/components/marketing/TenantPromoPickerDialog";
 
-const TenantMarketingAssets = () => {
+const TenantMarketingAssets = ({ embedded }: { embedded?: boolean }) => {
   const { tenantInfo } = useTenantAdmin();
   const { assets, isLoading, uploadAsset, togglePublish, deleteAsset } = useTenantMarketingAssets();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -42,12 +42,15 @@ const TenantMarketingAssets = () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className={embedded ? "space-y-6" : "p-6 max-w-5xl mx-auto space-y-6"}>
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">My Assets</h1>
-          <p className="text-sm text-muted-foreground mt-1">Your branded marketing assets</p>
-        </div>
+        {!embedded && (
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">My Assets</h1>
+            <p className="text-sm text-muted-foreground mt-1">Your branded marketing assets</p>
+          </div>
+        )}
+        {embedded && <div />}
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setPromoPickerOpen(true)}>
             <Megaphone className="h-4 w-4 mr-2" /> From Event

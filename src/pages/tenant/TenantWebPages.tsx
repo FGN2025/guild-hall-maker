@@ -11,7 +11,7 @@ import { Plus, FileText, Loader2, Trash2 } from "lucide-react";
 import WebPageEditor from "@/components/webpages/WebPageEditor";
 import { toast } from "sonner";
 
-const TenantWebPages = () => {
+const TenantWebPages = ({ embedded }: { embedded?: boolean }) => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
   const { pages, isLoadingPages, createPage, deletePage } = useWebPages(tenantId);
@@ -46,10 +46,13 @@ const TenantWebPages = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Web Pages</h1>
-          <p className="text-sm text-muted-foreground">Create and manage promotional web pages</p>
-        </div>
+        {!embedded && (
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Web Pages</h1>
+            <p className="text-sm text-muted-foreground">Create and manage promotional web pages</p>
+          </div>
+        )}
+        {embedded && <div />}
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> New Page</Button>

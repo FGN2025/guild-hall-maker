@@ -3,13 +3,16 @@ import { useMarketingCampaigns, MarketingCampaign } from "@/hooks/useMarketingCa
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Megaphone } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import TenantMarketingAssets from "./TenantMarketingAssets";
+import TenantCodes from "./TenantCodes";
+import TenantWebPages from "./TenantWebPages";
 
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 
@@ -45,53 +48,87 @@ const TenantMarketing = () => {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div>
         <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
-          <Megaphone className="h-8 w-8 text-primary" /> Marketing Library
+          <Megaphone className="h-8 w-8 text-primary" /> Marketing
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Browse and download marketing assets for your campaigns</p>
+        <p className="text-sm text-muted-foreground mt-1">Campaigns, assets, codes, and web pages in one place</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Tabs value={category} onValueChange={setCategory} className="flex-1">
-          <TabsList className="bg-muted">
-            {CATEGORY_TABS.map((t) => (
-              <TabsTrigger key={t} value={t} className="capitalize text-sm font-heading">
-                {t.replace("_", " ")}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search campaigns..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-        </div>
-      </div>
+      <Tabs defaultValue="campaigns" className="space-y-6">
+        <TabsList className="bg-muted">
+          <TabsTrigger value="campaigns" className="gap-2 font-heading">
+            <Megaphone className="h-4 w-4" /> Campaigns
+          </TabsTrigger>
+          <TabsTrigger value="assets" className="gap-2 font-heading">
+            <ImageIcon className="h-4 w-4" /> My Assets
+          </TabsTrigger>
+          <TabsTrigger value="codes" className="gap-2 font-heading">
+            <KeyRound className="h-4 w-4" /> Codes
+          </TabsTrigger>
+          <TabsTrigger value="webpages" className="gap-2 font-heading">
+            <FileText className="h-4 w-4" /> Web Pages
+          </TabsTrigger>
+        </TabsList>
 
-      {isLoading ? (
-        <div className="flex justify-center py-16"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>
-      ) : filtered.length === 0 ? (
-        <Card><CardContent className="py-16 text-center text-muted-foreground">No campaigns available yet.</CardContent></Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => (
-            <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-heading">{c.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Badge variant="outline" className="mb-2 capitalize">{c.category.replace("_", " ")}</Badge>
-                {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        {/* Campaigns Tab */}
+        <TabsContent value="campaigns" className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Tabs value={category} onValueChange={setCategory} className="flex-1">
+              <TabsList className="bg-muted">
+                {CATEGORY_TABS.map((t) => (
+                  <TabsTrigger key={t} value={t} className="capitalize text-sm font-heading">
+                    {t.replace("_", " ")}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search campaigns..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            </div>
+          </div>
 
-      {/* Calendar Publish for this tenant */}
-      {tenantAdmin && (
-        <div className="rounded-lg border border-border bg-card p-6">
-          <CalendarPublishManager tenantId={tenantAdmin} />
-        </div>
-      )}
+          {isLoading ? (
+            <div className="flex justify-center py-16"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>
+          ) : filtered.length === 0 ? (
+            <Card><CardContent className="py-16 text-center text-muted-foreground">No campaigns available yet.</CardContent></Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((c) => (
+                <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-heading">{c.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Badge variant="outline" className="mb-2 capitalize">{c.category.replace("_", " ")}</Badge>
+                    {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {tenantAdmin && (
+            <div className="rounded-lg border border-border bg-card p-6">
+              <CalendarPublishManager tenantId={tenantAdmin} />
+            </div>
+          )}
+        </TabsContent>
+
+        {/* My Assets Tab */}
+        <TabsContent value="assets">
+          <TenantMarketingAssets embedded />
+        </TabsContent>
+
+        {/* Codes Tab */}
+        <TabsContent value="codes">
+          <TenantCodes embedded />
+        </TabsContent>
+
+        {/* Web Pages Tab */}
+        <TabsContent value="webpages">
+          <TenantWebPages embedded />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
