@@ -52,7 +52,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tenant Manager — Scoped access within a Tenant portal. Managers can view leads, events, marketing assets, and the tenant dashboard but cannot manage ZIP codes, subscribers, integrations, or team settings.",
       "Tenant Marketing — Scoped access to tenant events and marketing assets only.",
       "Moderator — Elevated privileges for community moderation, challenge management, prize/redemption review, ladder management, and point adjustments.",
-      "Roles are assigned via the Admin → Users panel or Tenant → Team page. A user can hold both an app-level role and a tenant role simultaneously.",
+      "Roles are assigned via the Admin → Users dashboard or Tenant → Team page. A user can hold both an app-level role and a tenant role simultaneously.",
     ],
   },
   {
