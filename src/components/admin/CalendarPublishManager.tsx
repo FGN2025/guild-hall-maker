@@ -17,6 +17,9 @@ import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 
 interface Props {
   tenantId?: string | null;
+  tenantLogoUrl?: string | null;
+  tenantPrimaryColor?: string | null;
+  tenantAccentColor?: string | null;
 }
 
 const BASE_URL = "https://play.fgn.gg";
