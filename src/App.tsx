@@ -137,7 +137,7 @@ const App = () => (
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/media" element={<AdminRoute><AdminMedia /></AdminRoute>} />
+            <Route path="/admin/media" element={<MarketingRoute><AdminMedia /></MarketingRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
             <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
@@ -148,7 +148,7 @@ const App = () => (
             <Route path="/admin/notebooks" element={<AdminRoute><AdminNotebooks /></AdminRoute>} />
             <Route path="/admin/seasons" element={<AdminRoute><AdminSeasons /></AdminRoute>} />
             <Route path="/admin/achievements" element={<AdminRoute><AdminAchievements /></AdminRoute>} />
-            <Route path="/admin/guide" element={<AdminRoute><AdminGuide /></AdminRoute>} />
+            <Route path="/admin/guide" element={<MarketingRoute><AdminGuide /></MarketingRoute>} />
             <Route path="/admin/marketing" element={<MarketingRoute><AdminMarketing /></MarketingRoute>} />
             <Route path="/admin/access-requests" element={<AdminRoute><AdminAccessRequests /></AdminRoute>} />
             <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
