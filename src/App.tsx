@@ -1,88 +1,117 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import Tournaments from "./pages/Tournaments";
-import Dashboard from "./pages/Dashboard";
-import Community from "./pages/Community";
-import Leaderboard from "./pages/Leaderboard";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import ProfileSettings from "./pages/ProfileSettings";
-import ProtectedRoute from "./components/ProtectedRoute";
-import LinkDiscord from "./pages/LinkDiscord";
-import AppLayout from "./components/AppLayout";
-import TournamentBracket from "./pages/TournamentBracket";
-import TournamentCalendar from "./pages/TournamentCalendar";
-import TournamentDetail from "./pages/TournamentDetail";
-import TournamentManage from "./pages/TournamentManage";
-import PlayerProfile from "./pages/PlayerProfile";
-import SeasonStats from "./pages/SeasonStats";
-import PlayerComparison from "./pages/PlayerComparison";
-import Achievements from "./pages/Achievements";
-import Challenges from "./pages/Challenges";
-import ChallengeDetail from "./pages/ChallengeDetail";
-import PrizeShop from "./pages/PrizeShop";
-import PlayerGuide from "./pages/PlayerGuide";
-import Games from "./pages/Games";
-import GameDetail from "./pages/GameDetail";
-import Ladders from "./pages/Ladders";
-import AdminRoute from "./components/admin/AdminRoute";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminMedia from "./pages/admin/AdminMedia";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminTournaments from "./pages/admin/AdminTournaments";
-import AdminChallenges from "./pages/admin/AdminChallenges";
-import AdminBypassCodes from "./pages/admin/AdminBypassCodes";
-import AdminTenants from "./pages/admin/AdminTenants";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminGames from "./pages/admin/AdminGames";
-import AdminNotebooks from "./pages/admin/AdminNotebooks";
-import AdminSeasons from "./pages/admin/AdminSeasons";
-import AdminAchievements from "./pages/admin/AdminAchievements";
-import AdminGuide from "./pages/admin/AdminGuide";
-import AdminMarketing from "./pages/admin/AdminMarketing";
-import MarketingRoute from "./components/admin/MarketingRoute";
-import AdminAccessRequests from "./pages/admin/AdminAccessRequests";
-import AdminLegacyUsers from "./pages/admin/AdminLegacyUsers";
-import AdminEcosystem from "./pages/admin/AdminEcosystem";
-
-import ModeratorRoute from "./components/moderator/ModeratorRoute";
-import ModeratorDashboard from "./pages/moderator/ModeratorDashboard";
-import ModeratorTournaments from "./pages/moderator/ModeratorTournaments";
-import ModeratorMatches from "./pages/moderator/ModeratorMatches";
-import ModeratorPoints from "./pages/moderator/ModeratorPoints";
-import ModeratorChallenges from "./pages/moderator/ModeratorChallenges";
-import ModeratorLadders from "./pages/moderator/ModeratorLadders";
-import ModeratorRedemptions from "./pages/moderator/ModeratorRedemptions";
-import ModeratorGuide from "./pages/moderator/ModeratorGuide";
-import TenantRoute from "./components/tenant/TenantRoute";
-import TenantDashboard from "./pages/tenant/TenantDashboard";
-import TenantLeads from "./pages/tenant/TenantLeads";
-import TenantZipCodes from "./pages/tenant/TenantZipCodes";
-import TenantSubscribers from "./pages/tenant/TenantSubscribers";
-import TenantTeam from "./pages/tenant/TenantTeam";
-import TenantSettings from "./pages/tenant/TenantSettings";
-import TenantMarketing from "./pages/tenant/TenantMarketing";
-import TenantMarketingDetail from "./pages/tenant/TenantMarketingDetail";
-import TenantPlayers from "./pages/tenant/TenantPlayers";
-import TenantEvents from "./pages/tenant/TenantEvents";
-import TenantGuide from "./pages/tenant/TenantGuide";
-import TenantEventPage from "./pages/TenantEventPage";
-import TenantEventDetail from "./pages/TenantEventDetail";
-import Terms from "./pages/Terms";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import AcceptableUsePolicy from "./pages/AcceptableUsePolicy";
-import DisabledUsersNotice from "./pages/DisabledUsersNotice";
 import CookieConsent from "./components/CookieConsent";
-import ResetPassword from "./pages/ResetPassword";
-import EmbedCalendar from "./pages/EmbedCalendar";
-import WebPageView from "./pages/WebPageView";
 
-const queryClient = new QueryClient();
+// Eagerly loaded — critical entry points
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AppLayout from "./components/AppLayout";
+import AdminRoute from "./components/admin/AdminRoute";
+import MarketingRoute from "./components/admin/MarketingRoute";
+import ModeratorRoute from "./components/moderator/ModeratorRoute";
+import TenantRoute from "./components/tenant/TenantRoute";
+
+// Lazy-loaded pages
+const Tournaments = lazy(() => import("./pages/Tournaments"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Community = lazy(() => import("./pages/Community"));
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
+const LinkDiscord = lazy(() => import("./pages/LinkDiscord"));
+const TournamentBracket = lazy(() => import("./pages/TournamentBracket"));
+const TournamentCalendar = lazy(() => import("./pages/TournamentCalendar"));
+const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
+const TournamentManage = lazy(() => import("./pages/TournamentManage"));
+const PlayerProfile = lazy(() => import("./pages/PlayerProfile"));
+const SeasonStats = lazy(() => import("./pages/SeasonStats"));
+const PlayerComparison = lazy(() => import("./pages/PlayerComparison"));
+const Achievements = lazy(() => import("./pages/Achievements"));
+const Challenges = lazy(() => import("./pages/Challenges"));
+const ChallengeDetail = lazy(() => import("./pages/ChallengeDetail"));
+const PrizeShop = lazy(() => import("./pages/PrizeShop"));
+const PlayerGuide = lazy(() => import("./pages/PlayerGuide"));
+const Games = lazy(() => import("./pages/Games"));
+const GameDetail = lazy(() => import("./pages/GameDetail"));
+const Ladders = lazy(() => import("./pages/Ladders"));
+const Terms = lazy(() => import("./pages/Terms"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const AcceptableUsePolicy = lazy(() => import("./pages/AcceptableUsePolicy"));
+const DisabledUsersNotice = lazy(() => import("./pages/DisabledUsersNotice"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const TenantEventPage = lazy(() => import("./pages/TenantEventPage"));
+const TenantEventDetail = lazy(() => import("./pages/TenantEventDetail"));
+const EmbedCalendar = lazy(() => import("./pages/EmbedCalendar"));
+const WebPageView = lazy(() => import("./pages/WebPageView"));
+const MediaLibrary = lazy(() => import("./pages/MediaLibrary"));
+
+// Admin pages
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminTournaments = lazy(() => import("./pages/admin/AdminTournaments"));
+const AdminChallenges = lazy(() => import("./pages/admin/AdminChallenges"));
+const AdminBypassCodes = lazy(() => import("./pages/admin/AdminBypassCodes"));
+const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminGames = lazy(() => import("./pages/admin/AdminGames"));
+const AdminNotebooks = lazy(() => import("./pages/admin/AdminNotebooks"));
+const AdminSeasons = lazy(() => import("./pages/admin/AdminSeasons"));
+const AdminAchievements = lazy(() => import("./pages/admin/AdminAchievements"));
+const AdminGuide = lazy(() => import("./pages/admin/AdminGuide"));
+const AdminMarketing = lazy(() => import("./pages/admin/AdminMarketing"));
+const AdminAccessRequests = lazy(() => import("./pages/admin/AdminAccessRequests"));
+const AdminLegacyUsers = lazy(() => import("./pages/admin/AdminLegacyUsers"));
+const AdminEcosystem = lazy(() => import("./pages/admin/AdminEcosystem"));
+const AdminWebPages = lazy(() => import("./pages/admin/AdminWebPages"));
+
+// Moderator pages
+const ModeratorDashboard = lazy(() => import("./pages/moderator/ModeratorDashboard"));
+const ModeratorTournaments = lazy(() => import("./pages/moderator/ModeratorTournaments"));
+const ModeratorMatches = lazy(() => import("./pages/moderator/ModeratorMatches"));
+const ModeratorPoints = lazy(() => import("./pages/moderator/ModeratorPoints"));
+const ModeratorChallenges = lazy(() => import("./pages/moderator/ModeratorChallenges"));
+const ModeratorLadders = lazy(() => import("./pages/moderator/ModeratorLadders"));
+const ModeratorRedemptions = lazy(() => import("./pages/moderator/ModeratorRedemptions"));
+const ModeratorGuide = lazy(() => import("./pages/moderator/ModeratorGuide"));
+
+// Tenant pages
+const TenantDashboard = lazy(() => import("./pages/tenant/TenantDashboard"));
+const TenantLeads = lazy(() => import("./pages/tenant/TenantLeads"));
+const TenantZipCodes = lazy(() => import("./pages/tenant/TenantZipCodes"));
+const TenantSubscribers = lazy(() => import("./pages/tenant/TenantSubscribers"));
+const TenantTeam = lazy(() => import("./pages/tenant/TenantTeam"));
+const TenantSettings = lazy(() => import("./pages/tenant/TenantSettings"));
+const TenantMarketing = lazy(() => import("./pages/tenant/TenantMarketing"));
+const TenantMarketingDetail = lazy(() => import("./pages/tenant/TenantMarketingDetail"));
+const TenantPlayers = lazy(() => import("./pages/tenant/TenantPlayers"));
+const TenantEvents = lazy(() => import("./pages/tenant/TenantEvents"));
+const TenantGuide = lazy(() => import("./pages/tenant/TenantGuide"));
+const TenantCodes = lazy(() => import("./pages/tenant/TenantCodes"));
+const TenantMarketingAssets = lazy(() => import("./pages/tenant/TenantMarketingAssets"));
+const TenantWebPages = lazy(() => import("./pages/tenant/TenantWebPages"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const PageLoader = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -92,95 +121,95 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <CookieConsent />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/acceptable-use" element={<AcceptableUsePolicy />} />
-            <Route path="/disabled-users" element={<DisabledUsersNotice />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
-            <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
-            <Route path="/embed/calendar/:configId" element={<EmbedCalendar />} />
-            <Route path="/pages/:tenantSlug/:pageSlug" element={<WebPageView />} />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/acceptable-use" element={<AcceptableUsePolicy />} />
+              <Route path="/disabled-users" element={<DisabledUsersNotice />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
+              <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
+              <Route path="/embed/calendar/:configId" element={<EmbedCalendar />} />
+              <Route path="/pages/:tenantSlug/:pageSlug" element={<WebPageView />} />
 
-            {/* Authenticated but Discord-exempt */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/link-discord" element={<LinkDiscord />} />
-            </Route>
+              {/* Authenticated but Discord-exempt */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/link-discord" element={<LinkDiscord />} />
+              </Route>
 
-            {/* Authenticated routes with sidebar */}
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/tournaments" element={<Tournaments />} />
-              <Route path="/tournaments/:id" element={<TournamentDetail />} />
-              <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
-              <Route path="/calendar" element={<TournamentCalendar />} />
-              <Route path="/tournaments/:id/manage" element={<TournamentManage />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/season-stats" element={<SeasonStats />} />
-              <Route path="/compare" element={<PlayerComparison />} />
-              <Route path="/achievements" element={<Achievements />} />
-              <Route path="/games" element={<Games />} />
-              <Route path="/games/:slug" element={<GameDetail />} />
-              <Route path="/player/:id" element={<PlayerProfile />} />
-              <Route path="/challenges" element={<Challenges />} />
-              <Route path="/challenges/:id" element={<ChallengeDetail />} />
-              <Route path="/prize-shop" element={<PrizeShop />} />
-              <Route path="/guide" element={<PlayerGuide />} />
-              <Route path="/ladders" element={<Ladders />} />
-              <Route path="/profile" element={<ProfileSettings />} />
-              
-            </Route>
+              {/* Authenticated routes with sidebar */}
+              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/tournaments" element={<Tournaments />} />
+                <Route path="/tournaments/:id" element={<TournamentDetail />} />
+                <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
+                <Route path="/calendar" element={<TournamentCalendar />} />
+                <Route path="/tournaments/:id/manage" element={<TournamentManage />} />
+                <Route path="/community" element={<Community />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/season-stats" element={<SeasonStats />} />
+                <Route path="/compare" element={<PlayerComparison />} />
+                <Route path="/achievements" element={<Achievements />} />
+                <Route path="/games" element={<Games />} />
+                <Route path="/games/:slug" element={<GameDetail />} />
+                <Route path="/player/:id" element={<PlayerProfile />} />
+                <Route path="/challenges" element={<Challenges />} />
+                <Route path="/challenges/:id" element={<ChallengeDetail />} />
+                <Route path="/prize-shop" element={<PrizeShop />} />
+                <Route path="/guide" element={<PlayerGuide />} />
+                <Route path="/ladders" element={<Ladders />} />
+                <Route path="/profile" element={<ProfileSettings />} />
+              </Route>
 
-            {/* Admin routes */}
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/media" element={<MarketingRoute><AdminMedia /></MarketingRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-            <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
-            <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
-            <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
-            <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
-            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-            <Route path="/admin/games" element={<AdminRoute><AdminGames /></AdminRoute>} />
-            <Route path="/admin/notebooks" element={<AdminRoute><AdminNotebooks /></AdminRoute>} />
-            <Route path="/admin/seasons" element={<AdminRoute><AdminSeasons /></AdminRoute>} />
-            <Route path="/admin/achievements" element={<AdminRoute><AdminAchievements /></AdminRoute>} />
-            <Route path="/admin/guide" element={<MarketingRoute><AdminGuide /></MarketingRoute>} />
-            <Route path="/admin/marketing" element={<MarketingRoute><AdminMarketing /></MarketingRoute>} />
-            <Route path="/admin/access-requests" element={<AdminRoute><AdminAccessRequests /></AdminRoute>} />
-            <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
-            <Route path="/admin/ecosystem" element={<AdminRoute><AdminEcosystem /></AdminRoute>} />
-            
+              {/* Admin routes */}
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/media" element={<MarketingRoute><AdminMedia /></MarketingRoute>} />
+              <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+              <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
+              <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
+              <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
+              <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
+              <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+              <Route path="/admin/games" element={<AdminRoute><AdminGames /></AdminRoute>} />
+              <Route path="/admin/notebooks" element={<AdminRoute><AdminNotebooks /></AdminRoute>} />
+              <Route path="/admin/seasons" element={<AdminRoute><AdminSeasons /></AdminRoute>} />
+              <Route path="/admin/achievements" element={<AdminRoute><AdminAchievements /></AdminRoute>} />
+              <Route path="/admin/guide" element={<MarketingRoute><AdminGuide /></MarketingRoute>} />
+              <Route path="/admin/marketing" element={<MarketingRoute><AdminMarketing /></MarketingRoute>} />
+              <Route path="/admin/access-requests" element={<AdminRoute><AdminAccessRequests /></AdminRoute>} />
+              <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
+              <Route path="/admin/ecosystem" element={<AdminRoute><AdminEcosystem /></AdminRoute>} />
 
-            {/* Moderator routes */}
-            <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
-            <Route path="/moderator/tournaments" element={<ModeratorRoute><ModeratorTournaments /></ModeratorRoute>} />
-            <Route path="/moderator/matches" element={<ModeratorRoute><ModeratorMatches /></ModeratorRoute>} />
-            <Route path="/moderator/points" element={<ModeratorRoute><ModeratorPoints /></ModeratorRoute>} />
-            <Route path="/moderator/challenges" element={<ModeratorRoute><ModeratorChallenges /></ModeratorRoute>} />
-            <Route path="/moderator/ladders" element={<ModeratorRoute><ModeratorLadders /></ModeratorRoute>} />
-            <Route path="/moderator/redemptions" element={<ModeratorRoute><ModeratorRedemptions /></ModeratorRoute>} />
-            <Route path="/moderator/guide" element={<ModeratorRoute><ModeratorGuide /></ModeratorRoute>} />
+              {/* Moderator routes */}
+              <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
+              <Route path="/moderator/tournaments" element={<ModeratorRoute><ModeratorTournaments /></ModeratorRoute>} />
+              <Route path="/moderator/matches" element={<ModeratorRoute><ModeratorMatches /></ModeratorRoute>} />
+              <Route path="/moderator/points" element={<ModeratorRoute><ModeratorPoints /></ModeratorRoute>} />
+              <Route path="/moderator/challenges" element={<ModeratorRoute><ModeratorChallenges /></ModeratorRoute>} />
+              <Route path="/moderator/ladders" element={<ModeratorRoute><ModeratorLadders /></ModeratorRoute>} />
+              <Route path="/moderator/redemptions" element={<ModeratorRoute><ModeratorRedemptions /></ModeratorRoute>} />
+              <Route path="/moderator/guide" element={<ModeratorRoute><ModeratorGuide /></ModeratorRoute>} />
 
-            {/* Tenant routes */}
-            <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
-            <Route path="/tenant/players" element={<TenantRoute><TenantPlayers /></TenantRoute>} />
-            <Route path="/tenant/leads" element={<TenantRoute><TenantLeads /></TenantRoute>} />
-            <Route path="/tenant/zip-codes" element={<TenantRoute><TenantZipCodes /></TenantRoute>} />
-            <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
-            <Route path="/tenant/team" element={<TenantRoute><TenantTeam /></TenantRoute>} />
-            <Route path="/tenant/settings" element={<TenantRoute><TenantSettings /></TenantRoute>} />
-            <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
-            <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
-            <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
-            <Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />
+              {/* Tenant routes */}
+              <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
+              <Route path="/tenant/players" element={<TenantRoute><TenantPlayers /></TenantRoute>} />
+              <Route path="/tenant/leads" element={<TenantRoute><TenantLeads /></TenantRoute>} />
+              <Route path="/tenant/zip-codes" element={<TenantRoute><TenantZipCodes /></TenantRoute>} />
+              <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
+              <Route path="/tenant/team" element={<TenantRoute><TenantTeam /></TenantRoute>} />
+              <Route path="/tenant/settings" element={<TenantRoute><TenantSettings /></TenantRoute>} />
+              <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
+              <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
+              <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
+              <Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />
 
-            <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
