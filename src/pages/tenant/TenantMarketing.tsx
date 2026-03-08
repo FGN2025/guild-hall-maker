@@ -8,6 +8,7 @@ import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText } from "lucid
 import { useNavigate } from "react-router-dom";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import TenantMarketingAssets from "./TenantMarketingAssets";
@@ -21,6 +22,7 @@ const TenantMarketing = () => {
   const [category, setCategory] = useState("all");
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { tenantInfo } = useTenantAdmin();
 
   // Fetch asset counts + first thumbnail per campaign in a single query
   const { data: assetSummaryRaw } = useQuery({
@@ -163,7 +165,12 @@ const TenantMarketing = () => {
 
           {tenantAdmin && (
             <div className="rounded-lg border border-border bg-card p-6">
-              <CalendarPublishManager tenantId={tenantAdmin} />
+              <CalendarPublishManager
+                tenantId={tenantAdmin}
+                tenantLogoUrl={tenantInfo?.logoUrl}
+                tenantPrimaryColor={tenantInfo?.primaryColor}
+                tenantAccentColor={tenantInfo?.accentColor}
+              />
             </div>
           )}
         </TabsContent>

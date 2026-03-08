@@ -89,6 +89,7 @@ const TenantMarketingAssets = ({ embedded }: { embedded?: boolean }) => {
           onOpenChange={setPromoPickerOpen}
           tenantId={tenantInfo.tenantId}
           onSave={handlePromoSave}
+          tenantPrimaryColor={tenantInfo.primaryColor}
         />
       )}
 

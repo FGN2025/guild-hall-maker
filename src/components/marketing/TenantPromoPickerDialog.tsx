@@ -17,7 +17,7 @@ type PromoData = {
   texts: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>;
 };
 
-export function buildTenantEventPromo(e: TenantEvent): PromoData {
+export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: string | null): PromoData {
   const imageUrl = e.image_url || "";
   const dateStr = e.start_date ? format(new Date(e.start_date), "MMMM d, yyyy") : "";
   const texts: PromoData["texts"] = [
@@ -28,7 +28,7 @@ export function buildTenantEventPromo(e: TenantEvent): PromoData {
     texts.push({ text: dateStr, xPct: 0.05, yPct: 0.83, x: 40, y: 498, fontSize: 20, color: "#aaaaaa", fontFamily: "sans-serif" });
   }
   if (e.prize_pool) {
-    texts.push({ text: `Prize: ${e.prize_pool}`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: "#ffd700", fontFamily: "sans-serif" });
+    texts.push({ text: `Prize: ${e.prize_pool}`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: tenantPrimaryColor || "#ffd700", fontFamily: "sans-serif" });
   }
   return { imageUrl, texts };
 }
@@ -98,9 +98,10 @@ interface TenantPromoPickerDialogProps {
   onOpenChange: (open: boolean) => void;
   tenantId: string;
   onSave: (blob: Blob) => Promise<void>;
+  tenantPrimaryColor?: string | null;
 }
 
-export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }: TenantPromoPickerDialogProps) {
+export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, tenantPrimaryColor }: TenantPromoPickerDialogProps) {
   const [search, setSearch] = useState("");
   const [selectedPromo, setSelectedPromo] = useState<PromoData | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
@@ -129,7 +130,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }
   const handleQuickCreate = async (evt: TenantEvent) => {
     setQuickCreating(evt.id);
     try {
-      const promo = buildTenantEventPromo(evt);
+      const promo = buildTenantEventPromo(evt, tenantPrimaryColor);
       const blob = await renderPromoToBlob(promo);
       await onSave(blob);
       toast.success("Promo created and saved!");
@@ -206,7 +207,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setSelectedPromo(buildTenantEventPromo(evt))}
+                  onClick={() => setSelectedPromo(buildTenantEventPromo(evt, tenantPrimaryColor))}
                   title="Open in editor"
                 >
                   <Pencil className="h-3.5 w-3.5" />

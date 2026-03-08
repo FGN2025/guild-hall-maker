@@ -17,11 +17,14 @@ import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 
 interface Props {
   tenantId?: string | null;
+  tenantLogoUrl?: string | null;
+  tenantPrimaryColor?: string | null;
+  tenantAccentColor?: string | null;
 }
 
 const BASE_URL = "https://play.fgn.gg";
 
-const CalendarPublishManager = ({ tenantId }: Props) => {
+const CalendarPublishManager = ({ tenantId, tenantLogoUrl, tenantPrimaryColor, tenantAccentColor }: Props) => {
   const { user } = useAuth();
   const { data: configs, isLoading } = useCalendarPublishConfigs(tenantId);
   const upsert = useUpsertCalendarConfig();
@@ -35,10 +38,10 @@ const CalendarPublishManager = ({ tenantId }: Props) => {
     setEditing({
       tenant_id: tenantId ?? null,
       title: "Tournament Calendar",
-      logo_url: null,
+      logo_url: tenantLogoUrl ?? null,
       bg_image_url: null,
-      primary_color: "#6366f1",
-      accent_color: "",
+      primary_color: tenantPrimaryColor || "#6366f1",
+      accent_color: tenantAccentColor || "",
       show_platform_tournaments: !tenantId,
       is_active: true,
     });

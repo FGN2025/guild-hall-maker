@@ -34,12 +34,12 @@ const TenantEvents = () => {
   const [editingEvent, setEditingEvent] = useState<TenantEvent | null>(null);
   const [promoEvent, setPromoEvent] = useState<TenantEvent | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
-  const promoData = promoEvent ? buildTenantEventPromo(promoEvent) : null;
+  const promoData = promoEvent ? buildTenantEventPromo(promoEvent, tenantInfo?.primaryColor) : null;
 
   const handleQuickCreate = async (event: TenantEvent) => {
     setQuickCreating(event.id);
     try {
-      const promo = buildTenantEventPromo(event);
+      const promo = buildTenantEventPromo(event, tenantInfo?.primaryColor);
       const blob = await renderPromoToBlob(promo);
       const file = new File([blob], `event-promo-${Date.now()}.png`, { type: "image/png" });
       await uploadAsset.mutateAsync({ file, label: `${event.name} Promo` });

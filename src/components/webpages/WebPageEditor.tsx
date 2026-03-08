@@ -13,13 +13,20 @@ import AddSectionDialog from "./AddSectionDialog";
 import { toast } from "sonner";
 import { exportPageAsHtml } from "@/lib/exportWebPage";
 
+interface TenantBranding {
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  accentColor?: string | null;
+}
+
 interface Props {
   pageId: string;
   tenantId?: string | null;
   onBack: () => void;
+  tenantBranding?: TenantBranding;
 }
 
-const WebPageEditor = ({ pageId, tenantId, onBack }: Props) => {
+const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
   const { pages, useSections, updatePage, addSection, updateSection, deleteSection, reorderSections } = useWebPages(tenantId);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(pageId);
   const page = pages.find((p) => p.id === pageId);
@@ -29,8 +36,22 @@ const WebPageEditor = ({ pageId, tenantId, onBack }: Props) => {
   const [pendingConfigs, setPendingConfigs] = useState<Record<string, Record<string, any>>>({});
 
   const handleAddSection = useCallback((type: string) => {
-    addSection.mutate({ page_id: pageId, section_type: type, display_order: sections.length });
-  }, [addSection, pageId, sections.length]);
+    let config: Record<string, any> | undefined;
+    if (tenantBranding) {
+      if (type === "hero") {
+        config = {
+          button_color: tenantBranding.primaryColor || undefined,
+          button_text_color: tenantBranding.primaryColor ? "#ffffff" : undefined,
+        };
+      } else if (type === "cta") {
+        config = {
+          bg_color: tenantBranding.primaryColor || undefined,
+          button_color: tenantBranding.accentColor || undefined,
+        };
+      }
+    }
+    addSection.mutate({ page_id: pageId, section_type: type, display_order: sections.length, config });
+  }, [addSection, pageId, sections.length, tenantBranding]);
 
   const handleConfigChange = useCallback((sectionId: string, config: Record<string, any>) => {
     setPendingConfigs((prev) => ({ ...prev, [sectionId]: config }));
