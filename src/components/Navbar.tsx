@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2 } from "lucide-react";
+import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2, CalendarDays, Target, Gift, SwordIcon, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +7,7 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 
 const navItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/community", label: "Community", icon: Users },
@@ -14,13 +15,17 @@ const navItems = [
   { to: "/season-stats", label: "Stats", icon: BarChart3 },
   { to: "/compare", label: "Compare", icon: Swords },
   { to: "/achievements", label: "Badges", icon: Award },
+  { to: "/challenges", label: "Challenges", icon: Target },
+  { to: "/prize-shop", label: "Prize Shop", icon: Gift },
+  { to: "/ladders", label: "Ladders", icon: SwordIcon },
+  { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isModerator } = useAuth();
   const { isTenantAdmin } = useTenantAdmin();
 
   const handleSignOut = async () => {
@@ -153,6 +158,48 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                  location.pathname.startsWith("/admin")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <ShieldCheck className="h-5 w-5" />
+                Admin
+              </Link>
+            )}
+            {(isModerator || isAdmin) && (
+              <Link
+                to="/moderator"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                  location.pathname.startsWith("/moderator")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <SwordIcon className="h-5 w-5" />
+                Moderator
+              </Link>
+            )}
+            {isTenantAdmin && (
+              <Link
+                to="/tenant"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                  location.pathname.startsWith("/tenant")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <Building2 className="h-5 w-5" />
+                Tenant
+              </Link>
+            )}
             <div className="flex gap-2 pt-2 border-t border-border/50 mt-2">
               {user ? (
                 <div className="flex flex-col gap-2">

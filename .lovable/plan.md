@@ -1,26 +1,11 @@
 
 
-## Item 11: Mobile Sidebar vs Navbar Inconsistency
+# Add Helper Text to Career Path Mapping Form
 
-### Problem
-The Navbar's mobile menu only shows 8 items (Tournaments, Games, Dashboard, Community, Leaderboard, Stats, Compare, Badges). The AppSidebar has 13+ items including Calendar, Challenges, Prize Shop, Ladders, Player Guide, and AI Coach — all missing from the mobile nav. Mobile users on the landing page can't discover these features.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-### Plan
-
-**File: `src/components/Navbar.tsx`**
-
-1. Add missing items to the `navItems` array:
-   - Calendar (`/calendar`, CalendarDays)
-   - Challenges (`/challenges`, Target)
-   - Prize Shop (`/prize-shop`, Gift)
-   - Ladders (`/ladders`, SwordIcon)
-   - Player Guide (`/guide`, BookOpen)
-
-2. Add missing icon imports: `CalendarDays`, `Target`, `Gift`, `SwordIcon`, `BookOpen`
-
-3. Add Admin, Moderator, and Tenant links to the mobile menu (already present in desktop nav but missing from mobile dropdown) — these conditional links for `isAdmin`, `isModerator`, and `isTenantAdmin` should appear in the mobile menu section as well.
-
-4. Keep the desktop nav unchanged — it already shows the core items and the conditional role links. The additional items (Calendar, Challenges, etc.) will appear in both desktop and mobile to maintain parity with the sidebar.
-
-**Note:** The AI Coach button requires the `CoachContext`, which the Navbar doesn't currently consume. Rather than adding that dependency to the landing page nav, we'll omit AI Coach from the Navbar since it's only relevant for authenticated users who see the sidebar anyway.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
