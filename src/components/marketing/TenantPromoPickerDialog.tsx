@@ -207,7 +207,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setSelectedPromo(buildTenantEventPromo(evt))}
+                  onClick={() => setSelectedPromo(buildTenantEventPromo(evt, tenantPrimaryColor))}
                   title="Open in editor"
                 >
                   <Pencil className="h-3.5 w-3.5" />

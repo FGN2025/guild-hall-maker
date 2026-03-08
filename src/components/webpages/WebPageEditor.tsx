@@ -36,8 +36,22 @@ const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
   const [pendingConfigs, setPendingConfigs] = useState<Record<string, Record<string, any>>>({});
 
   const handleAddSection = useCallback((type: string) => {
-    addSection.mutate({ page_id: pageId, section_type: type, display_order: sections.length });
-  }, [addSection, pageId, sections.length]);
+    let config: Record<string, any> | undefined;
+    if (tenantBranding) {
+      if (type === "hero") {
+        config = {
+          button_color: tenantBranding.primaryColor || undefined,
+          button_text_color: tenantBranding.primaryColor ? "#ffffff" : undefined,
+        };
+      } else if (type === "cta") {
+        config = {
+          bg_color: tenantBranding.primaryColor || undefined,
+          button_color: tenantBranding.accentColor || undefined,
+        };
+      }
+    }
+    addSection.mutate({ page_id: pageId, section_type: type, display_order: sections.length, config });
+  }, [addSection, pageId, sections.length, tenantBranding]);
 
   const handleConfigChange = useCallback((sectionId: string, config: Record<string, any>) => {
     setPendingConfigs((prev) => ({ ...prev, [sectionId]: config }));

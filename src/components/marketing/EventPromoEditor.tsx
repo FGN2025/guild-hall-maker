@@ -32,7 +32,7 @@ function buildTournamentPromo(t: any, accentColor?: string | null): PromoData {
   return { imageUrl, texts };
 }
 
-function buildChallengePromo(c: any): PromoData {
+function buildChallengePromo(c: any, accentColor?: string | null): PromoData {
   const imageUrl = c.cover_image_url || c.games?.cover_image_url || "";
   const texts: PromoData["texts"] = [
     { text: c.name.toUpperCase(), xPct: 0.05, yPct: 0.65, x: 40, y: 390, fontSize: 42, color: "#ffffff", fontFamily: "sans-serif" },
@@ -42,7 +42,7 @@ function buildChallengePromo(c: any): PromoData {
     texts.push({ text: format(new Date(c.start_date), "MMMM d, yyyy"), xPct: 0.05, yPct: 0.83, x: 40, y: 498, fontSize: 20, color: "#aaaaaa", fontFamily: "sans-serif" });
   }
   if (c.points_first) {
-    texts.push({ text: `${c.points_first} pts for 1st place`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: "#ffd700", fontFamily: "sans-serif" });
+    texts.push({ text: `${c.points_first} pts for 1st place`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: accentColor || "#ffd700", fontFamily: "sans-serif" });
   }
   return { imageUrl, texts };
 }

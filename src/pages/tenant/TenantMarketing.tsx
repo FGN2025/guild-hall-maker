@@ -165,7 +165,12 @@ const TenantMarketing = () => {
 
           {tenantAdmin && (
             <div className="rounded-lg border border-border bg-card p-6">
-              <CalendarPublishManager tenantId={tenantAdmin} />
+              <CalendarPublishManager
+                tenantId={tenantAdmin}
+                tenantLogoUrl={tenantInfo?.logoUrl}
+                tenantPrimaryColor={tenantInfo?.primaryColor}
+                tenantAccentColor={tenantInfo?.accentColor}
+              />
             </div>
           )}
         </TabsContent>
