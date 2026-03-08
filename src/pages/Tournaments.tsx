@@ -146,8 +146,23 @@ const Tournaments = () => {
         })()}
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card/70 overflow-hidden animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
+                <Skeleton className="h-36 w-full rounded-none" />
+                <div className="p-6 space-y-3">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="grid grid-cols-3 gap-3 pt-4">
+                    <Skeleton className="h-16 rounded-lg" />
+                    <Skeleton className="h-16 rounded-lg" />
+                    <Skeleton className="h-16 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-10 w-full mt-4 rounded-md" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
