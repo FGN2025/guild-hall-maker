@@ -16,7 +16,7 @@ import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { buildTenantEventPromo, renderPromoToBlob } from "@/components/marketing/TenantPromoPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
-
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
