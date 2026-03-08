@@ -30,9 +30,9 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Moderator Role Overview",
     bullets: [
       "Moderators manage the day-to-day competitive lifecycle of the FGN platform.",
-      "Access — The Moderator Panel is available at /moderator. Admins and Super Admins also have full access.",
+      "Access — The Moderator Dashboard is available at /moderator. Admins and Super Admins also have full access.",
       "Scope — Moderators handle tournaments, match scoring, player points, challenges, ranked ladders, prize redemptions, and community moderation.",
-      "Sidebar — Use the Moderator Panel sidebar to navigate between Dashboard, Tournaments, Matches, Points, Challenges, Ladders, Redemptions, and this Guide.",
+      "Sidebar — Use the Moderator Dashboard sidebar to navigate between Dashboard, Tournaments, Matches, Points, Challenges, Ladders, Redemptions, and this Guide.",
       "Role Assignment — Moderator roles are assigned by Admins via Admin → Users using the role dropdown (User, Moderator, Marketing, Admin).",
     ],
   },

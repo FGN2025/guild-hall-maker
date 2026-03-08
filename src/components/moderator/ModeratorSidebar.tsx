@@ -18,7 +18,7 @@ const ModeratorSidebar = () => {
   return (
     <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
-        <h2 className="font-display text-lg font-bold text-primary tracking-wider">Moderator Panel</h2>
+        <h2 className="font-display text-lg font-bold text-primary tracking-wider">Moderator Dashboard</h2>
         <Link
           to="/dashboard"
           className="flex items-center gap-2 mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading"

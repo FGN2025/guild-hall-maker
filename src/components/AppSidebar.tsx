@@ -115,14 +115,14 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Admin Panel">
-                    <NavLink
-                      to="/admin"
-                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <ShieldCheck className="h-4 w-4 shrink-0" />
-                      <span>Admin Panel</span>
+                   <SidebarMenuButton asChild tooltip="Admin Dashboard">
+                     <NavLink
+                       to="/admin"
+                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                     >
+                       <ShieldCheck className="h-4 w-4 shrink-0" />
+                       <span>Admin Dashboard</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -137,14 +137,14 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Moderator Panel">
-                    <NavLink
-                      to="/moderator"
-                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <SwordIcon className="h-4 w-4 shrink-0" />
-                      <span>Moderator Panel</span>
+                   <SidebarMenuButton asChild tooltip="Moderator Dashboard">
+                     <NavLink
+                       to="/moderator"
+                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                     >
+                       <SwordIcon className="h-4 w-4 shrink-0" />
+                       <span>Moderator Dashboard</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -181,14 +181,14 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Tenant Panel">
-                    <NavLink
-                      to="/tenant"
-                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <Building2 className="h-4 w-4 shrink-0" />
-                      <span>Tenant Panel</span>
+                   <SidebarMenuButton asChild tooltip="Tenant Dashboard">
+                     <NavLink
+                       to="/tenant"
+                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                     >
+                       <Building2 className="h-4 w-4 shrink-0" />
+                       <span>Tenant Dashboard</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
