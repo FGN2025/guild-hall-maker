@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -6,6 +7,7 @@ import SectionPreview from "@/components/webpages/SectionPreview";
 import type { WebPage, WebPageSection } from "@/hooks/useWebPages";
 
 const WebPageView = () => {
+  usePageTitle("Page");
   const { tenantSlug, pageSlug } = useParams<{ tenantSlug: string; pageSlug: string }>();
 
   const { data, isLoading, error } = useQuery({

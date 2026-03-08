@@ -1,4 +1,5 @@
 import { useState } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import PageHero from "@/components/PageHero";
@@ -53,6 +54,7 @@ const tierLabels: Record<string, string> = {
 };
 
 const SeasonStats = () => {
+  usePageTitle("Season Stats");
   const { user } = useAuth();
   const [filterGameId, setFilterGameId] = useState<string>("all");
 

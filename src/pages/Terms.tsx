@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Gamepad2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const Terms = () => {
+  usePageTitle("Terms of Service");
   const handleDownload = () => window.print();
 
   return (

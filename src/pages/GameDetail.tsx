@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useGameBySlug, useGameTournaments } from "@/hooks/useGames";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Gamepad2, Calendar, Trophy, Loader2 } from "lucide-react";
@@ -6,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
 
 const GameDetail = () => {
+  usePageTitle("Game Detail");
   const { slug } = useParams<{ slug: string }>();
   const { data: game, isLoading } = useGameBySlug(slug ?? "");
   const { data: tournaments } = useGameTournaments(game?.name);

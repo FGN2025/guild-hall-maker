@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Trophy, Image, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const AdminDashboard = () => {
+  usePageTitle("Admin Dashboard");
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {

@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
 import { usePlayerAchievements } from "@/hooks/usePlayerAchievements";
 import { usePlayerGameBreakdown } from "@/hooks/usePlayerGameBreakdown";
@@ -13,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Gamepad2 } from "lucide-react";
 
 const PlayerProfile = () => {
+  usePageTitle("Player Profile");
   const { id } = useParams<{ id: string }>();
   const { profile, stats, matchHistory, headToHead, rankProgression, isLoading } = usePlayerProfile(id);
   const { data: achievements, isLoading: achievementsLoading } = usePlayerAchievements(id);

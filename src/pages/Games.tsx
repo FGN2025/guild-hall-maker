@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useGames } from "@/hooks/useGames";
 import GameCard from "@/components/games/GameCard";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 const CATEGORIES = ["All", "General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Simulation", "Strategy", "MOBA", "MMORPG", "RPG", "Card Game", "Puzzle", "Adventure"];
 
 const Games = () => {
+  usePageTitle("Games");
   const { data: games, isLoading } = useGames();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");

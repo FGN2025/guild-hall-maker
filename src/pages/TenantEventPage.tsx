@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 import { usePublicTenantBySlug, usePublicTenantEvents } from "@/hooks/usePublicTenantEvents";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +7,7 @@ import { Calendar, Users, Trophy, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 
 const TenantEventPage = () => {
+  usePageTitle("Events");
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const { data: tenant, isLoading: tenantLoading } = usePublicTenantBySlug(tenantSlug);
   const { data: events, isLoading: eventsLoading } = usePublicTenantEvents(tenant?.id);

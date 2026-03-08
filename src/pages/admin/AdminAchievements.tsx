@@ -1,4 +1,5 @@
 import { useState } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";

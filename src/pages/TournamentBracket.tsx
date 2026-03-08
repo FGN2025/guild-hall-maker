@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 
 import { useBracket } from "@/hooks/useBracket";
 import BracketMatchCard from "@/components/tournaments/BracketMatchCard";
@@ -8,6 +9,7 @@ import { ArrowLeft, Trophy, Gamepad2, Swords, Radio } from "lucide-react";
 import { useRef, useEffect } from "react";
 
 const TournamentBracket = () => {
+  usePageTitle("Tournament Bracket");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tournament, rounds, totalRounds, currentRound, matches, isLoading } = useBracket(id);

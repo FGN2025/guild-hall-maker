@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
 
 const ProfileSettings = () => {
+  usePageTitle("Profile Settings");
   const { user, discordLinked, refreshDiscordStatus } = useAuth();
   const discordClientId = useDiscordClientId();
   const fileInputRef = useRef<HTMLInputElement>(null);

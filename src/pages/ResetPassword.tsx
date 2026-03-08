@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
 const ResetPassword = () => {
+  usePageTitle("Reset Password");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);

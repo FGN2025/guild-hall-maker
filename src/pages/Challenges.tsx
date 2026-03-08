@@ -1,4 +1,5 @@
 import { useState } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,7 @@ import PageBackground from "@/components/PageBackground";
 import ChallengeCard from "@/components/challenges/ChallengeCard";
 
 const Challenges = () => {
+  usePageTitle("Challenges");
   const { user } = useAuth();
   const [gameFilter, setGameFilter] = useState<string | null>(null);
 

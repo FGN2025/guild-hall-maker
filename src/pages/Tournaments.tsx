@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
 import {
   Pagination,
@@ -18,6 +19,7 @@ import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 
 const Tournaments = () => {
+  usePageTitle("Tournaments");
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("open");

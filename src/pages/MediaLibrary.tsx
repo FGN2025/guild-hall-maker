@@ -1,4 +1,5 @@
 import { useState } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 
 import { useMediaLibrary } from "@/hooks/useMediaLibrary";
 import MediaUploader from "@/components/media/MediaUploader";
@@ -11,6 +12,7 @@ import { Image, Search } from "lucide-react";
 const TABS = ["all", "games", "tournament", "badge", "trophy", "banner", "general"];
 
 const MediaLibrary = () => {
+  usePageTitle("Media Library");
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const { media, isLoading, upload, isUploading, deleteMedia, isDeleting, generateImage, isGenerating, updateCategory } = useMediaLibrary(activeTab);

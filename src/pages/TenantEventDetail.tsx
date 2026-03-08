@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 import { usePublicTenantBySlug, usePublicTenantEvent, usePublicEventAssets } from "@/hooks/usePublicTenantEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +13,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 const TenantEventDetail = () => {
+  usePageTitle("Event Detail");
   const { tenantSlug, eventId } = useParams<{ tenantSlug: string; eventId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();

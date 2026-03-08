@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import {
   Pagination,
   PaginationContent,
@@ -70,6 +71,7 @@ const TIME_OPTIONS = [
 ];
 
 const Leaderboard = () => {
+  usePageTitle("Leaderboard");
   const [tab, setTab] = useState("seasonal");
   const [game, setGame] = useState("all");
   const [tournamentId, setTournamentId] = useState("all");

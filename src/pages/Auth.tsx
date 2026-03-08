@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
 type SignupStep = "zip" | "subscriber-verify" | "account";
 
 const Auth = () => {
+  usePageTitle("Sign In");
   const [searchParams] = useSearchParams();
   const isInviteFlow = searchParams.get("invite") === "true";
   const inviteEmail = searchParams.get("email") || "";

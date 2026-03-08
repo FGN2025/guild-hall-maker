@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +19,7 @@ import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { format } from "date-fns";
 
 const TournamentDetail = () => {
+  usePageTitle("Tournament Detail");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();

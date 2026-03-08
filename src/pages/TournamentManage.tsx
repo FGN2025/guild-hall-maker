@@ -1,4 +1,5 @@
 import { useState } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { useTournamentManagement, ManageMatch } from "@/hooks/useTournamentManagement";
@@ -41,6 +42,7 @@ const statusColors: Record<string, string> = {
 };
 
 const TournamentManage = () => {
+  usePageTitle("Manage Tournament");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const {

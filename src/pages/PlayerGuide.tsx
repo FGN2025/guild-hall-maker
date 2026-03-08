@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import {
   Accordion,
   AccordionContent,
@@ -376,6 +377,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
 ];
 
 const PlayerGuide = () => {
+  usePageTitle("Player Guide");
   const [search, setSearch] = useState("");
   const [showTop, setShowTop] = useState(false);
 

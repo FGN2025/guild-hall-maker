@@ -3,6 +3,7 @@ import { useCalendarPublishById } from "@/hooks/useCalendarPublish";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
+import usePageTitle from "@/hooks/usePageTitle";
 import {
   format,
   startOfMonth,
@@ -24,6 +25,7 @@ interface CalendarEvent {
 }
 
 const EmbedCalendar = () => {
+  usePageTitle("Event Calendar");
   const { configId } = useParams<{ configId: string }>();
   const { data: config, isLoading } = useCalendarPublishById(configId);
   const [currentMonth, setCurrentMonth] = useState(new Date());
