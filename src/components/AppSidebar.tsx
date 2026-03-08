@@ -159,14 +159,14 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Marketing">
+                  <SidebarMenuButton asChild tooltip="Marketing Dashboard">
                     <NavLink
                       to="/admin/marketing"
                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <Megaphone className="h-4 w-4 shrink-0" />
-                      <span>Marketing</span>
+                      <span>Marketing Dashboard</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
