@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantEvents, type TenantEvent } from "@/hooks/useTenantEvents";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { buildTenantEventPromo, renderPromoToBlob } from "@/components/marketing/TenantPromoPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
-
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -34,6 +34,7 @@ const TenantEvents = () => {
   const [editingEvent, setEditingEvent] = useState<TenantEvent | null>(null);
   const [promoEvent, setPromoEvent] = useState<TenantEvent | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const promoData = promoEvent ? buildTenantEventPromo(promoEvent, tenantInfo?.primaryColor) : null;
 
   const handleQuickCreate = async (event: TenantEvent) => {
@@ -239,7 +240,7 @@ const TenantEvents = () => {
                   <Button size="sm" variant="outline" onClick={() => togglePublish(event)}>
                     {event.status === "published" ? <><EyeOff className="h-3.5 w-3.5 mr-1" /> Unpublish</> : <><Eye className="h-3.5 w-3.5 mr-1" /> Publish</>}
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => { if (confirm("Delete this event?")) deleteEvent.mutate(event.id); }}>
+                  <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(event.id)}>
                     <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                   </Button>
                 </div>
@@ -261,6 +262,16 @@ const TenantEvents = () => {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        title="Delete Event"
+        description="Are you sure you want to delete this event? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => { if (deleteTarget) deleteEvent.mutate(deleteTarget); setDeleteTarget(null); }}
+      />
     </div>
   );
 };

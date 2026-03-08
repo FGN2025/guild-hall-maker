@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Camera, Save, User, Gamepad2, ArrowLeft, MessageSquare, Unlink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
@@ -26,6 +27,7 @@ const ProfileSettings = () => {
   const [discordAvatarHash, setDiscordAvatarHash] = useState<string | null>(null);
   const [discordId, setDiscordId] = useState<string | null>(null);
   const [unlinking, setUnlinking] = useState(false);
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -296,8 +298,20 @@ const ProfileSettings = () => {
                     variant="destructive"
                     size="sm"
                     disabled={unlinking}
-                    onClick={async () => {
-                      if (!confirm("Unlinking Discord will block platform access until you re-link. Continue?")) return;
+                    onClick={() => setShowUnlinkConfirm(true)}
+                    className="gap-1 font-heading text-xs"
+                  >
+                    <Unlink className="h-3 w-3" /> {unlinking ? "Unlinking…" : "Unlink"}
+                  </Button>
+                  <ConfirmDialog
+                    open={showUnlinkConfirm}
+                    onOpenChange={setShowUnlinkConfirm}
+                    title="Unlink Discord"
+                    description="Unlinking Discord will block platform access until you re-link. Are you sure you want to continue?"
+                    confirmLabel="Unlink"
+                    variant="destructive"
+                    onConfirm={async () => {
+                      setShowUnlinkConfirm(false);
                       setUnlinking(true);
                       try {
                         const { error } = await supabase.functions.invoke("discord-oauth-callback", {
@@ -314,10 +328,7 @@ const ProfileSettings = () => {
                       }
                       setUnlinking(false);
                     }}
-                    className="gap-1 font-heading text-xs"
-                  >
-                    <Unlink className="h-3 w-3" /> {unlinking ? "Unlinking…" : "Unlink"}
-                  </Button>
+                  />
                 </div>
               </div>
             ) : (
