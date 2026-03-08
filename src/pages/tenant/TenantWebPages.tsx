@@ -40,7 +40,7 @@ const TenantWebPages = ({ embedded }: { embedded?: boolean }) => {
   };
 
   if (editingId) {
-    return <WebPageEditor pageId={editingId} tenantId={tenantId} onBack={() => setEditingId(null)} />;
+    return <WebPageEditor pageId={editingId} tenantId={tenantId} onBack={() => setEditingId(null)} tenantBranding={{ logoUrl: tenantInfo?.logoUrl, primaryColor: tenantInfo?.primaryColor, accentColor: tenantInfo?.accentColor }} />;
   }
 
   return (
