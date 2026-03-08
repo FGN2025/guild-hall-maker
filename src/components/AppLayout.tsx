@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import CoachFloatingButton from "@/components/CoachFloatingButton";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { CoachProvider } from "@/contexts/CoachContext";
 
 const AppLayout = () => {
