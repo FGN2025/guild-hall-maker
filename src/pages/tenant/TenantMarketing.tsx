@@ -22,6 +22,31 @@ const TenantMarketing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // Fetch asset counts + first thumbnail per campaign in a single query
+  const { data: assetSummaryRaw } = useQuery({
+    queryKey: ["marketing_asset_summaries"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("marketing_assets" as any)
+        .select("campaign_id, url")
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data as unknown as { campaign_id: string; url: string }[];
+    },
+  });
+
+  const assetMap = useMemo(() => {
+    const map: Record<string, { count: number; first_url: string }> = {};
+    if (!assetSummaryRaw) return map;
+    for (const row of assetSummaryRaw) {
+      if (!map[row.campaign_id]) {
+        map[row.campaign_id] = { count: 0, first_url: row.url };
+      }
+      map[row.campaign_id].count++;
+    }
+    return map;
+  }, [assetSummaryRaw]);
+
   // Get the user's tenant_id
   const { data: tenantAdmin } = useQuery({
     queryKey: ["my_tenant_id", user?.id],
