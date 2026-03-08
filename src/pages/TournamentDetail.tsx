@@ -145,7 +145,7 @@ const TournamentDetail = () => {
                   {
                     icon: Users,
                     label: "Players",
-                    value: `${t.registrations_count} / ${t.max_participants}`,
+                    value: isAdmin ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max`,
                   },
                   {
                     icon: Gamepad2,

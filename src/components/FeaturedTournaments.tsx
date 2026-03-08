@@ -8,8 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 
 const FeaturedTournaments = () => {
-  const { isAdmin, isModerator } = useAuth();
-  const showRegCount = isAdmin || isModerator;
+  const { isAdmin } = useAuth();
+  const showRegCount = isAdmin;
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["featured-tournaments"],

@@ -328,7 +328,7 @@ const ModeratorTournaments = () => {
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { icon: Calendar, label: "Start Date", value: format(new Date(detailTournament.start_date), "MMM d, yyyy · h:mm a") },
-                  { icon: Users, label: "Players", value: `${detailTournament.registrations_count} / ${detailTournament.max_participants}` },
+                  { icon: Users, label: "Players", value: isAdmin ? `${detailTournament.registrations_count} / ${detailTournament.max_participants}` : `${detailTournament.max_participants} max` },
                   { icon: Trophy, label: "Prize Pool", value: detailTournament.prize_pool || "None" },
                   { icon: Gamepad2, label: "Entry Fee", value: detailTournament.entry_fee ? `$${detailTournament.entry_fee}` : "Free" },
                 ].map((info) => (

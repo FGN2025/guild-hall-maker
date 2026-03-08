@@ -96,7 +96,7 @@ onClick={() => navigate(`/tournaments/${t.id}`)}
                               <Gamepad2 className="h-3 w-3" /> {t.game}
                             </span>
                             <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" /> {t.registrations_count}/{t.max_participants}
+                              <Users className="h-3 w-3" /> {t.max_participants} max
                             </span>
                           </div>
                         </div>
