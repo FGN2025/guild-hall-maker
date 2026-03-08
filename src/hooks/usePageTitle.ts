@@ -2,9 +2,9 @@ import { useEffect } from "react";
 
 const usePageTitle = (title: string) => {
   useEffect(() => {
-    document.title = title ? `${title} | FGN` : "FGN - Fibre Gaming Network";
+    document.title = title ? `${title} | FGN Esports` : "FGN Esports";
     return () => {
-      document.title = "FGN - Fibre Gaming Network";
+      document.title = "FGN Esports";
     };
   }, [title]);
 };
