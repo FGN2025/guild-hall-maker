@@ -259,9 +259,9 @@ const ModeratorTournaments = () => {
                   <p className="text-sm text-muted-foreground">{t.game}</p>
                 </div>
 
-                {t.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">{t.description}</p>
-                )}
+                <div className="text-xs text-muted-foreground h-[2.5rem] overflow-y-auto whitespace-pre-line">
+                  {t.description || "\u00A0"}
+                </div>
 
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-muted rounded-lg p-2">
