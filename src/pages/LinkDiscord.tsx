@@ -10,6 +10,7 @@ import { MessageSquare, ExternalLink, CheckCircle2, Loader2 } from "lucide-react
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
 const LinkDiscord = () => {
+  usePageTitle("Link Discord");
   const { user, isAdmin, roleLoading, refreshDiscordStatus } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

@@ -19,6 +19,7 @@ import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { format } from "date-fns";
 
 const TournamentDetail = () => {
+  usePageTitle("Tournament Detail");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();

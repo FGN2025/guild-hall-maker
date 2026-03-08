@@ -30,6 +30,7 @@ const statusLabel: Record<string, { label: string; color: string }> = {
 type ChallengeRow = NonNullable<ReturnType<typeof useChallengeDetail>["challenge"]>;
 
 const ChallengeDetail = () => {
+  usePageTitle("Challenge Detail");
   const { id } = useParams<{ id: string }>();
   const { challenge, tasks, isLoading } = useChallengeDetail(id);
   const {

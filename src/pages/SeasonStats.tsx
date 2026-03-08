@@ -54,6 +54,7 @@ const tierLabels: Record<string, string> = {
 };
 
 const SeasonStats = () => {
+  usePageTitle("Season Stats");
   const { user } = useAuth();
   const [filterGameId, setFilterGameId] = useState<string>("all");
 

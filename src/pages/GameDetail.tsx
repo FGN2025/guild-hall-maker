@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
 
 const GameDetail = () => {
+  usePageTitle("Game Detail");
   const { slug } = useParams<{ slug: string }>();
   const { data: game, isLoading } = useGameBySlug(slug ?? "");
   const { data: tournaments } = useGameTournaments(game?.name);

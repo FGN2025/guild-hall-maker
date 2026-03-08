@@ -9,6 +9,7 @@ import { ArrowLeft, Trophy, Gamepad2, Swords, Radio } from "lucide-react";
 import { useRef, useEffect } from "react";
 
 const TournamentBracket = () => {
+  usePageTitle("Tournament Bracket");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tournament, rounds, totalRounds, currentRound, matches, isLoading } = useBracket(id);

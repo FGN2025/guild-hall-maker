@@ -42,6 +42,7 @@ const statusColors: Record<string, string> = {
 };
 
 const TournamentManage = () => {
+  usePageTitle("Manage Tournament");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const {
