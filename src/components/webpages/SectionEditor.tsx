@@ -191,6 +191,7 @@ const SectionEditor = ({ section, onUpdate }: Props) => {
           <MediaPickerDialog
             open={mediaPicker.open && mediaPicker.field === "embed_widget_pick"}
             onOpenChange={(o) => setMediaPicker({ ...mediaPicker, open: o })}
+            initialTab="widget"
             onSelect={(_url, _fp, item?: MediaItem) => {
               if (item?.embed_code) {
                 set("embed_code", item.embed_code);
