@@ -11,6 +11,7 @@ import { Pencil, CalendarIcon, Upload, ImageIcon } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useGames } from "@/hooks/useGames";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
@@ -63,6 +64,7 @@ interface Props {
 const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const { user } = useAuth();
   const { getPreset } = useImageLimits();
+  const { data: games = [] } = useGames();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
@@ -201,8 +203,16 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Game *</Label>
-            <Input value={game} onChange={(e) => setGame(e.target.value)} required maxLength={100}
-              className="bg-card border-border font-body" />
+            <Select value={game} onValueChange={setGame} required>
+              <SelectTrigger className="bg-card border-border font-body">
+                <SelectValue placeholder="Select a game" />
+              </SelectTrigger>
+              <SelectContent>
+                {games.map((g) => (
+                  <SelectItem key={g.id} value={g.name}>{g.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Description</Label>
