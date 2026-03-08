@@ -63,8 +63,17 @@ const Community = () => {
 
           {isLoading ? (
             <div className="p-4 space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full" />
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-4 animate-pulse" style={{ animationDelay: `${i * 75}ms` }}>
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-5 w-2/3" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <div className="flex gap-3">
+                    <Skeleton className="h-4 w-10" />
+                    <Skeleton className="h-4 w-10" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : topics && topics.length > 0 ? (
