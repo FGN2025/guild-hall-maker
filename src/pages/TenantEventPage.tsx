@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import usePageTitle from "@/hooks/usePageTitle";
 import { usePublicTenantBySlug, usePublicTenantEvents } from "@/hooks/usePublicTenantEvents";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

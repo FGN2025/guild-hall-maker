@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 const TenantEventDetail = () => {
+  usePageTitle("Event Detail");
   const { tenantSlug, eventId } = useParams<{ tenantSlug: string; eventId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();

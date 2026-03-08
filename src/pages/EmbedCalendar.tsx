@@ -25,6 +25,7 @@ interface CalendarEvent {
 }
 
 const EmbedCalendar = () => {
+  usePageTitle("Event Calendar");
   const { configId } = useParams<{ configId: string }>();
   const { data: config, isLoading } = useCalendarPublishById(configId);
   const [currentMonth, setCurrentMonth] = useState(new Date());
