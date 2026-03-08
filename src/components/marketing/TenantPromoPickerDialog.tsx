@@ -98,6 +98,7 @@ interface TenantPromoPickerDialogProps {
   onOpenChange: (open: boolean) => void;
   tenantId: string;
   onSave: (blob: Blob) => Promise<void>;
+  tenantPrimaryColor?: string | null;
 }
 
 export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave }: TenantPromoPickerDialogProps) {
