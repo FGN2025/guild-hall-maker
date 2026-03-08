@@ -33,7 +33,7 @@ const ModeratorLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </SheetContent>
         </Sheet>
-        <span className="ml-3 font-display text-sm font-bold text-primary">Moderator Panel</span>
+        <span className="ml-3 font-display text-sm font-bold text-primary">Moderator Dashboard</span>
       </header>
       <main className="flex-1 p-4 overflow-auto">{children}</main>
     </div>
