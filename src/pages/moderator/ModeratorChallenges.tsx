@@ -550,7 +550,7 @@ const ModeratorChallenges = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { icon: Users, label: "Enrolled", value: detailChallenge.enrollments_count },
+                  ...(isAdmin ? [{ icon: Users, label: "Enrolled", value: detailChallenge.enrollments_count }] : []),
                   { icon: Clock, label: "Est. Time", value: detailChallenge.estimated_minutes ? `${detailChallenge.estimated_minutes} min` : "—" },
                   { icon: Star, label: "1st Place Pts", value: detailChallenge.points_first },
                   { icon: Shield, label: "Evidence Req.", value: detailChallenge.requires_evidence ? "Yes" : "No" },
