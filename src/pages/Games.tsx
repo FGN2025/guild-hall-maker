@@ -80,8 +80,16 @@ const Games = () => {
       {/* Game grid */}
       <div className="flex-1">
         {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden animate-pulse" style={{ animationDelay: `${i * 50}ms` }}>
+                <Skeleton className="aspect-[3/4] w-full rounded-none" />
+                <div className="p-3 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground font-heading">
