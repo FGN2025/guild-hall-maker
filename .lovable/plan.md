@@ -1,11 +1,17 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Phase: Add Helper Text to Career Path Mapping Form
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+### Problem
+The Career Path mapping inputs in the Ecosystem settings lack clear guidance, making it hard for admins to know what values to enter for `external_path_id` and `external_module_id`.
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+### Changes
+
+#### `src/pages/admin/AdminEcosystem.tsx`
+
+1. Update the `external_path_id` input placeholder to `"e.g. cdl-class-a or path-001"`.
+2. Update the `external_module_id` input placeholder to `"e.g. module-safety-101 (optional)"`.
+3. Add a small `<p>` helper paragraph below the mapping form inputs explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+
+No backend or migration changes needed.
 
