@@ -55,7 +55,9 @@ const EvidenceUpload = ({ open, onOpenChange, taskId, taskTitle, onSubmit }: Evi
       setPreviewUrl(null);
       setUploadedUrl(null);
       onOpenChange(false);
-    } catch {}
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit evidence");
+    }
   };
 
   return (
