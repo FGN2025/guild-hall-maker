@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMarketingCampaigns, useMarketingAssets, MarketingCampaign } from "@/hooks/useMarketingCampaigns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AdminWebPages from "@/pages/admin/AdminWebPages";
 import AdminCampaignCodes from "@/components/admin/AdminCampaignCodes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,6 +70,13 @@ const AdminMarketing = () => {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <Tabs defaultValue="campaigns" className="w-full">
+        <TabsList>
+          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="web-pages">Web Pages</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="campaigns" className="space-y-6 mt-4">
         {/* Calendar Embed Manager */}
         <CalendarPublishManager />
 
@@ -144,8 +153,13 @@ const AdminMarketing = () => {
         {detailCampaign && (
           <CampaignAssetsDialog campaign={detailCampaign} onClose={() => setDetailCampaign(null)} />
         )}
+        </TabsContent>
+
+        <TabsContent value="web-pages" className="mt-4">
+          <AdminWebPages />
+        </TabsContent>
+      </Tabs>
       </div>
-    
   );
 };
 

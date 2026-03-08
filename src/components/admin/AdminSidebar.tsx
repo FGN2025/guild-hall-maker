@@ -15,7 +15,6 @@ const sidebarItems = [
   { to: "/admin/access-requests", label: "Access Requests", icon: UserCheck },
   { to: "/admin/bypass-codes", label: "Bypass Codes", icon: KeyRound },
   { to: "/admin/marketing", label: "Marketing", icon: Megaphone },
-  { to: "/admin/web-pages", label: "Web Pages", icon: FileText },
   { to: "/admin/legacy-users", label: "Legacy Import", icon: Archive },
   { to: "/admin/ecosystem", label: "Ecosystem", icon: Globe },
   { to: "/admin/settings", label: "Settings", icon: Settings },

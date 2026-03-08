@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
+
 import { useWebPages } from "@/hooks/useWebPages";
 import WebPageEditor from "@/components/webpages/WebPageEditor";
 import { Button } from "@/components/ui/button";
@@ -27,16 +27,11 @@ const AdminWebPages = () => {
   };
 
   if (editingId) {
-    return (
-      <AdminLayout>
-        <WebPageEditor pageId={editingId} onBack={() => setEditingId(null)} />
-      </AdminLayout>
-    );
+    return <WebPageEditor pageId={editingId} onBack={() => setEditingId(null)} />;
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">Web Pages</h1>
@@ -112,7 +107,7 @@ const AdminWebPages = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 

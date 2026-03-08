@@ -156,7 +156,7 @@ const App = () => (
             <Route path="/admin/access-requests" element={<AdminRoute><AdminAccessRequests /></AdminRoute>} />
             <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
             <Route path="/admin/ecosystem" element={<AdminRoute><AdminEcosystem /></AdminRoute>} />
-            <Route path="/admin/web-pages" element={<MarketingRoute><AdminWebPages /></MarketingRoute>} />
+            
 
             {/* Moderator routes */}
             <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
