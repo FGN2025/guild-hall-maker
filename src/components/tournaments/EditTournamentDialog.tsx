@@ -64,6 +64,7 @@ interface Props {
 const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const { user } = useAuth();
   const { getPreset } = useImageLimits();
+  const { data: games = [] } = useGames();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
