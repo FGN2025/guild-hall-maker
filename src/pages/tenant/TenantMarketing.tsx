@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMarketingCampaigns, MarketingCampaign } from "@/hooks/useMarketingCampaigns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,6 @@ import { useQuery } from "@tanstack/react-query";
 import TenantMarketingAssets from "./TenantMarketingAssets";
 import TenantCodes from "./TenantCodes";
 import TenantWebPages from "./TenantWebPages";
-
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 
 const TenantMarketing = () => {
@@ -22,6 +21,31 @@ const TenantMarketing = () => {
   const [category, setCategory] = useState("all");
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Fetch asset counts + first thumbnail per campaign in a single query
+  const { data: assetSummaryRaw } = useQuery({
+    queryKey: ["marketing_asset_summaries"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("marketing_assets" as any)
+        .select("campaign_id, url")
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data as unknown as { campaign_id: string; url: string }[];
+    },
+  });
+
+  const assetMap = useMemo(() => {
+    const map: Record<string, { count: number; first_url: string }> = {};
+    if (!assetSummaryRaw) return map;
+    for (const row of assetSummaryRaw) {
+      if (!map[row.campaign_id]) {
+        map[row.campaign_id] = { count: 0, first_url: row.url };
+      }
+      map[row.campaign_id].count++;
+    }
+    return map;
+  }, [assetSummaryRaw]);
 
   // Get the user's tenant_id
   const { data: tenantAdmin } = useQuery({
@@ -101,7 +125,17 @@ const TenantMarketing = () => {
                 const isUpdated = !isNew && now - updatedMs < 3 * 24 * 60 * 60 * 1000;
 
                 return (
-                  <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
+                  <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
+                    {assetMap[c.id]?.first_url && (
+                      <div className="h-12 w-full bg-muted">
+                        <img
+                          src={assetMap[c.id].first_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-lg font-heading">{c.title}</CardTitle>
@@ -116,6 +150,10 @@ const TenantMarketing = () => {
                     <CardContent>
                       <Badge variant="outline" className="mb-2 capitalize">{c.category.replace("_", " ")}</Badge>
                       {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        <span>{assetMap[c.id] ? `${assetMap[c.id].count} asset${assetMap[c.id].count !== 1 ? 's' : ''}` : 'No assets yet'}</span>
+                      </div>
                     </CardContent>
                   </Card>
                 );
