@@ -1,14 +1,42 @@
 import { useEffect, useState } from "react";
-import { Trophy, Zap, Users } from "lucide-react";
+import { Trophy, Zap, Users, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+
+const useHeroStats = () => {
+  return useQuery({
+    queryKey: ["hero-stats"],
+    queryFn: async () => {
+      const [tournamentsRes, regsRes, tenantsRes] = await Promise.all([
+        supabase.from("tournaments").select("id", { count: "exact", head: true }),
+        supabase.from("tournament_registrations").select("user_id", { count: "exact", head: true }),
+        supabase.from("tenants").select("id", { count: "exact", head: true }),
+      ]);
+
+      // For distinct player count, fetch user_ids and dedupe
+      const { data: regData } = await supabase
+        .from("tournament_registrations")
+        .select("user_id");
+      const distinctPlayers = new Set((regData ?? []).map((r: any) => r.user_id)).size;
+
+      return {
+        players: distinctPlayers,
+        tournaments: tournamentsRes.count ?? 0,
+        operators: tenantsRes.count ?? 0,
+      };
+    },
+    staleTime: 300_000,
+  });
+};
 
 const HeroSection = () => {
   const [logoUrl, setLogoUrl] = useState<string>(defaultLogo);
+  const { data: stats } = useHeroStats();
 
   useEffect(() => {
     supabase
@@ -75,9 +103,9 @@ const HeroSection = () => {
         {/* Stats bar */}
         <div className="animate-fade-in grid grid-cols-3 gap-6 max-w-xl mx-auto">
           {[
-            { label: "Active Players", value: "12K+", icon: Users },
-            { label: "Tournaments", value: "340+", icon: Trophy },
-            { label: "Prize Pool", value: "$8.5K", icon: Zap },
+            { label: "Active Players", value: stats ? `${stats.players.toLocaleString()}+` : "—", icon: Users },
+            { label: "Tournaments", value: stats ? `${stats.tournaments.toLocaleString()}+` : "—", icon: Trophy },
+            { label: "Operators Served", value: stats ? `${stats.operators.toLocaleString()}` : "—", icon: Building2 },
           ].map((stat) => (
             <div key={stat.label} className="glass-panel rounded-lg p-4">
               <stat.icon className="h-5 w-5 text-primary mx-auto mb-2" />
