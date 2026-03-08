@@ -360,7 +360,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Challenges",
     bullets: [
       "Challenges are time-limited objectives that reward players with season points upon completion.",
-      "Moderators create and manage challenges from the Moderator Panel → Challenges.",
+      "Moderators create and manage challenges from the Moderator Dashboard → Challenges.",
       "Each challenge has a name, description, point reward, optional game link, type (one-time or repeatable), and optional start/end dates.",
       "Players view active challenges at /challenges and can see which ones they've already completed.",
       "Challenge completions are recorded by moderators and automatically award points to the player's season score.",
