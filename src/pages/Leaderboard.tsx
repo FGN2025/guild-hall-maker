@@ -366,12 +366,14 @@ const Leaderboard = () => {
           {/* ALL-TIME TAB */}
           <TabsContent value="alltime" className="mt-6">
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
-              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-heading text-muted-foreground mr-1">Filters:</span>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-sm font-heading text-muted-foreground">Filters:</span>
+              </div>
 
               <Select value={game} onValueChange={(v) => { setGame(v); setTournamentId("all"); }}>
-                <SelectTrigger className="w-[160px] h-9 text-sm bg-background border-border">
+                <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm bg-background border-border">
                   <SelectValue placeholder="All Games" />
                 </SelectTrigger>
                 <SelectContent>
@@ -383,7 +385,7 @@ const Leaderboard = () => {
               </Select>
 
               <Select value={tournamentId} onValueChange={setTournamentId}>
-                <SelectTrigger className="w-[200px] h-9 text-sm bg-background border-border">
+                <SelectTrigger className="w-full sm:w-[200px] h-9 text-sm bg-background border-border">
                   <SelectValue placeholder="All Tournaments" />
                 </SelectTrigger>
                 <SelectContent>
@@ -395,7 +397,7 @@ const Leaderboard = () => {
               </Select>
 
               <Select value={timePeriod} onValueChange={setTimePeriod}>
-                <SelectTrigger className="w-[150px] h-9 text-sm bg-background border-border">
+                <SelectTrigger className="w-full sm:w-[150px] h-9 text-sm bg-background border-border">
                   <SelectValue placeholder="All Time" />
                 </SelectTrigger>
                 <SelectContent>
