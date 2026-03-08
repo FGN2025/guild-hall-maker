@@ -18,7 +18,7 @@ interface Props {
 
 const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister, onUnregister, isRegistering }: Props) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   if (!t) return null;
 
   const isFull = t.registrations_count >= t.max_participants;
