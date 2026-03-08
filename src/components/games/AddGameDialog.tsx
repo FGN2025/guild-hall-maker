@@ -116,6 +116,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       name, slug: slug || slugify(name), description: description || null,
       category, cover_image_url: coverImageUrl || null,
       guide_content: guideContent || null, platform_tags: tags, is_active: isActive,
+      tournament_rules_url: tournamentRulesUrl || null,
     };
     if (editGame) payload.id = editGame.id;
     onSubmit(payload);
