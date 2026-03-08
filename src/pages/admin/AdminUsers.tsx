@@ -3,6 +3,7 @@ import { useAdminUsers, useTenantsList } from "@/hooks/useAdminUsers";
 import { useLegacyUsers, useLegacyUserStats } from "@/hooks/useLegacyUsers";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import TableSkeleton from "@/components/ui/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Search, Users, UserCheck, UserX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
