@@ -13,10 +13,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onSelect: (url: string, filePath?: string, item?: MediaItem) => void;
   excludeCategories?: string[];
+  initialTab?: string;
 }
 
-const MediaPickerDialog = ({ open, onOpenChange, onSelect, excludeCategories = [] }: Props) => {
-  const [tab, setTab] = useState("all");
+const MediaPickerDialog = ({ open, onOpenChange, onSelect, excludeCategories = [], initialTab = "all" }: Props) => {
+  const [tab, setTab] = useState(initialTab);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
 
