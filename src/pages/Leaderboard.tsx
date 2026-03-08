@@ -455,7 +455,7 @@ const Leaderboard = () => {
                               {p.display_name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm text-center truncate max-w-[120px] hover:text-primary transition-colors">
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-xs sm:text-sm text-center truncate max-w-[80px] sm:max-w-[120px] hover:text-primary transition-colors">
                             {p.display_name}
                           </Link>
                           <p className="font-display text-xs text-primary">{p.points} Points</p>
