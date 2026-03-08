@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantEvents, type TenantEvent } from "@/hooks/useTenantEvents";
 import { Button } from "@/components/ui/button";
