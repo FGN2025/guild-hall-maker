@@ -1,5 +1,7 @@
 import { useState, useMemo, CSSProperties } from "react";
+import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
+import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
