@@ -32,6 +32,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut, isAdmin, isModerator } = useAuth();
   const { isTenantAdmin } = useTenantAdmin();
+  const activeNavItems = user ? navItems : publicNavItems;
 
   const handleSignOut = async () => {
     await signOut();
