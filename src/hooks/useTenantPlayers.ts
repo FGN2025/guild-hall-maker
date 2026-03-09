@@ -44,7 +44,8 @@ export function useTenantPlayers(tenantId: string | null) {
           source: "new",
           name: p?.display_name || "—",
           gamerTag: p?.gamer_tag || null,
-          email: null, // not stored in user_service_interests
+          email: null,
+          address: null,
           zip: row.zip_code,
           status: row.status || "new",
           matchedUserId: null,
