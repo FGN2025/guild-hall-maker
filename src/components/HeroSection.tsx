@@ -92,7 +92,7 @@ const HeroSection = () => {
           </h1>
           <p className="font-body text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-bold">
             Join Tournaments, climb Leaderboards, and compete with the best.
-            The Ultimate Experience for Players and Broadband Operators
+            The Ultimate Experience for Players on Fiber Broadband Networks.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
