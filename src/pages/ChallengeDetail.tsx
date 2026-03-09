@@ -87,7 +87,7 @@ const ChallengeDetail = () => {
         </Link>
 
         {/* Hero */}
-        <div className="relative rounded-xl overflow-hidden h-52 md:h-64">
+        <div className="relative rounded-xl overflow-hidden h-52 md:h-64 cursor-pointer" onClick={() => setLightboxOpen(true)}>
           <img src={coverUrl} alt={c.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
