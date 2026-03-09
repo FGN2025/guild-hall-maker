@@ -26,6 +26,7 @@ import {
   BrainCircuit,
   BookOpen,
   Megaphone,
+  KeyRound,
 } from "lucide-react";
 import {
   Sidebar,
