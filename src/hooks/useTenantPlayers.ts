@@ -8,6 +8,7 @@ export interface UnifiedPlayer {
   name: string;
   gamerTag: string | null;
   email: string | null;
+  address: string | null;
   zip: string | null;
   status: string;
   matchedUserId: string | null;
@@ -43,7 +44,8 @@ export function useTenantPlayers(tenantId: string | null) {
           source: "new",
           name: p?.display_name || "—",
           gamerTag: p?.gamer_tag || null,
-          email: null, // not stored in user_service_interests
+          email: null,
+          address: null,
           zip: row.zip_code,
           status: row.status || "new",
           matchedUserId: null,
@@ -59,7 +61,7 @@ export function useTenantPlayers(tenantId: string | null) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("legacy_users")
-        .select("id, legacy_username, email, first_name, last_name, zip_code, status, matched_user_id, created_at")
+        .select("id, legacy_username, email, first_name, last_name, address, zip_code, status, matched_user_id, created_at")
         .eq("tenant_id", tenantId!)
         .order("legacy_username", { ascending: true })
         .limit(1000);
@@ -70,6 +72,7 @@ export function useTenantPlayers(tenantId: string | null) {
         name: [row.first_name, row.last_name].filter(Boolean).join(" ") || row.legacy_username,
         gamerTag: row.legacy_username,
         email: row.email,
+        address: row.address || null,
         zip: row.zip_code,
         status: row.matched_user_id ? "matched" : (row.status || "unknown"),
         matchedUserId: row.matched_user_id,
