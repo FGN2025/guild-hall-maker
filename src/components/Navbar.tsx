@@ -21,6 +21,11 @@ const navItems = [
   { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 
+const publicNavItems = [
+  { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/challenges", label: "Challenges", icon: Target },
+];
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
