@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Trash2, Plus, MapPin, Search } from "lucide-react";
+import { Upload, Trash2, Plus, MapPin, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -16,6 +16,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ZipEntry {
   id: string;
@@ -23,6 +29,7 @@ interface ZipEntry {
   zip_code: string;
   city: string | null;
   state: string | null;
+  zip_estimated: boolean;
   created_at: string;
 }
 
@@ -37,7 +44,6 @@ const TenantZipCodes = () => {
 
   const tenantId = tenantInfo?.tenantId || "";
 
-  // All hooks above this line — conditional return below
   const { data: zips = [], isLoading } = useQuery({
     queryKey: ["tenant-zips", tenantId],
     enabled: !!tenantId,
@@ -54,7 +60,6 @@ const TenantZipCodes = () => {
 
   const addZip = useMutation({
     mutationFn: async (input: { zip_code: string; city?: string; state?: string }) => {
-      // If city/state not provided, look them up via validate-zip
       let city = input.city || null;
       let state = input.state || null;
 
@@ -99,7 +104,6 @@ const TenantZipCodes = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
-  // Redirect managers after all hooks
   if (tenantInfo?.tenantRole === "manager") {
     return <Navigate to="/tenant" replace />;
   }
@@ -135,21 +139,26 @@ const TenantZipCodes = () => {
       const dataLines = hasHeader ? lines.slice(1) : lines;
 
       const rows: { tenant_id: string; zip_code: string; city: string | null; state: string | null }[] = [];
+      let cityStateOnlyCount = 0;
 
       for (const line of dataLines) {
         const parts = line.split(",").map((p) => p.trim().replace(/^"|"$/g, ""));
-        if (parts[0] && /^\d{5}$/.test(parts[0])) {
-          rows.push({
-            tenant_id: tenantId,
-            zip_code: parts[0],
-            city: parts[1] || null,
-            state: parts[2] || null,
-          });
+        const zip = parts[0] || "";
+        const city = parts[1] || null;
+        const state = parts[2] || null;
+
+        if (/^\d{5}$/.test(zip)) {
+          // Normal row with ZIP
+          rows.push({ tenant_id: tenantId, zip_code: zip, city, state });
+        } else if (!zip && city && state) {
+          // City+State only — insert with empty zip for backfill
+          rows.push({ tenant_id: tenantId, zip_code: "", city, state });
+          cityStateOnlyCount++;
         }
       }
 
       if (rows.length === 0) {
-        toast.error("No valid ZIP codes found in the CSV.");
+        toast.error("No valid rows found in the CSV.");
         return;
       }
 
@@ -163,9 +172,13 @@ const TenantZipCodes = () => {
       }
 
       queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
-      toast.success(`Uploaded ${rows.length} ZIP codes.`);
 
-      // Auto-backfill city/state for any blanks
+      const msg = cityStateOnlyCount > 0
+        ? `Uploaded ${rows.length} rows. ${cityStateOnlyCount} need ZIP resolution.`
+        : `Uploaded ${rows.length} ZIP codes.`;
+      toast.success(msg);
+
+      // Auto-backfill
       triggerBackfill(true);
     } catch (err: any) {
       toast.error(err.message || "Failed to upload CSV.");
@@ -184,7 +197,7 @@ const TenantZipCodes = () => {
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
       if (data?.updated > 0) {
-        toast.success(data.message || `Updated ${data.updated} ZIP code(s) with city/state.`);
+        toast.success(data.message || `Updated ${data.updated} ZIP code(s).`);
       } else if (!silent) {
         toast.info("All ZIP codes already have city and state data.");
       }
@@ -195,7 +208,7 @@ const TenantZipCodes = () => {
     }
   };
 
-  const blanksCount = zips.filter((z) => !z.city || !z.state).length;
+  const blanksCount = zips.filter((z) => !z.city || !z.state || !z.zip_code).length;
 
   return (
     <div className="space-y-6">
@@ -222,7 +235,7 @@ const TenantZipCodes = () => {
               disabled={backfilling}
             >
               <Search className="h-4 w-4" />
-              {backfilling ? "Looking up..." : `Look Up City/State (${blanksCount})`}
+              {backfilling ? "Looking up..." : `Look Up Missing Data (${blanksCount})`}
             </Button>
           )}
           <Button
@@ -290,6 +303,7 @@ const TenantZipCodes = () => {
       <p className="text-xs text-muted-foreground">
         CSV format: <code className="text-primary">zip_code,city,state</code> — one per line.
         Headers are auto-detected. City/state are auto-filled if blank.
+        Rows with only city and state (no ZIP) will be resolved automatically.
       </p>
 
       {isLoading ? (
@@ -312,8 +326,25 @@ const TenantZipCodes = () => {
             </thead>
             <tbody>
               {zips.map((z) => (
-                <tr key={z.id} className="border-t border-border">
-                  <td className="p-3 font-mono text-primary">{z.zip_code}</td>
+                <tr
+                  key={z.id}
+                  className={`border-t border-border ${z.zip_estimated ? "bg-amber-500/10" : ""}`}
+                >
+                  <td className="p-3 font-mono text-primary flex items-center gap-2">
+                    {z.zip_code || <span className="text-muted-foreground italic">pending</span>}
+                    {z.zip_estimated && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Estimated — multiple ZIPs serve this city. Verify or replace if needed.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </td>
                   <td className="p-3 text-muted-foreground">{z.city || "—"}</td>
                   <td className="p-3">
                     {z.state ? (
