@@ -48,6 +48,7 @@ export function useTenantPlayers(tenantId: string | null) {
           email: null,
           address: null,
           zip: row.zip_code,
+          inviteCode: null,
           status: row.status || "new",
           matchedUserId: null,
           createdAt: row.created_at,
