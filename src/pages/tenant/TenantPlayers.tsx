@@ -69,7 +69,7 @@ const TenantPlayers = () => {
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <Input
-          placeholder="Search by name, gamer tag, email, or ZIP…"
+          placeholder="Search by name, gamer tag, email, or invite code…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md"
