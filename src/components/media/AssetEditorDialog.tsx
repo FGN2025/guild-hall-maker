@@ -523,6 +523,13 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
         onSelect={(url) => addLogoFromUrl(url)}
         excludeCategories={["tournament", "games", "challenges"]}
       />
+
+      {/* Media Picker for background image — no category filter */}
+      <MediaPickerDialog
+        open={bgPickerOpen}
+        onOpenChange={setBgPickerOpen}
+        onSelect={(url) => setBaseImageUrl(url)}
+      />
     </Dialog>
   );
 };
