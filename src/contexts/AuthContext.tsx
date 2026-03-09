@@ -39,8 +39,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isMarketing, setIsMarketing] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
   const [discordLinked, setDiscordLinked] = useState(false);
+  const fetchingRef = { current: false };
 
   const fetchRoleAndDiscord = async (userId: string) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     setRoleLoading(true);
     const [roleResult, profileResult] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
