@@ -44,12 +44,12 @@ export function useTenantAdmin() {
   const selectedTenantId = useSyncExternalStore(subscribeTenantStore, getTenantSnapshot, getTenantSnapshot);
 
   const setSelectedTenantId = useCallback((id: string | null) => {
-    setSelectedTenantIdState(id);
     if (id) {
       localStorage.setItem(SELECTED_TENANT_KEY, id);
     } else {
       localStorage.removeItem(SELECTED_TENANT_KEY);
     }
+    window.dispatchEvent(new Event(TENANT_CHANGE_EVENT));
   }, []);
 
   // Fetch all active tenants for platform admins
