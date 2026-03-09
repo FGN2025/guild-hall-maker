@@ -146,7 +146,7 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden glass-panel border-t border-border/50 animate-slide-up">
           <div className="flex flex-col p-4 gap-2">
-            {navItems.map((item) => {
+            {activeNavItems.map((item) => {
               const active = location.pathname === item.to;
               return (
                 <Link
