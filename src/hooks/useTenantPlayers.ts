@@ -10,6 +10,7 @@ export interface UnifiedPlayer {
   email: string | null;
   address: string | null;
   zip: string | null;
+  inviteCode: string | null;
   status: string;
   matchedUserId: string | null;
   createdAt: string;
