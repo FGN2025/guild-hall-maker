@@ -81,7 +81,7 @@ function drawShape(ctx: CanvasRenderingContext2D, o: ShapeOverlay, scaleX = 1, s
   ctx.globalAlpha = prevAlpha;
 }
 
-export function useCanvasEditor(baseImageUrl?: string) {
+export function useCanvasEditor(initialBaseImageUrl?: string) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { overlays, pushState, setOverlaysLive, undo, redo, canUndo, canRedo } = useCanvasHistory();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -89,13 +89,14 @@ export function useCanvasEditor(baseImageUrl?: string) {
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [activeFormat, setActiveFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [bgColor, setBgColor] = useState("#1a1a2e");
+  const [baseImageUrl, setBaseImageUrlState] = useState(initialBaseImageUrl);
   const [cursorStyle, setCursorStyle] = useState<"default" | "grab" | "grabbing" | "not-allowed">("default");
   const dragRef = useRef<DragState>(null);
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
   // Load base image
-  useEffect(() => {
-    if (!baseImageUrl) {
+  const loadBaseImage = useCallback((url: string | undefined) => {
+    if (!url) {
       setBaseImage(null);
       if (activeFormat.key !== "original") {
         setCanvasSize({ width: activeFormat.displayWidth, height: activeFormat.displayHeight });
@@ -115,8 +116,16 @@ export function useCanvasEditor(baseImageUrl?: string) {
         });
       }
     };
-    img.src = baseImageUrl;
+    img.src = url;
+  }, [activeFormat]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    loadBaseImage(baseImageUrl);
   }, [baseImageUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setBaseImageUrl = useCallback((url: string) => {
+    setBaseImageUrlState(url);
+  }, []);
 
   // Set format
   const setFormat = useCallback((format: CanvasFormat) => {
@@ -603,5 +612,7 @@ export function useCanvasEditor(baseImageUrl?: string) {
     bgColor,
     setBgColor,
     cursorStyle,
+    setBaseImageUrl,
+    baseImageUrl,
   };
 }

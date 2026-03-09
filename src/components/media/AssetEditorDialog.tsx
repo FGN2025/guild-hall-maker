@@ -9,7 +9,7 @@ import {
   ImagePlus, Type, Trash2, Download, Save, ExternalLink,
   LayoutTemplate, Undo2, Redo2, Layers, Square, RectangleHorizontal,
   RectangleVertical, Smartphone, Circle, Minus, ChevronUp, ChevronDown,
-  Lock, Unlock, Library, ChevronsUp, ChevronsDown,
+  Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -65,11 +65,15 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     bgColor,
     setBgColor,
     cursorStyle,
+    setBaseImageUrl,
+    baseImageUrl: currentBaseImageUrl,
   } = useCanvasEditor(baseImageUrl);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const appliedInitialRef = useRef(false);
 
   useEffect(() => {
@@ -86,6 +90,15 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) addLogo(file);
+    if (e.target) e.target.value = "";
+  };
+
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setBaseImageUrl(url);
+    }
     if (e.target) e.target.value = "";
   };
 
@@ -196,6 +209,10 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               <Button size="sm" variant="outline" onClick={() => setMediaPickerOpen(true)}>
                 <Library className="h-4 w-4 mr-1" /> Library
               </Button>
+              <Button size="sm" variant="outline" onClick={() => bgInputRef.current?.click()} title="Change background image">
+                <ImageIcon className="h-4 w-4 mr-1" /> Background
+              </Button>
+              <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
               <Button size="sm" variant="outline" onClick={() => addText()}>
                 <Type className="h-4 w-4 mr-1" /> Text
               </Button>
@@ -238,7 +255,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
             </div>
 
             {/* Background Color (shown when no base image) */}
-            {!baseImageUrl && (
+            {!currentBaseImageUrl && (
               <div className="p-3 border border-border rounded-lg bg-card space-y-2">
                 <Label className="text-xs font-heading uppercase tracking-wider text-muted-foreground">Canvas Background</Label>
                 <input

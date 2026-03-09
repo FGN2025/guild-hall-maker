@@ -5,22 +5,24 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Copy, Check, BookmarkPlus, Pencil } from "lucide-react";
+import { ArrowLeft, Download, Copy, Check, BookmarkPlus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(true);
-  const { assets, isLoading: loadingAssets } = useMarketingAssets(id);
+  const { assets, isLoading: loadingAssets, deleteAsset } = useMarketingAssets(id);
   const { saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
   const { tenantInfo } = useTenantAdmin();
   const [copied, setCopied] = useState(false);
   const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
   const [editorAssetMeta, setEditorAssetMeta] = useState<{ id: string; label: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; file_path: string; label: string } | null>(null);
   const campaign = campaigns.find((c) => c.id === id);
 
   if (loadingCampaigns) {
@@ -139,6 +141,14 @@ const TenantMarketingDetail = () => {
                     <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
                       <Download className="h-4 w-4 mr-2" /> Download
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleteTarget({ id: a.id, file_path: a.file_path, label: a.label })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -163,6 +173,19 @@ const TenantMarketingDetail = () => {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Asset Variant"
+        description={`Are you sure you want to delete "${deleteTarget?.label}"? This action cannot be undone.`}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteAsset.mutate({ id: deleteTarget.id, file_path: deleteTarget.file_path });
+            setDeleteTarget(null);
+          }
+        }}
+      />
     </div>
   );
 };
