@@ -81,7 +81,7 @@ function drawShape(ctx: CanvasRenderingContext2D, o: ShapeOverlay, scaleX = 1, s
   ctx.globalAlpha = prevAlpha;
 }
 
-export function useCanvasEditor(baseImageUrl?: string) {
+export function useCanvasEditor(initialBaseImageUrl?: string) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { overlays, pushState, setOverlaysLive, undo, redo, canUndo, canRedo } = useCanvasHistory();
   const [selectedId, setSelectedId] = useState<string | null>(null);
