@@ -111,7 +111,7 @@ const TenantMarketingDetail = () => {
                 <img src={a.url} alt={a.label} className="w-full h-48 object-cover" />
                 <CardContent className="pt-4 space-y-3">
                   <Badge variant="secondary">{a.label}</Badge>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 w-full">
                     <Button
                       size="sm"
                       variant="outline"
