@@ -1,5 +1,6 @@
 import { useState } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChallengeDetail } from "@/hooks/useChallengeDetail";
@@ -46,6 +47,7 @@ const ChallengeDetail = () => {
 
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -85,7 +87,7 @@ const ChallengeDetail = () => {
         </Link>
 
         {/* Hero */}
-        <div className="relative rounded-xl overflow-hidden h-52 md:h-64">
+        <div className="relative rounded-xl overflow-hidden h-52 md:h-64 cursor-pointer" onClick={() => setLightboxOpen(true)}>
           <img src={coverUrl} alt={c.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
@@ -299,6 +301,12 @@ const ChallengeDetail = () => {
         taskTitle={activeTask?.title}
         onSubmit={submitEvidence}
       />
+
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-4xl p-0 border-none bg-transparent shadow-none">
+          <img src={coverUrl} alt={c.name} className="w-full h-auto rounded-lg object-contain max-h-[85vh]" />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

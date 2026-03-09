@@ -1,15 +1,11 @@
 
 
-## Add Hero Image Lightbox on Challenge Detail
+# Add Helper Text to Career Path Mapping Form
 
-When a user clicks the hero/cover image on the challenge detail page, show the full image in a dialog overlay.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-### Changes
-
-**`src/pages/ChallengeDetail.tsx`**:
-1. Add `useState` for controlling a lightbox dialog open state.
-2. Wrap the hero `<img>` with an `onClick` handler and `cursor-pointer` class to open the lightbox.
-3. Render a `Dialog` containing the full-resolution image with `object-contain` styling so the entire image is visible without cropping.
-
-The dialog will use the existing `Dialog` component from `src/components/ui/dialog.tsx` with a wider `max-w-4xl` content area and no padding, so the image fills the popup cleanly.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
