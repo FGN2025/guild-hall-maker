@@ -47,21 +47,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRoleLoading(true);
     const [roleResult, profileResult] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
-      supabase.from("profiles").select("discord_id").eq("user_id", userId).maybeSingle(),
+      supabase.from("profiles").select("discord_id, discord_bypass_approved").eq("user_id", userId).maybeSingle(),
     ]);
     const roles = (roleResult.data ?? []).map((r) => r.role);
     setIsAdmin(roles.includes("admin"));
     setIsModerator(roles.includes("moderator"));
     setIsMarketing(roles.includes("marketing"));
-    setDiscordLinked(!!profileResult.data?.discord_id);
+    setDiscordLinked(!!profileResult.data?.discord_id || !!profileResult.data?.discord_bypass_approved);
     setRoleLoading(false);
     fetchingRef.current = false;
   };
 
   const refreshDiscordStatus = async () => {
     if (!user) return;
-    const { data } = await supabase.from("profiles").select("discord_id").eq("user_id", user.id).maybeSingle();
-    setDiscordLinked(!!data?.discord_id);
+    const { data } = await supabase.from("profiles").select("discord_id, discord_bypass_approved").eq("user_id", user.id).maybeSingle();
+    setDiscordLinked(!!data?.discord_id || !!data?.discord_bypass_approved);
   };
 
   useEffect(() => {

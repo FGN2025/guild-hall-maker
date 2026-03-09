@@ -5,8 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { MessageSquare, ExternalLink, CheckCircle2, Loader2, Info } from "lucide-react";
+import { MessageSquare, ExternalLink, CheckCircle2, Loader2, Info, ShieldQuestion, Clock } from "lucide-react";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
 const LinkDiscord = () => {
@@ -17,6 +18,28 @@ const LinkDiscord = () => {
   const [linking, setLinking] = useState(false);
   const [linked, setLinked] = useState(false);
   const clientId = useDiscordClientId();
+  const [showBypass, setShowBypass] = useState(false);
+  const [bypassReason, setBypassReason] = useState("");
+  const [submittingBypass, setSubmittingBypass] = useState(false);
+  const [bypassStatus, setBypassStatus] = useState<string | null>(null);
+
+  // Check if user already has a pending/approved bypass request
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("discord_bypass_requests" as any)
+      .select("status")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (data?.status) {
+          setBypassStatus(data.status);
+          if (data.status === "approved") {
+            navigate("/dashboard", { replace: true });
+          }
+        }
+      });
+  }, [user, navigate]);
 
   // Admins don't need Discord — redirect them to dashboard
   useEffect(() => {
@@ -87,6 +110,31 @@ const LinkDiscord = () => {
     window.location.href = `https://discord.com/api/oauth2/authorize?${params}`;
   };
 
+  const handleBypassRequest = async () => {
+    if (!user) return;
+    setSubmittingBypass(true);
+    try {
+      const { error } = await supabase
+        .from("discord_bypass_requests" as any)
+        .insert({ user_id: user.id, reason: bypassReason.trim() || "Unable to verify Discord account" } as any);
+      if (error) {
+        if (error.code === "23505") {
+          toast.info("You already have a pending verification request.");
+          setBypassStatus("pending");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Verification request submitted! An admin will review it shortly.");
+        setBypassStatus("pending");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit request");
+    } finally {
+      setSubmittingBypass(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center p-4">
       <Card className="glass-panel border-border/50 max-w-md w-full">
@@ -112,6 +160,51 @@ const LinkDiscord = () => {
               <Loader2 className="h-8 w-8 animate-spin text-[#5865F2]" />
               <p className="text-muted-foreground font-body">Linking your Discord account…</p>
             </div>
+          ) : bypassStatus === "pending" ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Clock className="h-10 w-10 text-yellow-500" />
+              <p className="text-foreground font-heading text-lg">Request Pending</p>
+              <p className="text-muted-foreground text-sm text-center font-body">
+                Your manual verification request is being reviewed by an admin. You'll receive a notification once it's approved.
+              </p>
+            </div>
+          ) : showBypass ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 p-3">
+                <ShieldQuestion className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <p className="text-xs text-muted-foreground font-body">
+                  If you're unable to link Discord, you can request manual verification from an admin. 
+                  This will allow platform access without a Discord account.
+                </p>
+              </div>
+              <Textarea
+                placeholder="Briefly explain why you can't link Discord (optional)"
+                value={bypassReason}
+                onChange={(e) => setBypassReason(e.target.value)}
+                rows={3}
+                className="resize-none"
+              />
+              <Button
+                onClick={handleBypassRequest}
+                disabled={submittingBypass}
+                className="w-full py-5 font-heading tracking-wide gap-2"
+                variant="outline"
+              >
+                {submittingBypass ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShieldQuestion className="h-4 w-4" />
+                )}
+                Submit Verification Request
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-sm"
+                onClick={() => setShowBypass(false)}
+              >
+                ← Back to Discord linking
+              </Button>
+            </div>
           ) : (
             <>
               <Button
@@ -122,15 +215,23 @@ const LinkDiscord = () => {
                 <ExternalLink className="h-4 w-4" />
                 Link Discord Account
               </Button>
-               <p className="text-xs text-muted-foreground text-center font-body">
-                 Don't have a Discord account yet? You'll be able to create one for free during the linking process.
-               </p>
-               <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 p-3">
-                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                 <p className="text-xs text-muted-foreground font-body">
-                   Discord requires a verified email address on your account. If you see an error, open Discord Settings → My Account and verify your email first.
-                 </p>
-               </div>
+              <p className="text-xs text-muted-foreground text-center font-body">
+                Don't have a Discord account yet? You'll be able to create one for free during the linking process.
+              </p>
+              <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 p-3">
+                <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <p className="text-xs text-muted-foreground font-body">
+                  Discord requires a verified email address on your account. If you see an error, open Discord Settings → My Account and verify your email first.
+                </p>
+              </div>
+              <div className="pt-2 border-t border-border">
+                <button
+                  onClick={() => setShowBypass(true)}
+                  className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors font-body text-center py-2"
+                >
+                  Can't link Discord? Request manual verification →
+                </button>
+              </div>
             </>
           )}
         </CardContent>

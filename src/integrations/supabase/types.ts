@@ -690,6 +690,39 @@ export type Database = {
           },
         ]
       }
+      discord_bypass_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ecosystem_auth_tokens: {
         Row: {
           created_at: string
@@ -1518,6 +1551,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           discord_avatar: string | null
+          discord_bypass_approved: boolean
           discord_id: string | null
           discord_linked_at: string | null
           discord_username: string | null
@@ -1532,6 +1566,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           discord_avatar?: string | null
+          discord_bypass_approved?: boolean
           discord_id?: string | null
           discord_linked_at?: string | null
           discord_username?: string | null
@@ -1546,6 +1581,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           discord_avatar?: string | null
+          discord_bypass_approved?: boolean
           discord_id?: string | null
           discord_linked_at?: string | null
           discord_username?: string | null
