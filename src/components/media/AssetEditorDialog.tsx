@@ -9,7 +9,7 @@ import {
   ImagePlus, Type, Trash2, Download, Save, ExternalLink,
   LayoutTemplate, Undo2, Redo2, Layers, Square, RectangleHorizontal,
   RectangleVertical, Smartphone, Circle, Minus, ChevronUp, ChevronDown,
-  Lock, Unlock, Library, ChevronsUp, ChevronsDown,
+  Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

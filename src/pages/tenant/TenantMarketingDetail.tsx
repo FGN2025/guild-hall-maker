@@ -173,6 +173,19 @@ const TenantMarketingDetail = () => {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Asset Variant"
+        description={`Are you sure you want to delete "${deleteTarget?.label}"? This action cannot be undone.`}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteAsset.mutate({ id: deleteTarget.id, file_path: deleteTarget.file_path });
+            setDeleteTarget(null);
+          }
+        }}
+      />
     </div>
   );
 };
