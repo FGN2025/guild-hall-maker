@@ -1,8 +1,10 @@
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantLeads } from "@/hooks/useTenantLeads";
+import { useTenantAchievements } from "@/hooks/useTenantAchievements";
+import TenantAchievementsCard from "@/components/tenant/TenantAchievementsCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, MapPin, TrendingUp, Clock, UserCheck, ArrowRight } from "lucide-react";
+import { Users, MapPin, Clock, UserCheck, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const TenantDashboard = () => {
@@ -37,9 +39,10 @@ const TenantDashboard = () => {
 
   const totalPlayers = leads.length + legacyCount;
 
+  const { data: achievementPlayers = [], isLoading: achievementsLoading } = useTenantAchievements(tenantInfo?.tenantId ?? null);
+
   const stats = [
     { label: "Total Players", value: totalPlayers, icon: Users, color: "text-primary" },
-    { label: "Legacy Players", value: legacyCount, icon: UserCheck, color: "text-purple-400" },
     { label: "New Leads", value: leads.filter((l) => l.status === "new").length, icon: Clock, color: "text-yellow-400" },
     { label: "ZIP Codes Covered", value: zipCount, icon: MapPin, color: "text-blue-400" },
   ];
@@ -78,6 +81,9 @@ const TenantDashboard = () => {
         </div>
         <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
       </Link>
+
+      {/* Player Achievements */}
+      <TenantAchievementsCard players={achievementPlayers} isLoading={achievementsLoading} />
 
       <div>
         <h2 className="font-display text-lg font-bold text-foreground mb-4">Recent Leads</h2>
