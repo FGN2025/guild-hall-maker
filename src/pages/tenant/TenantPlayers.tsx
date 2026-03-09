@@ -100,11 +100,11 @@ const TenantPlayers = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading…</TableCell>
               </TableRow>
             ) : players.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No players found.</TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No players found.</TableCell>
               </TableRow>
             ) : (
               players.map((p) => (
