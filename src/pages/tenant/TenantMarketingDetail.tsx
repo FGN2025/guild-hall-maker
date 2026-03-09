@@ -10,7 +10,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
