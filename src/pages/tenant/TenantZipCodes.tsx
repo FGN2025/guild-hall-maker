@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Trash2, Plus, MapPin } from "lucide-react";
+import { Upload, Trash2, Plus, MapPin, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -33,13 +33,11 @@ const TenantZipCodes = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ zip_code: "", city: "", state: "" });
   const [uploading, setUploading] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
 
   const tenantId = tenantInfo?.tenantId || "";
 
-  if (tenantInfo?.tenantRole === "manager") {
-    return <Navigate to="/tenant" replace />;
-  }
-
+  // All hooks above this line — conditional return below
   const { data: zips = [], isLoading } = useQuery({
     queryKey: ["tenant-zips", tenantId],
     enabled: !!tenantId,
@@ -56,11 +54,29 @@ const TenantZipCodes = () => {
 
   const addZip = useMutation({
     mutationFn: async (input: { zip_code: string; city?: string; state?: string }) => {
+      // If city/state not provided, look them up via validate-zip
+      let city = input.city || null;
+      let state = input.state || null;
+
+      if (!city || !state) {
+        try {
+          const { data } = await supabase.functions.invoke("validate-zip", {
+            body: { zipCode: input.zip_code },
+          });
+          if (data?.valid && data.city) {
+            city = city || data.city;
+            state = state || data.state;
+          }
+        } catch {
+          // Smarty lookup failed — proceed without geo data
+        }
+      }
+
       const { error } = await supabase.from("tenant_zip_codes").insert({
         tenant_id: tenantId,
         zip_code: input.zip_code,
-        city: input.city || null,
-        state: input.state || null,
+        city,
+        state,
       });
       if (error) throw error;
     },
@@ -82,6 +98,11 @@ const TenantZipCodes = () => {
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  // Redirect managers after all hooks
+  if (tenantInfo?.tenantRole === "manager") {
+    return <Navigate to="/tenant" replace />;
+  }
 
   const handleAdd = () => {
     if (!form.zip_code.trim() || form.zip_code.length !== 5) {
@@ -143,6 +164,9 @@ const TenantZipCodes = () => {
 
       queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
       toast.success(`Uploaded ${rows.length} ZIP codes.`);
+
+      // Auto-backfill city/state for any blanks
+      triggerBackfill(true);
     } catch (err: any) {
       toast.error(err.message || "Failed to upload CSV.");
     } finally {
@@ -150,6 +174,28 @@ const TenantZipCodes = () => {
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
+  const triggerBackfill = async (silent = false) => {
+    setBackfilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("backfill-zip-geo", {
+        body: { tenant_id: tenantId },
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
+      if (data?.updated > 0) {
+        toast.success(data.message || `Updated ${data.updated} ZIP code(s) with city/state.`);
+      } else if (!silent) {
+        toast.info("All ZIP codes already have city and state data.");
+      }
+    } catch (err: any) {
+      if (!silent) toast.error(err.message || "Backfill failed.");
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
+  const blanksCount = zips.filter((z) => !z.city || !z.state).length;
 
   return (
     <div className="space-y-6">
@@ -168,6 +214,17 @@ const TenantZipCodes = () => {
             className="hidden"
             onChange={handleCsvUpload}
           />
+          {blanksCount > 0 && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => triggerBackfill(false)}
+              disabled={backfilling}
+            >
+              <Search className="h-4 w-4" />
+              {backfilling ? "Looking up..." : `Look Up City/State (${blanksCount})`}
+            </Button>
+          )}
           <Button
             variant="outline"
             className="gap-2"
@@ -201,7 +258,7 @@ const TenantZipCodes = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>City (optional)</Label>
+                    <Label>City (optional — auto-filled)</Label>
                     <Input
                       placeholder="Beverly Hills"
                       value={form.city}
@@ -209,7 +266,7 @@ const TenantZipCodes = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>State (optional)</Label>
+                    <Label>State (optional — auto-filled)</Label>
                     <Input
                       placeholder="CA"
                       maxLength={2}
@@ -218,6 +275,9 @@ const TenantZipCodes = () => {
                     />
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Leave City and State blank to auto-fill via ZIP code lookup.
+                </p>
                 <Button onClick={handleAdd} disabled={addZip.isPending} className="w-full">
                   {addZip.isPending ? "Adding..." : "Add ZIP Code"}
                 </Button>
@@ -229,7 +289,7 @@ const TenantZipCodes = () => {
 
       <p className="text-xs text-muted-foreground">
         CSV format: <code className="text-primary">zip_code,city,state</code> — one per line.
-        Headers are auto-detected.
+        Headers are auto-detected. City/state are auto-filled if blank.
       </p>
 
       {isLoading ? (
