@@ -93,6 +93,15 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     if (e.target) e.target.value = "";
   };
 
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setBaseImageUrl(url);
+    }
+    if (e.target) e.target.value = "";
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
