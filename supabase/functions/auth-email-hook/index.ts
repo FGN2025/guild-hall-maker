@@ -36,9 +36,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "FGN"
-const SENDER_DOMAIN = "notify.fgn.gg"
+const SENDER_DOMAIN = "fgn.gg"
 const ROOT_DOMAIN = "fgn.gg"
-const FROM_DOMAIN = "notify.fgn.gg" // Domain shown in From address (may be root or sender subdomain)
+const FROM_DOMAIN = "fgn.gg" // Must match workspace-verified email domain
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
@@ -270,6 +270,23 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   console.log('sendLovableEmail full result:', JSON.stringify(result))
+
+  if (!result?.message_id) {
+    console.error('Email delivery failed - no message_id in response', {
+      run_id,
+      emailType,
+      recipient: payload.data.email,
+      senderDomain: SENDER_DOMAIN,
+      fromDomain: FROM_DOMAIN,
+      callbackUrlHost: new URL(callbackUrl).host,
+      fullResult: JSON.stringify(result),
+    })
+    return new Response(
+      JSON.stringify({ error: 'Email delivery failed - no message_id returned', run_id }),
+      { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   console.log('Email sent successfully', { message_id: result.message_id, run_id })
 
   return new Response(
