@@ -67,7 +67,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole, isPlatformAdmin, allTe
 
   if (!isMobile) {
     return (
-      <div className="min-h-screen bg-background flex tenant-portal">
+      <div className="h-screen bg-background flex overflow-hidden tenant-portal">
         <TenantSidebar {...sidebarProps} />
         <main className="flex-1 p-8 overflow-auto">{children}</main>
       </div>
