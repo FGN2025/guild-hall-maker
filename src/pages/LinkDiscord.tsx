@@ -131,6 +131,7 @@ const LinkDiscord = () => {
                    Discord requires a verified email address on your account. If you see an error, open Discord Settings → My Account and verify your email first.
                  </p>
                </div>
+            </>
           )}
         </CardContent>
       </Card>
