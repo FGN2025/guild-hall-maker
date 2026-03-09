@@ -29,6 +29,18 @@ const LinkDiscord = () => {
     ? `${window.location.origin}/link-discord`
     : "https://play.fgn.gg/link-discord";
 
+  // Handle OAuth error redirect
+  useEffect(() => {
+    const error = searchParams.get("error");
+    const errorDesc = searchParams.get("error_description");
+    if (error) {
+      toast.error(
+        errorDesc || "Discord authorization failed. Make sure your Discord account has a verified email address.",
+        { duration: 8000 }
+      );
+    }
+  }, [searchParams]);
+
   // Handle OAuth callback
   useEffect(() => {
     const code = searchParams.get("code");
