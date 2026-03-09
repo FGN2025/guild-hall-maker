@@ -2218,6 +2218,7 @@ export type Database = {
           state: string | null
           tenant_id: string
           zip_code: string
+          zip_estimated: boolean
         }
         Insert: {
           city?: string | null
@@ -2226,6 +2227,7 @@ export type Database = {
           state?: string | null
           tenant_id: string
           zip_code: string
+          zip_estimated?: boolean
         }
         Update: {
           city?: string | null
@@ -2234,6 +2236,7 @@ export type Database = {
           state?: string | null
           tenant_id?: string
           zip_code?: string
+          zip_estimated?: boolean
         }
         Relationships: [
           {
