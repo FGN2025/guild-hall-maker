@@ -9,7 +9,7 @@ const AppLayout = () => {
   return (
     <CoachProvider>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="h-screen flex w-full overflow-hidden">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
             <header className="h-12 flex items-center border-b border-border px-4 shrink-0 bg-background">

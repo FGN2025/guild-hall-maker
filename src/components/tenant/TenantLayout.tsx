@@ -67,7 +67,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole, isPlatformAdmin, allTe
 
   if (!isMobile) {
     return (
-      <div className="min-h-screen bg-background flex tenant-portal">
+      <div className="h-screen bg-background flex overflow-hidden tenant-portal">
         <TenantSidebar {...sidebarProps} />
         <main className="flex-1 p-8 overflow-auto">{children}</main>
       </div>
@@ -75,7 +75,7 @@ const TenantLayout = ({ children, tenantInfo, tenantRole, isPlatformAdmin, allTe
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col tenant-portal">
+    <div className="h-screen bg-background flex flex-col overflow-hidden tenant-portal">
       <header className="h-12 flex items-center border-b border-border px-4 bg-background shrink-0" style={brandAccent ? { borderBottomColor: brandAccent } : undefined}>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>

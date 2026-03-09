@@ -11,7 +11,7 @@ const MarketingSidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
+    <aside className="w-64 h-full bg-card border-r border-border flex flex-col overflow-hidden">
       <div className="p-6 border-b border-border">
         <h2 className="font-display text-lg font-bold text-primary tracking-wider">Marketing Dashboard</h2>
         <Link
@@ -22,7 +22,7 @@ const MarketingSidebar = () => {
           Back to App
         </Link>
       </div>
-      <nav className="flex-1 p-4 flex flex-col gap-1">
+      <nav className="flex-1 p-4 flex flex-col gap-1 overflow-y-auto">
         {sidebarItems.map((item) => {
           const active = location.pathname === item.to;
           return (

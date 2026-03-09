@@ -11,7 +11,7 @@ const MarketingLayout = ({ children }: { children: ReactNode }) => {
 
   if (!isMobile) {
     return (
-      <div className="min-h-screen bg-background flex">
+      <div className="h-screen bg-background flex overflow-hidden">
         <MarketingSidebar />
         <main className="flex-1 p-8 overflow-auto">{children}</main>
       </div>
@@ -19,7 +19,7 @@ const MarketingLayout = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <header className="h-12 flex items-center border-b border-border px-4 bg-background shrink-0">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
