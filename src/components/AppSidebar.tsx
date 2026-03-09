@@ -26,6 +26,7 @@ import {
   BrainCircuit,
   BookOpen,
   Megaphone,
+  KeyRound,
 } from "lucide-react";
 import {
   Sidebar,
@@ -189,6 +190,18 @@ export function AppSidebar() {
                      >
                        <Building2 className="h-4 w-4 shrink-0" />
                        <span>Tenant Dashboard</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                   <SidebarMenuButton asChild tooltip="Codes">
+                     <NavLink
+                       to="/tenant/codes"
+                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                     >
+                       <KeyRound className="h-4 w-4 shrink-0" />
+                       <span>Codes</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
