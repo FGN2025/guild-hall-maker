@@ -71,7 +71,11 @@ Deno.serve(async (req) => {
           } catch { /* skip */ }
         }
 
-        const tenantId = providerName ? tenantMap.get(providerName.toLowerCase()) || null : null;
+        // Default to Fiber Gaming Network tenant if no provider match found
+        const FGN_TENANT_ID = "d12d8519-4f30-4d98-9069-e614ee593f98";
+        const tenantId = providerName
+          ? tenantMap.get(providerName.toLowerCase()) || FGN_TENANT_ID
+          : FGN_TENANT_ID;
 
         return {
           legacy_username: row["Username"] || row["username"] || "unknown",
