@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
         if (session?.user) {
-          setTimeout(() => fetchRoleAndDiscord(session.user.id), 0);
+          fetchRoleAndDiscord(session.user.id);
         } else {
           setIsAdmin(false);
           setIsModerator(false);
