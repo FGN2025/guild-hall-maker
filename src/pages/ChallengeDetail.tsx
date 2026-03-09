@@ -87,7 +87,10 @@ const ChallengeDetail = () => {
         </Link>
 
         {/* Hero */}
-        <div className="relative rounded-xl overflow-hidden h-52 md:h-64 cursor-pointer" onClick={() => setLightboxOpen(true)}>
+        <div className="relative group rounded-xl overflow-hidden h-52 md:h-64 cursor-pointer" onClick={() => setLightboxOpen(true)}>
+          <span className="absolute top-3 right-3 z-10 text-xs text-white/60 bg-black/40 px-2 py-1 rounded-md flex items-center gap-1 group-hover:text-white/90 transition-colors">
+            <ImageIcon className="h-3 w-3" /> Click for full view
+          </span>
           <img src={coverUrl} alt={c.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
