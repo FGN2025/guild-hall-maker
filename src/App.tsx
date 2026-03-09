@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
+import ConditionalLayout from "./components/ConditionalLayout";
 import AdminRoute from "./components/admin/AdminRoute";
 import MarketingRoute from "./components/admin/MarketingRoute";
 import ModeratorRoute from "./components/moderator/ModeratorRoute";
