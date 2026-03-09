@@ -1,5 +1,6 @@
 import { useState } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChallengeDetail } from "@/hooks/useChallengeDetail";
