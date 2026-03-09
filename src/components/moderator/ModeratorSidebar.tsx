@@ -16,7 +16,7 @@ const ModeratorSidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
+    <aside className="w-64 h-full bg-card border-r border-border flex flex-col overflow-hidden">
       <div className="p-6 border-b border-border">
         <h2 className="font-display text-lg font-bold text-primary tracking-wider">Moderator Dashboard</h2>
         <Link
