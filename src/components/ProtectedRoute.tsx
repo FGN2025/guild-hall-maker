@@ -19,8 +19,11 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Discord gate — exempt certain paths
-  if (!discordLinked && !isAdmin && !DISCORD_EXEMPT_PATHS.includes(location.pathname)) {
+  // Discord gate — exempt certain paths and all admin/tenant routes
+  const isExempt = DISCORD_EXEMPT_PATHS.includes(location.pathname) ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/tenant");
+  if (!discordLinked && !isAdmin && !isExempt) {
     return <Navigate to="/link-discord" replace />;
   }
 

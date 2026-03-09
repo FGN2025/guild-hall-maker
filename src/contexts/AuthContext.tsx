@@ -39,8 +39,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isMarketing, setIsMarketing] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
   const [discordLinked, setDiscordLinked] = useState(false);
+  const fetchingRef = { current: false };
 
   const fetchRoleAndDiscord = async (userId: string) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     setRoleLoading(true);
     const [roleResult, profileResult] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
@@ -52,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsMarketing(roles.includes("marketing"));
     setDiscordLinked(!!profileResult.data?.discord_id);
     setRoleLoading(false);
+    fetchingRef.current = false;
   };
 
   const refreshDiscordStatus = async () => {
@@ -67,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
         if (session?.user) {
-          setTimeout(() => fetchRoleAndDiscord(session.user.id), 0);
+          fetchRoleAndDiscord(session.user.id);
         } else {
           setIsAdmin(false);
           setIsModerator(false);
