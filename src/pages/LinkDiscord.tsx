@@ -122,10 +122,15 @@ const LinkDiscord = () => {
                 <ExternalLink className="h-4 w-4" />
                 Link Discord Account
               </Button>
-              <p className="text-xs text-muted-foreground text-center font-body">
-                Don't have a Discord account yet? You'll be able to create one for free during the linking process.
-              </p>
-            </>
+               <p className="text-xs text-muted-foreground text-center font-body">
+                 Don't have a Discord account yet? You'll be able to create one for free during the linking process.
+               </p>
+               <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 p-3">
+                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                 <p className="text-xs text-muted-foreground font-body">
+                   Discord requires a verified email address on your account. If you see an error, open Discord Settings → My Account and verify your email first.
+                 </p>
+               </div>
           )}
         </CardContent>
       </Card>
