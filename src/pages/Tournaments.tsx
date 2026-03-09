@@ -193,8 +193,8 @@ const Tournaments = () => {
                 <TournamentCard
                     key={t.id}
                     tournament={t}
-                    onRegister={register}
-                    onUnregister={unregister}
+                    onRegister={user ? register : undefined}
+                    onUnregister={user ? unregister : undefined}
                     isRegistering={isRegistering}
                   />
                 </div>
