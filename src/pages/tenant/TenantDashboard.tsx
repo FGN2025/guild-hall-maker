@@ -82,6 +82,9 @@ const TenantDashboard = () => {
         <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
       </Link>
 
+      {/* Player Achievements */}
+      <TenantAchievementsCard players={achievementPlayers} isLoading={achievementsLoading} />
+
       <div>
         <h2 className="font-display text-lg font-bold text-foreground mb-4">Recent Leads</h2>
         {leads.length === 0 ? (
