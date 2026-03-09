@@ -84,7 +84,7 @@ const TournamentDetail = () => {
   const coverUrl = t.image_url || t.game_cover_url;
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       {/* Back button */}
       <Button
         variant="ghost"
