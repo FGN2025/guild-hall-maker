@@ -2,7 +2,8 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantLeads } from "@/hooks/useTenantLeads";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, MapPin, TrendingUp, Clock } from "lucide-react";
+import { Users, MapPin, TrendingUp, Clock, UserCheck, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const TenantDashboard = () => {
   const { tenantInfo } = useTenantAdmin();
@@ -21,14 +22,25 @@ const TenantDashboard = () => {
     },
   });
 
-  const newLeads = leads.filter((l) => l.status === "new").length;
-  const contactedLeads = leads.filter((l) => l.status === "contacted").length;
-  const convertedLeads = leads.filter((l) => l.status === "converted").length;
+  const { data: legacyCount = 0 } = useQuery({
+    queryKey: ["tenant-legacy-count", tenantInfo?.tenantId],
+    enabled: !!tenantInfo?.tenantId,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("legacy_users")
+        .select("*", { count: "exact", head: true })
+        .eq("tenant_id", tenantInfo!.tenantId);
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const totalPlayers = leads.length + legacyCount;
 
   const stats = [
-    { label: "Total Leads", value: leads.length, icon: Users, color: "text-primary" },
-    { label: "New Leads", value: newLeads, icon: Clock, color: "text-yellow-400" },
-    { label: "Converted", value: convertedLeads, icon: TrendingUp, color: "text-green-400" },
+    { label: "Total Players", value: totalPlayers, icon: Users, color: "text-primary" },
+    { label: "Legacy Players", value: legacyCount, icon: UserCheck, color: "text-purple-400" },
+    { label: "New Leads", value: leads.filter((l) => l.status === "new").length, icon: Clock, color: "text-yellow-400" },
     { label: "ZIP Codes Covered", value: zipCount, icon: MapPin, color: "text-blue-400" },
   ];
 
@@ -52,6 +64,20 @@ const TenantDashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* Quick Navigation to Players */}
+      <Link
+        to="/tenant/players"
+        className="flex items-center justify-between border border-border rounded-lg p-5 bg-card hover:bg-accent/50 transition-colors group"
+      >
+        <div>
+          <h2 className="font-display text-lg font-bold text-foreground">Player Directory</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            View and manage all {totalPlayers} players ({legacyCount} legacy, {leads.length} new)
+          </p>
+        </div>
+        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+      </Link>
 
       <div>
         <h2 className="font-display text-lg font-bold text-foreground mb-4">Recent Leads</h2>
