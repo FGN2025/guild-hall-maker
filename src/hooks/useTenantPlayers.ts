@@ -8,6 +8,7 @@ export interface UnifiedPlayer {
   name: string;
   gamerTag: string | null;
   email: string | null;
+  address: string | null;
   zip: string | null;
   status: string;
   matchedUserId: string | null;
