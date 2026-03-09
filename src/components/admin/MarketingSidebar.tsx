@@ -4,7 +4,7 @@ import { LayoutDashboard, Image, ArrowLeft, BookOpen } from "lucide-react";
 const sidebarItems = [
   { to: "/admin/marketing", label: "Campaigns", icon: LayoutDashboard },
   { to: "/admin/media", label: "Media Library", icon: Image },
-  { to: "/admin/guide", label: "Admin Guide", icon: BookOpen },
+  { to: "/admin/guide", label: "Marketing Guide", icon: BookOpen },
 ];
 
 const MarketingSidebar = () => {
