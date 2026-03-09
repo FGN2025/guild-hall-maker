@@ -39,9 +39,10 @@ const TenantDashboard = () => {
 
   const totalPlayers = leads.length + legacyCount;
 
+  const { data: achievementPlayers = [], isLoading: achievementsLoading } = useTenantAchievements(tenantInfo?.tenantId ?? null);
+
   const stats = [
     { label: "Total Players", value: totalPlayers, icon: Users, color: "text-primary" },
-    { label: "Legacy Players", value: legacyCount, icon: UserCheck, color: "text-purple-400" },
     { label: "New Leads", value: leads.filter((l) => l.status === "new").length, icon: Clock, color: "text-yellow-400" },
     { label: "ZIP Codes Covered", value: zipCount, icon: MapPin, color: "text-blue-400" },
   ];
