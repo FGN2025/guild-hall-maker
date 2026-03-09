@@ -81,7 +81,7 @@ const Challenges = () => {
             Challenges
           </h1>
           <p className="text-muted-foreground font-body mt-1">
-            Complete work orders to earn points. Upload evidence to prove your work.
+            Complete challenges to earn points. Upload evidence to prove completion.
           </p>
         </div>
 
