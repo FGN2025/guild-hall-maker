@@ -69,14 +69,6 @@ const ChallengeDetail = () => {
     },
     onError: () => toast.error("Failed to delete challenge"),
   });
-    submitEvidence, submittingEvidence,
-    submitForReview, submittingForReview,
-    deleteEvidence, deletingEvidence,
-  } = useChallengeEnrollment(id);
-
-  const [evidenceOpen, setEvidenceOpen] = useState(false);
-  const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
-  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   if (isLoading) {
     return (
