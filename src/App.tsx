@@ -211,6 +211,7 @@ const App = () => (
               <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
               <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
               <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
+              <Route path="/tenant/codes" element={<TenantRoute><TenantCodes /></TenantRoute>} />
               <Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />
 
               <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
