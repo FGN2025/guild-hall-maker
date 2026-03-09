@@ -65,11 +65,15 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     bgColor,
     setBgColor,
     cursorStyle,
+    setBaseImageUrl,
+    baseImageUrl: currentBaseImageUrl,
   } = useCanvasEditor(baseImageUrl);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const appliedInitialRef = useRef(false);
 
   useEffect(() => {

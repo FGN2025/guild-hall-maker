@@ -612,5 +612,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     bgColor,
     setBgColor,
     cursorStyle,
+    setBaseImageUrl,
+    baseImageUrl,
   };
 }
