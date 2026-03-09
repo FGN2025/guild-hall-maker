@@ -21,6 +21,13 @@ const navItems = [
   { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 
+const authNavItems = [
+  { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/challenges", label: "Challenges", icon: Target },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+];
+
 const publicNavItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/challenges", label: "Challenges", icon: Target },
@@ -32,7 +39,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut, isAdmin, isModerator } = useAuth();
   const { isTenantAdmin } = useTenantAdmin();
-  const activeNavItems = user ? navItems : publicNavItems;
+  const activeNavItems = user ? authNavItems : publicNavItems;
 
   const handleSignOut = async () => {
     await signOut();
