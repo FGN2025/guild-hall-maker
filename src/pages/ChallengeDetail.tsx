@@ -1,6 +1,7 @@
 import { useState } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { useChallengeDetail } from "@/hooks/useChallengeDetail";
 import { useChallengeEnrollment } from "@/hooks/useChallengeEnrollment";
 import { Badge } from "@/components/ui/badge";
