@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { format } from "date-fns";
+import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 
 const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
