@@ -141,6 +141,14 @@ const TenantMarketingDetail = () => {
                     <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
                       <Download className="h-4 w-4 mr-2" /> Download
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleteTarget({ id: a.id, file_path: a.file_path, label: a.label })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
