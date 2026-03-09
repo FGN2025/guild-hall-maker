@@ -84,5 +84,5 @@ export function useBypassCodes() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  return { codes, isLoading, createCode, toggleActive, deleteCode };
+  return { codes, isLoading, createCode, updateCode, deleteCode };
 }

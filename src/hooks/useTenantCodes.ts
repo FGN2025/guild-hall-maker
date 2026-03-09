@@ -70,7 +70,7 @@ export function useTenantCodes(tenantId: string | null) {
   });
 
   const updateCode = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; is_active?: boolean; description?: string; campaign_id?: string | null; event_id?: string | null }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; is_active?: boolean; description?: string; code_type?: string; max_uses?: number | null; expires_at?: string | null; campaign_id?: string | null; event_id?: string | null }) => {
       const { error } = await supabase
         .from("tenant_codes" as any)
         .update(updates as any)
