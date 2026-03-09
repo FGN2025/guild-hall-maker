@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { MessageSquare, ExternalLink, CheckCircle2, Loader2 } from "lucide-react";
+import { MessageSquare, ExternalLink, CheckCircle2, Loader2, Info } from "lucide-react";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
 const LinkDiscord = () => {
@@ -28,6 +28,18 @@ const LinkDiscord = () => {
   const redirectUri = window.location.hostname.includes("localhost")
     ? `${window.location.origin}/link-discord`
     : "https://play.fgn.gg/link-discord";
+
+  // Handle OAuth error redirect
+  useEffect(() => {
+    const error = searchParams.get("error");
+    const errorDesc = searchParams.get("error_description");
+    if (error) {
+      toast.error(
+        errorDesc || "Discord authorization failed. Make sure your Discord account has a verified email address.",
+        { duration: 8000 }
+      );
+    }
+  }, [searchParams]);
 
   // Handle OAuth callback
   useEffect(() => {
@@ -70,7 +82,7 @@ const LinkDiscord = () => {
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: "identify guilds.members.read",
+      scope: "identify",
     });
     window.location.href = `https://discord.com/api/oauth2/authorize?${params}`;
   };
@@ -110,9 +122,15 @@ const LinkDiscord = () => {
                 <ExternalLink className="h-4 w-4" />
                 Link Discord Account
               </Button>
-              <p className="text-xs text-muted-foreground text-center font-body">
-                Don't have a Discord account yet? You'll be able to create one for free during the linking process.
-              </p>
+               <p className="text-xs text-muted-foreground text-center font-body">
+                 Don't have a Discord account yet? You'll be able to create one for free during the linking process.
+               </p>
+               <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 p-3">
+                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                 <p className="text-xs text-muted-foreground font-body">
+                   Discord requires a verified email address on your account. If you see an error, open Discord Settings → My Account and verify your email first.
+                 </p>
+               </div>
             </>
           )}
         </CardContent>
