@@ -1,11 +1,22 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Plan: Update Tenant Players Table Columns
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+### Changes
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+**`src/hooks/useTenantPlayers.ts`**
+- Add `inviteCode: string | null` to `UnifiedPlayer` interface
+- Add `invite_code` to the legacy_users select query
+- Map `row.invite_code` to `inviteCode` in the legacy player mapping
+- Set `inviteCode: null` for new leads (no equivalent field)
+- Add `inviteCode` to the search filter
+
+**`src/pages/tenant/TenantPlayers.tsx`**
+- Remove the **ZIP** and **Source** columns from the table
+- Add an **Invite Code** column displaying `p.inviteCode || "—"`
+- Keep the "Extract ZIPs from Addresses" button as-is
+- Update `colSpan` from 7 to 6 (Name, Gamer Tag, Email, Invite Code, Status, Registered)
+- Update search placeholder to remove "ZIP" reference
+
+No database changes needed — `invite_code` already exists on `legacy_users`.
 
