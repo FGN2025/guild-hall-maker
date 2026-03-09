@@ -270,6 +270,23 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   console.log('sendLovableEmail full result:', JSON.stringify(result))
+
+  if (!result?.message_id) {
+    console.error('Email delivery failed - no message_id in response', {
+      run_id,
+      emailType,
+      recipient: payload.data.email,
+      senderDomain: SENDER_DOMAIN,
+      fromDomain: FROM_DOMAIN,
+      callbackUrlHost: new URL(callbackUrl).host,
+      fullResult: JSON.stringify(result),
+    })
+    return new Response(
+      JSON.stringify({ error: 'Email delivery failed - no message_id returned', run_id }),
+      { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   console.log('Email sent successfully', { message_id: result.message_id, run_id })
 
   return new Response(
