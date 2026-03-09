@@ -71,6 +71,7 @@ export function useTenantPlayers(tenantId: string | null) {
         name: [row.first_name, row.last_name].filter(Boolean).join(" ") || row.legacy_username,
         gamerTag: row.legacy_username,
         email: row.email,
+        address: row.address || null,
         zip: row.zip_code,
         status: row.matched_user_id ? "matched" : (row.status || "unknown"),
         matchedUserId: row.matched_user_id,
