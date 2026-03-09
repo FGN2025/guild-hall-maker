@@ -102,7 +102,7 @@ const ChallengeDetail = () => {
   return (
     <>
       <PageBackground pageSlug="challenges" />
-      <div className="space-y-6 p-4 md:p-6 pb-12">
+      <div className="space-y-6 pb-12">
         <Link to="/challenges" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to Challenges
         </Link>
