@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target } from "lucide-react";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target, ShieldCheck } from "lucide-react";
 
 const sidebarItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
