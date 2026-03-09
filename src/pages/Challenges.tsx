@@ -187,8 +187,8 @@ const Challenges = () => {
           <Card>
             <CardContent className="py-16 text-center">
               <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Work Orders Available</h3>
-              <p className="text-muted-foreground font-body">Check back soon for new work orders!</p>
+              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Challenges Available</h3>
+              <p className="text-muted-foreground font-body">Check back soon for new challenges!</p>
             </CardContent>
           </Card>
         ) : (
