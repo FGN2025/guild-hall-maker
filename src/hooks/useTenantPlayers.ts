@@ -76,6 +76,7 @@ export function useTenantPlayers(tenantId: string | null) {
         email: row.email,
         address: row.address || null,
         zip: row.zip_code,
+        inviteCode: row.invite_code || null,
         status: row.matched_user_id ? "matched" : (row.status || "unknown"),
         matchedUserId: row.matched_user_id,
         createdAt: row.created_at,
