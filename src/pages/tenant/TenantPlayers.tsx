@@ -14,9 +14,7 @@ const TenantPlayers = () => {
 
   const statCards = [
     { label: "Total Players", value: stats.total, icon: Users },
-    { label: "New Players", value: stats.newCount, icon: UserPlus },
-    { label: "Legacy Players", value: stats.legacyCount, icon: Archive },
-    { label: "Matched", value: stats.matched, icon: Link2 },
+    { label: "New Leads", value: stats.newCount, icon: UserPlus },
   ];
 
   return (
