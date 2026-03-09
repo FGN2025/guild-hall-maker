@@ -12,31 +12,18 @@ const useHeroStats = () => {
   return useQuery({
     queryKey: ["hero-stats"],
     queryFn: async () => {
-      const [tournamentsRes, tenantsRes, legacyRes, settingsRes] = await Promise.all([
+      const [profilesRes, legacyRes, tournamentsRes, tenantsRes, settingsRes] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        (supabase as any).from("legacy_users").select("id", { count: "exact", head: true }),
         supabase.from("tournaments").select("id", { count: "exact", head: true }),
         supabase.from("tenants").select("id", { count: "exact", head: true }),
-        supabase.from("legacy_users").select("id", { count: "exact", head: true }),
-        supabase.from("app_settings").select("key, value").in("key", [
-          "historical_tournament_count",
-          "historical_player_count_offset",
-        ]),
+        supabase.from("app_settings").select("key, value").eq("key", "historical_tournament_count"),
       ]);
 
-      const settings = new Map((settingsRes.data ?? []).map((s: any) => [s.key, parseInt(s.value) || 0]));
-      const historicalTournaments = settings.get("historical_tournament_count") ?? 0;
-      const playerOffset = settings.get("historical_player_count_offset") ?? 0;
-
-      // Distinct current players from tournament registrations
-      const { data: regData } = await supabase
-        .from("tournament_registrations")
-        .select("user_id");
-      const distinctPlayers = new Set((regData ?? []).map((r: any) => r.user_id)).size;
-
-      // Legacy users who haven't been matched (avoid double-counting)
-      const unmatchedLegacy = (legacyRes.count ?? 0);
+      const historicalTournaments = parseInt((settingsRes.data?.[0] as any)?.value) || 0;
 
       return {
-        players: distinctPlayers + unmatchedLegacy + playerOffset,
+        players: (profilesRes.count ?? 0) + (legacyRes.count ?? 0) + 2000,
         tournaments: (tournamentsRes.count ?? 0) + historicalTournaments,
         operators: tenantsRes.count ?? 0,
       };
@@ -114,7 +101,7 @@ const HeroSection = () => {
         {/* Stats bar */}
         <div className="animate-fade-in grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-xl mx-auto">
           {[
-            { label: "Active Players", value: stats ? `${stats.players.toLocaleString()}+` : "—", icon: Users },
+            { label: "Players", value: stats ? `${stats.players.toLocaleString()}+` : "—", icon: Users },
             { label: "Tournaments", value: stats ? `${stats.tournaments.toLocaleString()}+` : "—", icon: Trophy },
             { label: "Operators Served", value: stats ? `${stats.operators.toLocaleString()}` : "—", icon: Building2 },
           ].map((stat) => (
