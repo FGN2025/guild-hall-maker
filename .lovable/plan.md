@@ -1,11 +1,22 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Fix: Media Library Not Showing All Assets for Background Selection
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+### Problem
+Two issues:
+1. The "Library" button in the Asset Editor opens the Media Picker configured for **overlay images** — it excludes "tournament", "games", and "challenges" categories, and the selected image gets added as an overlay (`addLogoFromUrl`) rather than replacing the background.
+2. There is no way to select a background image from the Media Library. The `bgPickerOpen` state was created but never wired up — no second `MediaPickerDialog` instance exists for background selection.
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+### Solution
+
+**File: `src/components/media/AssetEditorDialog.tsx`**
+
+1. Add a second `MediaPickerDialog` instance wired to `bgPickerOpen` / `setBgPickerOpen`:
+   - `onSelect` calls `setBaseImageUrl(url)` to replace the canvas background
+   - No `excludeCategories` filter — show ALL media library assets so the user can pick any image as a background
+2. Wire the existing "Background" button (or add a "From Library" option next to it) to open `setBgPickerOpen(true)` so users can choose a background from the library instead of only uploading a file.
+
+### Result
+- The "Library" button continues to work for adding overlay images (with category filtering)
+- A new library-based background picker shows all assets and replaces the canvas background when selected
 
