@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsMarketing(roles.includes("marketing"));
     setDiscordLinked(!!profileResult.data?.discord_id);
     setRoleLoading(false);
+    fetchingRef.current = false;
   };
 
   const refreshDiscordStatus = async () => {
