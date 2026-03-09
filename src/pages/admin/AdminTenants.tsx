@@ -453,7 +453,15 @@ function TenantCard({
           <Badge variant="outline" className="gap-1 text-xs">
             <MapPin className="h-3 w-3" /> {zipCount ?? 0} ZIPs
           </Badge>
-          <Badge variant="outline" className="gap-1 text-xs">
+          <Badge
+            variant="outline"
+            className="gap-1 text-xs cursor-pointer hover:bg-accent transition-colors"
+            onClick={() => {
+              localStorage.setItem("tenant_admin_selected", t.id);
+              onManage();
+              setTimeout(() => window.location.assign("/tenant/codes"), 100);
+            }}
+          >
             <KeyRound className="h-3 w-3" /> {codesCount ?? 0} Codes
           </Badge>
           <Button variant="ghost" size="icon" onClick={onDelete}>
