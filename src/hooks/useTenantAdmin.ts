@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -23,20 +23,33 @@ interface TenantListItem {
 }
 
 const SELECTED_TENANT_KEY = "fgn_selected_tenant_id";
+const TENANT_CHANGE_EVENT = "fgn-tenant-change";
+
+function subscribeTenantStore(callback: () => void) {
+  const handler = () => callback();
+  window.addEventListener(TENANT_CHANGE_EVENT, handler);
+  window.addEventListener("storage", handler);
+  return () => {
+    window.removeEventListener(TENANT_CHANGE_EVENT, handler);
+    window.removeEventListener("storage", handler);
+  };
+}
+
+function getTenantSnapshot(): string | null {
+  return localStorage.getItem(SELECTED_TENANT_KEY);
+}
 
 export function useTenantAdmin() {
   const { user, isAdmin } = useAuth();
-  const [selectedTenantId, setSelectedTenantIdState] = useState<string | null>(
-    () => localStorage.getItem(SELECTED_TENANT_KEY)
-  );
+  const selectedTenantId = useSyncExternalStore(subscribeTenantStore, getTenantSnapshot, getTenantSnapshot);
 
   const setSelectedTenantId = useCallback((id: string | null) => {
-    setSelectedTenantIdState(id);
     if (id) {
       localStorage.setItem(SELECTED_TENANT_KEY, id);
     } else {
       localStorage.removeItem(SELECTED_TENANT_KEY);
     }
+    window.dispatchEvent(new Event(TENANT_CHANGE_EVENT));
   }, []);
 
   // Fetch all active tenants for platform admins
