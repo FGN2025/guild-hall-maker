@@ -343,6 +343,36 @@ const ChallengeDetail = () => {
           <img src={coverUrl} alt={c.name} className="w-full h-auto rounded-lg object-contain max-h-[85vh]" />
         </DialogContent>
       </Dialog>
+
+      {isAdmin && challenge && (
+        <>
+          <EditChallengeDialog
+            challenge={challenge}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            invalidateQueryKey={["challenge-detail", id!]}
+          />
+          <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Challenge</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete "{c.name}" and all associated data. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deleteMutation.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
     </>
   );
 };
