@@ -301,6 +301,12 @@ const ChallengeDetail = () => {
         taskTitle={activeTask?.title}
         onSubmit={submitEvidence}
       />
+
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-4xl p-0 border-none bg-transparent shadow-none">
+          <img src={coverUrl} alt={c.name} className="w-full h-auto rounded-lg object-contain max-h-[85vh]" />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
