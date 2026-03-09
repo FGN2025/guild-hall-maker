@@ -209,9 +209,21 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               <Button size="sm" variant="outline" onClick={() => setMediaPickerOpen(true)}>
                 <Library className="h-4 w-4 mr-1" /> Library
               </Button>
-              <Button size="sm" variant="outline" onClick={() => bgInputRef.current?.click()} title="Change background image">
-                <ImageIcon className="h-4 w-4 mr-1" /> Background
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" title="Change background image">
+                    <ImageIcon className="h-4 w-4 mr-1" /> Background
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={() => bgInputRef.current?.click()}>
+                    <ImagePlus className="h-4 w-4 mr-2" /> Upload File
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setBgPickerOpen(true)}>
+                    <Library className="h-4 w-4 mr-2" /> From Library
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
               <Button size="sm" variant="outline" onClick={() => addText()}>
                 <Type className="h-4 w-4 mr-1" /> Text
