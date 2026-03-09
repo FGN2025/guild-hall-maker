@@ -78,7 +78,7 @@ const Challenges = () => {
         <div>
           <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
             <Target className="h-8 w-8 text-primary" />
-            Work Orders
+            Challenges
           </h1>
           <p className="text-muted-foreground font-body mt-1">
             Complete work orders to earn points. Upload evidence to prove your work.
