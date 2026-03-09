@@ -10,6 +10,7 @@ export interface UnifiedPlayer {
   email: string | null;
   address: string | null;
   zip: string | null;
+  inviteCode: string | null;
   status: string;
   matchedUserId: string | null;
   createdAt: string;
@@ -47,6 +48,7 @@ export function useTenantPlayers(tenantId: string | null) {
           email: null,
           address: null,
           zip: row.zip_code,
+          inviteCode: null,
           status: row.status || "new",
           matchedUserId: null,
           createdAt: row.created_at,
@@ -61,7 +63,7 @@ export function useTenantPlayers(tenantId: string | null) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("legacy_users")
-        .select("id, legacy_username, email, first_name, last_name, address, zip_code, status, matched_user_id, created_at")
+        .select("id, legacy_username, email, first_name, last_name, address, zip_code, invite_code, status, matched_user_id, created_at")
         .eq("tenant_id", tenantId!)
         .order("legacy_username", { ascending: true })
         .limit(1000);
@@ -74,6 +76,7 @@ export function useTenantPlayers(tenantId: string | null) {
         email: row.email,
         address: row.address || null,
         zip: row.zip_code,
+        inviteCode: row.invite_code || null,
         status: row.matched_user_id ? "matched" : (row.status || "unknown"),
         matchedUserId: row.matched_user_id,
         createdAt: row.created_at,
@@ -93,7 +96,7 @@ export function useTenantPlayers(tenantId: string | null) {
         p.name.toLowerCase().includes(q) ||
         (p.gamerTag && p.gamerTag.toLowerCase().includes(q)) ||
         (p.email && p.email.toLowerCase().includes(q)) ||
-        (p.zip && p.zip.includes(q))
+        (p.inviteCode && p.inviteCode.toLowerCase().includes(q))
     );
   }, [allPlayers, search]);
 

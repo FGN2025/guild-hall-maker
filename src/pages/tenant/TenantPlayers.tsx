@@ -69,7 +69,7 @@ const TenantPlayers = () => {
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <Input
-          placeholder="Search by name, gamer tag, email, or ZIP…"
+          placeholder="Search by name, gamer tag, email, or invite code…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md"
@@ -92,8 +92,7 @@ const TenantPlayers = () => {
               <TableHead>Name</TableHead>
               <TableHead>Gamer Tag</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>ZIP</TableHead>
-              <TableHead>Source</TableHead>
+              <TableHead>Invite Code</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Registered</TableHead>
             </TableRow>
@@ -101,11 +100,11 @@ const TenantPlayers = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading…</TableCell>
               </TableRow>
             ) : players.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No players found.</TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No players found.</TableCell>
               </TableRow>
             ) : (
               players.map((p) => (
@@ -113,12 +112,7 @@ const TenantPlayers = () => {
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell>{p.gamerTag || "—"}</TableCell>
                   <TableCell>{p.email || "—"}</TableCell>
-                  <TableCell>{p.zip || "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={p.source === "new" ? "default" : "secondary"}>
-                      {p.source === "new" ? "New" : "Legacy"}
-                    </Badge>
-                  </TableCell>
+                  <TableCell>{p.inviteCode || "—"}</TableCell>
                   <TableCell>
                     <Badge variant={p.status === "matched" ? "default" : "outline"} className="capitalize">
                       {p.status}
