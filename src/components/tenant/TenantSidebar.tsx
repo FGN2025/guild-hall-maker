@@ -126,7 +126,7 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
           </div>
         )}
       </div>
-      <nav className="flex-1 p-4 flex flex-col gap-1">
+      <nav className="flex-1 p-4 flex flex-col gap-1 overflow-y-auto">
         {sidebarItems.map((item) => {
           const isIntegrationsLink = item.to.includes("?tab=integrations");
           const currentSearch = location.search;
