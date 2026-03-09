@@ -269,6 +269,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     })
   }
 
+  console.log('sendLovableEmail full result:', JSON.stringify(result))
   console.log('Email sent successfully', { message_id: result.message_id, run_id })
 
   return new Response(
