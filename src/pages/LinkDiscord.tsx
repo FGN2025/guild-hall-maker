@@ -82,7 +82,7 @@ const LinkDiscord = () => {
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: "identify guilds.members.read",
+      scope: "identify",
     });
     window.location.href = `https://discord.com/api/oauth2/authorize?${params}`;
   };
