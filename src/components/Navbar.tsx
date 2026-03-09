@@ -21,12 +21,18 @@ const navItems = [
   { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 
+const publicNavItems = [
+  { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/challenges", label: "Challenges", icon: Target },
+];
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut, isAdmin, isModerator } = useAuth();
   const { isTenantAdmin } = useTenantAdmin();
+  const activeNavItems = user ? navItems : publicNavItems;
 
   const handleSignOut = async () => {
     await signOut();
@@ -45,7 +51,7 @@ const Navbar = () => {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => {
+          {activeNavItems.map((item) => {
             const active = location.pathname === item.to;
             return (
               <Link
@@ -140,7 +146,7 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden glass-panel border-t border-border/50 animate-slide-up">
           <div className="flex flex-col p-4 gap-2">
-            {navItems.map((item) => {
+            {activeNavItems.map((item) => {
               const active = location.pathname === item.to;
               return (
                 <Link
