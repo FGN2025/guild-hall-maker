@@ -12,7 +12,12 @@ import { Progress } from "@/components/ui/progress";
 import PageBackground from "@/components/PageBackground";
 import TaskChecklist from "@/components/challenges/TaskChecklist";
 import EvidenceUpload from "@/components/challenges/EvidenceUpload";
-import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2 } from "lucide-react";
+import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -34,8 +39,9 @@ type ChallengeRow = NonNullable<ReturnType<typeof useChallengeDetail>["challenge
 const ChallengeDetail = () => {
   usePageTitle("Challenge Detail");
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { challenge, tasks, isLoading } = useChallengeDetail(id);
   const {
     enrollment, evidence, enrollmentLoading,
@@ -48,6 +54,21 @@ const ChallengeDetail = () => {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("challenges").delete().eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Challenge deleted");
+      queryClient.invalidateQueries({ queryKey: ["challenges"] });
+      navigate("/challenges");
+    },
+    onError: () => toast.error("Failed to delete challenge"),
+  });
 
   if (isLoading) {
     return (
@@ -112,6 +133,18 @@ const ChallengeDetail = () => {
             <h1 className="font-display text-2xl md:text-3xl font-bold text-white">{c.name}</h1>
           </div>
         </div>
+
+        {/* Admin action bar */}
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4" /> Edit Challenge
+            </Button>
+            <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setDeleteConfirmOpen(true)}>
+              <Trash2 className="h-4 w-4" /> Delete
+            </Button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content */}
@@ -310,6 +343,36 @@ const ChallengeDetail = () => {
           <img src={coverUrl} alt={c.name} className="w-full h-auto rounded-lg object-contain max-h-[85vh]" />
         </DialogContent>
       </Dialog>
+
+      {isAdmin && challenge && (
+        <>
+          <EditChallengeDialog
+            challenge={challenge}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            invalidateQueryKey={["challenge-detail", id!]}
+          />
+          <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Challenge</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete "{c.name}" and all associated data. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deleteMutation.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
     </>
   );
 };

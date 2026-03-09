@@ -1,28 +1,11 @@
 
 
-## Add Admin Edit & Delete to Challenge Detail — Players Excluded
+# Add Helper Text to Career Path Mapping Form
 
-### Security Analysis
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-Players **cannot** edit or delete challenges — this is already enforced at the database level:
-- The `challenges` table RLS only grants write access (INSERT/UPDATE/DELETE) to users with `admin` or `moderator` roles
-- Regular authenticated users only have SELECT on active challenges
-- Even if a player somehow triggered a delete/update call, the database would reject it
-
-### Frontend Guardrails
-
-The UI will use the `isAdmin` flag from `useAuth()` (derived from the server-side `user_roles` table) to conditionally render admin controls. Players will never see edit or delete buttons.
-
-### Changes
-
-**`src/pages/ChallengeDetail.tsx`**:
-1. Import `isAdmin` from `useAuth`, `EditChallengeDialog`, `AlertDialog`, `useMutation`, `useQueryClient`, `Pencil` icon
-2. Add `editOpen` and `deleteConfirmOpen` state
-3. Add a delete mutation (`supabase.from('challenges').delete().eq('id', id)`) that navigates to `/challenges` on success
-4. Render an admin action bar (only when `isAdmin === true`) below the hero with **Edit** and **Delete** buttons
-5. Render `EditChallengeDialog` and a delete confirmation `AlertDialog` at the bottom
-
-The admin bar will use a simple guard: `{isAdmin && ( ... )}` — no player will ever see these controls.
-
-No database changes needed — existing RLS policies already restrict writes to admin/moderator roles only.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
