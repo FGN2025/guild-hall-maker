@@ -86,49 +86,61 @@ const Challenges = () => {
         </div>
 
         {/* Stats bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold font-mono text-primary">{challenges.length}</p>
-              <p className="text-xs text-muted-foreground">Available</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold font-mono text-foreground">{enrolledIds.size}</p>
-              <p className="text-xs text-muted-foreground">Enrolled</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold font-mono text-green-400">{completedIds.size}</p>
-              <p className="text-xs text-muted-foreground">Completed</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold font-mono text-accent-foreground">
-                {challenges.length > 0
-                  ? Math.round((completedIds.size / challenges.length) * 100)
-                  : 0}%
-              </p>
-              <p className="text-xs text-muted-foreground">Progress</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Progress bar */}
-        {challenges.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground font-body">Overall Progress</span>
-              <span className="font-mono text-foreground">{completedIds.size} / {challenges.length}</span>
+        {user ? (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold font-mono text-primary">{challenges.length}</p>
+                  <p className="text-xs text-muted-foreground">Available</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold font-mono text-foreground">{enrolledIds.size}</p>
+                  <p className="text-xs text-muted-foreground">Enrolled</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold font-mono text-green-400">{completedIds.size}</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold font-mono text-accent-foreground">
+                    {challenges.length > 0
+                      ? Math.round((completedIds.size / challenges.length) * 100)
+                      : 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Progress</p>
+                </CardContent>
+              </Card>
             </div>
-            <Progress
-              value={challenges.length > 0 ? (completedIds.size / challenges.length) * 100 : 0}
-              className="h-3"
-            />
-          </div>
+
+            {/* Progress bar */}
+            {challenges.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-body">Overall Progress</span>
+                  <span className="font-mono text-foreground">{completedIds.size} / {challenges.length}</span>
+                </div>
+                <Progress
+                  value={challenges.length > 0 ? (completedIds.size / challenges.length) * 100 : 0}
+                  className="h-3"
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                <Link to="/auth" className="text-primary hover:underline font-medium">Sign in</Link> to track your progress and enroll in challenges.
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {/* Game filter tabs */}
