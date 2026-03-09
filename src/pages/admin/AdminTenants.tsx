@@ -457,9 +457,8 @@ function TenantCard({
             variant="outline"
             className="gap-1 text-xs cursor-pointer hover:bg-accent transition-colors"
             onClick={() => {
-              localStorage.setItem("tenant_admin_selected", t.id);
-              onManage();
-              setTimeout(() => window.location.assign("/tenant/codes"), 100);
+              localStorage.setItem("fgn_selected_tenant_id", t.id);
+              window.location.assign("/tenant/codes");
             }}
           >
             <KeyRound className="h-3 w-3" /> {codesCount ?? 0} Codes
