@@ -1,6 +1,7 @@
 import { useState } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { useChallengeDetail } from "@/hooks/useChallengeDetail";
 import { useChallengeEnrollment } from "@/hooks/useChallengeEnrollment";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,8 @@ type ChallengeRow = NonNullable<ReturnType<typeof useChallengeDetail>["challenge
 const ChallengeDetail = () => {
   usePageTitle("Challenge Detail");
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { challenge, tasks, isLoading } = useChallengeDetail(id);
   const {
     enrollment, evidence, enrollmentLoading,
@@ -241,9 +244,15 @@ const ChallengeDetail = () => {
                 )}
 
                 {!enrollment && !enrollmentLoading && (
-                  <Button onClick={() => enroll()} disabled={enrolling} className="w-full gap-2">
-                    {enrolling ? "Enrolling..." : "Enroll in Challenge"}
-                  </Button>
+                  user ? (
+                    <Button onClick={() => enroll()} disabled={enrolling} className="w-full gap-2">
+                      {enrolling ? "Enrolling..." : "Enroll in Challenge"}
+                    </Button>
+                  ) : (
+                    <Button onClick={() => navigate("/auth")} className="w-full gap-2">
+                      Sign In to Participate
+                    </Button>
+                  )
                 )}
 
                 {canUpload && tasks.length === 0 && (

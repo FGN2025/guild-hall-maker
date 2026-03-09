@@ -9,8 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface TournamentCardProps {
   tournament: Tournament;
-  onRegister: (id: string) => void;
-  onUnregister: (id: string) => void;
+  onRegister?: (id: string) => void;
+  onUnregister?: (id: string) => void;
   isRegistering: boolean;
 }
 
@@ -107,22 +107,31 @@ const TournamentCard = ({
             <GitBranch className="h-4 w-4" />
           </Button>
         )}
-        {t.is_registered ? (
-          <Button
-            variant="secondary"
-            className="flex-1 font-heading tracking-wide"
-            onClick={() => onUnregister(t.id)}
-            disabled={isRegistering}
-          >
-            Unregister
-          </Button>
+        {onRegister && onUnregister ? (
+          t.is_registered ? (
+            <Button
+              variant="secondary"
+              className="flex-1 font-heading tracking-wide"
+              onClick={() => onUnregister(t.id)}
+              disabled={isRegistering}
+            >
+              Unregister
+            </Button>
+          ) : (
+            <Button
+              className="flex-1 font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => onRegister(t.id)}
+              disabled={!canRegister || isRegistering}
+            >
+              {isFull ? "Full" : "Register"}
+            </Button>
+          )
         ) : (
           <Button
             className="flex-1 font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => onRegister(t.id)}
-            disabled={!canRegister || isRegistering}
+            onClick={() => navigate("/auth")}
           >
-            {isFull ? "Full" : "Register"}
+            Sign In to Register
           </Button>
         )}
       </div>

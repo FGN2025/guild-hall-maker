@@ -207,22 +207,31 @@ const TournamentDetail = () => {
                 </Button>
               )}
 
-              {t.is_registered ? (
-                <Button
-                  variant="secondary"
-                  className="w-full font-heading tracking-wide py-5"
-                  onClick={() => unregister(t.id)}
-                  disabled={isRegistering}
-                >
-                  Cancel Registration
-                </Button>
+              {user ? (
+                t.is_registered ? (
+                  <Button
+                    variant="secondary"
+                    className="w-full font-heading tracking-wide py-5"
+                    onClick={() => unregister(t.id)}
+                    disabled={isRegistering}
+                  >
+                    Cancel Registration
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5"
+                    onClick={() => register(t.id)}
+                    disabled={!canRegister || isRegistering}
+                  >
+                    {isFull ? "Tournament Full" : "Register Now"}
+                  </Button>
+                )
               ) : (
                 <Button
                   className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5"
-                  onClick={() => register(t.id)}
-                  disabled={!canRegister || isRegistering}
+                  onClick={() => navigate("/auth")}
                 >
-                  {isFull ? "Tournament Full" : "Register Now"}
+                  Sign In to Register
                 </Button>
               )}
             </div>

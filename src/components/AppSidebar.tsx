@@ -43,6 +43,7 @@ import {
 
 const mainNav = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
+  { to: "/challenges", label: "Challenges", icon: Target },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -51,7 +52,6 @@ const mainNav = [
   { to: "/season-stats", label: "Stats", icon: BarChart3 },
   { to: "/compare", label: "Compare", icon: Swords },
   { to: "/achievements", label: "Badges", icon: Award },
-  { to: "/challenges", label: "Challenges", icon: Target },
   { to: "/prize-shop", label: "Prize Shop", icon: Gift },
   { to: "/ladders", label: "Ladders", icon: SwordIcon },
   { to: "/guide", label: "Player Guide", icon: BookOpen },

@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
+import ConditionalLayout from "./components/ConditionalLayout";
 import AdminRoute from "./components/admin/AdminRoute";
 import MarketingRoute from "./components/admin/MarketingRoute";
 import ModeratorRoute from "./components/moderator/ModeratorRoute";
@@ -141,12 +142,18 @@ const App = () => (
                 <Route path="/link-discord" element={<LinkDiscord />} />
               </Route>
 
-              {/* Authenticated routes with sidebar */}
-              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<Dashboard />} />
+              {/* Public-or-authenticated routes (tournaments & challenges) */}
+              <Route element={<ConditionalLayout />}>
                 <Route path="/tournaments" element={<Tournaments />} />
                 <Route path="/tournaments/:id" element={<TournamentDetail />} />
                 <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
+                <Route path="/challenges" element={<Challenges />} />
+                <Route path="/challenges/:id" element={<ChallengeDetail />} />
+              </Route>
+
+              {/* Authenticated routes with sidebar */}
+              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/calendar" element={<TournamentCalendar />} />
                 <Route path="/tournaments/:id/manage" element={<TournamentManage />} />
                 <Route path="/community" element={<Community />} />
@@ -157,8 +164,6 @@ const App = () => (
                 <Route path="/games" element={<Games />} />
                 <Route path="/games/:slug" element={<GameDetail />} />
                 <Route path="/player/:id" element={<PlayerProfile />} />
-                <Route path="/challenges" element={<Challenges />} />
-                <Route path="/challenges/:id" element={<ChallengeDetail />} />
                 <Route path="/prize-shop" element={<PrizeShop />} />
                 <Route path="/guide" element={<PlayerGuide />} />
                 <Route path="/ladders" element={<Ladders />} />

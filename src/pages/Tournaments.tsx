@@ -1,5 +1,7 @@
 import { useState, useMemo, CSSProperties } from "react";
+import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
+import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,6 +23,7 @@ import PageBackground from "@/components/PageBackground";
 
 const Tournaments = () => {
   usePageTitle("Tournaments");
+  const { user } = useAuth();
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("open");
@@ -86,7 +89,15 @@ const Tournaments = () => {
             <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Browse & Register</p>
             <h1 className="font-display text-4xl font-bold text-foreground">Tournaments</h1>
           </div>
-          <CreateTournamentDialog onCreate={createTournament} isCreating={isCreating} />
+          {user ? (
+            <CreateTournamentDialog onCreate={createTournament} isCreating={isCreating} />
+          ) : (
+            <Link to="/auth">
+              <Button className="font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90">
+                Sign In to Register
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Search / Filter bar */}
@@ -182,8 +193,8 @@ const Tournaments = () => {
                 <TournamentCard
                     key={t.id}
                     tournament={t}
-                    onRegister={register}
-                    onUnregister={unregister}
+                    onRegister={user ? register : undefined}
+                    onUnregister={user ? unregister : undefined}
                     isRegistering={isRegistering}
                   />
                 </div>
