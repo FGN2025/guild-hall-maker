@@ -39,12 +39,36 @@ type ChallengeRow = NonNullable<ReturnType<typeof useChallengeDetail>["challenge
 const ChallengeDetail = () => {
   usePageTitle("Challenge Detail");
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { challenge, tasks, isLoading } = useChallengeDetail(id);
   const {
     enrollment, evidence, enrollmentLoading,
     enroll, enrolling,
+    submitEvidence, submittingEvidence,
+    submitForReview, submittingForReview,
+    deleteEvidence, deletingEvidence,
+  } = useChallengeEnrollment(id);
+
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("challenges").delete().eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Challenge deleted");
+      queryClient.invalidateQueries({ queryKey: ["challenges"] });
+      navigate("/challenges");
+    },
+    onError: () => toast.error("Failed to delete challenge"),
+  });
     submitEvidence, submittingEvidence,
     submitForReview, submittingForReview,
     deleteEvidence, deletingEvidence,
