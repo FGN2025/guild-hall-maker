@@ -11,7 +11,7 @@ const ModeratorLayout = ({ children }: { children: ReactNode }) => {
 
   if (!isMobile) {
     return (
-      <div className="min-h-screen bg-background flex">
+      <div className="h-screen bg-background flex overflow-hidden">
         <ModeratorSidebar />
         <main className="flex-1 p-8 overflow-auto">{children}</main>
       </div>
