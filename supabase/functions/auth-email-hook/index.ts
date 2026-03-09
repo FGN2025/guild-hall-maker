@@ -36,9 +36,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "FGN"
-const SENDER_DOMAIN = "notify.fgn.gg"
+const SENDER_DOMAIN = "fgn.gg"
 const ROOT_DOMAIN = "fgn.gg"
-const FROM_DOMAIN = "notify.fgn.gg" // Domain shown in From address (may be root or sender subdomain)
+const FROM_DOMAIN = "fgn.gg" // Must match workspace-verified email domain
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
