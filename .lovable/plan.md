@@ -1,11 +1,28 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Fix: Tenant Dropdown Not Refreshing ZIP Codes Page
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+### Root Cause
+`useTenantAdmin()` uses `useState` to hold `selectedTenantId`. Every component that calls this hook gets its **own independent state**. When the tenant dropdown (in `TenantRoute`/`TenantLayout`) calls `setSelectedTenantId`, it updates localStorage and its own React state — but `TenantZipCodes` has a separate hook instance whose state was initialized from the old localStorage value and never receives the update.
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+This affects **all tenant child pages**, not just ZIP Codes.
+
+### Fix: Shared State via `useSyncExternalStore`
+Create a lightweight localStorage-backed store that all `useTenantAdmin` instances subscribe to, so when any instance writes, all instances re-render.
+
+### Changes
+
+**File: `src/hooks/useTenantAdmin.ts`**
+- Replace `useState(() => localStorage.getItem(...))` with a `useSyncExternalStore` subscriber that listens for changes to the localStorage key
+- When `setSelectedTenantId` writes to localStorage, dispatch a custom `storage` event so all subscribers in the same tab re-render
+- This is ~15 lines of added code at the top of the file; the rest of the hook stays the same
+
+```text
+// Conceptual change:
+// Before: const [selectedTenantId, setState] = useState(() => localStorage.getItem(KEY))
+// After:  const selectedTenantId = useSyncExternalStore(subscribe, getSnapshot)
+//         function setSelectedTenantId(id) { localStorage.setItem(KEY, id); notify(); }
+```
+
+No other files need changes. The dropdown in `TenantLayout` and all child pages will automatically stay in sync.
 
