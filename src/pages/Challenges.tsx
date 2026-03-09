@@ -78,10 +78,10 @@ const Challenges = () => {
         <div>
           <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
             <Target className="h-8 w-8 text-primary" />
-            Work Orders
+            Challenges
           </h1>
           <p className="text-muted-foreground font-body mt-1">
-            Complete work orders to earn points. Upload evidence to prove your work.
+            Complete challenges to earn points. Upload evidence to prove completion.
           </p>
         </div>
 
@@ -187,15 +187,15 @@ const Challenges = () => {
           <Card>
             <CardContent className="py-16 text-center">
               <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Work Orders Available</h3>
-              <p className="text-muted-foreground font-body">Check back soon for new work orders!</p>
+              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Challenges Available</h3>
+              <p className="text-muted-foreground font-body">Check back soon for new challenges!</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-8">
             {activeChallenges.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-foreground">Available Work Orders</h2>
+                <h2 className="font-display text-lg font-semibold text-foreground">Available Challenges</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeChallenges.map((c: any) => (
                     <ChallengeCard
