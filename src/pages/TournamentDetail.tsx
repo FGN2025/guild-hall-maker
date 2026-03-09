@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { format } from "date-fns";
+import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 
 const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
@@ -238,9 +240,7 @@ const TournamentDetail = () => {
             </h2>
           </div>
           {/^https?:\/\/.+\.pdf(\?.*)?$/i.test(t.rules) ? (
-            <Button variant="outline" className="gap-2" onClick={() => window.open(t.rules, '_blank')}>
-              <FileText className="h-4 w-4" /> View Tournament Rules (PDF)
-            </Button>
+            <RulesPdfViewer url={t.rules} />
           ) : (
             <p className="text-sm text-muted-foreground font-body whitespace-pre-wrap leading-relaxed">
               {t.rules}
