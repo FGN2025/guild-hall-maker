@@ -1,11 +1,11 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Add Buffering to Tournament Detail Page
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+The tournament detail page's outer container (`space-y-6`) has no padding, causing content to touch the viewport edges.
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+### Change
+
+**`src/pages/TournamentDetail.tsx`** (line 87):
+- Add horizontal and vertical padding to the outer `div`: change `className="space-y-6"` to `className="space-y-6 p-4 md:p-6"` so content has consistent inset from the edges on all screen sizes.
 
