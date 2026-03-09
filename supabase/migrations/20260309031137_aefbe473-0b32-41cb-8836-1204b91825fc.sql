@@ -1,0 +1,1 @@
+ALTER TABLE public.tenant_zip_codes ADD COLUMN zip_estimated boolean NOT NULL DEFAULT false;
