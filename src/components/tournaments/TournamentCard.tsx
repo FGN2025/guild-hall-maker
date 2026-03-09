@@ -9,8 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface TournamentCardProps {
   tournament: Tournament;
-  onRegister: (id: string) => void;
-  onUnregister: (id: string) => void;
+  onRegister?: (id: string) => void;
+  onUnregister?: (id: string) => void;
   isRegistering: boolean;
 }
 
