@@ -35,7 +35,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "guild-hall-maker"
+const SITE_NAME = "FGN"
 const SENDER_DOMAIN = "notify.fgn.gg"
 const ROOT_DOMAIN = "fgn.gg"
 const FROM_DOMAIN = "notify.fgn.gg" // Domain shown in From address (may be root or sender subdomain)
@@ -269,6 +269,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     })
   }
 
+  console.log('sendLovableEmail full result:', JSON.stringify(result))
   console.log('Email sent successfully', { message_id: result.message_id, run_id })
 
   return new Response(
