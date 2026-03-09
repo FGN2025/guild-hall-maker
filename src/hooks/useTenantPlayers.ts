@@ -96,7 +96,7 @@ export function useTenantPlayers(tenantId: string | null) {
         p.name.toLowerCase().includes(q) ||
         (p.gamerTag && p.gamerTag.toLowerCase().includes(q)) ||
         (p.email && p.email.toLowerCase().includes(q)) ||
-        (p.zip && p.zip.includes(q))
+        (p.inviteCode && p.inviteCode.toLowerCase().includes(q))
     );
   }, [allPlayers, search]);
 

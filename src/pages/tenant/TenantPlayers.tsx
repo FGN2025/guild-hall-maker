@@ -112,12 +112,7 @@ const TenantPlayers = () => {
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell>{p.gamerTag || "—"}</TableCell>
                   <TableCell>{p.email || "—"}</TableCell>
-                  <TableCell>{p.zip || "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={p.source === "new" ? "default" : "secondary"}>
-                      {p.source === "new" ? "New" : "Legacy"}
-                    </Badge>
-                  </TableCell>
+                  <TableCell>{p.inviteCode || "—"}</TableCell>
                   <TableCell>
                     <Badge variant={p.status === "matched" ? "default" : "outline"} className="capitalize">
                       {p.status}
