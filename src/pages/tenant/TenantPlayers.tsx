@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, UserPlus, Archive, Link2 } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 
 const TenantPlayers = () => {
