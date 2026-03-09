@@ -57,11 +57,11 @@ export function useBypassCodes() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const toggleActive = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+  const updateCode = useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; description?: string; max_uses?: number | null; expires_at?: string | null; is_active?: boolean }) => {
       const { error } = await supabase
         .from("bypass_codes")
-        .update({ is_active })
+        .update(updates)
         .eq("id", id);
       if (error) throw error;
     },
@@ -84,5 +84,5 @@ export function useBypassCodes() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  return { codes, isLoading, createCode, toggleActive, deleteCode };
+  return { codes, isLoading, createCode, updateCode, deleteCode };
 }
