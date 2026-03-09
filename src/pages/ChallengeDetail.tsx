@@ -33,6 +33,8 @@ type ChallengeRow = NonNullable<ReturnType<typeof useChallengeDetail>["challenge
 const ChallengeDetail = () => {
   usePageTitle("Challenge Detail");
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { challenge, tasks, isLoading } = useChallengeDetail(id);
   const {
     enrollment, evidence, enrollmentLoading,
