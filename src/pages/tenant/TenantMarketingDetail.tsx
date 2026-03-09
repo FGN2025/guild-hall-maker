@@ -107,9 +107,9 @@ const TenantMarketingDetail = () => {
             {assets.map((a) => (
               <Card key={a.id} className="overflow-hidden">
                 <img src={a.url} alt={a.label} className="w-full h-48 object-cover" />
-                <CardContent className="pt-4 flex items-center justify-between">
+                <CardContent className="pt-4 space-y-3">
                   <Badge variant="secondary">{a.label}</Badge>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant="outline"
