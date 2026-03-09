@@ -60,7 +60,7 @@ export function useTenantPlayers(tenantId: string | null) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("legacy_users")
-        .select("id, legacy_username, email, first_name, last_name, zip_code, status, matched_user_id, created_at")
+        .select("id, legacy_username, email, first_name, last_name, address, zip_code, status, matched_user_id, created_at")
         .eq("tenant_id", tenantId!)
         .order("legacy_username", { ascending: true })
         .limit(1000);
