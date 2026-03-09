@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { MessageSquare, ExternalLink, CheckCircle2, Loader2 } from "lucide-react";
+import { MessageSquare, ExternalLink, CheckCircle2, Loader2, Info } from "lucide-react";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 
 const LinkDiscord = () => {
