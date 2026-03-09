@@ -60,8 +60,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshDiscordStatus = async () => {
     if (!user) return;
-    const { data } = await supabase.from("profiles").select("discord_id").eq("user_id", user.id).maybeSingle();
-    setDiscordLinked(!!data?.discord_id);
+    const { data } = await supabase.from("profiles").select("discord_id, discord_bypass_approved").eq("user_id", user.id).maybeSingle();
+    setDiscordLinked(!!data?.discord_id || !!data?.discord_bypass_approved);
   };
 
   useEffect(() => {
