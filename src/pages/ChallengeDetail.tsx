@@ -134,6 +134,18 @@ const ChallengeDetail = () => {
           </div>
         </div>
 
+        {/* Admin action bar */}
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4" /> Edit Challenge
+            </Button>
+            <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setDeleteConfirmOpen(true)}>
+              <Trash2 className="h-4 w-4" /> Delete
+            </Button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
