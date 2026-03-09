@@ -18,11 +18,19 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, KeyRound, Copy, Megaphone, CalendarDays } from "lucide-react";
+import { Plus, Trash2, KeyRound, Copy, Megaphone, CalendarDays, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
 const CODE_TYPES = ["campaign", "override", "access", "tracking", "verification"] as const;
+
+interface EditForm {
+  id: string;
+  description: string;
+  code_type: string;
+  max_uses: string;
+  expires_at: string;
+}
 
 const TenantCodes = ({ embedded }: { embedded?: boolean }) => {
   const { tenantInfo } = useTenantAdmin();
@@ -37,6 +45,8 @@ const TenantCodes = ({ embedded }: { embedded?: boolean }) => {
     code: "", description: "", code_type: "campaign" as string,
     max_uses: "", expires_at: "",
   });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
 
   const filtered = typeFilter === "all"
     ? codes
@@ -56,6 +66,31 @@ const TenantCodes = ({ embedded }: { embedded?: boolean }) => {
         setCreateOpen(false);
       },
     });
+  };
+
+  const openEdit = (c: TenantCode) => {
+    setEditForm({
+      id: c.id,
+      description: c.description || "",
+      code_type: c.code_type,
+      max_uses: c.max_uses != null ? String(c.max_uses) : "",
+      expires_at: c.expires_at ? c.expires_at.slice(0, 16) : "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editForm) return;
+    updateCode.mutate(
+      {
+        id: editForm.id,
+        description: editForm.description.trim() || undefined,
+        code_type: editForm.code_type,
+        max_uses: editForm.max_uses ? parseInt(editForm.max_uses) : null,
+        expires_at: editForm.expires_at || null,
+      },
+      { onSuccess: () => setEditOpen(false) }
+    );
   };
 
   const copyCode = (code: string) => {
@@ -158,7 +193,7 @@ const TenantCodes = ({ embedded }: { embedded?: boolean }) => {
                 <TableHead className="text-center">Usage</TableHead>
                 <TableHead>Expires</TableHead>
                 <TableHead className="text-center">Active</TableHead>
-                {!isReadOnly && <TableHead className="w-12" />}
+                {!isReadOnly && <TableHead className="w-20" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -214,10 +249,15 @@ const TenantCodes = ({ embedded }: { embedded?: boolean }) => {
                   </TableCell>
                   {!isReadOnly && (
                     <TableCell>
-                      <Button variant="ghost" size="icon"
-                        onClick={() => deleteCode.mutate(c.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button variant="ghost" size="icon"
+                          onClick={() => deleteCode.mutate(c.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -226,6 +266,66 @@ const TenantCodes = ({ embedded }: { embedded?: boolean }) => {
           </Table>
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">Edit Code</DialogTitle>
+          </DialogHeader>
+          {editForm && (
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Code</Label>
+                <Input value={codes.find((c) => c.id === editForm.id)?.code ?? ""} disabled className="opacity-60" />
+              </div>
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={editForm.code_type} onValueChange={(v) => setEditForm({ ...editForm, code_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CODE_TYPES.map((t) => (
+                      <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  placeholder="Description"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Max Uses (blank = unlimited)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="∞"
+                    value={editForm.max_uses}
+                    onChange={(e) => setEditForm({ ...editForm, max_uses: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Expires At</Label>
+                  <Input
+                    type="datetime-local"
+                    value={editForm.expires_at}
+                    onChange={(e) => setEditForm({ ...editForm, expires_at: e.target.value })}
+                  />
+                </div>
+              </div>
+              <Button onClick={handleEdit} disabled={updateCode.isPending} className="w-full">
+                {updateCode.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
