@@ -255,7 +255,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
             </div>
 
             {/* Background Color (shown when no base image) */}
-            {!baseImageUrl && (
+            {!currentBaseImageUrl && (
               <div className="p-3 border border-border rounded-lg bg-card space-y-2">
                 <Label className="text-xs font-heading uppercase tracking-wider text-muted-foreground">Canvas Background</Label>
                 <input
