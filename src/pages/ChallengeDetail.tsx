@@ -12,7 +12,12 @@ import { Progress } from "@/components/ui/progress";
 import PageBackground from "@/components/PageBackground";
 import TaskChecklist from "@/components/challenges/TaskChecklist";
 import EvidenceUpload from "@/components/challenges/EvidenceUpload";
-import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2 } from "lucide-react";
+import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-green-500/20 text-green-400 border-green-500/30",
