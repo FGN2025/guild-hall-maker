@@ -65,7 +65,7 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
   const sidebarItems = allSidebarItems.filter((item) => item.roles.includes(tenantRole));
 
   return (
-    <aside className="w-64 min-h-screen bg-card border-r border-border flex flex-col">
+    <aside className="w-64 h-full bg-card border-r border-border flex flex-col overflow-hidden">
       <div className="p-6 border-b border-border">
         {/* Access mode indicator */}
         <div className={`flex items-center gap-1.5 mb-3 px-2 py-1.5 rounded-md ${
