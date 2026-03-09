@@ -181,6 +181,7 @@ const App = () => (
               <Route path="/admin/guide" element={<MarketingRoute><AdminGuide /></MarketingRoute>} />
               <Route path="/admin/marketing" element={<MarketingRoute><AdminMarketing /></MarketingRoute>} />
               <Route path="/admin/access-requests" element={<AdminRoute><AdminAccessRequests /></AdminRoute>} />
+              <Route path="/admin/discord-bypass" element={<AdminRoute><AdminDiscordBypass /></AdminRoute>} />
               <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
               <Route path="/admin/ecosystem" element={<AdminRoute><AdminEcosystem /></AdminRoute>} />
 
