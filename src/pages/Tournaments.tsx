@@ -89,7 +89,15 @@ const Tournaments = () => {
             <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Browse & Register</p>
             <h1 className="font-display text-4xl font-bold text-foreground">Tournaments</h1>
           </div>
-          <CreateTournamentDialog onCreate={createTournament} isCreating={isCreating} />
+          {user ? (
+            <CreateTournamentDialog onCreate={createTournament} isCreating={isCreating} />
+          ) : (
+            <Link to="/auth">
+              <Button className="font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90">
+                Sign In to Register
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Search / Filter bar */}
