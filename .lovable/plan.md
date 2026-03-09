@@ -1,11 +1,14 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Rename "Work Orders" to "Challenges"
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+### Changes
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+**`src/pages/Challenges.tsx`** — 4 text replacements:
+1. Line 81: `Work Orders` → `Challenges`
+2. Line 84: `Complete work orders to earn points. Upload evidence to prove your work.` → `Complete challenges to earn points. Upload evidence to prove completion.`
+3. Line 190-191: `No Work Orders Available` → `No Challenges Available` and `Check back soon for new work orders!` → `Check back soon for new challenges!`
+4. Line 198: `Available Work Orders` → `Available Challenges`
+
+No other user-facing files affected (the export docs file uses it in internal documentation only).
 
