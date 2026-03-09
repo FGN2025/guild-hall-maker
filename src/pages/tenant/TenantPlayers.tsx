@@ -92,8 +92,7 @@ const TenantPlayers = () => {
               <TableHead>Name</TableHead>
               <TableHead>Gamer Tag</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>ZIP</TableHead>
-              <TableHead>Source</TableHead>
+              <TableHead>Invite Code</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Registered</TableHead>
             </TableRow>
