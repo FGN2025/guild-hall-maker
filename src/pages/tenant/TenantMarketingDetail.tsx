@@ -16,12 +16,13 @@ const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(true);
-  const { assets, isLoading: loadingAssets } = useMarketingAssets(id);
+  const { assets, isLoading: loadingAssets, deleteAsset } = useMarketingAssets(id);
   const { saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
   const { tenantInfo } = useTenantAdmin();
   const [copied, setCopied] = useState(false);
   const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
   const [editorAssetMeta, setEditorAssetMeta] = useState<{ id: string; label: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; file_path: string; label: string } | null>(null);
   const campaign = campaigns.find((c) => c.id === id);
 
   if (loadingCampaigns) {
