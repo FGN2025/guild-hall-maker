@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     );
 
     const payload: Payload = await req.json();
-    const { type, record, old_record, target_email } = payload;
+    const { type, record, old_record, target_email, bypass_code } = payload;
 
     const emails: { to: string; subject: string; html: string }[] = [];
 
