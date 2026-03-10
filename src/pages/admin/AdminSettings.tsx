@@ -257,6 +257,65 @@ const AdminSettings = () => {
         onSaved={(url) => setHeroLogoUrl(url)}
       />
 
+      {/* Home Page Stats */}
+      <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <Label className="font-heading text-sm">Home Page Stats</Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Override the hero stats shown on the home page. Leave a field blank to use the live database count.
+        </p>
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="heroPlayers" className="text-xs font-body">Players</Label>
+              <Input
+                id="heroPlayers"
+                type="number"
+                min={0}
+                value={heroPlayers}
+                onChange={(e) => setHeroPlayers(e.target.value)}
+                placeholder="Live count"
+                className="bg-background border-border font-body"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="heroTournaments" className="text-xs font-body">Tournaments</Label>
+              <Input
+                id="heroTournaments"
+                type="number"
+                min={0}
+                value={heroTournaments}
+                onChange={(e) => setHeroTournaments(e.target.value)}
+                placeholder="Live count"
+                className="bg-background border-border font-body"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="heroOperators" className="text-xs font-body">Operators Served</Label>
+              <Input
+                id="heroOperators"
+                type="number"
+                min={0}
+                value={heroOperators}
+                onChange={(e) => setHeroOperators(e.target.value)}
+                placeholder="Live count"
+                className="bg-background border-border font-body"
+              />
+            </div>
+          </div>
+        )}
+        <Button onClick={handleSaveHeroStats} disabled={savingStats || loading} className="font-heading">
+          {savingStats ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+          Save Stats
+        </Button>
+      </div>
+
       {/* Homepage Ticker Embed */}
       <div className="rounded-lg border border-border bg-card p-6 space-y-4">
         <div className="space-y-2">
