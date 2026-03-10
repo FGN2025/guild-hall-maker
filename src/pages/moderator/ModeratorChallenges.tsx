@@ -201,19 +201,26 @@ const ModeratorChallenges = () => {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
           <Target className="h-8 w-8 text-primary" />
-          Challenges
+          Challenges & Quests
         </h1>
-        <div className="flex items-center gap-2">
-          <CreateChallengeDialog
-            invalidateQueryKey={["mod-challenges"]}
-            trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> New Challenge</Button>}
-          />
-        </div>
       </div>
+
+      <Tabs defaultValue="challenges" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="challenges" className="gap-1.5"><Target className="h-4 w-4" /> Challenges</TabsTrigger>
+          <TabsTrigger value="quests" className="gap-1.5"><Compass className="h-4 w-4" /> Quests</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="challenges">
+          <div className="flex items-center justify-end mb-4">
+            <CreateChallengeDialog
+              invalidateQueryKey={["mod-challenges"]}
+              trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> New Challenge</Button>}
+            />
+          </div>
 
       <Tabs defaultValue="oversight">
         <TabsList>
