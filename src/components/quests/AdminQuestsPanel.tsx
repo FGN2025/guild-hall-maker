@@ -215,6 +215,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
         <TabsList>
           <TabsTrigger value="oversight" className="gap-1.5"><ClipboardList className="h-4 w-4" /> Oversight</TabsTrigger>
           <TabsTrigger value="review" className="gap-1.5"><Eye className="h-4 w-4" /> Evidence Review</TabsTrigger>
+          <TabsTrigger value="chains" className="gap-1.5"><Link2 className="h-4 w-4" /> Chains</TabsTrigger>
         </TabsList>
 
         <TabsContent value="oversight" className="mt-4">
