@@ -204,7 +204,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Challenges & Quests",
     bullets: [
       "Challenges are task-based work-order objectives that earn you bonus season points.",
-      "Types — Daily, Weekly, and One-Time challenges rotate regularly to keep things fresh.",
+      "Types — Daily, Weekly, Monthly, and One-Time challenges rotate regularly to keep things fresh.",
       "Difficulty Levels — Challenges are rated Beginner, Intermediate, or Advanced so you can find ones that match your skill level.",
       "Estimated Time — Each challenge shows an estimated completion time so you can plan accordingly.",
       "Task Checklists — Many challenges include multi-step task checklists. Complete each task and upload evidence (screenshots or video) per step to prove completion.",
