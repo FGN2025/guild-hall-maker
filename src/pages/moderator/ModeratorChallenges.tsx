@@ -121,10 +121,49 @@ const ModeratorChallenges = () => {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ enrollmentId, status }: { enrollmentId: string; status: string }) => {
+      // 1. Get enrollment details
+      const { data: enrollment, error: enrollErr } = await supabase
+        .from("challenge_enrollments")
+        .select("user_id, challenge_id")
+        .eq("id", enrollmentId)
+        .single();
+      if (enrollErr) throw enrollErr;
+
+      // 2. Update status
       const { error } = await supabase.from("challenge_enrollments")
         .update({ status, updated_at: new Date().toISOString() })
         .eq("id", enrollmentId);
       if (error) throw error;
+
+      // 3. If completing, award points
+      if (status === "completed" && enrollment && user) {
+        const { data: challenge } = await supabase
+          .from("challenges")
+          .select("points_reward, game_id, games(name)")
+          .eq("id", enrollment.challenge_id)
+          .single();
+
+        const points = (challenge as any)?.points_reward ?? 0;
+
+        // Record completion
+        await supabase.from("challenge_completions").insert({
+          user_id: enrollment.user_id,
+          challenge_id: enrollment.challenge_id,
+          awarded_points: points,
+          verified_by: user.id,
+        });
+
+        // Credit season score
+        if (points > 0) {
+          await supabase.functions.invoke("award-season-points", {
+            body: {
+              winner_id: enrollment.user_id,
+              points_winner: points,
+              game: (challenge as any)?.games?.name,
+            },
+          });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mod-review-enrollments"] });
