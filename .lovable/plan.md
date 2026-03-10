@@ -1,16 +1,11 @@
 
 
-## Change Email Sender Domain to play.fgn.gg
+# Add Helper Text to Career Path Mapping Form
 
-Since `play.fgn.gg` is the verified domain on Resend, we need to update the `from` address in all three edge functions that send emails via Resend.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-### Change
-
-Replace `noreply@fgn.gg` with `noreply@play.fgn.gg` in:
-
-1. **`supabase/functions/send-notification-email/index.ts`** (line 292)
-2. **`supabase/functions/send-tournament-email/index.ts`** (line 195)
-3. **`supabase/functions/send-tenant-invite/index.ts`** (line 65)
-
-All three files: `"FGN <noreply@fgn.gg>"` → `"FGN <noreply@play.fgn.gg>"`
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
