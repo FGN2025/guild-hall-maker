@@ -8,7 +8,7 @@ export const useQuestDetail = (questId: string | undefined) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("quests")
-        .select("*, games(name, slug, cover_image_url, category)")
+        .select("*, games(name, slug, cover_image_url, category), quest_chains(id, name, story_intro, story_outro, bonus_points)")
         .eq("id", questId!)
         .single();
       if (error) throw error;
