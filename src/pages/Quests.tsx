@@ -7,15 +7,21 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Compass, CheckCircle2 } from "lucide-react";
+import { Compass, CheckCircle2, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageBackground from "@/components/PageBackground";
 import QuestCard from "@/components/quests/QuestCard";
+import QuestChainCard from "@/components/quests/QuestChainCard";
+import QuestRankBadge from "@/components/quests/QuestRankBadge";
+import { useQuestChains } from "@/hooks/useQuestChains";
+import { usePlayerQuestXP } from "@/hooks/usePlayerQuestXP";
 
 const Quests = () => {
   usePageTitle("Quests");
   const { user } = useAuth();
   const [gameFilter, setGameFilter] = useState<string | null>(null);
+  const { chains, completedQuestIds } = useQuestChains();
+  const { totalXP, rankInfo } = usePlayerQuestXP();
 
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ["player-quests"],
@@ -67,26 +73,38 @@ const Quests = () => {
     ? quests.filter((q: any) => q.games?.name === gameFilter)
     : quests;
 
-  const activeQuests = filtered.filter((q: any) => !completedIds.has(q.id));
-  const completedQuests = filtered.filter((q: any) => completedIds.has(q.id));
+  // Standalone quests (not part of a chain)
+  const standaloneQuests = filtered.filter((q: any) => !q.chain_id);
+  const activeQuests = standaloneQuests.filter((q: any) => !completedIds.has(q.id));
+  const completedQuests = standaloneQuests.filter((q: any) => completedIds.has(q.id));
+
+  // Active chains with quests
+  const activeChains = chains.filter((c: any) => c.totalCount > 0);
 
   return (
     <>
       <PageBackground pageSlug="quests" />
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
-            <Compass className="h-8 w-8 text-primary" />
-            Quests
-          </h1>
-          <p className="text-muted-foreground font-body mt-1">
-            Complete quests to earn points. Upload evidence to prove completion.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
+              <Compass className="h-8 w-8 text-primary" />
+              Quests
+            </h1>
+            <p className="text-muted-foreground font-body mt-1">
+              Complete quests to earn points and XP. Chain quests together for bonus rewards.
+            </p>
+          </div>
+          {user && totalXP > 0 && (
+            <div className="flex-shrink-0">
+              <QuestRankBadge totalXP={totalXP} />
+            </div>
+          )}
         </div>
 
         {user ? (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold font-mono text-primary">{quests.length}</p>
@@ -111,6 +129,12 @@ const Quests = () => {
                     {quests.length > 0 ? Math.round((completedIds.size / quests.length) * 100) : 0}%
                   </p>
                   <p className="text-xs text-muted-foreground">Progress</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold font-mono text-primary">{totalXP}</p>
+                  <p className="text-xs text-muted-foreground">Quest XP</p>
                 </CardContent>
               </Card>
             </div>
@@ -175,6 +199,21 @@ const Quests = () => {
           </Card>
         ) : (
           <div className="space-y-8">
+            {/* Quest Chains */}
+            {activeChains.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Quest Chains
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {activeChains.map((chain: any) => (
+                    <QuestChainCard key={chain.id} chain={chain} />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeQuests.length > 0 && (
               <div className="space-y-3">
                 <h2 className="font-display text-lg font-semibold text-foreground">Available Quests</h2>

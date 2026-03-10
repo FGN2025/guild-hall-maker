@@ -14,13 +14,14 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Compass, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon,
+  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Link2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateQuestDialog from "@/components/quests/CreateQuestDialog";
 import EditQuestDialog from "@/components/quests/EditQuestDialog";
+import AdminChainsTab from "@/components/quests/AdminChainsTab";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -214,6 +215,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
         <TabsList>
           <TabsTrigger value="oversight" className="gap-1.5"><ClipboardList className="h-4 w-4" /> Oversight</TabsTrigger>
           <TabsTrigger value="review" className="gap-1.5"><Eye className="h-4 w-4" /> Evidence Review</TabsTrigger>
+          <TabsTrigger value="chains" className="gap-1.5"><Link2 className="h-4 w-4" /> Chains</TabsTrigger>
         </TabsList>
 
         <TabsContent value="oversight" className="mt-4">
@@ -460,6 +462,10 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
               </Card>
             );
           })}
+        </TabsContent>
+
+        <TabsContent value="chains" className="mt-4">
+          <AdminChainsTab />
         </TabsContent>
       </Tabs>
 

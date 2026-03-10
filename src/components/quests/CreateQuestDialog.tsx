@@ -26,6 +26,7 @@ const defaultForm = {
   points_first: "10", points_second: "5", points_third: "3", points_participation: "2",
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
   cover_image_url: "",
+  story_intro: "", story_outro: "", xp_reward: "0",
   tasks: [] as { title: string; description: string }[],
 };
 
@@ -36,6 +37,8 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...defaultForm });
   const [selectedGameId, setSelectedGameId] = useState("");
+  const [selectedChainId, setSelectedChainId] = useState("");
+  const [chainOrder, setChainOrder] = useState(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
@@ -45,6 +48,15 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
     queryKey: ["create-quest-games"],
     queryFn: async () => {
       const { data, error } = await supabase.from("games").select("id, name").eq("is_active", true).order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: questChains = [] } = useQuery({
+    queryKey: ["create-quest-chains"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("quest_chains").select("id, name").order("display_order");
       if (error) throw error;
       return data ?? [];
     },
@@ -101,6 +113,11 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
         requires_evidence: form.requires_evidence,
         cover_image_url: coverUrl,
         game_id: selectedGameId || null,
+        chain_id: selectedChainId || null,
+        chain_order: selectedChainId ? chainOrder : 0,
+        story_intro: form.story_intro || null,
+        story_outro: form.story_outro || null,
+        xp_reward: parseInt(form.xp_reward) || 0,
       } as any).select().single();
       if (error) throw error;
 
@@ -121,6 +138,8 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
       setOpen(false);
       setForm({ ...defaultForm });
       setSelectedGameId("");
+      setSelectedChainId("");
+      setChainOrder(0);
       setImageFile(null);
       setImagePreview(null);
     },
@@ -216,6 +235,42 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
               onOpenChange={setMediaPickerOpen}
               onSelect={(url) => { setImageFile(null); setImagePreview(url); }}
             />
+          </div>
+
+          {/* Chain & Story Fields */}
+          <div className="space-y-4 border-t border-border pt-4">
+            <Label className="text-base">Quest Chain & Story</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Quest Chain</Label>
+                <Select value={selectedChainId} onValueChange={setSelectedChainId}>
+                  <SelectTrigger><SelectValue placeholder="No chain" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No chain</SelectItem>
+                    {questChains.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Chain Order</Label>
+                <Input type="number" min={0} value={chainOrder} onChange={(e) => setChainOrder(Number(e.target.value))} disabled={!selectedChainId || selectedChainId === "none"} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>XP Reward</Label>
+              <Input type="number" min={0} value={form.xp_reward} onChange={(e) => setForm({ ...form, xp_reward: e.target.value })} placeholder="0" />
+              <p className="text-xs text-muted-foreground">Quest XP (separate from season points)</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Story Intro</Label>
+              <Textarea value={form.story_intro} onChange={(e) => setForm({ ...form, story_intro: e.target.value })} placeholder="Narrative shown when player starts this quest..." rows={2} />
+            </div>
+            <div className="space-y-2">
+              <Label>Story Outro</Label>
+              <Textarea value={form.story_outro} onChange={(e) => setForm({ ...form, story_outro: e.target.value })} placeholder="Narrative shown on completion..." rows={2} />
+            </div>
           </div>
 
           <div className="flex items-center gap-3">

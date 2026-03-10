@@ -32,6 +32,11 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
   const [difficulty, setDifficulty] = useState("beginner");
   const [challengeType, setChallengeType] = useState("one_time");
   const [gameId, setGameId] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<string | null>(null);
+  const [chainOrder, setChainOrder] = useState(0);
+  const [storyIntro, setStoryIntro] = useState("");
+  const [storyOutro, setStoryOutro] = useState("");
+  const [xpReward, setXpReward] = useState(0);
   const [pointsFirst, setPointsFirst] = useState(10);
   const [pointsSecond, setPointsSecond] = useState(5);
   const [pointsThird, setPointsThird] = useState(3);
@@ -57,6 +62,15 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
     },
   });
 
+  const { data: questChains = [] } = useQuery({
+    queryKey: ["edit-quest-chains"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("quest_chains").select("id, name").order("display_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   useEffect(() => {
     if (quest && open) {
       setName(quest.name || "");
@@ -64,6 +78,11 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
       setDifficulty(quest.difficulty || "beginner");
       setChallengeType(quest.challenge_type || "one_time");
       setGameId(quest.game_id || null);
+      setChainId(quest.chain_id || null);
+      setChainOrder(quest.chain_order ?? 0);
+      setStoryIntro(quest.story_intro || "");
+      setStoryOutro(quest.story_outro || "");
+      setXpReward(quest.xp_reward ?? 0);
       setPointsFirst(quest.points_first ?? 10);
       setPointsSecond(quest.points_second ?? 5);
       setPointsThird(quest.points_third ?? 3);
@@ -118,6 +137,11 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
         difficulty,
         challenge_type: challengeType,
         game_id: gameId || null,
+        chain_id: chainId || null,
+        chain_order: chainId ? chainOrder : 0,
+        story_intro: storyIntro || null,
+        story_outro: storyOutro || null,
+        xp_reward: xpReward,
         points_first: pointsFirst,
         points_second: pointsSecond,
         points_third: pointsThird,
@@ -129,7 +153,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
         cover_image_url: finalCoverUrl,
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
-      }).eq("id", quest.id);
+      } as any).eq("id", quest.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -247,6 +271,38 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               onOpenChange={setMediaPickerOpen}
               onSelect={(url) => { setImageFile(null); setImagePreview(url); setCoverImageUrl(url); }}
             />
+          </div>
+          {/* Chain & Story Fields */}
+          <div className="space-y-3 border-t border-border pt-3">
+            <Label className="text-sm font-semibold">Quest Chain & Story</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Chain</Label>
+                <Select value={chainId || "none"} onValueChange={(v) => setChainId(v === "none" ? null : v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No chain</SelectItem>
+                    {questChains.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Chain Order</Label>
+                <Input type="number" min={0} value={chainOrder} onChange={(e) => setChainOrder(Number(e.target.value))} disabled={!chainId} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">XP Reward</Label>
+              <Input type="number" min={0} value={xpReward} onChange={(e) => setXpReward(Number(e.target.value))} />
+            </div>
+            <div>
+              <Label className="text-xs">Story Intro</Label>
+              <Textarea value={storyIntro} onChange={(e) => setStoryIntro(e.target.value)} rows={2} placeholder="Narrative shown at start..." />
+            </div>
+            <div>
+              <Label className="text-xs">Story Outro</Label>
+              <Textarea value={storyOutro} onChange={(e) => setStoryOutro(e.target.value)} rows={2} placeholder="Narrative shown on completion..." />
+            </div>
           </div>
           <div>
             <Label>Max Enrollments</Label>
