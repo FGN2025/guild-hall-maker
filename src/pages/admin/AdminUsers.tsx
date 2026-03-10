@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const AdminUsers = () => {
   const [search, setSearch] = useState("");
   const [tenantId, setTenantId] = useState<string | undefined>(undefined);
-  const { users, isLoading, setRole } = useAdminUsers(search, tenantId);
+  const { users, isLoading, setRole, resendConfirmation } = useAdminUsers(search, tenantId);
   const { user: currentUser } = useAuth();
   const { data: tenants = [] } = useTenantsList();
 
