@@ -26,6 +26,7 @@ const defaultForm = {
   points_first: "10", points_second: "5", points_third: "3", points_participation: "2",
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
   cover_image_url: "",
+  story_intro: "", story_outro: "", xp_reward: "0",
   tasks: [] as { title: string; description: string }[],
 };
 
