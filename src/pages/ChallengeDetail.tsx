@@ -344,7 +344,7 @@ const ChallengeDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {isAdmin && challenge && (
+      {(isAdmin || isModerator) && challenge && (
         <>
           <EditChallengeDialog
             challenge={challenge}
