@@ -62,17 +62,26 @@ const AdminSettings = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const [msgRes, vidRes, imgRes, tickerRes, heroRes] = await Promise.all([
+      const [msgRes, vidRes, imgRes, tickerRes, heroRes, statsRes] = await Promise.all([
         supabase.from("app_settings").select("value").eq("key", "no_providers_message").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "featured_video_url").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "image_upload_limits").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "homepage_ticker_embed").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "hero_logo_url").maybeSingle(),
+        supabase.from("app_settings").select("value").eq("key", "hero_stats_overrides").maybeSingle(),
       ]);
       setMessage(msgRes.data?.value ?? "");
       setVideoUrl(vidRes.data?.value ?? "");
       setTickerEmbed(tickerRes.data?.value ?? "");
       setHeroLogoUrl(heroRes.data?.value ?? "");
+      if (statsRes.data?.value) {
+        try {
+          const parsed = JSON.parse(statsRes.data.value);
+          setHeroPlayers(parsed.players != null ? String(parsed.players) : "");
+          setHeroTournaments(parsed.tournaments != null ? String(parsed.tournaments) : "");
+          setHeroOperators(parsed.operators != null ? String(parsed.operators) : "");
+        } catch {}
+      }
       if (imgRes.data?.value) {
         try {
           const parsed = JSON.parse(imgRes.data.value);
