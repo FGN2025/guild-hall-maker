@@ -6,7 +6,7 @@ const quickLinks = [
   { to: "/moderator/tournaments", label: "Tournaments", description: "Manage tournaments, brackets, and results", icon: Trophy },
   { to: "/moderator/matches", label: "Matches", description: "Score matches and advance players", icon: Swords },
   { to: "/moderator/points", label: "Points", description: "Award and adjust player points", icon: Star },
-  { to: "/moderator/challenges", label: "Challenges", description: "Create and manage player challenges", icon: Target },
+  { to: "/moderator/challenges", label: "Challenges & Quests", description: "Create and manage challenges and quests", icon: Target },
   { to: "/moderator/ladders", label: "Ladders", description: "Manage ranked ladders and progression", icon: TrendingUp },
   { to: "/moderator/redemptions", label: "Redemptions", description: "Review and approve prize redemptions", icon: Gift },
 ];

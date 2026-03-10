@@ -216,7 +216,9 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Game-Specific — Some challenges are tied to specific games; others are open to any game on the platform.",
       "Max Completions — Certain challenges limit how many players can complete them, so act fast!",
       "Notifications — Get notified when a new challenge drops so you never miss an opportunity.",
-      "Tip: Challenges with clear task checklists and evidence uploads are the fastest way to earn season points!",
+      "Quests — Quests work exactly like challenges with their own separate catalog, enrollment, evidence upload, and completion flow. Browse active quests at /quests.",
+      "Quest Notifications — Opt in to 'New Quests' notifications from your Profile Settings to be alerted when a quest is published.",
+      "Tip: Challenges and quests with clear task checklists and evidence uploads are the fastest way to earn season points!",
     ],
   },
   {

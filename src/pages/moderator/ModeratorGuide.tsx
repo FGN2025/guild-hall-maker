@@ -116,7 +116,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Notifications — When a new active challenge is created, all registered players are automatically notified with the challenge name and point reward.",
       "Max Enrollments — Optionally limit how many players can enroll in a challenge.",
       "Active/Inactive — Toggle challenges on or off without deleting them.",
-      "Tip: Challenges with clear task checklists and evidence requirements drive the most meaningful engagement!",
+      "Quests Tab — Switch to the 'Quests' tab on the same page to create and manage quests. Quests follow the identical workflow (enrollment, evidence, review, completion) but are tracked separately.",
+      "Tip: Challenges and quests with clear task checklists and evidence requirements drive the most meaningful engagement!",
     ],
   },
   {
