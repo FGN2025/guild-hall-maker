@@ -408,7 +408,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Challenges are task-based work-order objectives that reward players with season points upon completion.",
       "Moderators create and manage challenges from the Moderator Dashboard → Challenges & Quests.",
-      "Each challenge has a name, description, point reward, optional game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (one-time or repeatable), and optional start/end dates.",
+      "Each challenge has a name, description, point reward, optional game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (Daily, Weekly, Monthly, or One-Time), and optional start/end dates.",
       "Cover Images — Upload a cover image or select one from the Media Library to make challenges visually distinct.",
       "AI-Enhanced Descriptions — Use the AI enhance button to automatically improve challenge descriptions for clarity and engagement.",
       "Task Checklists — Build multi-step task checklists within a challenge. Players must complete each task and upload evidence per step.",
