@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Save, Loader2, ImageIcon, Code, FileText } from "lucide-react";
+import { Settings, Save, Loader2, ImageIcon, Code, FileText, BarChart3 } from "lucide-react";
 import { exportReadmePdf, exportArchitecturePdf } from "@/lib/exportDocuments";
 import { IMAGE_PRESETS } from "@/lib/imageValidation";
 import { Checkbox } from "@/components/ui/checkbox";
