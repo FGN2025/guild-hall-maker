@@ -237,6 +237,42 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
             />
           </div>
 
+          {/* Chain & Story Fields */}
+          <div className="space-y-4 border-t border-border pt-4">
+            <Label className="text-base">Quest Chain & Story</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Quest Chain</Label>
+                <Select value={selectedChainId} onValueChange={setSelectedChainId}>
+                  <SelectTrigger><SelectValue placeholder="No chain" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No chain</SelectItem>
+                    {questChains.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Chain Order</Label>
+                <Input type="number" min={0} value={chainOrder} onChange={(e) => setChainOrder(Number(e.target.value))} disabled={!selectedChainId || selectedChainId === "none"} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>XP Reward</Label>
+              <Input type="number" min={0} value={form.xp_reward} onChange={(e) => setForm({ ...form, xp_reward: e.target.value })} placeholder="0" />
+              <p className="text-xs text-muted-foreground">Quest XP (separate from season points)</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Story Intro</Label>
+              <Textarea value={form.story_intro} onChange={(e) => setForm({ ...form, story_intro: e.target.value })} placeholder="Narrative shown when player starts this quest..." rows={2} />
+            </div>
+            <div className="space-y-2">
+              <Label>Story Outro</Label>
+              <Textarea value={form.story_outro} onChange={(e) => setForm({ ...form, story_outro: e.target.value })} placeholder="Narrative shown on completion..." rows={2} />
+            </div>
+          </div>
+
           <div className="flex items-center gap-3">
             <Switch checked={form.requires_evidence} onCheckedChange={(v) => setForm({ ...form, requires_evidence: v })} />
             <Label>Requires evidence upload</Label>
