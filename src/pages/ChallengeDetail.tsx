@@ -39,7 +39,7 @@ type ChallengeRow = NonNullable<ReturnType<typeof useChallengeDetail>["challenge
 const ChallengeDetail = () => {
   usePageTitle("Challenge Detail");
   const { id } = useParams<{ id: string }>();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { challenge, tasks, isLoading } = useChallengeDetail(id);
@@ -135,7 +135,7 @@ const ChallengeDetail = () => {
         </div>
 
         {/* Admin action bar */}
-        {isAdmin && (
+        {(isAdmin || isModerator) && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Edit Challenge
@@ -344,7 +344,7 @@ const ChallengeDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {isAdmin && challenge && (
+      {(isAdmin || isModerator) && challenge && (
         <>
           <EditChallengeDialog
             challenge={challenge}
