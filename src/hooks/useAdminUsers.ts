@@ -82,7 +82,8 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
           role: (roleMap.get(p.user_id) as string) ?? null,
           tenant_id: tId ?? null,
           tenant_name: tId ? (tenantMap.get(tId) as string) ?? null : null,
-          email_confirmed: true, // default, will be updated below
+          email_confirmed: true,
+          has_email: true,
         };
       }) as AdminUser[];
 
