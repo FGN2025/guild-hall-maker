@@ -558,12 +558,10 @@ const AdminChallenges = () => {
               <DialogTitle className="font-display text-2xl">{detailChallenge.name}</DialogTitle>
               <DialogDescription>{detailChallenge.games?.name ?? "No game"} · {typeLabels[detailChallenge.challenge_type] ?? detailChallenge.challenge_type}</DialogDescription>
             </DialogHeader>
-
             <div className="space-y-4 mt-2">
               {detailChallenge.description && (
                 <p className="text-sm text-muted-foreground">{detailChallenge.description}</p>
               )}
-
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { icon: Users, label: "Enrolled", value: detailChallenge.enrollments_count },
@@ -582,7 +580,6 @@ const AdminChallenges = () => {
                   </div>
                 ))}
               </div>
-
               <div className="bg-muted rounded-lg p-4">
                 <span className="font-heading text-sm text-foreground">Points Breakdown</span>
                 <div className="grid grid-cols-4 gap-2 mt-2 text-center">
@@ -599,8 +596,6 @@ const AdminChallenges = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Toggle active in dialog */}
               <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                 <Label className="text-sm">Active Status</Label>
                 <Switch
@@ -611,31 +606,14 @@ const AdminChallenges = () => {
                   }}
                 />
               </div>
-
-              {/* Admin action buttons */}
               <div className="flex flex-col gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="w-full py-5"
-                  onClick={() => { setEditChallenge(detailChallenge); setDetailChallenge(null); }}
-                >
+                <Button variant="outline" className="w-full py-5" onClick={() => { setEditChallenge(detailChallenge); setDetailChallenge(null); }}>
                   <Pencil className="h-4 w-4 mr-2" /> Edit Challenge
                 </Button>
-
-                <Button
-                  variant="outline"
-                  className="w-full py-5"
-                  onClick={() => { navigate(`/challenges/${detailChallenge.id}`); setDetailChallenge(null); }}
-                >
+                <Button variant="outline" className="w-full py-5" onClick={() => { navigate(`/challenges/${detailChallenge.id}`); setDetailChallenge(null); }}>
                   <Eye className="h-4 w-4 mr-2" /> View Challenge
                 </Button>
-
-                <Button
-                  variant="outline"
-                  className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10"
-                  onClick={() => handleDelete(detailChallenge.id, detailChallenge.name)}
-                  disabled={deleteMutation.isPending}
-                >
+                <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailChallenge.id, detailChallenge.name)} disabled={deleteMutation.isPending}>
                   <Trash2 className="h-4 w-4 mr-2" /> Delete Challenge
                 </Button>
               </div>
@@ -644,7 +622,6 @@ const AdminChallenges = () => {
         )}
       </Dialog>
 
-      {/* ───── EDIT DIALOG ───── */}
       <EditChallengeDialog
         challenge={editChallenge}
         open={!!editChallenge}
@@ -652,7 +629,6 @@ const AdminChallenges = () => {
         invalidateQueryKey={["admin-challenges"]}
       />
 
-      {/* ───── DELETE CONFIRMATION ───── */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -663,17 +639,13 @@ const AdminChallenges = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={confirmDelete}
-            >
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={confirmDelete}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Promo Editor */}
       {promoData && (
         <EventPromoEditorDialog
           open={!!promoData}
@@ -682,6 +654,13 @@ const AdminChallenges = () => {
           initialTexts={promoData.texts}
         />
       )}
+
+        </TabsContent>
+
+        <TabsContent value="quests">
+          <AdminQuestsPanel queryKeyPrefix="admin" showEnrollmentCounts />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
