@@ -13,19 +13,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Compass,
+  Compass, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
+  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
-import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
+import CreateQuestDialog from "@/components/quests/CreateQuestDialog";
+import EditQuestDialog from "@/components/quests/EditQuestDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -42,8 +41,13 @@ const typeLabels: Record<string, string> = {
 const ALL_DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"];
 const ALL_STATUSES = ["all", "active", "inactive"];
 
-const ModeratorChallenges = () => {
-  const { user, isAdmin } = useAuth();
+interface AdminQuestsPanelProps {
+  queryKeyPrefix: string;
+  showEnrollmentCounts?: boolean;
+}
+
+const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: AdminQuestsPanelProps) => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -51,69 +55,68 @@ const ModeratorChallenges = () => {
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [detailChallenge, setDetailChallenge] = useState<any | null>(null);
-  const [editChallenge, setEditChallenge] = useState<any | null>(null);
-  const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
+  const [detailQuest, setDetailQuest] = useState<any | null>(null);
+  const [editQuest, setEditQuest] = useState<any | null>(null);
+  const [reviewQuestId, setReviewQuestId] = useState<string | null>(null);
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
 
-  const { data: challenges = [], isLoading } = useQuery({
-    queryKey: ["mod-challenges"],
+  const { data: quests = [], isLoading } = useQuery({
+    queryKey: [`${queryKeyPrefix}-quests`],
     queryFn: async () => {
-      const { data: challengeData, error } = await supabase
-        .from("challenges")
+      const { data: questData, error } = await supabase
+        .from("quests")
         .select("*, games(name, slug, cover_image_url)")
         .order("created_at", { ascending: false });
       if (error) throw error;
 
       const { data: enrollments } = await supabase
-        .from("challenge_enrollments")
-        .select("challenge_id");
+        .from("quest_enrollments")
+        .select("quest_id");
 
       const enrollCounts = new Map<string, number>();
       (enrollments ?? []).forEach((e: any) => {
-        enrollCounts.set(e.challenge_id, (enrollCounts.get(e.challenge_id) ?? 0) + 1);
+        enrollCounts.set(e.quest_id, (enrollCounts.get(e.quest_id) ?? 0) + 1);
       });
 
-      return (challengeData ?? []).map((c: any) => ({
-        ...c,
-        enrollments_count: enrollCounts.get(c.id) ?? 0,
+      return (questData ?? []).map((q: any) => ({
+        ...q,
+        enrollments_count: enrollCounts.get(q.id) ?? 0,
       }));
     },
   });
 
   const filtered = useMemo(() => {
-    return challenges.filter((c: any) => {
-      if (difficultyFilter !== "all" && c.difficulty !== difficultyFilter) return false;
-      if (statusFilter === "active" && !c.is_active) return false;
-      if (statusFilter === "inactive" && c.is_active) return false;
+    return quests.filter((q: any) => {
+      if (difficultyFilter !== "all" && q.difficulty !== difficultyFilter) return false;
+      if (statusFilter === "active" && !q.is_active) return false;
+      if (statusFilter === "inactive" && q.is_active) return false;
       if (search) {
-        const q = search.toLowerCase();
-        return c.name.toLowerCase().includes(q) || (c.games?.name ?? "").toLowerCase().includes(q);
+        const s = search.toLowerCase();
+        return q.name.toLowerCase().includes(s) || (q.games?.name ?? "").toLowerCase().includes(s);
       }
       return true;
     });
-  }, [challenges, search, difficultyFilter, statusFilter]);
+  }, [quests, search, difficultyFilter, statusFilter]);
 
-  // ── Mutations ──
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("challenges").delete().eq("id", id);
+      const { error } = await supabase.from("quests").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mod-challenges"] });
-      toast.success("Challenge deleted");
+      queryClient.invalidateQueries({ queryKey: [`${queryKeyPrefix}-quests`] });
+      toast.success("Quest deleted");
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from("challenges").update({ is_active } as any).eq("id", id);
+      const { error } = await supabase.from("quests").update({ is_active } as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mod-challenges"] });
+      queryClient.invalidateQueries({ queryKey: [`${queryKeyPrefix}-quests`] });
       toast.success("Status updated");
     },
     onError: (e: any) => toast.error(e.message),
@@ -121,13 +124,13 @@ const ModeratorChallenges = () => {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ enrollmentId, status }: { enrollmentId: string; status: string }) => {
-      const { error } = await supabase.from("challenge_enrollments")
+      const { error } = await supabase.from("quest_enrollments")
         .update({ status, updated_at: new Date().toISOString() })
         .eq("id", enrollmentId);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mod-review-enrollments"] });
+      queryClient.invalidateQueries({ queryKey: [`${queryKeyPrefix}-quest-review-enrollments`] });
       toast.success("Status updated");
     },
     onError: (e: any) => toast.error(e.message),
@@ -136,7 +139,7 @@ const ModeratorChallenges = () => {
   const updateEvidenceStatusMutation = useMutation({
     mutationFn: async ({ evidenceId, status, reviewer_notes }: { evidenceId: string; status: string; reviewer_notes?: string }) => {
       if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("challenge_evidence")
+      const { error } = await supabase.from("quest_evidence")
         .update({
           status,
           reviewer_notes: reviewer_notes || null,
@@ -147,21 +150,20 @@ const ModeratorChallenges = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mod-review-enrollments"] });
+      queryClient.invalidateQueries({ queryKey: [`${queryKeyPrefix}-quest-review-enrollments`] });
       toast.success("Evidence status updated");
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  // ── Evidence review queries ──
   const { data: reviewTasks = [] } = useQuery({
-    queryKey: ["mod-review-tasks", reviewChallengeId],
-    enabled: !!reviewChallengeId,
+    queryKey: [`${queryKeyPrefix}-quest-review-tasks`, reviewQuestId],
+    enabled: !!reviewQuestId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("challenge_tasks")
+        .from("quest_tasks")
         .select("id, title, display_order")
-        .eq("challenge_id", reviewChallengeId!)
+        .eq("quest_id", reviewQuestId!)
         .order("display_order");
       if (error) throw error;
       return data ?? [];
@@ -169,13 +171,13 @@ const ModeratorChallenges = () => {
   });
 
   const { data: reviewEnrollments = [] } = useQuery({
-    queryKey: ["mod-review-enrollments", reviewChallengeId],
-    enabled: !!reviewChallengeId,
+    queryKey: [`${queryKeyPrefix}-quest-review-enrollments`, reviewQuestId],
+    enabled: !!reviewQuestId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("challenge_enrollments")
-        .select("*, challenge_evidence(*)")
-        .eq("challenge_id", reviewChallengeId!)
+        .from("quest_enrollments")
+        .select("*, quest_evidence(*)")
+        .eq("quest_id", reviewQuestId!)
         .order("enrolled_at", { ascending: false });
       if (error) throw error;
       const userIds = (data ?? []).map((e: any) => e.user_id);
@@ -189,7 +191,7 @@ const ModeratorChallenges = () => {
 
   const handleDelete = (id: string, name: string) => {
     setDeleteTarget({ id, name });
-    setDetailChallenge(null);
+    setDetailQuest(null);
   };
 
   const confirmDelete = () => {
@@ -201,26 +203,12 @@ const ModeratorChallenges = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
-          <Target className="h-8 w-8 text-primary" />
-          Challenges & Quests
-        </h1>
+      <div className="flex items-center justify-end mb-4">
+        <CreateQuestDialog
+          invalidateQueryKey={[`${queryKeyPrefix}-quests`]}
+          trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> New Quest</Button>}
+        />
       </div>
-
-      <Tabs defaultValue="challenges" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="challenges" className="gap-1.5"><Target className="h-4 w-4" /> Challenges</TabsTrigger>
-          <TabsTrigger value="quests" className="gap-1.5"><Compass className="h-4 w-4" /> Quests</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="challenges">
-          <div className="flex items-center justify-end mb-4">
-            <CreateChallengeDialog
-              invalidateQueryKey={["mod-challenges"]}
-              trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> New Challenge</Button>}
-            />
-          </div>
 
       <Tabs defaultValue="oversight">
         <TabsList>
@@ -228,18 +216,14 @@ const ModeratorChallenges = () => {
           <TabsTrigger value="review" className="gap-1.5"><Eye className="h-4 w-4" /> Evidence Review</TabsTrigger>
         </TabsList>
 
-        {/* ═══════ OVERSIGHT TAB ═══════ */}
         <TabsContent value="oversight" className="mt-4">
-          {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search challenges…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder="Search quests…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-              <SelectTrigger className="w-full sm:w-44">
-                <SelectValue placeholder="Difficulty" />
-              </SelectTrigger>
+              <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Difficulty" /></SelectTrigger>
               <SelectContent>
                 {ALL_DIFFICULTIES.map((d) => (
                   <SelectItem key={d} value={d}>{d === "all" ? "All Difficulties" : d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>
@@ -247,9 +231,7 @@ const ModeratorChallenges = () => {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
+              <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 {ALL_STATUSES.map((s) => (
                   <SelectItem key={s} value={s}>{s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
@@ -257,23 +239,16 @@ const ModeratorChallenges = () => {
               </SelectContent>
             </Select>
             <div className="flex gap-1">
-              <Button variant={viewMode === "list" ? "default" : "outline"} size="icon" onClick={() => setViewMode("list")}>
-                <List className="h-4 w-4" />
-              </Button>
-              <Button variant={viewMode === "grid" ? "default" : "outline"} size="icon" onClick={() => setViewMode("grid")}>
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
+              <Button variant={viewMode === "list" ? "default" : "outline"} size="icon" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>
+              <Button variant={viewMode === "grid" ? "default" : "outline"} size="icon" onClick={() => setViewMode("grid")}><LayoutGrid className="h-4 w-4" /></Button>
             </div>
           </div>
 
           {isLoading ? (
-            <div className="flex justify-center py-16">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-            </div>
+            <div className="flex justify-center py-16"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-16">No challenges found.</p>
+            <p className="text-center text-muted-foreground py-16">No quests found.</p>
           ) : viewMode === "list" ? (
-            /* ───── LIST VIEW ───── */
             <div className="rounded-lg border border-border overflow-hidden">
               <Table>
                 <TableHeader>
@@ -282,40 +257,27 @@ const ModeratorChallenges = () => {
                     <TableHead>Game</TableHead>
                     <TableHead>Difficulty</TableHead>
                     <TableHead>Type</TableHead>
-                    {isAdmin && <TableHead>Enrolled</TableHead>}
+                    {showEnrollmentCounts && <TableHead>Enrolled</TableHead>}
                     <TableHead>Active</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((c: any) => (
-                    <TableRow key={c.id} className="cursor-pointer" onClick={() => setDetailChallenge(c)}>
-                      <TableCell className="font-medium">{c.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.games?.name ?? "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{typeLabels[c.challenge_type] ?? c.challenge_type}</TableCell>
-                      {isAdmin && <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>}
+                  {filtered.map((q: any) => (
+                    <TableRow key={q.id} className="cursor-pointer" onClick={() => setDetailQuest(q)}>
+                      <TableCell className="font-medium">{q.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{q.games?.name ?? "—"}</TableCell>
+                      <TableCell><Badge variant="outline" className={`capitalize ${difficultyColor[q.difficulty] ?? ""}`}>{q.difficulty}</Badge></TableCell>
+                      <TableCell className="text-muted-foreground">{typeLabels[q.challenge_type] ?? q.challenge_type}</TableCell>
+                      {showEnrollmentCounts && <TableCell className="text-muted-foreground">{q.enrollments_count}</TableCell>}
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
+                        <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => setEditChallenge(c)}>
-                            <Pencil className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => navigate(`/challenges/${c.id}`)}>
-                            <Eye className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button
-                            variant="ghost" size="icon"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(c.id, c.name)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setEditQuest(q)}><Pencil className="h-4 w-4 text-primary" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-4 w-4 text-primary" /></Button>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -324,77 +286,53 @@ const ModeratorChallenges = () => {
               </Table>
             </div>
           ) : (
-            /* ───── GRID VIEW ───── */
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filtered.map((c: any) => (
-                <Card
-                  key={c.id}
-                  className="overflow-hidden cursor-pointer transition-transform hover:scale-[1.01] bg-card/70 backdrop-blur-sm border-border"
-                  onClick={() => setDetailChallenge(c)}
-                >
-                  {/* Hero */}
+              {filtered.map((q: any) => (
+                <Card key={q.id} className="overflow-hidden cursor-pointer transition-transform hover:scale-[1.01] bg-card/70 backdrop-blur-sm border-border" onClick={() => setDetailQuest(q)}>
                   <div className="relative h-36 bg-muted overflow-hidden">
-                    {(c.cover_image_url || c.games?.cover_image_url) ? (
-                      <img src={c.cover_image_url || c.games.cover_image_url} alt={c.name} className="w-full h-full object-cover" />
+                    {(q.cover_image_url || q.games?.cover_image_url) ? (
+                      <img src={q.cover_image_url || q.games.cover_image_url} alt={q.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/10 flex items-center justify-center">
-                        <Target className="h-10 w-10 text-foreground/30" />
+                        <Compass className="h-10 w-10 text-foreground/30" />
                       </div>
                     )}
                     <div className="absolute top-3 left-3 flex gap-2">
-                      <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
+                      <Badge variant="outline" className={`capitalize ${difficultyColor[q.difficulty] ?? ""}`}>{q.difficulty}</Badge>
                     </div>
                     <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
-                      <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
+                      <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
                     </div>
                   </div>
-
                   <CardContent className="p-5 flex flex-col gap-3">
                     <div>
-                      <h3 className="font-heading text-lg font-semibold text-foreground line-clamp-1">{c.name}</h3>
-                      <p className="text-sm text-muted-foreground">{c.games?.name ?? "No game"} · {typeLabels[c.challenge_type] ?? c.challenge_type}</p>
+                      <h3 className="font-heading text-lg font-semibold text-foreground line-clamp-1">{q.name}</h3>
+                      <p className="text-sm text-muted-foreground">{q.games?.name ?? "No game"} · {typeLabels[q.challenge_type] ?? q.challenge_type}</p>
                     </div>
-
-                    {c.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>
-                    )}
-
-                    <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-2 text-center`}>
-                      {isAdmin && (
+                    {q.description && <p className="text-xs text-muted-foreground line-clamp-2">{q.description}</p>}
+                    <div className={`grid ${showEnrollmentCounts ? 'grid-cols-3' : 'grid-cols-2'} gap-2 text-center`}>
+                      {showEnrollmentCounts && (
                         <div className="bg-muted rounded-lg p-2">
                           <Users className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
-                          <p className="font-heading text-xs font-semibold text-foreground">{c.enrollments_count}</p>
+                          <p className="font-heading text-xs font-semibold text-foreground">{q.enrollments_count}</p>
                           <p className="text-[10px] text-muted-foreground">Enrolled</p>
                         </div>
                       )}
                       <div className="bg-muted rounded-lg p-2">
                         <Star className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
-                        <p className="font-heading text-xs font-semibold text-foreground">{c.points_first}</p>
+                        <p className="font-heading text-xs font-semibold text-foreground">{q.points_first}</p>
                         <p className="text-[10px] text-muted-foreground">1st Pts</p>
                       </div>
                       <div className="bg-muted rounded-lg p-2">
                         <Clock className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
-                        <p className="font-heading text-xs font-semibold text-foreground">{c.estimated_minutes ?? "—"}</p>
+                        <p className="font-heading text-xs font-semibold text-foreground">{q.estimated_minutes ?? "—"}</p>
                         <p className="text-[10px] text-muted-foreground">Min</p>
                       </div>
                     </div>
-
-                    {/* Actions */}
                     <div className="flex gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="outline" size="sm" onClick={() => setEditChallenge(c)}>
-                        <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/challenges/${c.id}`)}>
-                        <Eye className="h-3.5 w-3.5 mr-1" /> View
-                      </Button>
-                      <Button
-                        variant="ghost" size="sm"
-                        className="ml-auto text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(c.id, c.name)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setEditQuest(q)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-3.5 w-3.5 mr-1" /> View</Button>
+                      <Button variant="ghost" size="sm" className="ml-auto text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -403,21 +341,20 @@ const ModeratorChallenges = () => {
           )}
         </TabsContent>
 
-        {/* ═══════ EVIDENCE REVIEW TAB ═══════ */}
         <TabsContent value="review" className="mt-4 space-y-4">
           <div className="space-y-2">
-            <Label>Select Challenge to Review</Label>
-            <Select value={reviewChallengeId || ""} onValueChange={setReviewChallengeId}>
-              <SelectTrigger><SelectValue placeholder="Choose a challenge..." /></SelectTrigger>
+            <Label>Select Quest to Review</Label>
+            <Select value={reviewQuestId || ""} onValueChange={setReviewQuestId}>
+              <SelectTrigger><SelectValue placeholder="Choose a quest..." /></SelectTrigger>
               <SelectContent>
-                {challenges.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                {quests.map((q: any) => (
+                  <SelectItem key={q.id} value={q.id}>{q.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {reviewChallengeId && reviewEnrollments.length === 0 && (
+          {reviewQuestId && reviewEnrollments.length === 0 && (
             <Card><CardContent className="py-8 text-center text-muted-foreground">No enrollments yet.</CardContent></Card>
           )}
 
@@ -436,9 +373,9 @@ const ModeratorChallenges = () => {
                     <Badge variant="outline" className="capitalize">{enrollment.status}</Badge>
                   </div>
 
-                  {enrollment.challenge_evidence?.length > 0 && (
+                  {enrollment.quest_evidence?.length > 0 && (
                     <div className="space-y-3">
-                      {enrollment.challenge_evidence.map((e: any) => {
+                      {enrollment.quest_evidence.map((e: any) => {
                         const task = e.task_id ? taskMap[e.task_id] : null;
                         const evStatusColor = e.status === "approved"
                           ? "bg-green-500/20 text-green-400 border-green-500/30"
@@ -471,7 +408,7 @@ const ModeratorChallenges = () => {
                             </div>
 
                             {e.notes && <p className="text-xs text-muted-foreground">{e.notes}</p>}
-                            {e.reviewer_notes && <p className="text-xs text-muted-foreground italic">Moderator: {e.reviewer_notes}</p>}
+                            {e.reviewer_notes && <p className="text-xs text-muted-foreground italic">Reviewer: {e.reviewer_notes}</p>}
 
                             {e.status !== "approved" && enrollment.status === "submitted" && (
                               <div className="flex items-center gap-2 pt-1">
@@ -511,18 +448,10 @@ const ModeratorChallenges = () => {
 
                   {enrollment.status === "submitted" && (
                     <div className="flex gap-2 border-t border-border pt-3">
-                      <Button
-                        size="sm" className="gap-1"
-                        onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "completed" })}
-                        disabled={updateStatusMutation.isPending}
-                      >
+                      <Button size="sm" className="gap-1" onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "completed" })} disabled={updateStatusMutation.isPending}>
                         <CheckCircle2 className="h-3.5 w-3.5" /> Approve All & Complete
                       </Button>
-                      <Button
-                        size="sm" variant="destructive" className="gap-1"
-                        onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "rejected" })}
-                        disabled={updateStatusMutation.isPending}
-                      >
+                      <Button size="sm" variant="destructive" className="gap-1" onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "rejected" })} disabled={updateStatusMutation.isPending}>
                         <XCircle className="h-3.5 w-3.5" /> Reject Enrollment
                       </Button>
                     </div>
@@ -534,81 +463,112 @@ const ModeratorChallenges = () => {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!detailChallenge} onOpenChange={(open) => !open && setDetailChallenge(null)}>
-        {detailChallenge && (
+      {/* Details Dialog */}
+      <Dialog open={!!detailQuest} onOpenChange={(open) => !open && setDetailQuest(null)}>
+        {detailQuest && (
           <DialogContent className="border-border/50 max-w-lg">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-1">
-                <Badge variant="outline" className={`capitalize ${difficultyColor[detailChallenge.difficulty] ?? ""}`}>{detailChallenge.difficulty}</Badge>
-                <Badge variant="outline" className={detailChallenge.is_active ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-muted text-muted-foreground border-border"}>
-                  {detailChallenge.is_active ? "Active" : "Inactive"}
+                <Badge variant="outline" className={`capitalize ${difficultyColor[detailQuest.difficulty] ?? ""}`}>{detailQuest.difficulty}</Badge>
+                <Badge variant="outline" className={detailQuest.is_active ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-muted text-muted-foreground border-border"}>
+                  {detailQuest.is_active ? "Active" : "Inactive"}
                 </Badge>
               </div>
-              <DialogTitle className="font-display text-2xl">{detailChallenge.name}</DialogTitle>
-              <DialogDescription>{detailChallenge.games?.name ?? "No game"} · {typeLabels[detailChallenge.challenge_type] ?? detailChallenge.challenge_type}</DialogDescription>
+              <DialogTitle className="font-display text-2xl">{detailQuest.name}</DialogTitle>
+              <DialogDescription>{detailQuest.games?.name ?? "No game"} · {typeLabels[detailQuest.challenge_type] ?? detailQuest.challenge_type}</DialogDescription>
             </DialogHeader>
+
             <div className="space-y-4 mt-2">
-              {detailChallenge.description && <p className="text-sm text-muted-foreground">{detailChallenge.description}</p>}
+              {detailQuest.description && <p className="text-sm text-muted-foreground">{detailQuest.description}</p>}
+
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  ...(isAdmin ? [{ icon: Users, label: "Enrolled", value: detailChallenge.enrollments_count }] : []),
-                  { icon: Clock, label: "Est. Time", value: detailChallenge.estimated_minutes ? `${detailChallenge.estimated_minutes} min` : "—" },
-                  { icon: Star, label: "1st Place Pts", value: detailChallenge.points_first },
-                  { icon: Shield, label: "Evidence Req.", value: detailChallenge.requires_evidence ? "Yes" : "No" },
-                  ...(detailChallenge.start_date ? [{ icon: Calendar, label: "Start", value: format(new Date(detailChallenge.start_date), "MMM d, yyyy") }] : []),
-                  ...(detailChallenge.end_date ? [{ icon: Calendar, label: "End", value: format(new Date(detailChallenge.end_date), "MMM d, yyyy") }] : []),
+                  ...(showEnrollmentCounts ? [{ icon: Users, label: "Enrolled", value: detailQuest.enrollments_count }] : []),
+                  { icon: Clock, label: "Est. Time", value: detailQuest.estimated_minutes ? `${detailQuest.estimated_minutes} min` : "—" },
+                  { icon: Star, label: "1st Place Pts", value: detailQuest.points_first },
+                  { icon: Shield, label: "Evidence Req.", value: detailQuest.requires_evidence ? "Yes" : "No" },
+                  ...(detailQuest.start_date ? [{ icon: Calendar, label: "Start", value: format(new Date(detailQuest.start_date), "MMM d, yyyy") }] : []),
+                  ...(detailQuest.end_date ? [{ icon: Calendar, label: "End", value: format(new Date(detailQuest.end_date), "MMM d, yyyy") }] : []),
                 ].map((info) => (
                   <div key={info.label} className="bg-muted rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1"><info.icon className="h-4 w-4 text-primary" /><span className="text-xs text-muted-foreground">{info.label}</span></div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <info.icon className="h-4 w-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">{info.label}</span>
+                    </div>
                     <p className="font-heading text-sm font-semibold text-foreground">{info.value}</p>
                   </div>
                 ))}
               </div>
+
               <div className="bg-muted rounded-lg p-4">
                 <span className="font-heading text-sm text-foreground">Points Breakdown</span>
                 <div className="grid grid-cols-4 gap-2 mt-2 text-center">
-                  {[{ label: "1st", value: detailChallenge.points_first },{ label: "2nd", value: detailChallenge.points_second },{ label: "3rd", value: detailChallenge.points_third },{ label: "Others", value: detailChallenge.points_participation }].map((p) => (
-                    <div key={p.label}><p className="font-heading text-lg font-bold text-primary">{p.value}</p><p className="text-[10px] text-muted-foreground">{p.label}</p></div>
+                  {[
+                    { label: "1st", value: detailQuest.points_first },
+                    { label: "2nd", value: detailQuest.points_second },
+                    { label: "3rd", value: detailQuest.points_third },
+                    { label: "Others", value: detailQuest.points_participation },
+                  ].map((p) => (
+                    <div key={p.label}>
+                      <p className="font-heading text-lg font-bold text-primary">{p.value}</p>
+                      <p className="text-[10px] text-muted-foreground">{p.label}</p>
+                    </div>
                   ))}
                 </div>
               </div>
+
               <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                 <Label className="text-sm">Active Status</Label>
-                <Switch checked={detailChallenge.is_active} onCheckedChange={(checked) => { toggleMutation.mutate({ id: detailChallenge.id, is_active: checked }); setDetailChallenge({ ...detailChallenge, is_active: checked }); }} />
+                <Switch
+                  checked={detailQuest.is_active}
+                  onCheckedChange={(checked) => {
+                    toggleMutation.mutate({ id: detailQuest.id, is_active: checked });
+                    setDetailQuest({ ...detailQuest, is_active: checked });
+                  }}
+                />
               </div>
+
               <div className="flex flex-col gap-2 pt-2">
-                <Button variant="outline" className="w-full py-5" onClick={() => { setEditChallenge(detailChallenge); setDetailChallenge(null); }}><Pencil className="h-4 w-4 mr-2" /> Edit Challenge</Button>
-                <Button variant="outline" className="w-full py-5" onClick={() => { navigate(`/challenges/${detailChallenge.id}`); setDetailChallenge(null); }}><Eye className="h-4 w-4 mr-2" /> View Challenge</Button>
-                <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailChallenge.id, detailChallenge.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4 mr-2" /> Delete Challenge</Button>
+                <Button variant="outline" className="w-full py-5" onClick={() => { setEditQuest(detailQuest); setDetailQuest(null); }}>
+                  <Pencil className="h-4 w-4 mr-2" /> Edit Quest
+                </Button>
+                <Button variant="outline" className="w-full py-5" onClick={() => { navigate(`/quests/${detailQuest.id}`); setDetailQuest(null); }}>
+                  <Eye className="h-4 w-4 mr-2" /> View Quest
+                </Button>
+                <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailQuest.id, detailQuest.name)} disabled={deleteMutation.isPending}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete Quest
+                </Button>
               </div>
             </div>
           </DialogContent>
         )}
       </Dialog>
 
-      <EditChallengeDialog challenge={editChallenge} open={!!editChallenge} onOpenChange={(open) => !open && setEditChallenge(null)} invalidateQueryKey={["mod-challenges"]} />
+      <EditQuestDialog
+        quest={editQuest}
+        open={!!editQuest}
+        onOpenChange={(open) => !open && setEditQuest(null)}
+        invalidateQueryKey={[`${queryKeyPrefix}-quests`]}
+      />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Challenge</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>? This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>Delete Quest</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>? This will also remove all enrollments, evidence, and task data. This action cannot be undone.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-        </TabsContent>
-
-        <TabsContent value="quests">
-          <AdminQuestsPanel queryKeyPrefix="mod" showEnrollmentCounts={isAdmin} />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
 
-export default ModeratorChallenges;
+export default AdminQuestsPanel;

@@ -36,6 +36,8 @@ const PlayerComparison = lazy(() => import("./pages/PlayerComparison"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const Challenges = lazy(() => import("./pages/Challenges"));
 const ChallengeDetail = lazy(() => import("./pages/ChallengeDetail"));
+const Quests = lazy(() => import("./pages/Quests"));
+const QuestDetail = lazy(() => import("./pages/QuestDetail"));
 const PrizeShop = lazy(() => import("./pages/PrizeShop"));
 const PlayerGuide = lazy(() => import("./pages/PlayerGuide"));
 const Games = lazy(() => import("./pages/Games"));
@@ -149,6 +151,8 @@ const App = () => (
                 <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
                 <Route path="/challenges" element={<Challenges />} />
                 <Route path="/challenges/:id" element={<ChallengeDetail />} />
+                <Route path="/quests" element={<Quests />} />
+                <Route path="/quests/:id" element={<QuestDetail />} />
               </Route>
 
               {/* Authenticated routes with sidebar */}
