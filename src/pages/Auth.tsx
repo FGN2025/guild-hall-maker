@@ -185,6 +185,7 @@ const Auth = () => {
     if (isLogin) return "Welcome Back";
     if (signupStep === "zip") return "Verify Location";
     if (signupStep === "subscriber-verify") return "Verify Subscriber";
+    if (signupStep === "confirmation") return "You're Almost There!";
     return "Create Account";
   };
 
@@ -192,6 +193,7 @@ const Auth = () => {
     if (isLogin) return "Sign in to your account";
     if (signupStep === "zip") return "Enter your ZIP code to get started";
     if (signupStep === "subscriber-verify") return "Confirm your service provider account";
+    if (signupStep === "confirmation") return "Just one more step to activate your account";
     return "Complete your registration";
   };
 
