@@ -53,6 +53,15 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
     },
   });
 
+  const { data: questChains = [] } = useQuery({
+    queryKey: ["create-quest-chains"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("quest_chains").select("id, name").order("display_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
