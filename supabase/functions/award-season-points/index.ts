@@ -24,11 +24,8 @@ Deno.serve(async (req) => {
     const winnerPoints = typeof points_winner === "number" ? points_winner : 10;
     const loserPoints = typeof points_loser === "number" ? points_loser : 2;
 
-    // Find the active season — optionally scoped to a game
-    let seasonQuery = supabase
-      .from("seasons")
-      .select("id")
-      .eq("status", "active");
+    // Find the active season — try game-specific first, then fall back to global
+    let season: { id: string } | null = null;
 
     if (game) {
       // Look up game_id from game name
@@ -39,12 +36,41 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (gameRow) {
-        seasonQuery = seasonQuery.eq("game_id", gameRow.id);
+        // Try game-specific season first
+        const { data: gameSeason } = await supabase
+          .from("seasons")
+          .select("id")
+          .eq("status", "active")
+          .eq("game_id", gameRow.id)
+          .maybeSingle();
+
+        if (gameSeason) {
+          season = gameSeason;
+        }
       }
-      // If game not found in DB, fall back to any active season (legacy)
     }
 
-    const { data: season } = await seasonQuery.maybeSingle();
+    // Fall back to any active season (global or legacy)
+    if (!season) {
+      const { data: fallbackSeason } = await supabase
+        .from("seasons")
+        .select("id")
+        .eq("status", "active")
+        .is("game_id", null)
+        .maybeSingle();
+      
+      // If no global season either, try any active season
+      if (fallbackSeason) {
+        season = fallbackSeason;
+      } else {
+        const { data: anySeason } = await supabase
+          .from("seasons")
+          .select("id")
+          .eq("status", "active")
+          .maybeSingle();
+        season = anySeason;
+      }
+    }
 
     if (!season) {
       return new Response(
