@@ -143,6 +143,19 @@ const AdminNotebooks = () => {
                 <Label>Notebook ID</Label>
                 <Input placeholder="notebook:xxxxx" value={form.notebook_id} onChange={(e) => setForm((p) => ({ ...p, notebook_id: e.target.value }))} />
               </div>
+              <div>
+                <Label>Game (optional)</Label>
+                <Select value={form.game_id || "none"} onValueChange={(v) => setForm((p) => ({ ...p, game_id: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="No game" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No game (global)</SelectItem>
+                    {games.map((g: any) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">Link this notebook to a game for AI quest narrative context</p>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

@@ -32,7 +32,7 @@ export function useNotebookConnections() {
   });
 
   const addConnection = useMutation({
-    mutationFn: async (conn: { name: string; api_url: string; notebook_id: string }) => {
+    mutationFn: async (conn: { name: string; api_url: string; notebook_id: string; game_id?: string | null }) => {
       const { error } = await supabase
         .from("admin_notebook_connections" as any)
         .insert(conn as any);
