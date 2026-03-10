@@ -272,6 +272,38 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               onSelect={(url) => { setImageFile(null); setImagePreview(url); setCoverImageUrl(url); }}
             />
           </div>
+          {/* Chain & Story Fields */}
+          <div className="space-y-3 border-t border-border pt-3">
+            <Label className="text-sm font-semibold">Quest Chain & Story</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Chain</Label>
+                <Select value={chainId || "none"} onValueChange={(v) => setChainId(v === "none" ? null : v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No chain</SelectItem>
+                    {questChains.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Chain Order</Label>
+                <Input type="number" min={0} value={chainOrder} onChange={(e) => setChainOrder(Number(e.target.value))} disabled={!chainId} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">XP Reward</Label>
+              <Input type="number" min={0} value={xpReward} onChange={(e) => setXpReward(Number(e.target.value))} />
+            </div>
+            <div>
+              <Label className="text-xs">Story Intro</Label>
+              <Textarea value={storyIntro} onChange={(e) => setStoryIntro(e.target.value)} rows={2} placeholder="Narrative shown at start..." />
+            </div>
+            <div>
+              <Label className="text-xs">Story Outro</Label>
+              <Textarea value={storyOutro} onChange={(e) => setStoryOutro(e.target.value)} rows={2} placeholder="Narrative shown on completion..." />
+            </div>
+          </div>
           <div>
             <Label>Max Enrollments</Label>
             <Input type="number" value={maxEnrollments} onChange={(e) => setMaxEnrollments(e.target.value ? Number(e.target.value) : "")} placeholder="Unlimited" />
