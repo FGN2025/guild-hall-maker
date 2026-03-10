@@ -105,8 +105,8 @@ const HeroSection = () => {
         {/* Stats bar */}
         <div className="animate-fade-in grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-xl mx-auto">
           {[
-            { label: "Players", value: stats ? `${stats.players.toLocaleString()}+` : "—", icon: Users },
-            { label: "Tournaments", value: stats ? `${stats.tournaments.toLocaleString()}+` : "—", icon: Trophy },
+            { label: "Players", value: stats ? `${stats.players.toLocaleString()}` : "—", icon: Users },
+            { label: "Tournaments", value: stats ? `${stats.tournaments.toLocaleString()}` : "—", icon: Trophy },
             { label: "Operators Served", value: stats ? `${stats.operators.toLocaleString()}` : "—", icon: Building2 },
           ].map((stat) => (
             <div key={stat.label} className="glass-panel rounded-lg p-4">
