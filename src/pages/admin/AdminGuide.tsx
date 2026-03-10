@@ -351,10 +351,12 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Manage external knowledge bases from Admin → Notebooks.",
       "Adding Connections — Set a display name, the API URL of your Open Notebook instance, and the target Notebook ID.",
+      "Game Mapping — Optionally link a notebook connection to a specific game using the Game selector. Game-linked notebooks provide RAG context for AI-enhanced quest narratives.",
       "Shared Credentials — The API password is stored as a backend secret (OPEN_NOTEBOOK_PASSWORD), shared across all connections pointing to the same host.",
       "Health Checks — Use the built-in health check to verify VPS connectivity and credential validity before relying on a connection.",
       "How It Works — The notebook-proxy backend function handles all communication with the external VPS, bypassing CORS and keeping credentials secure.",
-      "Tip: You can connect multiple notebooks (e.g., one per game or topic) to broaden the AI Coach's knowledge base.",
+      "AI Quest Narratives — When a quest is linked to a game that has a notebook connection, the AI narrative enhancement pulls context from that notebook to generate richer, game-specific story text.",
+      "Tip: You can connect multiple notebooks (e.g., one per game or topic) to broaden the AI Coach's knowledge base and improve quest narrative generation.",
     ],
   },
   {
