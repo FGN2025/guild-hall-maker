@@ -1,11 +1,12 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Add "Monthly" Challenge Type
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+### Change
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+**`src/components/challenges/CreateChallengeDialog.tsx`**: Add a `monthly` option to the Type `<Select>` dropdown, after "Weekly".
+
+**`src/components/challenges/EditChallengeDialog.tsx`**: Add the same `monthly` option to the Type select in the edit dialog.
+
+No database migration needed — the `challenge_type` column is a text field, not an enum.
 
