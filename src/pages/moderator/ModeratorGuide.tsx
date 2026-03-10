@@ -97,9 +97,9 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
   {
     id: "challenges",
     icon: Target,
-    title: "Challenges",
+    title: "Challenges & Quests",
     bullets: [
-      "Navigate to Moderator → Challenges to create and manage work-order style challenges.",
+      "Navigate to Moderator → Challenges & Quests to create and manage work-order style challenges and quests.",
       "Creating — Set name, description, point reward, game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (one-time or repeatable), and start/end dates.",
       "Cover Images — Upload a cover image or select one from the Media Library to make each challenge visually distinct on the player-facing cards.",
       "AI-Enhanced Descriptions — Click the AI enhance button to automatically improve challenge descriptions for clarity and engagement using the platform's AI capabilities.",
@@ -117,6 +117,10 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Max Enrollments — Optionally limit how many players can enroll in a challenge.",
       "Active/Inactive — Toggle challenges on or off without deleting them.",
       "Quests Tab — Switch to the 'Quests' tab on the same page to create and manage quests. Quests follow the identical workflow (enrollment, evidence, review, completion) but are tracked separately.",
+      "Quest Chains — The 'Chains' tab lets you build sequential quest progressions. Create a chain with a name, description, story intro/outro text, cover image, bonus points, and an optional achievement link. Assign quests to chains and set their order.",
+      "AI-Enhanced Narratives — Use the Sparkles (✨) button on story_intro and story_outro fields to auto-generate rich narrative text. If the quest's game has a linked notebook connection (Admin → Notebooks), the AI uses RAG to pull game-specific context for higher quality output.",
+      "XP Rewards — Quests award XP in addition to season points. XP feeds into a five-tier rank system: Novice (0–99), Apprentice (100–299), Journeyman (300–599), Expert (600–999), Master (1000+).",
+      "Chain Completion — When a player finishes all quests in a chain, bonus points and an optional achievement badge are awarded automatically via database triggers — no manual action required.",
       "Tip: Challenges and quests with clear task checklists and evidence requirements drive the most meaningful engagement!",
     ],
   },
