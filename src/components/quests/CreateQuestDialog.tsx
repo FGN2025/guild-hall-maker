@@ -138,6 +138,8 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
       setOpen(false);
       setForm({ ...defaultForm });
       setSelectedGameId("");
+      setSelectedChainId("");
+      setChainOrder(0);
       setImageFile(null);
       setImagePreview(null);
     },
