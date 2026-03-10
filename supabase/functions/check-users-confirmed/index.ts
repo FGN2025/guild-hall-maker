@@ -24,17 +24,17 @@ Deno.serve(async (req) => {
     }
 
     const confirmed: Record<string, boolean> = {};
-    // Batch lookup – admin API doesn't support bulk, so we fetch individually
-    // For performance, limit to 100
+    const has_email: Record<string, boolean> = {};
     const ids = user_ids.slice(0, 100);
     await Promise.all(
       ids.map(async (id: string) => {
         const { data } = await supabase.auth.admin.getUserById(id);
         confirmed[id] = !!data?.user?.email_confirmed_at;
+        has_email[id] = !!data?.user?.email;
       })
     );
 
-    return new Response(JSON.stringify({ confirmed }), {
+    return new Response(JSON.stringify({ confirmed, has_email }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

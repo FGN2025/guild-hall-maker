@@ -102,6 +102,7 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
             result = result.map((u) => ({
               ...u,
               email_confirmed: confirmData.confirmed[u.user_id] ?? true,
+              has_email: confirmData.has_email?.[u.user_id] ?? true,
             }));
           }
         } catch {

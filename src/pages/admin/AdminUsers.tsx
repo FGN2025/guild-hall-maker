@@ -148,7 +148,7 @@ const AdminUsers = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
-                                  disabled={resendConfirmation.isPending}
+                                  disabled={resendConfirmation.isPending || !u.has_email}
                                   onClick={() => resendConfirmation.mutate(u.user_id)}
                                 >
                                   {resendConfirmation.isPending && resendConfirmation.variables === u.user_id ? (
