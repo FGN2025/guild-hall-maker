@@ -14,6 +14,7 @@ export interface AdminUser {
   tenant_name: string | null;
   email_confirmed: boolean;
   has_email: boolean;
+  tenant_role: string | null;
 }
 
 interface Tenant {
