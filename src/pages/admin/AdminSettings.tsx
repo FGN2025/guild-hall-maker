@@ -165,6 +165,26 @@ const AdminSettings = () => {
     setImgLimits(getDefaults());
   };
 
+  const handleSaveHeroStats = async () => {
+    setSavingStats(true);
+    const overrides = {
+      players: heroPlayers !== "" ? parseInt(heroPlayers) : null,
+      tournaments: heroTournaments !== "" ? parseInt(heroTournaments) : null,
+      operators: heroOperators !== "" ? parseInt(heroOperators) : null,
+    };
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ value: JSON.stringify(overrides) })
+      .eq("key", "hero_stats_overrides");
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Saved", description: "Home page stats updated." });
+    }
+    setSavingStats(false);
+  };
+
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
