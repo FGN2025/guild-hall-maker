@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Upload, ImageIcon } from "lucide-react";
+import { Loader2, Upload, ImageIcon, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
@@ -52,6 +52,34 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [enhancingField, setEnhancingField] = useState<string | null>(null);
+
+  const enhanceNarrative = async (field: "intro" | "outro") => {
+    if (!name.trim()) { toast.error("Enter a quest name first"); return; }
+    setEnhancingField(field);
+    try {
+      const gameName = games.find((g: any) => g.id === gameId)?.name || "";
+      const { data, error } = await supabase.functions.invoke("enhance-quest-narrative", {
+        body: {
+          name, description, game_name: gameName,
+          difficulty, challenge_type: challengeType,
+          field, draft: field === "intro" ? storyIntro : storyOutro,
+          game_id: gameId || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.enhanced_text) {
+        if (field === "intro") setStoryIntro(data.enhanced_text);
+        else setStoryOutro(data.enhanced_text);
+        toast.success("Narrative generated");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to enhance narrative");
+    } finally {
+      setEnhancingField(null);
+    }
+  };
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active"],
@@ -296,11 +324,21 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               <Input type="number" min={0} value={xpReward} onChange={(e) => setXpReward(Number(e.target.value))} />
             </div>
             <div>
-              <Label className="text-xs">Story Intro</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Story Intro</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-xs text-primary" onClick={() => enhanceNarrative("intro")} disabled={enhancingField === "intro" || !name.trim()}>
+                  {enhancingField === "intro" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+                </Button>
+              </div>
               <Textarea value={storyIntro} onChange={(e) => setStoryIntro(e.target.value)} rows={2} placeholder="Narrative shown at start..." />
             </div>
             <div>
-              <Label className="text-xs">Story Outro</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Story Outro</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-xs text-primary" onClick={() => enhanceNarrative("outro")} disabled={enhancingField === "outro" || !name.trim()}>
+                  {enhancingField === "outro" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+                </Button>
+              </div>
               <Textarea value={storyOutro} onChange={(e) => setStoryOutro(e.target.value)} rows={2} placeholder="Narrative shown on completion..." />
             </div>
           </div>

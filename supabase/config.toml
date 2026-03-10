@@ -33,6 +33,8 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.ecosystem-webhook-dispatch]
     verify_jwt = false
+  [functions.enhance-quest-narrative]
+    verify_jwt = false
   [functions.backfill-zip-geo]
     verify_jwt = false
   [functions.backfill-legacy-zips]

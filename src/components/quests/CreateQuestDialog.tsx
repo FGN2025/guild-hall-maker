@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Upload, ImageIcon } from "lucide-react";
+import { Plus, Loader2, Upload, ImageIcon, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
@@ -43,6 +43,33 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [enhancingField, setEnhancingField] = useState<string | null>(null);
+
+  const enhanceNarrative = async (field: "intro" | "outro") => {
+    if (!form.name.trim()) { toast.error("Enter a quest name first"); return; }
+    setEnhancingField(field);
+    try {
+      const gameName = games.find((g: any) => g.id === selectedGameId)?.name || "";
+      const { data, error } = await supabase.functions.invoke("enhance-quest-narrative", {
+        body: {
+          name: form.name, description: form.description, game_name: gameName,
+          difficulty: form.difficulty, challenge_type: form.challenge_type,
+          field, draft: field === "intro" ? form.story_intro : form.story_outro,
+          game_id: selectedGameId || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.enhanced_text) {
+        setForm(f => ({ ...f, [field === "intro" ? "story_intro" : "story_outro"]: data.enhanced_text }));
+        toast.success("Narrative generated");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to enhance narrative");
+    } finally {
+      setEnhancingField(null);
+    }
+  };
 
   const { data: games = [] } = useQuery({
     queryKey: ["create-quest-games"],
@@ -264,11 +291,21 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
               <p className="text-xs text-muted-foreground">Quest XP (separate from season points)</p>
             </div>
             <div className="space-y-2">
-              <Label>Story Intro</Label>
+              <div className="flex items-center justify-between">
+                <Label>Story Intro</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-xs text-primary" onClick={() => enhanceNarrative("intro")} disabled={enhancingField === "intro" || !form.name.trim()}>
+                  {enhancingField === "intro" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+                </Button>
+              </div>
               <Textarea value={form.story_intro} onChange={(e) => setForm({ ...form, story_intro: e.target.value })} placeholder="Narrative shown when player starts this quest..." rows={2} />
             </div>
             <div className="space-y-2">
-              <Label>Story Outro</Label>
+              <div className="flex items-center justify-between">
+                <Label>Story Outro</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-xs text-primary" onClick={() => enhanceNarrative("outro")} disabled={enhancingField === "outro" || !form.name.trim()}>
+                  {enhancingField === "outro" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+                </Button>
+              </div>
               <Textarea value={form.story_outro} onChange={(e) => setForm({ ...form, story_outro: e.target.value })} placeholder="Narrative shown on completion..." rows={2} />
             </div>
           </div>

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 import { useNotebookConnections, NotebookConnection } from "@/hooks/useNotebookConnections";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Activity, Loader2, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,15 +21,24 @@ const AdminNotebooks = () => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", api_url: "", notebook_id: "" });
+  const [form, setForm] = useState({ name: "", api_url: "", notebook_id: "", game_id: "" });
+
+  const { data: games = [] } = useQuery({
+    queryKey: ["notebook-games"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("games").select("id, name").eq("is_active", true).order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const handleAdd = async () => {
     if (!form.name || !form.api_url || !form.notebook_id) {
       toast({ title: "All fields are required", variant: "destructive" });
       return;
     }
-    await addConnection.mutateAsync(form);
-    setForm({ name: "", api_url: "", notebook_id: "" });
+    await addConnection.mutateAsync({ ...form, game_id: form.game_id || null });
+    setForm({ name: "", api_url: "", notebook_id: "", game_id: "" });
     setDialogOpen(false);
   };
 
@@ -90,6 +102,9 @@ const AdminNotebooks = () => {
                   <div className="grid gap-1 text-sm text-muted-foreground mb-4">
                     <p><span className="font-medium text-foreground">URL:</span> {conn.api_url}</p>
                     <p><span className="font-medium text-foreground">Notebook ID:</span> {conn.notebook_id}</p>
+                    {conn.game_id && (
+                      <p><span className="font-medium text-foreground">Game:</span> {games.find((g: any) => g.id === conn.game_id)?.name || conn.game_id}</p>
+                    )}
                     {conn.last_health_check && (
                       <p><span className="font-medium text-foreground">Last check:</span> {new Date(conn.last_health_check).toLocaleString()}</p>
                     )}
@@ -127,6 +142,19 @@ const AdminNotebooks = () => {
               <div>
                 <Label>Notebook ID</Label>
                 <Input placeholder="notebook:xxxxx" value={form.notebook_id} onChange={(e) => setForm((p) => ({ ...p, notebook_id: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Game (optional)</Label>
+                <Select value={form.game_id || "none"} onValueChange={(v) => setForm((p) => ({ ...p, game_id: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="No game" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No game (global)</SelectItem>
+                    {games.map((g: any) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">Link this notebook to a game for AI quest narrative context</p>
               </div>
             </div>
             <DialogFooter>

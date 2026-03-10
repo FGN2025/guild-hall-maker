@@ -99,6 +99,7 @@ export type Database = {
         Row: {
           api_url: string
           created_at: string
+          game_id: string | null
           id: string
           is_active: boolean
           last_health_check: string | null
@@ -110,6 +111,7 @@ export type Database = {
         Insert: {
           api_url: string
           created_at?: string
+          game_id?: string | null
           id?: string
           is_active?: boolean
           last_health_check?: string | null
@@ -121,6 +123,7 @@ export type Database = {
         Update: {
           api_url?: string
           created_at?: string
+          game_id?: string | null
           id?: string
           is_active?: boolean
           last_health_check?: string | null
@@ -129,7 +132,15 @@ export type Database = {
           notebook_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_notebook_connections_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_settings: {
         Row: {
