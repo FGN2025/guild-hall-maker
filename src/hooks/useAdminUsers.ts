@@ -13,6 +13,7 @@ export interface AdminUser {
   tenant_id: string | null;
   tenant_name: string | null;
   email_confirmed: boolean;
+  has_email: boolean;
 }
 
 interface Tenant {
@@ -81,7 +82,8 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
           role: (roleMap.get(p.user_id) as string) ?? null,
           tenant_id: tId ?? null,
           tenant_name: tId ? (tenantMap.get(tId) as string) ?? null : null,
-          email_confirmed: true, // default, will be updated below
+          email_confirmed: true,
+          has_email: true,
         };
       }) as AdminUser[];
 
@@ -100,6 +102,7 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
             result = result.map((u) => ({
               ...u,
               email_confirmed: confirmData.confirmed[u.user_id] ?? true,
+              has_email: confirmData.has_email?.[u.user_id] ?? true,
             }));
           }
         } catch {
