@@ -44,7 +44,10 @@ const typeLabels: Record<string, string> = {
 const ALL_DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"];
 const ALL_STATUSES = ["all", "active", "inactive"];
 
+import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
+
 const AdminChallenges = () => {
+  usePageTitle("Challenge & Quest Management");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
