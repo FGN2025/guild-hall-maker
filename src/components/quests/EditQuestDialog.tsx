@@ -62,6 +62,15 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
     },
   });
 
+  const { data: questChains = [] } = useQuery({
+    queryKey: ["edit-quest-chains"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("quest_chains").select("id, name").order("display_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   useEffect(() => {
     if (quest && open) {
       setName(quest.name || "");
