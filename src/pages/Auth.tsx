@@ -38,7 +38,7 @@ const Auth = () => {
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { checkZip, loading: zipLoading, result: zipResult, reset: resetZip } = useRegistrationZipCheck();
-  const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && signupStep === "account");
+  const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && signupStep === "account" && !isInviteFlow);
 
   const handleZipCheck = async () => {
     await checkZip(zipCode, bypassCode || undefined);
@@ -85,7 +85,7 @@ const Auth = () => {
       return;
     }
 
-    if (!isLogin && !displayName.trim()) {
+    if (!isLogin && !isInviteFlow && !displayName.trim()) {
       toast.error("Display Name is required.");
       return;
     }
@@ -245,7 +245,7 @@ const Auth = () => {
           {/* Login form or signup account form */}
           {(isLogin || signupStep === "account") && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
+              {!isLogin && !isInviteFlow && (
                 <div className="space-y-2">
                   <Label htmlFor="displayName" className="font-heading text-sm text-foreground">
                     Display Name

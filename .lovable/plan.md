@@ -1,19 +1,11 @@
 
 
-## Confirm: Display Name Hidden Only for Invite Signups
+# Add Helper Text to Career Path Mapping Form
 
-The proposed plan checks `isInviteFlow` (which is `true` only when the URL has `?invite=true&email=...`). Here's a summary of what stays the same vs. what changes:
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-| Scenario | Display Name field | ZIP check step |
-|---|---|---|
-| Normal player signup | **Shown, required** (no change) | **Shown** (no change) |
-| Invite signup (`?invite=true`) | **Hidden, optional** | **Skipped** (already skipped today) |
-| Login | Not shown (no change) | N/A |
-
-Only one file changes: `src/pages/Auth.tsx`. Three small edits:
-1. Wrap the Display Name block in `{!isInviteFlow && (...)}`.
-2. Skip the "Display Name is required" validation when `isInviteFlow`.
-3. Disable the uniqueness-check hook for invite flows.
-
-Everything else — ZIP verification, subscriber validation, password strength, terms checkbox — remains identical.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 
