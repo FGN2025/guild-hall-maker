@@ -10,6 +10,7 @@ export interface NotebookConnection {
   is_active: boolean;
   last_health_check: string | null;
   last_health_status: string | null;
+  game_id: string | null;
   created_at: string;
   updated_at: string;
 }
