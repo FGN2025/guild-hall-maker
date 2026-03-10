@@ -37,8 +37,8 @@ const AdminNotebooks = () => {
       toast({ title: "All fields are required", variant: "destructive" });
       return;
     }
-    await addConnection.mutateAsync(form);
-    setForm({ name: "", api_url: "", notebook_id: "" });
+    await addConnection.mutateAsync({ ...form, game_id: form.game_id || null });
+    setForm({ name: "", api_url: "", notebook_id: "", game_id: "" });
     setDialogOpen(false);
   };
 
