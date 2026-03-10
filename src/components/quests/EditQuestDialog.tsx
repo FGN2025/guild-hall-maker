@@ -78,6 +78,11 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
       setDifficulty(quest.difficulty || "beginner");
       setChallengeType(quest.challenge_type || "one_time");
       setGameId(quest.game_id || null);
+      setChainId(quest.chain_id || null);
+      setChainOrder(quest.chain_order ?? 0);
+      setStoryIntro(quest.story_intro || "");
+      setStoryOutro(quest.story_outro || "");
+      setXpReward(quest.xp_reward ?? 0);
       setPointsFirst(quest.points_first ?? 10);
       setPointsSecond(quest.points_second ?? 5);
       setPointsThird(quest.points_third ?? 3);
