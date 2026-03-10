@@ -61,6 +61,13 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
         .select("user_id, tenant_id");
       if (intError) throw intError;
 
+      // Fetch tenant_admins for tenant role
+      const { data: tenantAdmins, error: taError } = await supabase
+        .from("tenant_admins")
+        .select("user_id, role, tenant_id");
+      if (taError) throw taError;
+      const tenantAdminMap = new Map((tenantAdmins ?? []).map((ta: any) => [ta.user_id, { role: ta.role, tenant_id: ta.tenant_id }]));
+
       // Fetch tenants for name resolution
       const { data: tenants, error: tError } = await supabase
         .from("tenants")
