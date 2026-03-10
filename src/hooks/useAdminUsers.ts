@@ -92,6 +92,7 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
           tenant_name: tId ? (tenantMap.get(tId) as string) ?? null : null,
           email_confirmed: true,
           has_email: true,
+          tenant_role: (tenantAdminMap.get(p.user_id) as any)?.role ?? null,
         };
       }) as AdminUser[];
 
