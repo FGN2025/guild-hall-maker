@@ -245,7 +245,7 @@ const Auth = () => {
           {/* Login form or signup account form */}
           {(isLogin || signupStep === "account") && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
+              {!isLogin && !isInviteFlow && (
                 <div className="space-y-2">
                   <Label htmlFor="displayName" className="font-heading text-sm text-foreground">
                     Display Name
