@@ -43,6 +43,33 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [enhancingField, setEnhancingField] = useState<string | null>(null);
+
+  const enhanceNarrative = async (field: "intro" | "outro") => {
+    if (!form.name.trim()) { toast.error("Enter a quest name first"); return; }
+    setEnhancingField(field);
+    try {
+      const gameName = games.find((g: any) => g.id === selectedGameId)?.name || "";
+      const { data, error } = await supabase.functions.invoke("enhance-quest-narrative", {
+        body: {
+          name: form.name, description: form.description, game_name: gameName,
+          difficulty: form.difficulty, challenge_type: form.challenge_type,
+          field, draft: field === "intro" ? form.story_intro : form.story_outro,
+          game_id: selectedGameId || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.enhanced_text) {
+        setForm(f => ({ ...f, [field === "intro" ? "story_intro" : "story_outro"]: data.enhanced_text }));
+        toast.success("Narrative generated");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to enhance narrative");
+    } finally {
+      setEnhancingField(null);
+    }
+  };
 
   const { data: games = [] } = useQuery({
     queryKey: ["create-quest-games"],
