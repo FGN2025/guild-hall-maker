@@ -106,5 +106,23 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  return { users, isLoading, setRole };
+  const resendConfirmation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("resend-confirmation", {
+        body: { user_id: userId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.already_confirmed) {
+        toast({ title: "Already confirmed", description: "This user has already verified their email." });
+      } else {
+        toast({ title: "Confirmation email sent" });
+      }
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return { users, isLoading, setRole, resendConfirmation };
 };

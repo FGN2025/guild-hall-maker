@@ -23,10 +23,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email } = await req.json();
-    if (!email) {
+    const { email, user_id } = await req.json();
+    if (!email && !user_id) {
       return new Response(
-        JSON.stringify({ error: "Missing required field: email" }),
+        JSON.stringify({ error: "Missing required field: email or user_id" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -35,10 +35,36 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Resolve email from user_id if needed, and check confirmation status
+    let resolvedEmail = email;
+    if (user_id) {
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(user_id);
+      if (userError || !userData?.user) {
+        return new Response(
+          JSON.stringify({ error: "User not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (userData.user.email_confirmed_at) {
+        return new Response(
+          JSON.stringify({ already_confirmed: true, message: "User has already confirmed their email" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      resolvedEmail = userData.user.email;
+    }
+
+    if (!resolvedEmail) {
+      return new Response(
+        JSON.stringify({ error: "Could not resolve email address" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Generate a fresh signup confirmation link
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: "signup",
-      email,
+      email: resolvedEmail,
       options: {
         redirectTo: "https://guild-hall-maker.lovable.app/auth",
       },
@@ -69,7 +95,7 @@ Deno.serve(async (req) => {
           One last step before you can compete.
         </p>
         <p style="font-size: 15px; color: #444; line-height: 1.6; margin: 0 25px 20px;">
-          Confirm your email (<strong>${email}</strong>) to unlock tournaments, leaderboards, and challenges.
+          Confirm your email (<strong>${resolvedEmail}</strong>) to unlock tournaments, leaderboards, and challenges.
         </p>
         <a href="${confirmationUrl}" style="display: block; background-color: #00e6e6; color: #0a0d14; font-size: 15px; font-weight: bold; font-family: 'Orbitron', 'Rajdhani', Arial, sans-serif; border-radius: 8px; padding: 14px 28px; text-decoration: none; text-align: center; margin: 8px 25px 28px;">
           Verify &amp; Enter
@@ -87,7 +113,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: "FGN <noreply@play.fgn.gg>",
-        to: [email],
+        to: [resolvedEmail],
         subject: "Confirm your FGN account",
         html,
       }),
@@ -103,7 +129,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log("Confirmation email resent to", email, result);
+    console.log("Confirmation email resent to", resolvedEmail, result);
 
     return new Response(
       JSON.stringify({ success: true, id: result.id }),
