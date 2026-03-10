@@ -33,6 +33,13 @@ const AdminUsers = () => {
     return <Badge variant="secondary">User</Badge>;
   };
 
+  const tenantRoleBadge = (role: string | null) => {
+    if (role === "admin") return <Badge className="bg-primary/20 text-primary border-primary/30">Tenant Admin</Badge>;
+    if (role === "manager") return <Badge className="bg-secondary text-secondary-foreground">Manager</Badge>;
+    if (role === "marketing") return <Badge className="bg-chart-4/20 text-chart-4 border-chart-4/30">Marketing</Badge>;
+    return <span className="text-muted-foreground">—</span>;
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
