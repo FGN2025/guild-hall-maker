@@ -13,8 +13,12 @@ import PageBackground from "@/components/PageBackground";
 import TaskChecklist from "@/components/challenges/TaskChecklist";
 import EvidenceUpload from "@/components/challenges/EvidenceUpload";
 import EditQuestDialog from "@/components/quests/EditQuestDialog";
+import StoryNarrative from "@/components/quests/StoryNarrative";
+import ChainBreadcrumb from "@/components/quests/ChainBreadcrumb";
+import QuestRankBadge from "@/components/quests/QuestRankBadge";
+import { usePlayerQuestXP } from "@/hooks/usePlayerQuestXP";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Clock, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, Clock, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Sparkles, Lock } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -39,7 +43,8 @@ const QuestDetail = () => {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { quest, tasks, isLoading } = useQuestDetail(id);
+  const { quest, tasks, chainSiblings, isLoading } = useQuestDetail(id);
+  const { totalXP } = usePlayerQuestXP();
   const {
     enrollment, evidence, enrollmentLoading,
     enroll, enrolling,
@@ -93,8 +98,10 @@ const QuestDetail = () => {
   const status = enrollment?.status ? statusLabel[enrollment.status] : null;
   const canUpload = enrollment && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
   const canSubmit = enrollment && evidence.length > 0 && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
-
   const activeTask = tasks.find((t) => t.id === activeTaskId);
+
+  const chainInfo = q.quest_chains;
+  const hasChain = !!q.chain_id && chainInfo;
 
   return (
     <>
@@ -103,6 +110,16 @@ const QuestDetail = () => {
         <Link to="/quests" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to Quests
         </Link>
+
+        {/* Chain Breadcrumb */}
+        {hasChain && chainSiblings.length > 0 && (
+          <ChainBreadcrumb
+            chainName={chainInfo.name}
+            chainOrder={q.chain_order}
+            siblings={chainSiblings}
+            currentQuestId={q.id}
+          />
+        )}
 
         {/* Hero */}
         <div className="relative group rounded-xl overflow-hidden h-52 md:h-64 cursor-pointer" onClick={() => setLightboxOpen(true)}>
@@ -146,6 +163,9 @@ const QuestDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Story Intro */}
+            {q.story_intro && <StoryNarrative text={q.story_intro} variant="intro" />}
+
             {q.description && (
               <Card>
                 <CardContent className="p-5">
@@ -239,6 +259,11 @@ const QuestDetail = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Story Outro (shown after completion) */}
+            {enrollment?.status === "completed" && q.story_outro && (
+              <StoryNarrative text={q.story_outro} variant="outro" />
+            )}
           </div>
 
           {/* Sidebar */}
@@ -250,6 +275,14 @@ const QuestDetail = () => {
                     <span className="text-muted-foreground">Points</span>
                     <span className="font-mono font-semibold text-foreground">+{q.points_first}</span>
                   </div>
+                  {q.xp_reward > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" /> XP Reward
+                      </span>
+                      <span className="font-mono font-semibold text-primary">+{q.xp_reward} XP</span>
+                    </div>
+                  )}
                   {q.start_date && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Starts</span>
@@ -321,6 +354,24 @@ const QuestDetail = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Chain Info Card */}
+            {hasChain && (
+              <Card className="border-primary/20">
+                <CardContent className="p-4 space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Part of Chain
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{chainInfo.name}</p>
+                  {chainInfo.bonus_points > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Complete all quests for <span className="font-mono text-primary">+{chainInfo.bonus_points} bonus pts</span>
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
