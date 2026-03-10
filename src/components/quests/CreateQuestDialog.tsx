@@ -113,6 +113,11 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
         requires_evidence: form.requires_evidence,
         cover_image_url: coverUrl,
         game_id: selectedGameId || null,
+        chain_id: selectedChainId || null,
+        chain_order: selectedChainId ? chainOrder : 0,
+        story_intro: form.story_intro || null,
+        story_outro: form.story_outro || null,
+        xp_reward: parseInt(form.xp_reward) || 0,
       } as any).select().single();
       if (error) throw error;
 
