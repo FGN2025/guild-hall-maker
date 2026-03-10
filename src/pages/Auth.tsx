@@ -16,7 +16,7 @@ import SubscriberVerifyStep from "@/components/auth/SubscriberVerifyStep";
 import { useRegistrationZipCheck } from "@/hooks/useRegistrationZipCheck";
 import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
 
-type SignupStep = "zip" | "subscriber-verify" | "account";
+type SignupStep = "zip" | "subscriber-verify" | "account" | "confirmation";
 
 const Auth = () => {
   usePageTitle("Sign In");
