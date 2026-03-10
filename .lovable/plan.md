@@ -1,34 +1,11 @@
 
 
-## Make Home Page Stats Admin-Editable
+# Add Helper Text to Career Path Mapping Form
 
-Store the three hero stats (Players, Tournaments, Operators Served) as an `app_settings` row so admins can override them from the Admin Settings page.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-### 1. Add `app_settings` row for hero stats
-
-Use the insert tool to upsert a new `app_settings` entry:
-```sql
-INSERT INTO app_settings (key, value)
-VALUES ('hero_stats_overrides', '{"players": 4740, "tournaments": null, "operators": null}')
-ON CONFLICT (key) DO NOTHING;
-```
-
-Values of `null` mean "use live count from the database." A number means "use this fixed value."
-
-### 2. Update `src/components/HeroSection.tsx`
-
-In `useHeroStats`, fetch the `hero_stats_overrides` setting alongside existing queries. For each stat, if the override is a number use it; otherwise fall back to the dynamic calculation. This also addresses the earlier request to show 4740 for players.
-
-### 3. Add Hero Stats editor to `src/pages/admin/AdminSettings.tsx`
-
-Add a new card section "Home Page Stats" with three number inputs:
-- **Players** (default: 4740)
-- **Tournaments** (leave blank for live count)
-- **Operators Served** (leave blank for live count)
-
-Each field saves to the JSON `hero_stats_overrides` key. Empty/cleared fields save as `null` to revert to dynamic counts. Include helper text: "Leave blank to use live database count."
-
-### Files changed
-- `src/components/HeroSection.tsx` — read overrides, apply them
-- `src/pages/admin/AdminSettings.tsx` — new "Home Page Stats" card with 3 inputs + save button
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 

@@ -12,20 +12,24 @@ const useHeroStats = () => {
   return useQuery({
     queryKey: ["hero-stats"],
     queryFn: async () => {
-      const [profilesRes, legacyRes, tournamentsRes, tenantsRes, settingsRes] = await Promise.all([
+      const [profilesRes, legacyRes, tournamentsRes, tenantsRes, settingsRes, overridesRes] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         (supabase as any).from("legacy_users").select("id", { count: "exact", head: true }),
         supabase.from("tournaments").select("id", { count: "exact", head: true }),
         supabase.from("tenants").select("id", { count: "exact", head: true }),
         supabase.from("app_settings").select("key, value").eq("key", "historical_tournament_count"),
+        supabase.from("app_settings").select("value").eq("key", "hero_stats_overrides").maybeSingle(),
       ]);
+
+      let overrides: { players?: number | null; tournaments?: number | null; operators?: number | null } = {};
+      try { if (overridesRes.data?.value) overrides = JSON.parse(overridesRes.data.value); } catch {}
 
       const historicalTournaments = parseInt((settingsRes.data?.[0] as any)?.value) || 0;
 
       return {
-        players: (profilesRes.count ?? 0) + (legacyRes.count ?? 0) + 2000,
-        tournaments: (tournamentsRes.count ?? 0) + historicalTournaments,
-        operators: tenantsRes.count ?? 0,
+        players: typeof overrides.players === "number" ? overrides.players : (profilesRes.count ?? 0) + (legacyRes.count ?? 0) + 2000,
+        tournaments: typeof overrides.tournaments === "number" ? overrides.tournaments : (tournamentsRes.count ?? 0) + historicalTournaments,
+        operators: typeof overrides.operators === "number" ? overrides.operators : tenantsRes.count ?? 0,
       };
     },
     staleTime: 300_000,

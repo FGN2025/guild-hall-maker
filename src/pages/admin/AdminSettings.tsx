@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Save, Loader2, ImageIcon, Code, FileText } from "lucide-react";
+import { Settings, Save, Loader2, ImageIcon, Code, FileText, BarChart3 } from "lucide-react";
 import { exportReadmePdf, exportArchitecturePdf } from "@/lib/exportDocuments";
 import { IMAGE_PRESETS } from "@/lib/imageValidation";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -54,19 +54,34 @@ const AdminSettings = () => {
   const [savingImg, setSavingImg] = useState(false);
   const [heroLogoUrl, setHeroLogoUrl] = useState("");
 
+  // Hero stats overrides
+  const [heroPlayers, setHeroPlayers] = useState("");
+  const [heroTournaments, setHeroTournaments] = useState("");
+  const [heroOperators, setHeroOperators] = useState("");
+  const [savingStats, setSavingStats] = useState(false);
+
   useEffect(() => {
     const fetchSettings = async () => {
-      const [msgRes, vidRes, imgRes, tickerRes, heroRes] = await Promise.all([
+      const [msgRes, vidRes, imgRes, tickerRes, heroRes, statsRes] = await Promise.all([
         supabase.from("app_settings").select("value").eq("key", "no_providers_message").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "featured_video_url").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "image_upload_limits").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "homepage_ticker_embed").maybeSingle(),
         supabase.from("app_settings").select("value").eq("key", "hero_logo_url").maybeSingle(),
+        supabase.from("app_settings").select("value").eq("key", "hero_stats_overrides").maybeSingle(),
       ]);
       setMessage(msgRes.data?.value ?? "");
       setVideoUrl(vidRes.data?.value ?? "");
       setTickerEmbed(tickerRes.data?.value ?? "");
       setHeroLogoUrl(heroRes.data?.value ?? "");
+      if (statsRes.data?.value) {
+        try {
+          const parsed = JSON.parse(statsRes.data.value);
+          setHeroPlayers(parsed.players != null ? String(parsed.players) : "");
+          setHeroTournaments(parsed.tournaments != null ? String(parsed.tournaments) : "");
+          setHeroOperators(parsed.operators != null ? String(parsed.operators) : "");
+        } catch {}
+      }
       if (imgRes.data?.value) {
         try {
           const parsed = JSON.parse(imgRes.data.value);
@@ -150,6 +165,26 @@ const AdminSettings = () => {
     setImgLimits(getDefaults());
   };
 
+  const handleSaveHeroStats = async () => {
+    setSavingStats(true);
+    const overrides = {
+      players: heroPlayers !== "" ? parseInt(heroPlayers) : null,
+      tournaments: heroTournaments !== "" ? parseInt(heroTournaments) : null,
+      operators: heroOperators !== "" ? parseInt(heroOperators) : null,
+    };
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ value: JSON.stringify(overrides) })
+      .eq("key", "hero_stats_overrides");
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Saved", description: "Home page stats updated." });
+    }
+    setSavingStats(false);
+  };
+
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
@@ -221,6 +256,65 @@ const AdminSettings = () => {
         loading={loading}
         onSaved={(url) => setHeroLogoUrl(url)}
       />
+
+      {/* Home Page Stats */}
+      <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <Label className="font-heading text-sm">Home Page Stats</Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Override the hero stats shown on the home page. Leave a field blank to use the live database count.
+        </p>
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="heroPlayers" className="text-xs font-body">Players</Label>
+              <Input
+                id="heroPlayers"
+                type="number"
+                min={0}
+                value={heroPlayers}
+                onChange={(e) => setHeroPlayers(e.target.value)}
+                placeholder="Live count"
+                className="bg-background border-border font-body"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="heroTournaments" className="text-xs font-body">Tournaments</Label>
+              <Input
+                id="heroTournaments"
+                type="number"
+                min={0}
+                value={heroTournaments}
+                onChange={(e) => setHeroTournaments(e.target.value)}
+                placeholder="Live count"
+                className="bg-background border-border font-body"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="heroOperators" className="text-xs font-body">Operators Served</Label>
+              <Input
+                id="heroOperators"
+                type="number"
+                min={0}
+                value={heroOperators}
+                onChange={(e) => setHeroOperators(e.target.value)}
+                placeholder="Live count"
+                className="bg-background border-border font-body"
+              />
+            </div>
+          </div>
+        )}
+        <Button onClick={handleSaveHeroStats} disabled={savingStats || loading} className="font-heading">
+          {savingStats ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+          Save Stats
+        </Button>
+      </div>
 
       {/* Homepage Ticker Embed */}
       <div className="rounded-lg border border-border bg-card p-6 space-y-4">
