@@ -1422,6 +1422,30 @@ export type Database = {
           },
         ]
       }
+      player_quest_xp: {
+        Row: {
+          id: string
+          quest_rank: string
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          quest_rank?: string
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          quest_rank?: string
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       point_adjustments: {
         Row: {
           adjusted_by: string
@@ -1594,6 +1618,94 @@ export type Database = {
         }
         Relationships: []
       }
+      quest_chain_completions: {
+        Row: {
+          bonus_points_awarded: number
+          chain_id: string
+          completed_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          bonus_points_awarded?: number
+          chain_id: string
+          completed_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          bonus_points_awarded?: number
+          chain_id?: string
+          completed_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_chain_completions_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "quest_chains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_chains: {
+        Row: {
+          bonus_achievement_id: string | null
+          bonus_points: number
+          cover_image_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          story_intro: string | null
+          story_outro: string | null
+          updated_at: string
+        }
+        Insert: {
+          bonus_achievement_id?: string | null
+          bonus_points?: number
+          cover_image_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          story_intro?: string | null
+          story_outro?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bonus_achievement_id?: string | null
+          bonus_points?: number
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          story_intro?: string | null
+          story_outro?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_chains_bonus_achievement_id_fkey"
+            columns: ["bonus_achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quest_completions: {
         Row: {
           awarded_points: number
@@ -1758,6 +1870,8 @@ export type Database = {
       }
       quests: {
         Row: {
+          chain_id: string | null
+          chain_order: number
           challenge_type: string
           cover_image_url: string | null
           created_at: string
@@ -1780,9 +1894,14 @@ export type Database = {
           requires_evidence: boolean
           season_id: string | null
           start_date: string | null
+          story_intro: string | null
+          story_outro: string | null
           updated_at: string
+          xp_reward: number
         }
         Insert: {
+          chain_id?: string | null
+          chain_order?: number
           challenge_type?: string
           cover_image_url?: string | null
           created_at?: string
@@ -1805,9 +1924,14 @@ export type Database = {
           requires_evidence?: boolean
           season_id?: string | null
           start_date?: string | null
+          story_intro?: string | null
+          story_outro?: string | null
           updated_at?: string
+          xp_reward?: number
         }
         Update: {
+          chain_id?: string | null
+          chain_order?: number
           challenge_type?: string
           cover_image_url?: string | null
           created_at?: string
@@ -1830,9 +1954,19 @@ export type Database = {
           requires_evidence?: boolean
           season_id?: string | null
           start_date?: string | null
+          story_intro?: string | null
+          story_outro?: string | null
           updated_at?: string
+          xp_reward?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "quests_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "quest_chains"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quests_game_id_fkey"
             columns: ["game_id"]
@@ -2861,6 +2995,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_quest_rank: { Args: { xp: number }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
