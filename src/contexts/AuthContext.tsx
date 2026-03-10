@@ -11,6 +11,7 @@ interface AuthContextType {
   isMarketing: boolean;
   roleLoading: boolean;
   discordLinked: boolean;
+  emailConfirmed: boolean;
   signOut: () => Promise<void>;
   refreshDiscordStatus: () => Promise<void>;
 }
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   isMarketing: false,
   roleLoading: true,
   discordLinked: false,
+  emailConfirmed: false,
   signOut: async () => {},
   refreshDiscordStatus: async () => {},
 });
