@@ -1594,6 +1594,261 @@ export type Database = {
         }
         Relationships: []
       }
+      quest_completions: {
+        Row: {
+          awarded_points: number
+          completed_at: string
+          id: string
+          quest_id: string
+          user_id: string
+          verified_by: string | null
+        }
+        Insert: {
+          awarded_points?: number
+          completed_at?: string
+          id?: string
+          quest_id: string
+          user_id: string
+          verified_by?: string | null
+        }
+        Update: {
+          awarded_points?: number
+          completed_at?: string
+          id?: string
+          quest_id?: string
+          user_id?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_completions_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_enrollments: {
+        Row: {
+          enrolled_at: string
+          id: string
+          quest_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          enrolled_at?: string
+          id?: string
+          quest_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          enrolled_at?: string
+          id?: string
+          quest_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_enrollments_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_evidence: {
+        Row: {
+          enrollment_id: string
+          file_type: string
+          file_url: string
+          id: string
+          notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
+          status: string
+          submitted_at: string
+          task_id: string | null
+        }
+        Insert: {
+          enrollment_id: string
+          file_type?: string
+          file_url: string
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          submitted_at?: string
+          task_id?: string | null
+        }
+        Update: {
+          enrollment_id?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          submitted_at?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_evidence_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "quest_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_evidence_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "quest_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          quest_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          quest_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          quest_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_tasks_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quests: {
+        Row: {
+          challenge_type: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          difficulty: string
+          end_date: string | null
+          estimated_minutes: number | null
+          game_id: string | null
+          id: string
+          is_active: boolean
+          max_completions: number | null
+          max_enrollments: number | null
+          name: string
+          points_first: number
+          points_participation: number
+          points_reward: number
+          points_second: number
+          points_third: number
+          requires_evidence: boolean
+          season_id: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          challenge_type?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          difficulty?: string
+          end_date?: string | null
+          estimated_minutes?: number | null
+          game_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_completions?: number | null
+          max_enrollments?: number | null
+          name: string
+          points_first?: number
+          points_participation?: number
+          points_reward?: number
+          points_second?: number
+          points_third?: number
+          requires_evidence?: boolean
+          season_id?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          challenge_type?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          difficulty?: string
+          end_date?: string | null
+          estimated_minutes?: number | null
+          game_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_completions?: number | null
+          max_enrollments?: number | null
+          name?: string
+          points_first?: number
+          points_participation?: number
+          points_reward?: number
+          points_second?: number
+          points_third?: number
+          requires_evidence?: boolean
+          season_id?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quests_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quests_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_scores: {
         Row: {
           created_at: string
