@@ -54,6 +54,12 @@ const AdminSettings = () => {
   const [savingImg, setSavingImg] = useState(false);
   const [heroLogoUrl, setHeroLogoUrl] = useState("");
 
+  // Hero stats overrides
+  const [heroPlayers, setHeroPlayers] = useState("");
+  const [heroTournaments, setHeroTournaments] = useState("");
+  const [heroOperators, setHeroOperators] = useState("");
+  const [savingStats, setSavingStats] = useState(false);
+
   useEffect(() => {
     const fetchSettings = async () => {
       const [msgRes, vidRes, imgRes, tickerRes, heroRes] = await Promise.all([
