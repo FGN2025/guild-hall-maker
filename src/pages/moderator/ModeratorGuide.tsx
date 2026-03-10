@@ -100,7 +100,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Challenges & Quests",
     bullets: [
       "Navigate to Moderator → Challenges & Quests to create and manage work-order style challenges and quests.",
-      "Creating — Set name, description, point reward, game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (one-time or repeatable), and start/end dates.",
+      "Creating — Set name, description, point reward, game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (Daily, Weekly, Monthly, or One-Time), and start/end dates.",
       "Cover Images — Upload a cover image or select one from the Media Library to make each challenge visually distinct on the player-facing cards.",
       "AI-Enhanced Descriptions — Click the AI enhance button to automatically improve challenge descriptions for clarity and engagement using the platform's AI capabilities.",
       "Tasks — Build multi-step task checklists within a challenge. Players must complete each task and upload evidence per step.",
