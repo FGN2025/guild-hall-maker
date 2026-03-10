@@ -278,6 +278,7 @@ Deno.serve(async (req) => {
 
     // Send via Resend (batch, max 100 at a time)
     let sent = 0;
+    let failed = 0;
     for (let i = 0; i < emails.length; i += 100) {
       const batch = emails.slice(i, i + 100);
       const promises = batch.map(async (e) => {
