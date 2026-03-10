@@ -18,6 +18,7 @@ import {
   Gift,
   Gamepad2,
   CalendarDays,
+  Compass,
   Joystick,
   Settings,
   LogOut,
