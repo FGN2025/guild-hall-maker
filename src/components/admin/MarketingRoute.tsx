@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 
 const MarketingRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, isAdmin, isMarketing, roleLoading } = useAuth();
+  const { user, loading, isAdmin, isMarketing, roleLoading, emailConfirmed } = useAuth();
 
   useEffect(() => {
     if (!loading && !roleLoading && user && !isAdmin && !isMarketing) {
@@ -22,6 +22,7 @@ const MarketingRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+  if (!emailConfirmed) return <Navigate to="/confirm-email" replace />;
   if (!isAdmin && !isMarketing) return <Navigate to="/dashboard" replace />;
 
   return <MarketingLayout>{children}</MarketingLayout>;

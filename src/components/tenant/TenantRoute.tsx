@@ -4,7 +4,7 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import TenantLayout from "./TenantLayout";
 
 const TenantRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, emailConfirmed } = useAuth();
   const { isTenantAdmin, isLoading, tenantInfo, isPlatformAdminMode, allTenants, selectedTenantId, setSelectedTenantId } = useTenantAdmin();
 
   if (loading || isLoading) {
@@ -16,6 +16,7 @@ const TenantRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+  if (!emailConfirmed) return <Navigate to="/confirm-email" replace />;
   if (!isTenantAdmin && !isAdmin) return <Navigate to="/dashboard" replace />;
 
   // Platform admin with no tenants available
