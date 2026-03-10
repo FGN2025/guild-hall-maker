@@ -30,5 +30,21 @@ export const useQuestDetail = (questId: string | undefined) => {
     },
   });
 
-  return { quest, tasks, isLoading: questLoading };
+  // Fetch sibling quests in same chain for breadcrumb navigation
+  const chainId = (quest as any)?.chain_id;
+  const { data: chainSiblings = [] } = useQuery({
+    queryKey: ["quest-chain-siblings", chainId],
+    enabled: !!chainId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("quests")
+        .select("id, name, chain_order")
+        .eq("chain_id", chainId!)
+        .order("chain_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  return { quest, tasks, chainSiblings, isLoading: questLoading };
 };
