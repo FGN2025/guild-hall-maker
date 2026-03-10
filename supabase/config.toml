@@ -25,6 +25,8 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.validate-ecosystem-token]
     verify_jwt = false
+  [functions.send-invite-welcome]
+    verify_jwt = false
   [functions.enhance-challenge-description]
     verify_jwt = false
   [functions.ecosystem-data-api]
