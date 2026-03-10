@@ -355,7 +355,17 @@ const AdminChallenges = () => {
                       <TableCell className="text-muted-foreground">{typeLabels[c.challenge_type] ?? c.challenge_type}</TableCell>
                       <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2">
+                                <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
+                                <span className="text-xs text-muted-foreground">{c.is_active ? "Active" : "Inactive"}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Toggle challenge visibility for players</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
