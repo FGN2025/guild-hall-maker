@@ -242,6 +242,85 @@ const Auth = () => {
             />
           )}
 
+          {/* Confirmation screen after signup */}
+          {!isLogin && signupStep === "confirmation" && (
+            <div className="text-center space-y-5">
+              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="h-8 w-8 text-primary" />
+              </div>
+
+              {legacyUsername && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <p className="text-sm text-foreground font-heading">
+                    Welcome back, <span className="font-bold">{legacyUsername}</span>!
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your legacy account has been linked automatically.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-foreground font-body">
+                  We've sent a confirmation email to:
+                </p>
+                <p className="text-primary font-heading font-bold text-lg break-all">
+                  {email}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-4 text-left space-y-3">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground font-body">
+                    Open the email and click the confirmation link
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground font-body">
+                    Your account will be activated instantly
+                  </p>
+                </div>
+                {isInviteFlow && (
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <p className="text-sm text-muted-foreground font-body">
+                      Your team role will be assigned automatically
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground font-body">
+                Didn't receive it? Check your spam folder or{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSignupStep("account");
+                    setPassword("");
+                  }}
+                  className="text-primary hover:underline"
+                >
+                  try again
+                </button>
+              </p>
+
+              <Button
+                variant="outline"
+                className="w-full font-heading"
+                onClick={() => {
+                  setIsLogin(true);
+                  setSignupStep("zip");
+                  setPassword("");
+                  setLegacyUsername(null);
+                }}
+              >
+                Go to Sign In
+              </Button>
+            </div>
+          )}
+
           {/* Login form or signup account form */}
           {(isLogin || signupStep === "account") && (
             <form onSubmit={handleSubmit} className="space-y-4">
