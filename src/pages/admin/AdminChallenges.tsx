@@ -144,11 +144,12 @@ const AdminChallenges = () => {
       if (status === "completed" && enrollment && user) {
         const { data: challenge } = await supabase
           .from("challenges")
-          .select("points_reward, game_id, games(name)")
+          .select("name, points_reward, game_id, games(name)")
           .eq("id", enrollment.challenge_id)
           .single();
 
         const points = (challenge as any)?.points_reward ?? 0;
+        const challengeName = (challenge as any)?.name ?? "Challenge";
 
         // Record completion
         await supabase.from("challenge_completions").insert({
@@ -156,6 +157,15 @@ const AdminChallenges = () => {
           challenge_id: enrollment.challenge_id,
           awarded_points: points,
           verified_by: user.id,
+        });
+
+        // Notify the player
+        await supabase.from("notifications").insert({
+          user_id: enrollment.user_id,
+          title: "Challenge Approved!",
+          message: `Your submission for "${challengeName}" has been approved! You earned ${points} points.`,
+          type: "challenge",
+          link: `/challenges/${enrollment.challenge_id}`,
         });
 
         // Credit season score
