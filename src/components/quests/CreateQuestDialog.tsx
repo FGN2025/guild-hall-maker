@@ -291,11 +291,21 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
               <p className="text-xs text-muted-foreground">Quest XP (separate from season points)</p>
             </div>
             <div className="space-y-2">
-              <Label>Story Intro</Label>
+              <div className="flex items-center justify-between">
+                <Label>Story Intro</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-xs text-primary" onClick={() => enhanceNarrative("intro")} disabled={enhancingField === "intro" || !form.name.trim()}>
+                  {enhancingField === "intro" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+                </Button>
+              </div>
               <Textarea value={form.story_intro} onChange={(e) => setForm({ ...form, story_intro: e.target.value })} placeholder="Narrative shown when player starts this quest..." rows={2} />
             </div>
             <div className="space-y-2">
-              <Label>Story Outro</Label>
+              <div className="flex items-center justify-between">
+                <Label>Story Outro</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-xs text-primary" onClick={() => enhanceNarrative("outro")} disabled={enhancingField === "outro" || !form.name.trim()}>
+                  {enhancingField === "outro" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+                </Button>
+              </div>
               <Textarea value={form.story_outro} onChange={(e) => setForm({ ...form, story_outro: e.target.value })} placeholder="Narrative shown on completion..." rows={2} />
             </div>
           </div>

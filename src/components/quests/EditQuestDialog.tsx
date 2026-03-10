@@ -324,11 +324,21 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               <Input type="number" min={0} value={xpReward} onChange={(e) => setXpReward(Number(e.target.value))} />
             </div>
             <div>
-              <Label className="text-xs">Story Intro</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Story Intro</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-xs text-primary" onClick={() => enhanceNarrative("intro")} disabled={enhancingField === "intro" || !name.trim()}>
+                  {enhancingField === "intro" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+                </Button>
+              </div>
               <Textarea value={storyIntro} onChange={(e) => setStoryIntro(e.target.value)} rows={2} placeholder="Narrative shown at start..." />
             </div>
             <div>
-              <Label className="text-xs">Story Outro</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Story Outro</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-xs text-primary" onClick={() => enhanceNarrative("outro")} disabled={enhancingField === "outro" || !name.trim()}>
+                  {enhancingField === "outro" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+                </Button>
+              </div>
               <Textarea value={storyOutro} onChange={(e) => setStoryOutro(e.target.value)} rows={2} placeholder="Narrative shown on completion..." />
             </div>
           </div>
