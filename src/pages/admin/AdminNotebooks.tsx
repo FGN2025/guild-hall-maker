@@ -21,7 +21,16 @@ const AdminNotebooks = () => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", api_url: "", notebook_id: "" });
+  const [form, setForm] = useState({ name: "", api_url: "", notebook_id: "", game_id: "" });
+
+  const { data: games = [] } = useQuery({
+    queryKey: ["notebook-games"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("games").select("id, name").eq("is_active", true).order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const handleAdd = async () => {
     if (!form.name || !form.api_url || !form.notebook_id) {
