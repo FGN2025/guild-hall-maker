@@ -52,6 +52,34 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [enhancingField, setEnhancingField] = useState<string | null>(null);
+
+  const enhanceNarrative = async (field: "intro" | "outro") => {
+    if (!name.trim()) { toast.error("Enter a quest name first"); return; }
+    setEnhancingField(field);
+    try {
+      const gameName = games.find((g: any) => g.id === gameId)?.name || "";
+      const { data, error } = await supabase.functions.invoke("enhance-quest-narrative", {
+        body: {
+          name, description, game_name: gameName,
+          difficulty, challenge_type: challengeType,
+          field, draft: field === "intro" ? storyIntro : storyOutro,
+          game_id: gameId || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.enhanced_text) {
+        if (field === "intro") setStoryIntro(data.enhanced_text);
+        else setStoryOutro(data.enhanced_text);
+        toast.success("Narrative generated");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to enhance narrative");
+    } finally {
+      setEnhancingField(null);
+    }
+  };
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active"],
