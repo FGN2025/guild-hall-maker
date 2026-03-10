@@ -33,6 +33,13 @@ const AdminUsers = () => {
     return <Badge variant="secondary">User</Badge>;
   };
 
+  const tenantRoleBadge = (role: string | null) => {
+    if (role === "admin") return <Badge className="bg-primary/20 text-primary border-primary/30">Tenant Admin</Badge>;
+    if (role === "manager") return <Badge className="bg-secondary text-secondary-foreground">Manager</Badge>;
+    if (role === "marketing") return <Badge className="bg-chart-4/20 text-chart-4 border-chart-4/30">Marketing</Badge>;
+    return <span className="text-muted-foreground">—</span>;
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -78,6 +85,7 @@ const AdminUsers = () => {
                     <TableHead>User</TableHead>
                     <TableHead>Gamer Tag</TableHead>
                     <TableHead>Tenant</TableHead>
+                    <TableHead>Tenant Role</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead className="text-right">Set Role</TableHead>
@@ -85,8 +93,8 @@ const AdminUsers = () => {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell colSpan={6} className="p-0">
-                      <TableSkeleton columns={6} rows={8} showAvatar />
+                    <TableCell colSpan={7} className="p-0">
+                      <TableSkeleton columns={7} rows={8} showAvatar />
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -100,6 +108,7 @@ const AdminUsers = () => {
                     <TableHead>User</TableHead>
                     <TableHead>Gamer Tag</TableHead>
                     <TableHead>Tenant</TableHead>
+                    <TableHead>Tenant Role</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead className="text-right">Set Role</TableHead>
@@ -135,6 +144,7 @@ const AdminUsers = () => {
                       </TableCell>
                       <TableCell className="text-muted-foreground">{u.gamer_tag ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{u.tenant_name ?? "—"}</TableCell>
+                      <TableCell>{tenantRoleBadge(u.tenant_role)}</TableCell>
                       <TableCell>{roleBadge(u.role)}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {new Date(u.created_at).toLocaleDateString()}

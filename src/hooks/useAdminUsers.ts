@@ -14,6 +14,7 @@ export interface AdminUser {
   tenant_name: string | null;
   email_confirmed: boolean;
   has_email: boolean;
+  tenant_role: string | null;
 }
 
 interface Tenant {
@@ -60,6 +61,13 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
         .select("user_id, tenant_id");
       if (intError) throw intError;
 
+      // Fetch tenant_admins for tenant role
+      const { data: tenantAdmins, error: taError } = await supabase
+        .from("tenant_admins")
+        .select("user_id, role, tenant_id");
+      if (taError) throw taError;
+      const tenantAdminMap = new Map((tenantAdmins ?? []).map((ta: any) => [ta.user_id, { role: ta.role, tenant_id: ta.tenant_id }]));
+
       // Fetch tenants for name resolution
       const { data: tenants, error: tError } = await supabase
         .from("tenants")
@@ -84,6 +92,7 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
           tenant_name: tId ? (tenantMap.get(tId) as string) ?? null : null,
           email_confirmed: true,
           has_email: true,
+          tenant_role: (tenantAdminMap.get(p.user_id) as any)?.role ?? null,
         };
       }) as AdminUser[];
 
