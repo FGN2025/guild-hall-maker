@@ -121,6 +121,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "AI-Enhanced Narratives — Use the Sparkles (✨) button on story_intro and story_outro fields to auto-generate rich narrative text. If the quest's game has a linked notebook connection (Admin → Notebooks), the AI uses RAG to pull game-specific context for higher quality output.",
       "XP Rewards — Quests award XP in addition to season points. XP feeds into a five-tier rank system: Novice (0–99), Apprentice (100–299), Journeyman (300–599), Expert (600–999), Master (1000+).",
       "Chain Completion — When a player finishes all quests in a chain, bonus points and an optional achievement badge are awarded automatically via database triggers — no manual action required.",
+      "Post-Publication Task Editing — Admins and Moderators can add, edit, reorder, and remove tasks on existing challenges via the Edit dialog accessible from the challenge detail page.",
+      "Approval Notifications — When you approve a challenge submission, the player automatically receives an in-app notification confirming approval and the points earned.",
       "Tip: Challenges and quests with clear task checklists and evidence requirements drive the most meaningful engagement!",
     ],
   },
