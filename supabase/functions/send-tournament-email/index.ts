@@ -192,23 +192,28 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "FGN Tournaments <onboarding@resend.dev>",
+          from: "FGN <noreply@fgn.gg>",
           to: [recipient.email],
           subject,
           html: htmlBody.replace("{{name}}", recipient.name),
         }),
       }).then(async (res) => {
         const body = await res.text();
-        return { email: recipient.email, status: res.status, body };
+        if (!res.ok) {
+          console.error(`Resend API error for ${recipient.email}: ${res.status} ${body}`);
+        }
+        return { email: recipient.email, status: res.status, body, ok: res.ok };
       })
     );
 
     const results = await Promise.all(emailPromises);
+    const sent = results.filter((r) => r.ok).length;
+    const failed = results.length - sent;
 
-    console.log("Email results:", JSON.stringify(results));
+    console.log(`Tournament email results: ${sent} sent, ${failed} failed`);
 
     return new Response(
-      JSON.stringify({ success: true, sent: results.length, results }),
+      JSON.stringify({ success: true, sent, failed, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

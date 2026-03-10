@@ -39,3 +39,9 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.backfill-legacy-zips]
     verify_jwt = false
+  [functions.send-notification-email]
+    verify_jwt = false
+  [functions.send-tenant-invite]
+    verify_jwt = false
+  [functions.tournament-reminders]
+    verify_jwt = false
