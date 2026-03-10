@@ -25,6 +25,7 @@ const navItems = [
 const authNavItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/challenges", label: "Challenges", icon: Target },
+  { to: "/quests", label: "Quests", icon: Compass },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
