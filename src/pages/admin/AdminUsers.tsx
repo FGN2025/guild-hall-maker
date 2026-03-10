@@ -108,6 +108,7 @@ const AdminUsers = () => {
                     <TableHead>User</TableHead>
                     <TableHead>Gamer Tag</TableHead>
                     <TableHead>Tenant</TableHead>
+                    <TableHead>Tenant Role</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead className="text-right">Set Role</TableHead>
