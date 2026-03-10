@@ -162,8 +162,10 @@ const Auth = () => {
           }
 
           setSignupStep("confirmation");
+        } else {
+          setSignupStep("confirmation");
+        }
       }
-    }
 
     setLoading(false);
   };
