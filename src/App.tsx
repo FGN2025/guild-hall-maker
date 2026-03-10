@@ -151,6 +151,8 @@ const App = () => (
                 <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
                 <Route path="/challenges" element={<Challenges />} />
                 <Route path="/challenges/:id" element={<ChallengeDetail />} />
+                <Route path="/quests" element={<Quests />} />
+                <Route path="/quests/:id" element={<QuestDetail />} />
               </Route>
 
               {/* Authenticated routes with sidebar */}
