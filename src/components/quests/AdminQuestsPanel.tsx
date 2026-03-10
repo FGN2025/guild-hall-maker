@@ -274,7 +274,17 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                       <TableCell className="text-muted-foreground">{typeLabels[q.challenge_type] ?? q.challenge_type}</TableCell>
                       {showEnrollmentCounts && <TableCell className="text-muted-foreground">{q.enrollments_count}</TableCell>}
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2">
+                                <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
+                                <span className="text-xs text-muted-foreground">{q.is_active ? "Active" : "Inactive"}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Toggle quest visibility for players</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
