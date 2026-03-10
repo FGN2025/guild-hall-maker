@@ -313,7 +313,8 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                     <div className="absolute top-3 left-3 flex gap-2">
                       <Badge variant="outline" className={`capitalize ${difficultyColor[q.difficulty] ?? ""}`}>{q.difficulty}</Badge>
                     </div>
-                    <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-[10px] font-medium text-foreground">{q.is_active ? "Active" : "Off"}</span>
                       <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
                     </div>
                   </div>
