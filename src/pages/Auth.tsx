@@ -166,6 +166,7 @@ const Auth = () => {
           setSignupStep("confirmation");
         }
       }
+    }
 
     setLoading(false);
   };
