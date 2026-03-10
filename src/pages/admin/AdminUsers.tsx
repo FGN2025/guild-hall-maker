@@ -115,7 +115,12 @@ const AdminUsers = () => {
                             <AvatarFallback className="text-xs">{(u.display_name ?? "?")[0]}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{u.display_name ?? "Unknown"}</span>
-                          {!u.email_confirmed && (
+                          {!u.has_email ? (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1">
+                              <Mail className="h-3 w-3" />
+                              No Email
+                            </Badge>
+                          ) : !u.email_confirmed && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Badge variant="destructive" className="text-[10px] px-1.5 py-0 gap-1">
