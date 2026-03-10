@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 import { useNotebookConnections, NotebookConnection } from "@/hooks/useNotebookConnections";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Activity, Loader2, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
