@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "FGN <noreply@fgn.gg>",
+          from: "FGN <noreply@play.fgn.gg>",
           to: [recipient.email],
           subject,
           html: htmlBody.replace("{{name}}", recipient.name),
