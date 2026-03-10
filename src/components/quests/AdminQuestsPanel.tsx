@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Compass, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
@@ -273,7 +274,17 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                       <TableCell className="text-muted-foreground">{typeLabels[q.challenge_type] ?? q.challenge_type}</TableCell>
                       {showEnrollmentCounts && <TableCell className="text-muted-foreground">{q.enrollments_count}</TableCell>}
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2">
+                                <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
+                                <span className="text-xs text-muted-foreground">{q.is_active ? "Active" : "Inactive"}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Toggle quest visibility for players</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
@@ -302,7 +313,8 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                     <div className="absolute top-3 left-3 flex gap-2">
                       <Badge variant="outline" className={`capitalize ${difficultyColor[q.difficulty] ?? ""}`}>{q.difficulty}</Badge>
                     </div>
-                    <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-[10px] font-medium text-foreground">{q.is_active ? "Active" : "Off"}</span>
                       <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
                     </div>
                   </div>

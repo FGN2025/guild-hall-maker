@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
@@ -354,7 +355,17 @@ const AdminChallenges = () => {
                       <TableCell className="text-muted-foreground">{typeLabels[c.challenge_type] ?? c.challenge_type}</TableCell>
                       <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2">
+                                <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
+                                <span className="text-xs text-muted-foreground">{c.is_active ? "Active" : "Inactive"}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Toggle challenge visibility for players</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
@@ -400,7 +411,8 @@ const AdminChallenges = () => {
                     <div className="absolute top-3 left-3 flex gap-2">
                       <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
                     </div>
-                    <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-[10px] font-medium text-foreground">{c.is_active ? "Active" : "Off"}</span>
                       <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
                     </div>
                   </div>
