@@ -48,6 +48,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const AcceptableUsePolicy = lazy(() => import("./pages/AcceptableUsePolicy"));
 const DisabledUsersNotice = lazy(() => import("./pages/DisabledUsersNotice"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ConfirmEmail = lazy(() => import("./pages/ConfirmEmail"));
 const TenantEventPage = lazy(() => import("./pages/TenantEventPage"));
 const TenantEventDetail = lazy(() => import("./pages/TenantEventDetail"));
 const EmbedCalendar = lazy(() => import("./pages/EmbedCalendar"));
