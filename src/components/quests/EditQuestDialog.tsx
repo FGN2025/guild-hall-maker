@@ -137,6 +137,11 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
         difficulty,
         challenge_type: challengeType,
         game_id: gameId || null,
+        chain_id: chainId || null,
+        chain_order: chainId ? chainOrder : 0,
+        story_intro: storyIntro || null,
+        story_outro: storyOutro || null,
+        xp_reward: xpReward,
         points_first: pointsFirst,
         points_second: pointsSecond,
         points_third: pointsThird,
@@ -148,7 +153,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
         cover_image_url: finalCoverUrl,
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
-      }).eq("id", quest.id);
+      } as any).eq("id", quest.id);
       if (error) throw error;
     },
     onSuccess: () => {
