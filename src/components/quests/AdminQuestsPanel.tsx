@@ -463,6 +463,10 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
             );
           })}
         </TabsContent>
+
+        <TabsContent value="chains" className="mt-4">
+          <AdminChainsTab />
+        </TabsContent>
       </Tabs>
 
       {/* Details Dialog */}
