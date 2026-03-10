@@ -205,6 +205,44 @@ Deno.serve(async (req) => {
             </div>`,
         });
       }
+    } else if (type === "new_quest") {
+      const questName = record.name as string;
+      const pointsReward = record.points_reward as number;
+
+      if (target_email) {
+        emails.push({
+          to: target_email,
+          subject: `🗺️ New Quest Available — FGN`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">New Quest Available!</h1>
+              <p>A new quest <strong>"${questName}"</strong> is now live!</p>
+              <p>Complete it to earn <strong>${pointsReward} points</strong>.</p>
+              <p>Log in to FGN and check the Quests page to get started.</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
+      } else {
+        const { data: userData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        if (userData?.users) {
+          for (const u of userData.users) {
+            if (u.email) {
+              emails.push({
+                to: u.email,
+                subject: `🗺️ New Quest Available — FGN`,
+                html: `
+                  <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+                    <h1 style="color: #00f0ff;">New Quest Available!</h1>
+                    <p>A new quest <strong>"${questName}"</strong> is now live!</p>
+                    <p>Complete it to earn <strong>${pointsReward} points</strong>.</p>
+                    <p>Log in to FGN and check the Quests page to get started.</p>
+                    <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+                  </div>`,
+              });
+            }
+          }
+        }
+      }
     } else if (type === "access_request_new") {
       // Notify all admins about new access request
       const { data: adminRoles } = await supabase
