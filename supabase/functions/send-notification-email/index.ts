@@ -309,10 +309,10 @@ Deno.serve(async (req) => {
       failed += batchFailed;
     }
 
-    console.log(`Sent ${sent} notification emails for type: ${type}`);
+    console.log(`Sent ${sent} notification emails for type: ${type}${failed > 0 ? `, ${failed} failed` : ""}`);
 
     return new Response(
-      JSON.stringify({ success: true, sent }),
+      JSON.stringify({ success: true, sent, failed }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
