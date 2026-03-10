@@ -85,7 +85,7 @@ const Auth = () => {
       return;
     }
 
-    if (!isLogin && !displayName.trim()) {
+    if (!isLogin && !isInviteFlow && !displayName.trim()) {
       toast.error("Display Name is required.");
       return;
     }
