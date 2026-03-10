@@ -16,7 +16,7 @@ import SubscriberVerifyStep from "@/components/auth/SubscriberVerifyStep";
 import { useRegistrationZipCheck } from "@/hooks/useRegistrationZipCheck";
 import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
 
-type SignupStep = "zip" | "subscriber-verify" | "account";
+type SignupStep = "zip" | "subscriber-verify" | "account" | "confirmation";
 
 const Auth = () => {
   usePageTitle("Sign In");
@@ -29,6 +29,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [legacyUsername, setLegacyUsername] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // ZIP check state (signup only)
@@ -154,18 +155,15 @@ const Auth = () => {
           try {
             const { data: matchResult } = await supabase.functions.invoke("match-legacy-user");
             if (matchResult?.matched) {
-              toast.success(
-                `Welcome back, ${matchResult.legacy_username}! Your legacy account has been linked.`,
-                { duration: 6000 }
-              );
-            } else {
-              toast.success("Check your email to confirm your account!");
+              setLegacyUsername(matchResult.legacy_username);
             }
           } catch {
-            toast.success("Check your email to confirm your account!");
+            // ignore
           }
+
+          setSignupStep("confirmation");
         } else {
-          toast.success("Check your email to confirm your account!");
+          setSignupStep("confirmation");
         }
       }
     }
@@ -187,6 +185,7 @@ const Auth = () => {
     if (isLogin) return "Welcome Back";
     if (signupStep === "zip") return "Verify Location";
     if (signupStep === "subscriber-verify") return "Verify Subscriber";
+    if (signupStep === "confirmation") return "You're Almost There!";
     return "Create Account";
   };
 
@@ -194,6 +193,7 @@ const Auth = () => {
     if (isLogin) return "Sign in to your account";
     if (signupStep === "zip") return "Enter your ZIP code to get started";
     if (signupStep === "subscriber-verify") return "Confirm your service provider account";
+    if (signupStep === "confirmation") return "Just one more step to activate your account";
     return "Complete your registration";
   };
 
@@ -240,6 +240,85 @@ const Auth = () => {
                 setSelectedTenantId(null);
               }}
             />
+          )}
+
+          {/* Confirmation screen after signup */}
+          {!isLogin && signupStep === "confirmation" && (
+            <div className="text-center space-y-5">
+              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="h-8 w-8 text-primary" />
+              </div>
+
+              {legacyUsername && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <p className="text-sm text-foreground font-heading">
+                    Welcome back, <span className="font-bold">{legacyUsername}</span>!
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your legacy account has been linked automatically.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-foreground font-body">
+                  We've sent a confirmation email to:
+                </p>
+                <p className="text-primary font-heading font-bold text-lg break-all">
+                  {email}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-4 text-left space-y-3">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground font-body">
+                    Open the email and click the confirmation link
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground font-body">
+                    Your account will be activated instantly
+                  </p>
+                </div>
+                {isInviteFlow && (
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <p className="text-sm text-muted-foreground font-body">
+                      Your team role will be assigned automatically
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground font-body">
+                Didn't receive it? Check your spam folder or{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSignupStep("account");
+                    setPassword("");
+                  }}
+                  className="text-primary hover:underline"
+                >
+                  try again
+                </button>
+              </p>
+
+              <Button
+                variant="outline"
+                className="w-full font-heading"
+                onClick={() => {
+                  setIsLogin(true);
+                  setSignupStep("zip");
+                  setPassword("");
+                  setLegacyUsername(null);
+                }}
+              >
+                Go to Sign In
+              </Button>
+            </div>
           )}
 
           {/* Login form or signup account form */}
@@ -378,16 +457,18 @@ const Auth = () => {
             </form>
           )}
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={switchMode}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors font-body"
-            >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"}
-            </button>
-          </div>
+          {signupStep !== "confirmation" && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={switchMode}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors font-body"
+              >
+                {isLogin
+                  ? "Don't have an account? Sign up"
+                  : "Already have an account? Sign in"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
