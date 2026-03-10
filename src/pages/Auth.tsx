@@ -38,7 +38,7 @@ const Auth = () => {
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { checkZip, loading: zipLoading, result: zipResult, reset: resetZip } = useRegistrationZipCheck();
-  const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && signupStep === "account");
+  const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && signupStep === "account" && !isInviteFlow);
 
   const handleZipCheck = async () => {
     await checkZip(zipCode, bypassCode || undefined);
