@@ -280,8 +280,8 @@ Deno.serve(async (req) => {
     let sent = 0;
     for (let i = 0; i < emails.length; i += 100) {
       const batch = emails.slice(i, i + 100);
-      const promises = batch.map((e) =>
-        fetch("https://api.resend.com/emails", {
+      const promises = batch.map(async (e) => {
+        const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${RESEND_API_KEY}`,
@@ -293,10 +293,19 @@ Deno.serve(async (req) => {
             subject: e.subject,
             html: e.html,
           }),
-        })
-      );
-      await Promise.all(promises);
-      sent += batch.length;
+        });
+        if (!res.ok) {
+          const errBody = await res.text();
+          console.error(`Resend API error for ${e.to}: ${res.status} ${errBody}`);
+          return false;
+        }
+        return true;
+      });
+      const results = await Promise.all(promises);
+      const batchSent = results.filter(Boolean).length;
+      const batchFailed = results.length - batchSent;
+      sent += batchSent;
+      failed += batchFailed;
     }
 
     console.log(`Sent ${sent} notification emails for type: ${type}`);
