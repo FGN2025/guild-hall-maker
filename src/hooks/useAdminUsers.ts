@@ -12,6 +12,7 @@ export interface AdminUser {
   role: string | null;
   tenant_id: string | null;
   tenant_name: string | null;
+  email_confirmed: boolean;
 }
 
 interface Tenant {
@@ -80,11 +81,30 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
           role: (roleMap.get(p.user_id) as string) ?? null,
           tenant_id: tId ?? null,
           tenant_name: tId ? (tenantMap.get(tId) as string) ?? null : null,
+          email_confirmed: true, // default, will be updated below
         };
       }) as AdminUser[];
 
       if (tenantId) {
         result = result.filter((u) => u.tenant_id === tenantId);
+      }
+
+      // Fetch confirmation status from edge function
+      const userIds = result.map((u) => u.user_id);
+      if (userIds.length > 0) {
+        try {
+          const { data: confirmData } = await supabase.functions.invoke("check-users-confirmed", {
+            body: { user_ids: userIds },
+          });
+          if (confirmData?.confirmed) {
+            result = result.map((u) => ({
+              ...u,
+              email_confirmed: confirmData.confirmed[u.user_id] ?? true,
+            }));
+          }
+        } catch {
+          // Silently fail – confirmation status is supplementary
+        }
       }
 
       return result;

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import TableSkeleton from "@/components/ui/table-skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, UserCheck, UserX, Mail, Loader2 } from "lucide-react";
+import { Search, Users, UserCheck, UserX, Mail, Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -115,6 +115,17 @@ const AdminUsers = () => {
                             <AvatarFallback className="text-xs">{(u.display_name ?? "?")[0]}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{u.display_name ?? "Unknown"}</span>
+                          {!u.email_confirmed && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0 gap-1">
+                                  <ShieldAlert className="h-3 w-3" />
+                                  Unconfirmed
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>This user has not verified their email</TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{u.gamer_tag ?? "—"}</TableCell>
