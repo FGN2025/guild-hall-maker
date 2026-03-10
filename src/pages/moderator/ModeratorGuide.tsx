@@ -179,6 +179,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Match Completed — Both players are notified when you record a match result.",
       "Challenge Published — All players are notified when you create a new active challenge.",
       "Redemption Updates — Players are notified when you approve, fulfill, or deny a redemption.",
+      "Challenge Approved — When a moderator approves a challenge enrollment, the player receives a notification with the challenge name and points awarded.",
       "Achievement Earned — Players are notified when badges are awarded.",
       "Scheduled Reminders — A background job sends tournament reminders ~24 hours before start time.",
       "Email Notifications — Key events also trigger email alerts via the notification system.",

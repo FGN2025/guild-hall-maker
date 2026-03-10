@@ -224,6 +224,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Rank Display — Your current quest rank and XP progress bar are shown at the top of the Quests page and on your player profile.",
       "Story Narratives — Some quests and chains feature story intro and outro text that adds flavor and context to your journey, displayed when you enroll and upon completion.",
       "Quest Notifications — Opt in to 'New Quests' notifications from your Profile Settings to be alerted when a quest is published.",
+      "Approval Notification — When a moderator approves your challenge submission, you'll receive an instant notification confirming approval and the points you earned.",
       "Tip: Challenges and quests with clear task checklists and evidence uploads are the fastest way to earn season points!",
     ],
   },

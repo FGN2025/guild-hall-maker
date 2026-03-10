@@ -420,6 +420,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "XP Rewards — Quests award XP in addition to season points. The XP feeds into a five-tier rank system (Novice → Apprentice → Journeyman → Expert → Master) tracked per player.",
       "Chain Completion — When a player finishes all quests in a chain, bonus points are awarded automatically via a database trigger, and an optional achievement badge is granted.",
       "Players view active challenges at /challenges and quests at /quests, and can see which ones they've already completed.",
+      "Post-Publication Task Editing — Admins and Moderators can add, edit, reorder, and remove tasks on published challenges directly from the Edit dialog on the challenge detail page.",
+      "Approval Notifications — When a challenge submission is approved, the player automatically receives an in-app notification with the challenge name and points earned.",
       "Challenge completions are recorded by moderators and automatically award points to the player's season score.",
       "Max completions can be set to limit how many players can complete a challenge.",
     ],
