@@ -135,7 +135,7 @@ const ChallengeDetail = () => {
         </div>
 
         {/* Admin action bar */}
-        {isAdmin && (
+        {(isAdmin || isModerator) && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Edit Challenge
