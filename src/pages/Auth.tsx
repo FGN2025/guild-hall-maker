@@ -457,16 +457,18 @@ const Auth = () => {
             </form>
           )}
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={switchMode}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors font-body"
-            >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"}
-            </button>
-          </div>
+          {signupStep !== "confirmation" && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={switchMode}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors font-body"
+              >
+                {isLogin
+                  ? "Don't have an account? Sign up"
+                  : "Already have an account? Sign in"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
