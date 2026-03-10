@@ -155,19 +155,13 @@ const Auth = () => {
           try {
             const { data: matchResult } = await supabase.functions.invoke("match-legacy-user");
             if (matchResult?.matched) {
-              toast.success(
-                `Welcome back, ${matchResult.legacy_username}! Your legacy account has been linked.`,
-                { duration: 6000 }
-              );
-            } else {
-              toast.success("Check your email to confirm your account!");
+              setLegacyUsername(matchResult.legacy_username);
             }
           } catch {
-            toast.success("Check your email to confirm your account!");
+            // ignore
           }
-        } else {
-          toast.success("Check your email to confirm your account!");
-        }
+
+          setSignupStep("confirmation");
       }
     }
 
