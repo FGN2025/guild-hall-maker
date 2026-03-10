@@ -144,6 +144,7 @@ const AdminUsers = () => {
                       </TableCell>
                       <TableCell className="text-muted-foreground">{u.gamer_tag ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{u.tenant_name ?? "—"}</TableCell>
+                      <TableCell>{tenantRoleBadge(u.tenant_role)}</TableCell>
                       <TableCell>{roleBadge(u.role)}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {new Date(u.created_at).toLocaleDateString()}
