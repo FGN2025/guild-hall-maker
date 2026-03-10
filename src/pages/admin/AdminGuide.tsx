@@ -408,7 +408,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Challenges are task-based work-order objectives that reward players with season points upon completion.",
       "Moderators create and manage challenges from the Moderator Dashboard → Challenges & Quests.",
-      "Each challenge has a name, description, point reward, optional game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (one-time or repeatable), and optional start/end dates.",
+      "Each challenge has a name, description, point reward, optional game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (Daily, Weekly, Monthly, or One-Time), and optional start/end dates.",
       "Cover Images — Upload a cover image or select one from the Media Library to make challenges visually distinct.",
       "AI-Enhanced Descriptions — Use the AI enhance button to automatically improve challenge descriptions for clarity and engagement.",
       "Task Checklists — Build multi-step task checklists within a challenge. Players must complete each task and upload evidence per step.",
@@ -420,6 +420,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "XP Rewards — Quests award XP in addition to season points. The XP feeds into a five-tier rank system (Novice → Apprentice → Journeyman → Expert → Master) tracked per player.",
       "Chain Completion — When a player finishes all quests in a chain, bonus points are awarded automatically via a database trigger, and an optional achievement badge is granted.",
       "Players view active challenges at /challenges and quests at /quests, and can see which ones they've already completed.",
+      "Post-Publication Task Editing — Admins and Moderators can add, edit, reorder, and remove tasks on published challenges directly from the Edit dialog on the challenge detail page.",
+      "Approval Notifications — When a challenge submission is approved, the player automatically receives an in-app notification with the challenge name and points earned.",
       "Challenge completions are recorded by moderators and automatically award points to the player's season score.",
       "Max completions can be set to limit how many players can complete a challenge.",
     ],
