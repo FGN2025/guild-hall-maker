@@ -102,6 +102,9 @@ const AdminNotebooks = () => {
                   <div className="grid gap-1 text-sm text-muted-foreground mb-4">
                     <p><span className="font-medium text-foreground">URL:</span> {conn.api_url}</p>
                     <p><span className="font-medium text-foreground">Notebook ID:</span> {conn.notebook_id}</p>
+                    {conn.game_id && (
+                      <p><span className="font-medium text-foreground">Game:</span> {games.find((g: any) => g.id === conn.game_id)?.name || conn.game_id}</p>
+                    )}
                     {conn.last_health_check && (
                       <p><span className="font-medium text-foreground">Last check:</span> {new Date(conn.last_health_check).toLocaleString()}</p>
                     )}
