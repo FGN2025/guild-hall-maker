@@ -175,9 +175,23 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "quests": {
+        let q = adminClient
+          .from("quests")
+          .select("id, name, description, game_id, challenge_type, difficulty, points_reward, start_date, end_date, requires_evidence, cover_image_url, created_at, updated_at")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(rowLimit);
+        if (since) q = q.gte("updated_at", since);
+        const { data, error } = await q;
+        if (error) throw error;
+        result = data;
+        break;
+      }
+
       default:
         return new Response(
-          JSON.stringify({ error: `Unknown action: ${action}. Valid: tournaments, tenant-events, challenges, player-progress, achievements, season-stats` }),
+          JSON.stringify({ error: `Unknown action: ${action}. Valid: tournaments, tenant-events, challenges, quests, player-progress, achievements, season-stats` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     }
