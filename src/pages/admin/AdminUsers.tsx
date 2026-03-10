@@ -124,25 +124,47 @@ const AdminUsers = () => {
                         {new Date(u.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        {u.user_id === currentUser?.id ? (
-                          <span className="text-xs text-muted-foreground">You</span>
-                        ) : (
-                          <Select
-                            value={u.role ?? "user"}
-                            onValueChange={(val) => setRole.mutate({ userId: u.user_id, role: val })}
-                            disabled={setRole.isPending}
-                          >
-                            <SelectTrigger className="w-[130px] ml-auto">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="user">User</SelectItem>
-                              <SelectItem value="moderator">Moderator</SelectItem>
-                              <SelectItem value="marketing">Marketing</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {u.user_id !== currentUser?.id && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  disabled={resendConfirmation.isPending}
+                                  onClick={() => resendConfirmation.mutate(u.user_id)}
+                                >
+                                  {resendConfirmation.isPending && resendConfirmation.variables === u.user_id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Mail className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Resend confirmation email</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {u.user_id === currentUser?.id ? (
+                            <span className="text-xs text-muted-foreground">You</span>
+                          ) : (
+                            <Select
+                              value={u.role ?? "user"}
+                              onValueChange={(val) => setRole.mutate({ userId: u.user_id, role: val })}
+                              disabled={setRole.isPending}
+                            >
+                              <SelectTrigger className="w-[130px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="moderator">Moderator</SelectItem>
+                                <SelectItem value="marketing">Marketing</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
