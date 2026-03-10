@@ -534,15 +534,12 @@ const ModeratorChallenges = () => {
         </TabsContent>
       </Tabs>
 
-      {/* ───── DETAILS DIALOG ───── */}
       <Dialog open={!!detailChallenge} onOpenChange={(open) => !open && setDetailChallenge(null)}>
         {detailChallenge && (
           <DialogContent className="border-border/50 max-w-lg">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-1">
-                <Badge variant="outline" className={`capitalize ${difficultyColor[detailChallenge.difficulty] ?? ""}`}>
-                  {detailChallenge.difficulty}
-                </Badge>
+                <Badge variant="outline" className={`capitalize ${difficultyColor[detailChallenge.difficulty] ?? ""}`}>{detailChallenge.difficulty}</Badge>
                 <Badge variant="outline" className={detailChallenge.is_active ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-muted text-muted-foreground border-border"}>
                   {detailChallenge.is_active ? "Active" : "Inactive"}
                 </Badge>
@@ -550,12 +547,8 @@ const ModeratorChallenges = () => {
               <DialogTitle className="font-display text-2xl">{detailChallenge.name}</DialogTitle>
               <DialogDescription>{detailChallenge.games?.name ?? "No game"} · {typeLabels[detailChallenge.challenge_type] ?? detailChallenge.challenge_type}</DialogDescription>
             </DialogHeader>
-
             <div className="space-y-4 mt-2">
-              {detailChallenge.description && (
-                <p className="text-sm text-muted-foreground">{detailChallenge.description}</p>
-              )}
-
+              {detailChallenge.description && <p className="text-sm text-muted-foreground">{detailChallenge.description}</p>}
               <div className="grid grid-cols-2 gap-3">
                 {[
                   ...(isAdmin ? [{ icon: Users, label: "Enrolled", value: detailChallenge.enrollments_count }] : []),
@@ -566,104 +559,54 @@ const ModeratorChallenges = () => {
                   ...(detailChallenge.end_date ? [{ icon: Calendar, label: "End", value: format(new Date(detailChallenge.end_date), "MMM d, yyyy") }] : []),
                 ].map((info) => (
                   <div key={info.label} className="bg-muted rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <info.icon className="h-4 w-4 text-primary" />
-                      <span className="text-xs text-muted-foreground">{info.label}</span>
-                    </div>
+                    <div className="flex items-center gap-2 mb-1"><info.icon className="h-4 w-4 text-primary" /><span className="text-xs text-muted-foreground">{info.label}</span></div>
                     <p className="font-heading text-sm font-semibold text-foreground">{info.value}</p>
                   </div>
                 ))}
               </div>
-
               <div className="bg-muted rounded-lg p-4">
                 <span className="font-heading text-sm text-foreground">Points Breakdown</span>
                 <div className="grid grid-cols-4 gap-2 mt-2 text-center">
-                  {[
-                    { label: "1st", value: detailChallenge.points_first },
-                    { label: "2nd", value: detailChallenge.points_second },
-                    { label: "3rd", value: detailChallenge.points_third },
-                    { label: "Others", value: detailChallenge.points_participation },
-                  ].map((p) => (
-                    <div key={p.label}>
-                      <p className="font-heading text-lg font-bold text-primary">{p.value}</p>
-                      <p className="text-[10px] text-muted-foreground">{p.label}</p>
-                    </div>
+                  {[{ label: "1st", value: detailChallenge.points_first },{ label: "2nd", value: detailChallenge.points_second },{ label: "3rd", value: detailChallenge.points_third },{ label: "Others", value: detailChallenge.points_participation }].map((p) => (
+                    <div key={p.label}><p className="font-heading text-lg font-bold text-primary">{p.value}</p><p className="text-[10px] text-muted-foreground">{p.label}</p></div>
                   ))}
                 </div>
               </div>
-
-              {/* Toggle active in dialog */}
               <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                 <Label className="text-sm">Active Status</Label>
-                <Switch
-                  checked={detailChallenge.is_active}
-                  onCheckedChange={(checked) => {
-                    toggleMutation.mutate({ id: detailChallenge.id, is_active: checked });
-                    setDetailChallenge({ ...detailChallenge, is_active: checked });
-                  }}
-                />
+                <Switch checked={detailChallenge.is_active} onCheckedChange={(checked) => { toggleMutation.mutate({ id: detailChallenge.id, is_active: checked }); setDetailChallenge({ ...detailChallenge, is_active: checked }); }} />
               </div>
-
-              {/* Action buttons */}
               <div className="flex flex-col gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="w-full py-5"
-                  onClick={() => { setEditChallenge(detailChallenge); setDetailChallenge(null); }}
-                >
-                  <Pencil className="h-4 w-4 mr-2" /> Edit Challenge
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="w-full py-5"
-                  onClick={() => { navigate(`/challenges/${detailChallenge.id}`); setDetailChallenge(null); }}
-                >
-                  <Eye className="h-4 w-4 mr-2" /> View Challenge
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10"
-                  onClick={() => handleDelete(detailChallenge.id, detailChallenge.name)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete Challenge
-                </Button>
+                <Button variant="outline" className="w-full py-5" onClick={() => { setEditChallenge(detailChallenge); setDetailChallenge(null); }}><Pencil className="h-4 w-4 mr-2" /> Edit Challenge</Button>
+                <Button variant="outline" className="w-full py-5" onClick={() => { navigate(`/challenges/${detailChallenge.id}`); setDetailChallenge(null); }}><Eye className="h-4 w-4 mr-2" /> View Challenge</Button>
+                <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailChallenge.id, detailChallenge.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4 mr-2" /> Delete Challenge</Button>
               </div>
             </div>
           </DialogContent>
         )}
       </Dialog>
 
-      {/* ───── EDIT DIALOG ───── */}
-      <EditChallengeDialog
-        challenge={editChallenge}
-        open={!!editChallenge}
-        onOpenChange={(open) => !open && setEditChallenge(null)}
-        invalidateQueryKey={["mod-challenges"]}
-      />
+      <EditChallengeDialog challenge={editChallenge} open={!!editChallenge} onOpenChange={(open) => !open && setEditChallenge(null)} invalidateQueryKey={["mod-challenges"]} />
 
-      {/* ───── DELETE CONFIRMATION ───── */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Challenge</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>? This will also remove all enrollments, evidence, and task data. This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>? This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={confirmDelete}
-            >
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={confirmDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+        </TabsContent>
+
+        <TabsContent value="quests">
+          <AdminQuestsPanel queryKeyPrefix="mod" showEnrollmentCounts={isAdmin} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
