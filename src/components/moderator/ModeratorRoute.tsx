@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 
 const ModeratorRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, isModerator, isAdmin, roleLoading } = useAuth();
+  const { user, loading, isModerator, isAdmin, roleLoading, emailConfirmed } = useAuth();
 
   useEffect(() => {
     if (!loading && !roleLoading && user && !isModerator && !isAdmin) {
@@ -22,6 +22,7 @@ const ModeratorRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+  if (!emailConfirmed) return <Navigate to="/confirm-email" replace />;
   // Admins can also access moderator panel
   if (!isModerator && !isAdmin) return <Navigate to="/dashboard" replace />;
 

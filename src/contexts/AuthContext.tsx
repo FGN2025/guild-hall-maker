@@ -11,6 +11,7 @@ interface AuthContextType {
   isMarketing: boolean;
   roleLoading: boolean;
   discordLinked: boolean;
+  emailConfirmed: boolean;
   signOut: () => Promise<void>;
   refreshDiscordStatus: () => Promise<void>;
 }
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   isMarketing: false,
   roleLoading: true,
   discordLinked: false,
+  emailConfirmed: false,
   signOut: async () => {},
   refreshDiscordStatus: async () => {},
 });
@@ -100,8 +102,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
+  const emailConfirmed = !!user?.email_confirmed_at;
+
   return (
-    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, roleLoading, discordLinked, signOut, refreshDiscordStatus }}>
+    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, roleLoading, discordLinked, emailConfirmed, signOut, refreshDiscordStatus }}>
       {children}
     </AuthContext.Provider>
   );

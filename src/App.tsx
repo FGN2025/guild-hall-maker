@@ -48,6 +48,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const AcceptableUsePolicy = lazy(() => import("./pages/AcceptableUsePolicy"));
 const DisabledUsersNotice = lazy(() => import("./pages/DisabledUsersNotice"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ConfirmEmail = lazy(() => import("./pages/ConfirmEmail"));
 const TenantEventPage = lazy(() => import("./pages/TenantEventPage"));
 const TenantEventDetail = lazy(() => import("./pages/TenantEventDetail"));
 const EmbedCalendar = lazy(() => import("./pages/EmbedCalendar"));
@@ -134,6 +135,7 @@ const App = () => (
               <Route path="/acceptable-use" element={<AcceptableUsePolicy />} />
               <Route path="/disabled-users" element={<DisabledUsersNotice />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/confirm-email" element={<ConfirmEmail />} />
               <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
               <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
               <Route path="/embed/calendar/:configId" element={<EmbedCalendar />} />

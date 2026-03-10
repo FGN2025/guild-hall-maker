@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const DISCORD_EXEMPT_PATHS = ["/link-discord", "/profile"];
 
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
-  const { user, loading, discordLinked, roleLoading, isAdmin } = useAuth();
+  const { user, loading, discordLinked, roleLoading, isAdmin, emailConfirmed } = useAuth();
   const location = useLocation();
 
   if (loading || roleLoading) {
@@ -17,6 +17,10 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (!emailConfirmed) {
+    return <Navigate to="/confirm-email" replace />;
   }
 
   // Discord gate — exempt certain paths and all admin/tenant routes

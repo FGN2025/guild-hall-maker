@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, isAdmin, roleLoading } = useAuth();
+  const { user, loading, isAdmin, roleLoading, emailConfirmed } = useAuth();
 
   useEffect(() => {
     if (!loading && !roleLoading && user && !isAdmin) {
@@ -22,6 +22,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+  if (!emailConfirmed) return <Navigate to="/confirm-email" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   return <AdminLayout>{children}</AdminLayout>;

@@ -4,7 +4,7 @@ import AppLayout from "@/components/AppLayout";
 import PublicLayout from "@/components/PublicLayout";
 
 const ConditionalLayout = () => {
-  const { user, loading, discordLinked, roleLoading, isAdmin } = useAuth();
+  const { user, loading, discordLinked, roleLoading, isAdmin, emailConfirmed } = useAuth();
 
   if (loading || roleLoading) {
     return (
@@ -17,6 +17,11 @@ const ConditionalLayout = () => {
   // Not logged in → public layout with navbar
   if (!user) {
     return <PublicLayout />;
+  }
+
+  // Logged in but email not confirmed → redirect
+  if (!emailConfirmed) {
+    return <Navigate to="/confirm-email" replace />;
   }
 
   // Logged in but no Discord → redirect (unless admin or exempt)
