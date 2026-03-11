@@ -164,7 +164,9 @@ const Auth = () => {
 
           // Auto-match legacy user by email
           try {
-            const { data: matchResult } = await supabase.functions.invoke("match-legacy-user");
+            const { data: matchResult } = await supabase.functions.invoke("match-legacy-user", {
+              body: { email, user_id: data.user!.id },
+            });
             if (matchResult?.matched) {
               setLegacyUsername(matchResult.legacy_username);
             }
