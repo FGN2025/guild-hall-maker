@@ -23,17 +23,25 @@ Deno.serve(async (req) => {
     let userId: string | null = null;
     let email: string | null = null;
 
-    // Try to resolve the user from the JWT first
-    if (authHeader && authHeader !== `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`) {
-      const anonClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
-      const { data } = await anonClient.auth.getUser();
-      if (data?.user) {
-        userId = data.user.id;
-        email = data.user.email?.toLowerCase() ?? null;
+    // Try to resolve the user from the JWT first (only if it looks like a real JWT, not the anon key)
+    if (
+      authHeader &&
+      authHeader.startsWith("Bearer ey") &&
+      authHeader !== `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`
+    ) {
+      try {
+        const anonClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data } = await anonClient.auth.getUser();
+        if (data?.user) {
+          userId = data.user.id;
+          email = data.user.email?.toLowerCase() ?? null;
+        }
+      } catch {
+        // JWT introspection failed — fall through to body
       }
     }
 

@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Gamepad2, Mail, Lock, User, ArrowLeft, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Gamepad2, Mail, Lock, User, ArrowLeft, CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import ZipCheckStep from "@/components/auth/ZipCheckStep";
@@ -23,14 +24,26 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const isInviteFlow = searchParams.get("invite") === "true";
   const inviteEmail = searchParams.get("email") || "";
+  const { user, loading: authLoading, emailConfirmed } = useAuth();
 
   const [isLogin, setIsLogin] = useState(!isInviteFlow);
   const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [legacyUsername, setLegacyUsername] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Redirect authenticated users away from /auth
+  useEffect(() => {
+    if (authLoading) return;
+    if (user && emailConfirmed) {
+      navigate("/dashboard", { replace: true });
+    } else if (user && !emailConfirmed) {
+      navigate("/confirm-email", { replace: true });
+    }
+  }, [user, emailConfirmed, authLoading, navigate]);
 
   // ZIP check state (signup only)
   const [zipCode, setZipCode] = useState("");
@@ -131,9 +144,9 @@ const Auth = () => {
         // Detect repeated signup (existing user) — Supabase returns user with empty identities
         const isRepeatedSignup = data.user && (!data.user.identities || data.user.identities.length === 0);
         if (isRepeatedSignup) {
-          toast.info("You already have an account. Please sign in to claim your invitation.");
-          setIsLogin(true);
-          setPassword("");
+          // Stay in confirmation flow — don't force login; offer resend instead
+          toast.info("An account with this email already exists but hasn't been verified yet. We've kept you on the verification screen so you can resend the confirmation email.");
+          setSignupStep("confirmation");
           setLoading(false);
           return;
         }
@@ -305,19 +318,63 @@ const Auth = () => {
                 )}
               </div>
 
-              <p className="text-xs text-muted-foreground font-body">
-                Didn't receive it? Check your spam folder or{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSignupStep("account");
-                    setPassword("");
-                  }}
-                  className="text-primary hover:underline"
-                >
-                  try again
-                </button>
-              </p>
+              {/* Resend confirmation email */}
+              <Button
+                variant="default"
+                className="w-full font-heading"
+                disabled={resending}
+                onClick={async () => {
+                  setResending(true);
+                  try {
+                    const { error } = await supabase.functions.invoke("resend-confirmation", {
+                      body: { email: email.trim() },
+                    });
+                    if (error) throw error;
+                    toast.success("Confirmation email resent! Check your inbox.");
+                  } catch {
+                    toast.error("Failed to resend. Please try again in a moment.");
+                  } finally {
+                    setResending(false);
+                  }
+                }}
+              >
+                {resending ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending…</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4 mr-2" /> Resend Confirmation Email</>
+                )}
+              </Button>
+
+              {/* Try signing in after verifying */}
+              <Button
+                variant="secondary"
+                className="w-full font-heading"
+                disabled={loading}
+                onClick={async () => {
+                  if (!password.trim()) {
+                    toast.error("Enter your password to continue.");
+                    return;
+                  }
+                  setLoading(true);
+                  const { error } = await supabase.auth.signInWithPassword({
+                    email: email.trim(),
+                    password,
+                  });
+                  setLoading(false);
+                  if (error) {
+                    if (error.message.toLowerCase().includes("not confirmed")) {
+                      toast.error("Email not verified yet. Please check your inbox and click the link first.");
+                    } else {
+                      toast.error(error.message);
+                    }
+                  } else {
+                    toast.success("Welcome!");
+                    navigate("/dashboard");
+                  }
+                }}
+              >
+                {loading ? "Checking…" : "I've Verified — Continue"}
+              </Button>
 
               <Button
                 variant="outline"
