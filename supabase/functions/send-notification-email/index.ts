@@ -22,9 +22,11 @@ Deno.serve(async (req) => {
   try {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
-      return new Response(JSON.stringify({ success: true, message: "RESEND_API_KEY not configured, skipping email" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("RESEND_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ success: false, message: "RESEND_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabase = createClient(
