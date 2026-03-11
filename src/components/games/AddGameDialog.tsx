@@ -270,6 +270,11 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
             />
           </div>
           <div>
+            <Label>Steam App ID</Label>
+            <Input value={steamAppId} onChange={e => setSteamAppId(e.target.value)} placeholder="e.g. 730 for CS2" />
+            <p className="text-xs text-muted-foreground mt-1">Find at store.steampowered.com — the number in the URL.</p>
+          </div>
+          <div>
             <Label>Platform Tags (comma separated)</Label>
             <Input value={platformTags} onChange={e => setPlatformTags(e.target.value)} placeholder="PC, PS5, Xbox" />
           </div>

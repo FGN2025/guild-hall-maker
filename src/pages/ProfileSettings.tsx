@@ -60,7 +60,7 @@ const ProfileSettings = () => {
   const fetchProfile = async () => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("display_name, gamer_tag, avatar_url, discord_id, discord_username, discord_avatar")
+      .select("display_name, gamer_tag, avatar_url, discord_id, discord_username, discord_avatar, steam_id, steam_username")
       .eq("user_id", user!.id)
       .single();
 
@@ -73,6 +73,8 @@ const ProfileSettings = () => {
       setDiscordUsername((data as any).discord_username);
       setDiscordAvatarHash((data as any).discord_avatar);
       setDiscordId((data as any).discord_id);
+      setSteamId((data as any).steam_id);
+      setSteamUsername((data as any).steam_username);
     }
     setInitialLoading(false);
   };

@@ -77,6 +77,33 @@ const GameDetail = () => {
           {game.description && (
             <p className="text-muted-foreground font-heading leading-relaxed">{game.description}</p>
           )}
+
+          {/* Launch on Steam */}
+          {game.steam_app_id && (
+            <div className="pt-2 space-y-2">
+              <Button
+                size="lg"
+                className="gap-2 font-heading tracking-wide"
+                onClick={() => {
+                  window.location.href = `steam://run/${game.steam_app_id}`;
+                }}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Launch on Steam
+              </Button>
+              {user && !hasSteamLinked && (
+                <p className="text-xs text-muted-foreground font-heading">
+                  <Link to="/profile" className="text-primary hover:underline">Link your Steam account</Link> to verify game ownership.
+                </p>
+              )}
+              {hasSteamLinked && (
+                <p className="text-xs text-emerald-500 font-heading flex items-center gap-1">
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                  Steam linked as {profile?.steam_username}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
