@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isModerator: boolean;
   isMarketing: boolean;
+  isTenantStaff: boolean;
   roleLoading: boolean;
   discordLinked: boolean;
   emailConfirmed: boolean;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   isModerator: false,
   isMarketing: false,
+  isTenantStaff: false,
   roleLoading: true,
   discordLinked: false,
   emailConfirmed: false,
@@ -39,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
   const [isMarketing, setIsMarketing] = useState(false);
+  const [isTenantStaff, setIsTenantStaff] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
   const [discordLinked, setDiscordLinked] = useState(false);
   const fetchingRef = { current: false };
@@ -47,14 +50,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     setRoleLoading(true);
-    const [roleResult, profileResult] = await Promise.all([
+    const [roleResult, profileResult, tenantAdminResult] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("profiles").select("discord_id, discord_bypass_approved").eq("user_id", userId).maybeSingle(),
+      supabase.from("tenant_admins").select("id").eq("user_id", userId).limit(1),
     ]);
     const roles = (roleResult.data ?? []).map((r) => r.role);
     setIsAdmin(roles.includes("admin"));
     setIsModerator(roles.includes("moderator"));
     setIsMarketing(roles.includes("marketing"));
+    setIsTenantStaff((tenantAdminResult.data ?? []).length > 0);
     setDiscordLinked(!!profileResult.data?.discord_id || !!profileResult.data?.discord_bypass_approved);
     setRoleLoading(false);
     fetchingRef.current = false;
@@ -78,6 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsAdmin(false);
           setIsModerator(false);
           setIsMarketing(false);
+          setIsTenantStaff(false);
           setDiscordLinked(false);
           setRoleLoading(false);
         }
@@ -105,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const emailConfirmed = !!user?.email_confirmed_at;
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, roleLoading, discordLinked, emailConfirmed, signOut, refreshDiscordStatus }}>
+    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, isTenantStaff, roleLoading, discordLinked, emailConfirmed, signOut, refreshDiscordStatus }}>
       {children}
     </AuthContext.Provider>
   );

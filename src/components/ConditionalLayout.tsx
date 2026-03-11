@@ -4,7 +4,7 @@ import AppLayout from "@/components/AppLayout";
 import PublicLayout from "@/components/PublicLayout";
 
 const ConditionalLayout = () => {
-  const { user, loading, discordLinked, roleLoading, isAdmin, emailConfirmed } = useAuth();
+  const { user, loading, discordLinked, roleLoading, isAdmin, isModerator, isMarketing, isTenantStaff, emailConfirmed } = useAuth();
 
   if (loading || roleLoading) {
     return (
@@ -24,8 +24,9 @@ const ConditionalLayout = () => {
     return <Navigate to="/confirm-email" replace />;
   }
 
-  // Logged in but no Discord → redirect (unless admin or exempt)
-  if (!discordLinked && !isAdmin) {
+  // Logged in but no Discord → redirect (unless staff or exempt)
+  const isStaff = isAdmin || isModerator || isMarketing || isTenantStaff;
+  if (!discordLinked && !isStaff) {
     return <Navigate to="/link-discord" replace />;
   }
 

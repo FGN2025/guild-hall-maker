@@ -1,32 +1,17 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Bypass ZIP and Discord Gates for Invited Staff
+## What was built
 
-Invited tenant staff (admin, moderator, marketing) should skip both the ZIP code verification and Discord linking requirements. These gates are only relevant for player registrations.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Current State
-- **ZIP gate**: Already bypassed for invite flow (`isInviteFlow ? "account" : "zip"` on Auth.tsx line 51) -- no change needed.
-- **Discord gate**: Only bypasses for platform `isAdmin`. Moderators, marketing users, and tenant staff (who only exist in `tenant_admins` table, not `user_roles`) are still forced to `/link-discord`.
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-### Changes
-
-**1. AuthContext.tsx — Add `isTenantStaff` flag**
-- After fetching roles and profile, also check if the user has any row in `tenant_admins`.
-- Add a `isTenantStaff` boolean to the context.
-- In `fetchRoleAndDiscord`, add a third parallel query: `supabase.from("tenant_admins").select("id").eq("user_id", userId).limit(1)`.
-- Set `isTenantStaff = true` if any row exists.
-
-**2. ConditionalLayout.tsx — Exempt all staff from Discord gate**
-- Pull `isModerator`, `isMarketing`, and `isTenantStaff` from `useAuth()`.
-- Change Discord gate condition from `!discordLinked && !isAdmin` to:
-  `!discordLinked && !isAdmin && !isModerator && !isMarketing && !isTenantStaff`
-
-**3. ProtectedRoute.tsx — Same exemption**
-- Pull `isModerator`, `isMarketing`, `isTenantStaff` from `useAuth()`.
-- Update the Discord gate check to also exempt these roles (in addition to existing path-based exemptions).
-
-### Files
-- `src/contexts/AuthContext.tsx` — add tenant_admins query + `isTenantStaff`
-- `src/components/ConditionalLayout.tsx` — widen Discord exemption
-- `src/components/ProtectedRoute.tsx` — widen Discord exemption
-
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User

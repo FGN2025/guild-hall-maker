@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const DISCORD_EXEMPT_PATHS = ["/link-discord", "/profile"];
 
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
-  const { user, loading, discordLinked, roleLoading, isAdmin, emailConfirmed } = useAuth();
+  const { user, loading, discordLinked, roleLoading, isAdmin, isModerator, isMarketing, isTenantStaff, emailConfirmed } = useAuth();
   const location = useLocation();
 
   if (loading || roleLoading) {
@@ -27,7 +27,8 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const isExempt = DISCORD_EXEMPT_PATHS.includes(location.pathname) ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/tenant");
-  if (!discordLinked && !isAdmin && !isExempt) {
+  const isStaff = isAdmin || isModerator || isMarketing || isTenantStaff;
+  if (!discordLinked && !isStaff && !isExempt) {
     return <Navigate to="/link-discord" replace />;
   }
 
