@@ -1,11 +1,16 @@
 
 
-# Add Helper Text to Career Path Mapping Form
+## Remove Test User `darcylorincz@gmail.com`
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+**User ID:** `28cb2d7e-87f0-441f-b9d2-73c86c0b1853` (display name: "Registration Test")
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+**Related records:** Only a `profiles` row exists — no bypass requests, notifications, roles, or service interests this time.
+
+### Plan
+
+Since profiles has `ON DELETE CASCADE` from auth.users, we only need one step:
+
+1. **Delete the auth user** via a temporary edge function call using `auth.admin.deleteUser('28cb2d7e-87f0-441f-b9d2-73c86c0b1853')` — this will cascade-delete the profile row automatically.
+
+We'll reuse the same approach as last time: create a temporary `delete-test-user` edge function, invoke it, then remove it.
 
