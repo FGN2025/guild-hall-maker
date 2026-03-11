@@ -2829,6 +2829,7 @@ export type Database = {
           created_at: string
           created_by: string
           description: string | null
+          discord_role_id: string | null
           end_date: string | null
           entry_fee: number | null
           format: string
@@ -2858,6 +2859,7 @@ export type Database = {
           created_at?: string
           created_by: string
           description?: string | null
+          discord_role_id?: string | null
           end_date?: string | null
           entry_fee?: number | null
           format?: string
@@ -2887,6 +2889,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           description?: string | null
+          discord_role_id?: string | null
           end_date?: string | null
           entry_fee?: number | null
           format?: string
