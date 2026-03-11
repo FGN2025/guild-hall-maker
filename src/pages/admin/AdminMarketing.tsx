@@ -5,6 +5,8 @@ import { useMarketingCampaigns, useMarketingAssets, MarketingCampaign } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminWebPages from "@/pages/admin/AdminWebPages";
 import AdminCampaignCodes from "@/components/admin/AdminCampaignCodes";
+import SocialAccountsManager from "@/components/marketing/SocialAccountsManager";
+import ScheduledPostsCalendar from "@/components/marketing/ScheduledPostsCalendar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
