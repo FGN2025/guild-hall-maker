@@ -67,3 +67,7 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.discord-server-roles]
     verify_jwt = false
+  [functions.publish-to-social]
+    verify_jwt = false
+  [functions.publish-scheduled-posts]
+    verify_jwt = false
