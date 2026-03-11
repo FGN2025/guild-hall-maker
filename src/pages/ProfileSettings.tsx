@@ -19,6 +19,7 @@ const ProfileSettings = () => {
   usePageTitle("Profile Settings");
   const { user, discordLinked, refreshDiscordStatus } = useAuth();
   const discordClientId = useDiscordClientId();
+  const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState("");
   const [gamerTag, setGamerTag] = useState("");
@@ -26,11 +27,31 @@ const ProfileSettings = () => {
   const [discordUsername, setDiscordUsername] = useState<string | null>(null);
   const [discordAvatarHash, setDiscordAvatarHash] = useState<string | null>(null);
   const [discordId, setDiscordId] = useState<string | null>(null);
+  const [steamId, setSteamId] = useState<string | null>(null);
+  const [steamUsername, setSteamUsername] = useState<string | null>(null);
   const [unlinking, setUnlinking] = useState(false);
+  const [unlinkingSteam, setUnlinkingSteam] = useState(false);
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
+  const [showUnlinkSteamConfirm, setShowUnlinkSteamConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  // Handle steam linking callback
+  useEffect(() => {
+    const steamParam = searchParams.get("steam");
+    if (steamParam === "linked") {
+      toast.success("Steam account linked successfully!");
+      searchParams.delete("steam");
+      setSearchParams(searchParams, { replace: true });
+      if (user) fetchProfile();
+    } else if (steamParam === "error") {
+      toast.error("Failed to link Steam account. Please try again.");
+      searchParams.delete("steam");
+      searchParams.delete("reason");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) fetchProfile();
