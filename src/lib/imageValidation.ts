@@ -38,8 +38,6 @@ export const IMAGE_PRESETS: Record<string, ImageValidationRules> = {
   },
   tournamentHero: {
     maxSizeKB: 5120,
-    minWidth: 320,
-    minHeight: 180,
     maxWidth: 3840,
     maxHeight: 2160,
     allowedFormats: ["image/jpeg", "image/png", "image/webp"],
