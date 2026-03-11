@@ -55,6 +55,15 @@ export const useTournaments = () => {
         .from("tournament_registrations")
         .insert({ tournament_id: tournamentId, user_id: user.id });
       if (error) throw error;
+
+      // Non-blocking: assign Discord role if configured
+      supabase.functions
+        .invoke("assign-tournament-role", {
+          body: { tournament_id: tournamentId, user_id: user.id },
+        })
+        .then(({ error: fnErr }) => {
+          if (fnErr) console.warn("Discord role assignment failed:", fnErr);
+        });
     },
     onSuccess: () => {
       toast.success("Registered successfully!");
@@ -98,6 +107,7 @@ export const useTournaments = () => {
       prize_pct_first?: number;
       prize_pct_second?: number;
       prize_pct_third?: number;
+      discord_role_id?: string;
     }) => {
       if (!user) throw new Error("Not authenticated");
       const { error } = await supabase

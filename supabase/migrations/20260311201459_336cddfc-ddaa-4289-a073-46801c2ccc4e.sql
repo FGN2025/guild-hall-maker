@@ -1,0 +1,1 @@
+ALTER TABLE public.tournaments ADD COLUMN discord_role_id text;

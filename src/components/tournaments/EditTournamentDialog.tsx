@@ -17,6 +17,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
+import { useDiscordRoles } from "@/hooks/useDiscordRoles";
 
 interface TournamentData {
   id: string;
@@ -34,6 +35,7 @@ interface TournamentData {
   points_second?: number;
   points_third?: number;
   points_participation?: number;
+  discord_role_id?: string | null;
 }
 
 interface Props {
@@ -57,6 +59,7 @@ interface Props {
     prize_pct_first?: number;
     prize_pct_second?: number;
     prize_pct_third?: number;
+    discord_role_id?: string;
   }) => void;
   isUpdating: boolean;
 }
@@ -66,6 +69,8 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const { getPreset } = useImageLimits();
   const { data: games = [] } = useGames();
   const [open, setOpen] = useState(false);
+  const { roles: discordRoles, loading: rolesLoading } = useDiscordRoles(open);
+  const [discordRoleId, setDiscordRoleId] = useState("");
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
   const [description, setDescription] = useState("");
@@ -107,6 +112,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPrizePctFirst((tournament as any).prize_pct_first ?? 50);
       setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
+      setDiscordRoleId(tournament.discord_role_id ?? "");
       const d = new Date(tournament.start_date);
       setStartDate(d);
       setStartTime(
@@ -180,6 +186,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       prize_pct_first: prizePctFirst,
       prize_pct_second: prizePctSecond,
       prize_pct_third: prizePctThird,
+      discord_role_id: discordRoleId && discordRoleId !== "none" ? discordRoleId : undefined,
     });
     setOpen(false);
   };
@@ -341,6 +348,21 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
                 <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body" />
               </div>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-heading text-sm">Discord Role (on registration)</Label>
+            <Select value={discordRoleId} onValueChange={setDiscordRoleId}>
+              <SelectTrigger className="bg-card border-border font-body">
+                <SelectValue placeholder={rolesLoading ? "Loading roles…" : "None"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {discordRoles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Automatically assign this Discord role when a player registers</p>
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Rules</Label>
