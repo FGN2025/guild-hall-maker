@@ -1,8 +1,12 @@
 import { useParams, Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useGameBySlug, useGameTournaments } from "@/hooks/useGames";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Gamepad2, Calendar, Trophy, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Gamepad2, Calendar, Trophy, Loader2, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
 
