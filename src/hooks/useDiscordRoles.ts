@@ -6,6 +6,7 @@ interface DiscordRole {
   name: string;
   color: number;
   position: number;
+  managed?: boolean;
 }
 
 export const useDiscordRoles = (shouldFetch: boolean) => {
