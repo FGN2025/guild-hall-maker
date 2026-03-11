@@ -1,17 +1,18 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Delete Test User for Registration Testing
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+The user `darcylorincz@gmail.com` (ID: `0f11ba49-b83e-4f3d-b53b-3b9bcdd46c25`, display name: "Reg Test 2") needs to be fully removed.
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+### Steps
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+1. **Create temporary edge function** `delete-test-user` that uses `supabase.auth.admin.deleteUser()` with the service role key to delete the auth user (cascade removes profiles row automatically)
+2. **Invoke the function** to execute the deletion
+3. **Clean up** — delete the temporary edge function
+4. **Verify** the user no longer exists in profiles or auth
+
+### Technical Detail
+- User ID: `0f11ba49-b83e-4f3d-b53b-3b9bcdd46c25`
+- The `ON DELETE CASCADE` on `profiles.user_id` will automatically remove the profile row
+- Any rows in `user_service_interests`, `user_roles`, `tenant_admins` with cascade references will also be cleaned
+
