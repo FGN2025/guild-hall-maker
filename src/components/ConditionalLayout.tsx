@@ -4,7 +4,7 @@ import AppLayout from "@/components/AppLayout";
 import PublicLayout from "@/components/PublicLayout";
 
 const ConditionalLayout = () => {
-  const { user, loading, discordLinked, roleLoading, isAdmin, emailConfirmed } = useAuth();
+  const { user, loading, discordLinked, roleLoading, isAdmin, isModerator, isMarketing, isTenantStaff, emailConfirmed } = useAuth();
 
   if (loading || roleLoading) {
     return (
