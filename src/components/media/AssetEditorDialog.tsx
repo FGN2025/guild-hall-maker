@@ -10,6 +10,7 @@ import {
   LayoutTemplate, Undo2, Redo2, Layers, Square, RectangleHorizontal,
   RectangleVertical, Smartphone, Circle, Minus, ChevronUp, ChevronDown,
   Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
+  Send, CalendarClock, Facebook, Instagram, Twitter, Linkedin, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
