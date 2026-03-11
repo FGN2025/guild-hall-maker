@@ -144,9 +144,9 @@ const Auth = () => {
         // Detect repeated signup (existing user) — Supabase returns user with empty identities
         const isRepeatedSignup = data.user && (!data.user.identities || data.user.identities.length === 0);
         if (isRepeatedSignup) {
-          toast.info("You already have an account. Please sign in to claim your invitation.");
-          setIsLogin(true);
-          setPassword("");
+          // Stay in confirmation flow — don't force login; offer resend instead
+          toast.info("An account with this email already exists but hasn't been verified yet. We've kept you on the verification screen so you can resend the confirmation email.");
+          setSignupStep("confirmation");
           setLoading(false);
           return;
         }
