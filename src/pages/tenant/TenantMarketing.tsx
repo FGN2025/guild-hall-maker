@@ -95,6 +95,12 @@ const TenantMarketing = () => {
           <TabsTrigger value="webpages" className="gap-2 font-heading">
             <FileText className="h-4 w-4" /> Web Pages
           </TabsTrigger>
+          <TabsTrigger value="social" className="gap-2 font-heading">
+            <Share2 className="h-4 w-4" /> Social Accounts
+          </TabsTrigger>
+          <TabsTrigger value="scheduled" className="gap-2 font-heading">
+            <CalendarClock className="h-4 w-4" /> Scheduled
+          </TabsTrigger>
         </TabsList>
 
         {/* Campaigns Tab */}
