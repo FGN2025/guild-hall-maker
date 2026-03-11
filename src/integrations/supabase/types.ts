@@ -843,6 +843,7 @@ export type Database = {
           name: string
           platform_tags: string[] | null
           slug: string
+          steam_app_id: string | null
           tournament_rules_url: string | null
           updated_at: string
         }
@@ -858,6 +859,7 @@ export type Database = {
           name: string
           platform_tags?: string[] | null
           slug: string
+          steam_app_id?: string | null
           tournament_rules_url?: string | null
           updated_at?: string
         }
@@ -873,6 +875,7 @@ export type Database = {
           name?: string
           platform_tags?: string[] | null
           slug?: string
+          steam_app_id?: string | null
           tournament_rules_url?: string | null
           updated_at?: string
         }
@@ -1593,6 +1596,8 @@ export type Database = {
           display_name: string | null
           gamer_tag: string | null
           id: string
+          steam_id: string | null
+          steam_username: string | null
           updated_at: string
           user_id: string
           zip_code: string | null
@@ -1608,6 +1613,8 @@ export type Database = {
           display_name?: string | null
           gamer_tag?: string | null
           id?: string
+          steam_id?: string | null
+          steam_username?: string | null
           updated_at?: string
           user_id: string
           zip_code?: string | null
@@ -1623,6 +1630,8 @@ export type Database = {
           display_name?: string | null
           gamer_tag?: string | null
           id?: string
+          steam_id?: string | null
+          steam_username?: string | null
           updated_at?: string
           user_id?: string
           zip_code?: string | null
