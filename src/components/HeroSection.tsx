@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const HeroSection = () => {
   const [logoUrl, setLogoUrl] = useState<string>(defaultLogo);
-  const { data: stats } = useHeroStats();
+  
 
   useEffect(() => {
     supabase
