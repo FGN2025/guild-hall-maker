@@ -1,6 +1,8 @@
 project_id = "yrhwzmkenjgiujhofucx"
 
 [functions]
+  [functions.assign-tournament-role]
+    verify_jwt = false
   [functions.ai-coach]
     verify_jwt = false
   [functions.auth-email-hook]
