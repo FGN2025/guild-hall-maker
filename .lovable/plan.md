@@ -1,18 +1,19 @@
 
 
-## Delete Test User for Registration Testing
+## Lower Card Cover Minimum Dimensions
 
-The user `darcylorincz@gmail.com` (ID: `0f11ba49-b83e-4f3d-b53b-3b9bcdd46c25`, display name: "Reg Test 2") needs to be fully removed.
+The `cardCover` preset in `src/lib/imageValidation.ts` currently enforces `minWidth: 640` and `minHeight: 360`, which rejects images like the 533px-wide Gears 5 cover shown in the screenshot.
 
-### Steps
+### Change
 
-1. **Create temporary edge function** `delete-test-user` that uses `supabase.auth.admin.deleteUser()` with the service role key to delete the auth user (cascade removes profiles row automatically)
-2. **Invoke the function** to execute the deletion
-3. **Clean up** — delete the temporary edge function
-4. **Verify** the user no longer exists in profiles or auth
+In `src/lib/imageValidation.ts`, update the `cardCover` preset:
+- `minWidth`: 640 → **320**
+- `minHeight`: 360 → **180**
 
-### Technical Detail
-- User ID: `0f11ba49-b83e-4f3d-b53b-3b9bcdd46c25`
-- The `ON DELETE CASCADE` on `profiles.user_id` will automatically remove the profile row
-- Any rows in `user_service_interests`, `user_roles`, `tenant_admins` with cascade references will also be cleaned
+This keeps a reasonable floor (320×180 is standard small thumbnail size) while accepting the images you're working with. Also update `tournamentHero` which shares the same minimums:
+- `minWidth`: 640 → **320**
+- `minHeight`: 360 → **180**
+
+### File
+- `src/lib/imageValidation.ts` — lines 16-17 and 39-40
 
