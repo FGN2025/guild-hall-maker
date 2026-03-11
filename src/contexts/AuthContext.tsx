@@ -24,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   isModerator: false,
   isMarketing: false,
+  isTenantStaff: false,
   roleLoading: true,
   discordLinked: false,
   emailConfirmed: false,
