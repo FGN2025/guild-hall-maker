@@ -149,6 +149,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
         prize_pct_first: prizePctFirst,
         prize_pct_second: prizePctSecond,
         prize_pct_third: prizePctThird,
+        discord_role_id: discordRoleId || undefined,
       });
     }
     setOpen(false);
