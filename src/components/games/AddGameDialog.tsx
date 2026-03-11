@@ -98,10 +98,11 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       setPlatformTags((editGame.platform_tags ?? []).join(", "));
       setIsActive(editGame.is_active);
       setTournamentRulesUrl(editGame.tournament_rules_url ?? "");
+      setSteamAppId(editGame.steam_app_id ?? "");
     } else {
       setName(""); setSlug(""); setDescription(""); setCategory("General");
       setCoverImageUrl(""); setGuideContent(""); setPlatformTags(""); setIsActive(true);
-      setTournamentRulesUrl("");
+      setTournamentRulesUrl(""); setSteamAppId("");
     }
   }, [editGame, open]);
 
