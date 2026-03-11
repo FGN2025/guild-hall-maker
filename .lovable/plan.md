@@ -1,40 +1,53 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Scheduled Social Media Publishing — Level of Effort Assessment
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+**Effort: Medium-Low** (builds on top of the social publishing feature from the previous plan)
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+This is an incremental addition to the social media publishing pipeline. The core publishing logic (connecting accounts, calling platform APIs) is the heavy lift — scheduling is a relatively thin layer on top.
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+### What's Needed
 
----
+**1. Database: `scheduled_posts` table**
+Stores queued posts with a future publish date:
+- `id`, `tenant_id`, `user_id` (creator)
+- `connection_id` → which social account to publish to
+- `platform` (facebook, instagram, twitter, linkedin)
+- `image_url` (the asset to publish)
+- `caption` (post text)
+- `scheduled_at` (timestamptz — when to publish)
+- `status` (pending, published, failed)
+- `published_at`, `error_message`
+- `created_at`
 
-# Delete & Ban Users — Completed
+**2. Scheduled publishing edge function**
+A `publish-scheduled-posts` function that:
+- Queries `scheduled_posts` where `scheduled_at <= now()` and `status = 'pending'`
+- For each, calls the existing `publish-to-social` function
+- Updates status to `published` or `failed`
+- Triggered by a `pg_cron` job running every 5 minutes
 
-## What was built
+**3. UI: Schedule option in Asset Editor**
+Extend the "Publish" dropdown with a "Schedule for later" option that opens a date/time picker dialog. On confirm, inserts into `scheduled_posts` instead of publishing immediately.
 
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
+**4. UI: Scheduled Posts calendar/list view**
+A new sub-tab or section in the Marketing Console showing upcoming scheduled posts in a calendar or timeline view, with the ability to:
+- View queued posts by date
+- Cancel or reschedule a pending post
+- See status (pending / published / failed)
 
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+### Files to Create/Modify
+- **New migration**: `scheduled_posts` table + RLS
+- **New**: `supabase/functions/publish-scheduled-posts/index.ts`
+- **New**: `src/components/marketing/ScheduledPostsCalendar.tsx`
+- **New**: `src/hooks/useScheduledPosts.ts`
+- **Edit**: Asset Editor — add "Schedule" option with date/time picker
+- **Edit**: Marketing Console tabs — add "Scheduled" tab
+- **pg_cron job**: Run `publish-scheduled-posts` every 5 minutes
 
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
+### Dependencies
+This feature depends on the social media connection + publishing infrastructure from the previous plan. Both can be built together or sequentially.
 
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
+### Summary
+The scheduling layer itself is straightforward — a table, a cron job, and a calendar UI. The heavier prerequisite is the social account connections and publishing API integrations, which are part of the prior approved plan.
+
