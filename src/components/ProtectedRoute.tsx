@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const DISCORD_EXEMPT_PATHS = ["/link-discord", "/profile"];
 
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
-  const { user, loading, discordLinked, roleLoading, isAdmin, emailConfirmed } = useAuth();
+  const { user, loading, discordLinked, roleLoading, isAdmin, isModerator, isMarketing, isTenantStaff, emailConfirmed } = useAuth();
   const location = useLocation();
 
   if (loading || roleLoading) {
