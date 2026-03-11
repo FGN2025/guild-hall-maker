@@ -9,7 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Camera, Save, User, Gamepad2, ArrowLeft, MessageSquare, Unlink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
