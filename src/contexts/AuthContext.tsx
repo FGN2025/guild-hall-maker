@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isModerator: boolean;
   isMarketing: boolean;
+  isTenantStaff: boolean;
   roleLoading: boolean;
   discordLinked: boolean;
   emailConfirmed: boolean;
