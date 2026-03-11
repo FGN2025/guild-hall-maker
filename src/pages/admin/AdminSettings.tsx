@@ -85,7 +85,12 @@ const AdminSettings = () => {
       if (imgRes.data?.value) {
         try {
           const parsed = JSON.parse(imgRes.data.value);
-          setImgLimits({ ...getDefaults(), ...parsed });
+          const defaults = getDefaults();
+          const merged: Record<string, LimitEntry> = {};
+          for (const k of PRESET_KEYS) {
+            merged[k] = { ...defaults[k], ...(parsed[k] ?? {}) };
+          }
+          setImgLimits(merged);
         } catch { /* keep defaults */ }
       }
       setLoading(false);
