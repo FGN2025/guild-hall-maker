@@ -42,6 +42,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [tournamentRulesUrl, setTournamentRulesUrl] = useState("");
+  const [steamAppId, setSteamAppId] = useState("");
   const [uploadingRules, setUploadingRules] = useState(false);
   const rulesFileInputRef = useRef<HTMLInputElement>(null);
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
