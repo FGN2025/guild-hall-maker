@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIcon, Library } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIcon, Library, Share2, CalendarClock } from "lucide-react";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
