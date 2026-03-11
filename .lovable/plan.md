@@ -1,17 +1,38 @@
 
-# Configurable Discord Role Assignment — Completed
+Goal: remove the lingering “minimum 640px” validation so 533px-wide covers upload successfully.
 
-## What was built
+What I found
+- The frontend code is already updated (`cardCover` and `tournamentHero` are 320x180 in `src/lib/imageValidation.ts`).
+- The live app is still loading old limits from backend settings (`app_settings.key = 'image_upload_limits'`), which currently contains:
+  - `cardCover.minWidth = 640`, `minHeight = 360`
+  - `tournamentHero.minWidth = 640`, `minHeight = 360`
+- `useImageLimits` applies backend overrides on top of code presets, so backend values win.
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+Implementation plan
+1) Patch persisted backend limits (durable fix)
+- Add a migration that updates `app_settings.value` for `image_upload_limits` from legacy 640x360 to 320x180 for:
+  - `cardCover`
+  - `tournamentHero`
+- Make the SQL conditional so it only rewrites legacy values (doesn’t override intentionally customized non-legacy limits).
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+2) Improve settings merge behavior (prevent confusion in admin UI)
+- In `src/pages/admin/AdminSettings.tsx`, change the load merge from shallow object spread to per-preset deep merge:
+  - Keep defaults from `IMAGE_PRESETS`
+  - Overlay only provided fields from stored JSON
+- This avoids legacy/incomplete JSON causing odd states in the limits editor.
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+3) Keep runtime logic unchanged (already correct after data fix)
+- No changes needed in upload components once backend values are corrected.
+- `AddGameDialog` will automatically use the corrected limits via `useImageLimits`.
+
+Validation plan
+- Confirm backend row after migration: `cardCover.minWidth=320`, `minHeight=180`, `tournamentHero.minWidth=320`, `minHeight=180`.
+- Hard refresh `/admin/games` and retry the same image upload (533px wide) → should pass dimension validation.
+- Smoke-test another uploader using `cardCover` preset (e.g., challenges/prizes) to confirm behavior is consistent.
+
+Technical details
+- Files to change:
+  - `supabase/migrations/<new_migration>.sql` (data update for `app_settings`)
+  - `src/pages/admin/AdminSettings.tsx` (deep-merge normalization on fetch)
+- No schema change required.
+- No auth/RLS policy changes required (data update only).
