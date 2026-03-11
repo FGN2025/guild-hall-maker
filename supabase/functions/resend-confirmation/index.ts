@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       type: "signup",
       email: resolvedEmail,
       options: {
-        redirectTo: "https://guild-hall-maker.lovable.app/auth",
+        redirectTo: "https://play.fgn.gg/auth",
       },
     });
 
