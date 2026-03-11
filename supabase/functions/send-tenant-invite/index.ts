@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     }
 
     const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
-    const siteUrl = "https://guild-hall-maker.lovable.app";
+    const siteUrl = "https://play.fgn.gg";
     const logoUrl = "https://yrhwzmkenjgiujhofucx.supabase.co/storage/v1/object/public/email-assets/fgn-logo.png";
 
     const html = `

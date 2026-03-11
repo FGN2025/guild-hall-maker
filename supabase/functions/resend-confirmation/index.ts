@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
 
     const confirmationUrl = linkData.properties.action_link;
     const logoUrl = "https://yrhwzmkenjgiujhofucx.supabase.co/storage/v1/object/public/email-assets/fgn-logo.png";
-    const siteUrl = "https://guild-hall-maker.lovable.app";
+    const siteUrl = "https://play.fgn.gg";
 
     const html = `
       <div style="font-family: 'Rajdhani', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">

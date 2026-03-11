@@ -269,7 +269,7 @@ Deno.serve(async (req) => {
                     <li><strong>Email:</strong> ${rec.email || "Unknown"}</li>
                     <li><strong>ZIP Code:</strong> ${rec.zip_code || "Unknown"}</li>
                   </ul>
-                  <p>Review this request in the <a href="https://guild-hall-maker.lovable.app/admin/access-requests" style="color: #00f0ff;">Admin Panel</a>.</p>
+                  <p>Review this request in the <a href="https://play.fgn.gg/admin/access-requests" style="color: #00f0ff;">Admin Panel</a>.</p>
                   <p style="color: #888; font-size: 12px;">— FGN Platform</p>
                 </div>`,
             });
