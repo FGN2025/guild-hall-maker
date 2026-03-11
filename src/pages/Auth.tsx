@@ -108,6 +108,8 @@ const Auth = () => {
       if (error) {
         toast.error(error.message);
       } else {
+        // Claim any pending tenant invitations silently
+        try { await supabase.rpc('claim_pending_invitations'); } catch {}
         toast.success("Welcome back!");
         navigate("/dashboard");
       }
@@ -126,6 +128,15 @@ const Auth = () => {
       if (error) {
         toast.error(error.message);
       } else {
+        // Detect repeated signup (existing user) — Supabase returns user with empty identities
+        const isRepeatedSignup = data.user && (!data.user.identities || data.user.identities.length === 0);
+        if (isRepeatedSignup) {
+          toast.info("You already have an account. Please sign in to claim your invitation.");
+          setIsLogin(true);
+          setPassword("");
+          setLoading(false);
+          return;
+        }
         if (data.user) {
           await supabase
             .from("profiles")
