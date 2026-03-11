@@ -17,6 +17,22 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import TemplateGalleryPanel from "./TemplateGalleryPanel";
 import MediaPickerDialog from "./MediaPickerDialog";
+import { FORMAT_PLATFORM_MAP, PLATFORM_LABELS, PLATFORM_COLORS } from "@/hooks/canvas/canvasTypes";
+import { useSocialConnections, SocialConnection } from "@/hooks/useSocialConnections";
+import { useScheduledPosts } from "@/hooks/useScheduledPosts";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover as UiPopover, PopoverContent as UiPopoverContent, PopoverTrigger as UiPopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+
+const PLATFORM_ICONS_SM: Record<string, React.ReactNode> = {
+  facebook: <Facebook className="h-4 w-4" />,
+  instagram: <Instagram className="h-4 w-4" />,
+  twitter: <Twitter className="h-4 w-4" />,
+  linkedin: <Linkedin className="h-4 w-4" />,
+};
 
 const FORMAT_ICONS: Record<string, React.ReactNode> = {
   original: <RectangleHorizontal className="h-4 w-4" />,
