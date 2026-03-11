@@ -27,7 +27,8 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const isExempt = DISCORD_EXEMPT_PATHS.includes(location.pathname) ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/tenant");
-  if (!discordLinked && !isAdmin && !isExempt) {
+  const isStaff = isAdmin || isModerator || isMarketing || isTenantStaff;
+  if (!discordLinked && !isStaff && !isExempt) {
     return <Navigate to="/link-discord" replace />;
   }
 
