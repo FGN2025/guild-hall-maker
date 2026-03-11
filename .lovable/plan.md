@@ -1,10 +1,11 @@
 
 
-## Plan: Remove Stats Cards from Home Page
+# Add Helper Text to Career Path Mapping Form
 
-Remove the stats bar (Players / Tournaments / Operators Served cards) from the bottom of the `HeroSection` component.
+## Change
+**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
 
-### Change
-
-**`src/components/HeroSection.tsx`**: Delete the stats bar `<div>` block (the `animate-fade-in grid grid-cols-1 sm:grid-cols-3` section) and remove the `useHeroStats` hook call and its definition since it will no longer be used. Also remove the unused `Users` and `Building2` icon imports.
+- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
+- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
+- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
 

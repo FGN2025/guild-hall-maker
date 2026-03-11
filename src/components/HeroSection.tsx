@@ -1,44 +1,17 @@
 import { useEffect, useState } from "react";
-import { Trophy, Zap, Users, Building2 } from "lucide-react";
+import { Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 
-const useHeroStats = () => {
-  return useQuery({
-    queryKey: ["hero-stats"],
-    queryFn: async () => {
-      const [profilesRes, legacyRes, tournamentsRes, tenantsRes, settingsRes, overridesRes] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        (supabase as any).from("legacy_users").select("id", { count: "exact", head: true }),
-        supabase.from("tournaments").select("id", { count: "exact", head: true }),
-        supabase.from("tenants").select("id", { count: "exact", head: true }),
-        supabase.from("app_settings").select("key, value").eq("key", "historical_tournament_count"),
-        supabase.from("app_settings").select("value").eq("key", "hero_stats_overrides").maybeSingle(),
-      ]);
 
-      let overrides: { players?: number | null; tournaments?: number | null; operators?: number | null } = {};
-      try { if (overridesRes.data?.value) overrides = JSON.parse(overridesRes.data.value); } catch {}
-
-      const historicalTournaments = parseInt((settingsRes.data?.[0] as any)?.value) || 0;
-
-      return {
-        players: typeof overrides.players === "number" ? overrides.players : (profilesRes.count ?? 0) + (legacyRes.count ?? 0) + 2000,
-        tournaments: typeof overrides.tournaments === "number" ? overrides.tournaments : (tournamentsRes.count ?? 0) + historicalTournaments,
-        operators: typeof overrides.operators === "number" ? overrides.operators : tenantsRes.count ?? 0,
-      };
-    },
-    staleTime: 300_000,
-  });
-};
 
 const HeroSection = () => {
   const [logoUrl, setLogoUrl] = useState<string>(defaultLogo);
-  const { data: stats } = useHeroStats();
+  
 
   useEffect(() => {
     supabase
@@ -102,20 +75,6 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Stats bar */}
-        <div className="animate-fade-in grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-xl mx-auto">
-          {[
-            { label: "Players", value: stats ? `${stats.players.toLocaleString()}` : "—", icon: Users },
-            { label: "Tournaments", value: stats ? `${stats.tournaments.toLocaleString()}` : "—", icon: Trophy },
-            { label: "Operators Served", value: stats ? `${stats.operators.toLocaleString()}` : "—", icon: Building2 },
-          ].map((stat) => (
-            <div key={stat.label} className="glass-panel rounded-lg p-4">
-              <stat.icon className="h-5 w-5 text-primary mx-auto mb-2" />
-              <p className="font-display text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="font-body text-xs text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
