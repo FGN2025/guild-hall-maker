@@ -318,19 +318,63 @@ const Auth = () => {
                 )}
               </div>
 
-              <p className="text-xs text-muted-foreground font-body">
-                Didn't receive it? Check your spam folder or{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSignupStep("account");
-                    setPassword("");
-                  }}
-                  className="text-primary hover:underline"
-                >
-                  try again
-                </button>
-              </p>
+              {/* Resend confirmation email */}
+              <Button
+                variant="default"
+                className="w-full font-heading"
+                disabled={resending}
+                onClick={async () => {
+                  setResending(true);
+                  try {
+                    const { error } = await supabase.functions.invoke("resend-confirmation", {
+                      body: { email: email.trim() },
+                    });
+                    if (error) throw error;
+                    toast.success("Confirmation email resent! Check your inbox.");
+                  } catch {
+                    toast.error("Failed to resend. Please try again in a moment.");
+                  } finally {
+                    setResending(false);
+                  }
+                }}
+              >
+                {resending ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending…</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4 mr-2" /> Resend Confirmation Email</>
+                )}
+              </Button>
+
+              {/* Try signing in after verifying */}
+              <Button
+                variant="secondary"
+                className="w-full font-heading"
+                disabled={loading}
+                onClick={async () => {
+                  if (!password.trim()) {
+                    toast.error("Enter your password to continue.");
+                    return;
+                  }
+                  setLoading(true);
+                  const { error } = await supabase.auth.signInWithPassword({
+                    email: email.trim(),
+                    password,
+                  });
+                  setLoading(false);
+                  if (error) {
+                    if (error.message.toLowerCase().includes("not confirmed")) {
+                      toast.error("Email not verified yet. Please check your inbox and click the link first.");
+                    } else {
+                      toast.error(error.message);
+                    }
+                  } else {
+                    toast.success("Welcome!");
+                    navigate("/dashboard");
+                  }
+                }}
+              >
+                {loading ? "Checking…" : "I've Verified — Continue"}
+              </Button>
 
               <Button
                 variant="outline"
