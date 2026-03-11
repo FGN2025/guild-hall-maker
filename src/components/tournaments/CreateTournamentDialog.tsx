@@ -336,6 +336,21 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             </div>
           </div>
           <div className="space-y-2">
+            <Label className="font-heading text-sm">Discord Role (on registration)</Label>
+            <Select value={discordRoleId} onValueChange={setDiscordRoleId}>
+              <SelectTrigger className="bg-card border-border font-body">
+                <SelectValue placeholder={rolesLoading ? "Loading roles…" : "None"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {discordRoles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Automatically assign this Discord role when a player registers</p>
+          </div>
+          <div className="space-y-2">
             <Label className="font-heading text-sm">Rules</Label>
             {(() => {
               const selectedGame = games.find((g) => g.name === game);
