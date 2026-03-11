@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import TableSkeleton from "@/components/ui/table-skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, UserCheck, UserX, Mail, Loader2, ShieldAlert } from "lucide-react";
+import { Search, Users, UserCheck, UserX, Mail, Loader2, ShieldAlert, Trash2, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
