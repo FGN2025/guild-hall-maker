@@ -83,6 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsAdmin(false);
           setIsModerator(false);
           setIsMarketing(false);
+          setIsTenantStaff(false);
           setDiscordLinked(false);
           setRoleLoading(false);
         }
