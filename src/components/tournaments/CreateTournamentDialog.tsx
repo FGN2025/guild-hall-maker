@@ -17,6 +17,7 @@ import { useImageLimits } from "@/hooks/useImageLimits";
 import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
+import { useDiscordRoles } from "@/hooks/useDiscordRoles";
 
 interface Props {
   onCreate: (data: {
