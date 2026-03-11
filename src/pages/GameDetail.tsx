@@ -1,16 +1,36 @@
 import { useParams, Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useGameBySlug, useGameTournaments } from "@/hooks/useGames";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Gamepad2, Calendar, Trophy, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Gamepad2, Calendar, Trophy, Loader2, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
 
 const GameDetail = () => {
   usePageTitle("Game Detail");
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
   const { data: game, isLoading } = useGameBySlug(slug ?? "");
   const { data: tournaments } = useGameTournaments(game?.name);
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile-steam", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("steam_id, steam_username")
+        .eq("user_id", user!.id)
+        .single();
+      return data as { steam_id: string | null; steam_username: string | null } | null;
+    },
+    enabled: !!user,
+  });
+
+  const hasSteamLinked = !!profile?.steam_id;
 
   if (isLoading) {
     return (
@@ -56,6 +76,33 @@ const GameDetail = () => {
           </div>
           {game.description && (
             <p className="text-muted-foreground font-heading leading-relaxed">{game.description}</p>
+          )}
+
+          {/* Launch on Steam */}
+          {game.steam_app_id && (
+            <div className="pt-2 space-y-2">
+              <Button
+                size="lg"
+                className="gap-2 font-heading tracking-wide"
+                onClick={() => {
+                  window.location.href = `steam://run/${game.steam_app_id}`;
+                }}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Launch on Steam
+              </Button>
+              {user && !hasSteamLinked && (
+                <p className="text-xs text-muted-foreground font-heading">
+                  <Link to="/profile" className="text-primary hover:underline">Link your Steam account</Link> to verify game ownership.
+                </p>
+              )}
+              {hasSteamLinked && (
+                <p className="text-xs text-primary font-heading flex items-center gap-1">
+                  <span className="inline-block h-2 w-2 rounded-full bg-primary" />
+                  Steam linked as {profile?.steam_username}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>

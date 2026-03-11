@@ -9,7 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Camera, Save, User, Gamepad2, ArrowLeft, MessageSquare, Unlink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
@@ -19,6 +19,7 @@ const ProfileSettings = () => {
   usePageTitle("Profile Settings");
   const { user, discordLinked, refreshDiscordStatus } = useAuth();
   const discordClientId = useDiscordClientId();
+  const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState("");
   const [gamerTag, setGamerTag] = useState("");
@@ -26,11 +27,31 @@ const ProfileSettings = () => {
   const [discordUsername, setDiscordUsername] = useState<string | null>(null);
   const [discordAvatarHash, setDiscordAvatarHash] = useState<string | null>(null);
   const [discordId, setDiscordId] = useState<string | null>(null);
+  const [steamId, setSteamId] = useState<string | null>(null);
+  const [steamUsername, setSteamUsername] = useState<string | null>(null);
   const [unlinking, setUnlinking] = useState(false);
+  const [unlinkingSteam, setUnlinkingSteam] = useState(false);
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
+  const [showUnlinkSteamConfirm, setShowUnlinkSteamConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  // Handle steam linking callback
+  useEffect(() => {
+    const steamParam = searchParams.get("steam");
+    if (steamParam === "linked") {
+      toast.success("Steam account linked successfully!");
+      searchParams.delete("steam");
+      setSearchParams(searchParams, { replace: true });
+      if (user) fetchProfile();
+    } else if (steamParam === "error") {
+      toast.error("Failed to link Steam account. Please try again.");
+      searchParams.delete("steam");
+      searchParams.delete("reason");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) fetchProfile();
@@ -39,7 +60,7 @@ const ProfileSettings = () => {
   const fetchProfile = async () => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("display_name, gamer_tag, avatar_url, discord_id, discord_username, discord_avatar")
+      .select("display_name, gamer_tag, avatar_url, discord_id, discord_username, discord_avatar, steam_id, steam_username")
       .eq("user_id", user!.id)
       .single();
 
@@ -52,6 +73,8 @@ const ProfileSettings = () => {
       setDiscordUsername((data as any).discord_username);
       setDiscordAvatarHash((data as any).discord_avatar);
       setDiscordId((data as any).discord_id);
+      setSteamId((data as any).steam_id);
+      setSteamUsername((data as any).steam_username);
     }
     setInitialLoading(false);
   };
@@ -355,6 +378,91 @@ const ProfileSettings = () => {
               >
                 <MessageSquare className="h-4 w-4" />
                 Link Discord Account
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Steam Section */}
+        <Card className="glass-panel border-border/50 mt-6">
+          <CardHeader>
+            <CardTitle className="font-display text-xl flex items-center gap-2">
+              <Gamepad2 className="h-5 w-5 text-primary" />
+              Steam
+            </CardTitle>
+            <CardDescription className="font-body">
+              Link your Steam account to launch games directly from the platform
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {steamId ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-sm">
+                    {(steamUsername ?? "ST").slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-heading text-foreground">{steamUsername}</p>
+                    <p className="text-xs text-muted-foreground">Steam ID: {steamId}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={unlinkingSteam}
+                  onClick={() => setShowUnlinkSteamConfirm(true)}
+                  className="gap-1 font-heading text-xs"
+                >
+                  <Unlink className="h-3 w-3" /> {unlinkingSteam ? "Unlinking…" : "Unlink Steam"}
+                </Button>
+                <ConfirmDialog
+                  open={showUnlinkSteamConfirm}
+                  onOpenChange={setShowUnlinkSteamConfirm}
+                  title="Unlink Steam"
+                  description="This will remove your Steam account link. You can re-link at any time."
+                  confirmLabel="Unlink"
+                  variant="destructive"
+                  onConfirm={async () => {
+                    setShowUnlinkSteamConfirm(false);
+                    setUnlinkingSteam(true);
+                    try {
+                      const { error } = await supabase.functions.invoke("steam-openid-callback", {
+                        body: { action: "unlink" },
+                      });
+                      if (error) throw error;
+                      setSteamId(null);
+                      setSteamUsername(null);
+                      toast.success("Steam unlinked.");
+                    } catch {
+                      toast.error("Failed to unlink Steam.");
+                    }
+                    setUnlinkingSteam(false);
+                  }}
+                />
+              </div>
+            ) : (
+              <Button
+                onClick={async () => {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) {
+                    toast.error("Please sign in first.");
+                    return;
+                  }
+                  const returnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/steam-openid-callback`;
+                  const params = new URLSearchParams({
+                    "openid.ns": "http://specs.openid.net/auth/2.0",
+                    "openid.mode": "checkid_setup",
+                    "openid.return_to": `${returnUrl}?state=${session.access_token}`,
+                    "openid.realm": returnUrl,
+                    "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
+                    "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
+                  });
+                  window.location.href = `https://steamcommunity.com/openid/login?${params}`;
+                }}
+                className="w-full py-5 font-heading tracking-wide gap-2"
+              >
+                <Gamepad2 className="h-4 w-4" />
+                Link Steam Account
               </Button>
             )}
           </CardContent>

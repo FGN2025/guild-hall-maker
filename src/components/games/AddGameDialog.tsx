@@ -42,6 +42,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [tournamentRulesUrl, setTournamentRulesUrl] = useState("");
+  const [steamAppId, setSteamAppId] = useState("");
   const [uploadingRules, setUploadingRules] = useState(false);
   const rulesFileInputRef = useRef<HTMLInputElement>(null);
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,10 +98,11 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       setPlatformTags((editGame.platform_tags ?? []).join(", "));
       setIsActive(editGame.is_active);
       setTournamentRulesUrl(editGame.tournament_rules_url ?? "");
+      setSteamAppId(editGame.steam_app_id ?? "");
     } else {
       setName(""); setSlug(""); setDescription(""); setCategory("General");
       setCoverImageUrl(""); setGuideContent(""); setPlatformTags(""); setIsActive(true);
-      setTournamentRulesUrl("");
+      setTournamentRulesUrl(""); setSteamAppId("");
     }
   }, [editGame, open]);
 
@@ -117,6 +119,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       category, cover_image_url: coverImageUrl || null,
       guide_content: guideContent || null, platform_tags: tags, is_active: isActive,
       tournament_rules_url: tournamentRulesUrl || null,
+      steam_app_id: steamAppId || null,
     };
     if (editGame) payload.id = editGame.id;
     onSubmit(payload);
@@ -265,6 +268,11 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
                 }
               }}
             />
+          </div>
+          <div>
+            <Label>Steam App ID</Label>
+            <Input value={steamAppId} onChange={e => setSteamAppId(e.target.value)} placeholder="e.g. 730 for CS2" />
+            <p className="text-xs text-muted-foreground mt-1">Find at store.steampowered.com — the number in the URL.</p>
           </div>
           <div>
             <Label>Platform Tags (comma separated)</Label>
