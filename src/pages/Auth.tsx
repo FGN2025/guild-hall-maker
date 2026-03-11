@@ -108,6 +108,8 @@ const Auth = () => {
       if (error) {
         toast.error(error.message);
       } else {
+        // Claim any pending tenant invitations silently
+        try { await supabase.rpc('claim_pending_invitations'); } catch {}
         toast.success("Welcome back!");
         navigate("/dashboard");
       }
