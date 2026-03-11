@@ -116,6 +116,22 @@ const Auth = () => {
 
     setLoading(true);
 
+    if (!isLogin) {
+      // Check if email is banned before attempting signup
+      try {
+        const { data: banData } = await supabase.functions.invoke("check-ban-status", {
+          body: { email: email.trim() },
+        });
+        if (banData?.banned) {
+          toast.error("This account has been permanently banned and cannot register.");
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // If check fails, allow signup attempt to proceed
+      }
+    }
+
     if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) {

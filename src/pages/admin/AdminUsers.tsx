@@ -322,6 +322,25 @@ const AdminUsers = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={!!confirmAction}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+        title={confirmAction?.ban ? "Ban User Permanently" : "Delete User"}
+        description={
+          confirmAction?.ban
+            ? "This will permanently remove ALL user data and prevent them from ever registering again. This action cannot be undone."
+            : "This will permanently remove ALL user data. The user will be able to register again from scratch. This action cannot be undone."
+        }
+        confirmLabel={confirmAction?.ban ? "Delete & Ban" : "Delete User"}
+        variant="destructive"
+        onConfirm={() => {
+          if (confirmAction) {
+            deleteUser.mutate({ userId: confirmAction.userId, ban: confirmAction.ban });
+            setConfirmAction(null);
+          }
+        }}
+      />
     </div>
   );
 };
