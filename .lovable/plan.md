@@ -15,3 +15,26 @@
 - **`DiscordRoleManager`** component on the Ecosystem admin page
 - Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
 - Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+
+---
+
+# Delete & Ban Users — Completed
+
+## What was built
+
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
+
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
+
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
