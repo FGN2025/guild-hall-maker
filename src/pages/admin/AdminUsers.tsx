@@ -156,24 +156,54 @@ const AdminUsers = () => {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           {u.user_id !== currentUser?.id && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  disabled={resendConfirmation.isPending || !u.has_email}
-                                  onClick={() => resendConfirmation.mutate(u.user_id)}
-                                >
-                                  {resendConfirmation.isPending && resendConfirmation.variables === u.user_id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Mail className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Resend confirmation email</TooltipContent>
-                            </Tooltip>
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    disabled={resendConfirmation.isPending || !u.has_email}
+                                    onClick={() => resendConfirmation.mutate(u.user_id)}
+                                  >
+                                    {resendConfirmation.isPending && resendConfirmation.variables === u.user_id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Mail className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Resend confirmation email</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    disabled={deleteUser.isPending}
+                                    onClick={() => setConfirmAction({ userId: u.user_id, ban: false })}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete user</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    disabled={deleteUser.isPending}
+                                    onClick={() => setConfirmAction({ userId: u.user_id, ban: true })}
+                                  >
+                                    <Ban className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete &amp; permanently ban</TooltipContent>
+                              </Tooltip>
+                            </>
                           )}
                           {u.user_id === currentUser?.id ? (
                             <span className="text-xs text-muted-foreground">You</span>
