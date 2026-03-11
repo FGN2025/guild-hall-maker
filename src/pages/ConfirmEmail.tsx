@@ -41,11 +41,12 @@ const ConfirmEmail = () => {
   }, [loading, user, navigate]);
 
   const handleResend = async () => {
-    if (!user?.id) return;
+    if (!user?.email) return;
     setResending(true);
     try {
-      const { error } = await supabase.functions.invoke("resend-confirmation", {
-        body: { userId: user.id },
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: user.email,
       });
       if (error) throw error;
       toast.success("Confirmation email sent! Check your inbox.");
