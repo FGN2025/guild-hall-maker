@@ -1,11 +1,16 @@
 
+# Configurable Discord Role Assignment — Completed
 
-# Add Helper Text to Career Path Mapping Form
+## What was built
 
-## Change
-**`src/pages/admin/AdminEcosystem.tsx`**: Update the two `Input` fields for `external_path_id` and `external_module_id` to have clearer placeholders and add helper text below the mapping form inputs.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `is_active`, `created_at`
+- Admin-only RLS policies
 
-- `external_path_id` placeholder: `"e.g. cdl-class-a or path-001"`
-- `external_module_id` placeholder: `"e.g. module-safety-101 (optional)"`
-- Add a small helper paragraph explaining these are IDs from the external LMS or custom identifiers agreed upon between systems.
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings and assigns each role. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
+### Admin UI
+- **`DiscordRoleManager`** component added to the Ecosystem admin page
+- Fetch server roles button, role + trigger selector, add/toggle/delete mappings
