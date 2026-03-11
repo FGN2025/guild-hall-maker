@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAdminUsers, useTenantsList } from "@/hooks/useAdminUsers";
 import { useLegacyUsers, useLegacyUserStats } from "@/hooks/useLegacyUsers";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import TableSkeleton from "@/components/ui/table-skeleton";
