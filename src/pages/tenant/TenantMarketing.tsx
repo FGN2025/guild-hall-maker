@@ -197,6 +197,16 @@ const TenantMarketing = () => {
         <TabsContent value="webpages">
           <TenantWebPages embedded />
         </TabsContent>
+
+        {/* Social Accounts Tab */}
+        <TabsContent value="social">
+          <SocialAccountsManager tenantId={tenantAdmin} />
+        </TabsContent>
+
+        {/* Scheduled Posts Tab */}
+        <TabsContent value="scheduled">
+          <ScheduledPostsCalendar tenantId={tenantAdmin} />
+        </TabsContent>
       </Tabs>
     </div>
   );

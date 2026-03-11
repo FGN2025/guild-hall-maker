@@ -166,6 +166,14 @@ const AdminMarketing = () => {
         <TabsContent value="web-pages" className="mt-4">
           <AdminWebPages />
         </TabsContent>
+
+        <TabsContent value="social" className="mt-4">
+          <SocialAccountsManager />
+        </TabsContent>
+
+        <TabsContent value="scheduled" className="mt-4">
+          <ScheduledPostsCalendar />
+        </TabsContent>
       </Tabs>
       </div>
   );

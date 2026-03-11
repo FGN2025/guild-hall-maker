@@ -539,14 +539,195 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex-wrap">
           <Button variant="outline" onClick={handleDownload}>
             <Download className="h-4 w-4 mr-1" /> Download
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             <Save className="h-4 w-4 mr-1" /> {saving ? "Saving..." : "Save as New Asset"}
           </Button>
+
+          {/* Publish / Schedule dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="secondary"
+                disabled={compatibleConnections.length === 0}
+                title={compatibleConnections.length === 0 ? "Connect social accounts in Marketing → Social Accounts" : "Publish or schedule to social media"}
+              >
+                <Send className="h-4 w-4 mr-1" /> Publish
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[220px]">
+              {compatibleConnections.length === 0 ? (
+                <DropdownMenuItem disabled className="text-muted-foreground text-xs">
+                  No social accounts connected for this format
+                </DropdownMenuItem>
+              ) : (
+                <>
+                  {compatibleConnections.map((conn) => (
+                    <DropdownMenuItem
+                      key={conn.id}
+                      onClick={async () => {
+                        setPublishing(true);
+                        try {
+                          const blob = await exportCanvas();
+                          if (!blob) { toast.error("Export failed"); return; }
+                          // Upload to storage first
+                          const path = `media/social-${crypto.randomUUID()}.png`;
+                          const { error: upErr } = await supabase.storage.from("app-media").upload(path, blob);
+                          if (upErr) throw upErr;
+                          const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
+                          // Call publish function
+                          const { error } = await supabase.functions.invoke("publish-to-social", {
+                            body: { connection_id: conn.id, image_url: urlData.publicUrl, caption: publishCaption },
+                          });
+                          if (error) throw error;
+                          toast.success(`Published to ${PLATFORM_LABELS[conn.platform]}!`);
+                        } catch (e: any) {
+                          toast.error(e?.message || "Publish failed");
+                        } finally {
+                          setPublishing(false);
+                        }
+                      }}
+                      disabled={publishing}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-white rounded p-0.5" style={{ backgroundColor: PLATFORM_COLORS[conn.platform] }}>
+                          {PLATFORM_ICONS_SM[conn.platform]}
+                        </span>
+                        <span>{conn.account_name}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (compatibleConnections.length > 0) {
+                        setScheduleConnection(compatibleConnections[0]);
+                        setScheduleDialogOpen(true);
+                      }
+                    }}
+                  >
+                    <CalendarClock className="h-4 w-4 mr-2" /> Schedule for Later
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Caption input for social posts */}
+          {compatibleConnections.length > 0 && (
+            <div className="w-full">
+              <Textarea
+                placeholder="Caption for social posts (optional)..."
+                value={publishCaption}
+                onChange={(e) => setPublishCaption(e.target.value)}
+                className="text-sm h-16 resize-none"
+              />
+            </div>
+          )}
         </DialogFooter>
+
+        {/* Schedule Dialog */}
+        {scheduleDialogOpen && (
+          <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-heading">Schedule Post</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm">Platform</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start gap-2">
+                        {scheduleConnection && (
+                          <>
+                            <span className="text-white rounded p-0.5" style={{ backgroundColor: PLATFORM_COLORS[scheduleConnection.platform] }}>
+                              {PLATFORM_ICONS_SM[scheduleConnection.platform]}
+                            </span>
+                            {scheduleConnection.account_name}
+                          </>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {compatibleConnections.map((conn) => (
+                        <DropdownMenuItem key={conn.id} onClick={() => setScheduleConnection(conn)}>
+                          <span className="text-white rounded p-0.5 mr-2" style={{ backgroundColor: PLATFORM_COLORS[conn.platform] }}>
+                            {PLATFORM_ICONS_SM[conn.platform]}
+                          </span>
+                          {conn.account_name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div>
+                  <Label className="text-sm">Date</Label>
+                  <UiPopover>
+                    <UiPopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start", !scheduleDate && "text-muted-foreground")}>
+                        <Clock className="h-4 w-4 mr-2" />
+                        {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </UiPopoverTrigger>
+                    <UiPopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={scheduleDate}
+                        onSelect={setScheduleDate}
+                        disabled={(date) => date < new Date()}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </UiPopoverContent>
+                  </UiPopover>
+                </div>
+                <div>
+                  <Label className="text-sm">Time</Label>
+                  <Input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>Cancel</Button>
+                <Button
+                  disabled={!scheduleDate || !scheduleConnection || schedulePost.isPending}
+                  onClick={async () => {
+                    if (!scheduleDate || !scheduleConnection) return;
+                    try {
+                      const blob = await exportCanvas();
+                      if (!blob) { toast.error("Export failed"); return; }
+                      const path = `media/scheduled-${crypto.randomUUID()}.png`;
+                      const { error: upErr } = await supabase.storage.from("app-media").upload(path, blob);
+                      if (upErr) throw upErr;
+                      const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
+                      const [hours, minutes] = scheduleTime.split(":").map(Number);
+                      const scheduledAt = new Date(scheduleDate);
+                      scheduledAt.setHours(hours, minutes, 0, 0);
+                      await schedulePost.mutateAsync({
+                        connection_id: scheduleConnection.id,
+                        platform: scheduleConnection.platform,
+                        image_url: urlData.publicUrl,
+                        caption: publishCaption,
+                        scheduled_at: scheduledAt.toISOString(),
+                      });
+                      setScheduleDialogOpen(false);
+                    } catch (e: any) {
+                      toast.error(e?.message || "Scheduling failed");
+                    }
+                  }}
+                >
+                  <CalendarClock className="h-4 w-4 mr-1" /> Schedule
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </DialogContent>
 
       {/* Media Picker for overlay images */}
