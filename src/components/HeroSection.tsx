@@ -6,7 +6,7 @@ import heroBg from "@/assets/hero-bg.jpg";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+
 
 
 const HeroSection = () => {
