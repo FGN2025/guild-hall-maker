@@ -75,20 +75,6 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Stats bar */}
-        <div className="animate-fade-in grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-xl mx-auto">
-          {[
-            { label: "Players", value: stats ? `${stats.players.toLocaleString()}` : "—", icon: Users },
-            { label: "Tournaments", value: stats ? `${stats.tournaments.toLocaleString()}` : "—", icon: Trophy },
-            { label: "Operators Served", value: stats ? `${stats.operators.toLocaleString()}` : "—", icon: Building2 },
-          ].map((stat) => (
-            <div key={stat.label} className="glass-panel rounded-lg p-4">
-              <stat.icon className="h-5 w-5 text-primary mx-auto mb-2" />
-              <p className="font-display text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="font-body text-xs text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
