@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
   const [isMarketing, setIsMarketing] = useState(false);
+  const [isTenantStaff, setIsTenantStaff] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
   const [discordLinked, setDiscordLinked] = useState(false);
   const fetchingRef = { current: false };
@@ -49,14 +50,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     setRoleLoading(true);
-    const [roleResult, profileResult] = await Promise.all([
+    const [roleResult, profileResult, tenantAdminResult] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("profiles").select("discord_id, discord_bypass_approved").eq("user_id", userId).maybeSingle(),
+      supabase.from("tenant_admins").select("id").eq("user_id", userId).limit(1),
     ]);
     const roles = (roleResult.data ?? []).map((r) => r.role);
     setIsAdmin(roles.includes("admin"));
     setIsModerator(roles.includes("moderator"));
     setIsMarketing(roles.includes("marketing"));
+    setIsTenantStaff((tenantAdminResult.data ?? []).length > 0);
     setDiscordLinked(!!profileResult.data?.discord_id || !!profileResult.data?.discord_bypass_approved);
     setRoleLoading(false);
     fetchingRef.current = false;
