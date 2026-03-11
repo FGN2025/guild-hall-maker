@@ -13,29 +13,6 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing auth" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Verify the calling user
-    const anonClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!
-    );
-    const {
-      data: { user },
-      error: userErr,
-    } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
-
-    if (userErr || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Use service role to query and update legacy_users (RLS = admin only)
     const adminClient = createClient(
@@ -43,10 +20,37 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const email = user.email?.toLowerCase();
+    let userId: string | null = null;
+    let email: string | null = null;
+
+    // Try to resolve the user from the JWT first
+    if (authHeader && authHeader !== `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`) {
+      const anonClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data } = await anonClient.auth.getUser();
+      if (data?.user) {
+        userId = data.user.id;
+        email = data.user.email?.toLowerCase() ?? null;
+      }
+    }
+
+    // Fallback: accept email and user_id from the request body
     if (!email) {
+      try {
+        const body = await req.json();
+        email = body.email?.toLowerCase() ?? null;
+        userId = body.user_id ?? userId;
+      } catch {
+        // no body
+      }
+    }
+
+    if (!email || !userId) {
       return new Response(
-        JSON.stringify({ matched: false, reason: "no_email" }),
+        JSON.stringify({ matched: false, reason: "no_email_or_user" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -70,14 +74,14 @@ Deno.serve(async (req) => {
     // Mark legacy user as matched
     await adminClient
       .from("legacy_users")
-      .update({ matched_user_id: user.id, matched_at: new Date().toISOString() })
+      .update({ matched_user_id: userId, matched_at: new Date().toISOString() })
       .eq("id", legacyUser.id);
 
     // Set gamer_tag on profile from legacy username
     await adminClient
       .from("profiles")
       .update({ gamer_tag: legacyUser.legacy_username })
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     return new Response(
       JSON.stringify({

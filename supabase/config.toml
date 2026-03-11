@@ -47,3 +47,19 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.tournament-reminders]
     verify_jwt = false
+  [functions.match-legacy-user]
+    verify_jwt = false
+  [functions.validate-zip]
+    verify_jwt = false
+  [functions.validate-tenant-code]
+    verify_jwt = false
+  [functions.validate-subscriber]
+    verify_jwt = false
+  [functions.resend-confirmation]
+    verify_jwt = false
+  [functions.import-legacy-users]
+    verify_jwt = false
+  [functions.steam-openid-callback]
+    verify_jwt = false
+  [functions.check-users-confirmed]
+    verify_jwt = false
