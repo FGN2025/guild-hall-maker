@@ -156,5 +156,26 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  return { users, isLoading, setRole, resendConfirmation };
+  const deleteUser = useMutation({
+    mutationFn: async ({ userId, ban }: { userId: string; ban: boolean }) => {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { user_id: userId, ban },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({
+        title: data.banned ? "User banned" : "User deleted",
+        description: data.banned
+          ? "User has been permanently deleted and banned from re-registering."
+          : "User has been permanently deleted. They can re-register.",
+      });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return { users, isLoading, setRole, resendConfirmation, deleteUser };
 };

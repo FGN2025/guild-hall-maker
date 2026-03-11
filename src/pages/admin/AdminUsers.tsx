@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useAdminUsers, useTenantsList } from "@/hooks/useAdminUsers";
 import { useLegacyUsers, useLegacyUserStats } from "@/hooks/useLegacyUsers";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import TableSkeleton from "@/components/ui/table-skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, UserCheck, UserX, Mail, Loader2, ShieldAlert } from "lucide-react";
+import { Search, Users, UserCheck, UserX, Mail, Loader2, ShieldAlert, Trash2, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,8 +18,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const AdminUsers = () => {
   const [search, setSearch] = useState("");
   const [tenantId, setTenantId] = useState<string | undefined>(undefined);
-  const { users, isLoading, setRole, resendConfirmation } = useAdminUsers(search, tenantId);
+  const { users, isLoading, setRole, resendConfirmation, deleteUser } = useAdminUsers(search, tenantId);
   const { user: currentUser } = useAuth();
+
+  // Delete / ban confirm dialog state
+  const [confirmAction, setConfirmAction] = useState<{ userId: string; ban: boolean } | null>(null);
   const { data: tenants = [] } = useTenantsList();
 
   // Legacy tab state
@@ -152,24 +156,54 @@ const AdminUsers = () => {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           {u.user_id !== currentUser?.id && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  disabled={resendConfirmation.isPending || !u.has_email}
-                                  onClick={() => resendConfirmation.mutate(u.user_id)}
-                                >
-                                  {resendConfirmation.isPending && resendConfirmation.variables === u.user_id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Mail className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Resend confirmation email</TooltipContent>
-                            </Tooltip>
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    disabled={resendConfirmation.isPending || !u.has_email}
+                                    onClick={() => resendConfirmation.mutate(u.user_id)}
+                                  >
+                                    {resendConfirmation.isPending && resendConfirmation.variables === u.user_id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Mail className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Resend confirmation email</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    disabled={deleteUser.isPending}
+                                    onClick={() => setConfirmAction({ userId: u.user_id, ban: false })}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete user</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    disabled={deleteUser.isPending}
+                                    onClick={() => setConfirmAction({ userId: u.user_id, ban: true })}
+                                  >
+                                    <Ban className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete &amp; permanently ban</TooltipContent>
+                              </Tooltip>
+                            </>
                           )}
                           {u.user_id === currentUser?.id ? (
                             <span className="text-xs text-muted-foreground">You</span>
@@ -288,6 +322,25 @@ const AdminUsers = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={!!confirmAction}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+        title={confirmAction?.ban ? "Ban User Permanently" : "Delete User"}
+        description={
+          confirmAction?.ban
+            ? "This will permanently remove ALL user data and prevent them from ever registering again. This action cannot be undone."
+            : "This will permanently remove ALL user data. The user will be able to register again from scratch. This action cannot be undone."
+        }
+        confirmLabel={confirmAction?.ban ? "Delete & Ban" : "Delete User"}
+        variant="destructive"
+        onConfirm={() => {
+          if (confirmAction) {
+            deleteUser.mutate({ userId: confirmAction.userId, ban: confirmAction.ban });
+            setConfirmAction(null);
+          }
+        }}
+      />
     </div>
   );
 };
