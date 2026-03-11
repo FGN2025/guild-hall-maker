@@ -78,6 +78,8 @@ const AdminMarketing = () => {
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="calendars">Calendars</TabsTrigger>
           <TabsTrigger value="web-pages">Web Pages</TabsTrigger>
+          <TabsTrigger value="social" className="gap-1.5"><Share2 className="h-4 w-4" /> Social Accounts</TabsTrigger>
+          <TabsTrigger value="scheduled" className="gap-1.5"><CalendarClock className="h-4 w-4" /> Scheduled</TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaigns" className="space-y-6 mt-4">
