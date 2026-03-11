@@ -93,6 +93,22 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const appliedInitialRef = useRef(false);
 
+  // Social publishing state
+  const { connections } = useSocialConnections();
+  const { schedulePost } = useScheduledPosts();
+  const [publishCaption, setPublishCaption] = useState("");
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
+  const [scheduleTime, setScheduleTime] = useState("12:00");
+  const [scheduleConnection, setScheduleConnection] = useState<SocialConnection | null>(null);
+  const [publishing, setPublishing] = useState(false);
+
+  // Get compatible platforms for current format
+  const compatiblePlatforms = FORMAT_PLATFORM_MAP[activeFormat.key] || FORMAT_PLATFORM_MAP.original;
+  const compatibleConnections = connections.filter(
+    (c) => compatiblePlatforms.includes(c.platform)
+  );
+
   useEffect(() => {
     if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0) {
       appliedInitialRef.current = true;
