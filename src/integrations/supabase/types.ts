@@ -734,6 +734,36 @@ export type Database = {
         }
         Relationships: []
       }
+      discord_role_mappings: {
+        Row: {
+          condition_value: string | null
+          created_at: string
+          discord_role_id: string
+          discord_role_name: string
+          id: string
+          is_active: boolean
+          trigger_condition: Database["public"]["Enums"]["discord_role_trigger"]
+        }
+        Insert: {
+          condition_value?: string | null
+          created_at?: string
+          discord_role_id: string
+          discord_role_name: string
+          id?: string
+          is_active?: boolean
+          trigger_condition?: Database["public"]["Enums"]["discord_role_trigger"]
+        }
+        Update: {
+          condition_value?: string | null
+          created_at?: string
+          discord_role_id?: string
+          discord_role_name?: string
+          id?: string
+          is_active?: boolean
+          trigger_condition?: Database["public"]["Enums"]["discord_role_trigger"]
+        }
+        Relationships: []
+      }
       ecosystem_auth_tokens: {
         Row: {
           created_at: string
@@ -3057,6 +3087,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "marketing"
+      discord_role_trigger:
+        | "on_link"
+        | "on_achievement"
+        | "on_rank"
+        | "on_tournament_win"
+        | "manual"
       match_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       tournament_status:
         | "upcoming"
@@ -3192,6 +3228,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user", "marketing"],
+      discord_role_trigger: [
+        "on_link",
+        "on_achievement",
+        "on_rank",
+        "on_tournament_win",
+        "manual",
+      ],
       match_status: ["scheduled", "in_progress", "completed", "cancelled"],
       tournament_status: [
         "upcoming",

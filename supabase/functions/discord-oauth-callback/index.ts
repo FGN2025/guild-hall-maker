@@ -152,21 +152,42 @@ Deno.serve(async (req) => {
 
     if (updateError) throw updateError;
 
-    // Optionally assign Discord server role
+    // Assign Discord server roles from mappings table (on_link trigger)
     const DISCORD_GUILD_ID = Deno.env.get("DISCORD_GUILD_ID");
     const DISCORD_VERIFIED_ROLE_ID = Deno.env.get("DISCORD_VERIFIED_ROLE_ID");
 
-    if (DISCORD_BOT_TOKEN && DISCORD_GUILD_ID && DISCORD_VERIFIED_ROLE_ID) {
+    if (DISCORD_BOT_TOKEN && DISCORD_GUILD_ID) {
       try {
-        await fetch(
-          `https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/${discordId}/roles/${DISCORD_VERIFIED_ROLE_ID}`,
-          {
-            method: "PUT",
-            headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
+        // Query configured role mappings for on_link trigger
+        const { data: roleMappings } = await serviceClient
+          .from("discord_role_mappings")
+          .select("discord_role_id")
+          .eq("trigger_condition", "on_link")
+          .eq("is_active", true);
+
+        const roleIds: string[] = (roleMappings ?? []).map((m: any) => m.discord_role_id);
+
+        // Fallback to env var if no mappings exist
+        if (roleIds.length === 0 && DISCORD_VERIFIED_ROLE_ID) {
+          roleIds.push(DISCORD_VERIFIED_ROLE_ID);
+        }
+
+        // Assign all mapped roles
+        for (const roleId of roleIds) {
+          try {
+            await fetch(
+              `https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/${discordId}/roles/${roleId}`,
+              {
+                method: "PUT",
+                headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
+              }
+            );
+          } catch (roleErr) {
+            console.error(`Failed to assign Discord role ${roleId}:`, roleErr);
           }
-        );
+        }
       } catch (roleErr) {
-        console.error("Failed to assign Discord role:", roleErr);
+        console.error("Failed to assign Discord roles:", roleErr);
         // Non-blocking — continue even if role assignment fails
       }
     }
