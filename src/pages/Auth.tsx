@@ -151,6 +151,15 @@ const Auth = () => {
           return;
         }
         if (data.user) {
+          // Fire working resend-confirmation as fallback (auth-email-hook fails silently)
+          try {
+            await supabase.functions.invoke("resend-confirmation", {
+              body: { email: email.trim() },
+            });
+          } catch {
+            // ignore — user can still manually resend from confirmation screen
+          }
+
           await supabase
             .from("profiles")
             .update({ zip_code: zipCode })
