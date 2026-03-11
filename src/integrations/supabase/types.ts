@@ -742,6 +742,7 @@ export type Database = {
           discord_role_name: string
           id: string
           is_active: boolean
+          platform_role: string | null
           trigger_condition: Database["public"]["Enums"]["discord_role_trigger"]
         }
         Insert: {
@@ -751,6 +752,7 @@ export type Database = {
           discord_role_name: string
           id?: string
           is_active?: boolean
+          platform_role?: string | null
           trigger_condition?: Database["public"]["Enums"]["discord_role_trigger"]
         }
         Update: {
@@ -760,6 +762,7 @@ export type Database = {
           discord_role_name?: string
           id?: string
           is_active?: boolean
+          platform_role?: string | null
           trigger_condition?: Database["public"]["Enums"]["discord_role_trigger"]
         }
         Relationships: []

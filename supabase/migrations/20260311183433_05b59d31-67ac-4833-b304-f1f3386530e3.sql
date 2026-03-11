@@ -1,0 +1,1 @@
+ALTER TABLE public.discord_role_mappings ADD COLUMN platform_role text DEFAULT NULL;
