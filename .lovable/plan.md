@@ -1,28 +1,44 @@
 
 
-## Remove Test User `darcylorincz@gmail.com`
+## Assessment: Initial Confirmation Email Fails Silently
 
-The user `6a6d5b1e-d2ab-4644-ad5e-f33bf07d25c9` has the following records:
-- 1 profile row
-- 1 discord_bypass_requests row (the one you just approved)
-- 1 notification row
-- Auth user entry (email confirmed)
+**Root cause identified.** The `auth-email-hook` (Lovable's managed auth email system) is failing on every signup attempt with:
 
-### Plan
+```
+403: {"type":"no_matching_sender","message":"No sender domain matches the requested sender domain"}
+```
 
-1. **Delete related public schema rows** via a migration that cascades from the profile and cleans up bypass requests and notifications:
-   - `DELETE FROM discord_bypass_requests WHERE user_id = '6a6d5b1e-...'`
-   - `DELETE FROM notifications WHERE user_id = '6a6d5b1e-...'`
-   - `DELETE FROM profiles WHERE user_id = '6a6d5b1e-...'`
+The hook sends from `noreply@fgn.gg` via the Lovable Email API, but the API rejects it despite `fgn.gg` being listed as verified. This appears to be a platform-level mismatch — the hook has been failing consistently across all recent signup attempts.
 
-2. **Delete the auth user** using the Auth Admin API via an edge function call (since `DELETE FROM auth.users` is not permitted via standard migrations). We will invoke `supabase.auth.admin.deleteUser()` from an existing or ad-hoc mechanism.
+**Why the second request works:** The "Resend Confirmation Email" button calls the `resend-confirmation` edge function, which bypasses the Lovable email system entirely and sends directly via the Resend API from `noreply@play.fgn.gg`. That path works reliably.
 
-Since most foreign keys reference `auth.users` with `ON DELETE CASCADE`, deleting the auth user should cascade to profiles, notifications, etc. So the cleanest approach is a single auth admin deletion.
+**This is a real bug.** Every new user will always need to manually request a resend.
 
-### Implementation
-- Create a one-time edge function invocation (or use the existing admin tooling) to call `auth.admin.deleteUser('6a6d5b1e-d2ab-4644-ad5e-f33bf07d25c9')`.
-- Verify the `profiles` table FK has `ON DELETE CASCADE` — if so, only the auth deletion is needed.
-- Clean up `discord_bypass_requests` separately if it doesn't cascade (it references `auth.users` but may not have cascade).
+## Recommended Fix
 
-Single step: Write a small edge function or use `supabase--curl_edge_functions` to delete the user via the service role key.
+Since the Lovable managed email path (`auth-email-hook`) has an unresolvable domain mismatch, the most reliable fix is to **automatically call the working `resend-confirmation` function immediately after signup succeeds** as a fallback.
+
+### Changes
+
+**`src/pages/Auth.tsx`** — After a successful `supabase.auth.signUp()` call, immediately invoke the `resend-confirmation` edge function with the user's email. This ensures the user gets a branded confirmation email via the working Resend path, even though the auth-email-hook silently fails.
+
+```typescript
+// Right after successful signup, fire the working resend path
+await supabase.functions.invoke("resend-confirmation", {
+  body: { email: signupEmail },
+});
+```
+
+This is a single-line addition to the existing signup success handler. No other files need to change.
+
+### Why this approach
+
+- Zero risk: the `resend-confirmation` function is already battle-tested and working
+- No platform dependency: sidesteps the Lovable Email API domain issue entirely  
+- User experience: confirmation email arrives immediately without manual action
+- The auth-email-hook will still fire (and fail silently) — this just ensures a working email always goes out
+
+### Separately (informational)
+
+The `auth-email-hook` domain mismatch (`fgn.gg` verified but rejected) may be a Lovable platform bug worth reporting. The fix above makes the system resilient regardless.
 
