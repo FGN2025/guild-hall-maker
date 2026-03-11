@@ -13,8 +13,24 @@ import { format } from "date-fns";
 const GameDetail = () => {
   usePageTitle("Game Detail");
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
   const { data: game, isLoading } = useGameBySlug(slug ?? "");
   const { data: tournaments } = useGameTournaments(game?.name);
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile-steam", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("steam_id, steam_username")
+        .eq("user_id", user!.id)
+        .single();
+      return data as { steam_id: string | null; steam_username: string | null } | null;
+    },
+    enabled: !!user,
+  });
+
+  const hasSteamLinked = !!profile?.steam_id;
 
   if (isLoading) {
     return (
