@@ -86,3 +86,26 @@ export type TemplateDefinition = {
     opacity: number;
   };
 };
+
+/** Maps canvas format keys to compatible social media platforms */
+export const FORMAT_PLATFORM_MAP: Record<string, string[]> = {
+  square: ["instagram", "facebook", "twitter", "linkedin"],
+  landscape: ["facebook", "twitter", "linkedin"],
+  portrait: ["instagram", "facebook"],
+  story: ["instagram", "facebook"],
+  original: ["facebook", "twitter", "linkedin"],
+};
+
+export const PLATFORM_LABELS: Record<string, string> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+  twitter: "Twitter / X",
+  linkedin: "LinkedIn",
+};
+
+export const PLATFORM_COLORS: Record<string, string> = {
+  facebook: "#1877F2",
+  instagram: "#E4405F",
+  twitter: "#000000",
+  linkedin: "#0A66C2",
+};

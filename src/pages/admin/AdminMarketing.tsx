@@ -5,6 +5,8 @@ import { useMarketingCampaigns, useMarketingAssets, MarketingCampaign } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminWebPages from "@/pages/admin/AdminWebPages";
 import AdminCampaignCodes from "@/components/admin/AdminCampaignCodes";
+import SocialAccountsManager from "@/components/marketing/SocialAccountsManager";
+import ScheduledPostsCalendar from "@/components/marketing/ScheduledPostsCalendar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIcon, Library } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Eye, EyeOff, Megaphone, Image as ImageIcon, Library, Share2, CalendarClock } from "lucide-react";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
@@ -76,6 +78,8 @@ const AdminMarketing = () => {
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="calendars">Calendars</TabsTrigger>
           <TabsTrigger value="web-pages">Web Pages</TabsTrigger>
+          <TabsTrigger value="social" className="gap-1.5"><Share2 className="h-4 w-4" /> Social Accounts</TabsTrigger>
+          <TabsTrigger value="scheduled" className="gap-1.5"><CalendarClock className="h-4 w-4" /> Scheduled</TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaigns" className="space-y-6 mt-4">
@@ -161,6 +165,14 @@ const AdminMarketing = () => {
 
         <TabsContent value="web-pages" className="mt-4">
           <AdminWebPages />
+        </TabsContent>
+
+        <TabsContent value="social" className="mt-4">
+          <SocialAccountsManager />
+        </TabsContent>
+
+        <TabsContent value="scheduled" className="mt-4">
+          <ScheduledPostsCalendar />
         </TabsContent>
       </Tabs>
       </div>

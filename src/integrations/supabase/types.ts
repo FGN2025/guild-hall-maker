@@ -2060,6 +2060,69 @@ export type Database = {
           },
         ]
       }
+      scheduled_posts: {
+        Row: {
+          caption: string | null
+          connection_id: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          image_url: string
+          platform: string
+          post_url: string | null
+          published_at: string | null
+          scheduled_at: string
+          status: string
+          tenant_id: string | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          connection_id: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          image_url: string
+          platform: string
+          post_url?: string | null
+          published_at?: string | null
+          scheduled_at: string
+          status?: string
+          tenant_id?: string | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          connection_id?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          image_url?: string
+          platform?: string
+          post_url?: string | null
+          published_at?: string | null
+          scheduled_at?: string
+          status?: string
+          tenant_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_posts_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "social_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_posts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_scores: {
         Row: {
           created_at: string
@@ -2185,6 +2248,59 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_connections: {
+        Row: {
+          access_token: string
+          account_name: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          page_id: string | null
+          platform: string
+          refresh_token: string | null
+          tenant_id: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          account_name?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          page_id?: string | null
+          platform: string
+          refresh_token?: string | null
+          tenant_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          account_name?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          page_id?: string | null
+          platform?: string
+          refresh_token?: string | null
+          tenant_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]

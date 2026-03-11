@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText } from "lucide-react";
+import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock } from "lucide-react";
+import SocialAccountsManager from "@/components/marketing/SocialAccountsManager";
+import ScheduledPostsCalendar from "@/components/marketing/ScheduledPostsCalendar";
 import { useNavigate } from "react-router-dom";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 import { useAuth } from "@/contexts/AuthContext";
@@ -92,6 +94,12 @@ const TenantMarketing = () => {
           </TabsTrigger>
           <TabsTrigger value="webpages" className="gap-2 font-heading">
             <FileText className="h-4 w-4" /> Web Pages
+          </TabsTrigger>
+          <TabsTrigger value="social" className="gap-2 font-heading">
+            <Share2 className="h-4 w-4" /> Social Accounts
+          </TabsTrigger>
+          <TabsTrigger value="scheduled" className="gap-2 font-heading">
+            <CalendarClock className="h-4 w-4" /> Scheduled
           </TabsTrigger>
         </TabsList>
 
@@ -188,6 +196,16 @@ const TenantMarketing = () => {
         {/* Web Pages Tab */}
         <TabsContent value="webpages">
           <TenantWebPages embedded />
+        </TabsContent>
+
+        {/* Social Accounts Tab */}
+        <TabsContent value="social">
+          <SocialAccountsManager tenantId={tenantAdmin} />
+        </TabsContent>
+
+        {/* Scheduled Posts Tab */}
+        <TabsContent value="scheduled">
+          <ScheduledPostsCalendar tenantId={tenantAdmin} />
         </TabsContent>
       </Tabs>
     </div>
