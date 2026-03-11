@@ -24,14 +24,26 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const isInviteFlow = searchParams.get("invite") === "true";
   const inviteEmail = searchParams.get("email") || "";
+  const { user, loading: authLoading, emailConfirmed } = useAuth();
 
   const [isLogin, setIsLogin] = useState(!isInviteFlow);
   const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [legacyUsername, setLegacyUsername] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Redirect authenticated users away from /auth
+  useEffect(() => {
+    if (authLoading) return;
+    if (user && emailConfirmed) {
+      navigate("/dashboard", { replace: true });
+    } else if (user && !emailConfirmed) {
+      navigate("/confirm-email", { replace: true });
+    }
+  }, [user, emailConfirmed, authLoading, navigate]);
 
   // ZIP check state (signup only)
   const [zipCode, setZipCode] = useState("");
