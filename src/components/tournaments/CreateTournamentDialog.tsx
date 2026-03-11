@@ -157,7 +157,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
     setMaxParticipants("16"); setPrizePool(""); setPrizeType("none"); setPrizeId(""); setStartDates([]); setStartTime("12:00"); setRules("");
     setImageFile(null); setImagePreview(null);
     setPointsFirst("10"); setPointsSecond("5"); setPointsThird("3"); setPointsParticipation("2");
-    setPrizePctFirst(50); setPrizePctSecond(30); setPrizePctThird(20);
+    setPrizePctFirst(50); setPrizePctSecond(30); setPrizePctThird(20); setDiscordRoleId("");
   };
 
   return (
