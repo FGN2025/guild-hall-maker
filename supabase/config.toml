@@ -63,3 +63,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.check-users-confirmed]
     verify_jwt = false
+  [functions.discord-server-roles]
+    verify_jwt = false
