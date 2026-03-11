@@ -119,6 +119,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       category, cover_image_url: coverImageUrl || null,
       guide_content: guideContent || null, platform_tags: tags, is_active: isActive,
       tournament_rules_url: tournamentRulesUrl || null,
+      steam_app_id: steamAppId || null,
     };
     if (editGame) payload.id = editGame.id;
     onSubmit(payload);
