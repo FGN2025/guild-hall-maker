@@ -107,6 +107,7 @@ export const useTournaments = () => {
       prize_pct_first?: number;
       prize_pct_second?: number;
       prize_pct_third?: number;
+      discord_role_id?: string;
     }) => {
       if (!user) throw new Error("Not authenticated");
       const { error } = await supabase
