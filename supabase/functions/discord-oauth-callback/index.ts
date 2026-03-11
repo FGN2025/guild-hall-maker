@@ -158,21 +158,36 @@ Deno.serve(async (req) => {
 
     if (DISCORD_BOT_TOKEN && DISCORD_GUILD_ID) {
       try {
-        // Query configured role mappings for on_link trigger
+        // Fetch all active on_link mappings
         const { data: roleMappings } = await serviceClient
           .from("discord_role_mappings")
-          .select("discord_role_id")
+          .select("discord_role_id, platform_role")
           .eq("trigger_condition", "on_link")
           .eq("is_active", true);
 
-        const roleIds: string[] = (roleMappings ?? []).map((m: any) => m.discord_role_id);
+        // Fetch user's platform roles
+        const [userRolesResult, tenantAdminResult] = await Promise.all([
+          serviceClient.from("user_roles").select("role").eq("user_id", userId),
+          serviceClient.from("tenant_admins").select("id").eq("user_id", userId).limit(1),
+        ]);
 
-        // Fallback to env var if no mappings exist
-        if (roleIds.length === 0 && DISCORD_VERIFIED_ROLE_ID) {
+        const platformRoles: string[] = (userRolesResult.data ?? []).map((r: any) => r.role);
+        const isTenantAdmin = (tenantAdminResult.data ?? []).length > 0;
+        if (isTenantAdmin) platformRoles.push("tenant_admin");
+        // If user has no special roles, they are a regular "user"
+        if (platformRoles.length === 0) platformRoles.push("user");
+
+        // Filter mappings: NULL platform_role = all users, otherwise must match
+        const roleIds: string[] = (roleMappings ?? [])
+          .filter((m: any) => !m.platform_role || platformRoles.includes(m.platform_role))
+          .map((m: any) => m.discord_role_id);
+
+        // Fallback to env var if no mappings exist at all
+        if ((roleMappings ?? []).length === 0 && DISCORD_VERIFIED_ROLE_ID) {
           roleIds.push(DISCORD_VERIFIED_ROLE_ID);
         }
 
-        // Assign all mapped roles
+        // Assign all matched roles
         for (const roleId of roleIds) {
           try {
             await fetch(
@@ -188,7 +203,6 @@ Deno.serve(async (req) => {
         }
       } catch (roleErr) {
         console.error("Failed to assign Discord roles:", roleErr);
-        // Non-blocking — continue even if role assignment fails
       }
     }
 

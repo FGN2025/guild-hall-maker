@@ -22,6 +22,7 @@ interface RoleMapping {
   discord_role_name: string;
   trigger_condition: string;
   condition_value: string | null;
+  platform_role: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -34,6 +35,14 @@ const TRIGGER_LABELS: Record<string, string> = {
   manual: "Manual Assignment",
 };
 
+const PLATFORM_ROLE_LABELS: Record<string, string> = {
+  all: "All Users",
+  admin: "Admin",
+  moderator: "Moderator",
+  tenant_admin: "Tenant Admin",
+  user: "Regular User",
+};
+
 const DiscordRoleManager = () => {
   const [serverRoles, setServerRoles] = useState<DiscordRole[]>([]);
   const [mappings, setMappings] = useState<RoleMapping[]>([]);
@@ -41,9 +50,9 @@ const DiscordRoleManager = () => {
   const [loadingMappings, setLoadingMappings] = useState(true);
   const [adding, setAdding] = useState(false);
 
-  // New mapping form
   const [selectedRoleId, setSelectedRoleId] = useState("");
   const [selectedTrigger, setSelectedTrigger] = useState("on_link");
+  const [selectedPlatformRole, setSelectedPlatformRole] = useState("all");
 
   const fetchMappings = async () => {
     setLoadingMappings(true);
@@ -95,6 +104,7 @@ const DiscordRoleManager = () => {
         discord_role_id: role.id,
         discord_role_name: role.name,
         trigger_condition: selectedTrigger,
+        platform_role: selectedPlatformRole === "all" ? null : selectedPlatformRole,
         is_active: true,
       } as any);
 
@@ -103,6 +113,7 @@ const DiscordRoleManager = () => {
     } else {
       toast({ title: "Mapping added" });
       setSelectedRoleId("");
+      setSelectedPlatformRole("all");
       fetchMappings();
     }
     setAdding(false);
@@ -157,7 +168,7 @@ const DiscordRoleManager = () => {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Map Discord server roles to platform events. When an event occurs (e.g. a user links Discord), the configured role(s) will be automatically assigned.
+        Map Discord server roles to platform events and roles. You can assign different Discord roles based on the user's platform role (Admin, Moderator, Tenant Admin, or Regular User).
       </p>
 
       {/* Add mapping form */}
@@ -180,8 +191,7 @@ const DiscordRoleManager = () => {
                       {r.name}
                     </span>
                   </SelectItem>
-                ))
-                }
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -194,8 +204,20 @@ const DiscordRoleManager = () => {
               <SelectContent>
                 {Object.entries(TRIGGER_LABELS).map(([k, v]) => (
                   <SelectItem key={k} value={k}>{v}</SelectItem>
-                ))
-                }
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1 min-w-[160px] space-y-1">
+            <label className="text-xs font-heading text-muted-foreground">Platform Role</label>
+            <Select value={selectedPlatformRole} onValueChange={setSelectedPlatformRole}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PLATFORM_ROLE_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -236,6 +258,9 @@ const DiscordRoleManager = () => {
               <Badge variant="secondary" className="text-xs">
                 {TRIGGER_LABELS[m.trigger_condition] ?? m.trigger_condition}
               </Badge>
+              <Badge variant="default" className="text-xs">
+                {m.platform_role ? PLATFORM_ROLE_LABELS[m.platform_role] ?? m.platform_role : "All Users"}
+              </Badge>
               {m.condition_value && (
                 <span className="text-xs text-muted-foreground">= {m.condition_value}</span>
               )}
@@ -249,8 +274,7 @@ const DiscordRoleManager = () => {
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-          ))
-          }
+          ))}
         </div>
       )}
     </div>
