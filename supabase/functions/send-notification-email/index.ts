@@ -22,9 +22,11 @@ Deno.serve(async (req) => {
   try {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
-      return new Response(JSON.stringify({ success: true, message: "RESEND_API_KEY not configured, skipping email" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("RESEND_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ success: false, message: "RESEND_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabase = createClient(
@@ -200,7 +202,7 @@ Deno.serve(async (req) => {
               <div style="background: #f0f0f0; padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0;">
                 <span style="font-size: 24px; font-weight: bold; letter-spacing: 2px; font-family: monospace;">${bypass_code}</span>
               </div>
-              <p>Go to the <a href="https://guild-hall-maker.lovable.app/auth" style="color: #00f0ff;">FGN registration page</a> and enter this code to get started.</p>
+              <p>Go to the <a href="https://play.fgn.gg/auth" style="color: #00f0ff;">FGN registration page</a> and enter this code to get started.</p>
               <p style="color: #888; font-size: 12px;">This code is single-use. — FGN Platform</p>
             </div>`,
         });
@@ -267,7 +269,7 @@ Deno.serve(async (req) => {
                     <li><strong>Email:</strong> ${rec.email || "Unknown"}</li>
                     <li><strong>ZIP Code:</strong> ${rec.zip_code || "Unknown"}</li>
                   </ul>
-                  <p>Review this request in the <a href="https://guild-hall-maker.lovable.app/admin/access-requests" style="color: #00f0ff;">Admin Panel</a>.</p>
+                  <p>Review this request in the <a href="https://play.fgn.gg/admin/access-requests" style="color: #00f0ff;">Admin Panel</a>.</p>
                   <p style="color: #888; font-size: 12px;">— FGN Platform</p>
                 </div>`,
             });
