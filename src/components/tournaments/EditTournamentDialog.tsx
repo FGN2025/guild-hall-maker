@@ -17,6 +17,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
+import { useDiscordRoles } from "@/hooks/useDiscordRoles";
 
 interface TournamentData {
   id: string;
