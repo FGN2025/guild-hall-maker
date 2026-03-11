@@ -9,6 +9,7 @@ import {
   ArrowUpDown, Link as LinkIcon, Send, History, ExternalLink
 } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
+import DiscordRoleManager from "@/components/admin/DiscordRoleManager";
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
