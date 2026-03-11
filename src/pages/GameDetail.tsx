@@ -97,8 +97,8 @@ const GameDetail = () => {
                 </p>
               )}
               {hasSteamLinked && (
-                <p className="text-xs text-emerald-500 font-heading flex items-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                <p className="text-xs text-primary font-heading flex items-center gap-1">
+                  <span className="inline-block h-2 w-2 rounded-full bg-primary" />
                   Steam linked as {profile?.steam_username}
                 </p>
               )}
