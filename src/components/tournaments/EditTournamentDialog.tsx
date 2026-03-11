@@ -69,6 +69,8 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const { getPreset } = useImageLimits();
   const { data: games = [] } = useGames();
   const [open, setOpen] = useState(false);
+  const { roles: discordRoles, loading: rolesLoading } = useDiscordRoles(open);
+  const [discordRoleId, setDiscordRoleId] = useState("");
   const [name, setName] = useState("");
   const [game, setGame] = useState("");
   const [description, setDescription] = useState("");
