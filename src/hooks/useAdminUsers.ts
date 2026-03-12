@@ -87,6 +87,8 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
           user_id: p.user_id,
           display_name: p.display_name,
           gamer_tag: p.gamer_tag,
+          discord_id: p.discord_id,
+          discord_username: p.discord_username,
           avatar_url: p.avatar_url,
           created_at: p.created_at,
           role: (roleMap.get(p.user_id) as string) ?? null,
