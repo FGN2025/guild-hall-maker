@@ -627,7 +627,7 @@ const AdminChallenges = () => {
                 {[
                   { icon: Users, label: "Enrolled", value: detailChallenge.enrollments_count },
                   { icon: Clock, label: "Est. Time", value: detailChallenge.estimated_minutes ? `${detailChallenge.estimated_minutes} min` : "—" },
-                  { icon: Star, label: "1st Place Pts", value: detailChallenge.points_first },
+                  { icon: Star, label: "Points", value: detailChallenge.points_first },
                   { icon: Shield, label: "Evidence Req.", value: detailChallenge.requires_evidence ? "Yes" : "No" },
                   ...(detailChallenge.start_date ? [{ icon: Calendar, label: "Start", value: format(new Date(detailChallenge.start_date), "MMM d, yyyy") }] : []),
                   ...(detailChallenge.end_date ? [{ icon: Calendar, label: "End", value: format(new Date(detailChallenge.end_date), "MMM d, yyyy") }] : []),
