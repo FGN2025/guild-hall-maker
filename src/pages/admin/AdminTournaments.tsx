@@ -113,6 +113,21 @@ const AdminTournaments = () => {
     }
   };
 
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("tournaments")
+        .insert({ ...data, created_by: user.id, status: "open" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Tournament created!");
+      queryClient.invalidateQueries({ queryKey: ["admin-tournaments"] });
+    },
+    onError: () => toast.error("Failed to create tournament"),
+  });
+
   return (
     <div>
       {/* Header */}
