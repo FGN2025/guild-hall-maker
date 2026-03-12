@@ -316,20 +316,9 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
           </div>
 
           <div className="space-y-2">
-            <Label>Season Points</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { key: "points_first", label: "1st" },
-                { key: "points_second", label: "2nd" },
-                { key: "points_third", label: "3rd" },
-                { key: "points_participation", label: "Others" },
-              ].map(({ key, label }) => (
-                <div key={key} className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">{label}</Label>
-                  <Input type="number" min={0} value={(form as any)[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
-                </div>
-              ))}
-            </div>
+            <Label>Quest Points</Label>
+            <Input type="number" min={0} value={form.points_first} onChange={(e) => setForm({ ...form, points_first: e.target.value })} placeholder="10" />
+            <p className="text-xs text-muted-foreground">Season points awarded on completion</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

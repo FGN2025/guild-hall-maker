@@ -241,23 +241,10 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               <Input type="number" value={estimatedMinutes} onChange={(e) => setEstimatedMinutes(e.target.value ? Number(e.target.value) : "")} />
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            <div>
-              <Label className="text-xs">1st Pts</Label>
-              <Input type="number" value={pointsFirst} onChange={(e) => setPointsFirst(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label className="text-xs">2nd Pts</Label>
-              <Input type="number" value={pointsSecond} onChange={(e) => setPointsSecond(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label className="text-xs">3rd Pts</Label>
-              <Input type="number" value={pointsThird} onChange={(e) => setPointsThird(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label className="text-xs">Other Pts</Label>
-              <Input type="number" value={pointsParticipation} onChange={(e) => setPointsParticipation(Number(e.target.value))} />
-            </div>
+          <div>
+            <Label>Quest Points</Label>
+            <Input type="number" value={pointsFirst} onChange={(e) => setPointsFirst(Number(e.target.value))} />
+            <p className="text-xs text-muted-foreground mt-1">Season points awarded on completion</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

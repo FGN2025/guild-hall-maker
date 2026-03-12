@@ -518,21 +518,9 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                 ))}
               </div>
 
-              <div className="bg-muted rounded-lg p-4">
-                <span className="font-heading text-sm text-foreground">Points Breakdown</span>
-                <div className="grid grid-cols-4 gap-2 mt-2 text-center">
-                  {[
-                    { label: "1st", value: detailQuest.points_first },
-                    { label: "2nd", value: detailQuest.points_second },
-                    { label: "3rd", value: detailQuest.points_third },
-                    { label: "Others", value: detailQuest.points_participation },
-                  ].map((p) => (
-                    <div key={p.label}>
-                      <p className="font-heading text-lg font-bold text-primary">{p.value}</p>
-                      <p className="text-[10px] text-muted-foreground">{p.label}</p>
-                    </div>
-                  ))}
-                </div>
+              <div className="bg-muted rounded-lg p-4 flex items-center justify-between">
+                <span className="font-heading text-sm text-foreground">Quest Points</span>
+                <p className="font-heading text-lg font-bold text-primary">{detailQuest.points_first}</p>
               </div>
 
               <div className="flex items-center justify-between bg-muted rounded-lg p-3">
