@@ -149,6 +149,16 @@ const AdminUsers = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{u.gamer_tag ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {u.discord_id ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help">{u.discord_username || u.discord_id}</span>
+                            </TooltipTrigger>
+                            <TooltipContent>ID: {u.discord_id}</TooltipContent>
+                          </Tooltip>
+                        ) : "—"}
+                      </TableCell>
                       <TableCell className="text-muted-foreground text-sm">{u.tenant_name ?? "—"}</TableCell>
                       <TableCell>{tenantRoleBadge(u.tenant_role)}</TableCell>
                       <TableCell>{roleBadge(u.role)}</TableCell>
