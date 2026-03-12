@@ -311,26 +311,9 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             />
           </div>
           <div className="space-y-2">
-            <Label className="font-heading text-sm">Season Points</Label>
-            <p className="text-xs text-muted-foreground">Points awarded based on final placement</p>
-            <div className="grid grid-cols-4 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">1st Place</Label>
-                <Input type="number" min={0} value={pointsFirst} onChange={(e) => setPointsFirst(e.target.value)} className="bg-card border-border font-body" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">2nd Place</Label>
-                <Input type="number" min={0} value={pointsSecond} onChange={(e) => setPointsSecond(e.target.value)} className="bg-card border-border font-body" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">3rd Place</Label>
-                <Input type="number" min={0} value={pointsThird} onChange={(e) => setPointsThird(e.target.value)} className="bg-card border-border font-body" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Participation</Label>
-                <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body" />
-              </div>
-            </div>
+            <Label className="font-heading text-sm">Participation Points</Label>
+            <p className="text-xs text-muted-foreground">Points awarded per match played</p>
+            <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body max-w-[120px]" />
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Discord Role (on registration)</Label>
