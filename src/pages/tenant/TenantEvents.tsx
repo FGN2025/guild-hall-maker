@@ -270,6 +270,9 @@ const TenantEvents = () => {
                   <Button size="sm" variant="outline" onClick={() => togglePublish(event)}>
                     {event.status === "published" ? <><EyeOff className="h-3.5 w-3.5 mr-1" /> Unpublish</> : <><Eye className="h-3.5 w-3.5 mr-1" /> Publish</>}
                   </Button>
+                  <Button size="sm" variant="outline" onClick={() => setModRequestTarget(event)}>
+                    <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Request Moderator
+                  </Button>
                   <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(event.id)}>
                     <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                   </Button>
