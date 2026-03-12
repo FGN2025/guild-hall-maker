@@ -10,9 +10,11 @@ import {
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Upload, Plug, History } from "lucide-react";
+import { Search, Users, Upload, Plug, History, Download, FileText } from "lucide-react";
+import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantSubscribers } from "@/hooks/useTenantSubscribers";
 import { useTenantIntegrations, type TenantIntegration } from "@/hooks/useTenantIntegrations";
@@ -135,14 +137,46 @@ const TenantSubscribers = () => {
         </TabsList>
 
         <TabsContent value="subscribers" className="space-y-4">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, email, account..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, account..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                const cols: ExportColumn[] = [
+                  { key: "account_number", label: "Account #" },
+                  { key: "name", label: "Name" },
+                  { key: "email", label: "Email" },
+                  { key: "zip_code", label: "ZIP" },
+                  { key: "plan_name", label: "Plan" },
+                  { key: "service_status", label: "Status" },
+                  { key: "source", label: "Source" },
+                ];
+                exportTableCSV(filtered.map(s => ({ ...s, name: [s.first_name, s.last_name].filter(Boolean).join(" ") })), cols, "subscribers.csv");
+              }}>
+                <Download className="h-4 w-4 mr-1" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const cols: ExportColumn[] = [
+                  { key: "account_number", label: "Account #" },
+                  { key: "name", label: "Name" },
+                  { key: "email", label: "Email" },
+                  { key: "zip_code", label: "ZIP" },
+                  { key: "plan_name", label: "Plan" },
+                  { key: "service_status", label: "Status" },
+                  { key: "source", label: "Source" },
+                ];
+                exportTablePDF(filtered.map(s => ({ ...s, name: [s.first_name, s.last_name].filter(Boolean).join(" ") })), cols, "Subscribers");
+              }}>
+                <FileText className="h-4 w-4 mr-1" /> PDF
+              </Button>
+            </div>
           </div>
 
           {isLoading ? (

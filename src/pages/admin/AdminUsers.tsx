@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import TableSkeleton from "@/components/ui/table-skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, UserCheck, UserX, Mail, Loader2, ShieldAlert, Trash2, Ban } from "lucide-react";
+import { Search, Users, UserCheck, UserX, Mail, Loader2, ShieldAlert, Trash2, Ban, Download, FileText } from "lucide-react";
+import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -76,9 +77,40 @@ const AdminUsers = () => {
 
         {/* Registered Users Tab */}
         <TabsContent value="registered" className="space-y-4">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search by name or tag..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border font-body" />
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search by name or tag..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border font-body" />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                const cols: ExportColumn[] = [
+                  { key: "display_name", label: "Display Name" },
+                  { key: "gamer_tag", label: "Gamer Tag" },
+                  { key: "discord_username", label: "Discord" },
+                  { key: "discord_id", label: "Discord ID" },
+                  { key: "tenant_name", label: "Tenant" },
+                  { key: "role", label: "Role" },
+                  { key: "created_at", label: "Joined" },
+                ];
+                exportTableCSV(users.map(u => ({ ...u, created_at: new Date(u.created_at).toLocaleDateString() })), cols, "registered_users.csv");
+              }}>
+                <Download className="h-4 w-4 mr-1" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const cols: ExportColumn[] = [
+                  { key: "display_name", label: "Display Name" },
+                  { key: "gamer_tag", label: "Gamer Tag" },
+                  { key: "discord_username", label: "Discord" },
+                  { key: "tenant_name", label: "Tenant" },
+                  { key: "role", label: "Role" },
+                  { key: "created_at", label: "Joined" },
+                ];
+                exportTablePDF(users.map(u => ({ ...u, created_at: new Date(u.created_at).toLocaleDateString() })), cols, "Registered Users");
+              }}>
+                <FileText className="h-4 w-4 mr-1" /> PDF
+              </Button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -268,9 +300,37 @@ const AdminUsers = () => {
             </Card>
           </div>
 
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search username, email, provider..." value={legacySearch} onChange={(e) => setLegacySearch(e.target.value)} className="pl-9 bg-card border-border" />
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search username, email, provider..." value={legacySearch} onChange={(e) => setLegacySearch(e.target.value)} className="pl-9 bg-card border-border" />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                const cols: ExportColumn[] = [
+                  { key: "legacy_username", label: "Username" },
+                  { key: "email", label: "Email" },
+                  { key: "provider_name", label: "Provider" },
+                  { key: "status", label: "Status" },
+                  { key: "legacy_created_at", label: "Created" },
+                ];
+                exportTableCSV(legacyUsers.map(u => ({ ...u, legacy_created_at: u.legacy_created_at ? new Date(u.legacy_created_at).toLocaleDateString() : "" })), cols, "legacy_users.csv");
+              }}>
+                <Download className="h-4 w-4 mr-1" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const cols: ExportColumn[] = [
+                  { key: "legacy_username", label: "Username" },
+                  { key: "email", label: "Email" },
+                  { key: "provider_name", label: "Provider" },
+                  { key: "status", label: "Status" },
+                  { key: "legacy_created_at", label: "Created" },
+                ];
+                exportTablePDF(legacyUsers.map(u => ({ ...u, legacy_created_at: u.legacy_created_at ? new Date(u.legacy_created_at).toLocaleDateString() : "" })), cols, "Legacy Users");
+              }}>
+                <FileText className="h-4 w-4 mr-1" /> PDF
+              </Button>
+            </div>
           </div>
 
           {legacyLoading ? (

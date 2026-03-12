@@ -7,6 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Download, FileText } from "lucide-react";
+import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
 
 const statusOptions = [
   { value: "new", label: "New" },
@@ -20,11 +23,41 @@ const TenantLeads = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Leads</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Users who matched your service area during registration.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Leads</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Users who matched your service area during registration.
+          </p>
+        </div>
+        {leads.length > 0 && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              const cols: ExportColumn[] = [
+                { key: "profile.display_name", label: "Display Name" },
+                { key: "profile.gamer_tag", label: "Gamer Tag" },
+                { key: "zip_code", label: "ZIP Code" },
+                { key: "status", label: "Status" },
+                { key: "created_at", label: "Registered" },
+              ];
+              exportTableCSV(leads.map(l => ({ ...l, created_at: new Date(l.created_at).toLocaleDateString() })), cols, "tenant_leads.csv");
+            }}>
+              <Download className="h-4 w-4 mr-1" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              const cols: ExportColumn[] = [
+                { key: "profile.display_name", label: "Display Name" },
+                { key: "profile.gamer_tag", label: "Gamer Tag" },
+                { key: "zip_code", label: "ZIP Code" },
+                { key: "status", label: "Status" },
+                { key: "created_at", label: "Registered" },
+              ];
+              exportTablePDF(leads.map(l => ({ ...l, created_at: new Date(l.created_at).toLocaleDateString() })), cols, "Tenant Leads");
+            }}>
+              <FileText className="h-4 w-4 mr-1" /> PDF
+            </Button>
+          </div>
+        )}
       </div>
 
       {isLoading ? (

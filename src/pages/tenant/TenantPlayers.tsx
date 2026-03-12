@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, UserPlus, MapPin } from "lucide-react";
+import { Users, UserPlus, MapPin, Download, FileText } from "lucide-react";
+import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
 import { format } from "date-fns";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,6 +84,34 @@ const TenantPlayers = () => {
           <MapPin className="h-4 w-4 mr-1" />
           {backfilling ? "Extracting…" : "Extract ZIPs from Addresses"}
         </Button>
+        <div className="flex gap-2 ml-auto">
+          <Button variant="outline" size="sm" onClick={() => {
+            const cols: ExportColumn[] = [
+              { key: "name", label: "Name" },
+              { key: "gamerTag", label: "Gamer Tag" },
+              { key: "email", label: "Email" },
+              { key: "inviteCode", label: "Invite Code" },
+              { key: "status", label: "Status" },
+              { key: "createdAt", label: "Registered" },
+            ];
+            exportTableCSV(players.map(p => ({ ...p, createdAt: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "" })), cols, "tenant_players.csv");
+          }}>
+            <Download className="h-4 w-4 mr-1" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            const cols: ExportColumn[] = [
+              { key: "name", label: "Name" },
+              { key: "gamerTag", label: "Gamer Tag" },
+              { key: "email", label: "Email" },
+              { key: "inviteCode", label: "Invite Code" },
+              { key: "status", label: "Status" },
+              { key: "createdAt", label: "Registered" },
+            ];
+            exportTablePDF(players.map(p => ({ ...p, createdAt: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "" })), cols, "Tenant Players");
+          }}>
+            <FileText className="h-4 w-4 mr-1" /> PDF
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-lg border overflow-x-auto">

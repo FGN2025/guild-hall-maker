@@ -1,55 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Add CSV & PDF Export to All Player/User List Pages
+## What was built
 
-### Pages Requiring Export Buttons
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-There are **4 pages** with tabular user/player data that need export functionality:
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-| Page | Route | Data Source | Roles with Access |
-|------|-------|-------------|-------------------|
-| Admin Users (Current + Legacy tabs) | `/admin/users` | `useAdminUsers`, `useLegacyUsers` | Admin |
-| Tenant Players | `/tenant/players` | `useTenantPlayers` | Tenant Admin, Manager, Marketing |
-| Tenant Leads | `/tenant/leads` | `useTenantLeads` | Tenant Admin, Manager, Marketing |
-| Tenant Subscribers | `/tenant/subscribers` | `useTenantSubscribers` | Tenant Admin, Manager |
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-### Existing Pattern
+---
 
-The project already has a proven export pattern in `src/lib/exportSeasonStats.ts`:
-- **CSV**: Build CSV string → create Blob → trigger download via hidden `<a>` element
-- **PDF**: Build styled HTML → open print window → browser print-to-PDF
+# Delete & Ban Users — Completed
 
-The `exportDocuments.ts` file has shared print styles (`PRINT_STYLES`) and an `openPrintWindow` helper that can be reused.
+## What was built
 
-### Changes
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-**1. `src/lib/exportUserData.ts`** (new file)
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-Create a shared utility with these functions:
-- `exportUsersCSV(rows, filename)` — Takes an array of objects with standardized column keys, builds CSV, triggers download
-- `exportUsersPDF(rows, title, filename)` — Takes same data, builds HTML table with `PRINT_STYLES`, opens print window
-- Both functions accept a `columns` config array so each page can define which fields to include
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
-**2. `src/pages/admin/AdminUsers.tsx`**
-
-Add two export buttons (CSV, PDF) to the header area next to the search/filter controls, one set per tab:
-- **Current Users tab**: Export columns — Display Name, Gamer Tag, Discord Username, Discord ID, Role, Tenant, Email Status, Created
-- **Legacy Users tab**: Export columns — Username, Email, Provider, Created
-
-**3. `src/pages/tenant/TenantPlayers.tsx`**
-
-Add CSV + PDF export buttons next to the existing search input. Export columns: Name, Gamer Tag, Email, Invite Code, Status, Registered.
-
-**4. `src/pages/tenant/TenantLeads.tsx`**
-
-Add CSV + PDF export buttons. Export columns: Email, Display Name, Status, Created.
-
-**5. `src/pages/tenant/TenantSubscribers.tsx`**
-
-Add CSV + PDF export buttons. Export columns: Account #, Name, Email, Phone, ZIP, Service Status, Plan, Source.
-
-### Level of Effort: Low-Medium
-- 1 new utility file (~80 lines)
-- 4 page files updated (add ~15-20 lines each for import + buttons)
-- No database or RLS changes needed — all data is already fetched client-side
-
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
