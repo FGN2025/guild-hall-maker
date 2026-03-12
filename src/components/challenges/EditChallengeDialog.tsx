@@ -85,10 +85,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setDifficulty(challenge.difficulty || "beginner");
       setChallengeType(challenge.challenge_type || "one_time");
       setGameId(challenge.game_id || null);
-      setPointsFirst(challenge.points_first ?? 10);
-      setPointsSecond(challenge.points_second ?? 5);
-      setPointsThird(challenge.points_third ?? 3);
-      setPointsParticipation(challenge.points_participation ?? 2);
+      setPoints(challenge.points_first ?? 10);
       setStartDate(challenge.start_date ? challenge.start_date.slice(0, 10) : "");
       setEndDate(challenge.end_date ? challenge.end_date.slice(0, 10) : "");
       setEstimatedMinutes(challenge.estimated_minutes ?? "");
