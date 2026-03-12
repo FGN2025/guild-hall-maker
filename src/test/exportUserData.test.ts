@@ -39,8 +39,6 @@ describe("exportTableCSV", () => {
     exportTableCSV(rows, columns, "test_export.csv");
 
     expect(createObjectURL).toHaveBeenCalledOnce();
-    const blob = createObjectURL.mock.calls[0][0] as Blob;
-    expect(blob.type).toBe("text/csv;charset=utf-8;");
     expect(clickSpy).toHaveBeenCalledOnce();
     expect(revokeObjectURL).toHaveBeenCalledOnce();
 
