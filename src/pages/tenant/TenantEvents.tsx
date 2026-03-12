@@ -305,6 +305,15 @@ const TenantEvents = () => {
         variant="destructive"
         onConfirm={() => { if (deleteTarget) deleteEvent.mutate(deleteTarget); setDeleteTarget(null); }}
       />
+
+      <ConfirmDialog
+        open={!!modRequestTarget}
+        onOpenChange={(o) => { if (!o) setModRequestTarget(null); }}
+        title="Request Moderator"
+        description={`Send a moderator request to FGN support for "${modRequestTarget?.name ?? ""}"? Support will respond to ${user?.email ?? "your email"}.`}
+        confirmLabel={modRequesting ? "Sending…" : "Send Request"}
+        onConfirm={handleModeratorRequest}
+      />
     </div>
   );
 };
