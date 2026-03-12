@@ -137,6 +137,7 @@ const AdminTournaments = () => {
           Tournament Oversight
         </h1>
         <div className="flex items-center gap-2">
+          <CreateTournamentDialog onCreate={createMutation.mutate} isCreating={createMutation.isPending} />
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
             size="icon"
