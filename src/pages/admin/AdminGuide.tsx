@@ -284,6 +284,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Template Gallery — Browse reusable design templates with thumbnail previews. Templates include 'locked zones' that anchor brand elements (logos, headers) while allowing customization of other areas.",
       "Asset Editor — An HTML5 Canvas-based design tool with layers, snap-to-grid, shape primitives (rectangles, circles, lines), fill/stroke/opacity controls, z-order management (Bring Forward, Send Backward), and context-sensitive cursors (grab for movable objects, closed hand during drags, not-allowed for locked elements). Export at 2x resolution as PNG.",
       "Social Media Presets — The Asset Editor includes format presets for Instagram, Facebook, Twitter, and other social platforms, ensuring correct dimensions for each channel.",
+      "Publish Dropdown — After designing an asset, use the Publish button in the editor footer (alongside Download and Save as New Asset) to post directly to connected social accounts. The dropdown filters platforms by canvas format compatibility (e.g., Square → Instagram/Facebook/Twitter, Story → Instagram/Facebook).",
+      "Schedule for Later — From the Publish dropdown, choose 'Schedule for Later' to pick a future date and time. The post is queued and delivered automatically by the backend scheduler.",
       "Quick Create (⚡) — Instantly generate promotional assets from tournament or challenge data using a streamlined one-click flow.",
       "Full Edit (✏️) — Open the full Canvas Editor for detailed design work with complete layer and shape control.",
       "'From Event' Promo Picker — Auto-map tenant event data (name, date, game, hero image) to design overlays for rapid promotional asset creation.",
