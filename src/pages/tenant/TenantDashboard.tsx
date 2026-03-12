@@ -4,7 +4,7 @@ import { useTenantAchievements } from "@/hooks/useTenantAchievements";
 import TenantAchievementsCard from "@/components/tenant/TenantAchievementsCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, MapPin, Clock, UserCheck, ArrowRight } from "lucide-react";
+import { Users, MapPin, Clock, UserCheck, ArrowRight, Contact } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const TenantDashboard = () => {
@@ -37,12 +37,26 @@ const TenantDashboard = () => {
     },
   });
 
+  const { data: subscriberCount = 0 } = useQuery({
+    queryKey: ["tenant-subscriber-count", tenantInfo?.tenantId],
+    enabled: !!tenantInfo?.tenantId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("tenant_subscribers")
+        .select("*", { count: "exact", head: true })
+        .eq("tenant_id", tenantInfo!.tenantId);
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   const totalPlayers = leads.length + legacyCount;
 
   const { data: achievementPlayers = [], isLoading: achievementsLoading } = useTenantAchievements(tenantInfo?.tenantId ?? null);
 
   const stats = [
     { label: "Total Players", value: totalPlayers, icon: Users, color: "text-primary" },
+    { label: "Subscribers", value: subscriberCount, icon: Contact, color: "text-green-400" },
     { label: "New Leads", value: leads.filter((l) => l.status === "new").length, icon: Clock, color: "text-yellow-400" },
     { label: "ZIP Codes Covered", value: zipCount, icon: MapPin, color: "text-blue-400" },
   ];
