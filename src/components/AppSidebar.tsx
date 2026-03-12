@@ -28,6 +28,7 @@ import {
   BookOpen,
   Megaphone,
   KeyRound,
+  LifeBuoy,
 } from "lucide-react";
 import {
   Sidebar,
@@ -217,6 +218,17 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Contact Support">
+              <a
+                href="mailto:support@fgn.gg?subject=Support%20Request"
+                className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <LifeBuoy className="h-4 w-4 shrink-0" />
+                <span>Contact Support</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <ThemeToggle />
           </SidebarMenuItem>
