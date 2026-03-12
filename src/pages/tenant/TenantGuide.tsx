@@ -47,7 +47,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Dashboard",
     bullets: [
       "The Dashboard provides a quick snapshot of your tenant's activity.",
-      "Quick Stats — See total leads, new leads, converted leads, and ZIP codes covered at a glance.",
+      "Quick Stats — See Total Players, Subscribers, New Leads, and ZIP Codes Covered at a glance.",
       "Recent Activity — View the latest lead activity and event updates.",
       "Quick Links — Jump directly to any tenant function from the dashboard cards.",
     ],
