@@ -9,7 +9,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Link } from "react-router-dom";
-import { Trophy, Medal, Swords, Crown, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star, Shield, Award } from "lucide-react";
+import { Trophy, Medal, Swords, Crown, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star, Shield, Award, Download, FileText } from "lucide-react";
+import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
 import { useLeaderboard, useLeaderboardFilterOptions, type LeaderboardPlayer } from "@/hooks/useLeaderboard";
 import { useSeasons, useSeasonalLeaderboard, type SeasonalPlayer } from "@/hooks/useSeasonalLeaderboard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
