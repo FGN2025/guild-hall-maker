@@ -23,7 +23,8 @@ import PageBackground from "@/components/PageBackground";
 
 const Tournaments = () => {
   usePageTitle("Tournaments");
-  const { user } = useAuth();
+  const { user, isAdmin, isModerator, isTenantStaff } = useAuth();
+  const canCreate = isAdmin || isModerator || isTenantStaff;
   const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("open");
