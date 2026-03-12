@@ -81,6 +81,8 @@ const TIME_OPTIONS = [
 
 const Leaderboard = () => {
   usePageTitle("Leaderboard");
+  const { isAdmin, isModerator } = useAuth();
+  const canExport = isAdmin || isModerator;
   const [tab, setTab] = useState("seasonal");
   const [game, setGame] = useState("all");
   const [tournamentId, setTournamentId] = useState("all");
