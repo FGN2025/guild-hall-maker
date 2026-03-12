@@ -1,28 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Allow Marketing Role to Access Events + Add "Request Moderator" Button
+## What was built
 
-### Changes Required
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-**1. Grant Marketing role access to Events sidebar item**
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-In `src/components/tenant/TenantSidebar.tsx` (line 44), add `'marketing'` to the Events sidebar item roles array — currently only `['admin', 'manager']`.
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-**2. Add "Request Moderator" button to each event card**
+---
 
-In `src/pages/tenant/TenantEvents.tsx`, add a button (e.g., with a `ShieldCheck` icon) labeled "Request Moderator" to each event card's action row. Clicking it opens a confirmation dialog, then invokes the `send-notification-email` edge function with a new type.
+# Delete & Ban Users — Completed
 
-**3. Extend the notification email edge function**
+## What was built
 
-In `supabase/functions/send-notification-email/index.ts`, add a new email type `moderator_request` that:
-- Sends to `support@fgn.gg`
-- Subject: "Moderator Request: [Event Name]"
-- Body includes: event name, date, tenant name, and the requestor's email so FGN support can respond
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-### Technical Details
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-- **Sidebar**: Change line 44 roles from `['admin', 'manager']` to `['admin', 'manager', 'marketing']`
-- **RLS**: The existing `is_tenant_marketing_member` DB function already grants access to admin + marketing roles, so if tenant_events RLS uses that function, marketing users can already read/write. If RLS uses `is_tenant_member` (any role), it already works. No DB migration needed.
-- **Edge function**: Add `"moderator_request"` to the Payload type union and add a handler that constructs an email to `support@fgn.gg` with event details and requestor email
-- **UI**: The request button calls `supabase.functions.invoke("send-notification-email", { body: { type: "moderator_request", ... } })` with the event name, tenant name, and user email. Shows a toast on success.
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called

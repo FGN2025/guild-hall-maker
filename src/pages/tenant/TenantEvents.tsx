@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 import { useTenantEvents, type TenantEvent } from "@/hooks/useTenantEvents";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Calendar, Users, Trash2, Eye, EyeOff, Pencil, ExternalLink, Megaphone, Zap } from "lucide-react";
+import { Plus, Calendar, Users, Trash2, Eye, EyeOff, Pencil, ExternalLink, Megaphone, Zap, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { buildTenantEventPromo, renderPromoToBlob } from "@/components/marketing/TenantPromoPickerDialog";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -28,6 +31,7 @@ const statusColors: Record<string, string> = {
 
 const TenantEvents = () => {
   const { tenantInfo } = useTenantAdmin();
+  const { user } = useAuth();
   const { events, isLoading, createEvent, updateEvent, deleteEvent } = useTenantEvents(tenantInfo?.tenantId);
   const { uploadAsset } = useTenantMarketingAssets();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,6 +39,8 @@ const TenantEvents = () => {
   const [promoEvent, setPromoEvent] = useState<TenantEvent | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [modRequestTarget, setModRequestTarget] = useState<TenantEvent | null>(null);
+  const [modRequesting, setModRequesting] = useState(false);
   const promoData = promoEvent ? buildTenantEventPromo(promoEvent, tenantInfo?.primaryColor) : null;
 
   const handleQuickCreate = async (event: TenantEvent) => {
@@ -48,6 +54,30 @@ const TenantEvents = () => {
       // toast is handled by the mutation
     } finally {
       setQuickCreating(null);
+    }
+  };
+
+  const handleModeratorRequest = async () => {
+    if (!modRequestTarget || !user?.email) return;
+    setModRequesting(true);
+    try {
+      const { error } = await supabase.functions.invoke("send-notification-email", {
+        body: {
+          type: "moderator_request",
+          event_name: modRequestTarget.name,
+          event_date: modRequestTarget.start_date,
+          tenant_name: tenantInfo?.tenantName ?? "Unknown",
+          user_email: user.email,
+        },
+      });
+      if (error) throw error;
+      toast.success("Moderator request sent to FGN support!");
+    } catch (err: any) {
+      toast.error("Failed to send request. Please try again.");
+      console.error(err);
+    } finally {
+      setModRequesting(false);
+      setModRequestTarget(null);
     }
   };
 
@@ -240,6 +270,9 @@ const TenantEvents = () => {
                   <Button size="sm" variant="outline" onClick={() => togglePublish(event)}>
                     {event.status === "published" ? <><EyeOff className="h-3.5 w-3.5 mr-1" /> Unpublish</> : <><Eye className="h-3.5 w-3.5 mr-1" /> Publish</>}
                   </Button>
+                  <Button size="sm" variant="outline" onClick={() => setModRequestTarget(event)}>
+                    <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Request Moderator
+                  </Button>
                   <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(event.id)}>
                     <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                   </Button>
@@ -271,6 +304,15 @@ const TenantEvents = () => {
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={() => { if (deleteTarget) deleteEvent.mutate(deleteTarget); setDeleteTarget(null); }}
+      />
+
+      <ConfirmDialog
+        open={!!modRequestTarget}
+        onOpenChange={(o) => { if (!o) setModRequestTarget(null); }}
+        title="Request Moderator"
+        description={`Send a moderator request to FGN support for "${modRequestTarget?.name ?? ""}"? Support will respond to ${user?.email ?? "your email"}.`}
+        confirmLabel={modRequesting ? "Sending…" : "Send Request"}
+        onConfirm={handleModeratorRequest}
       />
     </div>
   );
