@@ -1,40 +1,29 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Update Marketing Guide with Social Publishing & Scheduling Features
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+### What Changes
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+**1. Update the "Marketing Dashboard" section** (lines 494-511)
+Add bullets covering:
+- Social Accounts tab — connect Facebook, Instagram, Twitter/X, LinkedIn with API tokens
+- Format-aware publishing — the Asset Editor's Publish dropdown filters platforms by canvas format (Square → Instagram/Facebook/Twitter, Landscape → Facebook/Twitter/LinkedIn, Story → Instagram/Facebook)
+- Caption field — add post text when publishing or scheduling
+- Schedule for Later — pick a future date/time from the Asset Editor to queue a post
+- Scheduled Posts tab — calendar/list view of queued posts with status indicators (pending, published, failed), cancel and reschedule actions
+- Automated delivery — a backend job processes the queue every 5 minutes
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+**2. Update the "Media Library" / Asset Editor bullets** (lines 271-293)
+Add a bullet about the Publish dropdown and Schedule option in the Asset Editor footer, alongside Download and Save as New Asset.
 
----
+**3. Update the permissions table** (lines 568-609)
+Add rows for:
+- `Social Accounts (Connect/Manage)` — admin: ✅, marketing: ✅, manager: ❌
+- `Scheduled Posts (View/Manage)` — admin: ✅, marketing: ✅, manager: ❌
 
-# Delete & Ban Users — Completed
+**4. Add imports**
+Add `Share2` and `CalendarClock` icons (already imported as `CalendarDays` exists, need `Share2`).
 
-## What was built
+### Files Modified
+- `src/pages/admin/AdminGuide.tsx` — update sectionData bullets and permissionRows
 
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
-
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
-
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
-
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
