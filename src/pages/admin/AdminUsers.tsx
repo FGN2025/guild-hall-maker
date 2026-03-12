@@ -98,8 +98,8 @@ const AdminUsers = () => {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell colSpan={7} className="p-0">
-                      <TableSkeleton columns={7} rows={8} showAvatar />
+                    <TableCell colSpan={8} className="p-0">
+                      <TableSkeleton columns={8} rows={8} showAvatar />
                     </TableCell>
                   </TableRow>
                 </TableBody>
