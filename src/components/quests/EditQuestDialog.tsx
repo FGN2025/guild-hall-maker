@@ -109,9 +109,6 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
       setStoryOutro(quest.story_outro || "");
       setXpReward(quest.xp_reward ?? 0);
       setPointsFirst(quest.points_first ?? 10);
-      setPointsSecond(quest.points_second ?? 5);
-      setPointsThird(quest.points_third ?? 3);
-      setPointsParticipation(quest.points_participation ?? 2);
       setStartDate(quest.start_date ? quest.start_date.slice(0, 10) : "");
       setEndDate(quest.end_date ? quest.end_date.slice(0, 10) : "");
       setEstimatedMinutes(quest.estimated_minutes ?? "");
