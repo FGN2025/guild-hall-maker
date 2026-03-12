@@ -281,9 +281,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             onPrizePoolChange={setPrizePool}
             prizeId={prizeId}
             onPrizeIdChange={setPrizeId}
-            pointsFirst={parseInt(pointsFirst) || 10}
-            pointsSecond={parseInt(pointsSecond) || 5}
-            pointsThird={parseInt(pointsThird) || 3}
+            pointsFirst={0}
+            pointsSecond={0}
+            pointsThird={0}
             prizePctFirst={prizePctFirst}
             prizePctSecond={prizePctSecond}
             prizePctThird={prizePctThird}
