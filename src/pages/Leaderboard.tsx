@@ -254,15 +254,47 @@ const Leaderboard = () => {
               )}
             </div>
 
-            {/* Search */}
-            <div className="relative mb-8 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search players..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-sm bg-card/70 backdrop-blur-sm border-border"
-              />
+            {/* Search + Export */}
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-8">
+              <div className="relative max-w-sm w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search players..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 h-9 text-sm bg-card/70 backdrop-blur-sm border-border"
+                />
+              </div>
+              {canExport && filteredSeasonalPlayers.length > 0 && (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    const cols: ExportColumn[] = [
+                      { key: "rank", label: "Rank" },
+                      { key: "display_name", label: "Player" },
+                      { key: "tier", label: "Tier" },
+                      { key: "points", label: "Points" },
+                      { key: "wins", label: "Wins" },
+                      { key: "matches", label: "Matches" },
+                    ];
+                    exportTableCSV(filteredSeasonalPlayers.map(p => ({ ...p, matches: p.wins + p.losses })), cols, `seasonal_rankings_${selectedSeason?.name || "current"}.csv`);
+                  }}>
+                    <Download className="h-4 w-4 mr-1" /> CSV
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    const cols: ExportColumn[] = [
+                      { key: "rank", label: "Rank" },
+                      { key: "display_name", label: "Player" },
+                      { key: "tier", label: "Tier" },
+                      { key: "points", label: "Points" },
+                      { key: "wins", label: "Wins" },
+                      { key: "matches", label: "Matches" },
+                    ];
+                    exportTablePDF(filteredSeasonalPlayers.map(p => ({ ...p, matches: p.wins + p.losses })), cols, `Seasonal Rankings — ${selectedSeason?.name || "Current Season"}`);
+                  }}>
+                    <FileText className="h-4 w-4 mr-1" /> PDF
+                  </Button>
+                </div>
+              )}
             </div>
 
             {seasonalLoading ? (
