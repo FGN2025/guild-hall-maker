@@ -33,6 +33,8 @@ import {
   Bell,
   Megaphone,
   CalendarDays,
+  CalendarClock,
+  Share2,
   Moon,
   Scale,
   Activity,
