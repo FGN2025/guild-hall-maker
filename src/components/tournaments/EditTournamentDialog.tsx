@@ -86,9 +86,6 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
-  const [pointsFirst, setPointsFirst] = useState("10");
-  const [pointsSecond, setPointsSecond] = useState("5");
-  const [pointsThird, setPointsThird] = useState("3");
   const [pointsParticipation, setPointsParticipation] = useState("2");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
@@ -105,9 +102,6 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPrizeType(tournament.prize_type ?? "none");
       setPrizeId(tournament.prize_id ?? "");
       setRules(tournament.rules ?? "");
-      setPointsFirst(String(tournament.points_first ?? 10));
-      setPointsSecond(String(tournament.points_second ?? 5));
-      setPointsThird(String(tournament.points_third ?? 3));
       setPointsParticipation(String(tournament.points_participation ?? 2));
       setPrizePctFirst((tournament as any).prize_pct_first ?? 50);
       setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
@@ -179,9 +173,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       start_date: combinedDate.toISOString(),
       rules: rules.trim() || undefined,
       image_url,
-      points_first: parseInt(pointsFirst) || 10,
-      points_second: parseInt(pointsSecond) || 5,
-      points_third: parseInt(pointsThird) || 3,
+      points_first: 0,
+      points_second: 0,
+      points_third: 0,
       points_participation: parseInt(pointsParticipation) || 2,
       prize_pct_first: prizePctFirst,
       prize_pct_second: prizePctSecond,
@@ -287,9 +281,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             onPrizePoolChange={setPrizePool}
             prizeId={prizeId}
             onPrizeIdChange={setPrizeId}
-            pointsFirst={parseInt(pointsFirst) || 10}
-            pointsSecond={parseInt(pointsSecond) || 5}
-            pointsThird={parseInt(pointsThird) || 3}
+            pointsFirst={0}
+            pointsSecond={0}
+            pointsThird={0}
             prizePctFirst={prizePctFirst}
             prizePctSecond={prizePctSecond}
             prizePctThird={prizePctThird}
@@ -328,26 +322,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             />
           </div>
           <div className="space-y-2">
-            <Label className="font-heading text-sm">Season Points</Label>
-            <p className="text-xs text-muted-foreground">Points awarded based on final placement</p>
-            <div className="grid grid-cols-4 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">1st Place</Label>
-                <Input type="number" min={0} value={pointsFirst} onChange={(e) => setPointsFirst(e.target.value)} className="bg-card border-border font-body" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">2nd Place</Label>
-                <Input type="number" min={0} value={pointsSecond} onChange={(e) => setPointsSecond(e.target.value)} className="bg-card border-border font-body" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">3rd Place</Label>
-                <Input type="number" min={0} value={pointsThird} onChange={(e) => setPointsThird(e.target.value)} className="bg-card border-border font-body" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Participation</Label>
-                <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body" />
-              </div>
-            </div>
+            <Label className="font-heading text-sm">Participation Points</Label>
+            <p className="text-xs text-muted-foreground">Points awarded per match played</p>
+            <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body max-w-[120px]" />
           </div>
           <div className="space-y-2">
             <Label className="font-heading text-sm">Discord Role (on registration)</Label>
