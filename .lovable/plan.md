@@ -1,43 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Enhance Challenge Description AI with Richer Context
+## What was built
 
-### Problem
-1. The edge function only receives `name`, `description`, and `challenge_type` — missing game info, tasks, difficulty, cover image context
-2. The "Enhance with AI" button only exists on **CreateChallengeDialog** — missing from **EditChallengeDialog**
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Changes
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-#### 1. Update Edge Function (`supabase/functions/enhance-challenge-description/index.ts`)
-- Accept additional fields: `game_name`, `difficulty`, `estimated_minutes`, `tasks` (array of task titles), `cover_image_url`
-- Build a richer prompt that includes game context, difficulty level, task objectives, and image description cues
-- If `game_name` is provided, fetch the game's `guide_content` from the database for domain-specific language
-- Keep the system prompt gaming-focused but instruct the model to reference specific tasks and game mechanics
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-#### 2. Update CreateChallengeDialog
-- Pass additional context to the edge function call: `game_name` (resolved from `selectedGameId`), `difficulty`, `estimated_minutes`, `tasks` (mapped to titles), `cover_image_url` (from `imagePreview`)
+---
 
-#### 3. Add "Enhance with AI" to EditChallengeDialog
-- Import `Sparkles` icon, add `enhancing` state
-- Add the same enhance button below the Description textarea
-- Pass full context: `name`, `description`, `challenge_type`, `game_name` (from `gameId` + games list), `difficulty`, `estimated_minutes`, `tasks` (from `localTasks` titles), `cover_image_url`
+# Delete & Ban Users — Completed
 
-### Edge Function Prompt Enhancement
+## What was built
 
-The user prompt will be structured as:
-```
-Challenge: "{name}"
-Type: {challenge_type} | Difficulty: {difficulty} | Est. {estimated_minutes} min
-Game: {game_name}
-Tasks: 1) {task1} 2) {task2} ...
-Game Guide Context: {guide_content excerpt}
-{draft description or "generate from scratch"}
-```
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-The system prompt will instruct the AI to craft a description that references the specific tasks/objectives and incorporates game-specific terminology from the guide content.
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-### Files Modified
-- `supabase/functions/enhance-challenge-description/index.ts` — richer prompt with game lookup
-- `src/components/challenges/CreateChallengeDialog.tsx` — pass more context fields
-- `src/components/challenges/EditChallengeDialog.tsx` — add Enhance with AI button + logic
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called

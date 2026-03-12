@@ -136,8 +136,19 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
   const enhanceDescription = async () => {
     setEnhancing(true);
     try {
+      const gameName = selectedGameId ? games.find((g: any) => g.id === selectedGameId)?.name : undefined;
+      const taskTitles = form.tasks.map(t => t.title).filter(Boolean);
       const { data, error } = await supabase.functions.invoke('enhance-challenge-description', {
-        body: { name: form.name, description: form.description, challenge_type: form.challenge_type },
+        body: {
+          name: form.name,
+          description: form.description,
+          challenge_type: form.challenge_type,
+          game_name: gameName,
+          difficulty: form.difficulty,
+          estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : undefined,
+          tasks: taskTitles.length > 0 ? taskTitles : undefined,
+          cover_image_url: imagePreview || undefined,
+        },
       });
       if (error) throw error;
       if (data?.enhanced_description) {
