@@ -7,6 +7,8 @@ export interface AdminUser {
   user_id: string;
   display_name: string | null;
   gamer_tag: string | null;
+  discord_id: string | null;
+  discord_username: string | null;
   avatar_url: string | null;
   created_at: string;
   role: string | null;
