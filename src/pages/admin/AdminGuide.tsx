@@ -232,6 +232,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "The public Leaderboard (/leaderboard) displays all-time and seasonal rankings.",
       "Sort Options — Sort by points, wins, or win rate. Filter by time period (7/30/90 days), game, or tournament.",
+      "Export Rankings — Admins and Moderators can export the current leaderboard view (Seasonal or All-Time) as CSV or PDF using the export buttons beside the search filter.",
       "Player Profiles — Click any player to view their full profile with stats grid, skills radar, match history, game breakdown, rank progression chart, and achievements.",
       "Skills Report — Each player profile includes a Skills Overview Radar showing Win Rate, Score Margin, Consistency, Experience, and per-genre mastery benchmarked against the top 10%.",
       "Player Comparison — The /compare page lets any two players be compared side-by-side with a dual-overlay skills radar chart, per-game breakdown table, season stats, and head-to-head match history.",
