@@ -1,40 +1,22 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Simplify Tournament Season Points to Participation Only
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+Both the **Edit Tournament** and **Create Tournament** dialogs currently show a 4-column grid for season points (1st, 2nd, 3rd, Participation). Per the existing tournament system design where points are awarded per match (both winners and losers get participation points), only the single "Participation Points" field is needed.
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+### Changes
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+**1. `src/components/tournaments/EditTournamentDialog.tsx`**
+- Remove `pointsFirst`, `pointsSecond`, `pointsThird` state variables (lines 89-91)
+- Remove their hydration in `useEffect` (lines 108-110)
+- Remove them from the `onUpdate` payload (lines 182-184)
+- Replace the 4-column "Season Points" grid (lines 330-351) with a single "Participation Points" input bound to `pointsParticipation`
+- Send `points_first: 0, points_second: 0, points_third: 0` as hardcoded values in the update payload so they're zeroed out
 
----
+**2. `src/components/tournaments/CreateTournamentDialog.tsx`**
+- Same pattern: remove `pointsFirst`, `pointsSecond`, `pointsThird` state and form fields
+- Replace the 4-column grid (lines 316-336) with a single "Participation Points" input
+- Hardcode `points_first: 0, points_second: 0, points_third: 0` in the insert payload
 
-# Delete & Ban Users — Completed
+No database changes needed — the columns remain but will be set to 0 for tournaments.
 
-## What was built
-
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
-
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
-
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
-
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
