@@ -511,6 +511,12 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Web Pages — Build multi-section promotional landing pages using 7 block types: Hero, Text Block (Markdown), Image Gallery, CTA, Embed Widget, Banner, and Video.",
       "Page Hosting — Published pages are accessible at /pages/:tenantSlug/:pageSlug and automatically apply tenant branding (logo and accent colors).",
       "HTML Export — Export any web page as a standalone, self-contained HTML file with inline CSS and embedded media for hosting on external websites.",
+      "Social Accounts Tab — Connect Facebook, Instagram, Twitter/X, and LinkedIn accounts by providing API access tokens. Credentials are stored securely and used for direct publishing.",
+      "Format-Aware Publishing — The Asset Editor's Publish dropdown automatically filters connected accounts by canvas format: Square → Instagram/Facebook/Twitter/LinkedIn, Landscape → Facebook/Twitter/LinkedIn, Portrait → Instagram/Facebook, Story → Instagram/Facebook.",
+      "Caption Field — Add post text via a caption textarea that appears when social accounts are connected. Captions are included with both immediate publishes and scheduled posts.",
+      "Schedule for Later — Pick a future date and time from the Asset Editor to queue a post. Scheduled posts are stored in the queue and processed automatically.",
+      "Scheduled Posts Tab — View all queued, published, and failed posts in a calendar/list view. Click any post to see details, reschedule to a new date, or cancel pending posts.",
+      "Automated Delivery — A backend job processes the scheduled posts queue every 5 minutes, publishing content to the appropriate social platform and updating status (published or failed with error details).",
     ],
   },
   {
