@@ -28,6 +28,7 @@ import {
   BookOpen,
   Megaphone,
   KeyRound,
+  LifeBuoy,
 } from "lucide-react";
 import {
   Sidebar,
