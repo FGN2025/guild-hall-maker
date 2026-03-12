@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface Payload {
-  type: "redemption_update" | "new_challenge" | "new_quest" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed" | "access_request_approved" | "access_request_new";
+  type: "redemption_update" | "new_challenge" | "new_quest" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed" | "access_request_approved" | "access_request_new" | "moderator_request";
   record?: Record<string, unknown>;
   old_record?: Record<string, unknown>;
   target_email?: string;
