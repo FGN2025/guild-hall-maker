@@ -31,6 +31,7 @@ const statusColors: Record<string, string> = {
 
 const TenantEvents = () => {
   const { tenantInfo } = useTenantAdmin();
+  const { user } = useAuth();
   const { events, isLoading, createEvent, updateEvent, deleteEvent } = useTenantEvents(tenantInfo?.tenantId);
   const { uploadAsset } = useTenantMarketingAssets();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -38,6 +39,8 @@ const TenantEvents = () => {
   const [promoEvent, setPromoEvent] = useState<TenantEvent | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [modRequestTarget, setModRequestTarget] = useState<TenantEvent | null>(null);
+  const [modRequesting, setModRequesting] = useState(false);
   const promoData = promoEvent ? buildTenantEventPromo(promoEvent, tenantInfo?.primaryColor) : null;
 
   const handleQuickCreate = async (event: TenantEvent) => {
