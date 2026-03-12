@@ -1,40 +1,35 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Replace Multi-Tier Points with Single "Quest Points" Field
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+Quests currently share the same 4-tier points structure as Challenges/Tournaments (1st, 2nd, 3rd, Other). Since quests are non-competitive (everyone who completes earns the same reward), this should be simplified to a single "Quest Points" value.
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+### Approach
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+Use the existing `points_first` column as the single quest points value (renamed in the UI only — no DB migration needed). Remove references to `points_second`, `points_third`, and `points_participation` from quest-specific UI only. Challenges and Tournaments keep their 4-tier structure unchanged.
 
----
+### Files to Modify
 
-# Delete & Ban Users — Completed
+**1. `src/components/quests/EditQuestDialog.tsx`**
+- Remove `pointsSecond`, `pointsThird`, `pointsParticipation` state variables
+- Remove them from the `useEffect` hydration and the `update` mutation payload
+- Replace the 4-column points grid with a single "Quest Points" input bound to `pointsFirst`
 
-## What was built
+**2. `src/components/quests/CreateQuestDialog.tsx`**
+- Remove `points_second`, `points_third`, `points_participation` from `defaultForm`
+- Stop sending them in the insert mutation (or send 0)
+- Replace the 4-column points grid with a single "Quest Points" input
 
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
+**3. `src/components/quests/AdminQuestsPanel.tsx`**
+- Change the card stat from "1st Pts" → "Quest Pts"
+- Change the detail panel stat from "1st Place Pts" → "Quest Pts"
+- Remove the 4-column "Points Breakdown" grid in the detail panel; show single value instead
 
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+**4. `src/components/quests/QuestCard.tsx`**
+- Label already shows `+{q.points_first} pts` — no change needed (already correct)
 
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
+**5. `src/pages/QuestDetail.tsx`**
+- Label already shows `+{q.points_first}` as "Points" — no change needed
 
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
+No database migration required. The `points_first` column stores the quest points value; the other columns simply won't be used for quests going forward.
+
