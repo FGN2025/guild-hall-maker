@@ -47,7 +47,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Dashboard",
     bullets: [
       "The Dashboard provides a quick snapshot of your tenant's activity.",
-      "Quick Stats — See total leads, new leads, converted leads, and ZIP codes covered at a glance.",
+      "Quick Stats — See Total Players, Subscribers, New Leads, and ZIP Codes Covered at a glance.",
       "Recent Activity — View the latest lead activity and event updates.",
       "Quick Links — Jump directly to any tenant function from the dashboard cards.",
     ],
@@ -84,7 +84,12 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Events",
     bullets: [
       "Navigate to Events to create and manage tenant-specific tournaments and events.",
-      "Creating — Set name, game, format, date/time, max participants, description, rules, prize pool, and hero image.",
+      "Creating — Set name, game, format, date/time, max participants, description, rules, prize configuration, participation points, and hero image from the Media Library.",
+      "Multi-Date Scheduling — Create multiple event instances from a single dialog using the multi-date calendar picker with time pickers. Each date generates a separate event.",
+      "Prize Modes — Choose between 'None', 'Physical Prize' (linked to a Prize Shop item), or 'Value' (configurable percentage split for top finishers, default 50/30/20).",
+      "Participation Points — Configure points awarded to all participants regardless of placement.",
+      "Discord Role Assignment — Optionally assign a specific Discord role to players upon event registration.",
+      "Request Moderator — Admins and Marketing staff can request a platform moderator for an event, which sends an automated email to support with event details.",
       "Hero Images — Upload or select a hero image to make your event visually appealing on public pages.",
       "Status Flow — Events move through: Draft → Published → In Progress → Completed (or Cancelled).",
       "Public Pages — Published events appear on your public event page at /events/your-tenant-slug, accessible without login.",

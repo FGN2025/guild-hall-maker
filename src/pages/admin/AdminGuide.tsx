@@ -142,7 +142,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Tenant Portal",
     bullets: [
       "Access the Tenant Dashboard from the main sidebar (visible to Tenant Admins and Managers).",
-      "Dashboard — Overview of leads, subscribers, and key metrics at a glance.",
+      "Dashboard — Overview with stats grid showing Total Players, Subscribers, New Leads, and ZIP Codes Covered at a glance.",
       "Leads — View and manage user service interests. Update lead status (new → contacted → converted).",
       "ZIP Codes (Admin only) — Add or remove ZIP codes defining the tenant's service area.",
       "Subscribers (Admin only) — View/manage subscriber records with search and pagination (25 per page).",
@@ -232,6 +232,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "The public Leaderboard (/leaderboard) displays all-time and seasonal rankings.",
       "Sort Options — Sort by points, wins, or win rate. Filter by time period (7/30/90 days), game, or tournament.",
+      "Export Rankings — Admins and Moderators can export the current leaderboard view (Seasonal or All-Time) as CSV or PDF using the export buttons beside the search filter.",
       "Player Profiles — Click any player to view their full profile with stats grid, skills radar, match history, game breakdown, rank progression chart, and achievements.",
       "Skills Report — Each player profile includes a Skills Overview Radar showing Win Rate, Score Margin, Consistency, Experience, and per-genre mastery benchmarked against the top 10%.",
       "Player Comparison — The /compare page lets any two players be compared side-by-side with a dual-overlay skills radar chart, per-game breakdown table, season stats, and head-to-head match history.",
@@ -525,7 +526,12 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Tenant Events",
     bullets: [
       "Tenants can create and manage their own events from the Tenant → Events section.",
-      "Event Creation — Set name, game, format, dates, max participants, description, rules, prize pool, and a hero image.",
+      "Event Creation — Set name, game, format, dates, max participants, description, rules, prize configuration, participation points, and a hero image selected from the Media Library.",
+      "Multi-Date Scheduling — Create multiple event instances from a single dialog using the multi-date calendar picker with time pickers. Each date generates a separate event with an auto-appended date suffix.",
+      "Prize Modes — Choose between 'None', 'Physical Prize' (linked to a Prize Shop item), or 'Value' (configurable percentage split for top finishers, default 50/30/20, must sum to 100%).",
+      "Participation Points — Configure points awarded to all participants regardless of placement.",
+      "Discord Role Assignment — Optionally assign a specific Discord role to players upon event registration.",
+      "Request Moderator — Tenant Admins and Marketing staff can request a platform moderator for their event. This sends an automated email to support@fgn.gg with event details and the requester's contact information.",
       "Public Events — Toggle events as public to make them visible on a shareable public page at /events/:tenantSlug.",
       "Registration — Players can register for public tenant events directly from the public event page.",
       "Event Assets — Upload supporting images and files to events for promotional use.",
