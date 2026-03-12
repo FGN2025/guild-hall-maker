@@ -503,7 +503,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                 {[
                   ...(showEnrollmentCounts ? [{ icon: Users, label: "Enrolled", value: detailQuest.enrollments_count }] : []),
                   { icon: Clock, label: "Est. Time", value: detailQuest.estimated_minutes ? `${detailQuest.estimated_minutes} min` : "—" },
-                  { icon: Star, label: "1st Place Pts", value: detailQuest.points_first },
+                  { icon: Star, label: "Quest Pts", value: detailQuest.points_first },
                   { icon: Shield, label: "Evidence Req.", value: detailQuest.requires_evidence ? "Yes" : "No" },
                   ...(detailQuest.start_date ? [{ icon: Calendar, label: "Start", value: format(new Date(detailQuest.start_date), "MMM d, yyyy") }] : []),
                   ...(detailQuest.end_date ? [{ icon: Calendar, label: "End", value: format(new Date(detailQuest.end_date), "MMM d, yyyy") }] : []),
