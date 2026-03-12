@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Calendar, Users, Trash2, Eye, EyeOff, Pencil, ExternalLink, Megaphone, Zap } from "lucide-react";
+import { Plus, Calendar, Users, Trash2, Eye, EyeOff, Pencil, ExternalLink, Megaphone, Zap, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";

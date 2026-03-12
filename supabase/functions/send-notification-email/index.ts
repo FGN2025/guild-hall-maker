@@ -245,6 +245,29 @@ Deno.serve(async (req) => {
           }
         }
       }
+    } else if (type === "moderator_request") {
+      const eventName = (payload as any).event_name as string ?? "an event";
+      const eventDate = (payload as any).event_date as string ?? "TBD";
+      const tenantName = (payload as any).tenant_name as string ?? "a tenant";
+      const userEmail = (payload as any).user_email as string ?? "unknown";
+
+      emails.push({
+        to: "support@fgn.gg",
+        subject: `🎮 Moderator Request: ${eventName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+            <h1 style="color: #00f0ff;">Moderator Request</h1>
+            <p>A tenant has requested a moderator for one of their events:</p>
+            <ul>
+              <li><strong>Event:</strong> ${eventName}</li>
+              <li><strong>Date:</strong> ${eventDate}</li>
+              <li><strong>Tenant:</strong> ${tenantName}</li>
+              <li><strong>Requested By:</strong> ${userEmail}</li>
+            </ul>
+            <p>Please reply to <a href="mailto:${userEmail}" style="color: #00f0ff;">${userEmail}</a> to coordinate.</p>
+            <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+          </div>`,
+      });
     } else if (type === "access_request_new") {
       // Notify all admins about new access request
       const { data: adminRoles } = await supabase

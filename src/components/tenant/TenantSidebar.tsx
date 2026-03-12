@@ -41,7 +41,7 @@ const allSidebarItems = [
   { to: "/tenant", label: "Dashboard", icon: LayoutDashboard, roles: ['admin', 'manager'] },
   { to: "/tenant/players", label: "Players", icon: Users, roles: ['admin', 'manager'] },
   { to: "/tenant/leads", label: "Leads", icon: Users, roles: ['admin', 'manager'] },
-  { to: "/tenant/events", label: "Events", icon: Calendar, roles: ['admin', 'manager'] },
+  { to: "/tenant/events", label: "Events", icon: Calendar, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin, roles: ['admin', 'manager'] },
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin', 'manager'] },
   { to: "/tenant/subscribers?tab=integrations", label: "Integrations", icon: Plug, roles: ['admin', 'manager'] },
