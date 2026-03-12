@@ -86,9 +86,6 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
-  const [pointsFirst, setPointsFirst] = useState("10");
-  const [pointsSecond, setPointsSecond] = useState("5");
-  const [pointsThird, setPointsThird] = useState("3");
   const [pointsParticipation, setPointsParticipation] = useState("2");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
