@@ -57,6 +57,30 @@ const TenantEvents = () => {
     }
   };
 
+  const handleModeratorRequest = async () => {
+    if (!modRequestTarget || !user?.email) return;
+    setModRequesting(true);
+    try {
+      const { error } = await supabase.functions.invoke("send-notification-email", {
+        body: {
+          type: "moderator_request",
+          event_name: modRequestTarget.name,
+          event_date: modRequestTarget.start_date,
+          tenant_name: tenantInfo?.tenantName ?? "Unknown",
+          user_email: user.email,
+        },
+      });
+      if (error) throw error;
+      toast.success("Moderator request sent to FGN support!");
+    } catch (err: any) {
+      toast.error("Failed to send request. Please try again.");
+      console.error(err);
+    } finally {
+      setModRequesting(false);
+      setModRequestTarget(null);
+    }
+  };
+
   const [form, setForm] = useState({
     name: "",
     game: "",
