@@ -23,7 +23,7 @@ interface CreateQuestDialogProps {
 const defaultForm = {
   name: "", description: "", challenge_type: "one_time",
   start_date: "", end_date: "",
-  points_first: "10", points_second: "5", points_third: "3", points_participation: "2",
+  points_first: "10",
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
   cover_image_url: "",
   story_intro: "", story_outro: "", xp_reward: "0",
