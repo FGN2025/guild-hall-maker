@@ -436,7 +436,7 @@ const AdminChallenges = () => {
                       <div className="bg-muted rounded-lg p-2">
                         <Star className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
                         <p className="font-heading text-xs font-semibold text-foreground">{c.points_first}</p>
-                        <p className="text-[10px] text-muted-foreground">1st Pts</p>
+                        <p className="text-[10px] text-muted-foreground">Pts</p>
                       </div>
                       <div className="bg-muted rounded-lg p-2">
                         <Clock className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
@@ -627,7 +627,7 @@ const AdminChallenges = () => {
                 {[
                   { icon: Users, label: "Enrolled", value: detailChallenge.enrollments_count },
                   { icon: Clock, label: "Est. Time", value: detailChallenge.estimated_minutes ? `${detailChallenge.estimated_minutes} min` : "—" },
-                  { icon: Star, label: "1st Place Pts", value: detailChallenge.points_first },
+                  { icon: Star, label: "Points", value: detailChallenge.points_first },
                   { icon: Shield, label: "Evidence Req.", value: detailChallenge.requires_evidence ? "Yes" : "No" },
                   ...(detailChallenge.start_date ? [{ icon: Calendar, label: "Start", value: format(new Date(detailChallenge.start_date), "MMM d, yyyy") }] : []),
                   ...(detailChallenge.end_date ? [{ icon: Calendar, label: "End", value: format(new Date(detailChallenge.end_date), "MMM d, yyyy") }] : []),
@@ -640,22 +640,6 @@ const AdminChallenges = () => {
                     <p className="font-heading text-sm font-semibold text-foreground">{info.value}</p>
                   </div>
                 ))}
-              </div>
-              <div className="bg-muted rounded-lg p-4">
-                <span className="font-heading text-sm text-foreground">Points Breakdown</span>
-                <div className="grid grid-cols-4 gap-2 mt-2 text-center">
-                  {[
-                    { label: "1st", value: detailChallenge.points_first },
-                    { label: "2nd", value: detailChallenge.points_second },
-                    { label: "3rd", value: detailChallenge.points_third },
-                    { label: "Others", value: detailChallenge.points_participation },
-                  ].map((p) => (
-                    <div key={p.label}>
-                      <p className="font-heading text-lg font-bold text-primary">{p.value}</p>
-                      <p className="text-[10px] text-muted-foreground">{p.label}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
               <div className="flex items-center justify-between bg-muted rounded-lg p-3">
                 <Label className="text-sm">Active Status</Label>

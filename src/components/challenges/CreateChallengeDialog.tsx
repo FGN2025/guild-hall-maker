@@ -23,7 +23,7 @@ interface CreateChallengeDialogProps {
 const defaultForm = {
   name: "", description: "", challenge_type: "one_time",
   start_date: "", end_date: "",
-  points_first: "10", points_second: "5", points_third: "3", points_participation: "2",
+  points: "10",
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
   cover_image_url: "",
   tasks: [] as { title: string; description: string }[],
@@ -88,15 +88,15 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
       const { data: challenge, error } = await supabase.from("challenges").insert({
         name: form.name,
         description: form.description || null,
-        points_reward: parseInt(form.points_first) || 10,
+        points_reward: parseInt(form.points) || 10,
         challenge_type: form.challenge_type,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         created_by: user.id,
-        points_first: parseInt(form.points_first) || 10,
-        points_second: parseInt(form.points_second) || 5,
-        points_third: parseInt(form.points_third) || 3,
-        points_participation: parseInt(form.points_participation) || 2,
+        points_first: parseInt(form.points) || 10,
+        points_second: 0,
+        points_third: 0,
+        points_participation: 0,
         difficulty: form.difficulty,
         estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : null,
         requires_evidence: form.requires_evidence,
@@ -249,20 +249,8 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
           </div>
 
           <div className="space-y-2">
-            <Label>Season Points</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { key: "points_first", label: "1st" },
-                { key: "points_second", label: "2nd" },
-                { key: "points_third", label: "3rd" },
-                { key: "points_participation", label: "Others" },
-              ].map(({ key, label }) => (
-                <div key={key} className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">{label}</Label>
-                  <Input type="number" min={0} value={(form as any)[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
-                </div>
-              ))}
-            </div>
+            <Label>Points</Label>
+            <Input type="number" min={0} value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} placeholder="10" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
