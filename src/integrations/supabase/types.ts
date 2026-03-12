@@ -2479,6 +2479,7 @@ export type Database = {
           created_at: string
           created_by: string
           description: string | null
+          discord_role_id: string | null
           end_date: string | null
           format: string
           game: string
@@ -2487,7 +2488,13 @@ export type Database = {
           is_public: boolean
           max_participants: number
           name: string
+          points_participation: number | null
+          prize_id: string | null
+          prize_pct_first: number | null
+          prize_pct_second: number | null
+          prize_pct_third: number | null
           prize_pool: string | null
+          prize_type: string | null
           registration_open: boolean
           rules: string | null
           social_copy: string | null
@@ -2500,6 +2507,7 @@ export type Database = {
           created_at?: string
           created_by: string
           description?: string | null
+          discord_role_id?: string | null
           end_date?: string | null
           format?: string
           game?: string
@@ -2508,7 +2516,13 @@ export type Database = {
           is_public?: boolean
           max_participants?: number
           name: string
+          points_participation?: number | null
+          prize_id?: string | null
+          prize_pct_first?: number | null
+          prize_pct_second?: number | null
+          prize_pct_third?: number | null
           prize_pool?: string | null
+          prize_type?: string | null
           registration_open?: boolean
           rules?: string | null
           social_copy?: string | null
@@ -2521,6 +2535,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           description?: string | null
+          discord_role_id?: string | null
           end_date?: string | null
           format?: string
           game?: string
@@ -2529,7 +2544,13 @@ export type Database = {
           is_public?: boolean
           max_participants?: number
           name?: string
+          points_participation?: number | null
+          prize_id?: string | null
+          prize_pct_first?: number | null
+          prize_pct_second?: number | null
+          prize_pct_third?: number | null
           prize_pool?: string | null
+          prize_type?: string | null
           registration_open?: boolean
           rules?: string | null
           social_copy?: string | null

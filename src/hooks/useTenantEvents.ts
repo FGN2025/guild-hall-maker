@@ -13,6 +13,13 @@ export interface TenantEvent {
   format: string;
   max_participants: number;
   prize_pool: string | null;
+  prize_type: string;
+  prize_id: string | null;
+  points_participation: number;
+  discord_role_id: string | null;
+  prize_pct_first: number;
+  prize_pct_second: number;
+  prize_pct_third: number;
   start_date: string;
   end_date: string | null;
   rules: string | null;
