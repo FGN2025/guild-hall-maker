@@ -598,6 +598,8 @@ const permissionRows = [
   { feature: "Marketing Campaigns", admin: true, marketing: true, manager: false },
   { feature: "Marketing → Web Pages", admin: true, marketing: true, manager: false },
   { feature: "Marketing → Calendar Embeds", admin: true, marketing: true, manager: false },
+  { feature: "Social Accounts (Connect/Manage)", admin: true, marketing: true, manager: false },
+  { feature: "Scheduled Posts (View/Manage)", admin: true, marketing: true, manager: false },
   { feature: "Legal Pages (view)", admin: true, marketing: true, manager: true },
   { feature: "Challenges & Quests", admin: true, marketing: false, manager: true },
   { feature: "Quest Chains (Manage)", admin: true, marketing: false, manager: true },
