@@ -17,15 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTournaments } from "@/hooks/useTournaments";
 import TournamentCard from "@/components/tournaments/TournamentCard";
-import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 
 const Tournaments = () => {
   usePageTitle("Tournaments");
-  const { user, isAdmin, isModerator, isTenantStaff } = useAuth();
-  const canCreate = isAdmin || isModerator || isTenantStaff;
-  const { tournaments, isLoading, register, unregister, createTournament, isRegistering, isCreating } = useTournaments();
+  const { user } = useAuth();
+  const { tournaments, isLoading, register, unregister, isRegistering } = useTournaments();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("open");
   const [sortBy, setSortBy] = useState("date_asc");
@@ -90,15 +88,13 @@ const Tournaments = () => {
             <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Browse & Register</p>
             <h1 className="font-display text-4xl font-bold text-foreground">Tournaments</h1>
           </div>
-          {canCreate ? (
-            <CreateTournamentDialog onCreate={createTournament} isCreating={isCreating} />
-          ) : !user ? (
+          {!user && (
             <Link to="/auth">
               <Button className="font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90">
                 Sign In to Register
               </Button>
             </Link>
-          ) : null}
+          )}
         </div>
 
         {/* Search / Filter bar */}
