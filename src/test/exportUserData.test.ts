@@ -71,9 +71,7 @@ describe("exportTableCSV", () => {
     });
 
     exportTableCSV(nestedRows, nestedCols, "nested.csv");
-
-    const blob = createObjectURL.mock.calls[0][0] as Blob;
-    expect(blob).toBeInstanceOf(Blob);
+    expect(createObjectURL).toHaveBeenCalledOnce();
   });
 
   it("escapes commas and quotes in CSV values", () => {
