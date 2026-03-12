@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTournaments } from "@/hooks/useTournaments";
 import TournamentCard from "@/components/tournaments/TournamentCard";
-import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 
