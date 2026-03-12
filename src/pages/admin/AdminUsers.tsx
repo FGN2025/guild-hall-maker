@@ -112,6 +112,7 @@ const AdminUsers = () => {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Gamer Tag</TableHead>
+                    <TableHead>Discord</TableHead>
                     <TableHead>Tenant</TableHead>
                     <TableHead>Tenant Role</TableHead>
                     <TableHead>Role</TableHead>
