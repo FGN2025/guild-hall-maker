@@ -335,7 +335,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                       <div className="bg-muted rounded-lg p-2">
                         <Star className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
                         <p className="font-heading text-xs font-semibold text-foreground">{q.points_first}</p>
-                        <p className="text-[10px] text-muted-foreground">1st Pts</p>
+                        <p className="text-[10px] text-muted-foreground">Quest Pts</p>
                       </div>
                       <div className="bg-muted rounded-lg p-2">
                         <Clock className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
