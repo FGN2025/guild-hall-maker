@@ -7,6 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Download, FileText } from "lucide-react";
+import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
 
 const statusOptions = [
   { value: "new", label: "New" },
