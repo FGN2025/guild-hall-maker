@@ -4,7 +4,7 @@ import { useTenantAchievements } from "@/hooks/useTenantAchievements";
 import TenantAchievementsCard from "@/components/tenant/TenantAchievementsCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, MapPin, Clock, UserCheck, ArrowRight } from "lucide-react";
+import { Users, MapPin, Clock, UserCheck, ArrowRight, Contact } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const TenantDashboard = () => {
