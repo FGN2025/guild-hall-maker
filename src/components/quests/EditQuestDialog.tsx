@@ -38,9 +38,6 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
   const [storyOutro, setStoryOutro] = useState("");
   const [xpReward, setXpReward] = useState(0);
   const [pointsFirst, setPointsFirst] = useState(10);
-  const [pointsSecond, setPointsSecond] = useState(5);
-  const [pointsThird, setPointsThird] = useState(3);
-  const [pointsParticipation, setPointsParticipation] = useState(2);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [estimatedMinutes, setEstimatedMinutes] = useState<number | "">("");
@@ -112,9 +109,6 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
       setStoryOutro(quest.story_outro || "");
       setXpReward(quest.xp_reward ?? 0);
       setPointsFirst(quest.points_first ?? 10);
-      setPointsSecond(quest.points_second ?? 5);
-      setPointsThird(quest.points_third ?? 3);
-      setPointsParticipation(quest.points_participation ?? 2);
       setStartDate(quest.start_date ? quest.start_date.slice(0, 10) : "");
       setEndDate(quest.end_date ? quest.end_date.slice(0, 10) : "");
       setEstimatedMinutes(quest.estimated_minutes ?? "");
@@ -171,9 +165,9 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
         story_outro: storyOutro || null,
         xp_reward: xpReward,
         points_first: pointsFirst,
-        points_second: pointsSecond,
-        points_third: pointsThird,
-        points_participation: pointsParticipation,
+        points_second: 0,
+        points_third: 0,
+        points_participation: 0,
         start_date: startDate || null,
         end_date: endDate || null,
         estimated_minutes: estimatedMinutes || null,
@@ -247,23 +241,10 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               <Input type="number" value={estimatedMinutes} onChange={(e) => setEstimatedMinutes(e.target.value ? Number(e.target.value) : "")} />
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            <div>
-              <Label className="text-xs">1st Pts</Label>
-              <Input type="number" value={pointsFirst} onChange={(e) => setPointsFirst(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label className="text-xs">2nd Pts</Label>
-              <Input type="number" value={pointsSecond} onChange={(e) => setPointsSecond(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label className="text-xs">3rd Pts</Label>
-              <Input type="number" value={pointsThird} onChange={(e) => setPointsThird(Number(e.target.value))} />
-            </div>
-            <div>
-              <Label className="text-xs">Other Pts</Label>
-              <Input type="number" value={pointsParticipation} onChange={(e) => setPointsParticipation(Number(e.target.value))} />
-            </div>
+          <div>
+            <Label>Quest Points</Label>
+            <Input type="number" value={pointsFirst} onChange={(e) => setPointsFirst(Number(e.target.value))} />
+            <p className="text-xs text-muted-foreground mt-1">Season points awarded on completion</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

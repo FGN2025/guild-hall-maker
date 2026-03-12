@@ -335,7 +335,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                       <div className="bg-muted rounded-lg p-2">
                         <Star className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
                         <p className="font-heading text-xs font-semibold text-foreground">{q.points_first}</p>
-                        <p className="text-[10px] text-muted-foreground">1st Pts</p>
+                        <p className="text-[10px] text-muted-foreground">Quest Pts</p>
                       </div>
                       <div className="bg-muted rounded-lg p-2">
                         <Clock className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
@@ -503,7 +503,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                 {[
                   ...(showEnrollmentCounts ? [{ icon: Users, label: "Enrolled", value: detailQuest.enrollments_count }] : []),
                   { icon: Clock, label: "Est. Time", value: detailQuest.estimated_minutes ? `${detailQuest.estimated_minutes} min` : "—" },
-                  { icon: Star, label: "1st Place Pts", value: detailQuest.points_first },
+                  { icon: Star, label: "Quest Pts", value: detailQuest.points_first },
                   { icon: Shield, label: "Evidence Req.", value: detailQuest.requires_evidence ? "Yes" : "No" },
                   ...(detailQuest.start_date ? [{ icon: Calendar, label: "Start", value: format(new Date(detailQuest.start_date), "MMM d, yyyy") }] : []),
                   ...(detailQuest.end_date ? [{ icon: Calendar, label: "End", value: format(new Date(detailQuest.end_date), "MMM d, yyyy") }] : []),
@@ -518,21 +518,9 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                 ))}
               </div>
 
-              <div className="bg-muted rounded-lg p-4">
-                <span className="font-heading text-sm text-foreground">Points Breakdown</span>
-                <div className="grid grid-cols-4 gap-2 mt-2 text-center">
-                  {[
-                    { label: "1st", value: detailQuest.points_first },
-                    { label: "2nd", value: detailQuest.points_second },
-                    { label: "3rd", value: detailQuest.points_third },
-                    { label: "Others", value: detailQuest.points_participation },
-                  ].map((p) => (
-                    <div key={p.label}>
-                      <p className="font-heading text-lg font-bold text-primary">{p.value}</p>
-                      <p className="text-[10px] text-muted-foreground">{p.label}</p>
-                    </div>
-                  ))}
-                </div>
+              <div className="bg-muted rounded-lg p-4 flex items-center justify-between">
+                <span className="font-heading text-sm text-foreground">Quest Points</span>
+                <p className="font-heading text-lg font-bold text-primary">{detailQuest.points_first}</p>
               </div>
 
               <div className="flex items-center justify-between bg-muted rounded-lg p-3">
