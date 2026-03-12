@@ -1,40 +1,69 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Test Plan: Points Wallet Credit on Approval
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+### Summary of Current Point-Awarding Flows
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+| Feature | Approval triggers points? | Inserts completion record? | Sends notification? |
+|---------|--------------------------|---------------------------|---------------------|
+| **Tournaments** (match score) | Yes — `award-season-points` called with `points_participation` for both winner and loser | N/A (match-based) | Email via `send-tournament-email` |
+| **Challenges** (Admin) | Yes — `award-season-points` called with `points_reward` | Yes — `challenge_completions` | Yes — `notifications` insert |
+| **Challenges** (Moderator) | Yes — identical logic | Yes | Yes |
+| **Quests** (Admin/Moderator) | **NO — BUG** | **NO** | **NO** |
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+### Critical Bug Found
+
+**`src/components/quests/AdminQuestsPanel.tsx` line 127-133**: When a quest enrollment status is changed to "completed", the mutation **only** updates the enrollment status. It does **not**:
+1. Insert a `quest_completions` record
+2. Call `award-season-points` to credit the player's wallet
+3. Insert a notification to inform the player
+
+This means quest approvals currently award zero points and leave no audit trail. The challenge approval flow (in both `AdminChallenges.tsx` and `ModeratorChallenges.tsx`) correctly handles all three steps — the quest flow needs the same treatment.
 
 ---
 
-# Delete & Ban Users — Completed
+### Manual Test Plan
 
-## What was built
+#### Pre-requisites
+- An active season exists (global or game-specific)
+- Test player account with known `season_scores` balance
+- Admin/Moderator account for approvals
 
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
+#### Test 1: Tournament Match Points
+1. Create a tournament, register 2+ players, generate bracket
+2. Submit a match score (e.g., Player A wins 3-1 over Player B)
+3. **Verify**: Both players' `season_scores.points` and `season_scores.points_available` increase by `points_participation` value
+4. **Verify**: Winner's `wins` incremented; loser's record unchanged (participation points go to both)
 
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+#### Test 2: Challenge Approval Points
+1. Create a challenge with `points_reward = 25`
+2. Player enrolls, uploads evidence, submits for review
+3. Admin/Moderator sets enrollment status to "completed"
+4. **Verify**: `challenge_completions` row created with `awarded_points = 25`
+5. **Verify**: Player's `season_scores.points` and `points_available` increase by 25
+6. **Verify**: Player receives in-app notification
 
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
+#### Test 3: Quest Approval Points (WILL FAIL — bug)
+1. Create a quest with `points_reward = 15`
+2. Player enrolls, uploads evidence, submits for review
+3. Admin/Moderator sets enrollment status to "completed"
+4. **Verify**: `quest_completions` row should be created — **currently missing**
+5. **Verify**: Player's `season_scores` should increase by 15 — **currently not happening**
+6. **Verify**: Player should receive notification — **currently not sent**
 
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
+#### Test 4: Moderator Match Points (standalone)
+1. From Moderator > Matches, select a tournament match and submit a winner
+2. **Verify**: `award-season-points` is called (default 10 winner / 2 loser points used here — note this path uses defaults, not tournament-configured participation points)
+
+---
+
+### Recommended Fix
+
+Add the same completion/points/notification logic from `AdminChallenges.tsx` (lines 140-181) into `AdminQuestsPanel.tsx`'s `updateStatusMutation`, keyed on `status === "completed"`:
+1. Fetch the quest's `points_reward` and game name
+2. Insert into `quest_completions`
+3. Insert notification
+4. Call `award-season-points` with `points_reward`
+
+This is a single-file change to `src/components/quests/AdminQuestsPanel.tsx`.
+
