@@ -300,9 +300,37 @@ const AdminUsers = () => {
             </Card>
           </div>
 
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search username, email, provider..." value={legacySearch} onChange={(e) => setLegacySearch(e.target.value)} className="pl-9 bg-card border-border" />
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search username, email, provider..." value={legacySearch} onChange={(e) => setLegacySearch(e.target.value)} className="pl-9 bg-card border-border" />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                const cols: ExportColumn[] = [
+                  { key: "legacy_username", label: "Username" },
+                  { key: "email", label: "Email" },
+                  { key: "provider_name", label: "Provider" },
+                  { key: "status", label: "Status" },
+                  { key: "legacy_created_at", label: "Created" },
+                ];
+                exportTableCSV(legacyUsers.map(u => ({ ...u, legacy_created_at: u.legacy_created_at ? new Date(u.legacy_created_at).toLocaleDateString() : "" })), cols, "legacy_users.csv");
+              }}>
+                <Download className="h-4 w-4 mr-1" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const cols: ExportColumn[] = [
+                  { key: "legacy_username", label: "Username" },
+                  { key: "email", label: "Email" },
+                  { key: "provider_name", label: "Provider" },
+                  { key: "status", label: "Status" },
+                  { key: "legacy_created_at", label: "Created" },
+                ];
+                exportTablePDF(legacyUsers.map(u => ({ ...u, legacy_created_at: u.legacy_created_at ? new Date(u.legacy_created_at).toLocaleDateString() : "" })), cols, "Legacy Users");
+              }}>
+                <FileText className="h-4 w-4 mr-1" /> PDF
+              </Button>
+            </div>
           </div>
 
           {legacyLoading ? (
