@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,7 @@ const statusColor: Record<string, string> = {
 const ALL_STATUSES = ["all", "open", "upcoming", "in_progress", "completed", "cancelled"];
 
 const AdminTournaments = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -110,6 +113,21 @@ const AdminTournaments = () => {
     }
   };
 
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("tournaments")
+        .insert({ ...data, created_by: user.id, status: "open" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Tournament created!");
+      queryClient.invalidateQueries({ queryKey: ["admin-tournaments"] });
+    },
+    onError: () => toast.error("Failed to create tournament"),
+  });
+
   return (
     <div>
       {/* Header */}
@@ -119,6 +137,7 @@ const AdminTournaments = () => {
           Tournament Oversight
         </h1>
         <div className="flex items-center gap-2">
+          <CreateTournamentDialog onCreate={createMutation.mutate} isCreating={createMutation.isPending} />
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
             size="icon"
