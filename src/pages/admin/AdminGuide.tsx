@@ -526,7 +526,12 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Tenant Events",
     bullets: [
       "Tenants can create and manage their own events from the Tenant → Events section.",
-      "Event Creation — Set name, game, format, dates, max participants, description, rules, prize pool, and a hero image.",
+      "Event Creation — Set name, game, format, dates, max participants, description, rules, prize configuration, participation points, and a hero image selected from the Media Library.",
+      "Multi-Date Scheduling — Create multiple event instances from a single dialog using the multi-date calendar picker with time pickers. Each date generates a separate event with an auto-appended date suffix.",
+      "Prize Modes — Choose between 'None', 'Physical Prize' (linked to a Prize Shop item), or 'Value' (configurable percentage split for top finishers, default 50/30/20, must sum to 100%).",
+      "Participation Points — Configure points awarded to all participants regardless of placement.",
+      "Discord Role Assignment — Optionally assign a specific Discord role to players upon event registration.",
+      "Request Moderator — Tenant Admins and Marketing staff can request a platform moderator for their event. This sends an automated email to support@fgn.gg with event details and the requester's contact information.",
       "Public Events — Toggle events as public to make them visible on a shareable public page at /events/:tenantSlug.",
       "Registration — Players can register for public tenant events directly from the public event page.",
       "Event Assets — Upload supporting images and files to events for promotional use.",
