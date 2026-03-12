@@ -27,6 +27,8 @@ import {
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 import TableSkeleton from "@/components/ui/table-skeleton";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const staggerStyle = (idx: number): CSSProperties => ({
   animationDelay: `${idx * 50}ms`,
