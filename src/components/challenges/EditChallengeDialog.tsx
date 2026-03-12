@@ -247,7 +247,39 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
           </div>
           <div>
             <Label>Description</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} disabled={enhancing} />
+            <Button
+              type="button" variant="outline" size="sm" className="gap-1.5 mt-1"
+              disabled={enhancing || !name.trim()}
+              onClick={async () => {
+                setEnhancing(true);
+                try {
+                  const gameName = gameId ? games.find((g: any) => g.id === gameId)?.name : undefined;
+                  const taskTitles = visibleTasks.map(t => t.title).filter(Boolean);
+                  const { data, error } = await supabase.functions.invoke('enhance-challenge-description', {
+                    body: {
+                      name,
+                      description,
+                      challenge_type: challengeType,
+                      game_name: gameName,
+                      difficulty,
+                      estimated_minutes: estimatedMinutes || undefined,
+                      tasks: taskTitles.length > 0 ? taskTitles : undefined,
+                      cover_image_url: imagePreview || undefined,
+                    },
+                  });
+                  if (error) throw error;
+                  if (data?.enhanced_description) {
+                    setDescription(data.enhanced_description);
+                    toast.success("Description enhanced!");
+                  }
+                } catch (e: any) { toast.error(e.message || "Failed"); }
+                finally { setEnhancing(false); }
+              }}
+            >
+              {enhancing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {enhancing ? "Enhancing..." : "Enhance with AI"}
+            </Button>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
