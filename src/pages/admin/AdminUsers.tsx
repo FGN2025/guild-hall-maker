@@ -88,6 +88,7 @@ const AdminUsers = () => {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Gamer Tag</TableHead>
+                    <TableHead>Discord</TableHead>
                     <TableHead>Tenant</TableHead>
                     <TableHead>Tenant Role</TableHead>
                     <TableHead>Role</TableHead>
@@ -97,8 +98,8 @@ const AdminUsers = () => {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell colSpan={7} className="p-0">
-                      <TableSkeleton columns={7} rows={8} showAvatar />
+                    <TableCell colSpan={8} className="p-0">
+                      <TableSkeleton columns={8} rows={8} showAvatar />
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -111,6 +112,7 @@ const AdminUsers = () => {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Gamer Tag</TableHead>
+                    <TableHead>Discord</TableHead>
                     <TableHead>Tenant</TableHead>
                     <TableHead>Tenant Role</TableHead>
                     <TableHead>Role</TableHead>
@@ -147,6 +149,16 @@ const AdminUsers = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{u.gamer_tag ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {u.discord_id ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help">{u.discord_username || u.discord_id}</span>
+                            </TooltipTrigger>
+                            <TooltipContent>ID: {u.discord_id}</TooltipContent>
+                          </Tooltip>
+                        ) : "—"}
+                      </TableCell>
                       <TableCell className="text-muted-foreground text-sm">{u.tenant_name ?? "—"}</TableCell>
                       <TableCell>{tenantRoleBadge(u.tenant_role)}</TableCell>
                       <TableCell>{roleBadge(u.role)}</TableCell>
