@@ -126,10 +126,86 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ enrollmentId, status }: { enrollmentId: string; status: string }) => {
+      // 1. Get enrollment details
+      const { data: enrollment, error: enrollErr } = await supabase
+        .from("quest_enrollments")
+        .select("user_id, quest_id")
+        .eq("id", enrollmentId)
+        .single();
+      if (enrollErr) throw enrollErr;
+
+      // 2. Update status
       const { error } = await supabase.from("quest_enrollments")
         .update({ status, updated_at: new Date().toISOString() })
         .eq("id", enrollmentId);
       if (error) throw error;
+
+      // 3. If completing, award points + record completion + notify
+      if (status === "completed" && enrollment && user) {
+        const { data: quest } = await supabase
+          .from("quests")
+          .select("name, points_first, xp_reward, game_id, games(name)")
+          .eq("id", enrollment.quest_id)
+          .single();
+
+        const points = (quest as any)?.points_first ?? 0;
+        const xpReward = (quest as any)?.xp_reward ?? 0;
+        const questName = (quest as any)?.name ?? "Quest";
+
+        // Record completion
+        await supabase.from("quest_completions").insert({
+          user_id: enrollment.user_id,
+          quest_id: enrollment.quest_id,
+          awarded_points: points,
+          verified_by: user.id,
+        });
+
+        // Notify the player
+        await supabase.from("notifications").insert({
+          user_id: enrollment.user_id,
+          title: "Quest Approved!",
+          message: `Your submission for "${questName}" has been approved! You earned ${points} points${xpReward > 0 ? ` and ${xpReward} XP` : ""}.`,
+          type: "quest",
+          link: `/quests/${enrollment.quest_id}`,
+        });
+
+        // Credit season score
+        if (points > 0) {
+          await supabase.functions.invoke("award-season-points", {
+            body: {
+              winner_id: enrollment.user_id,
+              points_winner: points,
+              game: (quest as any)?.games?.name,
+            },
+          });
+        }
+
+        // Credit quest XP
+        if (xpReward > 0) {
+          const { data: existing } = await supabase
+            .from("player_quest_xp")
+            .select("id, total_xp")
+            .eq("user_id", enrollment.user_id)
+            .maybeSingle();
+
+          if (existing) {
+            const newXp = existing.total_xp + xpReward;
+            const newRank = newXp >= 1000 ? "master" : newXp >= 600 ? "expert" : newXp >= 300 ? "journeyman" : newXp >= 100 ? "apprentice" : "novice";
+            await supabase.from("player_quest_xp").update({
+              total_xp: newXp,
+              quest_rank: newRank,
+              updated_at: new Date().toISOString(),
+            }).eq("id", existing.id);
+          } else {
+            const newRank = xpReward >= 1000 ? "master" : xpReward >= 600 ? "expert" : xpReward >= 300 ? "journeyman" : xpReward >= 100 ? "apprentice" : "novice";
+            await supabase.from("player_quest_xp").insert({
+              user_id: enrollment.user_id,
+              total_xp: xpReward,
+              quest_rank: newRank,
+            });
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`${queryKeyPrefix}-quest-review-enrollments`] });
