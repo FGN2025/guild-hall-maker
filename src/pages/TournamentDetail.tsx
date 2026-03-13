@@ -81,6 +81,7 @@ const TournamentDetail = () => {
   const isFull = t.registrations_count >= t.max_participants;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const isCreator = user?.id === t.created_by;
+  const canManage = isAdmin || isModerator || isCreator;
   const coverUrl = t.image_url || t.game_cover_url;
 
   return (
