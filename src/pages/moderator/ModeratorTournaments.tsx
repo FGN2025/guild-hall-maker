@@ -411,13 +411,14 @@ const ModeratorTournaments = () => {
                   >
                     <Trash2 className="h-4 w-4 mr-2" /> Delete Tournament
                   </Button>
-                )}
-                </Button>
               </div>
             </div>
           </DialogContent>
         )}
       </Dialog>
+
+      {/* ───── PROMO EDITOR ───── */}
+      <EventPromoEditorDialog promoData={promoData} onClose={() => setPromoData(null)} />
 
       {/* ───── DELETE CONFIRMATION ───── */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
