@@ -1,40 +1,33 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Answers & Plan
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+### When Do Story Intros and Outros Appear?
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+Currently in `QuestDetail.tsx`:
+- **Story Intro** (line 167): Shown to **all visitors** immediately below the hero image, as long as `story_intro` has content — no enrollment required.
+- **Story Outro** (line 264): Shown **only after the player completes the quest** (`enrollment.status === "completed"`). It acts as a reward/epilogue unlocked upon completion.
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+This is the intended design — the intro hooks the player before they enroll, and the outro is a narrative payoff for finishing.
 
----
+### Plan: Improve Enhance Button Prompt Quality
 
-# Delete & Ban Users — Completed
+The current `enhance-quest-narrative` edge function prompt is decent but generic. It should be upgraded to produce richer, more storyteller-quality output that researches the game world.
 
-## What was built
+**File: `supabase/functions/enhance-quest-narrative/index.ts`**
 
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
+Update the system prompt and field instructions to:
+- Adopt a **master storyteller persona** — write as if narrating an epic tale, not a community announcement
+- Instruct the model to **research and reference the game's world, lore, characters, and locations** using its training knowledge plus any RAG context
+- Produce **3-5 sentences** (slightly longer than current 2-4) that are exciting and intriguing
+- For **intros**: create mystery, stakes, and a call to adventure that makes players feel like protagonists
+- For **outros**: deliver a satisfying climax celebrating the achievement with lore-appropriate grandeur
+- Include the quest's **tasks** in the prompt so the narrative can reference specific objectives
 
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+Also pass `tasks` (array of task titles) from the calling code in `EditQuestDialog` and `CreateQuestDialog` if available, to give the AI more material.
 
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
+**Files to update:**
+1. `supabase/functions/enhance-quest-narrative/index.ts` — richer prompts, accept `tasks` array
+2. `src/components/quests/EditQuestDialog.tsx` — pass task titles to the enhance call
+3. `src/components/quests/CreateQuestDialog.tsx` — pass task titles to the enhance call (if tasks exist at creation time)
 
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
