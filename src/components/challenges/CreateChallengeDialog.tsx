@@ -42,6 +42,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [achievementId, setAchievementId] = useState("");
 
   const { data: games = [] } = useQuery({
     queryKey: ["create-challenge-games"],
