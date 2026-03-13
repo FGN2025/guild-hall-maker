@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Gamepad2, Lock, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
