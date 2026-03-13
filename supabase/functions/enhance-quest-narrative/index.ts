@@ -18,7 +18,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { name, description, game_name, difficulty, challenge_type, field, draft, game_id } = await req.json();
+    const { name, description, game_name, difficulty, challenge_type, field, draft, game_id, tasks } = await req.json();
 
     if (!name) return json({ error: "Quest name is required" }, 400);
     if (!field || !["intro", "outro"].includes(field)) return json({ error: "field must be 'intro' or 'outro'" }, 400);
