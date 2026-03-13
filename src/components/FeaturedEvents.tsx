@@ -57,6 +57,7 @@ const FeaturedEvents = () => {
           stat2Value: t.prize_pool || "—",
           stat2Icon: Trophy,
           link: `/tournaments/${t.id}`,
+          imageUrl: t.image_url || undefined,
         });
       });
 
