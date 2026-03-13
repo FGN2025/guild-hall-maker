@@ -63,6 +63,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
   const [editQuest, setEditQuest] = useState<any | null>(null);
   const [reviewQuestId, setReviewQuestId] = useState<string | null>(null);
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   const { data: quests = [], isLoading } = useQuery({
     queryKey: [`${queryKeyPrefix}-quests`],
