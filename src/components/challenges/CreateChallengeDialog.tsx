@@ -104,6 +104,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         requires_evidence: form.requires_evidence,
         cover_image_url: coverUrl,
         game_id: selectedGameId || null,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
       } as any).select().single();
       if (error) throw error;
 
