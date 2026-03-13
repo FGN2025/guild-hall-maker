@@ -1,34 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Add All Pages to Page Appearance Manager
+## What was built
 
-### Problem
-The Page Appearance admin panel only shows the 6 pages that were manually seeded into the `managed_pages` database table. However, 17 pages in the app now use `<PageBackground>`, meaning 11 pages have no appearance controls.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Solution
-Create a database migration to insert the missing 11 pages into `managed_pages`. Use `INSERT ... ON CONFLICT DO NOTHING` so existing rows are preserved.
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-### Missing Pages to Add
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-| Slug | Label | Hero | Background |
-|------|-------|------|------------|
-| `challenges` | Challenges | yes | yes |
-| `games` | Games | no | yes |
-| `game-detail` | Game Detail | no | yes |
-| `player-profile` | Player Profile | no | yes |
-| `compare` | Player Comparison | no | yes |
-| `calendar` | Tournament Calendar | no | yes |
-| `profile` | Profile Settings | no | yes |
-| `guide` | Player Guide | no | yes |
-| `ladders` | Ladders | no | yes |
-| `prize-shop` | Prize Shop | no | yes |
-| `quests` | Quests | no | yes |
+---
 
-### Changes
+# Delete & Ban Users — Completed
 
-| What | Detail |
-|------|--------|
-| **Database migration** | `INSERT INTO managed_pages` for all 11 missing slugs with appropriate `supports_hero` / `supports_background` flags and sequential `display_order` values starting after existing rows |
+## What was built
 
-Single migration, no code file changes needed.
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
+
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called

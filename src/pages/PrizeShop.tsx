@@ -172,7 +172,7 @@ const PrizeShop = () => {
                   const canAfford = availablePoints >= prize.points_cost;
                   const outOfStock = prize.quantity_available !== null && prize.quantity_available <= 0;
                   return (
-                    <Card key={prize.id} className={`transition-colors ${canAfford && !outOfStock ? "hover:border-primary/40" : "opacity-60"}`}>
+                    <Card key={prize.id} className={`transition-colors glow-card ${canAfford && !outOfStock ? "hover:border-primary/40" : "opacity-60"}`}>
                       <CardContent className="p-5 flex flex-col h-full">
                         {prize.image_url && (
                           <div className="aspect-video rounded-md overflow-hidden mb-4 bg-muted">
