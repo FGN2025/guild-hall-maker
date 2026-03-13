@@ -1,40 +1,72 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Plan: Transform "Featured Tournaments" into "Featured Events" (Tournaments + Challenges + Quests)
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+### Database Changes
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+Add `is_featured` boolean column to `challenges` and `quests` tables (tournaments already has it).
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+```sql
+ALTER TABLE public.challenges ADD COLUMN is_featured boolean NOT NULL DEFAULT false;
+ALTER TABLE public.quests ADD COLUMN is_featured boolean NOT NULL DEFAULT false;
+```
 
----
+No RLS changes needed — existing policies already cover read/write for these tables.
 
-# Delete & Ban Users — Completed
+### UI Changes
 
-## What was built
+#### 1. `src/components/FeaturedTournaments.tsx` → Rename to `src/components/FeaturedEvents.tsx`
+- Rename component to `FeaturedEvents`
+- Change heading from "Featured Tournaments" to "Featured Events"
+- Change subtitle from "Compete Now" to "Don't Miss Out"
+- Query all three tables for `is_featured = true` (no limit)
+- Normalize each type into a unified card shape with a `type` field (tournament/challenge/quest)
+- Cards link to appropriate detail pages (`/tournaments/:id`, `/challenges/:id`, `/quests/:id`)
+- Add a type badge (Tournament/Challenge/Quest) on each card
+- Remove the `.limit(3)` — show all featured items
+- Replace "View all" link with `/tournaments` → something more generic or remove
 
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
+#### 2. `src/pages/Index.tsx`
+- Replace `FeaturedTournaments` import with `FeaturedEvents`
 
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+#### 3. Admin toggle buttons — add Star/Feature toggle to:
+- **`src/pages/admin/AdminTournaments.tsx`** — already has `is_featured` in DB, just add Star toggle button in grid/list views
+- **`src/pages/admin/AdminChallenges.tsx`** — add Star toggle button (new `is_featured` column)
+- **`src/components/quests/AdminQuestsPanel.tsx`** — add Star toggle button (new `is_featured` column)
+- Same toggles in moderator pages: `ModeratorTournaments.tsx`, `ModeratorChallenges.tsx`
 
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
+Each toggle mutation:
+```typescript
+const toggleFeatured = useMutation({
+  mutationFn: async ({ id, current }: { id: string; current: boolean }) => {
+    const { error } = await supabase
+      .from("tournaments") // or "challenges" / "quests"
+      .update({ is_featured: !current })
+      .eq("id", id);
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-tournaments"] });
+    toast.success("Featured status updated");
+  },
+});
+```
 
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
+### Card Design for Featured Events
+
+Each card shows:
+- Type badge (Tournament / Challenge / Quest) with distinct colors
+- Name + game
+- Status badge
+- Bottom stat row: Date + Players/Difficulty + Prize/Points (adapted per type)
+
+### Files Modified
+1. **Migration** — add `is_featured` to `challenges` and `quests`
+2. `src/components/FeaturedTournaments.tsx` → rewrite as `src/components/FeaturedEvents.tsx`
+3. `src/pages/Index.tsx` — update import
+4. `src/pages/admin/AdminTournaments.tsx` — add Star toggle
+5. `src/pages/admin/AdminChallenges.tsx` — add Star toggle
+6. `src/components/quests/AdminQuestsPanel.tsx` — add Star toggle
+7. `src/pages/moderator/ModeratorTournaments.tsx` — add Star toggle
+8. `src/pages/moderator/ModeratorChallenges.tsx` — add Star toggle
+
