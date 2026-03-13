@@ -171,34 +171,47 @@ const FeaturedEvents = () => {
                 <Link
                   key={`${e.type}-${e.id}`}
                   to={e.link}
-                  className="rounded-xl border border-border bg-card p-6 glow-card flex flex-col hover:border-primary/40 transition-colors"
+                  className="rounded-xl border border-border bg-card overflow-hidden glow-card flex flex-col hover:border-primary/40 transition-colors"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge
-                      variant="outline"
-                      className={typeBadgeStyle[e.type]}
-                    >
-                      <TypeIcon className="h-3 w-3 mr-1" />
-                      {e.type.charAt(0).toUpperCase() + e.type.slice(1)}
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      {e.status}
-                    </Badge>
+                  {/* Hero Image */}
+                  <div className="relative h-36 bg-muted overflow-hidden">
+                    {e.imageUrl ? (
+                      <img src={e.imageUrl} alt={e.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                        <span className="font-display text-lg text-foreground/60 uppercase tracking-widest">{e.game || e.type}</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                      <Badge
+                        variant="outline"
+                        className={typeBadgeStyle[e.type]}
+                      >
+                        <TypeIcon className="h-3 w-3 mr-1" />
+                        {e.type.charAt(0).toUpperCase() + e.type.slice(1)}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {e.status}
+                      </Badge>
+                    </div>
                   </div>
 
-                  <h3 className="font-heading text-xl font-semibold text-foreground mb-1 line-clamp-1">{e.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-6">{e.game || "General"}</p>
+                  <div className="p-6 flex flex-col flex-1">
+                    <h3 className="font-heading text-xl font-semibold text-foreground mb-1 line-clamp-1">{e.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-6">{e.game || "General"}</p>
 
-                  <div className="mt-auto grid grid-cols-2 gap-3 text-center">
-                    <div className="bg-muted rounded-lg p-3">
-                      <e.stat1Icon className="h-4 w-4 text-primary mx-auto mb-1" />
-                      <p className="font-heading text-sm font-semibold text-foreground">{e.stat1Value}</p>
-                      <p className="text-[10px] text-muted-foreground">{e.stat1Label}</p>
-                    </div>
-                    <div className="bg-muted rounded-lg p-3">
-                      <e.stat2Icon className="h-4 w-4 text-primary mx-auto mb-1" />
-                      <p className="font-heading text-sm font-semibold text-foreground">{e.stat2Value}</p>
-                      <p className="text-[10px] text-muted-foreground">{e.stat2Label}</p>
+                    <div className="mt-auto grid grid-cols-2 gap-3 text-center">
+                      <div className="bg-muted rounded-lg p-3">
+                        <e.stat1Icon className="h-4 w-4 text-primary mx-auto mb-1" />
+                        <p className="font-heading text-sm font-semibold text-foreground">{e.stat1Value}</p>
+                        <p className="text-[10px] text-muted-foreground">{e.stat1Label}</p>
+                      </div>
+                      <div className="bg-muted rounded-lg p-3">
+                        <e.stat2Icon className="h-4 w-4 text-primary mx-auto mb-1" />
+                        <p className="font-heading text-sm font-semibold text-foreground">{e.stat2Value}</p>
+                        <p className="text-[10px] text-muted-foreground">{e.stat2Label}</p>
+                      </div>
                     </div>
                   </div>
                 </Link>
