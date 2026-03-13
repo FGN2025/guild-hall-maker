@@ -44,7 +44,7 @@ const FeaturedVideo = () => {
 
   return (
     <section className="py-16">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-6 md:px-10 lg:px-16">
         <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">
           Watch Now
         </p>

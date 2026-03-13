@@ -37,7 +37,7 @@ const HeroSection = () => {
       {/* Grid overlay */}
       <div className="absolute inset-0 grid-bg opacity-20 z-[2]" />
 
-      <div className="relative z-10 container mx-auto px-4 text-center">
+      <div className="relative z-10 container mx-auto px-6 md:px-10 lg:px-16 text-center">
         <div className="animate-slide-up">
           {/* Hero Logo */}
           <img
