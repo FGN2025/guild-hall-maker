@@ -176,6 +176,7 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
         story_intro: form.story_intro || null,
         story_outro: form.story_outro || null,
         xp_reward: parseInt(form.xp_reward) || 0,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
       } as any).select().single();
       if (error) throw error;
 
