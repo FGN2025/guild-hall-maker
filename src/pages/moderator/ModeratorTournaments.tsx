@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Trophy, Trash2, LayoutGrid, List, Search, Calendar, Users, GitBranch, Settings,
-  Gamepad2, FileText, Plus, Eye, Megaphone, Pencil,
+  Gamepad2, FileText, Plus, Eye, Megaphone, Pencil, Star,
 } from "lucide-react";
 import { EventPromoEditorDialog, buildTournamentPromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
