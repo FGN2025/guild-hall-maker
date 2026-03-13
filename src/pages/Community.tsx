@@ -30,14 +30,14 @@ const Community = () => {
   const announcements = topics?.filter((t) => t.category === "Announcement").length ?? 0;
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <>
       <PageBackground pageSlug="community" />
-      <div className="py-8 container mx-auto px-4 relative z-10">
+      <div className="space-y-6 relative z-10">
         <PageHero pageSlug="community" />
-        <div className="mb-10 flex items-end justify-between">
+        <div className="flex items-end justify-between">
           <div>
-            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Connect & Discuss</p>
-            <h1 className="font-display text-4xl font-bold text-foreground">Community</h1>
+            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Connect & Discuss</p>
+            <h1 className="font-display text-4xl font-bold text-foreground page-heading">Community</h1>
           </div>
           {user && <CreateTopicDialog />}
         </div>

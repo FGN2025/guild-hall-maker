@@ -22,13 +22,13 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background grid-bg relative">
+    <>
       <PageBackground pageSlug="dashboard" />
-      <div className="py-8 container mx-auto px-4 relative z-10">
+      <div className="space-y-6 relative z-10">
         <PageHero pageSlug="dashboard" />
-        <div className="mb-10">
-          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Welcome Back</p>
-          <h1 className="font-display text-4xl font-bold text-foreground">Player Dashboard</h1>
+        <div>
+          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Welcome Back</p>
+          <h1 className="font-display text-4xl font-bold text-foreground page-heading">Player Dashboard</h1>
         </div>
 
         {isLoading ? (
