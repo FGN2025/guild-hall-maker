@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, Trophy, Gamepad2, FileText, GitBranch, Settings, ExternalLink } from "lucide-react";
 import { Tournament } from "@/hooks/useTournaments";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
