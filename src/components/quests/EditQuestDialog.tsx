@@ -50,6 +50,39 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
+  const [enhancingDesc, setEnhancingDesc] = useState(false);
+
+  const enhanceDescription = async () => {
+    if (!name.trim()) { toast.error("Enter a quest name first"); return; }
+    setEnhancingDesc(true);
+    try {
+      const gameName = games.find((g: any) => g.id === gameId)?.name || "";
+      let taskTitles: string[] = [];
+      if (quest?.id) {
+        const { data: taskData } = await supabase.from("quest_tasks").select("title").eq("quest_id", quest.id).order("display_order");
+        taskTitles = (taskData || []).map((t: any) => t.title).filter(Boolean);
+      }
+      const { data, error } = await supabase.functions.invoke("enhance-challenge-description", {
+        body: {
+          name, description, challenge_type: challengeType,
+          game_name: gameName, difficulty,
+          estimated_minutes: estimatedMinutes || null,
+          tasks: taskTitles,
+          cover_image_url: coverImageUrl || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.enhanced_description) {
+        setDescription(data.enhanced_description);
+        toast.success("Description enhanced");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to enhance description");
+    } finally {
+      setEnhancingDesc(false);
+    }
+  };
 
   const enhanceNarrative = async (field: "intro" | "outro") => {
     if (!name.trim()) { toast.error("Enter a quest name first"); return; }
