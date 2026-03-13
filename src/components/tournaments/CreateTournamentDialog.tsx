@@ -319,6 +319,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             <p className="text-xs text-muted-foreground">Points awarded per match played</p>
             <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body max-w-[120px]" />
           </div>
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Discord Role (on registration)</Label>
             <Select value={discordRoleId} onValueChange={setDiscordRoleId}>

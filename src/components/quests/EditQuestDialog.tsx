@@ -371,6 +371,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               <Textarea value={storyOutro} onChange={(e) => setStoryOutro(e.target.value)} rows={2} placeholder="Narrative shown on completion..." />
             </div>
           </div>
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div>
             <Label>Max Enrollments</Label>
             <Input type="number" value={maxEnrollments} onChange={(e) => setMaxEnrollments(e.target.value ? Number(e.target.value) : "")} placeholder="Unlimited" />

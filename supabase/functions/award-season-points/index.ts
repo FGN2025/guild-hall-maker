@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { winner_id, loser_id, points_winner, points_loser, game } = await req.json();
+    const { winner_id, loser_id, points_winner, points_loser, game, achievement_id } = await req.json();
     if (!winner_id) throw new Error("winner_id required");
 
     // Use provided points or fall back to defaults
@@ -125,6 +125,25 @@ Deno.serve(async (req) => {
           points: loserPoints,
           points_available: loserPoints,
           losses: 1,
+        });
+      }
+    }
+
+    // Auto-award linked achievement if provided
+    if (achievement_id && winner_id) {
+      // Check if already awarded to avoid duplicates
+      const { data: existing } = await supabase
+        .from("player_achievements")
+        .select("id")
+        .eq("user_id", winner_id)
+        .eq("achievement_id", achievement_id)
+        .maybeSingle();
+
+      if (!existing) {
+        await supabase.from("player_achievements").insert({
+          user_id: winner_id,
+          achievement_id,
+          notes: "Auto-awarded on completion",
         });
       }
     }

@@ -258,6 +258,8 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
             />
           </div>
 
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
+
           <div className="flex items-center gap-3">
             <Switch checked={form.requires_evidence} onCheckedChange={(v) => setForm({ ...form, requires_evidence: v })} />
             <Label>Requires evidence upload</Label>
