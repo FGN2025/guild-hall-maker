@@ -1,40 +1,22 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Plan: Add "Enhance with AI" Button to Quest Description Fields
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+### Problem
+Quest dialogs have the Enhance button for Story Intro/Outro but not for the Description field. Challenges have this — quests should match.
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+### Changes
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+#### 1. `src/components/quests/EditQuestDialog.tsx`
+- Replace the plain Description `<div>` (lines 206-209) with a version that includes an "Enhance with AI" button below the textarea
+- Reuse the existing `enhance-challenge-description` edge function (same one challenges use), passing quest context: `name`, `description`, `challenge_type`, `game_name`, `difficulty`, `estimated_minutes`, `tasks` (fetched from DB), `cover_image_url`
+- Add an `enhancingDesc` state to track loading independently from the narrative enhance states
+- Disable textarea while enhancing
 
----
+#### 2. `src/components/quests/CreateQuestDialog.tsx`
+- Add the same "Enhance with AI" button below the Description textarea (after line 210)
+- Pass context from form state: `name`, `description`, `challenge_type`, `game_name` (resolved from `selectedGameId`), `difficulty`, `estimated_minutes`, `tasks` (from `form.tasks`), `cover_image_url` (from `imagePreview`)
+- Add `enhancingDesc` state
 
-# Delete & Ban Users — Completed
+Both will invoke `enhance-challenge-description` (not `enhance-quest-narrative`) since that function is already designed for description enhancement with full context support.
 
-## What was built
-
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
-
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
-
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
-
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
