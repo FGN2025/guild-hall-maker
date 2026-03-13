@@ -419,7 +419,7 @@ const ModeratorTournaments = () => {
       </Dialog>
 
       {/* ───── PROMO EDITOR ───── */}
-      <EventPromoEditorDialog promoData={promoData} onClose={() => setPromoData(null)} />
+      <EventPromoEditorDialog open={!!promoData} onOpenChange={(open) => !open && setPromoData(null)} imageUrl={promoData?.imageUrl ?? ""} initialTexts={promoData?.texts ?? []} />
 
       {/* ───── DELETE CONFIRMATION ───── */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
