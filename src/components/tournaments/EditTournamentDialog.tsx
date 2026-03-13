@@ -62,6 +62,7 @@ interface Props {
     prize_pct_second?: number;
     prize_pct_third?: number;
     discord_role_id?: string;
+    achievement_id?: string;
   }) => void;
   isUpdating: boolean;
 }
