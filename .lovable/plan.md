@@ -1,47 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Unify Admin Card Action Buttons Across Tournaments, Challenges, and Quests
+## What was built
 
-### Current State (Grid View)
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-```text
-Tournaments:  [Manage] [Promo] [Delete]
-Challenges:   [Edit]   [View]  [Promo]  [Delete]
-Quests:       [Edit]   [View]           [Delete]
-```
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-### Target State
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-All three should show the same four buttons in the same order:
+---
 
-```text
-[Edit] [View] [Promo] ... [Delete]
-```
+# Delete & Ban Users — Completed
 
-### Level of Effort: Low
+## What was built
 
-Three small edits, all in the action button rows of grid cards. No new components, no logic changes, no database work.
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-### Changes
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-#### 1. `src/pages/admin/AdminTournaments.tsx` (Grid actions, ~lines 292-313)
-- Rename "Manage" to "Edit" (keep same navigate to `/manage`)
-- Add a "View" button that navigates to `/tournaments/${t.id}` (the player-facing detail page)
-- Keep "Promo" and "Delete" as-is
-- Also update the **list view** actions (~lines 216-234) to include a View icon button navigating to `/tournaments/${t.id}`
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
-#### 2. `src/components/quests/AdminQuestsPanel.tsx` (Grid actions, ~lines 422-426)
-- Add a "Promo" button between "View" and "Delete"
-- Import `Megaphone` icon and the `EventPromoEditorDialog` / promo builder (same pattern as challenges)
-- Add `promoData` state and the `EventPromoEditorDialog` render
-- Need to create a `buildQuestPromo` helper or reuse `buildChallengePromo` from `EventPromoEditor`
-- Also add Promo to the **list view** actions
-
-#### 3. `src/components/marketing/EventPromoEditor.tsx`
-- Add a `buildQuestPromo` export function (mirroring `buildChallengePromo`) so quests can generate promo data
-
-### Files Modified
-1. `src/pages/admin/AdminTournaments.tsx` — rename Manage to Edit, add View button
-2. `src/components/quests/AdminQuestsPanel.tsx` — add Promo button + state + dialog
-3. `src/components/marketing/EventPromoEditor.tsx` — add `buildQuestPromo` helper
-
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called

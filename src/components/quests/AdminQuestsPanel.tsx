@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Compass, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Link2,
+  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Link2, Megaphone,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -23,6 +23,8 @@ import { format } from "date-fns";
 import CreateQuestDialog from "@/components/quests/CreateQuestDialog";
 import EditQuestDialog from "@/components/quests/EditQuestDialog";
 import AdminChainsTab from "@/components/quests/AdminChainsTab";
+import { EventPromoEditorDialog, buildQuestPromo } from "@/components/marketing/EventPromoEditor";
+import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -61,6 +63,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
   const [editQuest, setEditQuest] = useState<any | null>(null);
   const [reviewQuestId, setReviewQuestId] = useState<string | null>(null);
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   const { data: quests = [], isLoading } = useQuery({
     queryKey: [`${queryKeyPrefix}-quests`],
@@ -366,6 +369,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                         <div className="flex items-center justify-end gap-1">
                           <Button variant="ghost" size="icon" onClick={() => setEditQuest(q)}><Pencil className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-4 w-4 text-primary" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setPromoData(buildQuestPromo(q))}><Megaphone className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
@@ -422,6 +426,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                     <div className="flex gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
                       <Button variant="outline" size="sm" onClick={() => setEditQuest(q)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</Button>
                       <Button variant="outline" size="sm" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-3.5 w-3.5 mr-1" /> View</Button>
+                      <Button variant="outline" size="sm" onClick={() => setPromoData(buildQuestPromo(q))}><Megaphone className="h-3.5 w-3.5 mr-1" /> Promo</Button>
                       <Button variant="ghost" size="sm" className="ml-auto text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </CardContent>
@@ -649,6 +654,16 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Promo Editor */}
+      {promoData && (
+        <EventPromoEditorDialog
+          open={!!promoData}
+          onOpenChange={(o) => { if (!o) setPromoData(null); }}
+          imageUrl={promoData.imageUrl}
+          initialTexts={promoData.texts}
+        />
+      )}
     </div>
   );
 };

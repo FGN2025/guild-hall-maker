@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Trophy, Trash2, LayoutGrid, List, Search, Calendar, Users, GitBranch, Settings,
-  Gamepad2, FileText, Megaphone,
+  Gamepad2, FileText, Megaphone, Eye,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -222,6 +222,12 @@ const AdminTournaments = () => {
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
                         <Settings className="h-4 w-4 text-muted-foreground" />
                       </Button>
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}`)}>
+                        <Eye className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setPromoData(buildTournamentPromo(t))}>
+                        <Megaphone className="h-4 w-4 text-primary" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -296,7 +302,10 @@ const AdminTournaments = () => {
                     </Button>
                   )}
                   <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
-                    <Settings className="h-3.5 w-3.5 mr-1" /> Manage
+                    <Settings className="h-3.5 w-3.5 mr-1" /> Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}`)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" /> View
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setPromoData(buildTournamentPromo(t))}>
                     <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
