@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SECTION_TYPES } from "@/hooks/useWebPages";
-import { Image, Type, LayoutGrid, MousePointerClick, Code2, RectangleHorizontal, Video } from "lucide-react";
+import { Image, Type, LayoutGrid, MousePointerClick, Code2, RectangleHorizontal, Video, CalendarDays } from "lucide-react";
 
 const ICONS: Record<string, typeof Image> = {
   hero: Image,
@@ -11,6 +11,7 @@ const ICONS: Record<string, typeof Image> = {
   embed_widget: Code2,
   banner: RectangleHorizontal,
   video: Video,
+  featured_events: CalendarDays,
 };
 
 interface Props {

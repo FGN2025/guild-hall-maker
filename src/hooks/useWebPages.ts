@@ -33,6 +33,7 @@ export const SECTION_TYPES = [
   { value: "embed_widget", label: "Embed Widget", description: "Embedded HTML widget" },
   { value: "banner", label: "Banner", description: "Full-width banner image with optional link" },
   { value: "video", label: "Video", description: "Embedded video with caption" },
+  { value: "featured_events", label: "Featured Events", description: "Live grid of featured tournaments, challenges & quests" },
 ] as const;
 
 export const useWebPages = (tenantId?: string | null) => {
