@@ -278,6 +278,12 @@ const ModeratorTournaments = () => {
                 <Badge variant="outline" className={`absolute top-3 left-3 capitalize ${statusColor[t.status] ?? ""}`}>
                   {t.status.replace("_", " ")}
                 </Badge>
+                <button
+                  className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-background transition-colors"
+                  onClick={(e) => { e.stopPropagation(); toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured }); }}
+                >
+                  <Star className={`h-4 w-4 ${t.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                </button>
               </div>
 
               <CardContent className="p-5 flex flex-col gap-3">
