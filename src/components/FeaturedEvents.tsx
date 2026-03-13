@@ -42,6 +42,22 @@ const FeaturedEvents = () => {
         .eq("is_featured", true)
         .order("start_date", { ascending: true });
 
+      // Fetch fallback game covers for tournaments without image_url
+      const gamesWithoutImage = (tourneys ?? [])
+        .filter((t: any) => !t.image_url)
+        .map((t: any) => t.game);
+
+      let gameCovers: Record<string, string> = {};
+      if (gamesWithoutImage.length > 0) {
+        const { data: gamesData } = await supabase
+          .from("games")
+          .select("name, cover_image_url")
+          .in("name", gamesWithoutImage);
+        (gamesData ?? []).forEach((g: any) => {
+          if (g.cover_image_url) gameCovers[g.name] = g.cover_image_url;
+        });
+      }
+
       (tourneys ?? []).forEach((t: any) => {
         results.push({
           id: t.id,
@@ -57,7 +73,7 @@ const FeaturedEvents = () => {
           stat2Value: t.prize_pool || "—",
           stat2Icon: Trophy,
           link: `/tournaments/${t.id}`,
-          imageUrl: t.image_url || undefined,
+          imageUrl: t.image_url || gameCovers[t.game] || undefined,
         });
       });
 
