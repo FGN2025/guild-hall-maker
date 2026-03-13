@@ -21,6 +21,7 @@ import {
   ArrowUp,
   Users,
   LayoutDashboard,
+  Award,
 } from "lucide-react";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
