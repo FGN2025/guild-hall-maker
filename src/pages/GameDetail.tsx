@@ -51,7 +51,9 @@ const GameDetail = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="relative">
+      <PageBackground pageSlug="game-detail" />
+      <div className="space-y-8 relative z-10">
       <Link to="/games" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading">
         <ArrowLeft className="h-4 w-4" /> Back to Games
       </Link>

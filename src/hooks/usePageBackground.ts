@@ -48,7 +48,7 @@ export const useUpsertPageBackground = () => {
         {
           page_slug: bg.page_slug,
           image_url: bg.image_url,
-          opacity: bg.opacity ?? 0.50,
+          opacity: bg.opacity ?? 0.65,
         },
         { onConflict: "page_slug" }
       );
