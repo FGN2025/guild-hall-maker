@@ -27,7 +27,7 @@ const QuestCard = ({ quest, enrollmentCount = 0, isLocked = false, lockMessage, 
   const coverUrl = q.cover_image_url || q.games?.cover_image_url || "/placeholder.svg";
 
   const cardContent = (
-    <Card className={`overflow-hidden transition-all group h-full ${isLocked ? "opacity-60 cursor-not-allowed" : "hover:border-primary/40 cursor-pointer"}`}>
+    <Card className={`overflow-hidden transition-all group h-full glow-card ${isLocked ? "opacity-60 cursor-not-allowed" : "hover:border-primary/40 cursor-pointer"}`}>
       <div className="relative h-40 overflow-hidden">
         <img
           src={coverUrl}

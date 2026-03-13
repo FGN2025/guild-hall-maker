@@ -24,7 +24,7 @@ const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) =
 
   return (
     <Link to={`/challenges/${c.id}`}>
-      <Card className="overflow-hidden hover:border-primary/40 transition-all group cursor-pointer h-full">
+      <Card className="overflow-hidden hover:border-primary/40 transition-all group cursor-pointer h-full glow-card">
         <div className="relative h-40 overflow-hidden">
           <img
             src={coverUrl}

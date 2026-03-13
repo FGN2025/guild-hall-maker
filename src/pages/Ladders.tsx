@@ -238,7 +238,7 @@ const Ladders = () => {
                 {ladders.map((ladder) => (
                   <Card
                     key={ladder.id}
-                    className="cursor-pointer hover:border-primary/40 transition-colors"
+                    className="cursor-pointer hover:border-primary/40 transition-colors glow-card"
                     onClick={() => setSelectedLadderId(ladder.id)}
                   >
                     <CardContent className="p-5 flex flex-col h-full">
