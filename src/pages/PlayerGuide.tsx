@@ -487,7 +487,7 @@ ${sectionBlocks}
       </div>
 
       {filteredSections.length > 0 && (
-        <nav className="glass-panel rounded-lg px-4 py-3">
+        <nav className="glass-panel rounded-lg px-4 py-3 border border-border/60">
           <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary mb-2">Table of Contents</h2>
           <ul className="columns-2 gap-x-6 text-sm space-y-1">
             {filteredSections.map((s) => (
@@ -510,7 +510,7 @@ ${sectionBlocks}
       )}
 
       {filteredSections.length > 0 ? (
-        <div className="glass-panel rounded-lg p-4 md:p-6">
+        <div className="glass-panel rounded-lg p-4 md:p-6 border border-border/60">
           <Accordion type="multiple" defaultValue={search.trim() ? filteredSections.map(s => s.id) : []} key={search} className="space-y-1">
             {filteredSections.map((section) => (
               <AccordionItem
