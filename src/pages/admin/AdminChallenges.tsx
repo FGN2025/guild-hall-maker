@@ -427,9 +427,17 @@ const AdminChallenges = () => {
                     <div className="absolute top-3 left-3 flex gap-2">
                       <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
                     </div>
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
-                      <span className="text-[10px] font-medium text-foreground">{c.is_active ? "Active" : "Off"}</span>
-                      <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="bg-background/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-background transition-colors"
+                        onClick={() => toggleFeaturedMutation.mutate({ id: c.id, current: !!c.is_featured })}
+                      >
+                        <Star className={`h-4 w-4 ${c.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                      </button>
+                      <div className="flex items-center gap-1.5 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1">
+                        <span className="text-[10px] font-medium text-foreground">{c.is_active ? "Active" : "Off"}</span>
+                        <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
+                      </div>
                     </div>
                   </div>
 
