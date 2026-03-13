@@ -40,7 +40,7 @@ const statusLabel: Record<string, { label: string; color: string }> = {
 const QuestDetail = () => {
   usePageTitle("Quest Detail");
   const { id } = useParams<{ id: string }>();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { quest, tasks, chainSiblings, isLoading } = useQuestDetail(id);
