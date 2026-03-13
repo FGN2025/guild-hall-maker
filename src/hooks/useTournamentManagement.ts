@@ -347,6 +347,9 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       prize_pct_first?: number;
       prize_pct_second?: number;
       prize_pct_third?: number;
+      achievement_id?: string;
+      discord_role_id?: string;
+      image_url?: string;
     }) => {
       if (!user || !tournamentId) throw new Error("Not authenticated");
       const { error } = await supabase
@@ -369,6 +372,9 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
           prize_pct_first: details.prize_pct_first ?? 50,
           prize_pct_second: details.prize_pct_second ?? 30,
           prize_pct_third: details.prize_pct_third ?? 20,
+          achievement_id: details.achievement_id ?? null,
+          discord_role_id: details.discord_role_id ?? null,
+          image_url: details.image_url ?? null,
         } as any)
         .eq("id", tournamentId);
       if (error) throw error;
