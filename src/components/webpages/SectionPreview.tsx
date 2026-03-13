@@ -1,5 +1,6 @@
 import { WebPageSection } from "@/hooks/useWebPages";
 import ReactMarkdown from "react-markdown";
+import FeaturedEventsPreview from "./FeaturedEventsPreview";
 
 interface Props {
   section: WebPageSection;
