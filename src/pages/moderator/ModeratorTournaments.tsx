@@ -373,7 +373,23 @@ const ModeratorTournaments = () => {
                   className="w-full py-5"
                   onClick={() => { navigate(`/tournaments/${detailTournament.id}/manage`); setDetailTournament(null); }}
                 >
-                  <Settings className="h-4 w-4 mr-2" /> Manage Tournament
+                  <Pencil className="h-4 w-4 mr-2" /> Edit Tournament
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full py-5"
+                  onClick={() => { navigate(`/tournaments/${detailTournament.id}`); setDetailTournament(null); }}
+                >
+                  <Eye className="h-4 w-4 mr-2" /> View Tournament
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full py-5"
+                  onClick={() => { setPromoData(buildTournamentPromo(detailTournament)); setDetailTournament(null); }}
+                >
+                  <Megaphone className="h-4 w-4 mr-2" /> Create Promo
                 </Button>
 
                 {(detailTournament.status === "in_progress" || detailTournament.status === "completed") && (
@@ -386,13 +402,16 @@ const ModeratorTournaments = () => {
                   </Button>
                 )}
 
-                <Button
-                  variant="outline"
-                  className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10"
-                  onClick={() => handleDelete(detailTournament.id, detailTournament.name)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete Tournament
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDelete(detailTournament.id, detailTournament.name)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete Tournament
+                  </Button>
+                )}
                 </Button>
               </div>
             </div>
