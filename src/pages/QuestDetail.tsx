@@ -18,6 +18,7 @@ import ChainBreadcrumb from "@/components/quests/ChainBreadcrumb";
 import QuestRankBadge from "@/components/quests/QuestRankBadge";
 import { usePlayerQuestXP } from "@/hooks/usePlayerQuestXP";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { ArrowLeft, Clock, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Sparkles, Lock } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
