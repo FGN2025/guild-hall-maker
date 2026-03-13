@@ -21,6 +21,7 @@ import {
   ArrowUp,
   Users,
   LayoutDashboard,
+  Award,
 } from "lucide-react";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -32,7 +33,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Moderators manage the day-to-day competitive lifecycle of the FGN platform.",
       "Access — The Moderator Dashboard is available at /moderator. Admins and Super Admins also have full access.",
       "Scope — Moderators handle tournaments, match scoring, player points, challenges, ranked ladders, prize redemptions, and community moderation.",
-      "Sidebar — Use the Moderator Dashboard sidebar to navigate between Dashboard, Tournaments, Matches, Points, Challenges, Ladders, Redemptions, and this Guide.",
+      "Sidebar — Use the Moderator Dashboard sidebar to navigate between Dashboard, Tournaments, Matches, Points, Challenges, Achievements, Ladders, Redemptions, and this Guide.",
       "Role Assignment — Moderator roles are assigned by Admins via Admin → Users using the role dropdown (User, Moderator, Marketing, Admin).",
     ],
   },
@@ -125,6 +126,25 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Post-Publication Task Editing — Admins and Moderators can add, edit, reorder, and remove tasks on existing challenges via the Edit dialog accessible from the challenge detail page.",
       "Approval Notifications — When you approve a challenge submission, the player automatically receives an in-app notification confirming approval and the points earned.",
       "Tip: Challenges and quests with clear task checklists and evidence requirements drive the most meaningful engagement!",
+    ],
+  },
+  {
+    id: "achievements",
+    icon: Award,
+    title: "Achievements & Badges",
+    bullets: [
+      "Navigate to Moderator → Achievements to create, edit, and manage achievement definitions and award badges to players.",
+      "Full CRUD — Create new achievement definitions with name, description, icon, category, tier (Bronze/Silver/Gold/Platinum), optional auto-criteria, and display order.",
+      "Visual Icon Picker — Choose from 15+ Lucide icons (trophy, flame, star, crown, target, shield, swords, zap, medal, award, sparkles, heart, gem, bolt, rocket) with live icon previews in the selector.",
+      "Editing & Deleting — Update any achievement definition or remove outdated ones. Changes are reflected immediately across the platform.",
+      "Manual Awarding — Award any achievement to a player with optional notes. Use the bulk-assignment tool to award badges to multiple players at once.",
+      "Quick Create — Define a new badge and award it to a player in a single streamlined flow.",
+      "Revoking — Remove incorrectly awarded badges from player profiles.",
+      "Special Recognition — Create custom 'Special Recognition' badges that display with distinctive purple styling and sparkle icons on player profiles.",
+      "Auto-Criteria — Set up automatic milestones (wins, streaks, matches, win rate, tournament championships) that are evaluated when players view their profiles.",
+      "Unified Icons — All achievement icons render as actual Lucide SVG icons everywhere on the platform for consistent visual presentation.",
+      "Safety — A confirmation dialog prevents accidental awards.",
+      "Tip: Coordinate with admins on achievement tiers to create clear progression paths for players.",
     ],
   },
   {
