@@ -667,6 +667,8 @@ const ModeratorChallenges = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <EventPromoEditorDialog open={!!promoData} onOpenChange={(open) => !open && setPromoData(null)} imageUrl={promoData?.imageUrl ?? ""} initialTexts={promoData?.texts ?? []} />
+
         </TabsContent>
 
         <TabsContent value="quests">
