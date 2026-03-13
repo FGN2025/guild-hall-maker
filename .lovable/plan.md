@@ -1,67 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Findings: Access Control Gaps for Edit/View/Promo/Delete Buttons
+## What was built
 
-After reviewing all relevant files, here is the current state and the issues found:
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Current Routing Protection
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-| Page | Route Guard | Who Can Access |
-|---|---|---|
-| `/admin/tournaments` | `AdminRoute` | Admin only |
-| `/admin/challenges` | `AdminRoute` | Admin only |
-| `/moderator/tournaments` | `ModeratorRoute` | Admin + Moderator |
-| `/moderator/challenges` | `ModeratorRoute` | Admin + Moderator |
-| `/tournaments/:id/manage` | `ProtectedRoute` | **Any authenticated user** |
-| `/tournaments/:id` (detail) | `ProtectedRoute` or `ConditionalLayout` | Any user |
-| `/challenges/:id` (detail) | Same | Any user |
-| `/quests/:id` (detail) | Same | Any user |
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-### Issues Found
+---
 
-1. **`TournamentManage.tsx`** — No role check at all. Any authenticated user who knows the URL can access the full tournament management page (edit settings, generate brackets, score matches). This is a security gap.
+# Delete & Ban Users — Completed
 
-2. **`TournamentDetail.tsx`** (line 188) — "Manage Tournament" button uses `isCreator` only. Admins and Moderators who didn't create the tournament cannot see the manage button. Should be `isAdmin || isModerator || isCreator`.
+## What was built
 
-3. **`QuestDetail.tsx`** (line 152) — Admin action bar only checks `isAdmin`. Moderators cannot see Edit/Delete buttons on the quest detail page. Should be `isAdmin || isModerator`.
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-4. **Moderator Tournaments page** (`ModeratorTournaments.tsx`) — Still shows old "Manage" label (not "Edit"), and is missing the View and Promo buttons that were added to the admin page. Also shows Delete to moderators, but per existing rules only Admins should delete.
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-5. **Moderator Challenges page** (`ModeratorChallenges.tsx`) — Missing Promo button. Shows Delete to moderators (should be admin-only per existing rules).
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
-6. **Delete button visibility** — Currently shown to all moderators in moderator pages. Per the documented rule ("only Administrators have the authority to delete"), Delete should be restricted to `isAdmin` only.
-
-### Plan
-
-#### 1. `src/pages/TournamentManage.tsx` — Add access control
-- Import `useAuth` and check `isAdmin || isModerator || (user?.id === tournament?.created_by)`
-- If unauthorized, redirect to `/tournaments/:id` with an access denied toast
-
-#### 2. `src/pages/TournamentDetail.tsx` — Fix manage button visibility
-- Change line 188 from `isCreator` to `isAdmin || isModerator || isCreator`
-
-#### 3. `src/pages/QuestDetail.tsx` — Add moderator access
-- Change line 152 from `isAdmin` to `isAdmin || isModerator`
-- Also import `isModerator` from `useAuth`
-
-#### 4. `src/pages/moderator/ModeratorTournaments.tsx` — Unify buttons
-- Rename "Manage" to "Edit", add View and Promo buttons (matching admin page)
-- Import `EventPromoEditorDialog`, `buildTournamentPromo`, `Megaphone`, `Eye`
-- Restrict Delete button to `isAdmin` only
-
-#### 5. `src/pages/moderator/ModeratorChallenges.tsx` — Add Promo, restrict Delete
-- Add Promo button (import `EventPromoEditorDialog`, `buildChallengePromo`, `Megaphone`)
-- Restrict Delete button to `isAdmin` only
-
-#### 6. `src/components/quests/AdminQuestsPanel.tsx` — Restrict Delete when used in moderator context
-- Accept an optional `isAdmin` prop (or read from `useAuth` directly)
-- Only show Delete button when `isAdmin` is true
-
-### Files to modify
-1. `src/pages/TournamentManage.tsx`
-2. `src/pages/TournamentDetail.tsx`
-3. `src/pages/QuestDetail.tsx`
-4. `src/pages/moderator/ModeratorTournaments.tsx`
-5. `src/pages/moderator/ModeratorChallenges.tsx`
-6. `src/components/quests/AdminQuestsPanel.tsx`
-
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called

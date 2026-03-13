@@ -51,7 +51,7 @@ interface AdminQuestsPanelProps {
 }
 
 const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: AdminQuestsPanelProps) => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -370,7 +370,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                           <Button variant="ghost" size="icon" onClick={() => setEditQuest(q)}><Pencil className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => setPromoData(buildQuestPromo(q))}><Megaphone className="h-4 w-4 text-primary" /></Button>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4" /></Button>
+                          {isAdmin && <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4" /></Button>}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -427,7 +427,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                       <Button variant="outline" size="sm" onClick={() => setEditQuest(q)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</Button>
                       <Button variant="outline" size="sm" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-3.5 w-3.5 mr-1" /> View</Button>
                       <Button variant="outline" size="sm" onClick={() => setPromoData(buildQuestPromo(q))}><Megaphone className="h-3.5 w-3.5 mr-1" /> Promo</Button>
-                      <Button variant="ghost" size="sm" className="ml-auto text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      {isAdmin && <Button variant="ghost" size="sm" className="ml-auto text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-3.5 w-3.5" /></Button>}
                     </div>
                   </CardContent>
                 </Card>
@@ -622,9 +622,11 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                 <Button variant="outline" className="w-full py-5" onClick={() => { navigate(`/quests/${detailQuest.id}`); setDetailQuest(null); }}>
                   <Eye className="h-4 w-4 mr-2" /> View Quest
                 </Button>
-                <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailQuest.id, detailQuest.name)} disabled={deleteMutation.isPending}>
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete Quest
-                </Button>
+                {isAdmin && (
+                  <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailQuest.id, detailQuest.name)} disabled={deleteMutation.isPending}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete Quest
+                  </Button>
+                )}
               </div>
             </div>
           </DialogContent>

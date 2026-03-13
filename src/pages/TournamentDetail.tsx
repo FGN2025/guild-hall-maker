@@ -24,7 +24,7 @@ const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const { register, unregister, isRegistering } = useTournaments();
 
   const { data: tournament, isLoading } = useQuery({
@@ -81,6 +81,7 @@ const TournamentDetail = () => {
   const isFull = t.registrations_count >= t.max_participants;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const isCreator = user?.id === t.created_by;
+  const canManage = isAdmin || isModerator || isCreator;
   const coverUrl = t.image_url || t.game_cover_url;
 
   return (
@@ -185,7 +186,7 @@ const TournamentDetail = () => {
 
             {/* Actions */}
             <div className="flex flex-col gap-2 pt-2">
-              {isCreator && (
+              {canManage && (
                 <Button
                   variant="outline"
                   className="w-full font-heading tracking-wide border-accent/30 text-accent hover:bg-accent/10 py-5"

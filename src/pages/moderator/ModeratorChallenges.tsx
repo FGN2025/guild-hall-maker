@@ -15,8 +15,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Compass,
+  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Compass, Megaphone,
 } from "lucide-react";
+import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
+import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -56,6 +58,7 @@ const ModeratorChallenges = () => {
   const [editChallenge, setEditChallenge] = useState<any | null>(null);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["mod-challenges"],
@@ -368,14 +371,19 @@ const ModeratorChallenges = () => {
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/challenges/${c.id}`)}>
                             <Eye className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button
-                            variant="ghost" size="icon"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(c.id, c.name)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" onClick={() => setPromoData(buildChallengePromo(c))}>
+                            <Megaphone className="h-4 w-4 text-primary" />
                           </Button>
+                          {isAdmin && (
+                            <Button
+                              variant="ghost" size="icon"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDelete(c.id, c.name)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -448,14 +456,19 @@ const ModeratorChallenges = () => {
                       <Button variant="outline" size="sm" onClick={() => navigate(`/challenges/${c.id}`)}>
                         <Eye className="h-3.5 w-3.5 mr-1" /> View
                       </Button>
-                      <Button
-                        variant="ghost" size="sm"
-                        className="ml-auto text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(c.id, c.name)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <Button variant="outline" size="sm" onClick={() => setPromoData(buildChallengePromo(c))}>
+                        <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
                       </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost" size="sm"
+                          className="ml-auto text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDelete(c.id, c.name)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -632,7 +645,7 @@ const ModeratorChallenges = () => {
               <div className="flex flex-col gap-2 pt-2">
                 <Button variant="outline" className="w-full py-5" onClick={() => { setEditChallenge(detailChallenge); setDetailChallenge(null); }}><Pencil className="h-4 w-4 mr-2" /> Edit Challenge</Button>
                 <Button variant="outline" className="w-full py-5" onClick={() => { navigate(`/challenges/${detailChallenge.id}`); setDetailChallenge(null); }}><Eye className="h-4 w-4 mr-2" /> View Challenge</Button>
-                <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailChallenge.id, detailChallenge.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4 mr-2" /> Delete Challenge</Button>
+                {isAdmin && <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailChallenge.id, detailChallenge.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4 mr-2" /> Delete Challenge</Button>}
               </div>
             </div>
           </DialogContent>
@@ -653,6 +666,8 @@ const ModeratorChallenges = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EventPromoEditorDialog open={!!promoData} onOpenChange={(open) => !open && setPromoData(null)} imageUrl={promoData?.imageUrl ?? ""} initialTexts={promoData?.texts ?? []} />
 
         </TabsContent>
 

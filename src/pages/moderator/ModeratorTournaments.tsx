@@ -11,8 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Trophy, Trash2, LayoutGrid, List, Search, Calendar, Users, GitBranch, Settings,
-  Gamepad2, FileText, Plus,
+  Gamepad2, FileText, Plus, Eye, Megaphone, Pencil,
 } from "lucide-react";
+import { EventPromoEditorDialog, buildTournamentPromo } from "@/components/marketing/EventPromoEditor";
+import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -42,6 +44,7 @@ const ModeratorTournaments = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [detailTournament, setDetailTournament] = useState<any | null>(null);
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["mod-tournaments"],
@@ -207,22 +210,30 @@ const ModeratorTournaments = () => {
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
+                        <Pencil className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}`)}>
+                        <Eye className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setPromoData(buildTournamentPromo(t))}>
+                        <Megaphone className="h-4 w-4 text-primary" />
+                      </Button>
                       {(t.status === "in_progress" || t.status === "completed") && (
                         <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/bracket`)}>
                           <GitBranch className="h-4 w-4 text-primary" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
-                        <Settings className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(t.id, t.name)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost" size="icon"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDelete(t.id, t.name)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -282,22 +293,25 @@ const ModeratorTournaments = () => {
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
-                  {(t.status === "in_progress" || t.status === "completed") && (
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/bracket`)}>
-                      <GitBranch className="h-3.5 w-3.5 mr-1" /> Bracket
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
+                    <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}`)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" /> View
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setPromoData(buildTournamentPromo(t))}>
+                    <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
+                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost" size="sm"
+                      className="ml-auto text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDelete(t.id, t.name)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
-                    <Settings className="h-3.5 w-3.5 mr-1" /> Manage
-                  </Button>
-                  <Button
-                    variant="ghost" size="sm"
-                    className="ml-auto text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDelete(t.id, t.name)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -359,7 +373,23 @@ const ModeratorTournaments = () => {
                   className="w-full py-5"
                   onClick={() => { navigate(`/tournaments/${detailTournament.id}/manage`); setDetailTournament(null); }}
                 >
-                  <Settings className="h-4 w-4 mr-2" /> Manage Tournament
+                  <Pencil className="h-4 w-4 mr-2" /> Edit Tournament
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full py-5"
+                  onClick={() => { navigate(`/tournaments/${detailTournament.id}`); setDetailTournament(null); }}
+                >
+                  <Eye className="h-4 w-4 mr-2" /> View Tournament
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full py-5"
+                  onClick={() => { setPromoData(buildTournamentPromo(detailTournament)); setDetailTournament(null); }}
+                >
+                  <Megaphone className="h-4 w-4 mr-2" /> Create Promo
                 </Button>
 
                 {(detailTournament.status === "in_progress" || detailTournament.status === "completed") && (
@@ -372,19 +402,24 @@ const ModeratorTournaments = () => {
                   </Button>
                 )}
 
-                <Button
-                  variant="outline"
-                  className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10"
-                  onClick={() => handleDelete(detailTournament.id, detailTournament.name)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete Tournament
-                </Button>
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDelete(detailTournament.id, detailTournament.name)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete Tournament
+                  </Button>
+                )}
               </div>
             </div>
           </DialogContent>
         )}
       </Dialog>
+
+      {/* ───── PROMO EDITOR ───── */}
+      <EventPromoEditorDialog open={!!promoData} onOpenChange={(open) => !open && setPromoData(null)} imageUrl={promoData?.imageUrl ?? ""} initialTexts={promoData?.texts ?? []} />
 
       {/* ───── DELETE CONFIRMATION ───── */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
