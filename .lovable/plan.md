@@ -1,40 +1,33 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Plan: Fix Achievement Not Saving/Displaying on Tournaments
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+### Root Cause
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+The `achievement_id` field is passed from the Create/Edit Tournament dialogs but **never reaches the database** because:
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+1. **Create mutation** (`src/hooks/useTournaments.ts` line 94-123): The type signature doesn't include `achievement_id`, so it's silently dropped.
+2. **Update mutation** (`src/hooks/useTournamentManagement.ts` lines 331-374): `achievement_id` is missing from both the type signature AND the `.update()` payload. Same for `discord_role_id` and `image_url`.
 
----
+The TournamentCard already renders `AchievementBadgeDisplay` when `achievement_id` exists — it just never gets saved to the DB.
 
-# Delete & Ban Users — Completed
+### Changes
 
-## What was built
+**1. `src/hooks/useTournaments.ts`** — Add `achievement_id` to the create mutation type:
+- Add `achievement_id?: string;` to the `data` type (line ~110)
 
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
+**2. `src/hooks/useTournamentManagement.ts`** — Add missing fields to the update mutation:
+- Add `achievement_id`, `discord_role_id`, and `image_url` to the type signature (~line 332-350)
+- Add these fields to the `.update()` payload (~line 354-372):
+  - `achievement_id: details.achievement_id ?? null`
+  - `discord_role_id: details.discord_role_id ?? null`
+  - `image_url` (only if provided)
 
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+### Files Modified
+| File | Change |
+|------|--------|
+| `src/hooks/useTournaments.ts` | Add `achievement_id` to create mutation type |
+| `src/hooks/useTournamentManagement.ts` | Add `achievement_id`, `discord_role_id`, `image_url` to update mutation type and payload |
 
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
+No database or UI changes needed — the dialogs and display components are already correct.
 
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
