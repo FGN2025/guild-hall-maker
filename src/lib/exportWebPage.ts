@@ -57,6 +57,12 @@ function renderSectionHtml(section: WebPageSection): string {
         ${c.caption ? `<p style="text-align:center;font-size:.85rem;color:#888;margin:8px 0 0">${esc(c.caption)}</p>` : ""}
       </div>`;
 
+    case "featured_events":
+      return `<div style="padding:16px;text-align:center;border:2px dashed #ddd;border-radius:8px;color:#888">
+        <p style="font-size:.9rem;font-weight:600;margin:0 0 4px">Featured Events</p>
+        <p style="font-size:.8rem">This section displays live data and cannot be fully exported to static HTML.<br/>Visit the page online to see featured events.</p>
+      </div>`;
+
     default:
       return "";
   }

@@ -118,6 +118,15 @@ const SectionPreview = ({ section }: Props) => {
         </div>
       );
 
+    case "featured_events":
+      return (
+        <FeaturedEventsPreview
+          maxItems={c.max_items}
+          types={c.types}
+          showStats={c.show_stats !== false}
+        />
+      );
+
     default:
       return <div className="p-4 text-muted-foreground text-sm">Unknown section type: {section.section_type}</div>;
   }
