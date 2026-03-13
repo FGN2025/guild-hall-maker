@@ -24,7 +24,7 @@ const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const { register, unregister, isRegistering } = useTournaments();
 
   const { data: tournament, isLoading } = useQuery({
