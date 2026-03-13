@@ -1,5 +1,6 @@
 import { Calendar, Users, GitBranch, Settings, Trophy } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tournament } from "@/hooks/useTournaments";
@@ -89,6 +90,11 @@ const TournamentCard = ({
           </div>
         ))}
       </div>
+      {(t as any).achievement_id && (
+        <div className="mt-3">
+          <AchievementBadgeDisplay achievementId={(t as any).achievement_id} compact />
+        </div>
+      )}
       <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
         {isCreator && (
           <Button

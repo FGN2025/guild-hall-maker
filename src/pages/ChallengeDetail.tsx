@@ -14,6 +14,7 @@ import TaskChecklist from "@/components/challenges/TaskChecklist";
 import EvidenceUpload from "@/components/challenges/EvidenceUpload";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -274,6 +275,13 @@ const ChallengeDetail = () => {
                     </div>
                   )}
                 </div>
+
+                {c.achievement_id && (
+                  <div>
+                    <span className="text-xs text-muted-foreground mb-1 block">Earn on Completion</span>
+                    <AchievementBadgeDisplay achievementId={c.achievement_id} />
+                  </div>
+                )}
 
                 {status && (
                   <Badge className={`w-full justify-center py-1.5 ${status.color}`}>

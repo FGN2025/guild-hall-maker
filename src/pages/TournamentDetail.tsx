@@ -17,6 +17,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { format } from "date-fns";
 import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 import PageBackground from "@/components/PageBackground";
@@ -186,6 +187,14 @@ const TournamentDetail = () => {
                   />
                 </div>
             </div>
+
+            {/* Achievement Reward */}
+            {t.achievement_id && (
+              <div>
+                <span className="text-xs text-muted-foreground mb-1 block">Earn on Completion</span>
+                <AchievementBadgeDisplay achievementId={t.achievement_id} />
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex flex-col gap-2 pt-2">

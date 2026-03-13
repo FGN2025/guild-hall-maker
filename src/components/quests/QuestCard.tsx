@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Gamepad2, Lock, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -96,6 +97,9 @@ const QuestCard = ({ quest, enrollmentCount = 0, isLocked = false, lockMessage, 
               +{q.points_first} pts
             </Badge>
           </div>
+          {q.achievement_id && (
+            <AchievementBadgeDisplay achievementId={q.achievement_id} compact />
+          )}
         </div>
       </CardContent>
     </Card>

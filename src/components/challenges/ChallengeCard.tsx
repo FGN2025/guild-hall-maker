@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Signal, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ChallengeCardProps {
@@ -75,6 +76,9 @@ const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) =
               +{c.points_first} pts
             </Badge>
           </div>
+          {c.achievement_id && (
+            <AchievementBadgeDisplay achievementId={c.achievement_id} compact />
+          )}
         </CardContent>
       </Card>
     </Link>
