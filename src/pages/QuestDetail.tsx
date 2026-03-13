@@ -306,6 +306,13 @@ const QuestDetail = () => {
                   )}
                 </div>
 
+                {q.achievement_id && (
+                  <div>
+                    <span className="text-xs text-muted-foreground mb-1 block">Earn on Completion</span>
+                    <AchievementBadgeDisplay achievementId={q.achievement_id} />
+                  </div>
+                )}
+
                 {status && (
                   <Badge className={`w-full justify-center py-1.5 ${status.color}`}>
                     {status.label}

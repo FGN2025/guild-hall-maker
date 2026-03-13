@@ -188,6 +188,14 @@ const TournamentDetail = () => {
                 </div>
             </div>
 
+            {/* Achievement Reward */}
+            {t.achievement_id && (
+              <div>
+                <span className="text-xs text-muted-foreground mb-1 block">Earn on Completion</span>
+                <AchievementBadgeDisplay achievementId={t.achievement_id} />
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex flex-col gap-2 pt-2">
               {canManage && (

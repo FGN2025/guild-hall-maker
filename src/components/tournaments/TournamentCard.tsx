@@ -90,6 +90,11 @@ const TournamentCard = ({
           </div>
         ))}
       </div>
+      {(t as any).achievement_id && (
+        <div className="mt-3">
+          <AchievementBadgeDisplay achievementId={(t as any).achievement_id} compact />
+        </div>
+      )}
       <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
         {isCreator && (
           <Button

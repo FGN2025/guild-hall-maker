@@ -76,6 +76,9 @@ const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) =
               +{c.points_first} pts
             </Badge>
           </div>
+          {c.achievement_id && (
+            <AchievementBadgeDisplay achievementId={c.achievement_id} compact />
+          )}
         </CardContent>
       </Card>
     </Link>

@@ -62,6 +62,13 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
             ))}
           </div>
 
+          {(t as any).achievement_id && (
+            <div>
+              <span className="text-xs text-muted-foreground mb-1 block">Earn on Completion</span>
+              <AchievementBadgeDisplay achievementId={(t as any).achievement_id} />
+            </div>
+          )}
+
           {t.rules && (
             <div className="bg-muted rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
