@@ -13,6 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Gamepad2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import PageBackground from "@/components/PageBackground";
 
 const PlayerProfile = () => {
   usePageTitle("Player Profile");
