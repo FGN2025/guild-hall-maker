@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Swords, Trophy, Target, TrendingUp, Calendar, Link2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import PageBackground from "@/components/PageBackground";
 
 const PlayerComparison = () => {
   usePageTitle("Player Comparison");
