@@ -38,7 +38,7 @@ const FeaturedEvents = () => {
       // Fetch featured tournaments
       const { data: tourneys } = await (supabase
         .from("tournaments")
-        .select("id, name, game, start_date, max_participants, prize_pool, format, status") as any)
+        .select("id, name, game, start_date, max_participants, prize_pool, format, status, image_url") as any)
         .eq("is_featured", true)
         .order("start_date", { ascending: true });
 
