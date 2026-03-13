@@ -296,7 +296,10 @@ const AdminTournaments = () => {
                     </Button>
                   )}
                   <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
-                    <Settings className="h-3.5 w-3.5 mr-1" /> Manage
+                    <Settings className="h-3.5 w-3.5 mr-1" /> Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}`)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" /> View
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setPromoData(buildTournamentPromo(t))}>
                     <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
