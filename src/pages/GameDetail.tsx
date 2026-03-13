@@ -150,6 +150,7 @@ const GameDetail = () => {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 };
