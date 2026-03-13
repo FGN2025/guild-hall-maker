@@ -125,6 +125,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
       setOpen(false);
       setForm({ ...defaultForm });
       setSelectedGameId("");
+      setAchievementId("");
       setImageFile(null);
       setImagePreview(null);
     },
