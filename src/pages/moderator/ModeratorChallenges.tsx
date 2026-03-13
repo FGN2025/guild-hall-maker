@@ -456,14 +456,19 @@ const ModeratorChallenges = () => {
                       <Button variant="outline" size="sm" onClick={() => navigate(`/challenges/${c.id}`)}>
                         <Eye className="h-3.5 w-3.5 mr-1" /> View
                       </Button>
-                      <Button
-                        variant="ghost" size="sm"
-                        className="ml-auto text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(c.id, c.name)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <Button variant="outline" size="sm" onClick={() => setPromoData(buildChallengePromo(c))}>
+                        <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
                       </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost" size="sm"
+                          className="ml-auto text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDelete(c.id, c.name)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
