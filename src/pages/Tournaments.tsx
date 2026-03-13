@@ -85,8 +85,8 @@ const Tournaments = () => {
         <PageHero pageSlug="tournaments" />
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
-            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Browse & Register</p>
-            <h1 className="font-display text-4xl font-bold text-foreground">Tournaments</h1>
+            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Browse & Register</p>
+            <h1 className="font-display text-4xl font-bold text-foreground page-heading">Tournaments</h1>
           </div>
           {!user && (
             <Link to="/auth">

@@ -112,11 +112,11 @@ const Ladders = () => {
       <PageBackground pageSlug="ladders" />
       <div className="space-y-8">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
             <Swords className="h-8 w-8 text-primary" />
             Ranked Ladders
           </h1>
-          <p className="text-muted-foreground font-body mt-1">
+          <p className="text-muted-foreground font-body mt-1 page-heading">
             Climb the ranks and prove your skill.
           </p>
         </div>
