@@ -1,4 +1,4 @@
-import { Calendar, Users, GitBranch, Settings } from "lucide-react";
+import { Calendar, Users, GitBranch, Settings, Trophy } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
