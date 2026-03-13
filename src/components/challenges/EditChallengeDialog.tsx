@@ -56,6 +56,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [uploadingImage, setUploadingImage] = useState(false);
   const [localTasks, setLocalTasks] = useState<LocalTask[]>([]);
   const [enhancing, setEnhancing] = useState(false);
+  const [achievementId, setAchievementId] = useState("");
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active"],
