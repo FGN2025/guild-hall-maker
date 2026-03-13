@@ -14,6 +14,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import AchievementPicker from "@/components/shared/AchievementPicker";
 
 interface EditChallengeDialogProps {
   challenge: any;
@@ -55,6 +56,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [uploadingImage, setUploadingImage] = useState(false);
   const [localTasks, setLocalTasks] = useState<LocalTask[]>([]);
   const [enhancing, setEnhancing] = useState(false);
+  const [achievementId, setAchievementId] = useState("");
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active"],
@@ -96,6 +98,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setImageFile(null);
       setMaxEnrollments(challenge.max_enrollments ?? "");
       setIsActive(challenge.is_active ?? true);
+      setAchievementId(challenge.achievement_id ?? "");
     }
   }, [challenge, open]);
 
@@ -182,6 +185,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         cover_image_url: finalCoverUrl,
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
       }).eq("id", challenge.id);
       if (error) throw error;
 
@@ -365,6 +369,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             <Label>Max Enrollments</Label>
             <Input type="number" value={maxEnrollments} onChange={(e) => setMaxEnrollments(e.target.value ? Number(e.target.value) : "")} placeholder="Unlimited" />
           </div>
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="flex items-center justify-between">
             <Label>Requires Evidence</Label>
             <Switch checked={requiresEvidence} onCheckedChange={setRequiresEvidence} />

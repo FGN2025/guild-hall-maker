@@ -18,6 +18,7 @@ import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 import { useDiscordRoles } from "@/hooks/useDiscordRoles";
+import AchievementPicker from "@/components/shared/AchievementPicker";
 
 interface TournamentData {
   id: string;
@@ -36,6 +37,7 @@ interface TournamentData {
   points_third?: number;
   points_participation?: number;
   discord_role_id?: string | null;
+  achievement_id?: string | null;
 }
 
 interface Props {
@@ -60,6 +62,7 @@ interface Props {
     prize_pct_second?: number;
     prize_pct_third?: number;
     discord_role_id?: string;
+    achievement_id?: string;
   }) => void;
   isUpdating: boolean;
 }
@@ -90,6 +93,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
+  const [achievementId, setAchievementId] = useState("");
 
   useEffect(() => {
     if (open && tournament) {
@@ -107,6 +111,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
       setDiscordRoleId(tournament.discord_role_id ?? "");
+      setAchievementId(tournament.achievement_id ?? "");
       const d = new Date(tournament.start_date);
       setStartDate(d);
       setStartTime(
@@ -181,6 +186,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       prize_pct_second: prizePctSecond,
       prize_pct_third: prizePctThird,
       discord_role_id: discordRoleId && discordRoleId !== "none" ? discordRoleId : undefined,
+      achievement_id: achievementId && achievementId !== "none" ? achievementId : undefined,
     });
     setOpen(false);
   };
@@ -326,6 +332,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             <p className="text-xs text-muted-foreground">Points awarded per match played</p>
             <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body max-w-[120px]" />
           </div>
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Discord Role (on registration)</Label>
             <Select value={discordRoleId} onValueChange={setDiscordRoleId}>

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import AchievementPicker from "@/components/shared/AchievementPicker";
 
 interface CreateChallengeDialogProps {
   invalidateQueryKey: string[];
@@ -41,6 +42,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [achievementId, setAchievementId] = useState("");
 
   const { data: games = [] } = useQuery({
     queryKey: ["create-challenge-games"],
@@ -102,6 +104,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         requires_evidence: form.requires_evidence,
         cover_image_url: coverUrl,
         game_id: selectedGameId || null,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
       } as any).select().single();
       if (error) throw error;
 
@@ -122,6 +125,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
       setOpen(false);
       setForm({ ...defaultForm });
       setSelectedGameId("");
+      setAchievementId("");
       setImageFile(null);
       setImagePreview(null);
     },
@@ -253,6 +257,8 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
               onSelect={(url) => { setImageFile(null); setImagePreview(url); }}
             />
           </div>
+
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
 
           <div className="flex items-center gap-3">
             <Switch checked={form.requires_evidence} onCheckedChange={(v) => setForm({ ...form, requires_evidence: v })} />

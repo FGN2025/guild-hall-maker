@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import AchievementPicker from "@/components/shared/AchievementPicker";
 
 interface CreateQuestDialogProps {
   invalidateQueryKey: string[];
@@ -45,6 +46,7 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
   const [uploadingImage, setUploadingImage] = useState(false);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
   const [enhancingDesc, setEnhancingDesc] = useState(false);
+  const [achievementId, setAchievementId] = useState("");
 
   const enhanceDescription = async () => {
     if (!form.name.trim()) { toast.error("Enter a quest name first"); return; }
@@ -174,6 +176,7 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
         story_intro: form.story_intro || null,
         story_outro: form.story_outro || null,
         xp_reward: parseInt(form.xp_reward) || 0,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
       } as any).select().single();
       if (error) throw error;
 
@@ -196,6 +199,7 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
       setSelectedGameId("");
       setSelectedChainId("");
       setChainOrder(0);
+      setAchievementId("");
       setImageFile(null);
       setImagePreview(null);
     },
@@ -343,6 +347,8 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
               <Textarea value={form.story_outro} onChange={(e) => setForm({ ...form, story_outro: e.target.value })} placeholder="Narrative shown on completion..." rows={2} />
             </div>
           </div>
+
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
 
           <div className="flex items-center gap-3">
             <Switch checked={form.requires_evidence} onCheckedChange={(v) => setForm({ ...form, requires_evidence: v })} />

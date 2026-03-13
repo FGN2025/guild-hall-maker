@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 import { useDiscordRoles } from "@/hooks/useDiscordRoles";
+import AchievementPicker from "@/components/shared/AchievementPicker";
 
 interface Props {
   onCreate: (data: {
@@ -40,6 +41,7 @@ interface Props {
     prize_pct_second?: number;
     prize_pct_third?: number;
     discord_role_id?: string;
+    achievement_id?: string;
   }) => void;
   isCreating: boolean;
 }
@@ -70,6 +72,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
+  const [achievementId, setAchievementId] = useState("");
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -147,6 +150,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
         prize_pct_second: prizePctSecond,
         prize_pct_third: prizePctThird,
         discord_role_id: discordRoleId || undefined,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : undefined,
       });
     }
     setOpen(false);
@@ -154,7 +158,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
     setMaxParticipants("16"); setPrizePool(""); setPrizeType("none"); setPrizeId(""); setStartDates([]); setStartTime("12:00"); setRules("");
     setImageFile(null); setImagePreview(null);
     setPointsParticipation("2");
-    setPrizePctFirst(50); setPrizePctSecond(30); setPrizePctThird(20); setDiscordRoleId("");
+    setPrizePctFirst(50); setPrizePctSecond(30); setPrizePctThird(20); setDiscordRoleId(""); setAchievementId("");
   };
 
   return (
@@ -315,6 +319,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             <p className="text-xs text-muted-foreground">Points awarded per match played</p>
             <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body max-w-[120px]" />
           </div>
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Discord Role (on registration)</Label>
             <Select value={discordRoleId} onValueChange={setDiscordRoleId}>

@@ -14,6 +14,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import AchievementPicker from "@/components/shared/AchievementPicker";
 
 interface EditQuestDialogProps {
   quest: any;
@@ -51,6 +52,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
   const [uploadingImage, setUploadingImage] = useState(false);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
   const [enhancingDesc, setEnhancingDesc] = useState(false);
+  const [achievementId, setAchievementId] = useState("");
 
   const enhanceDescription = async () => {
     if (!name.trim()) { toast.error("Enter a quest name first"); return; }
@@ -157,6 +159,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
       setImageFile(null);
       setMaxEnrollments(quest.max_enrollments ?? "");
       setIsActive(quest.is_active ?? true);
+      setAchievementId(quest.achievement_id ?? "");
     }
   }, [quest, open]);
 
@@ -214,6 +217,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
         cover_image_url: finalCoverUrl,
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
       } as any).eq("id", quest.id);
       if (error) throw error;
     },
@@ -367,6 +371,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               <Textarea value={storyOutro} onChange={(e) => setStoryOutro(e.target.value)} rows={2} placeholder="Narrative shown on completion..." />
             </div>
           </div>
+          <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div>
             <Label>Max Enrollments</Label>
             <Input type="number" value={maxEnrollments} onChange={(e) => setMaxEnrollments(e.target.value ? Number(e.target.value) : "")} placeholder="Unlimited" />
