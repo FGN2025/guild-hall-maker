@@ -1,30 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Add Hero Images to Featured Event Cards
+## What was built
 
-### Problem
-The Featured Events cards on the homepage have no hero image — they're text-only. Each entity type already stores an image URL in the database that should be displayed.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Image Fields Available
-- **Tournaments**: `image_url` column (+ game cover fallback from `games` table via text match)
-- **Challenges**: `cover_image_url` column (+ `games(cover_image_url)` via `game_id` FK)
-- **Quests**: `cover_image_url` column (+ `games(cover_image_url)` via `game_id` FK)
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-### Changes — Single File: `src/components/FeaturedEvents.tsx`
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-1. **Add `imageUrl` to the `FeaturedEvent` interface**
+---
 
-2. **Update queries to fetch image fields**:
-   - Tournaments: add `image_url` to select
-   - Challenges: add `cover_image_url` and `games(name, cover_image_url)` to select
-   - Quests: add `cover_image_url` and `games(name, cover_image_url)` to select
-   - Use the entity's own image first, fall back to the game's cover image
+# Delete & Ban Users — Completed
 
-3. **Add hero image section to each card** (matching the TournamentCard pattern):
-   - Add a `relative h-36 bg-muted overflow-hidden rounded-t-xl` image container at the top of each card
-   - Display the image with `object-cover` if available, or show a gradient placeholder with the game name
-   - Overlay the type badge and status badge on top of the image
-   - Remove padding from the card's outer wrapper top, add it only to the content below the image
+## What was built
 
-No database changes needed.
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
+
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
