@@ -380,6 +380,9 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: q.id, current: !!q.is_featured })}>
+                            <Star className={`h-4 w-4 ${q.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => setEditQuest(q)}><Pencil className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => setPromoData(buildQuestPromo(q))}><Megaphone className="h-4 w-4 text-primary" /></Button>
