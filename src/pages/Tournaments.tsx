@@ -83,7 +83,7 @@ const Tournaments = () => {
       <PageBackground pageSlug="tournaments" />
       <div className="space-y-6 relative z-10">
         <PageHero pageSlug="tournaments" />
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Browse & Register</p>
             <h1 className="font-display text-4xl font-bold text-foreground page-heading">Tournaments</h1>
