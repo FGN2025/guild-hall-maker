@@ -217,6 +217,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
         cover_image_url: finalCoverUrl,
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
       } as any).eq("id", quest.id);
       if (error) throw error;
     },
