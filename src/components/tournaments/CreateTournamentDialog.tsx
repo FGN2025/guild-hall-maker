@@ -150,6 +150,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
         prize_pct_second: prizePctSecond,
         prize_pct_third: prizePctThird,
         discord_role_id: discordRoleId || undefined,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : undefined,
       });
     }
     setOpen(false);
