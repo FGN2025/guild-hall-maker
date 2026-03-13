@@ -93,6 +93,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
+  const [achievementId, setAchievementId] = useState("");
 
   useEffect(() => {
     if (open && tournament) {
