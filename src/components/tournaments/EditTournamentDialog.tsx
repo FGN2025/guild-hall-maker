@@ -111,6 +111,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
       setDiscordRoleId(tournament.discord_role_id ?? "");
+      setAchievementId(tournament.achievement_id ?? "");
       const d = new Date(tournament.start_date);
       setStartDate(d);
       setStartTime(
