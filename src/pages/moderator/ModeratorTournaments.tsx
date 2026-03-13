@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -296,6 +297,10 @@ const ModeratorTournaments = () => {
                   {t.description || "\u00A0"}
                 </div>
 
+                {t.achievement_id && (
+                  <AchievementBadgeDisplay achievementId={t.achievement_id} compact />
+                )}
+
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-muted rounded-lg p-2">
                     <Calendar className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
@@ -377,6 +382,13 @@ const ModeratorTournaments = () => {
                   </div>
                 ))}
               </div>
+
+              {detailTournament.achievement_id && (
+                <div>
+                  <span className="text-xs text-muted-foreground mb-1 block">Earn on Completion</span>
+                  <AchievementBadgeDisplay achievementId={detailTournament.achievement_id} />
+                </div>
+              )}
 
               {detailTournament.rules && (
                 <div className="bg-muted rounded-lg p-4">
