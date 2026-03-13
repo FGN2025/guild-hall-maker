@@ -1,41 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Assessment: Featured Events as a Web Page Section Type
+## What was built
 
-### What We're Evaluating
-Adding a new "Featured Events" section type to the web page builder so tenant marketing pages can embed a live feed of featured tournaments, challenges, and quests.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Existing Infrastructure
-The web page builder already has a clean plugin-like architecture:
-- **`SECTION_TYPES`** array in `useWebPages.ts` — defines available section types
-- **`AddSectionDialog`** — renders the picker (the dialog in your screenshot)
-- **`SectionEditor`** — config form per section type (switch/case)
-- **`SectionPreview`** — live preview per section type (switch/case)
-- **`exportWebPage.ts`** — HTML export per section type (switch/case)
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-Adding a new section type means adding a case to each of these 4 touch points, plus registering it in `SECTION_TYPES`.
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-### Level of Effort: **Low-Medium** (~5 files, no DB migration)
+---
 
-#### Files to Modify
-| File | Change |
-|------|--------|
-| `src/hooks/useWebPages.ts` | Add `featured_events` to `SECTION_TYPES` array |
-| `src/components/webpages/AddSectionDialog.tsx` | Add icon mapping for `featured_events` |
-| `src/components/webpages/SectionEditor.tsx` | Add config form (minimal — optional max count, optional type filter) |
-| `src/components/webpages/SectionPreview.tsx` | Add case that renders a live `FeaturedEvents`-style grid using a Supabase query |
-| `src/lib/exportWebPage.ts` | Add static HTML rendering for the export case |
+# Delete & Ban Users — Completed
 
-#### Config Options (stored in `section.config`)
-- `max_items` — optional limit (e.g. show only 3)
-- `types` — optional filter array: `["tournament", "challenge", "quest"]`
-- `show_stats` — boolean to show/hide the stat boxes
+## What was built
 
-#### Key Considerations
-- **Preview & Published pages**: `SectionPreview` already renders live — the new case can reuse the same query logic from `FeaturedEvents.tsx`
-- **HTML Export**: The export would need to snapshot current featured events at export time (static HTML), since the exported file can't run queries. This is a minor limitation worth noting.
-- **No database changes needed** — the `web_page_sections` table already stores arbitrary JSON config, and the featured events data comes from existing `is_featured` columns.
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-### Summary
-This is a straightforward addition following an established pattern. The main work is creating the preview renderer (reusing `FeaturedEvents` query logic) and the static HTML export fallback. Estimated ~1-2 hours of implementation.
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
+
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called

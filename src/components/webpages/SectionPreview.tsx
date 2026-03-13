@@ -1,5 +1,6 @@
 import { WebPageSection } from "@/hooks/useWebPages";
 import ReactMarkdown from "react-markdown";
+import FeaturedEventsPreview from "./FeaturedEventsPreview";
 
 interface Props {
   section: WebPageSection;
@@ -115,6 +116,15 @@ const SectionPreview = ({ section }: Props) => {
           )}
           {c.caption && <p className="text-sm text-muted-foreground text-center">{c.caption}</p>}
         </div>
+      );
+
+    case "featured_events":
+      return (
+        <FeaturedEventsPreview
+          maxItems={c.max_items}
+          types={c.types}
+          showStats={c.show_stats !== false}
+        />
       );
 
     default:

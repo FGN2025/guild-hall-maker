@@ -248,6 +248,57 @@ const SectionEditor = ({ section, onUpdate }: Props) => {
         </div>
       );
 
+    case "featured_events": {
+      const currentTypes = (c.types || []) as string[];
+      const toggleType = (t: string) => {
+        const next = currentTypes.includes(t) ? currentTypes.filter((x: string) => x !== t) : [...currentTypes, t];
+        set("types", next);
+      };
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-heading">Max Items (leave empty for all)</Label>
+            <Input
+              type="number"
+              min={1}
+              max={12}
+              value={c.max_items || ""}
+              onChange={(e) => set("max_items", e.target.value ? parseInt(e.target.value) : undefined)}
+              placeholder="e.g. 3"
+              className="text-sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-heading">Event Types</Label>
+            <div className="flex gap-2 flex-wrap">
+              {["tournament", "challenge", "quest"].map((t) => (
+                <Button
+                  key={t}
+                  type="button"
+                  variant={currentTypes.length === 0 || currentTypes.includes(t) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleType(t)}
+                >
+                  {t.charAt(0).toUpperCase() + t.slice(1)}s
+                </Button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground">No selection = show all types</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="show_stats"
+              checked={c.show_stats !== false}
+              onChange={(e) => set("show_stats", e.target.checked)}
+              className="rounded border-border"
+            />
+            <Label htmlFor="show_stats" className="text-xs font-heading cursor-pointer">Show stat boxes</Label>
+          </div>
+        </div>
+      );
+    }
+
     default:
       return <p className="text-sm text-muted-foreground">No editor for this section type.</p>;
   }
