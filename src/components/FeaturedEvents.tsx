@@ -91,7 +91,7 @@ const FeaturedEvents = () => {
       // Fetch featured quests
       const { data: quests } = await (supabase
         .from("quests")
-        .select("id, name, difficulty, points_first, xp_reward, estimated_minutes, game_id, games(name)") as any)
+        .select("id, name, difficulty, points_first, xp_reward, estimated_minutes, cover_image_url, game_id, games(name, cover_image_url)") as any)
         .eq("is_featured", true)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
