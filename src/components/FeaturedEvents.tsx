@@ -144,7 +144,7 @@ const FeaturedEvents = () => {
 
   return (
     <section className="py-24 relative">
-      <div className="container mx-auto px-6 md:px-10 lg:px-16">
+      <div className="container mx-auto px-4">
         <div className="flex items-end justify-between mb-12">
           <div>
             <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Don't Miss Out</p>

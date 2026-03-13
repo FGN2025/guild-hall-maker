@@ -32,7 +32,7 @@ const FeaturedVideo = () => {
   if (loading) {
     return (
       <section className="py-16">
-        <div className="container mx-auto px-6 md:px-10 lg:px-16">
+        <div className="container mx-auto px-4">
           <Skeleton className="w-48 h-6 mb-6" />
           <Skeleton className="w-full aspect-video rounded-xl" />
         </div>
@@ -44,7 +44,7 @@ const FeaturedVideo = () => {
 
   return (
     <section className="py-16">
-      <div className="container mx-auto px-6 md:px-10 lg:px-16">
+      <div className="container mx-auto px-4">
         <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">
           Watch Now
         </p>
