@@ -293,22 +293,25 @@ const ModeratorTournaments = () => {
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
-                  {(t.status === "in_progress" || t.status === "completed") && (
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/bracket`)}>
-                      <GitBranch className="h-3.5 w-3.5 mr-1" /> Bracket
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
+                    <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}`)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" /> View
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setPromoData(buildTournamentPromo(t))}>
+                    <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
+                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost" size="sm"
+                      className="ml-auto text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDelete(t.id, t.name)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
-                    <Settings className="h-3.5 w-3.5 mr-1" /> Manage
-                  </Button>
-                  <Button
-                    variant="ghost" size="sm"
-                    className="ml-auto text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDelete(t.id, t.name)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
               </CardContent>
             </Card>
