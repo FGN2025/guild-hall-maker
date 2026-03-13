@@ -134,7 +134,7 @@ const Community = () => {
       </div>
 
       <TopicDetail topic={selectedTopic} open={!!selectedTopic} onOpenChange={(open) => !open && setSelectedTopic(null)} />
-    </div>
+    </>
   );
 };
 

@@ -150,7 +150,7 @@ const Achievements = () => {
           </>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

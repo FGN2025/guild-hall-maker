@@ -220,7 +220,7 @@ onClick={() => navigate(`/tournaments/${t.id}`)}
           </>
         )}
       </div>
-    </div>
+    </>
   );
 };
 
