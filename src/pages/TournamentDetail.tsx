@@ -261,6 +261,7 @@ const TournamentDetail = () => {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };

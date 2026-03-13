@@ -108,8 +108,9 @@ const TournamentBracket = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="py-8 container mx-auto px-4">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="bracket" />
+      <div className="py-8 container mx-auto px-4 relative z-10">
         {/* Back button */}
         <Button
           variant="ghost"
