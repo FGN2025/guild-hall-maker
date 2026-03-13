@@ -458,7 +458,9 @@ ${sectionBlocks}
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="relative">
+      <PageBackground pageSlug="guide" />
+      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 relative z-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl md:text-4xl font-display font-bold tracking-wider gradient-text mb-2">
