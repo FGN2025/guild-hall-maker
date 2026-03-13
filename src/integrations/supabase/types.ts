@@ -494,6 +494,7 @@ export type Database = {
       }
       challenges: {
         Row: {
+          achievement_id: string | null
           challenge_type: string
           cover_image_url: string | null
           created_at: string
@@ -520,6 +521,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          achievement_id?: string | null
           challenge_type?: string
           cover_image_url?: string | null
           created_at?: string
@@ -546,6 +548,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          achievement_id?: string | null
           challenge_type?: string
           cover_image_url?: string | null
           created_at?: string
@@ -572,6 +575,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "challenges_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "challenges_game_id_fkey"
             columns: ["game_id"]
@@ -1950,6 +1960,7 @@ export type Database = {
       }
       quests: {
         Row: {
+          achievement_id: string | null
           chain_id: string | null
           chain_order: number
           challenge_type: string
@@ -1981,6 +1992,7 @@ export type Database = {
           xp_reward: number
         }
         Insert: {
+          achievement_id?: string | null
           chain_id?: string | null
           chain_order?: number
           challenge_type?: string
@@ -2012,6 +2024,7 @@ export type Database = {
           xp_reward?: number
         }
         Update: {
+          achievement_id?: string | null
           chain_id?: string | null
           chain_order?: number
           challenge_type?: string
@@ -2043,6 +2056,13 @@ export type Database = {
           xp_reward?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "quests_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quests_chain_id_fkey"
             columns: ["chain_id"]
@@ -2969,6 +2989,7 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          achievement_id: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -2999,6 +3020,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          achievement_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -3029,6 +3051,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          achievement_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -3059,6 +3082,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tournaments_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tournaments_prize_id_fkey"
             columns: ["prize_id"]
