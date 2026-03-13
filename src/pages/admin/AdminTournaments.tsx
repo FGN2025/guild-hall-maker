@@ -227,6 +227,9 @@ const AdminTournaments = () => {
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured })}>
+                        <Star className={`h-4 w-4 ${t.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                      </Button>
                       {(t.status === "in_progress" || t.status === "completed") && (
                         <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/bracket`)}>
                           <GitBranch className="h-4 w-4 text-primary" />
