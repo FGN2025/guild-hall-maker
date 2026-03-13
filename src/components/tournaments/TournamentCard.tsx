@@ -1,5 +1,6 @@
 import { Calendar, Users, GitBranch, Settings, Trophy } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tournament } from "@/hooks/useTournaments";
