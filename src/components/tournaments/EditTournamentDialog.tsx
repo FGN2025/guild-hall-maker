@@ -186,6 +186,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       prize_pct_second: prizePctSecond,
       prize_pct_third: prizePctThird,
       discord_role_id: discordRoleId && discordRoleId !== "none" ? discordRoleId : undefined,
+      achievement_id: achievementId && achievementId !== "none" ? achievementId : undefined,
     });
     setOpen(false);
   };
