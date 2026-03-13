@@ -36,6 +36,7 @@ import {
   TrendingUp,
   Radar,
 } from "lucide-react";
+import PageBackground from "@/components/PageBackground";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
