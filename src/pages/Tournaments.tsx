@@ -79,9 +79,9 @@ const Tournaments = () => {
   useMemo(() => { setPage(1); }, [search, statusFilter, sortBy]);
 
   return (
-    <div className="min-h-screen bg-background grid-bg relative">
+    <>
       <PageBackground pageSlug="tournaments" />
-      <div className="py-8 container mx-auto px-4 relative z-10">
+      <div className="space-y-6 relative z-10">
         <PageHero pageSlug="tournaments" />
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
