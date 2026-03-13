@@ -185,6 +185,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         cover_image_url: finalCoverUrl,
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
+        achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
       }).eq("id", challenge.id);
       if (error) throw error;
 
