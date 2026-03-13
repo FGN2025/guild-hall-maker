@@ -18,6 +18,7 @@ import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 import { useDiscordRoles } from "@/hooks/useDiscordRoles";
+import AchievementPicker from "@/components/shared/AchievementPicker";
 
 interface TournamentData {
   id: string;
