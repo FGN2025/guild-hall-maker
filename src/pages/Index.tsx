@@ -1,7 +1,7 @@
 import HeroSection from "@/components/HeroSection";
 import TickerEmbed from "@/components/TickerEmbed";
 import FeaturedVideo from "@/components/FeaturedVideo";
-import FeaturedTournaments from "@/components/FeaturedTournaments";
+import FeaturedEvents from "@/components/FeaturedEvents";
 import Navbar from "@/components/Navbar";
 import usePageTitle from "@/hooks/usePageTitle";
 
@@ -13,7 +13,7 @@ const Index = () => {
       <HeroSection />
       <TickerEmbed />
       <FeaturedVideo />
-      <FeaturedTournaments />
+      <FeaturedEvents />
       <footer className="border-t border-border py-12">
         <div className="container mx-auto px-4 text-center">
           <p className="font-display text-sm tracking-widest text-primary mb-4">FGN</p>
