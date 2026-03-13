@@ -411,6 +411,7 @@ const ModeratorTournaments = () => {
                   >
                     <Trash2 className="h-4 w-4 mr-2" /> Delete Tournament
                   </Button>
+                )}
               </div>
             </div>
           </DialogContent>
