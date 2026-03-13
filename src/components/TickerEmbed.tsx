@@ -49,6 +49,7 @@ const TickerEmbed = () => {
       <div className="container mx-auto px-4">
         <div
           ref={containerRef}
+          className="rounded-xl border border-border overflow-hidden bg-card"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>

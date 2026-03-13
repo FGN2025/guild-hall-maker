@@ -1,24 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Add Rounded Corners to Video and Ticker Sections
+## What was built
 
-### Current State
-- **Featured Event cards**: Already use `rounded-xl` (12px border radius) — the target style.
-- **Featured Video**: The inner wrapper at line 54 already has `rounded-xl border border-border overflow-hidden` — so the video embed itself is rounded, but the outer section has no rounding.
-- **Ticker**: Has no rounding at all — the `dangerouslySetInnerHTML` div is unstyled.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Changes
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-**`src/components/TickerEmbed.tsx`**
-- Wrap the embed div with `rounded-xl border border-border overflow-hidden bg-card` to match the video and card styling.
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-**`src/components/FeaturedVideo.tsx`**
-- The video container already has `rounded-xl`. No change needed here — it already matches the Featured Event cards.
+---
 
-Looking at the screenshot more closely: the video does appear rounded already. The ticker is the one that bleeds edge-to-edge without rounding. So the change is just the ticker.
+# Delete & Ban Users — Completed
 
-### Single File Change
-| File | Change |
-|------|--------|
-| `src/components/TickerEmbed.tsx` | Add `rounded-xl border border-border overflow-hidden bg-card` to the embed container div |
+## What was built
 
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
+
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
+
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
