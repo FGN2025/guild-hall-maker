@@ -127,6 +127,19 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
     onError: (e: any) => toast.error(e.message),
   });
 
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ id, current }: { id: string; current: boolean }) => {
+      const { error } = await supabase.from("quests").update({ is_featured: !current } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`${queryKeyPrefix}-quests`] });
+      queryClient.invalidateQueries({ queryKey: ["featured-events"] });
+      toast.success("Featured status updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ enrollmentId, status }: { enrollmentId: string; status: string }) => {
       // 1. Get enrollment details
@@ -367,6 +380,9 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: q.id, current: !!q.is_featured })}>
+                            <Star className={`h-4 w-4 ${q.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => setEditQuest(q)}><Pencil className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => setPromoData(buildQuestPromo(q))}><Megaphone className="h-4 w-4 text-primary" /></Button>
@@ -393,9 +409,17 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                     <div className="absolute top-3 left-3 flex gap-2">
                       <Badge variant="outline" className={`capitalize ${difficultyColor[q.difficulty] ?? ""}`}>{q.difficulty}</Badge>
                     </div>
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1" onClick={(e) => e.stopPropagation()}>
-                      <span className="text-[10px] font-medium text-foreground">{q.is_active ? "Active" : "Off"}</span>
-                      <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="bg-background/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-background transition-colors"
+                        onClick={() => toggleFeaturedMutation.mutate({ id: q.id, current: !!q.is_featured })}
+                      >
+                        <Star className={`h-4 w-4 ${q.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                      </button>
+                      <div className="flex items-center gap-1.5 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1">
+                        <span className="text-[10px] font-medium text-foreground">{q.is_active ? "Active" : "Off"}</span>
+                        <Switch checked={q.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: q.id, is_active: checked })} />
+                      </div>
                     </div>
                   </div>
                   <CardContent className="p-5 flex flex-col gap-3">

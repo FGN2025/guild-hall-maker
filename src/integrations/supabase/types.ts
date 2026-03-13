@@ -505,6 +505,7 @@ export type Database = {
           game_id: string | null
           id: string
           is_active: boolean
+          is_featured: boolean
           max_completions: number | null
           max_enrollments: number | null
           name: string
@@ -530,6 +531,7 @@ export type Database = {
           game_id?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           max_completions?: number | null
           max_enrollments?: number | null
           name: string
@@ -555,6 +557,7 @@ export type Database = {
           game_id?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           max_completions?: number | null
           max_enrollments?: number | null
           name?: string
@@ -1960,6 +1963,7 @@ export type Database = {
           game_id: string | null
           id: string
           is_active: boolean
+          is_featured: boolean
           max_completions: number | null
           max_enrollments: number | null
           name: string
@@ -1990,6 +1994,7 @@ export type Database = {
           game_id?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           max_completions?: number | null
           max_enrollments?: number | null
           name: string
@@ -2020,6 +2025,7 @@ export type Database = {
           game_id?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           max_completions?: number | null
           max_enrollments?: number | null
           name?: string
