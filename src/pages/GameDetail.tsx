@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Gamepad2, Calendar, Trophy, Loader2, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
+import PageBackground from "@/components/PageBackground";
 
 const GameDetail = () => {
   usePageTitle("Game Detail");
