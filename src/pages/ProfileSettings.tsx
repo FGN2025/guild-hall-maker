@@ -13,6 +13,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
+import PageBackground from "@/components/PageBackground";
 
 
 const ProfileSettings = () => {
