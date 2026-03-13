@@ -23,17 +23,19 @@ const Achievements = () => {
     <>
       <PageBackground pageSlug="achievements" />
       <div className="space-y-6 relative z-10">
-        <PageHero pageSlug="achievements" />
-        <div>
-          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">
-            Global Rankings
-          </p>
-          <h1 className="font-display text-4xl font-bold text-foreground page-heading">
-            Achievements Leaderboard
-          </h1>
-          <p className="text-sm text-muted-foreground font-body mt-2 page-heading">
-            Players ranked by total achievements unlocked across all milestones.
-          </p>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <PageHero pageSlug="achievements" />
+          <div>
+            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">
+              Global Rankings
+            </p>
+            <h1 className="font-display text-4xl font-bold text-foreground page-heading">
+              Achievements Leaderboard
+            </h1>
+            <p className="text-sm text-muted-foreground font-body mt-2 page-heading">
+              Players ranked by total achievements unlocked across all milestones.
+            </p>
+          </div>
         </div>
 
         {isLoading ? (

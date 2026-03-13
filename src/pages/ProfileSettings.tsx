@@ -171,12 +171,14 @@ const ProfileSettings = () => {
     <div className="min-h-screen bg-background grid-bg relative">
       <PageBackground pageSlug="profile" />
       <main className="container mx-auto px-4 py-8 max-w-2xl relative z-10">
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors font-body text-sm"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-        </Link>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-body text-sm"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+          </Link>
+        </div>
 
         <Card className="glass-panel border-border/50">
           <CardHeader>

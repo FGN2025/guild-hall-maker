@@ -84,11 +84,13 @@ const SeasonStats = () => {
     <div className="min-h-screen bg-background grid-bg relative">
       <PageBackground pageSlug="season-stats" />
       <div className="py-8 container mx-auto px-4 relative z-10">
-        <PageHero pageSlug="season-stats" />
-        {/* Header */}
-        <div className="mb-6">
-          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Analytics</p>
-          <h1 className="font-display text-4xl font-bold text-foreground">Statistics</h1>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <PageHero pageSlug="season-stats" />
+          {/* Header */}
+          <div>
+            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Analytics</p>
+            <h1 className="font-display text-4xl font-bold text-foreground">Statistics</h1>
+          </div>
         </div>
 
         <Tabs defaultValue="season" className="w-full">

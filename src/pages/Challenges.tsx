@@ -75,14 +75,16 @@ const Challenges = () => {
     <>
       <PageBackground pageSlug="challenges" />
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
-            <Target className="h-8 w-8 text-primary" />
-            Challenges
-          </h1>
-          <p className="text-muted-foreground font-body mt-1 page-heading">
-            Complete challenges to earn points. Upload evidence to prove completion.
-          </p>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
+              <Target className="h-8 w-8 text-primary" />
+              Challenges
+            </h1>
+            <p className="text-muted-foreground font-body mt-1 page-heading">
+              Complete challenges to earn points. Upload evidence to prove completion.
+            </p>
+          </div>
         </div>
 
         {/* Stats bar */}

@@ -26,12 +26,14 @@ const PlayerProfile = () => {
     <div className="min-h-screen bg-background grid-bg relative">
       <PageBackground pageSlug="player-profile" />
       <div className="py-8 container mx-auto px-4 max-w-5xl relative z-10">
-        <Link
-          to="/leaderboard"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors font-body text-sm"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Leaderboard
-        </Link>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <Link
+            to="/leaderboard"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-body text-sm"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to Leaderboard
+          </Link>
+        </div>
 
         {isLoading ? (
           <div className="space-y-8">
