@@ -186,7 +186,7 @@ const TournamentDetail = () => {
 
             {/* Actions */}
             <div className="flex flex-col gap-2 pt-2">
-              {isCreator && (
+              {canManage && (
                 <Button
                   variant="outline"
                   className="w-full font-heading tracking-wide border-accent/30 text-accent hover:bg-accent/10 py-5"
