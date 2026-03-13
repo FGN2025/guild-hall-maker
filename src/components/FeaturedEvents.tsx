@@ -84,6 +84,7 @@ const FeaturedEvents = () => {
           stat2Value: c.estimated_minutes ? `~${c.estimated_minutes}m` : "—",
           stat2Icon: Clock,
           link: `/challenges/${c.id}`,
+          imageUrl: c.cover_image_url || c.games?.cover_image_url || undefined,
         });
       });
 
