@@ -199,6 +199,7 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
       setSelectedGameId("");
       setSelectedChainId("");
       setChainOrder(0);
+      setAchievementId("");
       setImageFile(null);
       setImagePreview(null);
     },
