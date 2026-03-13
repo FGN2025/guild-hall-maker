@@ -44,6 +44,7 @@ const ModeratorTournaments = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [detailTournament, setDetailTournament] = useState<any | null>(null);
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["mod-tournaments"],
