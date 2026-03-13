@@ -20,6 +20,7 @@ interface FeaturedEvent {
   stat2Value: string;
   stat2Icon: any;
   link: string;
+  imageUrl?: string;
 }
 
 const typeBadgeStyle: Record<string, string> = {
