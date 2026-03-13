@@ -372,6 +372,9 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
           prize_pct_first: details.prize_pct_first ?? 50,
           prize_pct_second: details.prize_pct_second ?? 30,
           prize_pct_third: details.prize_pct_third ?? 20,
+          achievement_id: details.achievement_id ?? null,
+          discord_role_id: details.discord_role_id ?? null,
+          image_url: details.image_url ?? null,
         } as any)
         .eq("id", tournamentId);
       if (error) throw error;
