@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Compass, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Link2,
+  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Link2, Megaphone,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
