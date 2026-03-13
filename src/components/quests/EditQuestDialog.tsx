@@ -52,6 +52,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
   const [uploadingImage, setUploadingImage] = useState(false);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
   const [enhancingDesc, setEnhancingDesc] = useState(false);
+  const [achievementId, setAchievementId] = useState("");
 
   const enhanceDescription = async () => {
     if (!name.trim()) { toast.error("Enter a quest name first"); return; }
