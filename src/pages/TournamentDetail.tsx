@@ -17,6 +17,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
+import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { format } from "date-fns";
 import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 import PageBackground from "@/components/PageBackground";
