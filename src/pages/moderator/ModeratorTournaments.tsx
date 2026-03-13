@@ -383,6 +383,13 @@ const ModeratorTournaments = () => {
                 ))}
               </div>
 
+              {detailTournament.achievement_id && (
+                <div>
+                  <span className="text-xs text-muted-foreground mb-1 block">Earn on Completion</span>
+                  <AchievementBadgeDisplay achievementId={detailTournament.achievement_id} />
+                </div>
+              )}
+
               {detailTournament.rules && (
                 <div className="bg-muted rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
