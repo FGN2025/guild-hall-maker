@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Gamepad2, Calendar, Trophy, Loader2, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
+import PageBackground from "@/components/PageBackground";
 
 const GameDetail = () => {
   usePageTitle("Game Detail");
@@ -50,7 +51,9 @@ const GameDetail = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="relative">
+      <PageBackground pageSlug="game-detail" />
+      <div className="space-y-8 relative z-10">
       <Link to="/games" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading">
         <ArrowLeft className="h-4 w-4" /> Back to Games
       </Link>
@@ -147,6 +150,7 @@ const GameDetail = () => {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 };

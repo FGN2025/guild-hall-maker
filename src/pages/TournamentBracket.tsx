@@ -6,6 +6,7 @@ import BracketMatchCard from "@/components/tournaments/BracketMatchCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, Gamepad2, Swords, Radio } from "lucide-react";
+import PageBackground from "@/components/PageBackground";
 import { useRef, useEffect } from "react";
 
 const TournamentBracket = () => {
@@ -107,8 +108,9 @@ const TournamentBracket = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="py-8 container mx-auto px-4">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="bracket" />
+      <div className="py-8 container mx-auto px-4 relative z-10">
         {/* Back button */}
         <Button
           variant="ghost"

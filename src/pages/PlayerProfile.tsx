@@ -13,6 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Gamepad2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import PageBackground from "@/components/PageBackground";
 
 const PlayerProfile = () => {
   usePageTitle("Player Profile");
@@ -22,8 +23,9 @@ const PlayerProfile = () => {
   const { data: gameBreakdown } = usePlayerGameBreakdown(id);
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="py-8 container mx-auto px-4 max-w-5xl">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="player-profile" />
+      <div className="py-8 container mx-auto px-4 max-w-5xl relative z-10">
         <Link
           to="/leaderboard"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors font-body text-sm"

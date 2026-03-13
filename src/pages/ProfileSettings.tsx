@@ -13,6 +13,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
+import PageBackground from "@/components/PageBackground";
 
 
 const ProfileSettings = () => {
@@ -167,8 +168,9 @@ const ProfileSettings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="profile" />
+      <main className="container mx-auto px-4 py-8 max-w-2xl relative z-10">
         <Link
           to="/dashboard"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors font-body text-sm"

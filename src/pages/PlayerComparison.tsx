@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Swords, Trophy, Target, TrendingUp, Calendar, Link2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import PageBackground from "@/components/PageBackground";
 
 const PlayerComparison = () => {
   usePageTitle("Player Comparison");
@@ -35,8 +36,9 @@ const PlayerComparison = () => {
   const bothSelected = playerA && playerB;
 
   return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="py-8 container mx-auto px-4">
+    <div className="min-h-screen bg-background grid-bg relative">
+      <PageBackground pageSlug="compare" />
+      <div className="py-8 container mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="mb-6">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Head to Head</p>

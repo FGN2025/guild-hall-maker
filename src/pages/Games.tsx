@@ -10,6 +10,7 @@ import { Search, Gamepad2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import PageBackground from "@/components/PageBackground";
 
 const CATEGORIES = ["All", "General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Simulation", "Strategy", "MOBA", "MMORPG", "RPG", "Card Game", "Puzzle", "Adventure"];
 
@@ -40,7 +41,9 @@ const Games = () => {
   }, [games, search, category, hasTournaments, tournamentGameNames]);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="relative">
+      <PageBackground pageSlug="games" />
+      <div className="relative z-10 flex flex-col lg:flex-row gap-6">
       {/* Sidebar filters */}
       <aside className="lg:w-64 shrink-0 space-y-4">
         <div className="glass-panel rounded-xl p-5 space-y-5">
@@ -103,6 +106,7 @@ const Games = () => {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

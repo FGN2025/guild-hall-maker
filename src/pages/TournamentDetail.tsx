@@ -19,6 +19,7 @@ import {
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { format } from "date-fns";
 import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
+import PageBackground from "@/components/PageBackground";
 
 const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
@@ -85,7 +86,9 @@ const TournamentDetail = () => {
   const coverUrl = t.image_url || t.game_cover_url;
 
   return (
-    <div className="space-y-6">
+    <div className="relative">
+      <PageBackground pageSlug="tournaments" />
+      <div className="space-y-6 relative z-10">
       {/* Back button */}
       <Button
         variant="ghost"
@@ -258,6 +261,7 @@ const TournamentDetail = () => {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };

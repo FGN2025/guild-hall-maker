@@ -17,6 +17,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTournaments } from "@/hooks/useTournaments";
+import PageBackground from "@/components/PageBackground";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -39,7 +40,8 @@ const TournamentCalendar = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      <PageBackground pageSlug="calendar" />
       <div className="flex items-center justify-between">
         <h1 className="font-display text-3xl font-bold text-foreground">
           Tournament Calendar
