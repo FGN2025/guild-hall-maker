@@ -589,7 +589,7 @@ const permissionRows = [
   { feature: "User Management", admin: true, marketing: false, manager: false },
   { feature: "Access Requests", admin: true, marketing: false, manager: false },
   { feature: "Tournament Management", admin: true, marketing: false, manager: false },
-  { feature: "Badge / Achievement System", admin: true, marketing: false, manager: false },
+  { feature: "Badge / Achievement System", admin: true, marketing: false, manager: true },
   { feature: "Games Management", admin: true, marketing: false, manager: false },
   { feature: "Season Management", admin: true, marketing: false, manager: false },
   { feature: "Media Library", admin: true, marketing: false, manager: false },
