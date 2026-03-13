@@ -1,22 +1,11 @@
-import { Trophy, Flame, Star, Crown, Target, Shield, Swords, Zap, Medal, Award, Sparkles } from "lucide-react";
+import { Award, Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { getAchievementIcon } from "@/lib/achievementIcons";
 import type { Achievement } from "@/hooks/usePlayerAchievements";
 
 interface Props {
   achievements: Achievement[];
 }
-
-const iconMap = {
-  trophy: Trophy,
-  flame: Flame,
-  star: Star,
-  crown: Crown,
-  target: Target,
-  shield: Shield,
-  swords: Swords,
-  zap: Zap,
-  medal: Medal,
-};
 
 const tierStyles = {
   bronze: {
@@ -46,7 +35,7 @@ const tierStyles = {
 };
 
 const AchievementCard = ({ a }: { a: Achievement }) => {
-  const Icon = iconMap[a.icon];
+  const Icon = getAchievementIcon(a.icon);
   const tier = tierStyles[a.tier];
   const isCustom = a.category === "custom";
 

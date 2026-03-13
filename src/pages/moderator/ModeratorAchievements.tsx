@@ -16,11 +16,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Pencil, Trash2, Award, Search, X, Sparkles } from "lucide-react";
 import { useAchievementDefinitions, useAchievementAdmin, useRecentAwards } from "@/hooks/useAchievementAdmin";
 import type { AchievementDefinition } from "@/hooks/useAchievementAdmin";
+import { ACHIEVEMENT_ICON_KEYS, getAchievementIcon } from "@/lib/achievementIcons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-import { ACHIEVEMENT_ICON_KEYS, getAchievementIcon } from "@/lib/achievementIcons";
-const ICONS = ACHIEVEMENT_ICON_KEYS;
 const TIERS = ["bronze", "silver", "gold", "platinum"];
 
 const tierColor: Record<string, string> = {
@@ -81,7 +80,7 @@ const DefForm = ({
             <SelectTrigger>
               {(() => { const Ic = getAchievementIcon(icon); return <span className="flex items-center gap-2"><Ic className="h-4 w-4" />{icon}</span>; })()}
             </SelectTrigger>
-            <SelectContent>{ICONS.map((i) => {
+            <SelectContent>{ACHIEVEMENT_ICON_KEYS.map((i) => {
               const Ic = getAchievementIcon(i);
               return <SelectItem key={i} value={i}><span className="flex items-center gap-2"><Ic className="h-4 w-4" />{i}</span></SelectItem>;
             })}</SelectContent>
@@ -158,6 +157,7 @@ const DefinitionsTab = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                <th className="text-left py-3 px-4">Icon</th>
                 <th className="text-left py-3 px-4">Name</th>
                 <th className="text-center py-3 px-2">Tier</th>
                 <th className="text-center py-3 px-2">Category</th>
@@ -166,24 +166,28 @@ const DefinitionsTab = () => {
               </tr>
             </thead>
             <tbody>
-              {defs?.map((d) => (
-                <tr key={d.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
-                  <td className="py-3 px-4 font-heading font-medium text-foreground">{d.name}</td>
-                  <td className="py-3 px-2 text-center">
-                    <span className={`text-xs font-display uppercase ${tierColor[d.tier] ?? "text-muted-foreground"}`}>{d.tier}</span>
-                  </td>
-                  <td className="py-3 px-2 text-center">
-                    <Badge variant={d.category === "milestone" ? "secondary" : "outline"}>{d.category}</Badge>
-                  </td>
-                  <td className="py-3 px-2 text-center">
-                    <Badge variant={d.is_active ? "default" : "destructive"}>{d.is_active ? "Yes" : "No"}</Badge>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <Button variant="ghost" size="icon" onClick={() => setEditItem(d)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteDef.mutate(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </td>
-                </tr>
-              ))}
+              {defs?.map((d) => {
+                const Icon = getAchievementIcon(d.icon);
+                return (
+                  <tr key={d.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                    <td className="py-3 px-4"><Icon className={`h-5 w-5 ${tierColor[d.tier] ?? "text-muted-foreground"}`} /></td>
+                    <td className="py-3 px-4 font-heading font-medium text-foreground">{d.name}</td>
+                    <td className="py-3 px-2 text-center">
+                      <span className={`text-xs font-display uppercase ${tierColor[d.tier] ?? "text-muted-foreground"}`}>{d.tier}</span>
+                    </td>
+                    <td className="py-3 px-2 text-center">
+                      <Badge variant={d.category === "milestone" ? "secondary" : "outline"}>{d.category}</Badge>
+                    </td>
+                    <td className="py-3 px-2 text-center">
+                      <Badge variant={d.is_active ? "default" : "destructive"}>{d.is_active ? "Yes" : "No"}</Badge>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Button variant="ghost" size="icon" onClick={() => setEditItem(d)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteDef.mutate(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -313,7 +317,7 @@ const AwardTab = () => {
           </div>
         </div>
 
-        {/* Achievement select - grouped */}
+        {/* Achievement select */}
         <div>
           <div className="flex items-center justify-between mb-1">
             <Label>Achievement</Label>
@@ -337,11 +341,14 @@ const AwardTab = () => {
               {milestoneDefs.length > 0 && (
                 <SelectGroup>
                   <SelectLabel>Milestone Achievements</SelectLabel>
-                  {milestoneDefs.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      <span className={tierColor[d.tier]}>{d.tier}</span> — {d.name}
-                    </SelectItem>
-                  ))}
+                  {milestoneDefs.map((d) => {
+                    const Ic = getAchievementIcon(d.icon);
+                    return (
+                      <SelectItem key={d.id} value={d.id}>
+                        <span className="flex items-center gap-1.5"><Ic className={`h-3.5 w-3.5 ${tierColor[d.tier]}`} /> {d.name}</span>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectGroup>
               )}
             </SelectContent>
@@ -438,18 +445,22 @@ const AwardTab = () => {
 };
 
 // ---------- Main Page ----------
-const AdminAchievements = () => (
-  <div className="space-y-6">
-    <h1 className="font-display text-3xl font-bold text-foreground">Achievements</h1>
-    <Tabs defaultValue="definitions">
-      <TabsList>
-        <TabsTrigger value="definitions">Definitions</TabsTrigger>
-        <TabsTrigger value="award">Award</TabsTrigger>
-      </TabsList>
-      <TabsContent value="definitions"><DefinitionsTab /></TabsContent>
-      <TabsContent value="award"><AwardTab /></TabsContent>
-    </Tabs>
-  </div>
-);
+const ModeratorAchievements = () => {
+  usePageTitle("Moderator – Achievements");
 
-export default AdminAchievements;
+  return (
+    <div className="space-y-6">
+      <h1 className="font-display text-3xl font-bold text-foreground">Achievements</h1>
+      <Tabs defaultValue="definitions">
+        <TabsList>
+          <TabsTrigger value="definitions">Definitions</TabsTrigger>
+          <TabsTrigger value="award">Award</TabsTrigger>
+        </TabsList>
+        <TabsContent value="definitions"><DefinitionsTab /></TabsContent>
+        <TabsContent value="award"><AwardTab /></TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default ModeratorAchievements;

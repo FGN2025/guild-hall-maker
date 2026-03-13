@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Trophy } from "lucide-react";
+import { getAchievementIcon } from "@/lib/achievementIcons";
 
 interface AchievementPickerProps {
   value: string;
@@ -52,17 +53,18 @@ const AchievementPicker = ({ value, onChange, label = "Achievement / Badge" }: A
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">None (no badge)</SelectItem>
-          {achievements.map((a) => (
-            <SelectItem key={a.id} value={a.id}>
-              <span className="flex items-center gap-2">
-                <span className={tierColors[a.tier] || "text-foreground"}>
-                  {a.icon || "🏆"}
+          {achievements.map((a) => {
+            const Icon = getAchievementIcon(a.icon);
+            return (
+              <SelectItem key={a.id} value={a.id}>
+                <span className="flex items-center gap-2">
+                  <Icon className={`h-4 w-4 ${tierColors[a.tier] || "text-foreground"}`} />
+                  <span className="capitalize text-xs text-muted-foreground">[{a.tier}]</span>
+                  {a.name}
                 </span>
-                <span className="capitalize text-xs text-muted-foreground">[{a.tier}]</span>
-                {a.name}
-              </span>
-            </SelectItem>
-          ))}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
       <p className="text-xs text-muted-foreground">Auto-awarded to players on completion</p>

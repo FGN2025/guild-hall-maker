@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Trophy, Swords, Star, Gift, ArrowLeft, TrendingUp, Target, BookOpen } from "lucide-react";
+import { LayoutDashboard, Trophy, Swords, Star, Gift, ArrowLeft, TrendingUp, Target, BookOpen, Award } from "lucide-react";
 
 const sidebarItems = [
   { to: "/moderator", label: "Dashboard", icon: LayoutDashboard },
@@ -7,6 +7,7 @@ const sidebarItems = [
   { to: "/moderator/matches", label: "Matches", icon: Swords },
   { to: "/moderator/points", label: "Points", icon: Star },
   { to: "/moderator/challenges", label: "Challenges & Quests", icon: Target },
+  { to: "/moderator/achievements", label: "Achievements", icon: Award },
   { to: "/moderator/ladders", label: "Ladders", icon: TrendingUp },
   { to: "/moderator/redemptions", label: "Redemptions", icon: Gift },
   { to: "/moderator/guide", label: "Mod Guide", icon: BookOpen },
