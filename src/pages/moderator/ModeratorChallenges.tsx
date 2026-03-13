@@ -378,6 +378,9 @@ const ModeratorChallenges = () => {
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: c.id, current: !!c.is_featured })}>
+                            <Star className={`h-4 w-4 ${c.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => setEditChallenge(c)}>
                             <Pencil className="h-4 w-4 text-primary" />
                           </Button>
