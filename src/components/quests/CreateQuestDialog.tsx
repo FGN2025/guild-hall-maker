@@ -46,6 +46,7 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
   const [uploadingImage, setUploadingImage] = useState(false);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
   const [enhancingDesc, setEnhancingDesc] = useState(false);
+  const [achievementId, setAchievementId] = useState("");
 
   const enhanceDescription = async () => {
     if (!form.name.trim()) { toast.error("Enter a quest name first"); return; }
