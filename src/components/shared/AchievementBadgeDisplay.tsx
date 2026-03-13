@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy } from "lucide-react";
+import { getAchievementIcon } from "@/lib/achievementIcons";
 
 interface AchievementBadgeDisplayProps {
   achievementId: string | null | undefined;
-  /** compact = small inline badge; full = larger display with description */
   compact?: boolean;
 }
 
@@ -42,14 +42,14 @@ const AchievementBadgeDisplay = ({ achievementId, compact = false }: Achievement
 
   if (!achievementId || !achievement) return null;
 
-  const iconText = achievement.icon || "🏆";
+  const Icon = getAchievementIcon(achievement.icon);
   const tierColor = tierColors[achievement.tier] || "text-foreground";
   const bgColor = tierBgColors[achievement.tier] || "bg-muted border-border";
 
   if (compact) {
     return (
       <div className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${bgColor}`}>
-        <span className={tierColor}>{iconText}</span>
+        <Icon className={`h-3 w-3 ${tierColor}`} />
         <span className="font-heading font-medium text-foreground">{achievement.name}</span>
       </div>
     );
@@ -57,7 +57,7 @@ const AchievementBadgeDisplay = ({ achievementId, compact = false }: Achievement
 
   return (
     <div className={`flex items-center gap-3 rounded-lg border p-3 ${bgColor}`}>
-      <div className={`text-2xl ${tierColor}`}>{iconText}</div>
+      <Icon className={`h-6 w-6 ${tierColor}`} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <Trophy className={`h-3.5 w-3.5 ${tierColor}`} />

@@ -35,7 +35,7 @@ const tierStyles = {
 };
 
 const AchievementCard = ({ a }: { a: Achievement }) => {
-  const Icon = iconMap[a.icon];
+  const Icon = getAchievementIcon(a.icon);
   const tier = tierStyles[a.tier];
   const isCustom = a.category === "custom";
 
