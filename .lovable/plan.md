@@ -1,30 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Fix Featured Event Card Images on iPhone
+## What was built
 
-### Problem
-Images in Featured Event cards are not rendering on iPhone/Safari. The cards use Supabase storage URLs which are publicly accessible, so this is a Safari-specific rendering issue rather than a network/CORS problem.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Root Cause
-Safari on iPhone has known issues rendering images inside flex containers with `overflow-hidden` when the image relies on `h-full` to inherit height. The image can collapse to 0px height because Safari doesn't resolve the intrinsic size the same way Chrome does.
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-### Fix — Single file: `src/components/FeaturedEvents.tsx`
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-1. **Add explicit dimensions to the `<img>` tag** — add `width` and `height` attributes to give Safari an intrinsic aspect ratio hint
-2. **Add `min-h-[144px]`** to the image container div (backup for the `h-36` class)
-3. **Add `loading="eager"`** to prevent lazy-loading from interfering on mobile viewports where the cards may be just outside the initial viewport threshold
+---
 
-```tsx
-// Before
-<div className="relative h-36 bg-muted overflow-hidden">
-  <img src={e.imageUrl} alt={e.title} className="w-full h-full object-cover" />
+# Delete & Ban Users — Completed
 
-// After
-<div className="relative h-36 min-h-[144px] bg-muted overflow-hidden">
-  <img src={e.imageUrl} alt={e.title} className="w-full h-full object-cover" loading="eager" width={400} height={144} />
-```
+## What was built
 
-Same fix applies to the gradient placeholder fallback (add `min-h-[144px]` to container).
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-No database or backend changes needed.
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
+
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called

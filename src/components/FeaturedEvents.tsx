@@ -190,9 +190,9 @@ const FeaturedEvents = () => {
                   className="rounded-xl border border-border bg-card overflow-hidden glow-card flex flex-col hover:border-primary/40 transition-colors"
                 >
                   {/* Hero Image */}
-                  <div className="relative h-36 bg-muted overflow-hidden">
+                  <div className="relative h-36 min-h-[144px] bg-muted overflow-hidden">
                     {e.imageUrl ? (
-                      <img src={e.imageUrl} alt={e.title} className="w-full h-full object-cover" />
+                      <img src={e.imageUrl} alt={e.title} className="w-full h-full object-cover" loading="eager" width={400} height={144} />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                         <span className="font-display text-lg text-foreground/60 uppercase tracking-widest">{e.game || e.type}</span>
