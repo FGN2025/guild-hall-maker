@@ -287,7 +287,7 @@ const ModeratorTournaments = () => {
                     <div className="font-heading text-xs font-semibold text-foreground">
                       <PrizeDisplay prizeType={(t as any).prize_type} prizePool={t.prize_pool} compact />
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Prize</p>
+                    <Trophy className="h-3.5 w-3.5 text-primary mx-auto mt-0.5" />
                   </div>
                 </div>
 
