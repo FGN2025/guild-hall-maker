@@ -1,4 +1,4 @@
-import { Calendar, Users, GitBranch, Settings } from "lucide-react";
+import { Calendar, Users, GitBranch, Settings, Trophy } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,7 @@ const TournamentCard = ({
           <div key={info.label} className="bg-muted rounded-lg p-3">
             {info.isPrize ? (
               <>
+                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mx-auto mb-1" />
                 <div className="font-heading text-sm font-semibold text-foreground">
                   <PrizeDisplay prizeType={(t as any).prize_type} prizePool={t.prize_pool} compact />
                 </div>
