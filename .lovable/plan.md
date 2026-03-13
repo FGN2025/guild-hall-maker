@@ -1,40 +1,51 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Plan: Sticky Page Headers on All Pages
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
+### Scope
+Apply sticky headers to **all** pages that have a heading section, not just those with filter bars. This covers ~15 pages.
 
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
+### Approach
+Wrap each page's header block in a sticky container that stays pinned at the top of the scrollable `<main>` area. The container uses `backdrop-blur` and a semi-transparent background to remain legible over content that scrolls beneath it.
 
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+**Sticky wrapper pattern:**
+```tsx
+<div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pt-0 pb-4">
+  {/* PageHero (if present) */}
+  {/* Title / subtitle */}
+  {/* Filter bar (if present) */}
+  {/* Result count (if present) */}
+</div>
+```
 
----
+The negative margin + padding trick ensures the sticky area spans edge-to-edge within the content padding set by `AppLayout`.
 
-# Delete & Ban Users — Completed
+### Pages to Update
 
-## What was built
+| Page | Header content to make sticky |
+|------|-------------------------------|
+| Games | Hero + title + filter bar + count |
+| Tournaments | Hero + title + filter bar + count |
+| Challenges | Title + description + filters |
+| Quests | Title + description + filters |
+| Leaderboard | Hero + title + filters |
+| Prize Shop | Hero + title + description + filters |
+| Ladders | Title + description |
+| Community | Hero + title + create button |
+| Dashboard | Hero + title |
+| Achievements | Hero + title + description |
+| Season Stats | Hero + title |
+| Tournament Calendar | Title + month nav |
+| Player Comparison | Title |
+| Player Profile | Back link + profile header |
+| Profile Settings | Title |
+| Game Detail | Back link + title |
 
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
+### Changes Summary
 
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
+| What | Detail |
+|------|--------|
+| **~16 page files** | Wrap header sections in the sticky container div |
+| **No new components** | Inline wrapper using existing Tailwind utilities |
+| **No layout changes** | `AppLayout` already has `overflow-auto` on `<main>`, so `sticky` works natively |
 
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
-
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
