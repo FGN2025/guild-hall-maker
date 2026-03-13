@@ -25,10 +25,12 @@ const Dashboard = () => {
     <>
       <PageBackground pageSlug="dashboard" />
       <div className="space-y-6 relative z-10">
-        <PageHero pageSlug="dashboard" />
-        <div>
-          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Welcome Back</p>
-          <h1 className="font-display text-4xl font-bold text-foreground page-heading">Player Dashboard</h1>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <PageHero pageSlug="dashboard" />
+          <div>
+            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Welcome Back</p>
+            <h1 className="font-display text-4xl font-bold text-foreground page-heading">Player Dashboard</h1>
+          </div>
         </div>
 
         {isLoading ? (

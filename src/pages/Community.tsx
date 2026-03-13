@@ -33,13 +33,15 @@ const Community = () => {
     <>
       <PageBackground pageSlug="community" />
       <div className="space-y-6 relative z-10">
-        <PageHero pageSlug="community" />
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Connect & Discuss</p>
-            <h1 className="font-display text-4xl font-bold text-foreground page-heading">Community</h1>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <PageHero pageSlug="community" />
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Connect & Discuss</p>
+              <h1 className="font-display text-4xl font-bold text-foreground page-heading">Community</h1>
+            </div>
+            {user && <CreateTopicDialog />}
           </div>
-          {user && <CreateTopicDialog />}
         </div>
 
         <div className="grid md:grid-cols-3 gap-4 mb-10">

@@ -40,7 +40,7 @@ const PlayerComparison = () => {
       <PageBackground pageSlug="compare" />
       <div className="py-8 container mx-auto px-4 relative z-10">
         {/* Header */}
-        <div className="mb-6">
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
           <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Head to Head</p>
           <h1 className="font-display text-4xl font-bold text-foreground">Player Comparison</h1>
         </div>

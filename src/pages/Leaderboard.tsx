@@ -202,23 +202,28 @@ const Leaderboard = () => {
     <>
       <PageBackground pageSlug="leaderboard" />
       <div className="space-y-6 relative z-10">
-        <PageHero pageSlug="leaderboard" />
-        <div>
-          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Global Rankings</p>
-          <h1 className="font-display text-4xl font-bold text-foreground page-heading">Leaderboard</h1>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <PageHero pageSlug="leaderboard" />
+          <div>
+            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Global Rankings</p>
+            <h1 className="font-display text-4xl font-bold text-foreground page-heading">Leaderboard</h1>
+          </div>
+
+          <Tabs value={tab} onValueChange={setTab} className="mb-6 mt-6">
+            <TabsList className="bg-card/70 backdrop-blur-sm border border-border">
+              <TabsTrigger value="seasonal" className="gap-2 data-[state=active]:bg-primary/20">
+                <Calendar className="h-4 w-4" />
+                Seasonal
+              </TabsTrigger>
+              <TabsTrigger value="alltime" className="gap-2 data-[state=active]:bg-primary/20">
+                <Trophy className="h-4 w-4" />
+                All-Time
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        <Tabs value={tab} onValueChange={setTab} className="mb-6">
-          <TabsList className="bg-card/70 backdrop-blur-sm border border-border">
-            <TabsTrigger value="seasonal" className="gap-2 data-[state=active]:bg-primary/20">
-              <Calendar className="h-4 w-4" />
-              Seasonal
-            </TabsTrigger>
-            <TabsTrigger value="alltime" className="gap-2 data-[state=active]:bg-primary/20">
-              <Trophy className="h-4 w-4" />
-              All-Time
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={tab} onValueChange={setTab}>
 
           {/* SEASONAL TAB */}
           <TabsContent value="seasonal" className="mt-6">

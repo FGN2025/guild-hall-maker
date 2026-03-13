@@ -120,29 +120,31 @@ const PrizeShop = () => {
     <>
       <PageBackground pageSlug="prize-shop" />
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
-              <Gift className="h-8 w-8 text-primary" />
-              Prize Shop
-            </h1>
-            <p className="text-muted-foreground font-body mt-1 page-heading">
-              Spend your season points on awesome prizes.
-            </p>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
+                <Gift className="h-8 w-8 text-primary" />
+                Prize Shop
+              </h1>
+              <p className="text-muted-foreground font-body mt-1 page-heading">
+                Spend your season points on awesome prizes.
+              </p>
+            </div>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Available</p>
+                  <p className="text-xl font-bold font-mono text-primary">{availablePoints} pts</p>
+                </div>
+                <div className="border-l border-border pl-4">
+                  <p className="text-xs text-muted-foreground">Total Earned</p>
+                  <p className="text-sm font-mono text-muted-foreground">{totalEarned} pts</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <ShoppingBag className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-xs text-muted-foreground">Available</p>
-                <p className="text-xl font-bold font-mono text-primary">{availablePoints} pts</p>
-              </div>
-              <div className="border-l border-border pl-4">
-                <p className="text-xs text-muted-foreground">Total Earned</p>
-                <p className="text-sm font-mono text-muted-foreground">{totalEarned} pts</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <Tabs defaultValue="shop">

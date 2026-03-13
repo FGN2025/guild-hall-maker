@@ -82,59 +82,61 @@ const Tournaments = () => {
     <>
       <PageBackground pageSlug="tournaments" />
       <div className="space-y-6 relative z-10">
-        <PageHero pageSlug="tournaments" />
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Browse & Register</p>
-            <h1 className="font-display text-4xl font-bold text-foreground page-heading">Tournaments</h1>
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <PageHero pageSlug="tournaments" />
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Browse & Register</p>
+              <h1 className="font-display text-4xl font-bold text-foreground page-heading">Tournaments</h1>
+            </div>
+            {!user && (
+              <Link to="/auth">
+                <Button className="font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90">
+                  Sign In to Register
+                </Button>
+              </Link>
+            )}
           </div>
-          {!user && (
-            <Link to="/auth">
-              <Button className="font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90">
-                Sign In to Register
-              </Button>
-            </Link>
-          )}
-        </div>
 
-        {/* Search / Filter bar */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or game..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 bg-card border-border font-body"
-            />
+          {/* Search / Filter bar */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or game..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 bg-card border-border font-body"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-card border-border font-body">
+                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Filter status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="registered">Registered</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-[200px] bg-card border-border font-body">
+                <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date_asc">Date (Earliest)</SelectItem>
+                <SelectItem value="date_desc">Date (Latest)</SelectItem>
+                <SelectItem value="name_asc">Name (A–Z)</SelectItem>
+                <SelectItem value="name_desc">Name (Z–A)</SelectItem>
+                <SelectItem value="prize_desc">Prize (Highest)</SelectItem>
+                <SelectItem value="prize_asc">Prize (Lowest)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border font-body">
-              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="Filter status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="registered">Registered</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-[200px] bg-card border-border font-body">
-              <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date_asc">Date (Earliest)</SelectItem>
-              <SelectItem value="date_desc">Date (Latest)</SelectItem>
-              <SelectItem value="name_asc">Name (A–Z)</SelectItem>
-              <SelectItem value="name_desc">Name (Z–A)</SelectItem>
-              <SelectItem value="prize_desc">Prize (Highest)</SelectItem>
-              <SelectItem value="prize_asc">Prize (Lowest)</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {(() => {

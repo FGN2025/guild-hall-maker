@@ -54,9 +54,11 @@ const GameDetail = () => {
     <div className="relative">
       <PageBackground pageSlug="game-detail" />
       <div className="space-y-8 relative z-10">
-      <Link to="/games" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading">
-        <ArrowLeft className="h-4 w-4" /> Back to Games
-      </Link>
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+        <Link to="/games" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading">
+          <ArrowLeft className="h-4 w-4" /> Back to Games
+        </Link>
+      </div>
 
       {/* Hero */}
       <div className="flex flex-col md:flex-row gap-8">

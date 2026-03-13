@@ -85,21 +85,23 @@ const Quests = () => {
     <>
       <PageBackground pageSlug="quests" />
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
-              <Compass className="h-8 w-8 text-primary" />
-              Quests
-            </h1>
-            <p className="text-muted-foreground font-body mt-1 page-heading">
-              Complete quests to earn points and XP. Chain quests together for bonus rewards.
-            </p>
-          </div>
-          {user && totalXP > 0 && (
-            <div className="flex-shrink-0">
-              <QuestRankBadge totalXP={totalXP} />
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
+                <Compass className="h-8 w-8 text-primary" />
+                Quests
+              </h1>
+              <p className="text-muted-foreground font-body mt-1 page-heading">
+                Complete quests to earn points and XP. Chain quests together for bonus rewards.
+              </p>
             </div>
-          )}
+            {user && totalXP > 0 && (
+              <div className="flex-shrink-0">
+                <QuestRankBadge totalXP={totalXP} />
+              </div>
+            )}
+          </div>
         </div>
 
         {user ? (
