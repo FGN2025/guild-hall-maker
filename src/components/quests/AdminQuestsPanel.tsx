@@ -622,9 +622,11 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                 <Button variant="outline" className="w-full py-5" onClick={() => { navigate(`/quests/${detailQuest.id}`); setDetailQuest(null); }}>
                   <Eye className="h-4 w-4 mr-2" /> View Quest
                 </Button>
-                <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailQuest.id, detailQuest.name)} disabled={deleteMutation.isPending}>
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete Quest
-                </Button>
+                {isAdmin && (
+                  <Button variant="outline" className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(detailQuest.id, detailQuest.name)} disabled={deleteMutation.isPending}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete Quest
+                  </Button>
+                )}
               </div>
             </div>
           </DialogContent>
