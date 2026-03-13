@@ -237,8 +237,13 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
-            <Label>Description</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            <div className="flex items-center justify-between">
+              <Label>Description</Label>
+              <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-xs text-primary" onClick={enhanceDescription} disabled={enhancingDesc || !name.trim()}>
+                {enhancingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+              </Button>
+            </div>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} disabled={enhancingDesc} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
