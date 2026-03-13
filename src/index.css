@@ -125,11 +125,11 @@
   }
 
   .page-heading {
-    text-shadow: 0 2px 12px hsl(var(--background) / 0.9), 0 0 30px hsl(var(--background) / 0.7);
+    text-shadow: 0 1px 8px hsl(var(--background)), 0 2px 16px hsl(var(--background)), 0 0 40px hsl(var(--background) / 0.8);
   }
 
   :is(.light) .page-heading {
-    text-shadow: 0 1px 4px hsl(0 0% 100% / 0.8);
+    text-shadow: 0 1px 6px hsl(0 0% 100%), 0 2px 12px hsl(0 0% 100% / 0.8);
   }
 
   .neon-border {
