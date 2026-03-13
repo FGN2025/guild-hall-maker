@@ -19,6 +19,7 @@ import {
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import { format } from "date-fns";
 import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
+import PageBackground from "@/components/PageBackground";
 
 const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
