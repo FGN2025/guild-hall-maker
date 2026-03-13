@@ -642,7 +642,7 @@ const Leaderboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </>
   );
 };
 
