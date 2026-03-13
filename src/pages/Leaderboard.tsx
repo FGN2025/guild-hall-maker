@@ -199,13 +199,13 @@ const Leaderboard = () => {
     : topThree;
 
   return (
-    <div className="min-h-screen grid-bg relative">
+    <>
       <PageBackground pageSlug="leaderboard" />
-      <div className="py-8 container mx-auto px-4 relative z-10">
+      <div className="space-y-6 relative z-10">
         <PageHero pageSlug="leaderboard" />
-        <div className="mb-6">
-          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">Global Rankings</p>
-          <h1 className="font-display text-4xl font-bold text-foreground">Leaderboard</h1>
+        <div>
+          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">Global Rankings</p>
+          <h1 className="font-display text-4xl font-bold text-foreground page-heading">Leaderboard</h1>
         </div>
 
         <Tabs value={tab} onValueChange={setTab} className="mb-6">
@@ -642,7 +642,7 @@ const Leaderboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </>
   );
 };
 

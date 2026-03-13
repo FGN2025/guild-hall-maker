@@ -20,18 +20,18 @@ const Achievements = () => {
   const { data: players, isLoading } = useGlobalAchievements();
 
   return (
-    <div className="min-h-screen bg-background grid-bg relative">
+    <>
       <PageBackground pageSlug="achievements" />
-      <div className="py-8 container mx-auto px-4 relative z-10">
+      <div className="space-y-6 relative z-10">
         <PageHero pageSlug="achievements" />
-        <div className="mb-6">
-          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2">
+        <div>
+          <p className="font-display text-xs tracking-[0.3em] text-primary uppercase mb-2 page-heading">
             Global Rankings
           </p>
-          <h1 className="font-display text-4xl font-bold text-foreground">
+          <h1 className="font-display text-4xl font-bold text-foreground page-heading">
             Achievements Leaderboard
           </h1>
-          <p className="text-sm text-muted-foreground font-body mt-2">
+          <p className="text-sm text-muted-foreground font-body mt-2 page-heading">
             Players ranked by total achievements unlocked across all milestones.
           </p>
         </div>
@@ -150,7 +150,7 @@ const Achievements = () => {
           </>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

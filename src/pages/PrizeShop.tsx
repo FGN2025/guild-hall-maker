@@ -122,11 +122,11 @@ const PrizeShop = () => {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
+            <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
               <Gift className="h-8 w-8 text-primary" />
               Prize Shop
             </h1>
-            <p className="text-muted-foreground font-body mt-1">
+            <p className="text-muted-foreground font-body mt-1 page-heading">
               Spend your season points on awesome prizes.
             </p>
           </div>
