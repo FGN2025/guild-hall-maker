@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import AchievementPicker from "@/components/shared/AchievementPicker";
 
 interface CreateChallengeDialogProps {
   invalidateQueryKey: string[];
