@@ -44,6 +44,34 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
+  const [enhancingDesc, setEnhancingDesc] = useState(false);
+
+  const enhanceDescription = async () => {
+    if (!form.name.trim()) { toast.error("Enter a quest name first"); return; }
+    setEnhancingDesc(true);
+    try {
+      const gameName = games.find((g: any) => g.id === selectedGameId)?.name || "";
+      const { data, error } = await supabase.functions.invoke("enhance-challenge-description", {
+        body: {
+          name: form.name, description: form.description, challenge_type: form.challenge_type,
+          game_name: gameName, difficulty: form.difficulty,
+          estimated_minutes: form.estimated_minutes ? Number(form.estimated_minutes) : null,
+          tasks: form.tasks.map(t => t.title).filter(Boolean),
+          cover_image_url: imagePreview || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.enhanced_description) {
+        setForm(f => ({ ...f, description: data.enhanced_description }));
+        toast.success("Description enhanced");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to enhance description");
+    } finally {
+      setEnhancingDesc(false);
+    }
+  };
 
   const enhanceNarrative = async (field: "intro" | "outro") => {
     if (!form.name.trim()) { toast.error("Enter a quest name first"); return; }
@@ -206,8 +234,13 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
           </div>
 
           <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What players need to do..." />
+            <div className="flex items-center justify-between">
+              <Label>Description</Label>
+              <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-xs text-primary" onClick={enhanceDescription} disabled={enhancingDesc || !form.name.trim()}>
+                {enhancingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Enhance
+              </Button>
+            </div>
+            <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What players need to do..." disabled={enhancingDesc} />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
