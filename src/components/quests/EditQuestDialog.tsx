@@ -159,6 +159,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
       setImageFile(null);
       setMaxEnrollments(quest.max_enrollments ?? "");
       setIsActive(quest.is_active ?? true);
+      setAchievementId(quest.achievement_id ?? "");
     }
   }, [quest, open]);
 
