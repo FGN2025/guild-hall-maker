@@ -17,6 +17,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTournaments } from "@/hooks/useTournaments";
+import PageBackground from "@/components/PageBackground";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
