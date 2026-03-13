@@ -56,6 +56,7 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
           difficulty: form.difficulty, challenge_type: form.challenge_type,
           field, draft: field === "intro" ? form.story_intro : form.story_outro,
           game_id: selectedGameId || null,
+          tasks: form.tasks.map(t => t.title).filter(Boolean),
         },
       });
       if (error) throw error;
