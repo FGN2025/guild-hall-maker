@@ -72,6 +72,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
+  const [achievementId, setAchievementId] = useState("");
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
