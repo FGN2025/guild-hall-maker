@@ -7,7 +7,7 @@ interface PageHeroProps {
 const PageHero = ({ pageSlug }: PageHeroProps) => {
   const { data: hero } = usePageHero(pageSlug);
 
-  if (!hero) return null;
+  if (!hero || !hero.image_url) return null;
 
   return (
     <div className="relative w-full h-48 md:h-64 overflow-hidden rounded-xl mb-8">
