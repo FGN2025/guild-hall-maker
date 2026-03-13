@@ -18,7 +18,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { name, description, game_name, difficulty, challenge_type, field, draft, game_id } = await req.json();
+    const { name, description, game_name, difficulty, challenge_type, field, draft, game_id, tasks } = await req.json();
 
     if (!name) return json({ error: "Quest name is required" }, 400);
     if (!field || !["intro", "outro"].includes(field)) return json({ error: "field must be 'intro' or 'outro'" }, 400);
@@ -85,20 +85,24 @@ serve(async (req) => {
 
     // --- Build prompt ---
     const fieldInstruction = field === "intro"
-      ? "Write an immersive narrative introduction (2-4 sentences) that sets the stage for the quest. It should feel like the opening of an adventure — motivating and atmospheric."
-      : "Write a satisfying narrative conclusion (2-4 sentences) that celebrates the player's accomplishment upon completing the quest. It should feel rewarding and epic.";
+      ? "Write an immersive narrative INTRODUCTION (3-5 sentences) for this quest. You are addressing the player directly as the protagonist of an unfolding story. Build mystery, tension, and stakes — make the player feel they are stepping into something dangerous, rare, or legendary. Reference specific locations, characters, factions, or lore elements from the game world using your knowledge. End with a compelling call to adventure that makes enrollment irresistible."
+      : "Write a triumphant narrative CONCLUSION (3-5 sentences) for a player who has just completed this quest. Celebrate their accomplishment with lore-appropriate grandeur — reference what they overcame, what they proved, and why it matters in the game's world. Make it feel like a cinematic victory moment. The tone should be rewarding, epic, and leave them hungry for the next quest.";
+
+    const tasksPart = Array.isArray(tasks) && tasks.length > 0
+      ? `\nQuest objectives: ${tasks.map((t: any) => typeof t === "string" ? t : t.title).join(", ")}`
+      : "";
 
     const draftPart = draft?.trim()
-      ? `The admin wrote this draft: "${draft}". Enhance and professionalize it while keeping its intent.`
-      : "No draft provided — generate from scratch based on the quest details.";
+      ? `\nThe admin wrote this draft: "${draft}". Enhance it dramatically while preserving its core intent — elevate the language, weave in game lore, and make it feel like it belongs in the game's universe.`
+      : "\nNo draft provided — craft an original narrative from scratch using the quest details and your deep knowledge of this game's world.";
 
-    const systemPrompt = `You are a lore writer and community manager for a competitive gaming community. You craft engaging quest narratives that immerse players in the experience. Keep the tone energetic, motivating, and game-appropriate. Return ONLY the narrative text — no labels, no quotes, no formatting.`;
+    const systemPrompt = `You are a master storyteller and lore keeper for competitive gaming communities. You write in the voice of an epic narrator — think dark fantasy chronicler, sci-fi mission briefing officer, or legendary sports commentator, depending on the game's genre. You have deep knowledge of every major game's universe, characters, lore, maps, and culture. Your narratives make players feel like heroes in a living story. Write with vivid imagery, dramatic tension, and game-authentic language. Return ONLY the narrative text — no labels, no quotes, no markdown formatting, no prefixes.`;
 
     const userPrompt = `Quest: "${name}"
 Game: ${game_name || "General"}
 Difficulty: ${difficulty || "beginner"}
 Type: ${challenge_type || "one_time"}
-Description: ${description || "N/A"}
+Description: ${description || "N/A"}${tasksPart}
 
 ${fieldInstruction}
 

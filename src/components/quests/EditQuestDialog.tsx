@@ -56,12 +56,18 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
     setEnhancingField(field);
     try {
       const gameName = games.find((g: any) => g.id === gameId)?.name || "";
+      let taskTitles: string[] = [];
+      if (quest?.id) {
+        const { data: taskData } = await supabase.from("quest_tasks").select("title").eq("quest_id", quest.id).order("display_order");
+        taskTitles = (taskData || []).map((t: any) => t.title).filter(Boolean);
+      }
       const { data, error } = await supabase.functions.invoke("enhance-quest-narrative", {
         body: {
           name, description, game_name: gameName,
           difficulty, challenge_type: challengeType,
           field, draft: field === "intro" ? storyIntro : storyOutro,
           game_id: gameId || null,
+          tasks: taskTitles,
         },
       });
       if (error) throw error;
