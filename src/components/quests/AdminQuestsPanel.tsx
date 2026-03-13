@@ -427,7 +427,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                       <Button variant="outline" size="sm" onClick={() => setEditQuest(q)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</Button>
                       <Button variant="outline" size="sm" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-3.5 w-3.5 mr-1" /> View</Button>
                       <Button variant="outline" size="sm" onClick={() => setPromoData(buildQuestPromo(q))}><Megaphone className="h-3.5 w-3.5 mr-1" /> Promo</Button>
-                      <Button variant="ghost" size="sm" className="ml-auto text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      {isAdmin && <Button variant="ghost" size="sm" className="ml-auto text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-3.5 w-3.5" /></Button>}
                     </div>
                   </CardContent>
                 </Card>
