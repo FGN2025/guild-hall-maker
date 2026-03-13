@@ -41,7 +41,9 @@ const Games = () => {
   }, [games, search, category, hasTournaments, tournamentGameNames]);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="relative">
+      <PageBackground pageSlug="games" />
+      <div className="relative z-10 flex flex-col lg:flex-row gap-6">
       {/* Sidebar filters */}
       <aside className="lg:w-64 shrink-0 space-y-4">
         <div className="glass-panel rounded-xl p-5 space-y-5">
