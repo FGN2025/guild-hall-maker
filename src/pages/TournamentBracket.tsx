@@ -6,6 +6,7 @@ import BracketMatchCard from "@/components/tournaments/BracketMatchCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, Gamepad2, Swords, Radio } from "lucide-react";
+import PageBackground from "@/components/PageBackground";
 import { useRef, useEffect } from "react";
 
 const TournamentBracket = () => {
