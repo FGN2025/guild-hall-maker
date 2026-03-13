@@ -111,10 +111,13 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Manage achievements from Admin → Achievements.",
       "Creating Badges — Define name, description, icon, category, tier (Bronze/Silver/Gold/Platinum), optional auto-criteria, and display order.",
+      "Visual Icon Picker — Choose from 15+ Lucide icons (trophy, flame, star, crown, target, shield, swords, zap, medal, award, sparkles, heart, gem, bolt, rocket) with live icon previews in the selector dropdown.",
       "Auto-Criteria Types — wins, streak, matches, win_rate, tournament_champion, multi_tournament, iron_will — these are evaluated automatically when a player views their profile.",
       "Manual Awarding — Award any badge from the achievements admin page with optional notes. Use the bulk-assignment tool for awarding to multiple players.",
       "Quick Create — Define and award a badge in one step using the Quick Create flow.",
       "Special Recognition — Custom 'Special Recognition' badges are visually distinguished with purple styling and sparkling icons on player profiles.",
+      "Moderator Access — Moderators also have full achievement management (create, edit, delete, award, revoke) from the Moderator → Achievements page.",
+      "Unified Icons — All achievement icons render as actual Lucide SVG icons everywhere on the platform (profiles, pickers, admin/moderator panels) instead of text labels.",
       "Safety — A confirmation dialog prevents accidental awards.",
       "Leaderboard Sync — Milestone achievements are automatically persisted when players view their profile, keeping the global achievements leaderboard accurate.",
       "Tip: Use tiers for progression paths — e.g. 'Tournament Veteran' at Bronze (5), Silver (15), Gold (50), Platinum (100).",
