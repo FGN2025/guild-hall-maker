@@ -370,7 +370,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
                           <Button variant="ghost" size="icon" onClick={() => setEditQuest(q)}><Pencil className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/quests/${q.id}`)}><Eye className="h-4 w-4 text-primary" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => setPromoData(buildQuestPromo(q))}><Megaphone className="h-4 w-4 text-primary" /></Button>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4" /></Button>
+                          {isAdmin && <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(q.id, q.name)} disabled={deleteMutation.isPending}><Trash2 className="h-4 w-4" /></Button>}
                         </div>
                       </TableCell>
                     </TableRow>
