@@ -37,6 +37,7 @@ interface TournamentData {
   points_third?: number;
   points_participation?: number;
   discord_role_id?: string | null;
+  achievement_id?: string | null;
 }
 
 interface Props {
