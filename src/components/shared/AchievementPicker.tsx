@@ -19,15 +19,22 @@ const tierColors: Record<string, string> = {
 };
 
 const AchievementPicker = ({ value, onChange, label = "Achievement / Badge" }: AchievementPickerProps) => {
+  const selectedValue = value && value !== "" ? value : "none";
+
   const { data: achievements = [], isLoading } = useQuery({
-    queryKey: ["achievement-definitions-picker"],
+    queryKey: ["achievement-definitions-picker", selectedValue],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("achievement_definitions")
-        .select("id, name, tier, icon, category")
-        .eq("is_active", true)
+        .select("id, name, tier, icon, category, is_active")
         .order("tier")
         .order("name");
+
+      query = selectedValue !== "none"
+        ? query.or(`is_active.eq.true,id.eq.${selectedValue}`)
+        : query.eq("is_active", true);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
@@ -39,7 +46,7 @@ const AchievementPicker = ({ value, onChange, label = "Achievement / Badge" }: A
         <Trophy className="h-3.5 w-3.5 text-primary" />
         {label}
       </Label>
-      <Select value={value} onValueChange={onChange}>
+      <Select value={selectedValue} onValueChange={onChange}>
         <SelectTrigger className="bg-card border-border font-body">
           <SelectValue placeholder={isLoading ? "Loading..." : "None (no badge)"} />
         </SelectTrigger>
