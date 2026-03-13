@@ -224,5 +224,22 @@ export function PromoPickerDialog({ open, onOpenChange, onSave }: PromoPickerDia
   );
 }
 
-export { buildTournamentPromo, buildChallengePromo };
+function buildQuestPromo(q: any, accentColor?: string | null): PromoData {
+  const imageUrl = q.cover_image_url || q.games?.cover_image_url || "";
+  const texts: PromoData["texts"] = [
+    { text: q.name.toUpperCase(), xPct: 0.05, yPct: 0.65, x: 40, y: 390, fontSize: 42, color: "#ffffff", fontFamily: "sans-serif" },
+    { text: q.games?.name ?? "Quest", xPct: 0.05, yPct: 0.76, x: 40, y: 456, fontSize: 22, color: "#cccccc", fontFamily: "sans-serif" },
+  ];
+  if (q.start_date) {
+    texts.push({ text: format(new Date(q.start_date), "MMMM d, yyyy"), xPct: 0.05, yPct: 0.83, x: 40, y: 498, fontSize: 20, color: "#aaaaaa", fontFamily: "sans-serif" });
+  }
+  if (q.xp_reward) {
+    texts.push({ text: `${q.xp_reward} XP Reward`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: accentColor || "#ffd700", fontFamily: "sans-serif" });
+  } else if (q.points_first) {
+    texts.push({ text: `${q.points_first} pts for 1st place`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: accentColor || "#ffd700", fontFamily: "sans-serif" });
+  }
+  return { imageUrl, texts };
+}
+
+export { buildTournamentPromo, buildChallengePromo, buildQuestPromo };
 export type { PromoData };

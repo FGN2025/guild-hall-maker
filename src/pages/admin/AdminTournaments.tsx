@@ -222,6 +222,12 @@ const AdminTournaments = () => {
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
                         <Settings className="h-4 w-4 text-muted-foreground" />
                       </Button>
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}`)}>
+                        <Eye className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setPromoData(buildTournamentPromo(t))}>
+                        <Megaphone className="h-4 w-4 text-primary" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
