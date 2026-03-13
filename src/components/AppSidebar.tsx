@@ -55,7 +55,7 @@ const mainNav = [
   { to: "/leaderboard", label: "Leaderboard", icon: Shield },
   { to: "/season-stats", label: "Stats", icon: BarChart3 },
   { to: "/compare", label: "Compare", icon: Swords },
-  { to: "/achievements", label: "Badges", icon: Award },
+  { to: "/achievements", label: "Achievements", icon: Award },
   { to: "/prize-shop", label: "Prize Shop", icon: Gift },
   { to: "/ladders", label: "Ladders", icon: SwordIcon },
   { to: "/guide", label: "Player Guide", icon: BookOpen },
