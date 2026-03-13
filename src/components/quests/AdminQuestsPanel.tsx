@@ -51,7 +51,7 @@ interface AdminQuestsPanelProps {
 }
 
 const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: AdminQuestsPanelProps) => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
