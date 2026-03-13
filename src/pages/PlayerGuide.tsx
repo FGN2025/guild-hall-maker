@@ -510,7 +510,7 @@ ${sectionBlocks}
       )}
 
       {filteredSections.length > 0 ? (
-        <div className="glass-panel rounded-lg p-4 md:p-6">
+        <div className="glass-panel rounded-lg p-4 md:p-6 border border-border/60">
           <Accordion type="multiple" defaultValue={search.trim() ? filteredSections.map(s => s.id) : []} key={search} className="space-y-1">
             {filteredSections.map((section) => (
               <AccordionItem
