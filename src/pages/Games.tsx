@@ -10,6 +10,7 @@ import { Search, Gamepad2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import PageBackground from "@/components/PageBackground";
 
 const CATEGORIES = ["All", "General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Simulation", "Strategy", "MOBA", "MMORPG", "RPG", "Card Game", "Puzzle", "Adventure"];
 
