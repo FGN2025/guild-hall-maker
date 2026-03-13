@@ -58,6 +58,7 @@ const ModeratorChallenges = () => {
   const [editChallenge, setEditChallenge] = useState<any | null>(null);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["mod-challenges"],
