@@ -111,6 +111,7 @@ const FeaturedEvents = () => {
           stat2Value: q.xp_reward ? `${q.xp_reward} XP` : "—",
           stat2Icon: Compass,
           link: `/quests/${q.id}`,
+          imageUrl: q.cover_image_url || q.games?.cover_image_url || undefined,
         });
       });
 
