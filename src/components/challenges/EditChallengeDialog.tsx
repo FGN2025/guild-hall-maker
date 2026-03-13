@@ -98,6 +98,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setImageFile(null);
       setMaxEnrollments(challenge.max_enrollments ?? "");
       setIsActive(challenge.is_active ?? true);
+      setAchievementId(challenge.achievement_id ?? "");
     }
   }, [challenge, open]);
 
