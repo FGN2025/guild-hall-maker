@@ -15,7 +15,7 @@ const Index = () => {
       <FeaturedVideo />
       <FeaturedEvents />
       <footer className="border-t border-border py-12">
-        <div className="container mx-auto px-4 text-center">
+        <div className="container mx-auto px-6 md:px-10 lg:px-16 text-center">
           <p className="font-display text-sm tracking-widest text-primary mb-4">FGN</p>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground mb-3">
             <a href="/terms" className="text-primary hover:underline">Terms &amp; Conditions</a>
