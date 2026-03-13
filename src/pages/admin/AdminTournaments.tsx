@@ -300,6 +300,10 @@ const AdminTournaments = () => {
                   {t.description || "\u00A0"}
                 </div>
 
+                {t.achievement_id && (
+                  <AchievementBadgeDisplay achievementId={t.achievement_id} compact />
+                )}
+
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-muted rounded-lg p-2">
                     <Calendar className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
