@@ -97,6 +97,9 @@ const QuestCard = ({ quest, enrollmentCount = 0, isLocked = false, lockMessage, 
               +{q.points_first} pts
             </Badge>
           </div>
+          {q.achievement_id && (
+            <AchievementBadgeDisplay achievementId={q.achievement_id} compact />
+          )}
         </div>
       </CardContent>
     </Card>
