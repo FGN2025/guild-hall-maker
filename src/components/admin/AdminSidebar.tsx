@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target, ShieldCheck, Server } from "lucide-react";
 
 const sidebarItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -15,6 +15,7 @@ const sidebarItems = [
   { to: "/admin/discord-bypass", label: "Discord Bypass", icon: ShieldCheck },
   { to: "/admin/bypass-codes", label: "Bypass Codes", icon: KeyRound },
   { to: "/admin/ecosystem", label: "Ecosystem", icon: Globe },
+  { to: "/admin/game-servers", label: "Game Servers", icon: Server },
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/notebooks", label: "Notebooks", icon: BookOpen },
   { to: "/admin/legacy-users", label: "Legacy Import", icon: Archive },
