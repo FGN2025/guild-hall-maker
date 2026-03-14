@@ -908,6 +908,7 @@ export type Database = {
           description: string | null
           display_order: number
           game: string
+          game_id: string | null
           id: string
           image_url: string | null
           ip_address: string
@@ -927,6 +928,7 @@ export type Database = {
           description?: string | null
           display_order?: number
           game: string
+          game_id?: string | null
           id?: string
           image_url?: string | null
           ip_address: string
@@ -946,6 +948,7 @@ export type Database = {
           description?: string | null
           display_order?: number
           game?: string
+          game_id?: string | null
           id?: string
           image_url?: string | null
           ip_address?: string
@@ -958,7 +961,15 @@ export type Database = {
           port?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "game_servers_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       games: {
         Row: {
