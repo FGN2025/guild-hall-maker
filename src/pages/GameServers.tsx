@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Server, Copy, ChevronDown, Users, Gamepad2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { usePageTitle } from "@/hooks/usePageTitle";
+import usePageTitle from "@/hooks/usePageTitle";
 
 function StatusDot({ server }: { server: GameServer }) {
   const hasPanelConfig = server.panel_type === "pterodactyl";
