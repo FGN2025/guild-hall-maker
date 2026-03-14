@@ -1,36 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Add AI Enhance Buttons + Media Library Image Upload to Server Form
+## What was built
 
-### Overview
-Add "Enhance with AI" buttons for Description and Connection Instructions fields, and replace the plain Image URL text input with an image upload section supporting both desktop file upload and Media Library picker — matching the pattern used in Challenges and Quests.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Changes
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-**1. New Edge Function: `supabase/functions/enhance-server-description/index.ts`**
-- Accepts `name`, `game_name`, `description`, `connection_instructions`, `field` (which field to enhance: "description" or "connection_instructions")
-- For description: generates an engaging server description referencing the game and server name
-- For connection instructions: generates clear step-by-step join instructions for the specific game
-- Uses Lovable AI Gateway with `google/gemini-3-flash-preview`
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-**2. `src/pages/admin/AdminGameServers.tsx` — ServerFormDialog updates**
+---
 
-*AI Enhance:*
-- Add an "Enhance" button next to the Description label (calls edge function with `field: "description"`)
-- Add an "Enhance" button next to the Connection Instructions label (calls edge function with `field: "connection_instructions"`)
-- Both follow the existing pattern: `Sparkles` icon, disabled when name is empty, loading state with `Loader2`
+# Delete & Ban Users — Completed
 
-*Image Upload:*
-- Replace the `Image URL` text input with a proper image section containing:
-  - A file upload button (`<input type="file" accept="image/*">`) for desktop uploads (uploads to `app-media` storage bucket)
-  - A "Media Library" button that opens `MediaPickerDialog`
-  - A small preview thumbnail when an image is set
-- Uses `useMediaLibrary` upload function or direct storage upload for desktop files
+## What was built
 
-### Files
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-| File | Action |
-|------|--------|
-| `supabase/functions/enhance-server-description/index.ts` | New — AI enhance for server descriptions and connection instructions |
-| `src/pages/admin/AdminGameServers.tsx` | Update form: add Enhance buttons + image upload/media picker |
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
+
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
