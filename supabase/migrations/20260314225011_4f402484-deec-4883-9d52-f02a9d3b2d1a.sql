@@ -1,0 +1,1 @@
+ALTER TABLE public.game_servers ADD COLUMN game_id uuid REFERENCES public.games(id);

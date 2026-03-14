@@ -53,9 +53,9 @@ function ServerCard({ server }: { server: GameServer }) {
 
   return (
     <Card className="overflow-hidden hover:ring-1 hover:ring-primary/30 transition-all">
-      {server.image_url && (
+      {(server.image_url || server.games?.cover_image_url) && (
         <div className="h-32 bg-muted overflow-hidden">
-          <img src={server.image_url} alt={server.name} className="w-full h-full object-cover" />
+          <img src={server.image_url || server.games!.cover_image_url!} alt={server.name} className="w-full h-full object-cover" />
         </div>
       )}
       <CardContent className={server.image_url ? "p-5" : "p-5"}>
@@ -69,7 +69,7 @@ function ServerCard({ server }: { server: GameServer }) {
 
         <Badge variant="outline" className="gap-1 mb-3">
           <Gamepad2 className="h-3 w-3" />
-          {server.game}
+          {server.games?.name ?? server.game}
         </Badge>
 
         {server.description && (

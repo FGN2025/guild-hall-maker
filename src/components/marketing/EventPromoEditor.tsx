@@ -241,5 +241,19 @@ function buildQuestPromo(q: any, accentColor?: string | null): PromoData {
   return { imageUrl, texts };
 }
 
-export { buildTournamentPromo, buildChallengePromo, buildQuestPromo };
+function buildServerPromo(s: any): PromoData {
+  const imageUrl = s.image_url || s.games?.cover_image_url || "";
+  const address = `${s.ip_address}${s.port ? `:${s.port}` : ""}`;
+  const texts: PromoData["texts"] = [
+    { text: s.name.toUpperCase(), xPct: 0.05, yPct: 0.65, x: 40, y: 390, fontSize: 42, color: "#ffffff", fontFamily: "sans-serif" },
+    { text: s.games?.name ?? s.game ?? "Game Server", xPct: 0.05, yPct: 0.76, x: 40, y: 456, fontSize: 22, color: "#cccccc", fontFamily: "sans-serif" },
+    { text: address, xPct: 0.05, yPct: 0.83, x: 40, y: 498, fontSize: 20, color: "#aaaaaa", fontFamily: "monospace" },
+  ];
+  if (s.description) {
+    texts.push({ text: s.description.slice(0, 60), xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 18, color: "#cccccc", fontFamily: "sans-serif" });
+  }
+  return { imageUrl, texts };
+}
+
+export { buildTournamentPromo, buildChallengePromo, buildQuestPromo, buildServerPromo };
 export type { PromoData };

@@ -1,48 +1,40 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Plan: Link Game Selector to Games Catalog + Add Promo Generation for Servers
+## What was built
 
-### Problem
-The Game Servers "Add/Edit Server" dialog currently uses a free-text input for the Game field. It should use a dropdown linked to the existing `games` catalog (same pattern as Tournaments, Challenges, and Quests). Additionally, admins should be able to generate promotional assets for servers.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-### Database Change
-Add a `game_id` column to `game_servers` that references the `games` table, allowing the server to inherit the game's cover image and name. Keep the existing `game` text column as a fallback display name.
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-```sql
-ALTER TABLE public.game_servers ADD COLUMN game_id uuid REFERENCES public.games(id);
-```
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-### Changes
+---
 
-**1. Migration: Add `game_id` FK to `game_servers`**
-- Add nullable `game_id uuid` column referencing `games(id)`
-- This lets servers link to the games catalog for cover images, names, and consistent data
+# Delete & Ban Users — Completed
 
-**2. `src/hooks/useGameServers.ts`**
-- Update `GameServer` type to include `game_id` and a joined `games` object (name, cover_image_url)
-- Update queries to `.select("*, games(name, cover_image_url)")` so we get game data in one query
-- Update `GameServerInput` to include `game_id`
+## What was built
 
-**3. `src/pages/admin/AdminGameServers.tsx`**
-- Replace the free-text Game `<Input>` with a `<Select>` dropdown populated from `useGames()` (same hook used by CreateTournamentDialog)
-- When a game is selected, auto-populate the `game` text field and `game_id`
-- Add a "Promo" button (Megaphone icon) per server row, using the existing `EventPromoEditorDialog` + a new `buildServerPromo()` helper
-- The promo builder will use the server's image (or linked game cover) as background and overlay server name, game, IP:port
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-**4. `src/components/marketing/EventPromoEditor.tsx`**
-- Add a `buildServerPromo(server)` function following the same pattern as `buildTournamentPromo` and `buildChallengePromo`
-- Overlay: server name, game name, IP:port, description (if present)
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-**5. `src/pages/GameServers.tsx`**
-- Use the joined `games.cover_image_url` as fallback when `image_url` is null on the server card
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
-### Files
-
-| File | Action |
-|------|--------|
-| Migration SQL | Add `game_id` column |
-| `src/hooks/useGameServers.ts` | Add `game_id`, join games table |
-| `src/pages/admin/AdminGameServers.tsx` | Game select dropdown + Promo button |
-| `src/components/marketing/EventPromoEditor.tsx` | Add `buildServerPromo` |
-| `src/pages/GameServers.tsx` | Use game cover as fallback image |
-
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
