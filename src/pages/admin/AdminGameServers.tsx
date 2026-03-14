@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAdminGameServers, useCreateServer, useUpdateServer, useDeleteServer, useServerStatus, type GameServer, type GameServerInput } from "@/hooks/useGameServers";
 import { useGames } from "@/hooks/useGames";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,11 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Server, Activity, Copy, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, Server, Activity, Copy, Megaphone, Sparkles, Loader2, Upload, ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { EventPromoEditorDialog, buildServerPromo } from "@/components/marketing/EventPromoEditor";
+import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const emptyForm: GameServerInput = {
   name: "", game: "", game_id: null, ip_address: "", port: null, description: null,
@@ -29,6 +31,10 @@ function ServerFormDialog({ open, onOpenChange, initial, onSubmit, loading }: {
 }) {
   const [form, setForm] = useState<GameServerInput>(initial);
   const { data: games = [] } = useGames();
+  const [enhancingField, setEnhancingField] = useState<string | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof GameServerInput, v: any) => setForm(prev => ({ ...prev, [k]: v }));
 
   const handleGameSelect = (gameId: string) => {
@@ -43,61 +49,173 @@ function ServerFormDialog({ open, onOpenChange, initial, onSubmit, loading }: {
     }
   };
 
+  const handleEnhance = async (field: "description" | "connection_instructions") => {
+    if (!form.name) return;
+    setEnhancingField(field);
+    try {
+      const { data, error } = await supabase.functions.invoke("enhance-server-description", {
+        body: {
+          name: form.name,
+          game_name: form.game,
+          description: form.description,
+          connection_instructions: form.connection_instructions,
+          field,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const enhanced = data?.enhanced;
+      if (enhanced) {
+        set(field, enhanced);
+        toast({ title: "Enhanced!", description: `${field === "description" ? "Description" : "Connection instructions"} updated.` });
+      }
+    } catch (e: any) {
+      toast({ title: "Enhance failed", description: e.message || "Unknown error", variant: "destructive" });
+    } finally {
+      setEnhancingField(null);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "bin";
+      const fileName = `servers/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("app-media").upload(fileName, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(fileName);
+      set("image_url", urlData.publicUrl);
+      toast({ title: "Image uploaded!" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{initial.name ? "Edit Server" : "Add Server"}</DialogTitle></DialogHeader>
-        <div className="grid gap-4">
-          <div><Label>Name *</Label><Input value={form.name} onChange={e => set("name", e.target.value)} /></div>
-          <div>
-            <Label>Game *</Label>
-            <Select value={form.game_id ?? "__none__"} onValueChange={handleGameSelect}>
-              <SelectTrigger><SelectValue placeholder="Select a game…" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">— Select a game —</SelectItem>
-                {games.map(g => (
-                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>IP Address *</Label><Input value={form.ip_address} onChange={e => set("ip_address", e.target.value)} /></div>
-            <div><Label>Port</Label><Input type="number" value={form.port ?? ""} onChange={e => set("port", e.target.value ? Number(e.target.value) : null)} /></div>
-          </div>
-          <div><Label>Description</Label><Textarea value={form.description ?? ""} onChange={e => set("description", e.target.value || null)} /></div>
-          <div><Label>Connection Instructions</Label><Textarea value={form.connection_instructions ?? ""} onChange={e => set("connection_instructions", e.target.value || null)} placeholder="How players should connect..." /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>Image URL</Label><Input value={form.image_url ?? ""} onChange={e => set("image_url", e.target.value || null)} /></div>
-            <div><Label>Max Players</Label><Input type="number" value={form.max_players ?? ""} onChange={e => set("max_players", e.target.value ? Number(e.target.value) : null)} /></div>
-          </div>
-          <div><Label>Display Order</Label><Input type="number" value={form.display_order} onChange={e => set("display_order", Number(e.target.value))} /></div>
-
-          <div className="border-t border-border pt-4">
-            <h4 className="font-heading font-medium text-sm mb-3">Panel Integration (Optional)</h4>
-            <div className="flex items-center gap-2 mb-3">
-              <Switch checked={form.panel_type === "pterodactyl"} onCheckedChange={c => set("panel_type", c ? "pterodactyl" : null)} />
-              <Label>Pterodactyl Panel</Label>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{initial.name ? "Edit Server" : "Add Server"}</DialogTitle></DialogHeader>
+          <div className="grid gap-4">
+            <div><Label>Name *</Label><Input value={form.name} onChange={e => set("name", e.target.value)} /></div>
+            <div>
+              <Label>Game *</Label>
+              <Select value={form.game_id ?? "__none__"} onValueChange={handleGameSelect}>
+                <SelectTrigger><SelectValue placeholder="Select a game…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Select a game —</SelectItem>
+                  {games.map(g => (
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            {form.panel_type === "pterodactyl" && (
-              <div className="grid gap-3">
-                <div><Label>Panel URL</Label><Input value={form.panel_url ?? ""} onChange={e => set("panel_url", e.target.value || null)} placeholder="https://panel.example.com" /></div>
-                <div><Label>Panel Server ID</Label><Input value={form.panel_server_id ?? ""} onChange={e => set("panel_server_id", e.target.value || null)} placeholder="abc123" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>IP Address *</Label><Input value={form.ip_address} onChange={e => set("ip_address", e.target.value)} /></div>
+              <div><Label>Port</Label><Input type="number" value={form.port ?? ""} onChange={e => set("port", e.target.value ? Number(e.target.value) : null)} /></div>
+            </div>
+
+            {/* Description with Enhance */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Description</Label>
+                <Button
+                  type="button" variant="ghost" size="sm"
+                  disabled={!form.name || enhancingField === "description"}
+                  onClick={() => handleEnhance("description")}
+                  className="text-xs h-7 gap-1"
+                >
+                  {enhancingField === "description" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Enhance
+                </Button>
               </div>
-            )}
-          </div>
+              <Textarea value={form.description ?? ""} onChange={e => set("description", e.target.value || null)} />
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Switch checked={form.is_active} onCheckedChange={c => set("is_active", c)} />
-            <Label>Active</Label>
-          </div>
+            {/* Connection Instructions with Enhance */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Connection Instructions</Label>
+                <Button
+                  type="button" variant="ghost" size="sm"
+                  disabled={!form.name || enhancingField === "connection_instructions"}
+                  onClick={() => handleEnhance("connection_instructions")}
+                  className="text-xs h-7 gap-1"
+                >
+                  {enhancingField === "connection_instructions" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Enhance
+                </Button>
+              </div>
+              <Textarea value={form.connection_instructions ?? ""} onChange={e => set("connection_instructions", e.target.value || null)} placeholder="How players should connect..." />
+            </div>
 
-          <Button disabled={loading || !form.name || !form.game || !form.ip_address} onClick={() => onSubmit(form)}>
-            {initial.name ? "Save Changes" : "Add Server"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            {/* Image Upload Section */}
+            <div>
+              <Label className="mb-2 block">Server Image</Label>
+              {form.image_url && (
+                <div className="relative mb-2 rounded-md overflow-hidden border border-border w-32 h-20">
+                  <img src={form.image_url} alt="Server" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => set("image_url", null)}
+                    className="absolute top-0.5 right-0.5 bg-background/80 rounded-full p-0.5 text-xs text-destructive hover:text-destructive/80"
+                  >✕</button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+                  {uploading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                  Upload
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setMediaPickerOpen(true)}>
+                  <ImageIcon className="h-4 w-4 mr-1" />Media Library
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Max Players</Label><Input type="number" value={form.max_players ?? ""} onChange={e => set("max_players", e.target.value ? Number(e.target.value) : null)} /></div>
+              <div><Label>Display Order</Label><Input type="number" value={form.display_order} onChange={e => set("display_order", Number(e.target.value))} /></div>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <h4 className="font-heading font-medium text-sm mb-3">Panel Integration (Optional)</h4>
+              <div className="flex items-center gap-2 mb-3">
+                <Switch checked={form.panel_type === "pterodactyl"} onCheckedChange={c => set("panel_type", c ? "pterodactyl" : null)} />
+                <Label>Pterodactyl Panel</Label>
+              </div>
+              {form.panel_type === "pterodactyl" && (
+                <div className="grid gap-3">
+                  <div><Label>Panel URL</Label><Input value={form.panel_url ?? ""} onChange={e => set("panel_url", e.target.value || null)} placeholder="https://panel.example.com" /></div>
+                  <div><Label>Panel Server ID</Label><Input value={form.panel_server_id ?? ""} onChange={e => set("panel_server_id", e.target.value || null)} placeholder="abc123" /></div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch checked={form.is_active} onCheckedChange={c => set("is_active", c)} />
+              <Label>Active</Label>
+            </div>
+
+            <Button disabled={loading || !form.name || !form.game || !form.ip_address} onClick={() => onSubmit(form)}>
+              {initial.name ? "Save Changes" : "Add Server"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <MediaPickerDialog
+        open={mediaPickerOpen}
+        onOpenChange={setMediaPickerOpen}
+        onSelect={(url) => { set("image_url", url); setMediaPickerOpen(false); }}
+      />
+    </>
   );
 }
 

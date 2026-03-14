@@ -71,3 +71,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.publish-scheduled-posts]
     verify_jwt = false
+  [functions.enhance-server-description]
+    verify_jwt = false
