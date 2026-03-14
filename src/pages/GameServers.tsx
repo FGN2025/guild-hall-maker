@@ -69,7 +69,7 @@ function ServerCard({ server }: { server: GameServer }) {
 
         <Badge variant="outline" className="gap-1 mb-3">
           <Gamepad2 className="h-3 w-3" />
-          {server.game}
+          {server.games?.name ?? server.game}
         </Badge>
 
         {server.description && (
