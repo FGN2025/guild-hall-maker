@@ -900,6 +900,66 @@ export type Database = {
         }
         Relationships: []
       }
+      game_servers: {
+        Row: {
+          connection_instructions: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          display_order: number
+          game: string
+          id: string
+          image_url: string | null
+          ip_address: string
+          is_active: boolean
+          max_players: number | null
+          name: string
+          panel_server_id: string | null
+          panel_type: string | null
+          panel_url: string | null
+          port: number | null
+          updated_at: string
+        }
+        Insert: {
+          connection_instructions?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          display_order?: number
+          game: string
+          id?: string
+          image_url?: string | null
+          ip_address: string
+          is_active?: boolean
+          max_players?: number | null
+          name: string
+          panel_server_id?: string | null
+          panel_type?: string | null
+          panel_url?: string | null
+          port?: number | null
+          updated_at?: string
+        }
+        Update: {
+          connection_instructions?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          display_order?: number
+          game?: string
+          id?: string
+          image_url?: string | null
+          ip_address?: string
+          is_active?: boolean
+          max_players?: number | null
+          name?: string
+          panel_server_id?: string | null
+          panel_type?: string | null
+          panel_url?: string | null
+          port?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       games: {
         Row: {
           category: string
