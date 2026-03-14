@@ -199,6 +199,7 @@ const App = () => (
               <Route path="/admin/discord-bypass" element={<AdminRoute><AdminDiscordBypass /></AdminRoute>} />
               <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
               <Route path="/admin/ecosystem" element={<AdminRoute><AdminEcosystem /></AdminRoute>} />
+              <Route path="/admin/game-servers" element={<AdminRoute><AdminGameServers /></AdminRoute>} />
 
               {/* Moderator routes */}
               <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
