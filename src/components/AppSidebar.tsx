@@ -12,6 +12,7 @@ import {
   Shield,
   BarChart3,
   Swords,
+  Server,
   SwordIcon,
   Award,
   Target,
