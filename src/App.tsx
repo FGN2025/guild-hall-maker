@@ -75,6 +75,8 @@ const AdminLegacyUsers = lazy(() => import("./pages/admin/AdminLegacyUsers"));
 const AdminEcosystem = lazy(() => import("./pages/admin/AdminEcosystem"));
 const AdminWebPages = lazy(() => import("./pages/admin/AdminWebPages"));
 const AdminDiscordBypass = lazy(() => import("./pages/admin/AdminDiscordBypass"));
+const AdminGameServers = lazy(() => import("./pages/admin/AdminGameServers"));
+const GameServers = lazy(() => import("./pages/GameServers"));
 
 // Moderator pages
 const ModeratorDashboard = lazy(() => import("./pages/moderator/ModeratorDashboard"));
