@@ -6,6 +6,7 @@ export interface GameServer {
   id: string;
   name: string;
   game: string;
+  game_id: string | null;
   ip_address: string;
   port: number | null;
   description: string | null;
@@ -20,17 +21,18 @@ export interface GameServer {
   created_by: string;
   created_at: string;
   updated_at: string;
+  games?: { name: string; cover_image_url: string | null } | null;
 }
 
-export type GameServerInput = Omit<GameServer, "id" | "created_at" | "updated_at" | "created_by">;
+export type GameServerInput = Omit<GameServer, "id" | "created_at" | "updated_at" | "created_by" | "games">;
 
 export function useGameServers() {
   return useQuery({
     queryKey: ["game-servers"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("game_servers")
-        .select("*")
+      const { data, error } = await (supabase
+        .from("game_servers") as any)
+        .select("*, games(name, cover_image_url)")
         .eq("is_active", true)
         .order("display_order");
       if (error) throw error;
@@ -43,9 +45,9 @@ export function useAdminGameServers() {
   return useQuery({
     queryKey: ["game-servers-admin"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("game_servers")
-        .select("*")
+      const { data, error } = await (supabase
+        .from("game_servers") as any)
+        .select("*, games(name, cover_image_url)")
         .order("display_order");
       if (error) throw error;
       return data as GameServer[];
@@ -59,7 +61,7 @@ export function useCreateServer() {
     mutationFn: async (input: GameServerInput) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("game_servers").insert({ ...input, created_by: user.id });
+      const { error } = await (supabase.from("game_servers") as any).insert({ ...input, created_by: user.id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -75,7 +77,7 @@ export function useUpdateServer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: Partial<GameServerInput> & { id: string }) => {
-      const { error } = await supabase.from("game_servers").update({ ...input, updated_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase.from("game_servers") as any).update({ ...input, updated_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -91,7 +93,7 @@ export function useDeleteServer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("game_servers").delete().eq("id", id);
+      const { error } = await (supabase.from("game_servers") as any).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

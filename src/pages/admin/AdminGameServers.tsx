@@ -1,20 +1,23 @@
 import { useState } from "react";
 import { useAdminGameServers, useCreateServer, useUpdateServer, useDeleteServer, useServerStatus, type GameServer, type GameServerInput } from "@/hooks/useGameServers";
+import { useGames } from "@/hooks/useGames";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Server, Activity, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, Server, Activity, Copy, Megaphone } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { EventPromoEditorDialog, buildServerPromo } from "@/components/marketing/EventPromoEditor";
 
 const emptyForm: GameServerInput = {
-  name: "", game: "", ip_address: "", port: null, description: null,
+  name: "", game: "", game_id: null, ip_address: "", port: null, description: null,
   image_url: null, max_players: null, connection_instructions: null,
   panel_type: null, panel_url: null, panel_server_id: null,
   is_active: true, display_order: 0,
@@ -25,7 +28,20 @@ function ServerFormDialog({ open, onOpenChange, initial, onSubmit, loading }: {
   initial: GameServerInput; onSubmit: (v: GameServerInput) => void; loading: boolean;
 }) {
   const [form, setForm] = useState<GameServerInput>(initial);
+  const { data: games = [] } = useGames();
   const set = (k: keyof GameServerInput, v: any) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const handleGameSelect = (gameId: string) => {
+    if (gameId === "__none__") {
+      set("game_id", null);
+      set("game", "");
+      return;
+    }
+    const g = games.find(g => g.id === gameId);
+    if (g) {
+      setForm(prev => ({ ...prev, game_id: g.id, game: g.name }));
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,7 +49,18 @@ function ServerFormDialog({ open, onOpenChange, initial, onSubmit, loading }: {
         <DialogHeader><DialogTitle>{initial.name ? "Edit Server" : "Add Server"}</DialogTitle></DialogHeader>
         <div className="grid gap-4">
           <div><Label>Name *</Label><Input value={form.name} onChange={e => set("name", e.target.value)} /></div>
-          <div><Label>Game *</Label><Input value={form.game} onChange={e => set("game", e.target.value)} /></div>
+          <div>
+            <Label>Game *</Label>
+            <Select value={form.game_id ?? "__none__"} onValueChange={handleGameSelect}>
+              <SelectTrigger><SelectValue placeholder="Select a game…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">— Select a game —</SelectItem>
+                {games.map(g => (
+                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>IP Address *</Label><Input value={form.ip_address} onChange={e => set("ip_address", e.target.value)} /></div>
             <div><Label>Port</Label><Input type="number" value={form.port ?? ""} onChange={e => set("port", e.target.value ? Number(e.target.value) : null)} /></div>
@@ -101,6 +128,9 @@ export default function AdminGameServers() {
   const [addOpen, setAddOpen] = useState(false);
   const [editServer, setEditServer] = useState<GameServer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [promoServer, setPromoServer] = useState<GameServer | null>(null);
+
+  const promoData = promoServer ? buildServerPromo(promoServer) : null;
 
   return (
     <div className="space-y-6">
@@ -135,7 +165,7 @@ export default function AdminGameServers() {
                 {servers.map(s => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell>{s.game}</TableCell>
+                    <TableCell>{s.games?.name ?? s.game}</TableCell>
                     <TableCell>
                       <button
                         className="font-mono text-xs hover:text-primary transition-colors"
@@ -149,6 +179,7 @@ export default function AdminGameServers() {
                       <Switch checked={s.is_active} onCheckedChange={c => updateMut.mutate({ id: s.id, is_active: c })} />
                     </TableCell>
                     <TableCell className="text-right space-x-1">
+                      <Button variant="ghost" size="icon" onClick={() => setPromoServer(s)} title="Generate Promo"><Megaphone className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => setEditServer(s)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </TableCell>
@@ -175,6 +206,15 @@ export default function AdminGameServers() {
           initial={editServer}
           loading={updateMut.isPending}
           onSubmit={v => updateMut.mutate({ id: editServer.id, ...v }, { onSuccess: () => setEditServer(null) })}
+        />
+      )}
+
+      {promoData && (
+        <EventPromoEditorDialog
+          open={!!promoServer}
+          onOpenChange={o => !o && setPromoServer(null)}
+          imageUrl={promoData.imageUrl}
+          initialTexts={promoData.texts}
         />
       )}
 
