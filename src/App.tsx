@@ -177,6 +177,7 @@ const App = () => (
                 <Route path="/guide" element={<PlayerGuide />} />
                 <Route path="/ladders" element={<Ladders />} />
                 <Route path="/profile" element={<ProfileSettings />} />
+                <Route path="/servers" element={<GameServers />} />
               </Route>
 
               {/* Admin routes */}
