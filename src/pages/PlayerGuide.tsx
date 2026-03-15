@@ -35,6 +35,7 @@ import {
   Activity,
   TrendingUp,
   Radar,
+  Server,
 } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
 
