@@ -35,7 +35,7 @@ export function useTenantPlayers(tenantId: string | null) {
         .select("user_id, display_name, gamer_tag")
         .in("user_id", userIds);
 
-      const pMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+      const pMap = new Map(((profiles || []) as any[]).map((p: any) => [p.user_id, p]));
 
       return data.map((row: any): UnifiedPlayer => {
         const p = pMap.get(row.user_id);
