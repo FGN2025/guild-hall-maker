@@ -124,7 +124,7 @@ export const usePlayerProfile = (userId: string | undefined) => {
       const [tournamentsRes, profilesRes] = await Promise.all([
         supabase.from("tournaments").select("id, name").in("id", tournamentIds),
         opponentIds.length > 0
-          ? supabase.from("profiles").select("user_id, display_name, gamer_tag").in("user_id", opponentIds)
+          ? (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag").in("user_id", opponentIds)
           : Promise.resolve({ data: [] }),
       ]);
 
