@@ -64,8 +64,7 @@ const Ladders = () => {
       const userIds = (data ?? []).map((e) => e.user_id);
       const { data: profiles } =
         userIds.length > 0
-          ? await supabase
-              .from("profiles")
+          ? await (supabase.from as any)("profiles_public")
               .select("user_id, display_name, gamer_tag, avatar_url")
               .in("user_id", userIds)
           : { data: [] };

@@ -190,8 +190,7 @@ export const usePlayerProfile = (userId: string | undefined) => {
       const opponentIds = Object.keys(h2h);
       if (opponentIds.length === 0) return [] as HeadToHeadRecord[];
 
-      const { data: profiles } = await supabase
-        .from("profiles")
+      const { data: profiles } = await (supabase.from as any)("profiles_public")
         .select("user_id, display_name, gamer_tag, avatar_url")
         .in("user_id", opponentIds);
 

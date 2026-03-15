@@ -130,7 +130,7 @@ export function useReplies(postId: string | null) {
       const replyIds = replies.map((r) => r.id);
 
       const [profilesRes, likesRes] = await Promise.all([
-        supabase.from("profiles").select("user_id, display_name, gamer_tag").in("user_id", userIds),
+        (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag").in("user_id", userIds),
         supabase.from("community_likes").select("post_id").in("post_id", replyIds),
       ]);
 

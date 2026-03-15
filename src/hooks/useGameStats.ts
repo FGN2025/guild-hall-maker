@@ -76,8 +76,7 @@ export const useGameStats = (gameName: string | null, seasonRange?: { start: str
       const playerIds = Array.from(playerMap.keys());
       let profileMap = new Map<string, { display_name: string; avatar_url: string | null }>();
       if (playerIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
+        const { data: profiles } = await (supabase.from as any)("profiles_public")
           .select("user_id, display_name, avatar_url")
           .in("user_id", playerIds);
         for (const p of profiles ?? []) {

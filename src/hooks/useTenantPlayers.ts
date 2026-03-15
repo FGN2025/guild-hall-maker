@@ -31,8 +31,7 @@ export function useTenantPlayers(tenantId: string | null) {
       if (!data || data.length === 0) return [] as UnifiedPlayer[];
 
       const userIds = data.map((d: any) => d.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
+      const { data: profiles } = await (supabase.from as any)("profiles_public")
         .select("user_id, display_name, gamer_tag")
         .in("user_id", userIds);
 

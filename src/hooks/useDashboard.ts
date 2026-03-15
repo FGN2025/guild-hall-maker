@@ -105,7 +105,7 @@ export const useDashboard = () => {
         .filter(Boolean) as string[];
       
       const { data: profiles } = opponentIds.length > 0
-        ? await supabase.from("profiles").select("user_id, display_name, gamer_tag").in("user_id", opponentIds)
+        ? await (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag").in("user_id", opponentIds)
         : { data: [] };
 
       return matches.map((m) => {
