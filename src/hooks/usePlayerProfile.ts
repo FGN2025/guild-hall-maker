@@ -195,7 +195,7 @@ export const usePlayerProfile = (userId: string | undefined) => {
         .in("user_id", opponentIds);
 
       const profileMap = new Map(
-        (profiles ?? []).map((p) => [p.user_id, { name: p.gamer_tag || p.display_name || "Unknown", avatar: p.avatar_url }])
+        ((profiles ?? []) as any[]).map((p: any) => [p.user_id, { name: p.gamer_tag || p.display_name || "Unknown", avatar: p.avatar_url }])
       );
 
       return opponentIds

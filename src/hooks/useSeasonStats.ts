@@ -185,7 +185,7 @@ async function buildFromSnapshots(seasonId: string): Promise<SeasonStatsData> {
   const { data: profiles } = userIds.length > 0
     ? await (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag, avatar_url").in("user_id", userIds)
     : { data: [] };
-  const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+  const profileMap = new Map(((profiles ?? []) as any[]).map((p: any) => [p.user_id, p]));
 
   const totalPlayers = rows.length;
   const totalPoints = rows.reduce((s, r) => s + r.final_points, 0);
