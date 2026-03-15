@@ -30,8 +30,7 @@ export const useAllPlayers = () => {
   return useQuery({
     queryKey: ["all-players-for-comparison"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await (supabase.from as any)("profiles_public")
         .select("user_id, display_name, gamer_tag, avatar_url")
         .order("display_name");
       return data ?? [];
