@@ -76,7 +76,7 @@ export function useTopics() {
 
       // Parallel: profiles, reply counts, like counts
       const [profilesRes, repliesRes, likesRes] = await Promise.all([
-        supabase.from("profiles").select("user_id, display_name, gamer_tag").in("user_id", userIds),
+        (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag").in("user_id", userIds),
         supabase.from("community_posts").select("parent_id").in("parent_id", postIds),
         supabase.from("community_likes").select("post_id").in("post_id", postIds),
       ]);
