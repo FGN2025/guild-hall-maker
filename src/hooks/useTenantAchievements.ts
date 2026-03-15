@@ -59,12 +59,11 @@ export function useTenantAchievements(tenantId: string | null) {
       });
 
       // 4. Fetch profiles
-      const { data: profiles } = await supabase
-        .from("profiles")
+      const { data: profiles } = await (supabase.from as any)("profiles_public")
         .select("user_id, display_name, avatar_url")
         .in("user_id", Array.from(userMap.keys()));
 
-      const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+      const profileMap = new Map(((profiles ?? []) as any[]).map((p: any) => [p.user_id, p]));
 
       const results: TenantPlayerAchievement[] = [];
       userMap.forEach((stats, uid) => {

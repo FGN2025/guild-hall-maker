@@ -122,8 +122,7 @@ export const useLeaderboard = (filters: LeaderboardFilters) => {
       // Fetch profiles for all players
       const playerIds = Object.keys(stats);
       const { data: profiles } = playerIds.length > 0
-        ? await supabase
-            .from("profiles")
+        ? await (supabase.from as any)("profiles_public")
             .select("user_id, display_name, gamer_tag, avatar_url")
             .in("user_id", playerIds)
         : { data: [] };

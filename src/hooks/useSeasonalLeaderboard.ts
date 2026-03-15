@@ -65,10 +65,10 @@ export const useSeasonalLeaderboard = (seasonId: string | null) => {
 
         const userIds = (snapshots ?? []).map((s) => s.user_id);
         const { data: profiles } = userIds.length > 0
-          ? await supabase.from("profiles").select("user_id, display_name, gamer_tag, avatar_url").in("user_id", userIds)
+          ? await (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag, avatar_url").in("user_id", userIds)
           : { data: [] };
 
-        const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+        const profileMap = new Map(((profiles ?? []) as any[]).map((p: any) => [p.user_id, p]));
 
         return (snapshots ?? []).map((s) => {
           const profile = profileMap.get(s.user_id);
@@ -96,10 +96,10 @@ export const useSeasonalLeaderboard = (seasonId: string | null) => {
 
         const userIds = (scores ?? []).map((s) => s.user_id);
         const { data: profiles } = userIds.length > 0
-          ? await supabase.from("profiles").select("user_id, display_name, gamer_tag, avatar_url").in("user_id", userIds)
+          ? await (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag, avatar_url").in("user_id", userIds)
           : { data: [] };
 
-        const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+        const profileMap = new Map(((profiles ?? []) as any[]).map((p: any) => [p.user_id, p]));
         const total = (scores ?? []).length;
 
         return (scores ?? []).map((s, i) => {

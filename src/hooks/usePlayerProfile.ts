@@ -50,8 +50,7 @@ export const usePlayerProfile = (userId: string | undefined) => {
     queryKey: ["player-profile", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
+      const { data, error } = await (supabase.from as any)("profiles_public")
         .select("user_id, display_name, gamer_tag, avatar_url")
         .eq("user_id", userId!)
         .maybeSingle();
@@ -125,13 +124,13 @@ export const usePlayerProfile = (userId: string | undefined) => {
       const [tournamentsRes, profilesRes] = await Promise.all([
         supabase.from("tournaments").select("id, name").in("id", tournamentIds),
         opponentIds.length > 0
-          ? supabase.from("profiles").select("user_id, display_name, gamer_tag").in("user_id", opponentIds)
+          ? (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag").in("user_id", opponentIds)
           : Promise.resolve({ data: [] }),
       ]);
 
       const tournamentMap = new Map((tournamentsRes.data ?? []).map((t) => [t.id, t.name]));
       const profileMap = new Map(
-        (profilesRes.data ?? []).map((p) => [p.user_id, p.gamer_tag || p.display_name || "Unknown"])
+        ((profilesRes.data ?? []) as any[]).map((p: any) => [p.user_id, p.gamer_tag || p.display_name || "Unknown"])
       );
 
       return matches.map((m): MatchHistoryEntry => {
@@ -191,13 +190,12 @@ export const usePlayerProfile = (userId: string | undefined) => {
       const opponentIds = Object.keys(h2h);
       if (opponentIds.length === 0) return [] as HeadToHeadRecord[];
 
-      const { data: profiles } = await supabase
-        .from("profiles")
+      const { data: profiles } = await (supabase.from as any)("profiles_public")
         .select("user_id, display_name, gamer_tag, avatar_url")
         .in("user_id", opponentIds);
 
       const profileMap = new Map(
-        (profiles ?? []).map((p) => [p.user_id, { name: p.gamer_tag || p.display_name || "Unknown", avatar: p.avatar_url }])
+        ((profiles ?? []) as any[]).map((p: any) => [p.user_id, { name: p.gamer_tag || p.display_name || "Unknown", avatar: p.avatar_url }])
       );
 
       return opponentIds

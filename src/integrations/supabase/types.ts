@@ -3316,7 +3316,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          discord_avatar: string | null
+          discord_bypass_approved: boolean | null
+          discord_linked_at: string | null
+          discord_username: string | null
+          display_name: string | null
+          gamer_tag: string | null
+          id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          discord_avatar?: string | null
+          discord_bypass_approved?: boolean | null
+          discord_linked_at?: string | null
+          discord_username?: string | null
+          display_name?: string | null
+          gamer_tag?: string | null
+          id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          discord_avatar?: string | null
+          discord_bypass_approved?: boolean | null
+          discord_linked_at?: string | null
+          discord_username?: string | null
+          display_name?: string | null
+          gamer_tag?: string | null
+          id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       claim_pending_invitations: { Args: never; Returns: undefined }

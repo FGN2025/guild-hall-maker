@@ -115,7 +115,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
 
       const { data: profiles } =
         playerIds.length > 0
-          ? await supabase.from("profiles").select("user_id, display_name, gamer_tag, discord_username").in("user_id", playerIds)
+          ? await (supabase.from as any)("profiles_public").select("user_id, display_name, gamer_tag, discord_username").in("user_id", playerIds)
           : { data: [] };
 
       const profileMap = new Map(
