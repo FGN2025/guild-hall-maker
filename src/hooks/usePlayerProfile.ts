@@ -50,8 +50,7 @@ export const usePlayerProfile = (userId: string | undefined) => {
     queryKey: ["player-profile", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
+      const { data, error } = await (supabase.from as any)("profiles_public")
         .select("user_id, display_name, gamer_tag, avatar_url")
         .eq("user_id", userId!)
         .maybeSingle();
