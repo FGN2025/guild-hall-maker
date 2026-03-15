@@ -77,7 +77,19 @@ export function useUpdateServer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: Partial<GameServerInput> & { id: string }) => {
-      const { error } = await (supabase.from("game_servers") as any).update({ ...input, updated_at: new Date().toISOString() }).eq("id", id);
+      const payload = { ...input } as Record<string, unknown>;
+      delete payload.games;
+      delete payload.created_at;
+      delete payload.created_by;
+      delete payload.updated_at;
+
+      for (const key of Object.keys(payload)) {
+        if (payload[key] === undefined) delete payload[key];
+      }
+
+      const { error } = await (supabase.from("game_servers") as any)
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
