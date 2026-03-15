@@ -110,6 +110,20 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     ],
   },
   {
+    id: "game-servers",
+    icon: Server,
+    title: "Game Servers",
+    bullets: [
+      "Browse dedicated community gaming servers at /game-servers from the sidebar.",
+      "Server Cards — Each server displays its name, game, status indicator, player count, and cover image.",
+      "Live Status — Servers with panel integration show real-time online/offline status via a colored dot (green = online, red = offline) and current player counts.",
+      "Copy Address — Click the copy button next to any server's IP:Port address to paste it directly into your game client.",
+      "How to Join — Expand the 'How to Join' section on any server card for step-by-step connection instructions specific to that game.",
+      "Game Linking — Servers are linked to games in the catalog, so you can quickly identify which title each server runs.",
+      "Tip: Check the server status dot before joining — green means the server is online and ready for players!",
+    ],
+  },
+  {
     id: "community",
     icon: Users,
     title: "Community Forum",
