@@ -35,6 +35,7 @@ import {
   Activity,
   TrendingUp,
   Radar,
+  Server,
 } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
 
@@ -106,6 +107,20 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Game Details — Click into a game to see its full description and guide content (markdown-formatted tips and strategies).",
       "Related Tournaments — Game detail pages show tournaments linked to that specific game.",
       "Tip: Game guides feed directly into the AI Coach — the more guide content available, the better coaching advice you'll get.",
+    ],
+  },
+  {
+    id: "game-servers",
+    icon: Server,
+    title: "Game Servers",
+    bullets: [
+      "Browse dedicated community gaming servers at /game-servers from the sidebar.",
+      "Server Cards — Each server displays its name, game, status indicator, player count, and cover image.",
+      "Live Status — Servers with panel integration show real-time online/offline status via a colored dot (green = online, red = offline) and current player counts.",
+      "Copy Address — Click the copy button next to any server's IP:Port address to paste it directly into your game client.",
+      "How to Join — Expand the 'How to Join' section on any server card for step-by-step connection instructions specific to that game.",
+      "Game Linking — Servers are linked to games in the catalog, so you can quickly identify which title each server runs.",
+      "Tip: Check the server status dot before joining — green means the server is online and ready for players!",
     ],
   },
   {

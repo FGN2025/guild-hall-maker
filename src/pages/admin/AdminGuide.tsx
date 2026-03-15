@@ -42,6 +42,7 @@ import {
   Sparkles,
   FileText,
   ClipboardList,
+  Server,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -211,6 +212,24 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Guide content — Add game-specific markdown guides that feed into the AI Coach's knowledge base.",
       "Display order — Drag-and-drop reordering controls sort order in the catalog.",
       "Tournament linking — Tournaments are dynamically linked to games by name.",
+    ],
+  },
+  {
+    id: "game-servers",
+    icon: Server,
+    title: "Game Server Directory",
+    bullets: [
+      "Manage dedicated gaming servers from Admin → Game Servers.",
+      "Adding Servers — Set server name, select a game from the catalog, enter IP address and port, description, connection instructions, cover image, max players, and display order.",
+      "Game Selector — Link each server to a game from your Games Catalog. The server inherits the game's cover image when no custom image is set.",
+      "AI Enhance — Use the 'Enhance' button next to Description and Connection Instructions fields to generate polished content via AI, based on the server name and game.",
+      "Image Upload — Upload a custom server image from your desktop or pick one from the Media Library. A preview thumbnail displays below the upload controls.",
+      "Panel Integration — Optionally connect to a Pterodactyl Panel for live server status monitoring (online/offline state and player counts). Enter the Panel URL and Server ID to enable.",
+      "Promo Generation — Use the Promo action button in the server list to generate promotional marketing assets for any server.",
+      "Status Indicators — Servers with panel integration display real-time online/offline status dots and live player counts in the public server browser.",
+      "Connection Info — Players can copy the server address (IP:Port) with one click and expand 'How to Join' instructions directly on the server card.",
+      "Active Toggle — Toggle servers active/inactive to control visibility in the public directory without deleting them.",
+      "Display Order — Control the sort order of servers in the public browser using the display order field.",
     ],
   },
   {
