@@ -70,7 +70,7 @@ const Ladders = () => {
           : { data: [] };
 
       const profileMap = new Map(
-        (profiles ?? []).map((p) => [p.user_id, p])
+        ((profiles ?? []) as any[]).map((p: any) => [p.user_id, p])
       );
 
       return (data ?? []).map((e, i) => {

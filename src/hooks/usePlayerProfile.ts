@@ -130,7 +130,7 @@ export const usePlayerProfile = (userId: string | undefined) => {
 
       const tournamentMap = new Map((tournamentsRes.data ?? []).map((t) => [t.id, t.name]));
       const profileMap = new Map(
-        (profilesRes.data ?? []).map((p) => [p.user_id, p.gamer_tag || p.display_name || "Unknown"])
+        ((profilesRes.data ?? []) as any[]).map((p: any) => [p.user_id, p.gamer_tag || p.display_name || "Unknown"])
       );
 
       return matches.map((m): MatchHistoryEntry => {
