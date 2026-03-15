@@ -158,6 +158,7 @@ const App = () => (
                 <Route path="/challenges/:id" element={<ChallengeDetail />} />
                 <Route path="/quests" element={<Quests />} />
                 <Route path="/quests/:id" element={<QuestDetail />} />
+                <Route path="/servers" element={<GameServers />} />
               </Route>
 
               {/* Authenticated routes with sidebar */}
