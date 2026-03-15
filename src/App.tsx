@@ -158,6 +158,7 @@ const App = () => (
                 <Route path="/challenges/:id" element={<ChallengeDetail />} />
                 <Route path="/quests" element={<Quests />} />
                 <Route path="/quests/:id" element={<QuestDetail />} />
+                <Route path="/servers" element={<GameServers />} />
               </Route>
 
               {/* Authenticated routes with sidebar */}
@@ -177,7 +178,6 @@ const App = () => (
                 <Route path="/guide" element={<PlayerGuide />} />
                 <Route path="/ladders" element={<Ladders />} />
                 <Route path="/profile" element={<ProfileSettings />} />
-                <Route path="/servers" element={<GameServers />} />
               </Route>
 
               {/* Admin routes */}
