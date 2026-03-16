@@ -196,6 +196,9 @@ const TenantSettings = () => {
       </Card>
 
       <CloudGamingConfigCard tenantId={tenantInfo.tenantId} />
+      {cloudGamingConfig?.is_enabled && (
+        <CloudGamingSeatsCard tenantId={tenantInfo.tenantId} />
+      )}
     </div>
   );
 };
