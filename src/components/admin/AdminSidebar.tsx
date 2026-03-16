@@ -16,6 +16,7 @@ const sidebarItems = [
   { to: "/admin/bypass-codes", label: "Bypass Codes", icon: KeyRound },
   { to: "/admin/ecosystem", label: "Ecosystem", icon: Globe },
   { to: "/admin/game-servers", label: "Game Servers", icon: Server },
+  { to: "/admin/cloud-gaming", label: "Cloud Gaming", icon: Cloud },
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/notebooks", label: "Notebooks", icon: BookOpen },
   { to: "/admin/legacy-users", label: "Legacy Import", icon: Archive },

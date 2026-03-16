@@ -172,6 +172,8 @@ const TenantSettings = () => {
           </div>
         </CardContent>
       </Card>
+
+      <CloudGamingConfigCard tenantId={tenantInfo.tenantId} />
     </div>
   );
 };
