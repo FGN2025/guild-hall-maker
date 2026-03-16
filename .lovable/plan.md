@@ -56,3 +56,23 @@
 ### UI
 - **`CloudGamingSeatsCard`**: capacity bar, integration notice (Blacknut pending), subscriber picker for seat assignment, seats table with status badges and revoke action via ConfirmDialog
 - Rendered in TenantSettings below CloudGamingConfigCard when cloud gaming is enabled
+
+---
+
+# Phase 5: Stripe Webhook Sync — Completed
+
+## What was built
+
+### Edge Function
+- **`stripe-webhook`**: Receives Stripe webhook events, verifies signature via `STRIPE_WEBHOOK_SECRET`, and syncs status to local tables
+- Handles 3 event types:
+  - `checkout.session.completed`: Upserts `tenant_subscriptions` for tenant plan checkouts; updates `subscriber_cloud_purchases` status to `active` for cloud gaming seat checkouts
+  - `customer.subscription.updated`: Syncs status changes (active → past_due, etc.) to both `tenant_subscriptions` and `subscriber_cloud_purchases`
+  - `customer.subscription.deleted`: Marks subscriptions as `canceled`; auto-deactivates cloud gaming seats in `subscriber_cloud_access`
+- Uses price ID matching to route events to correct table (tenant basic vs cloud gaming seat)
+- `verify_jwt = false` in config.toml (Stripe calls this directly)
+
+### Configuration
+- `STRIPE_WEBHOOK_SECRET` secret stored for signature verification
+- Stripe webhook endpoint: `https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/stripe-webhook`
+- Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
