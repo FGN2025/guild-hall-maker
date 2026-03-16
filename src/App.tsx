@@ -97,7 +97,6 @@ const TenantZipCodes = lazy(() => import("./pages/tenant/TenantZipCodes"));
 const TenantSubscribers = lazy(() => import("./pages/tenant/TenantSubscribers"));
 const TenantTeam = lazy(() => import("./pages/tenant/TenantTeam"));
 const TenantSettings = lazy(() => import("./pages/tenant/TenantSettings"));
-const TenantBilling = lazy(() => import("./pages/tenant/TenantBilling"));
 const TenantMarketing = lazy(() => import("./pages/tenant/TenantMarketing"));
 const TenantMarketingDetail = lazy(() => import("./pages/tenant/TenantMarketingDetail"));
 const TenantPlayers = lazy(() => import("./pages/tenant/TenantPlayers"));
@@ -224,7 +223,6 @@ const App = () => (
               <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
               <Route path="/tenant/team" element={<TenantRoute><TenantTeam /></TenantRoute>} />
               <Route path="/tenant/settings" element={<TenantRoute><TenantSettings /></TenantRoute>} />
-              <Route path="/tenant/billing" element={<TenantRoute><TenantBilling /></TenantRoute>} />
               <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
               <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
               <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
