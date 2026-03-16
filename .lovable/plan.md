@@ -38,3 +38,21 @@
 
 ### Auth Flow
 - Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
+
+---
+
+# Phase 3: Subscriber Cloud Gaming Seat Purchases — Completed
+
+## What was built
+
+### Database
+- **`subscriber_cloud_purchases`** table: tracks Stripe subscription per cloud gaming seat assignment (tenant_id, subscriber_id, user_id, stripe_subscription_id, status, timestamps)
+- RLS policies: tenant members can view, tenant admins can insert/update
+- `updated_at` trigger via `update_updated_at_column()`
+
+### Hook
+- **`useCloudGamingSeats`**: queries active seats from `subscriber_cloud_access` and purchases from `subscriber_cloud_purchases`, provides `assignSeat` (inserts access + purchase records, triggers Stripe checkout), `revokeSeat` (deactivates seat), and computed `availableSlots`/`availableSubscribers`
+
+### UI
+- **`CloudGamingSeatsCard`**: capacity bar, integration notice (Blacknut pending), subscriber picker for seat assignment, seats table with status badges and revoke action via ConfirmDialog
+- Rendered in TenantSettings below CloudGamingConfigCard when cloud gaming is enabled
