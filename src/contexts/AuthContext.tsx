@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+type SubscriptionStatus = 'active' | 'inactive' | 'past_due' | 'loading';
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -13,6 +15,7 @@ interface AuthContextType {
   roleLoading: boolean;
   discordLinked: boolean;
   emailConfirmed: boolean;
+  subscriptionStatus: SubscriptionStatus;
   signOut: () => Promise<void>;
   refreshDiscordStatus: () => Promise<void>;
 }
@@ -28,6 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   roleLoading: true,
   discordLinked: false,
   emailConfirmed: false,
+  subscriptionStatus: 'loading',
   signOut: async () => {},
   refreshDiscordStatus: async () => {},
 });
@@ -44,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isTenantStaff, setIsTenantStaff] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
   const [discordLinked, setDiscordLinked] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('loading');
   const fetchingRef = { current: false };
 
   const fetchRoleAndDiscord = async (userId: string) => {
@@ -59,10 +64,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAdmin(roles.includes("admin"));
     setIsModerator(roles.includes("moderator"));
     setIsMarketing(roles.includes("marketing"));
-    setIsTenantStaff((tenantAdminResult.data ?? []).length > 0);
+    const isTenant = (tenantAdminResult.data ?? []).length > 0;
+    setIsTenantStaff(isTenant);
     setDiscordLinked(!!profileResult.data?.discord_id || !!profileResult.data?.discord_bypass_approved);
     setRoleLoading(false);
     fetchingRef.current = false;
+
+    // Fetch subscription status for tenant staff
+    if (isTenant) {
+      try {
+        const { data: subData } = await supabase.functions.invoke("check-subscription", {
+          body: { userId },
+        });
+        const status = subData?.status;
+        if (status === "active" || status === "trialing") {
+          setSubscriptionStatus("active");
+        } else if (status === "past_due") {
+          setSubscriptionStatus("past_due");
+        } else {
+          setSubscriptionStatus("inactive");
+        }
+      } catch {
+        setSubscriptionStatus("inactive");
+      }
+    } else {
+      setSubscriptionStatus("inactive");
+    }
   };
 
   const refreshDiscordStatus = async () => {
@@ -86,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsTenantStaff(false);
           setDiscordLinked(false);
           setRoleLoading(false);
+          setSubscriptionStatus('inactive');
         }
       }
     );
@@ -111,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const emailConfirmed = !!user?.email_confirmed_at;
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, isTenantStaff, roleLoading, discordLinked, emailConfirmed, signOut, refreshDiscordStatus }}>
+    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, isTenantStaff, roleLoading, discordLinked, emailConfirmed, subscriptionStatus, signOut, refreshDiscordStatus }}>
       {children}
     </AuthContext.Provider>
   );
