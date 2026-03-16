@@ -12,7 +12,9 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import CloudGamingConfigCard from "@/components/tenant/CloudGamingConfigCard";
+import CloudGamingSeatsCard from "@/components/tenant/CloudGamingSeatsCard";
 import TenantBillingCard from "@/components/tenant/TenantBillingCard";
+import { useTenantCloudGaming } from "@/hooks/useTenantCloudGaming";
 
 const TenantSettings = () => {
   const { tenantInfo } = useTenantAdmin();
