@@ -34,8 +34,8 @@ export function useTenantBilling() {
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: {
-          priceId: priceId || STRIPE_PRODUCTS.tenant_basic.price_id,
-          tenantId,
+          price_id: priceId || STRIPE_PRODUCTS.tenant_basic.price_id,
+          tenant_id: tenantId,
         },
       });
       if (error) throw error;
