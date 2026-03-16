@@ -77,6 +77,7 @@ const AdminWebPages = lazy(() => import("./pages/admin/AdminWebPages"));
 const AdminDiscordBypass = lazy(() => import("./pages/admin/AdminDiscordBypass"));
 const AdminGameServers = lazy(() => import("./pages/admin/AdminGameServers"));
 const GameServers = lazy(() => import("./pages/GameServers"));
+const AdminCloudGaming = lazy(() => import("./pages/admin/AdminCloudGaming"));
 const WhitePaper = lazy(() => import("./pages/WhitePaper"));
 
 // Moderator pages
@@ -203,6 +204,7 @@ const App = () => (
               <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
               <Route path="/admin/ecosystem" element={<AdminRoute><AdminEcosystem /></AdminRoute>} />
               <Route path="/admin/game-servers" element={<AdminRoute><AdminGameServers /></AdminRoute>} />
+              <Route path="/admin/cloud-gaming" element={<AdminRoute><AdminCloudGaming /></AdminRoute>} />
 
               {/* Moderator routes */}
               <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
