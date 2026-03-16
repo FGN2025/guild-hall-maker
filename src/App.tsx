@@ -224,6 +224,7 @@ const App = () => (
               <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
               <Route path="/tenant/team" element={<TenantRoute><TenantTeam /></TenantRoute>} />
               <Route path="/tenant/settings" element={<TenantRoute><TenantSettings /></TenantRoute>} />
+              <Route path="/tenant/billing" element={<TenantRoute><TenantBilling /></TenantRoute>} />
               <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
               <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
               <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
