@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,11 +12,13 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import CloudGamingConfigCard from "@/components/tenant/CloudGamingConfigCard";
+import TenantBillingCard from "@/components/tenant/TenantBillingCard";
 
 const TenantSettings = () => {
   const { tenantInfo } = useTenantAdmin();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [contactEmail, setContactEmail] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#00e5ff");
@@ -32,6 +35,20 @@ const TenantSettings = () => {
       setAccentColor(tenantInfo.accentColor || "#7c3aed");
     }
   }, [tenantInfo]);
+
+  // Handle checkout redirect params
+  useEffect(() => {
+    const checkout = searchParams.get("checkout");
+    if (checkout === "success") {
+      toast.success("Subscription activated! Your billing is now set up.");
+      searchParams.delete("checkout");
+      setSearchParams(searchParams, { replace: true });
+    } else if (checkout === "canceled") {
+      toast.info("Checkout canceled. No charges were made.");
+      searchParams.delete("checkout");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   if (!tenantInfo) return null;
 
@@ -97,6 +114,8 @@ const TenantSettings = () => {
           Manage your company branding and contact info.
         </p>
       </div>
+
+      <TenantBillingCard />
 
       <Card>
         <CardHeader>

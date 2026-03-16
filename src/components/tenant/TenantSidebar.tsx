@@ -48,6 +48,7 @@ const allSidebarItems = [
   { to: "/tenant/marketing", label: "Marketing", icon: Megaphone, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
   { to: "/tenant/codes", label: "Codes", icon: KeyRound, roles: ['admin'] },
+  { to: "/tenant/settings", label: "Billing", icon: CreditCard, roles: ['admin'] },
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin', 'manager'] },
   { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];
