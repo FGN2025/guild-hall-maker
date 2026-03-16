@@ -152,6 +152,8 @@ const TenantSettings = () => {
         </CardContent>
       </Card>
 
+      <TenantBillingCard />
+
       <Card>
         <CardHeader>
           <CardTitle className="font-display text-lg">Company Info</CardTitle>
