@@ -75,7 +75,7 @@ export function useTenantBilling() {
     if (!tenantId) return null;
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription", {
-        body: { tenantId },
+        body: { tenant_id: tenantId },
       });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["tenant-subscription", tenantId] });
