@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const emailConfirmed = !!user?.email_confirmed_at;
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, isTenantStaff, roleLoading, discordLinked, emailConfirmed, signOut, refreshDiscordStatus }}>
+    <AuthContext.Provider value={{ session, user, loading, isAdmin, isModerator, isMarketing, isTenantStaff, roleLoading, discordLinked, emailConfirmed, subscriptionStatus, signOut, refreshDiscordStatus }}>
       {children}
     </AuthContext.Provider>
   );
