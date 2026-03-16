@@ -112,6 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsTenantStaff(false);
           setDiscordLinked(false);
           setRoleLoading(false);
+          setSubscriptionStatus('inactive');
         }
       }
     );
