@@ -14,6 +14,7 @@ import {
   Swords,
   Server,
   SwordIcon,
+  FileText,
   Award,
   Target,
   Gift,
