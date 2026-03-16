@@ -97,6 +97,7 @@ const TenantZipCodes = lazy(() => import("./pages/tenant/TenantZipCodes"));
 const TenantSubscribers = lazy(() => import("./pages/tenant/TenantSubscribers"));
 const TenantTeam = lazy(() => import("./pages/tenant/TenantTeam"));
 const TenantSettings = lazy(() => import("./pages/tenant/TenantSettings"));
+const TenantBilling = lazy(() => import("./pages/tenant/TenantBilling"));
 const TenantMarketing = lazy(() => import("./pages/tenant/TenantMarketing"));
 const TenantMarketingDetail = lazy(() => import("./pages/tenant/TenantMarketingDetail"));
 const TenantPlayers = lazy(() => import("./pages/tenant/TenantPlayers"));
