@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isTenantStaff, setIsTenantStaff] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
   const [discordLinked, setDiscordLinked] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('loading');
   const fetchingRef = { current: false };
 
   const fetchRoleAndDiscord = async (userId: string) => {
