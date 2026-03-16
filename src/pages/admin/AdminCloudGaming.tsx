@@ -153,7 +153,7 @@ const AdminCloudGaming = () => {
             deleteGame.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
           }
         }}
-        destructive
+        variant="destructive"
       />
     </AdminLayout>
   );
