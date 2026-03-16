@@ -43,6 +43,8 @@ import {
   FileText,
   ClipboardList,
   Server,
+  CreditCard,
+  Cloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -156,6 +158,37 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tenant Web Pages — Build multi-section landing pages from the Marketing → Web Pages tab, hosted at /pages/:tenantSlug/:pageSlug with automatic tenant branding.",
       "Platform Admin Switching — Platform admins can switch between tenants using the sidebar dropdown. A 'Viewing as Platform Admin' indicator confirms administrative access.",
       "Ecosystem Links — Quick access to Manage and Hub apps via magic link SSO.",
+    ],
+  },
+  {
+    id: "tenant-billing",
+    icon: CreditCard,
+    title: "Tenant Billing & Subscriptions",
+    bullets: [
+      "Each tenant can subscribe to a plan via Stripe from the Tenant → Settings page.",
+      "Billing Card — The Settings page displays a billing card showing plan name, status badge (Active, Trial, Past Due, Canceled), and renewal date.",
+      "Subscribe Flow — Tenants without an active subscription see a 'Subscribe' button that opens a Stripe Checkout session for the Tenant Basic plan ($850/mo).",
+      "Manage Subscription — Active subscribers can open the Stripe Customer Portal to update payment methods, view invoices, or cancel.",
+      "Stripe Webhook Sync — A backend webhook handler automatically syncs subscription status changes (new, updated, canceled) from Stripe to the tenant_subscriptions table in real time.",
+      "Global Status — The AuthContext tracks subscription status globally, allowing feature gating based on billing status across the tenant portal.",
+      "Checkout Redirect — After completing Stripe checkout, users are redirected back to Settings with a success/canceled toast notification.",
+      "Cloud Gaming Add-On — Tenants can purchase additional cloud gaming seats at $29.99/mo per seat, managed from the Cloud Gaming section in Settings.",
+    ],
+  },
+  {
+    id: "cloud-gaming-admin",
+    icon: Cloud,
+    title: "Cloud Gaming Management",
+    bullets: [
+      "Cloud gaming is a tenant-level premium add-on providing browser-based gaming access for subscribers.",
+      "Configuration — Tenant admins enable cloud gaming and configure max seats and subscription tier from Settings → Cloud Gaming.",
+      "Tiers — Three tiers are available: Basic (up to 25 seats), Standard (up to 100 seats), Premium (unlimited).",
+      "Seat Assignment — Admins assign seats to individual subscribers from a picker. Each assignment creates a local tracking record and triggers a Stripe checkout for recurring billing.",
+      "Capacity Tracking — A visual progress bar shows active seats vs. max capacity. Assignment is blocked when all seats are filled.",
+      "Seat Revocation — Admins can revoke seats via the management table. Revoked seats are deactivated immediately. Stripe subscriptions should be canceled separately.",
+      "Auto-Deactivation — When a cloud gaming seat's Stripe subscription is canceled (via webhook), the seat is automatically deactivated in the system.",
+      "Blacknut Integration — The system is designed for future Blacknut Cloud Gaming API integration. Currently, seats are tracked locally with a 'Pending Integration' notice.",
+      "Purchase Tracking — The subscriber_cloud_purchases table tracks Stripe subscription IDs and billing status per seat for audit and reconciliation.",
     ],
   },
   {
@@ -657,6 +690,8 @@ const permissionRows = [
   { feature: "Tenant Subscribers", admin: true, marketing: false, manager: false },
   { feature: "Tenant Integrations", admin: true, marketing: false, manager: false },
   { feature: "Tenant Team Management", admin: true, marketing: false, manager: false },
+  { feature: "Tenant Billing & Subscription", admin: true, marketing: false, manager: false },
+  { feature: "Cloud Gaming Management", admin: true, marketing: false, manager: false },
 ];
 
 const AdminGuide = () => {

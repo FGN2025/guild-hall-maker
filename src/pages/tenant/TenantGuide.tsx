@@ -26,6 +26,8 @@ import {
   ArrowUp,
   KeyRound,
   FileText,
+  CreditCard,
+  Cloud,
 } from "lucide-react";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
@@ -238,6 +240,38 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Live Preview — Brand color changes are reflected immediately across your tenant's public presence.",
       "Subscriber Validation — Optionally require subscriber identity validation during registration. When enabled, users must verify their name and account number against your subscriber registry before gaining access.",
       "Admin Only — Only tenant admins can modify settings.",
+    ],
+  },
+  {
+    id: "billing",
+    icon: CreditCard,
+    title: "Billing & Subscription (Admin Only)",
+    bullets: [
+      "Navigate to Settings to view and manage your tenant's billing and subscription status.",
+      "Billing Card — The Billing card at the top of Settings shows your current plan, status, and renewal date.",
+      "Subscribe — If you don't have an active subscription, click 'Subscribe' to start a Stripe checkout for the Tenant Basic plan ($850/mo).",
+      "Manage Subscription — Active subscribers can click 'Manage Subscription' to open the Stripe Customer Portal where you can update payment methods, view invoices, or cancel.",
+      "Status Indicators — Your subscription status is shown as a badge: Active (green), Trial, Past Due (warning), Canceled, or Inactive.",
+      "Checkout Flow — After completing Stripe checkout, you'll be redirected back to Settings with a confirmation message.",
+      "Auto-Sync — Subscription status is automatically synchronized via Stripe webhooks. Changes to your billing (upgrades, cancellations, payment failures) are reflected in real time.",
+      "Admin Only — Only tenant admins can manage billing and subscriptions.",
+    ],
+  },
+  {
+    id: "cloud-gaming",
+    icon: Cloud,
+    title: "Cloud Gaming Seats (Admin Only)",
+    bullets: [
+      "Navigate to Settings → Cloud Gaming to manage cloud-based gaming access for your subscribers.",
+      "Enable Cloud Gaming — Toggle cloud gaming on/off from the Cloud Gaming configuration card. When enabled, the Seats management card appears below.",
+      "Subscription Tiers — Choose a tier (Basic up to 25 seats, Standard up to 100, Premium unlimited) and set the max seat count.",
+      "Assign Seats — Select a subscriber from the dropdown picker and click 'Assign' to grant them a cloud gaming seat. Each seat assignment triggers a Stripe checkout ($29.99/mo per seat).",
+      "Capacity Bar — A visual progress bar shows how many of your allocated seats are currently in use.",
+      "Seat Table — View all assigned seats with subscriber name, email, billing status (Active, Pending, Tracked), and assignment date.",
+      "Revoke Seats — Click the revoke button on any seat to deactivate it. A confirmation dialog prevents accidental removals. Note: Stripe subscriptions should be canceled separately via the billing portal.",
+      "Pending Integration — Cloud gaming seats are currently tracked locally. Blacknut account provisioning will be enabled when the API integration is configured.",
+      "Auto-Sync — When a cloud gaming seat's Stripe subscription is canceled, the seat is automatically deactivated via webhook sync.",
+      "Admin Only — Only tenant admins can manage cloud gaming settings and seat assignments.",
     ],
   },
   {
