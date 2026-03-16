@@ -180,6 +180,19 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     ],
   },
   {
+    id: "game-servers",
+    icon: Shield,
+    title: "Game Server Awareness",
+    bullets: [
+      "Moderators do not manage game servers directly — server administration is handled by Admins via Admin → Game Servers.",
+      "Server Directory — Players can browse dedicated game servers at /servers (or /game-servers). Each server card shows the game, IP address, live status, and max player count.",
+      "Player Support — If a player reports connection issues, direct them to the Game Servers page to verify the server is online and copy the correct IP address.",
+      "Live Status — Server cards display real-time online/offline indicators pulled from panel integrations (Pterodactyl/Shockbyte). A green dot means the server is reachable.",
+      "Linking to Events — When creating tournaments or challenges, consider mentioning the relevant game server in the description so players know where to practice or compete.",
+      "Tip: Familiarize yourself with the active servers so you can assist players quickly during tournaments and events.",
+    ],
+  },
+  {
     id: "community",
     icon: Users,
     title: "Community Moderation",

@@ -77,6 +77,7 @@ const AdminWebPages = lazy(() => import("./pages/admin/AdminWebPages"));
 const AdminDiscordBypass = lazy(() => import("./pages/admin/AdminDiscordBypass"));
 const AdminGameServers = lazy(() => import("./pages/admin/AdminGameServers"));
 const GameServers = lazy(() => import("./pages/GameServers"));
+const WhitePaper = lazy(() => import("./pages/WhitePaper"));
 
 // Moderator pages
 const ModeratorDashboard = lazy(() => import("./pages/moderator/ModeratorDashboard"));
@@ -160,6 +161,7 @@ const App = () => (
                 <Route path="/quests/:id" element={<QuestDetail />} />
                 <Route path="/servers" element={<GameServers />} />
                 <Route path="/game-servers" element={<GameServers />} />
+                <Route path="/white-paper" element={<WhitePaper />} />
               </Route>
 
               {/* Authenticated routes with sidebar */}
