@@ -26,6 +26,8 @@ import {
   ArrowUp,
   KeyRound,
   FileText,
+  CreditCard,
+  Cloud,
 } from "lucide-react";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
