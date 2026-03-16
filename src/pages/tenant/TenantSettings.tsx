@@ -10,6 +10,7 @@ import { resizeImageFile, LOGO_PRESET } from "@/lib/imageResize";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import CloudGamingConfigCard from "@/components/tenant/CloudGamingConfigCard";
 
 const TenantSettings = () => {
   const { tenantInfo } = useTenantAdmin();
