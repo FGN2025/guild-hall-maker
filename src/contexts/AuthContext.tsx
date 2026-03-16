@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+type SubscriptionStatus = 'active' | 'inactive' | 'past_due' | 'loading';
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -13,6 +15,7 @@ interface AuthContextType {
   roleLoading: boolean;
   discordLinked: boolean;
   emailConfirmed: boolean;
+  subscriptionStatus: SubscriptionStatus;
   signOut: () => Promise<void>;
   refreshDiscordStatus: () => Promise<void>;
 }
