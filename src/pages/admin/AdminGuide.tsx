@@ -43,6 +43,8 @@ import {
   FileText,
   ClipboardList,
   Server,
+  CreditCard,
+  Cloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
