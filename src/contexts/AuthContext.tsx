@@ -64,6 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAdmin(roles.includes("admin"));
     setIsModerator(roles.includes("moderator"));
     setIsMarketing(roles.includes("marketing"));
+    const isTenant = (tenantAdminResult.data ?? []).length > 0;
     setIsTenantStaff(isTenant);
     setDiscordLinked(!!profileResult.data?.discord_id || !!profileResult.data?.discord_bypass_approved);
     setRoleLoading(false);
