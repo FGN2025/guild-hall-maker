@@ -209,7 +209,6 @@ const CloudGamingSeatsCard = ({ tenantId }: Props) => {
         description="This will deactivate the subscriber's cloud gaming access. Their Stripe subscription (if active) should be canceled separately."
         confirmLabel="Revoke"
         variant="destructive"
-        loading={revokeSeat.isPending}
         onConfirm={() => {
           if (revokeTarget) {
             revokeSeat.mutate(revokeTarget, {
