@@ -166,7 +166,7 @@ const CloudGamingSeatsCard = ({ tenantId }: Props) => {
                         </TableCell>
                         <TableCell>
                           {purchaseStatus === "active" ? (
-                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Active</Badge>
+                            <Badge className="bg-primary/20 text-primary border-primary/30">Active</Badge>
                           ) : purchaseStatus === "pending" ? (
                             <Badge variant="secondary">Pending</Badge>
                           ) : (
