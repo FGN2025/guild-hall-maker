@@ -598,6 +598,42 @@ export type Database = {
           },
         ]
       }
+      cloud_games: {
+        Row: {
+          blacknut_game_id: string
+          cover_url: string | null
+          created_at: string
+          deep_link_url: string | null
+          description: string | null
+          genre: string | null
+          id: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          blacknut_game_id: string
+          cover_url?: string | null
+          created_at?: string
+          deep_link_url?: string | null
+          description?: string | null
+          genre?: string | null
+          id?: string
+          is_active?: boolean
+          title: string
+        }
+        Update: {
+          blacknut_game_id?: string
+          cover_url?: string | null
+          created_at?: string
+          deep_link_url?: string | null
+          description?: string | null
+          genre?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
       coach_conversations: {
         Row: {
           created_at: string
@@ -2402,6 +2438,41 @@ export type Database = {
           },
         ]
       }
+      subscriber_cloud_access: {
+        Row: {
+          activated_at: string
+          deactivated_at: string | null
+          id: string
+          is_active: boolean
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriber_cloud_access_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_admins: {
         Row: {
           created_at: string
@@ -2429,6 +2500,44 @@ export type Database = {
             foreignKeyName: "tenant_admins_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_cloud_gaming: {
+        Row: {
+          blacknut_account_id: string | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          max_seats: number
+          subscription_tier: string
+          tenant_id: string
+        }
+        Insert: {
+          blacknut_account_id?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          max_seats?: number
+          subscription_tier?: string
+          tenant_id: string
+        }
+        Update: {
+          blacknut_account_id?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          max_seats?: number
+          subscription_tier?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_cloud_gaming_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
