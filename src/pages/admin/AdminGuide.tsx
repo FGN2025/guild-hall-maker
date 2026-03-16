@@ -690,6 +690,8 @@ const permissionRows = [
   { feature: "Tenant Subscribers", admin: true, marketing: false, manager: false },
   { feature: "Tenant Integrations", admin: true, marketing: false, manager: false },
   { feature: "Tenant Team Management", admin: true, marketing: false, manager: false },
+  { feature: "Tenant Billing & Subscription", admin: true, marketing: false, manager: false },
+  { feature: "Cloud Gaming Management", admin: true, marketing: false, manager: false },
 ];
 
 const AdminGuide = () => {

@@ -158,6 +158,21 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
     ],
   },
   {
+    id: "feature-cloud-gaming",
+    icon: Server,
+    title: "Feature: Cloud Gaming",
+    content: [
+      "Browser-based cloud gaming access for subscribers — no hardware investment required.",
+      "Powered by Blacknut Cloud Gaming (integration pending), offering a catalog of high-quality titles playable from any browser.",
+      "Seat-based licensing model — institutions purchase individual subscriber seats at $29.99/month each.",
+      "Tenant admins manage seat assignments from their Settings dashboard, with visual capacity tracking and subscriber selection.",
+      "Tiered plans: Basic (up to 25 seats), Standard (up to 100 seats), Premium (unlimited) — matching institutional scale.",
+      "Integrated billing via Stripe with automatic subscription management and webhook-based status synchronization.",
+      "Auto-deactivation — when a seat subscription is canceled, access is revoked automatically with no admin action required.",
+      "Designed as a premium add-on to the base tenant subscription, enabling institutions to offer cutting-edge gaming without local hardware.",
+    ],
+  },
+  {
     id: "feature-coach",
     icon: Bot,
     title: "Feature: AI Coach",
