@@ -204,10 +204,12 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
     title: "Implementation Models",
     content: [
       "Tenant Onboarding — Each institution is set up as a 'Tenant' on the platform with its own branded sub-portal, logo, and color scheme.",
+      "Subscription Plans — Tenants subscribe via Stripe ($850/mo base plan) with self-service billing management, automatic status sync, and add-on capabilities like cloud gaming seats.",
       "ZIP-Based Enrollment — Define service area ZIP codes so that players who register from your area are automatically captured as leads.",
       "Staff Roles — Assign team members as Admins (full control), Managers (operations), or Marketing (promotional content).",
       "Moderator Assignment — Platform admins assign moderator roles to institution staff who manage day-to-day tournament and challenge operations.",
       "Subscriber Integration — Connect existing billing or membership systems (NISC, GLDS) to auto-import subscriber lists for verification.",
+      "Cloud Gaming Add-On — Purchase browser-based gaming seats for subscribers at $29.99/mo each, with automatic billing and seat management.",
       "Event Pages — Published events appear on a public-facing page at /events/your-organization-slug, shareable with no login required.",
       "Web Pages — Create branded landing pages at /pages/your-organization-slug/page-name for program promotion.",
       "Calendar Embeds — Publish branded calendar widgets for embedding on your organization's website.",
