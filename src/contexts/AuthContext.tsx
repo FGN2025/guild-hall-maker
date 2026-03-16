@@ -64,10 +64,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAdmin(roles.includes("admin"));
     setIsModerator(roles.includes("moderator"));
     setIsMarketing(roles.includes("marketing"));
-    setIsTenantStaff((tenantAdminResult.data ?? []).length > 0);
+    setIsTenantStaff(isTenant);
     setDiscordLinked(!!profileResult.data?.discord_id || !!profileResult.data?.discord_bypass_approved);
     setRoleLoading(false);
     fetchingRef.current = false;
+
+    // Fetch subscription status for tenant staff
+    if (isTenant) {
+      try {
+        const { data: subData } = await supabase.functions.invoke("check-subscription", {
+          body: { userId },
+        });
+        const status = subData?.status;
+        if (status === "active" || status === "trialing") {
+          setSubscriptionStatus("active");
+        } else if (status === "past_due") {
+          setSubscriptionStatus("past_due");
+        } else {
+          setSubscriptionStatus("inactive");
+        }
+      } catch {
+        setSubscriptionStatus("inactive");
+      }
+    } else {
+      setSubscriptionStatus("inactive");
+    }
   };
 
   const refreshDiscordStatus = async () => {
