@@ -160,6 +160,7 @@ const App = () => (
                 <Route path="/quests/:id" element={<QuestDetail />} />
                 <Route path="/servers" element={<GameServers />} />
                 <Route path="/game-servers" element={<GameServers />} />
+                <Route path="/white-paper" element={<WhitePaper />} />
               </Route>
 
               {/* Authenticated routes with sidebar */}
