@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2, CalendarDays, Target, Gift, SwordIcon, BookOpen, Compass } from "lucide-react";
+import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2, CalendarDays, Target, Gift, SwordIcon, BookOpen, Compass, FileText } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +34,7 @@ const publicNavItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/challenges", label: "Challenges", icon: Target },
   { to: "/quests", label: "Quests", icon: Compass },
+  { to: "/white-paper", label: "White Paper", icon: FileText },
 ];
 
 const Navbar = () => {

@@ -14,6 +14,7 @@ import {
   Swords,
   Server,
   SwordIcon,
+  FileText,
   Award,
   Target,
   Gift,
@@ -60,6 +61,7 @@ const mainNav = [
   { to: "/prize-shop", label: "Prize Shop", icon: Gift },
   { to: "/ladders", label: "Ladders", icon: SwordIcon },
   { to: "/servers", label: "Servers", icon: Server },
+  { to: "/white-paper", label: "White Paper", icon: FileText },
   { to: "/guide", label: "Player Guide", icon: BookOpen },
 ];
 

@@ -25,6 +25,8 @@ const Index = () => {
             <a href="/acceptable-use" className="text-primary hover:underline">Acceptable Use Policy</a>
             <span className="hidden sm:inline">·</span>
             <a href="/disabled-users" className="text-primary hover:underline">Disabled Users Notice</a>
+            <span className="hidden sm:inline">·</span>
+            <a href="/white-paper" className="text-primary hover:underline">White Paper</a>
           </div>
           <p className="text-sm text-muted-foreground">
             © 2026 Fibre Gaming Network. All rights reserved.
