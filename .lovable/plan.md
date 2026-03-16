@@ -1,83 +1,58 @@
 
+# Configurable Discord Role Assignment — Completed
 
-# Phase 3: Subscriber Cloud Gaming Seat Purchases
+## What was built
 
-## Context
-- `subscriber_cloud_access` table exists (tracks active seats per tenant/user)
-- `tenant_cloud_gaming` config exists (max_seats, tier, enabled flag)
-- `cloud_gaming_seat` Stripe product defined ($29.99/mo) in `stripeProducts.ts`
-- `create-checkout` edge function already supports both `subscription` and `payment` modes
-- No Blacknut API yet — seats are tracked locally only (no external provisioning)
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-## Database Migration
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-### New table: `subscriber_cloud_purchases`
-Tracks Stripe subscription per cloud gaming seat assignment.
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-```sql
-CREATE TABLE public.subscriber_cloud_purchases (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-  subscriber_id uuid NOT NULL REFERENCES public.tenant_subscribers(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  stripe_subscription_id text,
-  stripe_customer_id text,
-  status text NOT NULL DEFAULT 'pending',
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  canceled_at timestamptz,
-  UNIQUE (tenant_id, subscriber_id)
-);
+---
 
-ALTER TABLE public.subscriber_cloud_purchases ENABLE ROW LEVEL SECURITY;
+# Delete & Ban Users — Completed
 
--- Tenant members can view their tenant's purchases
-CREATE POLICY "Tenant members can view purchases"
-  ON public.subscriber_cloud_purchases FOR SELECT TO authenticated
-  USING (public.is_tenant_member(tenant_id, auth.uid()));
+## What was built
 
--- Tenant admins can manage purchases
-CREATE POLICY "Tenant admins can insert purchases"
-  ON public.subscriber_cloud_purchases FOR INSERT TO authenticated
-  WITH CHECK (public.is_tenant_admin(tenant_id, auth.uid()));
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-CREATE POLICY "Tenant admins can update purchases"
-  ON public.subscriber_cloud_purchases FOR UPDATE TO authenticated
-  USING (public.is_tenant_admin(tenant_id, auth.uid()));
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
--- updated_at trigger
-CREATE TRIGGER set_updated_at
-  BEFORE UPDATE ON public.subscriber_cloud_purchases
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-```
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
-## Files to Create
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
 
-### 1. `src/hooks/useCloudGamingSeats.ts`
-- Queries `subscriber_cloud_access` for the tenant (active seats list with subscriber details)
-- Queries `subscriber_cloud_purchases` for purchase status
-- `assignSeat(subscriberId)` — inserts into `subscriber_cloud_access` (local-only, no Blacknut), creates a purchase record, and invokes `create-checkout` with `cloud_gaming_seat` price
-- `revokeSeat(accessId)` — deactivates the seat (sets `is_active = false`, `deactivated_at = now()`)
-- Returns: `seats`, `purchases`, `isLoading`, `assignSeat`, `revokeSeat`, `availableSlots`
+---
 
-### 2. `src/components/tenant/CloudGamingSeatsCard.tsx`
-- Displays active seat count vs max_seats from cloud gaming config
-- Table of assigned seats: subscriber name, email, status, assigned date, actions (revoke)
-- "Assign Seat" button opens a subscriber picker (simple select from `tenant_subscribers` not already assigned)
-- Seat assignment creates a local record; since no Blacknut API exists yet, shows a "Pending Integration" badge
-- Disabled when cloud gaming is not enabled for the tenant
+# Phase 3: Subscriber Cloud Gaming Seat Purchases — Completed
 
-## Files to Edit
+## What was built
 
-### 3. `src/pages/tenant/TenantSettings.tsx`
-- Import and render `<CloudGamingSeatsCard>` below the existing `<CloudGamingConfigCard>`
-- Only shown when cloud gaming is enabled
+### Database
+- **`subscriber_cloud_purchases`** table: tracks Stripe subscription per cloud gaming seat assignment (tenant_id, subscriber_id, user_id, stripe_subscription_id, status, timestamps)
+- RLS policies: tenant members can view, tenant admins can insert/update
+- `updated_at` trigger via `update_updated_at_column()`
 
-### 4. `src/components/tenant/CloudGamingConfigCard.tsx`
-- No changes needed — seats card is separate
+### Hook
+- **`useCloudGamingSeats`**: queries active seats from `subscriber_cloud_access` and purchases from `subscriber_cloud_purchases`, provides `assignSeat` (inserts access + purchase records, triggers Stripe checkout), `revokeSeat` (deactivates seat), and computed `availableSlots`/`availableSubscribers`
 
-## Technical Notes
-- Since Blacknut API is not available, seat assignment is **local tracking only**. The UI will indicate this with a notice: "Cloud gaming seats are tracked locally. Blacknut account provisioning will be enabled when the API integration is configured."
-- The `create-checkout` edge function already handles `cloud_gaming_seat` price — we pass `mode: 'subscription'` for recurring billing per seat
-- Seat count validation: check `activeSeats < config.max_seats` before allowing assignment
-
+### UI
+- **`CloudGamingSeatsCard`**: capacity bar, integration notice (Blacknut pending), subscriber picker for seat assignment, seats table with status badges and revoke action via ConfirmDialog
+- Rendered in TenantSettings below CloudGamingConfigCard when cloud gaming is enabled

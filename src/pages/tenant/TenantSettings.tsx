@@ -12,10 +12,13 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import CloudGamingConfigCard from "@/components/tenant/CloudGamingConfigCard";
+import CloudGamingSeatsCard from "@/components/tenant/CloudGamingSeatsCard";
 import TenantBillingCard from "@/components/tenant/TenantBillingCard";
+import { useTenantCloudGaming } from "@/hooks/useTenantCloudGaming";
 
 const TenantSettings = () => {
   const { tenantInfo } = useTenantAdmin();
+  const { config: cloudGamingConfig } = useTenantCloudGaming(tenantInfo?.tenantId);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -193,6 +196,9 @@ const TenantSettings = () => {
       </Card>
 
       <CloudGamingConfigCard tenantId={tenantInfo.tenantId} />
+      {cloudGamingConfig?.is_enabled && (
+        <CloudGamingSeatsCard tenantId={tenantInfo.tenantId} />
+      )}
     </div>
   );
 };
