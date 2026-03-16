@@ -56,7 +56,7 @@ export function useTenantBilling() {
     setActionLoading("portal");
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal", {
-        body: { tenantId },
+        body: { tenant_id: tenantId },
       });
       if (error) throw error;
       if (data?.url) {
