@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import {
   Select,
