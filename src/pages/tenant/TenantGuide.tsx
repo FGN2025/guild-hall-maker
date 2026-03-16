@@ -241,6 +241,18 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     ],
   },
   {
+    id: "game-servers",
+    icon: Plug,
+    title: "Game Servers",
+    bullets: [
+      "The platform hosts a public Game Server Directory at /servers (or /game-servers) where players can find dedicated servers for supported games.",
+      "Event Promotion — When creating tenant events, reference specific game servers in the event description to guide players on where to practice or compete.",
+      "Live Status — Server cards show real-time online/offline status, IP addresses, and player capacity so your community knows which servers are available.",
+      "No Management Required — Game servers are managed by platform admins. Tenants benefit from the directory as a resource for their community events.",
+      "Tip: Include the server name and IP in your event descriptions to make it easy for participants to find the right server.",
+    ],
+  },
+  {
     id: "notifications",
     icon: Bell,
     title: "Notifications",
