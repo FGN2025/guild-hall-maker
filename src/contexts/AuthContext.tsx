@@ -31,6 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   roleLoading: true,
   discordLinked: false,
   emailConfirmed: false,
+  subscriptionStatus: 'loading',
   signOut: async () => {},
   refreshDiscordStatus: async () => {},
 });
