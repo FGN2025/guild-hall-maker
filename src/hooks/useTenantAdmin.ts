@@ -101,6 +101,7 @@ export function useTenantAdmin() {
         logoUrl: t.logo_url || null,
         primaryColor: (t as any).primary_color || null,
         accentColor: (t as any).accent_color || null,
+        onboardingCompleted: !!(t as any).onboarding_completed,
       } as TenantAdminInfo;
     },
   });
