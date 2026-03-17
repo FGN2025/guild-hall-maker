@@ -76,3 +76,33 @@
 - `STRIPE_WEBHOOK_SECRET` secret stored for signature verification
 - Stripe webhook endpoint: `https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/stripe-webhook`
 - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+
+---
+
+# Phase 6: Tenant Self-Service Signup — Completed
+
+## What was built
+
+### Public Landing Page
+- **`/for-providers`** route with value proposition hero, feature grid, pricing card ($850/mo), and registration form
+- Fields: Organization Name, Contact Email, Admin Name, Password
+- Client-side validation via zod; redirects to Stripe Checkout on submit
+
+### Edge Function
+- **`provision-tenant`**: Public endpoint (verify_jwt = false) that:
+  1. Validates inputs and checks banned emails
+  2. Creates or finds existing auth user
+  3. Generates unique slug from org name
+  4. Inserts tenant with status `provisioning`
+  5. Assigns user as tenant_admin (role: admin)
+  6. Creates Stripe Checkout session for Tenant Basic price
+  7. Returns checkout URL
+
+### Webhook Enhancement
+- **`stripe-webhook`** updated: on `checkout.session.completed` for Tenant Basic price, also updates `tenants.status` from `provisioning` → `active`
+
+### Database
+- Added unique constraint on `tenants.slug` (`tenants_slug_key`)
+
+### Navigation
+- "For Providers" link added to public navbar items and Index page footer

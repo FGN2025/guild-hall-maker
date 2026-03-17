@@ -166,6 +166,9 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Tenant Billing & Subscriptions",
     bullets: [
       "Each tenant can subscribe to a plan via Stripe from the Tenant → Settings page.",
+      "Self-Service Signup — Providers can self-register at /for-providers. The public page collects organization name, contact email, admin name, and password, then provisions the tenant and redirects to Stripe Checkout.",
+      "Provisioning Flow — The provision-tenant backend function creates the auth user, generates a unique slug, inserts the tenant record (status: provisioning), assigns the tenant_admin role, and creates a Stripe Checkout session.",
+      "Automatic Activation — When the Stripe webhook receives a successful checkout for the Tenant Basic plan, it upserts the subscription record AND updates the tenant status from 'provisioning' to 'active'.",
       "Billing Card — The Settings page displays a billing card showing plan name, status badge (Active, Trial, Past Due, Canceled), and renewal date.",
       "Subscribe Flow — Tenants without an active subscription see a 'Subscribe' button that opens a Stripe Checkout session for the Tenant Basic plan ($850/mo).",
       "Manage Subscription — Active subscribers can open the Stripe Customer Portal to update payment methods, view invoices, or cancel.",
