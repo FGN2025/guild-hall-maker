@@ -1,95 +1,141 @@
 
+# Configurable Discord Role Assignment — Completed
 
-## Automated Engagement Emails
+## What was built
 
-Three new scheduled edge functions that send lifecycle emails via Resend, respecting user notification preferences. Each runs on a pg_cron schedule.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
----
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-### 1. Weekly Recap Email (`weekly-recap-email`)
-
-**Schedule:** Every Monday at 10:00 AM UTC
-**Logic:**
-- Query all active users (profiles with activity in the last 30 days OR season_scores > 0)
-- For each user, gather stats from the past 7 days:
-  - Points earned (season_scores delta or challenge/quest completions)
-  - Tournaments played (match_results)
-  - Achievements unlocked (player_achievements)
-  - Challenges/quests completed
-- Skip users with zero activity (nothing to report)
-- Check `should_notify(user_id, 'weekly_recap', 'email')` preference
-- Send branded HTML email via Resend with personalized stats summary and CTAs ("View Leaderboard", "Browse Challenges")
-
-**Deduplication:** Track last recap sent per user in a new `engagement_email_log` table to avoid double-sends on retry.
-
-### 2. Tournament Promo Email (`tournament-promo-email`)
-
-**Schedule:** Daily at 14:00 UTC
-**Logic:**
-- Find tournaments with status `open` and `start_date` within the next 3 days
-- Get all registered user IDs for those tournaments
-- Get all active users NOT in that registration list
-- Check `should_notify(user_id, 'tournament_promo', 'email')` preference
-- Send email: "Don't miss out! [Tournament Name] starts in X days — register now!"
-- Deduplicate: only send once per user per tournament (tracked in `engagement_email_log`)
-
-### 3. Re-engagement Email (`reengagement-email`)
-
-**Schedule:** Weekly, Wednesdays at 12:00 UTC
-**Logic:**
-- Find users who haven't logged in or had any activity (no challenge enrollments, quest completions, match results, or notifications read) in 14+ days
-- Exclude users inactive for 90+ days (likely churned — don't spam)
-- Check `should_notify(user_id, 'reengagement', 'email')` preference
-- Send personalized email: "We miss you! Here's what's new..." with counts of new tournaments, challenges, and quests created since their last activity
-- Deduplicate: max one re-engagement email per user per 14-day window
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
 ---
 
-### Database Changes
+# Delete & Ban Users — Completed
 
-**New table: `engagement_email_log`**
-- `id` (uuid, PK)
-- `user_id` (uuid, references profiles)
-- `email_type` (text: 'weekly_recap' | 'tournament_promo' | 'reengagement')
-- `reference_id` (uuid, nullable — tournament ID for promo emails)
-- `sent_at` (timestamptz, default now())
-- RLS: service-role only (no client access needed)
+## What was built
 
-**Add 3 new notification preference types** to `NOTIFICATION_TYPES` in `useNotificationPreferences.ts`:
-- `weekly_recap` — "Weekly Recap"
-- `tournament_promo` — "Tournament Promotions"
-- `reengagement` — "Re-engagement Reminders"
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-Also update `NotificationPreferences.tsx` UI to show these new toggles.
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-**Add `last_active_at` column to `profiles`** (timestamptz, nullable) — updated by a lightweight trigger on login or key actions, used by the re-engagement query to identify inactive users efficiently.
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
-### pg_cron Jobs (via insert tool, not migration)
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
 
-Three cron entries calling the respective edge functions on schedule.
+---
 
-### Config Changes
+# Phase 3: Subscriber Cloud Gaming Seat Purchases — Completed
 
-Add all three functions to `supabase/config.toml` with `verify_jwt = false`.
+## What was built
+
+### Database
+- **`subscriber_cloud_purchases`** table: tracks Stripe subscription per cloud gaming seat assignment (tenant_id, subscriber_id, user_id, stripe_subscription_id, status, timestamps)
+- RLS policies: tenant members can view, tenant admins can insert/update
+- `updated_at` trigger via `update_updated_at_column()`
+
+### Hook
+- **`useCloudGamingSeats`**: queries active seats from `subscriber_cloud_access` and purchases from `subscriber_cloud_purchases`, provides `assignSeat` (inserts access + purchase records, triggers Stripe checkout), `revokeSeat` (deactivates seat), and computed `availableSlots`/`availableSubscribers`
+
+### UI
+- **`CloudGamingSeatsCard`**: capacity bar, integration notice (Blacknut pending), subscriber picker for seat assignment, seats table with status badges and revoke action via ConfirmDialog
+- Rendered in TenantSettings below CloudGamingConfigCard when cloud gaming is enabled
+
+---
+
+# Phase 5: Stripe Webhook Sync — Completed
+
+## What was built
+
+### Edge Function
+- **`stripe-webhook`**: Receives Stripe webhook events, verifies signature via `STRIPE_WEBHOOK_SECRET`, and syncs status to local tables
+- Handles 3 event types:
+  - `checkout.session.completed`: Upserts `tenant_subscriptions` for tenant plan checkouts; updates `subscriber_cloud_purchases` status to `active` for cloud gaming seat checkouts
+  - `customer.subscription.updated`: Syncs status changes (active → past_due, etc.) to both `tenant_subscriptions` and `subscriber_cloud_purchases`
+  - `customer.subscription.deleted`: Marks subscriptions as `canceled`; auto-deactivates cloud gaming seats in `subscriber_cloud_access`
+- Uses price ID matching to route events to correct table (tenant basic vs cloud gaming seat)
+- `verify_jwt = false` in config.toml (Stripe calls this directly)
+
+### Configuration
+- `STRIPE_WEBHOOK_SECRET` secret stored for signature verification
+- Stripe webhook endpoint: `https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/stripe-webhook`
+- Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+
+---
+
+# Phase 6: Tenant Self-Service Signup — Completed
+
+## What was built
+
+### Public Landing Page
+- **`/for-providers`** route with value proposition hero, feature grid, pricing card ($850/mo), and registration form
+- Fields: Organization Name, Contact Email, Admin Name, Password
+- Client-side validation via zod; redirects to Stripe Checkout on submit
+
+### Edge Function
+- **`provision-tenant`**: Public endpoint (verify_jwt = false) that:
+  1. Validates inputs and checks banned emails
+  2. Creates or finds existing auth user
+  3. Generates unique slug from org name
+  4. Inserts tenant with status `provisioning`
+  5. Assigns user as tenant_admin (role: admin)
+  6. Creates Stripe Checkout session for Tenant Basic price
+  7. Returns checkout URL
+
+### Webhook Enhancement
+- **`stripe-webhook`** updated: on `checkout.session.completed` for Tenant Basic price, also updates `tenants.status` from `provisioning` → `active`
+
+### Database
+- Added unique constraint on `tenants.slug` (`tenants_slug_key`)
+
+### Navigation
+- "For Providers" link added to public navbar items and Index page footer
+
+---
+
+# Automated Engagement Emails — Completed
+
+## What was built
+
+### Database
+- **`engagement_email_log`** table: tracks sent engagement emails for deduplication (`user_id`, `email_type`, `reference_id`, `sent_at`)
+- RLS enabled with no policies (service-role only access)
+- Indexes on `(user_id, email_type, sent_at)` and `(user_id, email_type, reference_id)`
+- Added **`last_active_at`** column to `profiles` with trigger to auto-update on notification reads
+
+### Edge Functions
+- **`weekly-recap-email`**: Sends personalized weekly stats (matches, challenges, quests, achievements) to active users every Monday at 10:00 AM UTC. Skips users with zero activity.
+- **`tournament-promo-email`**: Sends tournament promotion emails daily at 2:00 PM UTC to active users who haven't registered for open tournaments starting within 3 days.
+- **`reengagement-email`**: Sends "we miss you" emails with new content highlights every Wednesday at 12:00 PM UTC to users inactive for 14–90 days.
+
+### Scheduling
+- Three pg_cron jobs configured to invoke the edge functions on their respective schedules
+
+### Notification Preferences
+- Added 3 new notification types: `weekly_recap`, `tournament_promo`, `reengagement`
+- All toggleable per-user in Profile Settings under In-App and Email channels
+- All engagement emails check `should_notify()` preference before sending
+
+### Deduplication
+- Weekly recap: max one per user per 7-day window
+- Tournament promo: max one per user per tournament
+- Re-engagement: max one per user per 14-day window
 
 ### Guide Updates
-
-Update Admin Guide and White Paper with the new automated engagement email system.
-
----
-
-### Files to Create/Modify
-
-| Action | File |
-|--------|------|
-| Create | `supabase/functions/weekly-recap-email/index.ts` |
-| Create | `supabase/functions/tournament-promo-email/index.ts` |
-| Create | `supabase/functions/reengagement-email/index.ts` |
-| Migration | Create `engagement_email_log` table; add `last_active_at` to profiles |
-| Edit | `src/hooks/useNotificationPreferences.ts` (add 3 types) |
-| Edit | `src/components/NotificationPreferences.tsx` (render new toggles) |
-| Edit | `supabase/config.toml` (add 3 functions) |
-| Edit | `src/pages/admin/AdminGuide.tsx` |
-| Edit | `src/pages/WhitePaper.tsx` |
-| Cron SQL | 3 pg_cron schedules (via insert tool) |
-
+- Admin Guide notification section updated with engagement email documentation

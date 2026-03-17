@@ -936,6 +936,30 @@ export type Database = {
         }
         Relationships: []
       }
+      engagement_email_log: {
+        Row: {
+          email_type: string
+          id: string
+          reference_id: string | null
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          email_type: string
+          id?: string
+          reference_id?: string | null
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          email_type?: string
+          id?: string
+          reference_id?: string | null
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       game_servers: {
         Row: {
           connection_instructions: string | null
@@ -1773,6 +1797,7 @@ export type Database = {
           display_name: string | null
           gamer_tag: string | null
           id: string
+          last_active_at: string | null
           onboarding_completed: boolean
           steam_id: string | null
           steam_username: string | null
@@ -1791,6 +1816,7 @@ export type Database = {
           display_name?: string | null
           gamer_tag?: string | null
           id?: string
+          last_active_at?: string | null
           onboarding_completed?: boolean
           steam_id?: string | null
           steam_username?: string | null
@@ -1809,6 +1835,7 @@ export type Database = {
           display_name?: string | null
           gamer_tag?: string | null
           id?: string
+          last_active_at?: string | null
           onboarding_completed?: boolean
           steam_id?: string | null
           steam_username?: string | null
