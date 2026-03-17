@@ -548,6 +548,12 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Mark as Read — Players can mark individual notifications as read or clear all at once.",
       "Deep Links — Each notification includes a link to the relevant page (Prize Shop, Challenges, Tournament, Achievements) for one-click navigation.",
       "Tip: The notification system works automatically — just manage tournaments, approve redemptions, and create challenges as usual, and players will be notified.",
+      "Automated Engagement Emails — Three scheduled email campaigns run automatically to boost retention:",
+      "Weekly Recap (Mondays 10:00 AM UTC) — Sends personalized weekly stats summaries (matches, challenges, quests, achievements) to active players.",
+      "Tournament Promotions (Daily 2:00 PM UTC) — Notifies active players about open tournaments starting within 3 days that they haven't registered for yet.",
+      "Re-engagement (Wednesdays 12:00 PM UTC) — Sends 'we miss you' emails with new content highlights to players inactive for 14–90 days.",
+      "All engagement emails respect user notification preferences (weekly_recap, tournament_promo, reengagement toggles) and use deduplication to prevent duplicate sends.",
+      "Engagement email history is tracked in the engagement_email_log table for auditing and dedup.",
     ],
   },
   {

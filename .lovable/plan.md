@@ -106,3 +106,36 @@
 
 ### Navigation
 - "For Providers" link added to public navbar items and Index page footer
+
+---
+
+# Automated Engagement Emails — Completed
+
+## What was built
+
+### Database
+- **`engagement_email_log`** table: tracks sent engagement emails for deduplication (`user_id`, `email_type`, `reference_id`, `sent_at`)
+- RLS enabled with no policies (service-role only access)
+- Indexes on `(user_id, email_type, sent_at)` and `(user_id, email_type, reference_id)`
+- Added **`last_active_at`** column to `profiles` with trigger to auto-update on notification reads
+
+### Edge Functions
+- **`weekly-recap-email`**: Sends personalized weekly stats (matches, challenges, quests, achievements) to active users every Monday at 10:00 AM UTC. Skips users with zero activity.
+- **`tournament-promo-email`**: Sends tournament promotion emails daily at 2:00 PM UTC to active users who haven't registered for open tournaments starting within 3 days.
+- **`reengagement-email`**: Sends "we miss you" emails with new content highlights every Wednesday at 12:00 PM UTC to users inactive for 14–90 days.
+
+### Scheduling
+- Three pg_cron jobs configured to invoke the edge functions on their respective schedules
+
+### Notification Preferences
+- Added 3 new notification types: `weekly_recap`, `tournament_promo`, `reengagement`
+- All toggleable per-user in Profile Settings under In-App and Email channels
+- All engagement emails check `should_notify()` preference before sending
+
+### Deduplication
+- Weekly recap: max one per user per 7-day window
+- Tournament promo: max one per user per tournament
+- Re-engagement: max one per user per 14-day window
+
+### Guide Updates
+- Admin Guide notification section updated with engagement email documentation
