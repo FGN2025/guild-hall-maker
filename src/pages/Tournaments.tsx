@@ -83,7 +83,7 @@ const Tournaments = () => {
     <>
       <PageBackground pageSlug="tournaments" />
       <div className="space-y-6 relative z-10">
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
+        <div className="sticky top-0 z-20 bg-background -mx-4 px-4 md:-mx-6 md:px-6 -mt-4 pt-4 md:-mt-6 md:pt-6 pb-4">
           <PageHero pageSlug="tournaments" />
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
