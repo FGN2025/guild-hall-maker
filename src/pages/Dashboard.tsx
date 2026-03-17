@@ -23,17 +23,25 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("onboarding_completed")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data && !(data as any).onboarding_completed) {
-          setShowOnboarding(true);
-        }
-        setOnboardingChecked(true);
-      });
+
+    const checkOnboarding = async () => {
+      // Check if user has any elevated role (admin, moderator, tenant_admin etc.)
+      const [rolesRes, tenantRes, profileRes] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", user.id).limit(1),
+        supabase.from("tenant_admins").select("role").eq("user_id", user.id).limit(1),
+        supabase.from("profiles").select("onboarding_completed").eq("user_id", user.id).single(),
+      ]);
+
+      const hasElevatedRole = (rolesRes.data && rolesRes.data.length > 0) ||
+                               (tenantRes.data && tenantRes.data.length > 0);
+
+      if (!hasElevatedRole && profileRes.data && !(profileRes.data as any).onboarding_completed) {
+        setShowOnboarding(true);
+      }
+      setOnboardingChecked(true);
+    };
+
+    checkOnboarding();
   }, [user]);
 
   const statCards = [
