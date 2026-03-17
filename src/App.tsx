@@ -79,6 +79,7 @@ const AdminGameServers = lazy(() => import("./pages/admin/AdminGameServers"));
 const GameServers = lazy(() => import("./pages/GameServers"));
 const AdminCloudGaming = lazy(() => import("./pages/admin/AdminCloudGaming"));
 const WhitePaper = lazy(() => import("./pages/WhitePaper"));
+const ForProviders = lazy(() => import("./pages/ForProviders"));
 
 // Moderator pages
 const ModeratorDashboard = lazy(() => import("./pages/moderator/ModeratorDashboard"));
@@ -144,6 +145,7 @@ const App = () => (
               <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
               <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
               <Route path="/embed/calendar/:configId" element={<EmbedCalendar />} />
+              <Route path="/for-providers" element={<ForProviders />} />
               <Route path="/pages/:tenantSlug/:pageSlug" element={<WebPageView />} />
 
               {/* Authenticated but Discord-exempt */}

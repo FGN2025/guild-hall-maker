@@ -157,8 +157,19 @@ async function handleCheckoutCompleted(
         },
         { onConflict: "tenant_id" }
       );
-    if (error) logStep("Error upserting tenant_subscriptions", { error: error.message });
-    else logStep("Tenant subscription upserted successfully");
+    if (error) {
+      logStep("Error upserting tenant_subscriptions", { error: error.message });
+    } else {
+      logStep("Tenant subscription upserted successfully");
+      // Activate tenant on successful checkout
+      const { error: activateErr } = await supabase
+        .from("tenants")
+        .update({ status: "active" })
+        .eq("id", tenantId)
+        .in("status", ["provisioning", "pending"]);
+      if (activateErr) logStep("Error activating tenant", { error: activateErr.message });
+      else logStep("Tenant activated", { tenantId });
+    }
   } else if (priceId === CLOUD_SEAT_PRICE && tenantId) {
     // Update cloud gaming purchase record
     logStep("Updating cloud gaming purchase", { tenantId, subscriptionId });

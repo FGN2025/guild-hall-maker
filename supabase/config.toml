@@ -81,3 +81,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.stripe-webhook]
     verify_jwt = false
+  [functions.provision-tenant]
+    verify_jwt = false
