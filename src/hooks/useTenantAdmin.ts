@@ -60,7 +60,7 @@ export function useTenantAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tenants")
-        .select("id, name, slug, logo_url, primary_color, accent_color")
+        .select("id, name, slug, logo_url, primary_color, accent_color, onboarding_completed")
         .eq("status", "active")
         .order("name");
       if (error) throw error;
