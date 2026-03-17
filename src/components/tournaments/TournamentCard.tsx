@@ -64,8 +64,13 @@ const TournamentCard = ({
       </div>
       <h3 className="font-heading text-xl font-semibold text-foreground mb-1 line-clamp-1">{t.name}</h3>
       <p className="text-sm text-muted-foreground mb-2">{t.game}</p>
-      <div className="text-xs text-muted-foreground mb-4 h-[2.5rem] overflow-y-auto whitespace-pre-line">
+      <div className="text-xs text-muted-foreground mb-4 h-[3.5rem] overflow-y-auto whitespace-pre-line">
         {t.description || "\u00A0"}
+        {(t as any).achievement_id && (
+          <div className="mt-1">
+            <AchievementBadgeDisplay achievementId={(t as any).achievement_id} compact />
+          </div>
+        )}
       </div>
       <div className="mt-auto grid grid-cols-3 gap-2 sm:gap-3 text-center">
         {[
