@@ -1773,6 +1773,7 @@ export type Database = {
           display_name: string | null
           gamer_tag: string | null
           id: string
+          onboarding_completed: boolean
           steam_id: string | null
           steam_username: string | null
           updated_at: string
@@ -1790,6 +1791,7 @@ export type Database = {
           display_name?: string | null
           gamer_tag?: string | null
           id?: string
+          onboarding_completed?: boolean
           steam_id?: string | null
           steam_username?: string | null
           updated_at?: string
@@ -1807,6 +1809,7 @@ export type Database = {
           display_name?: string | null
           gamer_tag?: string | null
           id?: string
+          onboarding_completed?: boolean
           steam_id?: string | null
           steam_username?: string | null
           updated_at?: string
