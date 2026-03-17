@@ -84,7 +84,7 @@ export function useTenantAdmin() {
       const tenantIds = adminRows.map((r: any) => r.tenant_id);
       const { data: tenants, error: tErr } = await supabase
         .from("tenants")
-        .select("id, name, slug, logo_url, primary_color, accent_color")
+        .select("id, name, slug, logo_url, primary_color, accent_color, onboarding_completed")
         .in("id", tenantIds)
         .eq("status", "active");
 
