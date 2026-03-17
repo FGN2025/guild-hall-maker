@@ -8,6 +8,7 @@ export type Tournament = Tables<"tournaments"> & {
   registrations_count: number;
   is_registered: boolean;
   game_cover_url?: string | null;
+  effective_status: string;
 };
 
 export const useTournaments = () => {
@@ -36,13 +37,20 @@ export const useTournaments = () => {
         (games ?? []).map((g: any) => [g.name, g.cover_image_url])
       );
 
+      const now = new Date();
       return (tournaments ?? []).map((t) => {
         const regs = (registrations ?? []).filter((r) => r.tournament_id === t.id);
+        const isPast = new Date(t.start_date) < now;
+        const effective_status =
+          (t.status === "open" || t.status === "upcoming") && isPast
+            ? "closed"
+            : t.status;
         return {
           ...t,
           registrations_count: regs.length,
           is_registered: user ? regs.some((r) => r.user_id === user.id) : false,
           game_cover_url: gameCovers.get(t.game) ?? null,
+          effective_status,
         } as Tournament;
       });
     },

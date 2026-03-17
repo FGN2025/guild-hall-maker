@@ -21,6 +21,7 @@ const statusColors: Record<string, string> = {
   in_progress: "bg-accent/15 text-accent border-accent/30",
   completed: "bg-muted text-muted-foreground border-border",
   cancelled: "bg-destructive/15 text-destructive border-destructive/30",
+  closed: "bg-muted text-muted-foreground border-border",
 };
 
 const TournamentCard = ({
@@ -33,7 +34,8 @@ const TournamentCard = ({
   const { user, isAdmin } = useAuth();
   const isFull = t.registrations_count >= t.max_participants;
   const showRegCount = isAdmin;
-  const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
+  const isPast = t.effective_status === "closed";
+  const canRegister = (t.effective_status === "open" || t.effective_status === "upcoming") && !isFull && !t.is_registered;
   const dateStr = format(new Date(t.start_date), "MMM d, yyyy");
   const showBracket = t.status === "in_progress" || t.status === "completed";
   const isCreator = user?.id === t.created_by;
@@ -55,8 +57,8 @@ const TournamentCard = ({
       </div>
       <div className="p-6 flex flex-col flex-1">
       <div className="flex items-center justify-between mb-4">
-        <Badge variant="outline" className={statusColors[t.status] ?? ""}>
-          {t.status.replace("_", " ")}
+        <Badge variant="outline" className={statusColors[t.effective_status] ?? ""}>
+          {t.effective_status.replace("_", " ")}
         </Badge>
         <span className="text-xs font-body text-muted-foreground capitalize">{t.format.replace("_", " ")}</span>
       </div>
@@ -130,7 +132,7 @@ const TournamentCard = ({
               onClick={() => onRegister(t.id)}
               disabled={!canRegister || isRegistering}
             >
-              {isFull ? "Full" : "Register"}
+              {isPast ? "Closed" : isFull ? "Full" : "Register"}
             </Button>
           )
         ) : (
