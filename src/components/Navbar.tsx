@@ -34,6 +34,7 @@ const publicNavItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/challenges", label: "Challenges", icon: Target },
   { to: "/quests", label: "Quests", icon: Compass },
+  { to: "/for-providers", label: "For Providers", icon: Building2 },
 ];
 
 const Navbar = () => {
