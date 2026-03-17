@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Trophy, Target, Swords, TrendingUp, Calendar, Clock, Users, Gamepad2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +9,32 @@ import { Button } from "@/components/ui/button";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 import usePageTitle from "@/hooks/usePageTitle";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import OnboardingWizard from "@/components/OnboardingWizard";
 
 const Dashboard = () => {
   usePageTitle("Dashboard");
   const { stats, registeredTournaments, recentMatches, isLoading } = useDashboard();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data && !(data as any).onboarding_completed) {
+          setShowOnboarding(true);
+        }
+        setOnboardingChecked(true);
+      });
+  }, [user]);
 
   const statCards = [
     { label: "Registered Tournaments", value: stats.tournamentsRegistered, icon: Trophy, accent: "text-primary" },
@@ -23,6 +45,9 @@ const Dashboard = () => {
 
   return (
     <>
+      {showOnboarding && (
+        <OnboardingWizard onComplete={() => setShowOnboarding(false)} />
+      )}
       <PageBackground pageSlug="dashboard" />
       <div className="space-y-6 relative z-10">
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
