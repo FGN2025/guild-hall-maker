@@ -45,6 +45,9 @@ const Dashboard = () => {
 
   return (
     <>
+      {showOnboarding && (
+        <OnboardingWizard onComplete={() => setShowOnboarding(false)} />
+      )}
       <PageBackground pageSlug="dashboard" />
       <div className="space-y-6 relative z-10">
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 pb-4">
