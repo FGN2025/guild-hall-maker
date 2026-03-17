@@ -34,7 +34,8 @@ const TournamentCard = ({
   const { user, isAdmin } = useAuth();
   const isFull = t.registrations_count >= t.max_participants;
   const showRegCount = isAdmin;
-  const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
+  const isPast = t.effective_status === "closed";
+  const canRegister = (t.effective_status === "open" || t.effective_status === "upcoming") && !isFull && !t.is_registered;
   const dateStr = format(new Date(t.start_date), "MMM d, yyyy");
   const showBracket = t.status === "in_progress" || t.status === "completed";
   const isCreator = user?.id === t.created_by;
