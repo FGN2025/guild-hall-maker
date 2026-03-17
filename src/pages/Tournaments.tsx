@@ -38,9 +38,10 @@ const Tournaments = () => {
         t.game.toLowerCase().includes(search.toLowerCase());
       const matchesStatus =
         statusFilter === "all" ? true
-        : statusFilter === "open" ? (t.status === "open" || t.is_registered)
+        : statusFilter === "open" ? ((t.effective_status === "open" || t.effective_status === "upcoming") || t.is_registered)
+        : statusFilter === "past" ? (t.effective_status === "closed" || t.effective_status === "completed")
         : statusFilter === "registered" ? t.is_registered
-        : t.status === statusFilter;
+        : t.effective_status === statusFilter;
       return matchesSearch && matchesStatus;
     });
 
