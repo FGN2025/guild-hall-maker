@@ -57,8 +57,8 @@ const TournamentCard = ({
       </div>
       <div className="p-6 flex flex-col flex-1">
       <div className="flex items-center justify-between mb-4">
-        <Badge variant="outline" className={statusColors[t.status] ?? ""}>
-          {t.status.replace("_", " ")}
+        <Badge variant="outline" className={statusColors[t.effective_status] ?? ""}>
+          {t.effective_status.replace("_", " ")}
         </Badge>
         <span className="text-xs font-body text-muted-foreground capitalize">{t.format.replace("_", " ")}</span>
       </div>
