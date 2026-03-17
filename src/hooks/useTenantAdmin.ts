@@ -11,6 +11,7 @@ interface TenantAdminInfo {
   logoUrl: string | null;
   primaryColor: string | null;
   accentColor: string | null;
+  onboardingCompleted: boolean;
 }
 
 interface TenantListItem {
