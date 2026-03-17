@@ -129,6 +129,7 @@ export function useTenantAdmin() {
         logoUrl: selected.logo_url,
         primaryColor: selected.primary_color,
         accentColor: selected.accent_color,
+        onboardingCompleted: !!(selected as any).onboarding_completed,
       };
     }
   } else if (tenantAdminData) {
