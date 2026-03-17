@@ -8,6 +8,7 @@ export type Tournament = Tables<"tournaments"> & {
   registrations_count: number;
   is_registered: boolean;
   game_cover_url?: string | null;
+  effective_status: string;
 };
 
 export const useTournaments = () => {
