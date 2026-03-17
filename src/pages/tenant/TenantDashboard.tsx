@@ -2,13 +2,14 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantLeads } from "@/hooks/useTenantLeads";
 import { useTenantAchievements } from "@/hooks/useTenantAchievements";
 import TenantAchievementsCard from "@/components/tenant/TenantAchievementsCard";
+import TenantOnboardingChecklist from "@/components/tenant/TenantOnboardingChecklist";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, MapPin, Clock, UserCheck, ArrowRight, Contact } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const TenantDashboard = () => {
-  const { tenantInfo } = useTenantAdmin();
+  const { tenantInfo, isPlatformAdminMode } = useTenantAdmin();
   const { leads } = useTenantLeads(tenantInfo?.tenantId || null);
 
   const { data: zipCount = 0 } = useQuery({
@@ -69,6 +70,10 @@ const TenantDashboard = () => {
           Overview for {tenantInfo?.tenantName}
         </p>
       </div>
+
+      {tenantInfo && !tenantInfo.onboardingCompleted && !isPlatformAdminMode && (
+        <TenantOnboardingChecklist tenantId={tenantInfo.tenantId} />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (

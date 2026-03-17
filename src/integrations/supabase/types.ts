@@ -3232,6 +3232,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          onboarding_completed: boolean
           primary_color: string | null
           require_subscriber_validation: boolean
           slug: string
@@ -3245,6 +3246,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          onboarding_completed?: boolean
           primary_color?: string | null
           require_subscriber_validation?: boolean
           slug: string
@@ -3258,6 +3260,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          onboarding_completed?: boolean
           primary_color?: string | null
           require_subscriber_validation?: boolean
           slug?: string

@@ -11,6 +11,7 @@ interface TenantAdminInfo {
   logoUrl: string | null;
   primaryColor: string | null;
   accentColor: string | null;
+  onboardingCompleted: boolean;
 }
 
 interface TenantListItem {
@@ -59,7 +60,7 @@ export function useTenantAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tenants")
-        .select("id, name, slug, logo_url, primary_color, accent_color")
+        .select("id, name, slug, logo_url, primary_color, accent_color, onboarding_completed")
         .eq("status", "active")
         .order("name");
       if (error) throw error;
@@ -83,7 +84,7 @@ export function useTenantAdmin() {
       const tenantIds = adminRows.map((r: any) => r.tenant_id);
       const { data: tenants, error: tErr } = await supabase
         .from("tenants")
-        .select("id, name, slug, logo_url, primary_color, accent_color")
+        .select("id, name, slug, logo_url, primary_color, accent_color, onboarding_completed")
         .in("id", tenantIds)
         .eq("status", "active");
 
@@ -100,6 +101,7 @@ export function useTenantAdmin() {
         logoUrl: t.logo_url || null,
         primaryColor: (t as any).primary_color || null,
         accentColor: (t as any).accent_color || null,
+        onboardingCompleted: !!(t as any).onboarding_completed,
       } as TenantAdminInfo;
     },
   });
@@ -127,6 +129,7 @@ export function useTenantAdmin() {
         logoUrl: selected.logo_url,
         primaryColor: selected.primary_color,
         accentColor: selected.accent_color,
+        onboardingCompleted: !!(selected as any).onboarding_completed,
       };
     }
   } else if (tenantAdminData) {
