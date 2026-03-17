@@ -132,7 +132,7 @@ const TournamentCard = ({
               onClick={() => onRegister(t.id)}
               disabled={!canRegister || isRegistering}
             >
-              {isFull ? "Full" : "Register"}
+              {isPast ? "Closed" : isFull ? "Full" : "Register"}
             </Button>
           )
         ) : (
