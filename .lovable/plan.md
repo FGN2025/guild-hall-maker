@@ -1,78 +1,103 @@
 
-# Configurable Discord Role Assignment — Completed
 
-## What was built
+## Tenant Self-Service Signup
 
-### Database
-- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
-- Admin-only RLS policies
-
-### Edge Functions
-- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
-- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
-
-### Admin UI
-- **`DiscordRoleManager`** component on the Ecosystem admin page
-- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
-- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
+A public-facing signup flow where broadband providers can register their organization, select a plan, and auto-provision their tenant -- all without admin intervention.
 
 ---
 
-# Delete & Ban Users — Completed
+### User Flow
 
-## What was built
-
-### Database
-- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
-- Admin-only RLS policy via `has_role()`
-
-### Edge Functions
-- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
-- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
-
-### Admin UI
-- Trash icon (delete) and Ban icon on each user row in Admin User Management
-- Both protected by destructive ConfirmDialog with clear messaging
-- Disabled for current user's own row
-- Loading states during mutations
-
-### Auth Flow
-- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
-
----
-
-# Phase 3: Subscriber Cloud Gaming Seat Purchases — Completed
-
-## What was built
-
-### Database
-- **`subscriber_cloud_purchases`** table: tracks Stripe subscription per cloud gaming seat assignment (tenant_id, subscriber_id, user_id, stripe_subscription_id, status, timestamps)
-- RLS policies: tenant members can view, tenant admins can insert/update
-- `updated_at` trigger via `update_updated_at_column()`
-
-### Hook
-- **`useCloudGamingSeats`**: queries active seats from `subscriber_cloud_access` and purchases from `subscriber_cloud_purchases`, provides `assignSeat` (inserts access + purchase records, triggers Stripe checkout), `revokeSeat` (deactivates seat), and computed `availableSlots`/`availableSubscribers`
-
-### UI
-- **`CloudGamingSeatsCard`**: capacity bar, integration notice (Blacknut pending), subscriber picker for seat assignment, seats table with status badges and revoke action via ConfirmDialog
-- Rendered in TenantSettings below CloudGamingConfigCard when cloud gaming is enabled
+```text
+Landing Page (/for-providers)
+  │
+  ├─ Hero: value prop for broadband providers
+  ├─ Plan card: Tenant Basic @ $850/mo
+  └─ "Get Started" CTA
+        │
+        ▼
+  Signup Form (same page, scrolls down or modal)
+  ├─ Organization Name
+  ├─ Contact Email
+  ├─ Admin Name (display_name)
+  ├─ Password
+  └─ Submit
+        │
+        ▼
+  Edge Function: provision-tenant
+  ├─ Creates auth user (or uses existing)
+  ├─ Creates tenant row (status: 'pending')
+  ├─ Creates tenant_admins row (role: admin)
+  ├─ Creates Stripe checkout session
+  └─ Returns checkout URL
+        │
+        ▼
+  Stripe Checkout (redirect)
+        │
+        ▼
+  stripe-webhook: checkout.session.completed
+  ├─ Upserts tenant_subscriptions
+  └─ Updates tenant status → 'active'
+        │
+        ▼
+  Success redirect → /tenant/settings?checkout=success
+```
 
 ---
 
-# Phase 5: Stripe Webhook Sync — Completed
+### Technical Details
 
-## What was built
+#### 1. New public page: `/for-providers`
+- **File**: `src/pages/ForProviders.tsx`
+- Hero section with value proposition, feature highlights, pricing card
+- Registration form with fields: org name, slug (auto-generated from name), contact email, admin name, password
+- Client-side validation (zod)
+- Calls `provision-tenant` edge function on submit
+- Redirects to Stripe checkout URL on success
+- Add route to `App.tsx` (public, no auth required)
 
-### Edge Function
-- **`stripe-webhook`**: Receives Stripe webhook events, verifies signature via `STRIPE_WEBHOOK_SECRET`, and syncs status to local tables
-- Handles 3 event types:
-  - `checkout.session.completed`: Upserts `tenant_subscriptions` for tenant plan checkouts; updates `subscriber_cloud_purchases` status to `active` for cloud gaming seat checkouts
-  - `customer.subscription.updated`: Syncs status changes (active → past_due, etc.) to both `tenant_subscriptions` and `subscriber_cloud_purchases`
-  - `customer.subscription.deleted`: Marks subscriptions as `canceled`; auto-deactivates cloud gaming seats in `subscriber_cloud_access`
-- Uses price ID matching to route events to correct table (tenant basic vs cloud gaming seat)
-- `verify_jwt = false` in config.toml (Stripe calls this directly)
+#### 2. New edge function: `provision-tenant`
+- **File**: `supabase/functions/provision-tenant/index.ts`
+- `verify_jwt = false` (public endpoint)
+- Steps:
+  1. Validate inputs (name, email, password)
+  2. Create auth user via `supabase.auth.admin.createUser()` with `email_confirm: false`
+  3. Generate slug from org name (lowercase, hyphenated, uniqueness check)
+  4. Insert into `tenants` table with `status: 'provisioning'`
+  5. Insert into `tenant_admins` (user_id, tenant_id, role: 'admin')
+  6. Create Stripe checkout session (mode: subscription, tenant_basic price)
+  7. Return `{ url: session.url }`
+- On Stripe webhook completion, existing `stripe-webhook` handler already upserts `tenant_subscriptions`
 
-### Configuration
-- `STRIPE_WEBHOOK_SECRET` secret stored for signature verification
-- Stripe webhook endpoint: `https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/stripe-webhook`
-- Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+#### 3. Database migration
+- Add a check: ensure `tenants.slug` has a unique constraint (verify if already exists)
+- No new tables needed -- uses existing `tenants`, `tenant_admins`, `tenant_subscriptions`
+
+#### 4. Update stripe-webhook
+- After upserting `tenant_subscriptions` on checkout complete, also update `tenants.status` to `'active'` when the subscription is for the tenant_basic price
+
+#### 5. Landing page link
+- Add "For Providers" link to the Navbar (public nav items) and Index footer
+
+#### 6. Config
+- Add `provision-tenant` to `supabase/config.toml` with `verify_jwt = false`
+
+#### 7. Update guides & white paper
+- Add self-service signup documentation to Admin Guide and White Paper
+
+---
+
+### Files to create/modify
+
+| Action | File |
+|--------|------|
+| Create | `src/pages/ForProviders.tsx` |
+| Create | `supabase/functions/provision-tenant/index.ts` |
+| Edit | `src/App.tsx` (add route) |
+| Edit | `src/components/Navbar.tsx` (add link) |
+| Edit | `src/pages/Index.tsx` (add footer link) |
+| Edit | `supabase/functions/stripe-webhook/index.ts` (activate tenant on checkout) |
+| Edit | `supabase/config.toml` (add function config) |
+| Edit | Guide/White Paper pages |
+| Migration | Verify slug uniqueness constraint |
+
