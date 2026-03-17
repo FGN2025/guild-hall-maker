@@ -17,6 +17,9 @@ const NOTIFICATION_TYPES = [
   { key: "registration_confirmed", label: "Registration Confirmed", description: "When you successfully register for a tournament" },
   { key: "match_completed", label: "Match Completed", description: "When a match you played in has a result recorded" },
   { key: "achievement_earned", label: "Achievement Earned", description: "When you unlock a new achievement or badge" },
+  { key: "weekly_recap", label: "Weekly Recap", description: "A weekly summary of your activity, stats, and accomplishments" },
+  { key: "tournament_promo", label: "Tournament Promotions", description: "Emails about upcoming tournaments you haven't registered for yet" },
+  { key: "reengagement", label: "Re-engagement Reminders", description: "Updates on new content when you haven't visited in a while" },
 ] as const;
 
 export { NOTIFICATION_TYPES };
