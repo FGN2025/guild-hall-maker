@@ -399,7 +399,9 @@ const AdminUsers = () => {
 
       <ConfirmDialog
         open={!!confirmAction}
-        onOpenChange={(open) => !open && setConfirmAction(null)}
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null);
+        }}
         title={confirmAction?.ban ? "Ban User Permanently" : "Delete User"}
         description={
           confirmAction?.ban
@@ -410,8 +412,9 @@ const AdminUsers = () => {
         variant="destructive"
         onConfirm={() => {
           if (confirmAction) {
-            deleteUser.mutate({ userId: confirmAction.userId, ban: confirmAction.ban });
+            const action = { ...confirmAction };
             setConfirmAction(null);
+            deleteUser.mutate({ userId: action.userId, ban: action.ban });
           }
         }}
       />
