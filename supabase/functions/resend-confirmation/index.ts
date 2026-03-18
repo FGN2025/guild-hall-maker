@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     // Generate a fresh signup confirmation link
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-      type: "signup",
+      type: "magiclink",
       email: resolvedEmail,
       options: {
         redirectTo: "https://play.fgn.gg/auth",
