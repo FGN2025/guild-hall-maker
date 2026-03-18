@@ -410,6 +410,8 @@ const Auth = () => {
                       toast.error(error.message);
                     }
                   } else {
+                    // Claim any pending tenant invitations
+                    try { await supabase.rpc('claim_pending_invitations'); } catch {}
                     toast.success("Welcome!");
                     navigate("/dashboard");
                   }
