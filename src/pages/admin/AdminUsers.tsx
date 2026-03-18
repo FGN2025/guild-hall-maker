@@ -119,6 +119,7 @@ const AdminUsers = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Gamer Tag</TableHead>
                     <TableHead>Discord</TableHead>
                     <TableHead>Tenant</TableHead>
@@ -130,8 +131,8 @@ const AdminUsers = () => {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell colSpan={8} className="p-0">
-                      <TableSkeleton columns={8} rows={8} showAvatar />
+                    <TableCell colSpan={9} className="p-0">
+                      <TableSkeleton columns={9} rows={8} showAvatar />
                     </TableCell>
                   </TableRow>
                 </TableBody>
