@@ -1,5 +1,6 @@
-import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target, ShieldCheck, Server, Cloud } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target, ShieldCheck, Server, Cloud, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const sidebarItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -26,6 +27,13 @@ const sidebarItems = [
 
 const AdminSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <aside className="w-64 h-full bg-card border-r border-border flex flex-col overflow-hidden">
@@ -59,7 +67,7 @@ const AdminSidebar = () => {
         })}
 
       </nav>
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border flex flex-col gap-1">
         <Link
           to="/dashboard"
           className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading"
@@ -67,6 +75,13 @@ const AdminSidebar = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to App
         </Link>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading w-full text-left"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </button>
       </div>
     </aside>
   );
