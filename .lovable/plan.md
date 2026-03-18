@@ -1,64 +1,141 @@
 
-Problem
+# Configurable Discord Role Assignment — Completed
 
-The issue is not the Publish button itself. The app is still showing Update because the latest frontend bundle is not reaching production. The publish step is failing before deployment completes.
+## What was built
 
-What I verified
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-- `package.json` already includes `rollup`.
-- `bun.lock` also includes `rollup`.
-- `package-lock.json` is out of sync at the root package level and does not list `rollup` there.
-- The build error is still coming from:
-  ```text
-  /opt/template-node-modules/vite/dist/node/cli.js
-  ```
-  which means the build is invoking a template/global Vite binary, not a project-local one.
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-Why this matters
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-Adding `rollup` to the project was not enough because the failing Vite process is resolving dependencies from `/opt/template-node-modules/...`, not from the project install. That is why publish keeps failing and why the UI still shows Update.
+---
 
-Plan
+# Delete & Ban Users — Completed
 
-1. Make the build scripts use the project-local Vite binary explicitly
-   - Update `package.json` scripts so build commands run local Vite directly instead of `vite build`.
-   - Example approach:
-     ```json
-     "build": "node ./node_modules/vite/bin/vite.js build"
-     ```
-   - Do the same for `build:dev` and `preview` so all environments use the same resolution path.
+## What was built
 
-2. Normalize package manager state
-   - Choose one lockfile strategy and remove the mismatch.
-   - Most likely fix:
-     - keep `package.json` with `rollup`
-     - regenerate or align `package-lock.json` to match
-     - avoid having Bun/NPM lockfiles disagree
-   - This prevents installs from drifting between environments.
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-3. Republish after dependency resolution is deterministic
-   - Once Vite resolves from local `node_modules`, `rollup` should be found correctly.
-   - The frontend build should then complete and publish the pending UI changes.
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-4. Verify the actual publish result
-   - Confirm the latest tenant settings change appears on the live site.
-   - Confirm the publish panel no longer behaves like there are unapplied frontend changes.
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
 
-Files to update
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
 
-- `package.json`
-- `package-lock.json` and/or `bun.lock` (to make dependency resolution consistent)
+---
 
-Expected result
+# Phase 3: Subscriber Cloud Gaming Seat Purchases — Completed
 
-- Frontend publishes complete successfully.
-- The live site reflects the latest code changes.
-- The Update state stops persisting because there are no longer failed unpublished changes blocking deployment.
+## What was built
 
-Technical note
+### Database
+- **`subscriber_cloud_purchases`** table: tracks Stripe subscription per cloud gaming seat assignment (tenant_id, subscriber_id, user_id, stripe_subscription_id, status, timestamps)
+- RLS policies: tenant members can view, tenant admins can insert/update
+- `updated_at` trigger via `update_updated_at_column()`
 
-The key clue is the path in the error:
-```text
-Cannot find package 'rollup' imported from /opt/template-node-modules/vite/dist/node/cli.js
-```
-That strongly suggests this is a tool-resolution problem, not an app-code problem. The next fix should target how the build command resolves Vite, not just whether `rollup` exists in `package.json`.
+### Hook
+- **`useCloudGamingSeats`**: queries active seats from `subscriber_cloud_access` and purchases from `subscriber_cloud_purchases`, provides `assignSeat` (inserts access + purchase records, triggers Stripe checkout), `revokeSeat` (deactivates seat), and computed `availableSlots`/`availableSubscribers`
+
+### UI
+- **`CloudGamingSeatsCard`**: capacity bar, integration notice (Blacknut pending), subscriber picker for seat assignment, seats table with status badges and revoke action via ConfirmDialog
+- Rendered in TenantSettings below CloudGamingConfigCard when cloud gaming is enabled
+
+---
+
+# Phase 5: Stripe Webhook Sync — Completed
+
+## What was built
+
+### Edge Function
+- **`stripe-webhook`**: Receives Stripe webhook events, verifies signature via `STRIPE_WEBHOOK_SECRET`, and syncs status to local tables
+- Handles 3 event types:
+  - `checkout.session.completed`: Upserts `tenant_subscriptions` for tenant plan checkouts; updates `subscriber_cloud_purchases` status to `active` for cloud gaming seat checkouts
+  - `customer.subscription.updated`: Syncs status changes (active → past_due, etc.) to both `tenant_subscriptions` and `subscriber_cloud_purchases`
+  - `customer.subscription.deleted`: Marks subscriptions as `canceled`; auto-deactivates cloud gaming seats in `subscriber_cloud_access`
+- Uses price ID matching to route events to correct table (tenant basic vs cloud gaming seat)
+- `verify_jwt = false` in config.toml (Stripe calls this directly)
+
+### Configuration
+- `STRIPE_WEBHOOK_SECRET` secret stored for signature verification
+- Stripe webhook endpoint: `https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/stripe-webhook`
+- Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+
+---
+
+# Phase 6: Tenant Self-Service Signup — Completed
+
+## What was built
+
+### Public Landing Page
+- **`/for-providers`** route with value proposition hero, feature grid, pricing card ($850/mo), and registration form
+- Fields: Organization Name, Contact Email, Admin Name, Password
+- Client-side validation via zod; redirects to Stripe Checkout on submit
+
+### Edge Function
+- **`provision-tenant`**: Public endpoint (verify_jwt = false) that:
+  1. Validates inputs and checks banned emails
+  2. Creates or finds existing auth user
+  3. Generates unique slug from org name
+  4. Inserts tenant with status `provisioning`
+  5. Assigns user as tenant_admin (role: admin)
+  6. Creates Stripe Checkout session for Tenant Basic price
+  7. Returns checkout URL
+
+### Webhook Enhancement
+- **`stripe-webhook`** updated: on `checkout.session.completed` for Tenant Basic price, also updates `tenants.status` from `provisioning` → `active`
+
+### Database
+- Added unique constraint on `tenants.slug` (`tenants_slug_key`)
+
+### Navigation
+- "For Providers" link added to public navbar items and Index page footer
+
+---
+
+# Automated Engagement Emails — Completed
+
+## What was built
+
+### Database
+- **`engagement_email_log`** table: tracks sent engagement emails for deduplication (`user_id`, `email_type`, `reference_id`, `sent_at`)
+- RLS enabled with no policies (service-role only access)
+- Indexes on `(user_id, email_type, sent_at)` and `(user_id, email_type, reference_id)`
+- Added **`last_active_at`** column to `profiles` with trigger to auto-update on notification reads
+
+### Edge Functions
+- **`weekly-recap-email`**: Sends personalized weekly stats (matches, challenges, quests, achievements) to active users every Monday at 10:00 AM UTC. Skips users with zero activity.
+- **`tournament-promo-email`**: Sends tournament promotion emails daily at 2:00 PM UTC to active users who haven't registered for open tournaments starting within 3 days.
+- **`reengagement-email`**: Sends "we miss you" emails with new content highlights every Wednesday at 12:00 PM UTC to users inactive for 14–90 days.
+
+### Scheduling
+- Three pg_cron jobs configured to invoke the edge functions on their respective schedules
+
+### Notification Preferences
+- Added 3 new notification types: `weekly_recap`, `tournament_promo`, `reengagement`
+- All toggleable per-user in Profile Settings under In-App and Email channels
+- All engagement emails check `should_notify()` preference before sending
+
+### Deduplication
+- Weekly recap: max one per user per 7-day window
+- Tournament promo: max one per user per tournament
+- Re-engagement: max one per user per 14-day window
+
+### Guide Updates
+- Admin Guide notification section updated with engagement email documentation
