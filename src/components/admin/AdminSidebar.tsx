@@ -67,7 +67,7 @@ const AdminSidebar = () => {
         })}
 
       </nav>
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border flex flex-col gap-1">
         <Link
           to="/dashboard"
           className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading"
@@ -75,6 +75,13 @@ const AdminSidebar = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to App
         </Link>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-heading w-full text-left"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </button>
       </div>
     </aside>
   );
