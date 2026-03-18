@@ -118,7 +118,7 @@ const TenantSettings = () => {
         </p>
       </div>
 
-      <TenantBillingCard />
+      {!isSubscribed && <TenantBillingCard />}
 
       <Card>
         <CardHeader>
