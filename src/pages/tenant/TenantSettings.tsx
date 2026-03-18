@@ -15,10 +15,12 @@ import CloudGamingConfigCard from "@/components/tenant/CloudGamingConfigCard";
 import CloudGamingSeatsCard from "@/components/tenant/CloudGamingSeatsCard";
 import TenantBillingCard from "@/components/tenant/TenantBillingCard";
 import { useTenantCloudGaming } from "@/hooks/useTenantCloudGaming";
+import { useTenantBilling } from "@/hooks/useTenantBilling";
 
 const TenantSettings = () => {
   const { tenantInfo } = useTenantAdmin();
   const { config: cloudGamingConfig } = useTenantCloudGaming(tenantInfo?.tenantId);
+  const { isSubscribed } = useTenantBilling();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -118,7 +120,7 @@ const TenantSettings = () => {
         </p>
       </div>
 
-      <TenantBillingCard />
+      {!isSubscribed && <TenantBillingCard />}
 
       <Card>
         <CardHeader>
