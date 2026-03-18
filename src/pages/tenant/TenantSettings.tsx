@@ -20,6 +20,7 @@ import { useTenantBilling } from "@/hooks/useTenantBilling";
 const TenantSettings = () => {
   const { tenantInfo } = useTenantAdmin();
   const { config: cloudGamingConfig } = useTenantCloudGaming(tenantInfo?.tenantId);
+  const { isSubscribed } = useTenantBilling();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
