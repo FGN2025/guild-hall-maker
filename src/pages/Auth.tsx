@@ -45,6 +45,22 @@ const Auth = () => {
     }
   }, [user, emailConfirmed, authLoading, navigate]);
 
+  // Poll for email confirmation when on confirmation step
+  useEffect(() => {
+    if (signupStep !== "confirmation" || !email.trim()) return;
+    const interval = setInterval(async () => {
+      // Try refreshing the session — if user confirmed via link, session will update
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user?.email_confirmed_at) {
+        // Claim invites and redirect
+        try { await supabase.rpc('claim_pending_invitations'); } catch {}
+        toast.success("Email verified! Welcome!");
+        navigate("/dashboard", { replace: true });
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [signupStep, email, navigate]);
+
   // ZIP check state (signup only)
   const [zipCode, setZipCode] = useState("");
   const [bypassCode, setBypassCode] = useState("");
