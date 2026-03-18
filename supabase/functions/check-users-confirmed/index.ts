@@ -25,16 +25,18 @@ Deno.serve(async (req) => {
 
     const confirmed: Record<string, boolean> = {};
     const has_email: Record<string, boolean> = {};
+    const emails: Record<string, string> = {};
     const ids = user_ids.slice(0, 100);
     await Promise.all(
       ids.map(async (id: string) => {
         const { data } = await supabase.auth.admin.getUserById(id);
         confirmed[id] = !!data?.user?.email_confirmed_at;
         has_email[id] = !!data?.user?.email;
+        if (data?.user?.email) emails[id] = data.user.email;
       })
     );
 
-    return new Response(JSON.stringify({ confirmed, has_email }), {
+    return new Response(JSON.stringify({ confirmed, has_email, emails }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

@@ -80,7 +80,7 @@ const AdminUsers = () => {
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search by name or tag..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border font-body" />
+              <Input placeholder="Search by name, tag, or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border font-body" />
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => {
@@ -119,6 +119,7 @@ const AdminUsers = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Gamer Tag</TableHead>
                     <TableHead>Discord</TableHead>
                     <TableHead>Tenant</TableHead>
@@ -130,8 +131,8 @@ const AdminUsers = () => {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell colSpan={8} className="p-0">
-                      <TableSkeleton columns={8} rows={8} showAvatar />
+                    <TableCell colSpan={9} className="p-0">
+                      <TableSkeleton columns={9} rows={8} showAvatar />
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -143,6 +144,7 @@ const AdminUsers = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Gamer Tag</TableHead>
                     <TableHead>Discord</TableHead>
                     <TableHead>Tenant</TableHead>
@@ -180,6 +182,7 @@ const AdminUsers = () => {
                           )}
                         </div>
                       </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{u.email ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{u.gamer_tag ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {u.discord_id ? (
@@ -397,7 +400,9 @@ const AdminUsers = () => {
 
       <ConfirmDialog
         open={!!confirmAction}
-        onOpenChange={(open) => !open && setConfirmAction(null)}
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null);
+        }}
         title={confirmAction?.ban ? "Ban User Permanently" : "Delete User"}
         description={
           confirmAction?.ban
@@ -408,8 +413,9 @@ const AdminUsers = () => {
         variant="destructive"
         onConfirm={() => {
           if (confirmAction) {
-            deleteUser.mutate({ userId: confirmAction.userId, ban: confirmAction.ban });
+            const action = { ...confirmAction };
             setConfirmAction(null);
+            deleteUser.mutate({ userId: action.userId, ban: action.ban });
           }
         }}
       />
