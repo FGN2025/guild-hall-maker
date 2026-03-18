@@ -61,8 +61,9 @@ Deno.serve(async (req) => {
     // Get user email before deletion (for banning)
     const { data: { user: targetUser }, error: getUserErr } =
       await adminClient.auth.admin.getUserById(user_id);
+    console.log("getUserById result:", { targetUser: targetUser?.id, getUserErr: getUserErr?.message });
     if (getUserErr || !targetUser) {
-      return new Response(JSON.stringify({ error: "User not found" }), {
+      return new Response(JSON.stringify({ error: "User not found", detail: getUserErr?.message ?? "No user returned for id: " + user_id }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
