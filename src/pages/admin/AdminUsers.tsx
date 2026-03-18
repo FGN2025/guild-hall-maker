@@ -181,6 +181,7 @@ const AdminUsers = () => {
                           )}
                         </div>
                       </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{u.email ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{u.gamer_tag ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {u.discord_id ? (
