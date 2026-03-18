@@ -54,6 +54,20 @@ const Auth = () => {
   const { checkZip, loading: zipLoading, result: zipResult, reset: resetZip } = useRegistrationZipCheck();
   const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && signupStep === "account" && !isInviteFlow);
 
+  // Poll for email confirmation when on confirmation step
+  useEffect(() => {
+    if (signupStep !== "confirmation" || !email.trim()) return;
+    const interval = setInterval(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user?.email_confirmed_at) {
+        try { await supabase.rpc('claim_pending_invitations'); } catch {}
+        toast.success("Email verified! Welcome!");
+        navigate("/dashboard", { replace: true });
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [signupStep, email, navigate]);
+
   const handleZipCheck = async () => {
     await checkZip(zipCode, bypassCode || undefined);
   };
@@ -160,8 +174,25 @@ const Auth = () => {
         // Detect repeated signup (existing user) — Supabase returns user with empty identities
         const isRepeatedSignup = data.user && (!data.user.identities || data.user.identities.length === 0);
         if (isRepeatedSignup) {
-          // Stay in confirmation flow — don't force login; offer resend instead
-          toast.info("An account with this email already exists but hasn't been verified yet. We've kept you on the verification screen so you can resend the confirmation email.");
+          // Check if user is already confirmed via backend lookup
+          try {
+            const { data: confirmData } = await supabase.functions.invoke("check-users-confirmed", {
+              body: { user_ids: [data.user!.id] },
+            });
+            const isAlreadyConfirmed = confirmData?.confirmed?.[data.user!.id];
+            if (isAlreadyConfirmed) {
+              // Account exists AND is confirmed — switch to sign-in mode
+              toast.info("An account with this email already exists. Please sign in to continue.");
+              setIsLogin(true);
+              setSignupStep("zip");
+              setLoading(false);
+              return;
+            }
+          } catch {
+            // If lookup fails, fall through to unconfirmed flow
+          }
+          // Account exists but is NOT confirmed — show resend flow
+          toast.info("An account with this email already exists but hasn't been verified yet. You can resend the confirmation email below.");
           setSignupStep("confirmation");
           setLoading(false);
           return;
@@ -393,6 +424,8 @@ const Auth = () => {
                       toast.error(error.message);
                     }
                   } else {
+                    // Claim any pending tenant invitations
+                    try { await supabase.rpc('claim_pending_invitations'); } catch {}
                     toast.success("Welcome!");
                     navigate("/dashboard");
                   }

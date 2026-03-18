@@ -1,48 +1,141 @@
 
-Issue assessment
+# Configurable Discord Role Assignment — Completed
 
-I checked the auth flow and the current data for darcy@wtfast.com. The problem is not a missing invite email record — it is a broken invite/confirmation handoff.
+## What was built
 
-What I found
-- Darcy already has an existing auth account, and it is already confirmed.
-- There is an unclaimed Consolidated tenant invitation for darcy@wtfast.com.
-- There is no tenant_admins row for Darcy yet, which means the invite was never claimed.
-- In `src/pages/Auth.tsx`, repeated signup is treated as “existing but unconfirmed” for all cases and sends the user to the “You’re Almost There” screen.
-- That assumption is wrong for Darcy: he is already confirmed, so he should be directed to sign in, not asked to wait for another confirmation email.
-- The “I’ve Verified — Continue” button on that same screen signs the user in, but does not call `claim_pending_invitations`, so even a successful sign-in from that screen can still leave the tenant role unclaimed.
-- The invite confirmation screen on `/auth` also lacks the polling/auto-redirect logic used on `/confirm-email`, so it can visually look stuck even after verification.
+### Database
+- **`discord_role_mappings`** table with columns: `id`, `discord_role_id`, `discord_role_name`, `trigger_condition` (enum: on_link, on_achievement, on_rank, on_tournament_win, manual), `condition_value`, `platform_role` (nullable text: admin, moderator, tenant_admin, user — NULL = all users), `is_active`, `created_at`
+- Admin-only RLS policies
 
-Plan to fix
+### Edge Functions
+- **`discord-server-roles`**: Fetches available roles from the FGN Discord server via bot API. Admin-authenticated.
+- **`discord-oauth-callback`** (updated): Queries `discord_role_mappings` for all active `on_link` mappings, fetches the linking user's platform roles from `user_roles` and `tenant_admins`, and assigns only matching Discord roles. Falls back to `DISCORD_VERIFIED_ROLE_ID` if no mappings exist.
 
-1. Fix repeated-signup detection in `src/pages/Auth.tsx`
-- When signup returns an existing user, distinguish:
-  - already confirmed existing account → switch to sign-in guidance
-  - unconfirmed existing account → stay on confirmation/resend flow
-- Use the returned user state if available; if that is not reliable enough, add a lightweight backend lookup by email for confirmation status.
+### Admin UI
+- **`DiscordRoleManager`** component on the Ecosystem admin page
+- Fetch server roles button, role + trigger + platform role selector, add/toggle/delete mappings
+- Platform role options: All Users, Admin, Moderator, Tenant Admin, Regular User
 
-2. Claim tenant invites after “I’ve Verified — Continue”
-- In the confirmation-screen sign-in handler, call `claim_pending_invitations` after successful sign-in, just like the normal login flow already does.
-- Then route invited staff to the correct post-login destination.
+---
 
-3. Make the invite confirmation screen self-healing
-- Add confirmation polling / session refresh logic to the `/auth` confirmation step so it automatically exits once the account is verified, instead of waiting for the user to guess the next step.
+# Delete & Ban Users — Completed
 
-4. Clean up resend behavior and messaging
-- If the account is already confirmed, do not tell the user another confirmation email is coming.
-- Show accurate messaging like “Your account already exists — sign in to claim your invite.”
-- Keep resend only for genuinely unconfirmed accounts.
+## What was built
 
-5. Verify Darcy’s exact scenario
-- After the code fix, Darcy’s next successful sign-in should automatically claim the Consolidated invite and create the tenant admin membership.
-- No database migration should be needed for this fix.
+### Database
+- **`banned_users`** table: stores permanently banned emails (`email` UNIQUE, `banned_by`, `reason`, `created_at`)
+- Admin-only RLS policy via `has_role()`
 
-Files likely involved
-- `src/pages/Auth.tsx` — main fix
-- `src/pages/ConfirmEmail.tsx` — optional behavior parity / resend cleanup
-- `src/contexts/AuthContext.tsx` — only if session refresh handling needs tightening
-- Possibly one small backend helper only if confirmation-state lookup by email is needed
+### Edge Functions
+- **`delete-user`**: Admin-authenticated cascade delete of all user data across 20+ tables, nullifies match_results references, deletes auth user via admin API. Optionally inserts email into `banned_users` when `ban: true`.
+- **`check-ban-status`**: Lightweight unauthenticated check — returns `{ banned: true/false }` for a given email.
 
-Expected outcome
-- Existing invited users like Darcy will no longer be trapped on the confirmation screen.
-- Unconfirmed invited users will still get the correct resend/verify flow.
-- Successful sign-in from the invite flow will actually claim the pending tenant invitation and unlock tenant access for Consolidated.
+### Admin UI
+- Trash icon (delete) and Ban icon on each user row in Admin User Management
+- Both protected by destructive ConfirmDialog with clear messaging
+- Disabled for current user's own row
+- Loading states during mutations
+
+### Auth Flow
+- Pre-signup ban check in Auth.tsx — blocked emails see "This account has been permanently banned" error before `signUp()` is called
+
+---
+
+# Phase 3: Subscriber Cloud Gaming Seat Purchases — Completed
+
+## What was built
+
+### Database
+- **`subscriber_cloud_purchases`** table: tracks Stripe subscription per cloud gaming seat assignment (tenant_id, subscriber_id, user_id, stripe_subscription_id, status, timestamps)
+- RLS policies: tenant members can view, tenant admins can insert/update
+- `updated_at` trigger via `update_updated_at_column()`
+
+### Hook
+- **`useCloudGamingSeats`**: queries active seats from `subscriber_cloud_access` and purchases from `subscriber_cloud_purchases`, provides `assignSeat` (inserts access + purchase records, triggers Stripe checkout), `revokeSeat` (deactivates seat), and computed `availableSlots`/`availableSubscribers`
+
+### UI
+- **`CloudGamingSeatsCard`**: capacity bar, integration notice (Blacknut pending), subscriber picker for seat assignment, seats table with status badges and revoke action via ConfirmDialog
+- Rendered in TenantSettings below CloudGamingConfigCard when cloud gaming is enabled
+
+---
+
+# Phase 5: Stripe Webhook Sync — Completed
+
+## What was built
+
+### Edge Function
+- **`stripe-webhook`**: Receives Stripe webhook events, verifies signature via `STRIPE_WEBHOOK_SECRET`, and syncs status to local tables
+- Handles 3 event types:
+  - `checkout.session.completed`: Upserts `tenant_subscriptions` for tenant plan checkouts; updates `subscriber_cloud_purchases` status to `active` for cloud gaming seat checkouts
+  - `customer.subscription.updated`: Syncs status changes (active → past_due, etc.) to both `tenant_subscriptions` and `subscriber_cloud_purchases`
+  - `customer.subscription.deleted`: Marks subscriptions as `canceled`; auto-deactivates cloud gaming seats in `subscriber_cloud_access`
+- Uses price ID matching to route events to correct table (tenant basic vs cloud gaming seat)
+- `verify_jwt = false` in config.toml (Stripe calls this directly)
+
+### Configuration
+- `STRIPE_WEBHOOK_SECRET` secret stored for signature verification
+- Stripe webhook endpoint: `https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/stripe-webhook`
+- Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+
+---
+
+# Phase 6: Tenant Self-Service Signup — Completed
+
+## What was built
+
+### Public Landing Page
+- **`/for-providers`** route with value proposition hero, feature grid, pricing card ($850/mo), and registration form
+- Fields: Organization Name, Contact Email, Admin Name, Password
+- Client-side validation via zod; redirects to Stripe Checkout on submit
+
+### Edge Function
+- **`provision-tenant`**: Public endpoint (verify_jwt = false) that:
+  1. Validates inputs and checks banned emails
+  2. Creates or finds existing auth user
+  3. Generates unique slug from org name
+  4. Inserts tenant with status `provisioning`
+  5. Assigns user as tenant_admin (role: admin)
+  6. Creates Stripe Checkout session for Tenant Basic price
+  7. Returns checkout URL
+
+### Webhook Enhancement
+- **`stripe-webhook`** updated: on `checkout.session.completed` for Tenant Basic price, also updates `tenants.status` from `provisioning` → `active`
+
+### Database
+- Added unique constraint on `tenants.slug` (`tenants_slug_key`)
+
+### Navigation
+- "For Providers" link added to public navbar items and Index page footer
+
+---
+
+# Automated Engagement Emails — Completed
+
+## What was built
+
+### Database
+- **`engagement_email_log`** table: tracks sent engagement emails for deduplication (`user_id`, `email_type`, `reference_id`, `sent_at`)
+- RLS enabled with no policies (service-role only access)
+- Indexes on `(user_id, email_type, sent_at)` and `(user_id, email_type, reference_id)`
+- Added **`last_active_at`** column to `profiles` with trigger to auto-update on notification reads
+
+### Edge Functions
+- **`weekly-recap-email`**: Sends personalized weekly stats (matches, challenges, quests, achievements) to active users every Monday at 10:00 AM UTC. Skips users with zero activity.
+- **`tournament-promo-email`**: Sends tournament promotion emails daily at 2:00 PM UTC to active users who haven't registered for open tournaments starting within 3 days.
+- **`reengagement-email`**: Sends "we miss you" emails with new content highlights every Wednesday at 12:00 PM UTC to users inactive for 14–90 days.
+
+### Scheduling
+- Three pg_cron jobs configured to invoke the edge functions on their respective schedules
+
+### Notification Preferences
+- Added 3 new notification types: `weekly_recap`, `tournament_promo`, `reengagement`
+- All toggleable per-user in Profile Settings under In-App and Email channels
+- All engagement emails check `should_notify()` preference before sending
+
+### Deduplication
+- Weekly recap: max one per user per 7-day window
+- Tournament promo: max one per user per tournament
+- Re-engagement: max one per user per 14-day window
+
+### Guide Updates
+- Admin Guide notification section updated with engagement email documentation
