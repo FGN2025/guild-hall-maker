@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+
 import { useTournaments } from "@/hooks/useTournaments";
 import TournamentCard from "@/components/tournaments/TournamentCard";
 import PageHero from "@/components/PageHero";
