@@ -143,6 +143,7 @@ const AdminUsers = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Gamer Tag</TableHead>
                     <TableHead>Discord</TableHead>
                     <TableHead>Tenant</TableHead>
