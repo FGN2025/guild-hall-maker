@@ -61,20 +61,30 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get user email before deletion (for banning)
-    const { data: { user: targetUser }, error: getUserErr } =
-      await adminClient.auth.admin.getUserById(user_id);
-    console.log("getUserById result:", { targetUser: targetUser?.id, getUserErr: getUserErr?.message });
-    if (getUserErr || !targetUser) {
-      return new Response(JSON.stringify({ error: "User not found", detail: getUserErr?.message ?? "No user returned for id: " + user_id }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let targetEmail: string | null = null;
+
+    // Only fetch auth user details when banning; plain deletes can proceed directly.
+    if (ban) {
+      const { data: { user: targetUser }, error: getUserErr } =
+        await adminClient.auth.admin.getUserById(user_id);
+      console.log("getUserById result:", { targetUser: targetUser?.id, getUserErr: getUserErr?.message });
+
+      if (getUserErr || !targetUser?.email) {
+        return new Response(JSON.stringify({
+          error: "Unable to ban user",
+          detail: getUserErr?.message ?? "No email found for user id: " + user_id,
+        }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      targetEmail = targetUser.email.toLowerCase();
     }
 
     // If banning, insert into banned_users first
-    if (ban && targetUser.email) {
+    if (ban && targetEmail) {
       await adminClient.from("banned_users").upsert(
-        { email: targetUser.email.toLowerCase(), banned_by: caller.id, reason: "Banned by admin" },
+        { email: targetEmail, banned_by: caller.id, reason: "Banned by admin" },
         { onConflict: "email" }
       );
     }
