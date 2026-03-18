@@ -15,6 +15,7 @@ import CloudGamingConfigCard from "@/components/tenant/CloudGamingConfigCard";
 import CloudGamingSeatsCard from "@/components/tenant/CloudGamingSeatsCard";
 import TenantBillingCard from "@/components/tenant/TenantBillingCard";
 import { useTenantCloudGaming } from "@/hooks/useTenantCloudGaming";
+import { useTenantBilling } from "@/hooks/useTenantBilling";
 
 const TenantSettings = () => {
   const { tenantInfo } = useTenantAdmin();
