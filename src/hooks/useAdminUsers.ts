@@ -98,6 +98,7 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
           email_confirmed: true,
           has_email: true,
           tenant_role: (tenantAdminMap.get(p.user_id) as any)?.role ?? null,
+          email: null as string | null,
         };
       }) as AdminUser[];
 
@@ -105,7 +106,7 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
         result = result.filter((u) => u.tenant_id === tenantId);
       }
 
-      // Fetch confirmation status from edge function
+      // Fetch confirmation status + emails from edge function
       const userIds = result.map((u) => u.user_id);
       if (userIds.length > 0) {
         try {
@@ -117,11 +118,22 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
               ...u,
               email_confirmed: confirmData.confirmed[u.user_id] ?? true,
               has_email: confirmData.has_email?.[u.user_id] ?? true,
+              email: confirmData.emails?.[u.user_id] ?? null,
             }));
           }
         } catch {
           // Silently fail – confirmation status is supplementary
         }
+      }
+
+      // Client-side email search filtering (DB query only filters by display_name/gamer_tag)
+      if (search) {
+        const lowerSearch = search.toLowerCase();
+        result = result.filter((u) =>
+          (u.display_name?.toLowerCase().includes(lowerSearch)) ||
+          (u.gamer_tag?.toLowerCase().includes(lowerSearch)) ||
+          (u.email?.toLowerCase().includes(lowerSearch))
+        );
       }
 
       return result;
