@@ -27,6 +27,13 @@ const sidebarItems = [
 
 const AdminSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <aside className="w-64 h-full bg-card border-r border-border flex flex-col overflow-hidden">
