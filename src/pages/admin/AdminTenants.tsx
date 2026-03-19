@@ -122,7 +122,7 @@ function LogoPicker({
 const AdminTenants = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { tenants, isLoading, createTenant, updateTenant, deleteTenant } = useTenants();
+  const { tenants, isLoading, error, createTenant, updateTenant, deleteTenant } = useTenants();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
   const [logoUploading, setLogoUploading] = useState(false);
