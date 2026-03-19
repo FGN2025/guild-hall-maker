@@ -52,7 +52,7 @@ interface UpdateTenantInput {
 export function useTenants() {
   const queryClient = useQueryClient();
 
-  const { data: tenants = [], isLoading } = useQuery({
+  const { data: tenants = [], isLoading, error } = useQuery({
     queryKey: ["tenants"],
     queryFn: async () => {
       const { data, error } = await supabase
