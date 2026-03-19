@@ -144,10 +144,35 @@ export function useTenantAdmins(tenantId: string | null) {
 
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
-      return adminRows.map((row: any) => ({
-        ...row,
-        profile: profileMap.get(row.user_id) || null,
-      })) as TenantAdmin[];
+      // Fetch emails as fallback for users with no display_name
+      let emailMap = new Map<string, string>();
+      const missingNameIds = userIds.filter((uid: string) => {
+        const p = profileMap.get(uid);
+        return !p || !p.display_name;
+      });
+      if (missingNameIds.length > 0) {
+        try {
+          const { data: confirmData } = await supabase.functions.invoke("check-users-confirmed", {
+            body: { user_ids: missingNameIds },
+          });
+          if (confirmData?.emails) {
+            emailMap = new Map(Object.entries(confirmData.emails));
+          }
+        } catch {
+          // Non-critical — display will fall back to "Unknown"
+        }
+      }
+
+      return adminRows.map((row: any) => {
+        const profile = profileMap.get(row.user_id);
+        const email = emailMap.get(row.user_id);
+        return {
+          ...row,
+          profile: profile
+            ? { ...profile, display_name: profile.display_name || email || null }
+            : email ? { user_id: row.user_id, display_name: email } : null,
+        };
+      }) as TenantAdmin[];
     },
   });
 
