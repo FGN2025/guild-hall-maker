@@ -146,8 +146,8 @@ const AdminTenants = () => {
     })
     .sort((a, b) => {
       switch (sortOption) {
-        case "name-asc": return a.name.localeCompare(b.name);
-        case "name-desc": return b.name.localeCompare(a.name);
+        case "name-asc": return (a.name ?? "").localeCompare(b.name ?? "");
+        case "name-desc": return (b.name ?? "").localeCompare(a.name ?? "");
         case "created-desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case "created-asc": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case "status": {
