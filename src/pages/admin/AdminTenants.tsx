@@ -122,7 +122,7 @@ function LogoPicker({
 const AdminTenants = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { tenants, isLoading, createTenant, updateTenant, deleteTenant } = useTenants();
+  const { tenants, isLoading, error, createTenant, updateTenant, deleteTenant } = useTenants();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
   const [logoUploading, setLogoUploading] = useState(false);
@@ -140,20 +140,20 @@ const AdminTenants = () => {
       if (statusFilter === "inactive" && t.status === "active") return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        return t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q);
+        return (t.name?.toLowerCase().includes(q)) || (t.slug?.toLowerCase().includes(q));
       }
       return true;
     })
     .sort((a, b) => {
       switch (sortOption) {
-        case "name-asc": return a.name.localeCompare(b.name);
-        case "name-desc": return b.name.localeCompare(a.name);
+        case "name-asc": return (a.name ?? "").localeCompare(b.name ?? "");
+        case "name-desc": return (b.name ?? "").localeCompare(a.name ?? "");
         case "created-desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case "created-asc": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case "status": {
           if (a.status === "active" && b.status !== "active") return -1;
           if (a.status !== "active" && b.status === "active") return 1;
-          return a.name.localeCompare(b.name);
+          return (a.name ?? "").localeCompare(b.name ?? "");
         }
         default: return 0;
       }
@@ -319,6 +319,15 @@ const AdminTenants = () => {
 
         {isLoading ? (
           <p className="text-muted-foreground">Loading...</p>
+        ) : error ? (
+          <div className="text-center py-12 text-muted-foreground space-y-3">
+            <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-destructive font-medium">Failed to load providers</p>
+            <p className="text-sm">{(error as Error).message}</p>
+            <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["tenants"] })}>
+              Retry
+            </Button>
+          </div>
         ) : tenants.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />

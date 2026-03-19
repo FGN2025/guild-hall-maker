@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface Tenant {
+export interface Tenant {
   id: string;
   name: string;
   slug: string;
@@ -13,6 +13,7 @@ interface Tenant {
   status: string;
   created_at: string;
   updated_at: string;
+  require_subscriber_validation?: boolean;
 }
 
 interface TenantAdmin {
@@ -51,7 +52,7 @@ interface UpdateTenantInput {
 export function useTenants() {
   const queryClient = useQueryClient();
 
-  const { data: tenants = [], isLoading } = useQuery({
+  const { data: tenants = [], isLoading, error } = useQuery({
     queryKey: ["tenants"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -107,7 +108,7 @@ export function useTenants() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  return { tenants, isLoading, createTenant, updateTenant, deleteTenant };
+  return { tenants, isLoading, error, createTenant, updateTenant, deleteTenant };
 }
 
 export interface TenantInvitation {
