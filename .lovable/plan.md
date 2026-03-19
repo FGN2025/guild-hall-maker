@@ -1,35 +1,36 @@
 
 
-## Problem Analysis
+## Problem
+The admin tenants page (`/admin/tenants`) is showing a white/blank content area in the development preview. The sidebar renders correctly, but the page content is empty with no visible console errors.
 
-There are **two separate issues**:
+## Root Cause Analysis
+After reviewing the code thoroughly, there are no obvious crash-inducing bugs. The most likely causes are:
 
-### Issue 1: Build Failure (blocking publishing)
-The build system runs `$ vite build`, which resolves to `/opt/template-node-modules/vite/dist/node/cli.js` — a platform-level Vite binary. That binary cannot find `rollup` because rollup is installed in the project's `node_modules`, not in `/opt/template-node-modules/`. Previous attempts to fix this (adding rollup to dependencies, changing scripts to `node ./node_modules/vite/bin/vite.js build`) were either reverted or ineffective because the build system uses its own PATH resolution.
-
-### Issue 2: Production Runtime Error (from old deployed bundle)
-The production site at `play.fgn.gg/tournaments` shows `"useSidebar must be used within a SidebarProvider"`. This is from whatever bundle was last successfully deployed before builds started failing.
+1. **Transient auth/query state** — The `useTenants` query may be silently failing due to an RLS or auth issue, causing `tenants` to remain `[]` and the page to show an empty state that blends with the background.
+2. **Missing `require_subscriber_validation` on Tenant interface** — While not a crash risk, this is a type gap that should be fixed.
+3. **Silent query errors** — The `tenants` query throws on error but the error is caught by React Query and not displayed to the user.
 
 ## Plan
 
-### Step 1: Fix the build resolution
-Change the build script to use `./node_modules/.bin/vite build` which is a locally-installed shim that always resolves to the project's Vite. This bypasses the PATH-based resolution that falls back to the template directory.
+### Step 1: Add error handling to the tenants page
+Add an error state display to `AdminTenants` so if the `useTenants` query fails (e.g., RLS denial, network issue), the user sees an error message instead of a blank screen.
 
-**`package.json` scripts change:**
-```json
-"scripts": {
-  "dev": "vite",
-  "build": "./node_modules/.bin/vite build",
-  "build:dev": "./node_modules/.bin/vite build --mode development",
-  "preview": "./node_modules/.bin/vite preview"
-}
-```
+**File: `src/hooks/useTenants.ts`**
+- Add `require_subscriber_validation` to the `Tenant` interface
+- Export the `Tenant` type
+- Return `error` from the `useTenants` hook
 
-### Step 2: If step 1 still fails, escalate
-If the build system overrides or ignores the `build` script entirely, this is a platform-level infrastructure issue that cannot be fixed from within the project. In that case, I would recommend contacting Lovable support.
+**File: `src/pages/admin/AdminTenants.tsx`**
+- Destructure `error` from `useTenants()` (currently not exposed)
+- Add an error display state between the loading and empty states:
+  ```
+  if (error) → show "Failed to load tenants" with the error message and a retry button
+  ```
 
-### Step 3: Fix production runtime error (will deploy with successful build)
-Investigate the `useSidebar must be used within a SidebarProvider` error — this is likely a component using the shadcn `useSidebar` hook outside of the `SidebarProvider` context. Once the build succeeds, the latest code (which works in development) will deploy and fix this.
+### Step 2: Add defensive null checks in TenantCard filter
+Add optional chaining for `t.name?.toLowerCase()` and `t.slug?.toLowerCase()` in the filter/sort logic to prevent crashes if a tenant has unexpected null values.
 
-**Files to edit:** `package.json` (scripts only)
+**Files to edit:**
+- `src/hooks/useTenants.ts` (interface fix + expose error)
+- `src/pages/admin/AdminTenants.tsx` (error display + defensive null checks)
 
