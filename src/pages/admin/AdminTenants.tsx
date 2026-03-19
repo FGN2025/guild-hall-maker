@@ -140,7 +140,7 @@ const AdminTenants = () => {
       if (statusFilter === "inactive" && t.status === "active") return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        return t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q);
+        return (t.name?.toLowerCase().includes(q)) || (t.slug?.toLowerCase().includes(q));
       }
       return true;
     })
