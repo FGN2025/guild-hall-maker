@@ -153,7 +153,7 @@ const AdminTenants = () => {
         case "status": {
           if (a.status === "active" && b.status !== "active") return -1;
           if (a.status !== "active" && b.status === "active") return 1;
-          return a.name.localeCompare(b.name);
+          return (a.name ?? "").localeCompare(b.name ?? "");
         }
         default: return 0;
       }
