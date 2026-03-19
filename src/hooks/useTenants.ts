@@ -108,7 +108,7 @@ export function useTenants() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  return { tenants, isLoading, createTenant, updateTenant, deleteTenant };
+  return { tenants, isLoading, error, createTenant, updateTenant, deleteTenant };
 }
 
 export interface TenantInvitation {

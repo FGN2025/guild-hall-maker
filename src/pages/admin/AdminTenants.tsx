@@ -319,6 +319,15 @@ const AdminTenants = () => {
 
         {isLoading ? (
           <p className="text-muted-foreground">Loading...</p>
+        ) : error ? (
+          <div className="text-center py-12 text-muted-foreground space-y-3">
+            <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-destructive font-medium">Failed to load providers</p>
+            <p className="text-sm">{(error as Error).message}</p>
+            <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["tenants"] })}>
+              Retry
+            </Button>
+          </div>
         ) : tenants.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
