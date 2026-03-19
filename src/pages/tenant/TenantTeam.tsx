@@ -119,7 +119,13 @@ const TenantTeam = () => {
           role: inviteRole,
           invited_by: user?.id,
         });
-      if (insertErr) throw insertErr;
+      if (insertErr) {
+        if (insertErr.message?.includes("tenant_invitations_tenant_id_email_key")) {
+          toast.error("An invitation is already pending for this email address.");
+          return;
+        }
+        throw insertErr;
+      }
 
       // Send invite email via edge function
       const tenantName = tenantInfo?.tenantName || "your organization";

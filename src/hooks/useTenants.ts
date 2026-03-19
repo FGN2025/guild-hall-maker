@@ -262,7 +262,13 @@ export function useTenantAdmins(tenantId: string | null) {
       queryClient.invalidateQueries({ queryKey: ["tenant-invitations", tenantId] });
       toast.success("Invitation created. Role will be assigned when they register.");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: any) => {
+      if (err.message?.includes("tenant_invitations_tenant_id_email_key")) {
+        toast.error("An invitation is already pending for this email address.");
+      } else {
+        toast.error(err.message);
+      }
+    },
   });
 
   const cancelInvitation = useMutation({
