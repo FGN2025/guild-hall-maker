@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface Tenant {
+export interface Tenant {
   id: string;
   name: string;
   slug: string;
@@ -13,6 +13,7 @@ interface Tenant {
   status: string;
   created_at: string;
   updated_at: string;
+  require_subscriber_validation?: boolean;
 }
 
 interface TenantAdmin {
