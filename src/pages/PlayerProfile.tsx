@@ -20,7 +20,9 @@ import { useAuth } from "@/contexts/AuthContext";
 const PlayerProfile = () => {
   usePageTitle("Player Profile");
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { profile, stats, matchHistory, headToHead, rankProgression, isLoading } = usePlayerProfile(id);
+  const isOwnProfile = user?.id === id;
   const { data: achievements, isLoading: achievementsLoading } = usePlayerAchievements(id);
   const { data: gameBreakdown } = usePlayerGameBreakdown(id);
 
