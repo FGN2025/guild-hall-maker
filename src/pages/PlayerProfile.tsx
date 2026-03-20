@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Gamepad2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageBackground from "@/components/PageBackground";
+import PointsWalletCard from "@/components/shared/PointsWalletCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PlayerProfile = () => {
   usePageTitle("Player Profile");
