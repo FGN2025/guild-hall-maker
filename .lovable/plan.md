@@ -1,19 +1,50 @@
 
+## Assessment
 
-## Problem
+The grey bar is not the tournaments sticky header anymore. It is the global `AppLayout` header:
 
-The sticky header on `/tournaments` floats slightly below the top of the scrollable area instead of sitting flush. The root cause is the parent container's `space-y-6` class. Tailwind's `space-y-6` applies `margin-top: 1.5rem` to every child after the first. Since `PageBackground` is the first child and the sticky header div is the second, it receives a `1.5rem` top margin that prevents it from reaching `top: 0` when stuck.
+- `src/components/AppLayout.tsx` always renders:
+  - a fixed-height top header (`h-12`)
+  - `bg-background`
+  - a bottom border
+  - the `SidebarTrigger`
+- Logged-in users on `/tournaments` go through `ConditionalLayout` → `AppLayout`, so that top bar is always present.
+- The tournaments page sticky header is inside `<main>`, below that global header. Negative `top` values can only offset within the padded scroll area; they cannot remove the separate layout header above it.
 
-## Fix
+That matches the screenshot: the grey strip with the small sidebar button at the far left is the shared app header, not page-specific spacing.
 
-**File: `src/pages/Tournaments.tsx`**
+## Recommended fix
 
-Replace `space-y-6` on the outer wrapper with a structure that excludes the sticky header from the spacing:
+### Best fix
+Make the tournaments page use a “headerless content” mode inside `AppLayout`, then place the sidebar trigger inside the tournaments sticky header.
 
-1. Remove `space-y-6` from the outer `<div>` wrapper.
-2. Move `PageBackground` outside the wrapper (it's position-fixed/absolute, so placement doesn't matter).
-3. Keep the sticky header as the first child with no top margin.
-4. Add `space-y-6` (or `mt-6`) only to the content below the sticky header, so tournament cards and pagination get proper spacing without affecting the sticky element.
+## Implementation plan
 
-This is a single-file, ~3-line change.
+1. **Add route-aware header suppression in `AppLayout`**
+   - Use the current route to detect `/tournaments`.
+   - Skip rendering the global `<header>` for that route only.
+   - Let `<main>` expand to full height when the header is hidden.
 
+2. **Preserve navigation access**
+   - Add `SidebarTrigger` into `src/pages/Tournaments.tsx` inside the sticky header row.
+   - Keep it visible at least on mobile/tablet so users can still open the sidebar.
+   - Align it with the page title so the sticky area becomes the only top bar.
+
+3. **Adjust tournaments sticky container after header removal**
+   - Remove the compensating negative top hacks that were added to fight the old layout padding/header interaction.
+   - Re-test the sticky container with a simple `top-0` (or a minimal negative offset only if needed because of main padding).
+   - Keep the opaque background and horizontal bleed handling so cards do not show through while scrolling.
+
+4. **Verify no regressions**
+   - Confirm `/tournaments` sits flush to the top with no grey strip.
+   - Confirm sidebar access still works on smaller screens.
+   - Confirm other authenticated pages still keep the shared top header unchanged.
+
+## Files to update
+
+- `src/components/AppLayout.tsx`
+- `src/pages/Tournaments.tsx`
+
+## Why this is the right fix
+
+The current issue is structural, not a sticky-position bug. The page is being rendered underneath a shared layout header. As long as that header exists, a top bar will remain visible no matter how the tournaments sticky header is adjusted. The fix is to remove the shared header for this route and merge its control into the page’s own sticky header.
