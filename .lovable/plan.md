@@ -1,51 +1,19 @@
 
 
-## Points Wallet Widget — Surface Across Key Pages
+## Problem
 
-### What & Why
-The points wallet (Available / Total Earned) is currently only visible on the Prize Shop page. Players earning points through challenges, quests, matches, and moderator awards have no visibility into their balance unless they navigate to the shop. Surfacing this widget on high-traffic pages reinforces the reward loop and drives engagement with the economy.
+The sticky header on `/tournaments` floats slightly below the top of the scrollable area instead of sitting flush. The root cause is the parent container's `space-y-6` class. Tailwind's `space-y-6` applies `margin-top: 1.5rem` to every child after the first. Since `PageBackground` is the first child and the sticky header div is the second, it receives a `1.5rem` top margin that prevents it from reaching `top: 0` when stuck.
 
-### Where to Add the Wallet
+## Fix
 
-| Page | Rationale |
-|------|-----------|
-| **Dashboard** | First thing players see after login — shows their balance alongside other key stats |
-| **Challenges** | Players earn points by completing challenges — seeing balance motivates participation |
-| **Quests** | Same as Challenges — quest completions award points |
-| **Leaderboard** | Players see rankings based on points — wallet contextualizes their own standing |
-| **Player Profile** | Personal stats page — natural home for wallet balance |
+**File: `src/pages/Tournaments.tsx`**
 
-### Implementation
+Replace `space-y-6` on the outer wrapper with a structure that excludes the sticky header from the spacing:
 
-**Step 1: Extract a reusable `PointsWalletCard` component**
+1. Remove `space-y-6` from the outer `<div>` wrapper.
+2. Move `PageBackground` outside the wrapper (it's position-fixed/absolute, so placement doesn't matter).
+3. Keep the sticky header as the first child with no top margin.
+4. Add `space-y-6` (or `mt-6`) only to the content below the sticky header, so tournament cards and pagination get proper spacing without affecting the sticky element.
 
-Create `src/components/shared/PointsWalletCard.tsx` that encapsulates the wallet query and display logic currently inline in `PrizeShop.tsx`. It will:
-- Accept an optional `compact` prop for smaller placements (sidebar, inline stats rows)
-- Query `seasons` + `season_scores` to aggregate available/earned points (same logic as PrizeShop)
-- Use a shared React Query key (`player-season-score`) so all instances stay in sync
-- Include a "Go to Prize Shop" link in the non-compact variant
-- Only render when the user is authenticated
-
-**Step 2: Add the widget to each page**
-
-- **Dashboard**: Add as a new stat card in the top stats row, alongside Tournaments/Matches/Wins/Win Rate
-- **Challenges**: Add below the page header, above the filter/game tabs
-- **Quests**: Add alongside the existing XP rank badge area
-- **Leaderboard**: Add a small compact wallet card near the top when viewing the seasonal tab
-- **Player Profile** (`PlayerProfile.tsx`): Add to the stats grid below the profile header (own profile only)
-
-**Step 3: Refactor PrizeShop to use the shared component**
-
-Replace the inline wallet markup in `PrizeShop.tsx` with the new `PointsWalletCard` component to eliminate duplication.
-
-### Files to create/edit
-- **New**: `src/components/shared/PointsWalletCard.tsx`
-- **Edit**: `src/pages/Dashboard.tsx` — add wallet card
-- **Edit**: `src/pages/Challenges.tsx` — add wallet card
-- **Edit**: `src/pages/Quests.tsx` — add wallet card
-- **Edit**: `src/pages/Leaderboard.tsx` — add compact wallet card
-- **Edit**: `src/pages/PlayerProfile.tsx` — add wallet to own-profile view
-- **Edit**: `src/pages/PrizeShop.tsx` — refactor to use shared component
-
-No database or migration changes required.
+This is a single-file, ~3-line change.
 
