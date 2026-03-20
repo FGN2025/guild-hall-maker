@@ -20,6 +20,7 @@ const NOTIFICATION_TYPES = [
   { key: "weekly_recap", label: "Weekly Recap", description: "A weekly summary of your activity, stats, and accomplishments" },
   { key: "tournament_promo", label: "Tournament Promotions", description: "Emails about upcoming tournaments you haven't registered for yet" },
   { key: "reengagement", label: "Re-engagement Reminders", description: "Updates on new content when you haven't visited in a while" },
+  { key: "points_adjusted", label: "Points Adjustments", description: "When a moderator or admin awards or deducts points from your balance" },
 ] as const;
 
 export { NOTIFICATION_TYPES };
