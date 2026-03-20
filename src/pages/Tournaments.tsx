@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Pagination,
@@ -84,7 +85,10 @@ const Tournaments = () => {
     <>
       <PageBackground pageSlug="tournaments" />
       <div className="relative z-10">
-        <div className="sticky top-[-1rem] z-20 bg-background -mx-4 px-4 md:-mx-6 md:px-6 -mt-4 pt-4 md:top-[-1.5rem] md:-mt-6 md:pt-6 pb-4">
+        <div className="sticky top-[-1rem] md:top-[-1.5rem] z-20 bg-background -mx-4 px-4 md:-mx-6 md:px-6 -mt-4 pt-4 md:-mt-6 md:pt-6 pb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <SidebarTrigger />
+          </div>
           <PageHero pageSlug="tournaments" />
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
