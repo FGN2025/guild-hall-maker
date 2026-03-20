@@ -15,6 +15,7 @@ import QuestChainCard from "@/components/quests/QuestChainCard";
 import QuestRankBadge from "@/components/quests/QuestRankBadge";
 import { useQuestChains } from "@/hooks/useQuestChains";
 import { usePlayerQuestXP } from "@/hooks/usePlayerQuestXP";
+import PointsWalletCard from "@/components/shared/PointsWalletCard";
 
 const Quests = () => {
   usePageTitle("Quests");
