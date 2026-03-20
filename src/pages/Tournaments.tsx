@@ -233,6 +233,7 @@ const Tournaments = () => {
             )}
           </>
         )}
+        </div>
       </div>
     </>
   );
