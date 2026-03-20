@@ -29,6 +29,7 @@ import PageBackground from "@/components/PageBackground";
 import TableSkeleton from "@/components/ui/table-skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import PointsWalletCard from "@/components/shared/PointsWalletCard";
 
 const staggerStyle = (idx: number): CSSProperties => ({
   animationDelay: `${idx * 50}ms`,
@@ -222,6 +223,8 @@ const Leaderboard = () => {
             </TabsList>
           </Tabs>
         </div>
+
+        <PointsWalletCard compact />
 
         <Tabs value={tab} onValueChange={setTab}>
 

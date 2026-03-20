@@ -14,11 +14,15 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Gamepad2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageBackground from "@/components/PageBackground";
+import PointsWalletCard from "@/components/shared/PointsWalletCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PlayerProfile = () => {
   usePageTitle("Player Profile");
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { profile, stats, matchHistory, headToHead, rankProgression, isLoading } = usePlayerProfile(id);
+  const isOwnProfile = user?.id === id;
   const { data: achievements, isLoading: achievementsLoading } = usePlayerAchievements(id);
   const { data: gameBreakdown } = usePlayerGameBreakdown(id);
 
@@ -71,6 +75,7 @@ const PlayerProfile = () => {
           <div className="space-y-8">
             <PlayerProfileHeader profile={profile} stats={stats} />
             <PlayerStatsGrid stats={stats} />
+            {isOwnProfile && <PointsWalletCard />}
 
             {achievements && achievements.length > 0 && (
               <PlayerAchievements achievements={achievements} />
