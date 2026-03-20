@@ -11,6 +11,7 @@ import { Target, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageBackground from "@/components/PageBackground";
 import ChallengeCard from "@/components/challenges/ChallengeCard";
+import PointsWalletCard from "@/components/shared/PointsWalletCard";
 
 const Challenges = () => {
   usePageTitle("Challenges");
