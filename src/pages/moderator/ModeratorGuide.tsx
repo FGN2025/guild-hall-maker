@@ -89,6 +89,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Two-Tier Wallet — Players have two balances: 'Points' (lifetime earned, used for rankings) and 'Points Available' (spendable balance for the Prize Shop).",
       "Point Adjustments — Award or deduct points manually with a required reason for audit tracking.",
       "Adjustment Types — Adjustments are categorized (bonus, penalty, correction) for reporting clarity.",
+      "Player Notifications — When you award or deduct points, the affected player is automatically notified via in-app notification and email (if enabled). Award notifications say 'Points Awarded' with the amount and reason; deductions say 'Points Deducted'. No manual notification step is required.",
       "Season Scope — Points are tied to the currently active season.",
       "Audit Trail — All manual adjustments are logged with the moderator who made them and a timestamp.",
       "Automatic Awards — Tournament placement points are awarded automatically and don't need manual entry.",
