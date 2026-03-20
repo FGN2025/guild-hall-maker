@@ -141,6 +141,7 @@ const Tournaments = () => {
           </div>
         </div>
 
+        <div className="space-y-6 mt-6">
         {(() => {
           const filtersActive = search || statusFilter !== "open" || sortBy !== "date_asc";
           return (
