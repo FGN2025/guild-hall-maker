@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Gift, ShoppingBag, Clock, CheckCircle2, XCircle, Package } from "lucide-react";
 import { toast } from "sonner";
 import PageBackground from "@/components/PageBackground";
+import PointsWalletCard from "@/components/shared/PointsWalletCard";
 
 const PrizeShop = () => {
   usePageTitle("Prize Shop");
