@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Pagination,
