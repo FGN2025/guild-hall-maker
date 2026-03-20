@@ -132,19 +132,7 @@ const PrizeShop = () => {
                 Spend your season points on awesome prizes.
               </p>
             </div>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <ShoppingBag className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Available</p>
-                  <p className="text-xl font-bold font-mono text-primary">{availablePoints} pts</p>
-                </div>
-                <div className="border-l border-border pl-4">
-                  <p className="text-xs text-muted-foreground">Total Earned</p>
-                  <p className="text-sm font-mono text-muted-foreground">{totalEarned} pts</p>
-                </div>
-              </CardContent>
-            </Card>
+            <PointsWalletCard />
           </div>
         </div>
 

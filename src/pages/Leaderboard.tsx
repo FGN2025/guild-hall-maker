@@ -224,6 +224,8 @@ const Leaderboard = () => {
           </Tabs>
         </div>
 
+        <PointsWalletCard compact />
+
         <Tabs value={tab} onValueChange={setTab}>
 
           {/* SEASONAL TAB */}

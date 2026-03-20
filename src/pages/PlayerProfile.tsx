@@ -75,6 +75,7 @@ const PlayerProfile = () => {
           <div className="space-y-8">
             <PlayerProfileHeader profile={profile} stats={stats} />
             <PlayerStatsGrid stats={stats} />
+            {isOwnProfile && <PointsWalletCard />}
 
             {achievements && achievements.length > 0 && (
               <PlayerAchievements achievements={achievements} />

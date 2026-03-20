@@ -162,6 +162,8 @@ const Quests = () => {
           </Card>
         )}
 
+        <PointsWalletCard compact />
+
         {gameNames.length > 1 && (
           <div className="flex flex-wrap gap-2">
             <Badge variant={gameFilter === null ? "default" : "outline"} className="cursor-pointer" onClick={() => setGameFilter(null)}>

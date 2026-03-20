@@ -146,6 +146,8 @@ const Challenges = () => {
           </Card>
         )}
 
+        <PointsWalletCard compact />
+
         {/* Game filter tabs */}
         {gameNames.length > 1 && (
           <div className="flex flex-wrap gap-2">

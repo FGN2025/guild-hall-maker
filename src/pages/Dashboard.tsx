@@ -128,6 +128,8 @@ const Dashboard = () => {
               ))}
             </div>
 
+            <PointsWalletCard />
+
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Registered tournaments */}
               <div className="rounded-xl border border-border bg-card p-6">
