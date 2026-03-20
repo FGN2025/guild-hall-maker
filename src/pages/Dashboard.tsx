@@ -12,6 +12,7 @@ import usePageTitle from "@/hooks/usePageTitle";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import OnboardingWizard from "@/components/OnboardingWizard";
+import PointsWalletCard from "@/components/shared/PointsWalletCard";
 
 const Dashboard = () => {
   usePageTitle("Dashboard");
