@@ -303,7 +303,11 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Context-Aware Suggestions — The coach offers category-specific conversation starters based on your selected game.",
       "Conversation History — Your past conversations are saved automatically so you can revisit previous coaching sessions anytime.",
       "Export Sessions — Export coaching conversations as .md or .pdf files for offline reference.",
-      "Tip: The more specific your question, the better the coaching advice. Include game name, situation, and what you've already tried.",
+      "Personalized Coaching Profile — Enable optional personalized coaching from Profile Settings → AI Coach Profile. Toggle it on, then add free-text notes about your play style, goals, and weaknesses, plus a stats summary (rank, win rate, K/D, etc.).",
+      "File Uploads — Upload up to 5 stat screenshots, CSVs, or PDFs to your coaching profile. The coach references this data when providing advice, tailoring recommendations to your specific situation.",
+      "Personalization Indicator — When your coaching profile is active, a green dot appears on the coach icon and a link to your profile settings is shown in the header.",
+      "Privacy — Your coaching profile data is private and only used to personalize your own coaching sessions. No other players can see it.",
+      "Tip: The more specific your question, the better the coaching advice. Enable your Coach Profile and add your stats for truly personalized guidance.",
     ],
   },
   {
