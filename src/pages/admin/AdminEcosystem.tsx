@@ -99,17 +99,6 @@ const AdminEcosystem = () => {
     fetchGamesAndChallenges();
   };
 
-  const fetchApiKey = async () => {
-    setLoadingKey(true);
-    const { data } = await supabase
-      .from("app_settings")
-      .select("value")
-      .eq("key", "ecosystem_api_key")
-      .maybeSingle();
-    setApiKey(data?.value || "");
-    setLoadingKey(false);
-  };
-
   const fetchWebhooks = async () => {
     setLoadingWH(true);
     const { data } = await supabase.from("ecosystem_webhooks").select("*").order("created_at", { ascending: false });
