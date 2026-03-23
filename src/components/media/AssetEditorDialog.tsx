@@ -13,7 +13,7 @@ import {
   RectangleVertical, Smartphone, Circle, Minus, ChevronUp, ChevronDown,
   Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
   Send, CalendarClock, Facebook, Instagram, Twitter, Linkedin, Clock,
-  Bold, Italic, Underline,
+  Bold, Italic, Underline, Triangle, Diamond, Star, ArrowRight, Hexagon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -294,8 +294,26 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                   <DropdownMenuItem onClick={() => addShape("rect")}>
                     <Square className="h-4 w-4 mr-2" /> Rectangle
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("rounded-rect")}>
+                    <Square className="h-4 w-4 mr-2 rounded" /> Rounded Rect
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addShape("circle")}>
                     <Circle className="h-4 w-4 mr-2" /> Circle
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("triangle")}>
+                    <Triangle className="h-4 w-4 mr-2" /> Triangle
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("diamond")}>
+                    <Diamond className="h-4 w-4 mr-2" /> Diamond
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("star")}>
+                    <Star className="h-4 w-4 mr-2" /> Star
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("hexagon")}>
+                    <Hexagon className="h-4 w-4 mr-2" /> Hexagon
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("arrow")}>
+                    <ArrowRight className="h-4 w-4 mr-2" /> Arrow
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addShape("line")}>
                     <Minus className="h-4 w-4 mr-2" /> Line
@@ -608,6 +626,18 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                         step={1}
                       />
                     </div>
+                    {selectedOverlay.shape === "rounded-rect" && (
+                      <div>
+                        <Label className="text-xs">Corner Radius: {selectedOverlay.cornerRadius ?? 12}px</Label>
+                        <Slider
+                          value={[selectedOverlay.cornerRadius ?? 12]}
+                          onValueChange={([v]) => updateOverlay(selectedOverlay.id, { cornerRadius: v })}
+                          min={0}
+                          max={60}
+                          step={1}
+                        />
+                      </div>
+                    )}
                     <div>
                       <Label className="text-xs">Opacity: {Math.round(selectedOverlay.opacity * 100)}%</Label>
                       <Slider

@@ -28,7 +28,7 @@ export type TextOverlay = {
 export type ShapeOverlay = {
   id: string;
   type: "shape";
-  shape: "rect" | "circle" | "line";
+  shape: "rect" | "circle" | "line" | "triangle" | "diamond" | "rounded-rect" | "arrow" | "star" | "hexagon";
   x: number;
   y: number;
   width: number;
@@ -37,6 +37,7 @@ export type ShapeOverlay = {
   strokeColor: string;
   strokeWidth: number;
   opacity: number;
+  cornerRadius?: number;
   locked?: boolean;
 };
 

@@ -74,7 +74,7 @@ function hitTestOverlay(
       const d = distToSegment(mx, my, o.x, o.y, o.x + o.width, o.y + o.height);
       return d <= Math.max(HIT_PADDING, (o.strokeWidth || 2) / 2 + 4);
     }
-    // rect — standard bounding box
+    // All shapes use bounding-box hit testing (they fit within x,y,w,h)
     return (
       mx >= o.x - HIT_PADDING &&
       mx <= o.x + o.width + HIT_PADDING &&
