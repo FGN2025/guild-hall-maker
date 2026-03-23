@@ -271,7 +271,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.stroke();
       ctx.setLineDash([]);
     });
-  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor]);
+  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor, bgOpacity]);
 
   useEffect(() => {
     renderCanvas();
