@@ -13,7 +13,7 @@ import {
   RectangleVertical, Smartphone, Circle, Minus, ChevronUp, ChevronDown,
   Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
   Send, CalendarClock, Facebook, Instagram, Twitter, Linkedin, Clock,
-  Bold, Italic, Underline, Triangle, Diamond, Star, ArrowRight, Hexagon, SquareRoundCorner,
+  Bold, Italic, Underline, Triangle, Diamond, Star, ArrowRight, Hexagon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
