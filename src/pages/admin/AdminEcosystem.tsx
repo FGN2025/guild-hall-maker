@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import {
-  Globe, Loader2, Plus, Trash2, RefreshCw, Copy, Eye, EyeOff,
+  Globe, Loader2, Plus, Trash2, RefreshCw, Copy,
   ArrowUpDown, Link as LinkIcon, Send, History, ExternalLink
 } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
@@ -66,9 +66,7 @@ const ecosystemApps = [
 
 const AdminEcosystem = () => {
   const { requestMagicLink, loading: loadingApp } = useEcosystemAuth();
-  const [apiKey, setApiKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
-  const [loadingKey, setLoadingKey] = useState(true);
+  const [loadingKey] = useState(false);
 
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loadingWH, setLoadingWH] = useState(true);
@@ -95,22 +93,10 @@ const AdminEcosystem = () => {
   }, []);
 
   const fetchAll = () => {
-    fetchApiKey();
     fetchWebhooks();
     fetchLogs();
     fetchMappings();
     fetchGamesAndChallenges();
-  };
-
-  const fetchApiKey = async () => {
-    setLoadingKey(true);
-    const { data } = await supabase
-      .from("app_settings")
-      .select("value")
-      .eq("key", "ecosystem_api_key")
-      .maybeSingle();
-    setApiKey(data?.value || "");
-    setLoadingKey(false);
   };
 
   const fetchWebhooks = async () => {
@@ -143,21 +129,8 @@ const AdminEcosystem = () => {
     setChallenges(cRes.data || []);
   };
 
-  const copyKey = () => {
-    navigator.clipboard.writeText(apiKey);
-    toast({ title: "Copied", description: "API key copied to clipboard." });
-  };
 
-  const regenerateKey = async () => {
-    const newKey = crypto.randomUUID() + "-" + crypto.randomUUID();
-    const { error } = await supabase.from("app_settings").update({ value: newKey }).eq("key", "ecosystem_api_key");
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setApiKey(newKey);
-      toast({ title: "Regenerated", description: "New API key generated. Update all consuming apps." });
-    }
-  };
+
 
   /* Webhooks */
   const addWebhook = async () => {
@@ -281,22 +254,15 @@ const AdminEcosystem = () => {
           <Label className="font-heading text-sm">Ecosystem API Key</Label>
         </div>
         <p className="text-xs text-muted-foreground">
-          External apps use this key in the <code className="bg-muted px-1 rounded">X-Ecosystem-Key</code> header to pull data. Auto-generated on first API call.
+          External apps use this key in the <code className="bg-muted px-1 rounded">X-Ecosystem-Key</code> header to pull data.
         </p>
-        {loadingKey ? (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
-        ) : apiKey ? (
-          <div className="flex items-center gap-2">
-            <Input value={showKey ? apiKey : "••••••••••••••••"} readOnly className="font-mono text-xs bg-background" />
-            <Button size="icon" variant="ghost" onClick={() => setShowKey(!showKey)}>
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-            <Button size="icon" variant="ghost" onClick={copyKey}><Copy className="h-4 w-4" /></Button>
-            <Button size="sm" variant="outline" onClick={regenerateKey}>Regenerate</Button>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Key will be generated on the first external API call.</p>
-        )}
+        <div className="flex items-center gap-2 p-3 rounded border border-border bg-muted/50">
+          <Input value="••••••••••••••••••••••••" readOnly className="font-mono text-xs bg-background" />
+          <Badge variant="secondary" className="whitespace-nowrap">Managed as backend secret</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          This key is securely stored as a backend secret (<code className="bg-muted px-1 rounded">ECOSYSTEM_API_KEY</code>). Contact a platform administrator to view or rotate it.
+        </p>
       </div>
 
       {/* Calendar Feed */}

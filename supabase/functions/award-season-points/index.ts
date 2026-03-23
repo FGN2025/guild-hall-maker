@@ -12,15 +12,55 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // ── Auth guard ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing authorization" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const callerId = claimsData.claims.sub;
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { data: roles } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId);
+
+    const callerRoles = (roles || []).map((r: any) => r.role);
+    if (!callerRoles.includes("admin") && !callerRoles.includes("moderator")) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin or moderator role required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Business logic ──
+    const supabase = adminClient;
 
     const { winner_id, loser_id, points_winner, points_loser, game, achievement_id } = await req.json();
     if (!winner_id) throw new Error("winner_id required");
 
-    // Use provided points or fall back to defaults
     const winnerPoints = typeof points_winner === "number" ? points_winner : 10;
     const loserPoints = typeof points_loser === "number" ? points_loser : 2;
 
@@ -28,7 +68,6 @@ Deno.serve(async (req) => {
     let season: { id: string } | null = null;
 
     if (game) {
-      // Look up game_id from game name
       const { data: gameRow } = await supabase
         .from("games")
         .select("id")
@@ -36,7 +75,6 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (gameRow) {
-        // Try game-specific season first
         const { data: gameSeason } = await supabase
           .from("seasons")
           .select("id")
@@ -50,7 +88,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fall back to any active season (global or legacy)
     if (!season) {
       const { data: fallbackSeason } = await supabase
         .from("seasons")
@@ -59,7 +96,6 @@ Deno.serve(async (req) => {
         .is("game_id", null)
         .maybeSingle();
       
-      // If no global season either, try any active season
       if (fallbackSeason) {
         season = fallbackSeason;
       } else {
@@ -131,7 +167,6 @@ Deno.serve(async (req) => {
 
     // Auto-award linked achievement if provided
     if (achievement_id && winner_id) {
-      // Check if already awarded to avoid duplicates
       const { data: existing } = await supabase
         .from("player_achievements")
         .select("id")
