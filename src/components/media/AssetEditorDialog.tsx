@@ -215,8 +215,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               ref={canvasRef}
               width={canvasSize.width}
               height={canvasSize.height}
-              className={`max-w-full ${cursorStyle === "grabbing" ? "cursor-grabbing" : cursorStyle === "grab" ? "cursor-grab" : cursorStyle === "not-allowed" ? "cursor-not-allowed" : "cursor-default"}`}
-              style={{ maxHeight: "60vh" }}
+              tabIndex={0}
+              className="max-w-full outline-none"
+              style={{ maxHeight: "60vh", cursor: cursorStyle }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
               onMouseUp={onMouseUp}
@@ -224,6 +225,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
+              onKeyDown={onKeyDown}
             />
           </div>
 
