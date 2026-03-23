@@ -82,6 +82,8 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     setFormat,
     bgColor,
     setBgColor,
+    bgOpacity,
+    setBgOpacity,
     cursorStyle,
     setBaseImageUrl,
     baseImageUrl: currentBaseImageUrl,
@@ -302,18 +304,44 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               </Popover>
             </div>
 
-            {/* Background Color (shown when no base image) */}
-            {!currentBaseImageUrl && (
-              <div className="p-3 border border-border rounded-lg bg-card space-y-2">
-                <Label className="text-xs font-heading uppercase tracking-wider text-muted-foreground">Canvas Background</Label>
+            {/* Background Settings */}
+            <div className="p-3 border border-border rounded-lg bg-card space-y-2">
+              <Label className="text-xs font-heading uppercase tracking-wider text-muted-foreground">
+                {currentBaseImageUrl ? "Background" : "Canvas Background"}
+              </Label>
+              {!currentBaseImageUrl && (
                 <input
                   type="color"
                   value={bgColor}
                   onChange={(e) => setBgColor(e.target.value)}
                   className="w-full h-8 rounded border border-input cursor-pointer"
                 />
-              </div>
-            )}
+              )}
+              {currentBaseImageUrl && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Opacity</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">{Math.round(bgOpacity * 100)}%</span>
+                  </div>
+                  <Slider
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[Math.round(bgOpacity * 100)]}
+                    onValueChange={([v]) => setBgOpacity(v / 100)}
+                  />
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground">Tint</span>
+                    <input
+                      type="color"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="w-6 h-6 rounded border border-input cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Layers Panel */}
             {overlays.length > 0 && (

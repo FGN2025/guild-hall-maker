@@ -86,6 +86,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [activeFormat, setActiveFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [bgColor, setBgColor] = useState("#1a1a2e");
+  const [bgOpacity, setBgOpacity] = useState(1);
   const [baseImageUrl, setBaseImageUrlState] = useState(initialBaseImageUrl);
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
@@ -180,7 +181,13 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Always fill bg color first (visible when image opacity < 1)
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     if (baseImage) {
+      const prevAlpha = ctx.globalAlpha;
+      ctx.globalAlpha = bgOpacity;
       if (activeFormat.key !== "original") {
         const { sx, sy, sw, sh } = centerCropRect(
           baseImage.naturalWidth, baseImage.naturalHeight,
@@ -190,9 +197,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       } else {
         ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
       }
-    } else {
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = prevAlpha;
     }
 
     overlays.forEach((o) => {
@@ -267,7 +272,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.stroke();
       ctx.setLineDash([]);
     });
-  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor]);
+  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor, bgOpacity]);
 
   useEffect(() => {
     renderCanvas();
@@ -432,7 +437,13 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     const scaleX = exportW / canvasSize.width;
     const scaleY = exportH / canvasSize.height;
 
+    // Always fill bg color first
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, exportW, exportH);
+
     if (baseImage) {
+      const prevAlpha = ctx.globalAlpha;
+      ctx.globalAlpha = bgOpacity;
       if (activeFormat.key !== "original") {
         const { sx, sy, sw, sh } = centerCropRect(
           baseImage.naturalWidth, baseImage.naturalHeight, exportW, exportH
@@ -441,9 +452,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       } else {
         ctx.drawImage(baseImage, 0, 0, exportW, exportH);
       }
-    } else {
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, exportW, exportH);
+      ctx.globalAlpha = prevAlpha;
     }
 
     overlays.forEach((o) => {
@@ -460,7 +469,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     });
 
     return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
-  }, [baseImage, overlays, canvasSize, activeFormat, bgColor]);
+  }, [baseImage, overlays, canvasSize, activeFormat, bgColor, bgOpacity]);
 
   const selectedOverlay = overlays.find((o) => o.id === selectedId) ?? null;
 
@@ -496,6 +505,8 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     setFormat,
     bgColor,
     setBgColor,
+    bgOpacity,
+    setBgOpacity,
     cursorStyle: interaction.cursorStyle,
     setBaseImageUrl,
     baseImageUrl,
