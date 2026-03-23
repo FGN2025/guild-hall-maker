@@ -1,17 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useCanvasHistory } from "./canvas/useCanvasHistory";
 import { useCanvasSnap } from "./canvas/useCanvasSnap";
+import { useCanvasInteraction, getOverlayBounds, getResizeHandles } from "./canvas/useCanvasInteraction";
 import type { Overlay, LogoOverlay, TextOverlay, ShapeOverlay, SnapGuide, CanvasFormat } from "./canvas/canvasTypes";
 import { CANVAS_FORMATS } from "./canvas/canvasTypes";
 
 export type { Overlay, LogoOverlay, TextOverlay, ShapeOverlay, SnapGuide, CanvasFormat };
 export { CANVAS_FORMATS };
-
-type DragState = {
-  overlayId: string;
-  offsetX: number;
-  offsetY: number;
-} | null;
 
 /** Compute center-crop source rect from image into target aspect ratio */
 function centerCropRect(
@@ -81,6 +76,8 @@ function drawShape(ctx: CanvasRenderingContext2D, o: ShapeOverlay, scaleX = 1, s
   ctx.globalAlpha = prevAlpha;
 }
 
+const HANDLE_SIZE = 8;
+
 export function useCanvasEditor(initialBaseImageUrl?: string) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { overlays, pushState, setOverlaysLive, undo, redo, canUndo, canRedo } = useCanvasHistory();
@@ -90,9 +87,42 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
   const [activeFormat, setActiveFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [bgColor, setBgColor] = useState("#1a1a2e");
   const [baseImageUrl, setBaseImageUrlState] = useState(initialBaseImageUrl);
-  const [cursorStyle, setCursorStyle] = useState<"default" | "grab" | "grabbing" | "not-allowed">("default");
-  const dragRef = useRef<DragState>(null);
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
+
+  // Update overlay helper for keyboard handler
+  const updateOverlay = useCallback((id: string, updates: Record<string, unknown>) => {
+    const next = overlays.map((o) => {
+      if (o.id !== id) return o;
+      if (o.type === "logo") return { ...o, ...updates } as LogoOverlay;
+      if (o.type === "shape") return { ...o, ...updates } as ShapeOverlay;
+      return { ...o, ...updates } as TextOverlay;
+    });
+    pushState(next);
+  }, [overlays, pushState]);
+
+  // Delete overlay helper
+  const deleteOverlay = useCallback(
+    (id: string) => {
+      pushState(overlays.filter((o) => o.id !== id));
+      if (selectedId === id) setSelectedId(null);
+    },
+    [overlays, selectedId, pushState]
+  );
+
+  // Canvas interaction (hit-test, drag, resize, keyboard, hover)
+  const interaction = useCanvasInteraction(
+    canvasRef,
+    overlays,
+    selectedId,
+    setSelectedId,
+    pushState,
+    setOverlaysLive,
+    snapOverlay,
+    setGuides,
+    clearGuides,
+    deleteOverlay,
+    updateOverlay,
+  );
 
   // Load base image
   const loadBaseImage = useCallback((url: string | undefined) => {
@@ -117,7 +147,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       }
     };
     img.src = url;
-  }, [activeFormat]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeFormat]);
 
   useEffect(() => {
     loadBaseImage(baseImageUrl);
@@ -177,26 +207,47 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
         ctx.fillText(o.text, o.x, o.y);
       }
 
-      if (o.id === selectedId) {
-        ctx.strokeStyle = "#3b82f6";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 3]);
-        if (o.type === "logo" || o.type === "shape") {
-          ctx.strokeRect(o.x - 2, o.y - 2, o.width + 4, o.height + 4);
-        } else {
-          const metrics = ctx.measureText(o.text);
-          ctx.strokeRect(o.x - 2, o.y - 2, metrics.width + 4, o.fontSize + 4);
-        }
+      const isSelected = o.id === selectedId;
+      const isHovered = o.id === interaction.hoveredId && !isSelected;
+
+      // Hover highlight
+      if (isHovered) {
+        const bounds = getOverlayBounds(o, ctx);
+        ctx.strokeStyle = "rgba(59,130,246,0.4)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(bounds.x - 3, bounds.y - 3, bounds.w + 6, bounds.h + 6);
         ctx.setLineDash([]);
       }
 
-      // Draw lock indicator
-      if (o.locked && o.id === selectedId) {
-        ctx.fillStyle = "rgba(239,68,68,0.7)";
-        ctx.fillRect(o.x - 2, o.y - 14, 12, 12);
-        ctx.fillStyle = "#fff";
-        ctx.font = "10px sans-serif";
-        ctx.fillText("🔒", o.x - 1, o.y - 13);
+      // Selection with resize handles
+      if (isSelected) {
+        const bounds = getOverlayBounds(o, ctx);
+
+        // Solid border
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]);
+        ctx.strokeRect(bounds.x - 2, bounds.y - 2, bounds.w + 4, bounds.h + 4);
+
+        // Resize handles (8 squares)
+        const handles = getResizeHandles(bounds);
+        handles.forEach((h) => {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(h.cx - HANDLE_SIZE / 2, h.cy - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
+          ctx.strokeStyle = "#3b82f6";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(h.cx - HANDLE_SIZE / 2, h.cy - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
+        });
+
+        // Lock indicator
+        if (o.locked) {
+          ctx.fillStyle = "rgba(239,68,68,0.7)";
+          ctx.fillRect(bounds.x - 2, bounds.y - 16, 14, 14);
+          ctx.fillStyle = "#fff";
+          ctx.font = "10px sans-serif";
+          ctx.fillText("🔒", bounds.x - 1, bounds.y - 15);
+        }
       }
     });
 
@@ -216,158 +267,11 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.stroke();
       ctx.setLineDash([]);
     });
-  }, [overlays, baseImage, selectedId, guides, activeFormat, bgColor]);
+  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor]);
 
   useEffect(() => {
     renderCanvas();
   }, [renderCanvas]);
-
-  // Hit test
-  const hitTest = useCallback(
-    (mx: number, my: number): Overlay | null => {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-      for (let i = overlays.length - 1; i >= 0; i--) {
-        const o = overlays[i];
-        if (o.type === "logo" || o.type === "shape") {
-          if (mx >= o.x && mx <= o.x + o.width && my >= o.y && my <= o.y + o.height) return o;
-        } else if (ctx) {
-          ctx.font = `${o.fontSize}px ${o.fontFamily}`;
-          const w = ctx.measureText(o.text).width;
-          if (mx >= o.x && mx <= o.x + w && my >= o.y && my <= o.y + o.fontSize) return o;
-        }
-      }
-      return null;
-    },
-    [overlays]
-  );
-
-  // Mouse handlers
-  const onMouseDown = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      const hit = hitTest(mx, my);
-      if (hit) {
-        setSelectedId(hit.id);
-        if (!hit.locked) {
-          dragRef.current = { overlayId: hit.id, offsetX: mx - hit.x, offsetY: my - hit.y };
-          setCursorStyle("grabbing");
-        }
-      } else {
-        setSelectedId(null);
-      }
-    },
-    [hitTest]
-  );
-
-  const onMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-
-      if (!dragRef.current) {
-        const hover = hitTest(mx, my);
-        if (hover) {
-          setCursorStyle(hover.locked ? "not-allowed" : "grab");
-        } else {
-          setCursorStyle("default");
-        }
-        return;
-      }
-      const { overlayId, offsetX, offsetY } = dragRef.current;
-
-      setOverlaysLive((prev) => {
-        const idx = prev.findIndex((o) => o.id === overlayId);
-        if (idx === -1) return prev;
-        const current = prev[idx];
-        if (current.locked) return prev;
-        const dragged = { ...current, x: mx - offsetX, y: my - offsetY };
-        const ctx = canvasRef.current?.getContext("2d");
-        const { dx, dy, guides: newGuides } = snapOverlay(dragged as Overlay, prev, ctx);
-        dragged.x += dx;
-        dragged.y += dy;
-        setGuides(newGuides);
-        const next = [...prev];
-        next[idx] = dragged as Overlay;
-        return next;
-      });
-    },
-    [snapOverlay, setGuides, setOverlaysLive]
-  );
-
-  const onMouseUp = useCallback(() => {
-    if (dragRef.current) {
-      pushState(overlays);
-      clearGuides();
-    }
-    dragRef.current = null;
-    setCursorStyle("default");
-  }, [overlays, pushState, clearGuides]);
-
-  // Touch handlers
-  const onTouchStart = useCallback(
-    (e: React.TouchEvent<HTMLCanvasElement>) => {
-      const touch = e.touches[0];
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect || !touch) return;
-      const mx = touch.clientX - rect.left;
-      const my = touch.clientY - rect.top;
-      const hit = hitTest(mx, my);
-      if (hit) {
-        e.preventDefault();
-        setSelectedId(hit.id);
-        if (!hit.locked) {
-          dragRef.current = { overlayId: hit.id, offsetX: mx - hit.x, offsetY: my - hit.y };
-        }
-      } else {
-        setSelectedId(null);
-      }
-    },
-    [hitTest]
-  );
-
-  const onTouchMove = useCallback(
-    (e: React.TouchEvent<HTMLCanvasElement>) => {
-      if (!dragRef.current) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect || !touch) return;
-      const mx = touch.clientX - rect.left;
-      const my = touch.clientY - rect.top;
-      const { overlayId, offsetX, offsetY } = dragRef.current;
-
-      setOverlaysLive((prev) => {
-        const idx = prev.findIndex((o) => o.id === overlayId);
-        if (idx === -1) return prev;
-        const current = prev[idx];
-        if (current.locked) return prev;
-        const dragged = { ...current, x: mx - offsetX, y: my - offsetY };
-        const ctx = canvasRef.current?.getContext("2d");
-        const { dx, dy, guides: newGuides } = snapOverlay(dragged as Overlay, prev, ctx);
-        dragged.x += dx;
-        dragged.y += dy;
-        setGuides(newGuides);
-        const next = [...prev];
-        next[idx] = dragged as Overlay;
-        return next;
-      });
-    },
-    [snapOverlay, setGuides, setOverlaysLive]
-  );
-
-  const onTouchEnd = useCallback(() => {
-    if (dragRef.current) {
-      pushState(overlays);
-      clearGuides();
-    }
-    dragRef.current = null;
-  }, [overlays, pushState, clearGuides]);
 
   // Add logo from file
   const addLogo = useCallback((file: File) => {
@@ -476,26 +380,6 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     [pushState, canvasSize]
   );
 
-  // Update overlay
-  const updateOverlay = useCallback((id: string, updates: Record<string, unknown>) => {
-    const next = overlays.map((o) => {
-      if (o.id !== id) return o;
-      if (o.type === "logo") return { ...o, ...updates } as LogoOverlay;
-      if (o.type === "shape") return { ...o, ...updates } as ShapeOverlay;
-      return { ...o, ...updates } as TextOverlay;
-    });
-    pushState(next);
-  }, [overlays, pushState]);
-
-  // Delete overlay
-  const deleteOverlay = useCallback(
-    (id: string) => {
-      pushState(overlays.filter((o) => o.id !== id));
-      if (selectedId === id) setSelectedId(null);
-    },
-    [overlays, selectedId, pushState]
-  );
-
   // Reorder overlay (z-order)
   const reorderOverlay = useCallback(
     (id: string, direction: "up" | "down" | "front" | "back") => {
@@ -594,12 +478,13 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     updateOverlay,
     deleteOverlay,
     reorderOverlay,
-    onMouseDown,
-    onMouseMove,
-    onMouseUp,
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
+    onMouseDown: interaction.onMouseDown,
+    onMouseMove: interaction.onMouseMove,
+    onMouseUp: interaction.onMouseUp,
+    onTouchStart: interaction.onTouchStart,
+    onTouchMove: interaction.onTouchMove,
+    onTouchEnd: interaction.onTouchEnd,
+    onKeyDown: interaction.onKeyDown,
     exportCanvas,
     setSelectedId,
     undo,
@@ -611,7 +496,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     setFormat,
     bgColor,
     setBgColor,
-    cursorStyle,
+    cursorStyle: interaction.cursorStyle,
     setBaseImageUrl,
     baseImageUrl,
   };
