@@ -53,7 +53,7 @@ async function searchNotebooks(query: string): Promise<string> {
 
         if (!res.ok) {
           console.warn(`Notebook search failed for "${conn.name}":`, res.status);
-          await res.text(); // consume body
+          await res.text();
           return;
         }
 
@@ -77,6 +77,41 @@ async function searchNotebooks(query: string): Promise<string> {
 
   if (allPassages.length === 0) return "";
   return "\n\n## Relevant Knowledge Base Content:\n" + allPassages.join("\n\n");
+}
+
+async function fetchPlayerProfile(userId: string): Promise<string> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  const { data: profile } = await supabase
+    .from("coach_player_profiles")
+    .select("enabled, notes, stats_summary")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!profile || !profile.enabled) return "";
+
+  const sections: string[] = [];
+  if (profile.notes) sections.push(`**Player Notes:** ${profile.notes}`);
+  if (profile.stats_summary) sections.push(`**Player Stats:** ${profile.stats_summary}`);
+
+  // Fetch any extracted text from uploaded files
+  const { data: files } = await supabase
+    .from("coach_player_files")
+    .select("file_name, extracted_text")
+    .eq("user_id", userId)
+    .not("extracted_text", "is", null);
+
+  if (files && files.length > 0) {
+    for (const f of files) {
+      sections.push(`**Uploaded Data (${f.file_name}):** ${f.extracted_text}`);
+    }
+  }
+
+  if (sections.length === 0) return "";
+  return "\n\n## Player Profile (self-reported by the player — reference naturally, don't repeat verbatim):\n" + sections.join("\n\n");
 }
 
 // Category-specific coaching frameworks
@@ -191,6 +226,7 @@ serve(async (req) => {
       });
     }
 
+    const userId = claimsData.claims.sub as string;
     const { messages, game } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -201,7 +237,12 @@ serve(async (req) => {
 
     // Build search query with game context
     const searchQuery = game ? `${game.name}: ${query}` : query;
-    const notebookContext = searchQuery ? await searchNotebooks(searchQuery) : "";
+
+    // Fetch notebook context and player profile in parallel
+    const [notebookContext, playerProfileContext] = await Promise.all([
+      searchQuery ? searchNotebooks(searchQuery) : Promise.resolve(""),
+      fetchPlayerProfile(userId),
+    ]);
 
     // Build game-specific context from local guide content
     let gameContext = "";
@@ -229,7 +270,9 @@ When answering questions:
 - When discussing strategy, consider multiple skill levels (beginner, intermediate, advanced)
 - Format responses with clear headers and bullet points when helpful
 - For game-specific questions, reference current meta, patch notes concepts, and community-accepted best practices
-${gameContext}${notebookContext}`;
+- If a player profile is provided, tailor advice to their specific situation, rank, goals, and play style — but don't parrot their stats back to them
+${gameContext}${playerProfileContext}${notebookContext}`;
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
