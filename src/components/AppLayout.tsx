@@ -22,7 +22,7 @@ const AppLayout = () => {
                 <SidebarTrigger />
               </header>
             )}
-            <main className="flex-1 overflow-auto p-4 md:p-6">
+            <main className={`flex-1 overflow-auto ${hideHeader ? 'px-4 md:px-6 pb-4 md:pb-6' : 'p-4 md:p-6'}`}>
               <Outlet />
             </main>
           </div>
