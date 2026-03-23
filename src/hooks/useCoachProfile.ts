@@ -16,6 +16,7 @@ export interface CoachFile {
   file_name: string;
   file_url: string;
   file_type: string;
+  game_name: string | null;
   created_at: string;
 }
 
