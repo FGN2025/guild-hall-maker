@@ -12,21 +12,58 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Optionally accept a game_id to rotate a specific game's season
+    // ── Auth guard ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing authorization" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const callerId = claimsData.claims.sub;
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId);
+
+    const callerRoles = (roles || []).map((r: any) => r.role);
+    if (!callerRoles.includes("admin") && !callerRoles.includes("moderator")) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin or moderator role required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Business logic ──
     let targetGameId: string | null = null;
     try {
       const body = await req.json();
       targetGameId = body.game_id ?? null;
     } catch {
-      // No body is fine — rotate all expired seasons
+      // No body is fine
     }
 
-    // Find active seasons (optionally filtered by game_id)
     let query = supabase
       .from("seasons")
       .select("*")
@@ -56,7 +93,6 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Get all scores for this season, ranked by points
       const { data: scores } = await supabase
         .from("season_scores")
         .select("*")
@@ -65,7 +101,6 @@ Deno.serve(async (req) => {
 
       const rankedScores = scores ?? [];
 
-      // Assign tiers: top 5% platinum, top 15% gold, top 35% silver, top 60% bronze
       const total = rankedScores.length;
       const snapshots = rankedScores.map((s, i) => {
         const rank = i + 1;
@@ -87,7 +122,6 @@ Deno.serve(async (req) => {
         };
       });
 
-      // Insert snapshots
       if (snapshots.length > 0) {
         const { error: snapErr } = await supabase
           .from("season_snapshots")
@@ -95,7 +129,6 @@ Deno.serve(async (req) => {
         if (snapErr) throw snapErr;
       }
 
-      // Mark season as completed
       await supabase
         .from("seasons")
         .update({ status: "completed" })

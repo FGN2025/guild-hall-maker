@@ -6,26 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-ecosystem-key, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/** Auto-generate and persist ecosystem API key on first use */
-async function getOrCreateApiKey(adminClient: any): Promise<string> {
-  const { data } = await adminClient
-    .from("app_settings")
-    .select("value")
-    .eq("key", "ecosystem_api_key")
-    .maybeSingle();
-
-  if (data?.value) return data.value;
-
-  const newKey = crypto.randomUUID() + "-" + crypto.randomUUID();
-  await adminClient.from("app_settings").insert({
-    key: "ecosystem_api_key",
-    value: newKey,
-    description: "Auto-generated API key for ecosystem data API authentication",
-  });
-  console.log("Generated new ecosystem API key");
-  return newKey;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -34,9 +14,11 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
-    // Authenticate via X-Ecosystem-Key header
+    // Authenticate via X-Ecosystem-Key header against env secret
     const providedKey = req.headers.get("x-ecosystem-key");
     if (!providedKey) {
       return new Response(JSON.stringify({ error: "Missing X-Ecosystem-Key header" }), {
@@ -45,7 +27,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const storedKey = await getOrCreateApiKey(adminClient);
+    const storedKey = Deno.env.get("ECOSYSTEM_API_KEY");
+    if (!storedKey) {
+      console.error("ECOSYSTEM_API_KEY secret is not configured");
+      return new Response(JSON.stringify({ error: "API key not configured on server" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (providedKey !== storedKey) {
       return new Response(JSON.stringify({ error: "Invalid API key" }), {
         status: 401,

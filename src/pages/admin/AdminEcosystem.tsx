@@ -66,9 +66,7 @@ const ecosystemApps = [
 
 const AdminEcosystem = () => {
   const { requestMagicLink, loading: loadingApp } = useEcosystemAuth();
-  const [apiKey, setApiKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
-  const [loadingKey, setLoadingKey] = useState(true);
+  const [loadingKey] = useState(false);
 
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loadingWH, setLoadingWH] = useState(true);
