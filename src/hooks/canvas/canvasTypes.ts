@@ -19,6 +19,9 @@ export type TextOverlay = {
   fontSize: number;
   color: string;
   fontFamily: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  textDecoration?: string;
   locked?: boolean;
 };
 

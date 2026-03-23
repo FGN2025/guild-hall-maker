@@ -473,6 +473,50 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                       />
                     </div>
                     <div>
+                      <Label className="text-xs">Font Family</Label>
+                      <Select
+                        value={selectedOverlay.fontFamily}
+                        onValueChange={(v) => updateOverlay(selectedOverlay.id, { fontFamily: v })}
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FONT_OPTIONS.map((f) => (
+                            <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                              {f.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Toggle
+                        size="sm"
+                        pressed={selectedOverlay.fontWeight === "bold"}
+                        onPressedChange={(p) => updateOverlay(selectedOverlay.id, { fontWeight: p ? "bold" : "normal" })}
+                        aria-label="Bold"
+                      >
+                        <Bold className="h-4 w-4" />
+                      </Toggle>
+                      <Toggle
+                        size="sm"
+                        pressed={selectedOverlay.fontStyle === "italic"}
+                        onPressedChange={(p) => updateOverlay(selectedOverlay.id, { fontStyle: p ? "italic" : "normal" })}
+                        aria-label="Italic"
+                      >
+                        <Italic className="h-4 w-4" />
+                      </Toggle>
+                      <Toggle
+                        size="sm"
+                        pressed={selectedOverlay.textDecoration === "underline"}
+                        onPressedChange={(p) => updateOverlay(selectedOverlay.id, { textDecoration: p ? "underline" : "none" })}
+                        aria-label="Underline"
+                      >
+                        <Underline className="h-4 w-4" />
+                      </Toggle>
+                    </div>
+                    <div>
                       <Label className="text-xs">Font Size: {selectedOverlay.fontSize}px</Label>
                       <Slider
                         value={[selectedOverlay.fontSize]}
