@@ -100,13 +100,14 @@ async function fetchPlayerProfile(userId: string): Promise<string> {
   // Fetch any extracted text from uploaded files
   const { data: files } = await supabase
     .from("coach_player_files")
-    .select("file_name, extracted_text")
+    .select("file_name, extracted_text, game_name")
     .eq("user_id", userId)
     .not("extracted_text", "is", null);
 
   if (files && files.length > 0) {
     for (const f of files) {
-      sections.push(`**Uploaded Data (${f.file_name}):** ${f.extracted_text}`);
+      const gameTag = f.game_name ? ` [${f.game_name}]` : "";
+      sections.push(`**Uploaded Data (${f.file_name}${gameTag}):** ${f.extracted_text}`);
     }
   }
 
