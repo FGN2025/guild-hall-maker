@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Toggle } from "@/components/ui/toggle";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ImagePlus, Type, Trash2, Download, Save, ExternalLink,
   LayoutTemplate, Undo2, Redo2, Layers, Square, RectangleHorizontal,
   RectangleVertical, Smartphone, Circle, Minus, ChevronUp, ChevronDown,
   Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
   Send, CalendarClock, Facebook, Instagram, Twitter, Linkedin, Clock,
+  Bold, Italic, Underline,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -26,6 +29,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+
+const FONT_OPTIONS = [
+  { value: "sans-serif", label: "Sans-serif" },
+  { value: "serif", label: "Serif" },
+  { value: "monospace", label: "Monospace" },
+  { value: "Georgia, serif", label: "Georgia" },
+  { value: "Verdana, sans-serif", label: "Verdana" },
+  { value: "'Courier New', monospace", label: "Courier New" },
+  { value: "Impact, sans-serif", label: "Impact" },
+  { value: "'Comic Sans MS', cursive", label: "Comic Sans" },
+  { value: "'Trebuchet MS', sans-serif", label: "Trebuchet MS" },
+  { value: "'Arial Black', sans-serif", label: "Arial Black" },
+];
 
 const PLATFORM_ICONS_SM: Record<string, React.ReactNode> = {
   facebook: <Facebook className="h-4 w-4" />,
