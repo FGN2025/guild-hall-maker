@@ -626,6 +626,18 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                         step={1}
                       />
                     </div>
+                    {selectedOverlay.shape === "rounded-rect" && (
+                      <div>
+                        <Label className="text-xs">Corner Radius: {selectedOverlay.cornerRadius ?? 12}px</Label>
+                        <Slider
+                          value={[selectedOverlay.cornerRadius ?? 12]}
+                          onValueChange={([v]) => updateOverlay(selectedOverlay.id, { cornerRadius: v })}
+                          min={0}
+                          max={60}
+                          step={1}
+                        />
+                      </div>
+                    )}
                     <div>
                       <Label className="text-xs">Opacity: {Math.round(selectedOverlay.opacity * 100)}%</Label>
                       <Slider
