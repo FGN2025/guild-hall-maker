@@ -78,7 +78,7 @@ export function useCoachProfile() {
     setSaving(false);
   }, [user, profile]);
 
-  const uploadFile = useCallback(async (file: File) => {
+  const uploadFile = useCallback(async (file: File, gameName?: string) => {
     if (!user) return;
     if (files.length >= 5) {
       toast.error("Maximum 5 files allowed. Delete one first.");
