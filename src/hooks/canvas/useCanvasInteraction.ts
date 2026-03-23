@@ -4,11 +4,15 @@ import type { Overlay, ResizeHandlePosition, SnapGuide } from "./canvasTypes";
 const HIT_PADDING = 8;
 const HANDLE_SIZE = 8;
 const HANDLE_HALF = HANDLE_SIZE / 2;
+const DRAG_THRESHOLD = 4; // pixels before drag starts
 
 type DragState = {
   overlayId: string;
   offsetX: number;
   offsetY: number;
+  startX: number;
+  startY: number;
+  hasMoved: boolean;
 } | null;
 
 type ResizeState = {
@@ -22,10 +26,109 @@ type ResizeState = {
   origH: number;
 } | null;
 
-/** Get the bounding box of an overlay (with optional canvas context for text measurement) */
+// ─── Geometry-aware hit testing ────────────────────────────────────────
+
+/** Point-in-ellipse test (used for circle shapes) */
+function hitEllipse(
+  mx: number, my: number,
+  cx: number, cy: number,
+  rx: number, ry: number,
+  padding: number,
+): boolean {
+  const dx = mx - cx;
+  const dy = my - cy;
+  const rxP = rx + padding;
+  const ryP = ry + padding;
+  return (dx * dx) / (rxP * rxP) + (dy * dy) / (ryP * ryP) <= 1;
+}
+
+/** Shortest distance from a point to a line segment */
+function distToSegment(
+  px: number, py: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+): number {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+/** Geometry-aware hit test for a single overlay. Returns true if the point is inside the visible shape. */
+function hitTestOverlay(
+  mx: number,
+  my: number,
+  o: Overlay,
+  ctx?: CanvasRenderingContext2D | null,
+): boolean {
+  if (o.type === "shape") {
+    if (o.shape === "circle") {
+      const cx = o.x + o.width / 2;
+      const cy = o.y + o.height / 2;
+      return hitEllipse(mx, my, cx, cy, o.width / 2, o.height / 2, HIT_PADDING);
+    }
+    if (o.shape === "line") {
+      const d = distToSegment(mx, my, o.x, o.y, o.x + o.width, o.y + o.height);
+      return d <= Math.max(HIT_PADDING, (o.strokeWidth || 2) / 2 + 4);
+    }
+    // rect — standard bounding box
+    return (
+      mx >= o.x - HIT_PADDING &&
+      mx <= o.x + o.width + HIT_PADDING &&
+      my >= o.y - HIT_PADDING &&
+      my <= o.y + o.height + HIT_PADDING
+    );
+  }
+
+  if (o.type === "logo") {
+    return (
+      mx >= o.x - HIT_PADDING &&
+      mx <= o.x + o.width + HIT_PADDING &&
+      my >= o.y - HIT_PADDING &&
+      my <= o.y + o.height + HIT_PADDING
+    );
+  }
+
+  // text — use measured width when possible
+  if (ctx) {
+    ctx.font = `${o.fontSize}px ${o.fontFamily}`;
+    const w = ctx.measureText(o.text).width;
+    return (
+      mx >= o.x - HIT_PADDING &&
+      mx <= o.x + w + HIT_PADDING &&
+      my >= o.y - HIT_PADDING &&
+      my <= o.y + o.fontSize + HIT_PADDING
+    );
+  }
+  // fallback
+  const approxW = o.fontSize * o.text.length * 0.6;
+  return (
+    mx >= o.x - HIT_PADDING &&
+    mx <= o.x + approxW + HIT_PADDING &&
+    my >= o.y - HIT_PADDING &&
+    my <= o.y + o.fontSize + HIT_PADDING
+  );
+}
+
+/** Compute the visual area of an overlay (used for "smallest wins" tie-breaking) */
+function overlayArea(o: Overlay, ctx?: CanvasRenderingContext2D | null): number {
+  if (o.type === "logo" || o.type === "shape") return o.width * o.height;
+  if (ctx) {
+    ctx.font = `${o.fontSize}px ${o.fontFamily}`;
+    return ctx.measureText(o.text).width * o.fontSize;
+  }
+  return o.fontSize * o.text.length * 0.6 * o.fontSize;
+}
+
+// ─── Bounding-box helpers (used for selection/resize visuals) ──────────
+
+/** Get the bounding box of an overlay */
 export function getOverlayBounds(
   o: Overlay,
-  ctx?: CanvasRenderingContext2D | null
+  ctx?: CanvasRenderingContext2D | null,
 ): { x: number; y: number; w: number; h: number } {
   if (o.type === "logo" || o.type === "shape") {
     return { x: o.x, y: o.y, w: o.width, h: o.height };
@@ -40,7 +143,7 @@ export function getOverlayBounds(
 
 /** Compute the 8 resize handle rects for a bounding box */
 export function getResizeHandles(
-  bounds: { x: number; y: number; w: number; h: number }
+  bounds: { x: number; y: number; w: number; h: number },
 ): Array<{ pos: ResizeHandlePosition; cx: number; cy: number }> {
   const { x, y, w, h } = bounds;
   return [
@@ -55,11 +158,11 @@ export function getResizeHandles(
   ];
 }
 
-/** Hit-test resize handles; returns the handle position if hit, null otherwise */
+/** Hit-test resize handles */
 function hitTestHandles(
   mx: number,
   my: number,
-  bounds: { x: number; y: number; w: number; h: number }
+  bounds: { x: number; y: number; w: number; h: number },
 ): ResizeHandlePosition | null {
   const handles = getResizeHandles(bounds);
   for (const h of handles) {
@@ -90,6 +193,8 @@ export function handleCursor(pos: ResizeHandlePosition): string {
   return map[pos];
 }
 
+// ─── Hook ──────────────────────────────────────────────────────────────
+
 export function useCanvasInteraction(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   overlays: Overlay[],
@@ -108,50 +213,55 @@ export function useCanvasInteraction(
   const dragRef = useRef<DragState>(null);
   const resizeRef = useRef<ResizeState>(null);
 
-  // Hit test with padding
-  const hitTest = useCallback(
-    (mx: number, my: number): Overlay | null => {
+  // ── Hit test: geometry-aware, returns ALL candidates sorted by z-order (top first) ──
+  const hitTestAll = useCallback(
+    (mx: number, my: number): Overlay[] => {
       const ctx = canvasRef.current?.getContext("2d");
+      const hits: Overlay[] = [];
       for (let i = overlays.length - 1; i >= 0; i--) {
         const o = overlays[i];
-        const b = getOverlayBounds(o, ctx);
-        if (
-          mx >= b.x - HIT_PADDING &&
-          mx <= b.x + b.w + HIT_PADDING &&
-          my >= b.y - HIT_PADDING &&
-          my <= b.y + b.h + HIT_PADDING
-        ) {
-          return o;
+        if (hitTestOverlay(mx, my, o, ctx)) {
+          hits.push(o);
         }
       }
-      return null;
+      return hits;
     },
-    [overlays, canvasRef]
+    [overlays, canvasRef],
   );
 
-  // Click-through: find next overlay under the same point
+  // Pick the best candidate: prefer smallest among top-z hits
+  const hitTest = useCallback(
+    (mx: number, my: number): Overlay | null => {
+      const hits = hitTestAll(mx, my);
+      if (hits.length === 0) return null;
+      if (hits.length === 1) return hits[0];
+
+      // Among candidates, prefer the one with the smallest area (more precise pick)
+      const ctx = canvasRef.current?.getContext("2d");
+      let best = hits[0];
+      let bestArea = overlayArea(best, ctx);
+      for (let i = 1; i < hits.length; i++) {
+        const a = overlayArea(hits[i], ctx);
+        if (a < bestArea) {
+          best = hits[i];
+          bestArea = a;
+        }
+      }
+      return best;
+    },
+    [hitTestAll, canvasRef],
+  );
+
+  // Cycle to the next candidate below the current selection
   const hitTestBelow = useCallback(
     (mx: number, my: number, currentId: string): Overlay | null => {
-      const ctx = canvasRef.current?.getContext("2d");
-      let foundCurrent = false;
-      for (let i = overlays.length - 1; i >= 0; i--) {
-        const o = overlays[i];
-        const b = getOverlayBounds(o, ctx);
-        const hit =
-          mx >= b.x - HIT_PADDING &&
-          mx <= b.x + b.w + HIT_PADDING &&
-          my >= b.y - HIT_PADDING &&
-          my <= b.y + b.h + HIT_PADDING;
-        if (!hit) continue;
-        if (o.id === currentId) {
-          foundCurrent = true;
-          continue;
-        }
-        if (foundCurrent) return o;
-      }
-      return null;
+      const hits = hitTestAll(mx, my);
+      const curIdx = hits.findIndex((o) => o.id === currentId);
+      if (curIdx === -1 || hits.length <= 1) return null;
+      // Wrap around to the next candidate
+      return hits[(curIdx + 1) % hits.length];
     },
-    [overlays, canvasRef]
+    [hitTestAll],
   );
 
   const onMouseDown = useCallback(
@@ -161,7 +271,7 @@ export function useCanvasInteraction(
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
 
-      // Check if clicking a resize handle of the selected overlay
+      // Check resize handles on selected overlay
       if (selectedId) {
         const selOverlay = overlays.find((o) => o.id === selectedId);
         if (selOverlay && (selOverlay.type === "logo" || selOverlay.type === "shape")) {
@@ -187,28 +297,40 @@ export function useCanvasInteraction(
 
       const hit = hitTest(mx, my);
       if (hit) {
-        // Click-through cycling: if clicking an already-selected object, try to find one below
+        // Click-through cycling when clicking an already-selected object
         if (hit.id === selectedId) {
           const below = hitTestBelow(mx, my, selectedId);
           if (below) {
             setSelectedId(below.id);
             if (!below.locked) {
-              dragRef.current = { overlayId: below.id, offsetX: mx - below.x, offsetY: my - below.y };
-              setCursorStyle("grabbing");
+              dragRef.current = {
+                overlayId: below.id,
+                offsetX: mx - below.x,
+                offsetY: my - below.y,
+                startX: mx,
+                startY: my,
+                hasMoved: false,
+              };
             }
             return;
           }
         }
         setSelectedId(hit.id);
         if (!hit.locked) {
-          dragRef.current = { overlayId: hit.id, offsetX: mx - hit.x, offsetY: my - hit.y };
-          setCursorStyle("grabbing");
+          dragRef.current = {
+            overlayId: hit.id,
+            offsetX: mx - hit.x,
+            offsetY: my - hit.y,
+            startX: mx,
+            startY: my,
+            hasMoved: false,
+          };
         }
       } else {
         setSelectedId(null);
       }
     },
-    [hitTest, hitTestBelow, selectedId, overlays, canvasRef, setSelectedId]
+    [hitTest, hitTestBelow, selectedId, overlays, canvasRef, setSelectedId],
   );
 
   const onMouseMove = useCallback(
@@ -256,9 +378,20 @@ export function useCanvasInteraction(
         return;
       }
 
-      // Drag mode
+      // Drag mode — only start moving after threshold
       if (dragRef.current) {
-        const { overlayId, offsetX, offsetY } = dragRef.current;
+        const drag = dragRef.current;
+        if (!drag.hasMoved) {
+          const dist = Math.hypot(mx - drag.startX, my - drag.startY);
+          if (dist < DRAG_THRESHOLD) {
+            // Haven't moved enough — don't drag yet
+            return;
+          }
+          drag.hasMoved = true;
+          setCursorStyle("grabbing");
+        }
+
+        const { overlayId, offsetX, offsetY } = drag;
         setOverlaysLive((prev) => {
           const idx = prev.findIndex((o) => o.id === overlayId);
           if (idx === -1) return prev;
@@ -301,11 +434,11 @@ export function useCanvasInteraction(
         setCursorStyle("default");
       }
     },
-    [hitTest, selectedId, overlays, canvasRef, snapOverlay, setGuides, setOverlaysLive]
+    [hitTest, selectedId, overlays, canvasRef, snapOverlay, setGuides, setOverlaysLive],
   );
 
   const onMouseUp = useCallback(() => {
-    if (dragRef.current || resizeRef.current) {
+    if (dragRef.current?.hasMoved || resizeRef.current) {
       pushState(overlays);
       clearGuides();
     }
@@ -327,25 +460,40 @@ export function useCanvasInteraction(
         e.preventDefault();
         setSelectedId(hit.id);
         if (!hit.locked) {
-          dragRef.current = { overlayId: hit.id, offsetX: mx - hit.x, offsetY: my - hit.y };
+          dragRef.current = {
+            overlayId: hit.id,
+            offsetX: mx - hit.x,
+            offsetY: my - hit.y,
+            startX: mx,
+            startY: my,
+            hasMoved: false,
+          };
         }
       } else {
         setSelectedId(null);
       }
     },
-    [hitTest, canvasRef, setSelectedId]
+    [hitTest, canvasRef, setSelectedId],
   );
 
   const onTouchMove = useCallback(
     (e: React.TouchEvent<HTMLCanvasElement>) => {
       if (!dragRef.current) return;
-      e.preventDefault();
+      const drag = dragRef.current;
       const touch = e.touches[0];
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect || !touch) return;
       const mx = touch.clientX - rect.left;
       const my = touch.clientY - rect.top;
-      const { overlayId, offsetX, offsetY } = dragRef.current;
+
+      if (!drag.hasMoved) {
+        const dist = Math.hypot(mx - drag.startX, my - drag.startY);
+        if (dist < DRAG_THRESHOLD) return;
+        drag.hasMoved = true;
+      }
+
+      e.preventDefault();
+      const { overlayId, offsetX, offsetY } = drag;
 
       setOverlaysLive((prev) => {
         const idx = prev.findIndex((o) => o.id === overlayId);
@@ -363,11 +511,11 @@ export function useCanvasInteraction(
         return next;
       });
     },
-    [canvasRef, snapOverlay, setGuides, setOverlaysLive]
+    [canvasRef, snapOverlay, setGuides, setOverlaysLive],
   );
 
   const onTouchEnd = useCallback(() => {
-    if (dragRef.current) {
+    if (dragRef.current?.hasMoved) {
       pushState(overlays);
       clearGuides();
     }
@@ -378,7 +526,6 @@ export function useCanvasInteraction(
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLCanvasElement>) => {
       if (!selectedId) {
-        // Tab to select first overlay
         if (e.key === "Tab" && overlays.length > 0) {
           e.preventDefault();
           setSelectedId(overlays[overlays.length - 1].id);
@@ -422,7 +569,7 @@ export function useCanvasInteraction(
         }
       }
     },
-    [selectedId, overlays, deleteOverlay, updateOverlay, setSelectedId]
+    [selectedId, overlays, deleteOverlay, updateOverlay, setSelectedId],
   );
 
   return {
