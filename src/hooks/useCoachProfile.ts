@@ -120,6 +120,7 @@ export function useCoachProfile() {
           file_name: file.name,
           file_url: fileUrl,
           file_type: file.type,
+          game_name: gameName || null,
         })
         .select()
         .single();
