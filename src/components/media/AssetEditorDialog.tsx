@@ -295,7 +295,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                     <Square className="h-4 w-4 mr-2" /> Rectangle
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addShape("rounded-rect")}>
-                    <SquareRoundCorner className="h-4 w-4 mr-2" /> Rounded Rect
+                    <Square className="h-4 w-4 mr-2 rounded" /> Rounded Rect
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addShape("circle")}>
                     <Circle className="h-4 w-4 mr-2" /> Circle
