@@ -294,8 +294,26 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                   <DropdownMenuItem onClick={() => addShape("rect")}>
                     <Square className="h-4 w-4 mr-2" /> Rectangle
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("rounded-rect")}>
+                    <SquareRoundCorner className="h-4 w-4 mr-2" /> Rounded Rect
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addShape("circle")}>
                     <Circle className="h-4 w-4 mr-2" /> Circle
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("triangle")}>
+                    <Triangle className="h-4 w-4 mr-2" /> Triangle
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("diamond")}>
+                    <Diamond className="h-4 w-4 mr-2" /> Diamond
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("star")}>
+                    <Star className="h-4 w-4 mr-2" /> Star
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("hexagon")}>
+                    <Hexagon className="h-4 w-4 mr-2" /> Hexagon
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addShape("arrow")}>
+                    <ArrowRight className="h-4 w-4 mr-2" /> Arrow
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addShape("line")}>
                     <Minus className="h-4 w-4 mr-2" /> Line

@@ -453,19 +453,27 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
   }, [overlays, pushState]);
 
   // Add shape
-  const addShape = useCallback((shape: "rect" | "circle" | "line") => {
+  const addShape = useCallback((shape: ShapeOverlay["shape"]) => {
+    const dims: Record<string, { w: number; h: number }> = {
+      line: { w: 200, h: 0 },
+      arrow: { w: 180, h: 80 },
+      star: { w: 120, h: 120 },
+      hexagon: { w: 120, h: 110 },
+    };
+    const d = dims[shape] ?? { w: 120, h: 120 };
     const overlay: ShapeOverlay = {
       id: crypto.randomUUID(),
       type: "shape",
       shape,
       x: 40,
       y: 40,
-      width: shape === "line" ? 200 : 120,
-      height: shape === "line" ? 0 : 120,
+      width: d.w,
+      height: d.h,
       fillColor: shape === "line" ? "" : "rgba(59,130,246,0.5)",
       strokeColor: "#ffffff",
       strokeWidth: 2,
       opacity: 1,
+      ...(shape === "rounded-rect" ? { cornerRadius: 12 } : {}),
     };
     const next = [...overlays, overlay];
     pushState(next);
