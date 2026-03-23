@@ -129,21 +129,8 @@ const AdminEcosystem = () => {
     setChallenges(cRes.data || []);
   };
 
-  const copyKey = () => {
-    navigator.clipboard.writeText(apiKey);
-    toast({ title: "Copied", description: "API key copied to clipboard." });
-  };
 
-  const regenerateKey = async () => {
-    const newKey = crypto.randomUUID() + "-" + crypto.randomUUID();
-    const { error } = await supabase.from("app_settings").update({ value: newKey }).eq("key", "ecosystem_api_key");
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setApiKey(newKey);
-      toast({ title: "Regenerated", description: "New API key generated. Update all consuming apps." });
-    }
-  };
+
 
   /* Webhooks */
   const addWebhook = async () => {
