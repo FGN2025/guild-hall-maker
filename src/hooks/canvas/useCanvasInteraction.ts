@@ -193,6 +193,23 @@ export function handleCursor(pos: ResizeHandlePosition): string {
   return map[pos];
 }
 
+// ─── Coordinate scaling ────────────────────────────────────────────────
+
+/** Convert CSS mouse/touch position to canvas-space coordinates */
+function getCanvasCoords(
+  clientX: number,
+  clientY: number,
+  canvas: HTMLCanvasElement,
+  rect: DOMRect,
+): { mx: number; my: number } {
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    mx: (clientX - rect.left) * scaleX,
+    my: (clientY - rect.top) * scaleY,
+  };
+}
+
 // ─── Hook ──────────────────────────────────────────────────────────────
 
 export function useCanvasInteraction(
