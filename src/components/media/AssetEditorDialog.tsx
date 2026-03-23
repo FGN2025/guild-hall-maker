@@ -72,6 +72,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     onTouchStart,
     onTouchMove,
     onTouchEnd,
+    onKeyDown,
     exportCanvas,
     undo,
     redo,
