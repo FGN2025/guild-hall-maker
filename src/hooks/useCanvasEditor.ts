@@ -343,6 +343,9 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       fontSize: defaults?.fontSize ?? 32,
       color: defaults?.color ?? "#ffffff",
       fontFamily: defaults?.fontFamily ?? "sans-serif",
+      fontWeight: defaults?.fontWeight ?? "normal",
+      fontStyle: defaults?.fontStyle ?? "normal",
+      textDecoration: defaults?.textDecoration ?? "none",
       locked: defaults?.locked,
     };
     const next = [...overlays, overlay];
