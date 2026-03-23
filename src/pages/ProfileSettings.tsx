@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import { useDiscordClientId } from "@/hooks/useDiscordClientId";
 import PageBackground from "@/components/PageBackground";
+import CoachProfileCard from "@/components/coach/CoachProfileCard";
 
 
 const ProfileSettings = () => {
