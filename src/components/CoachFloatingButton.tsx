@@ -21,7 +21,9 @@ import {
   FileText,
   History,
   ArrowLeft,
+  UserCheck,
 } from "lucide-react";
+import { useCoachProfile } from "@/hooks/useCoachProfile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -136,6 +138,7 @@ export default function CoachFloatingButton() {
   const activeConvIdRef = useRef<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const { user } = useAuth();
+  const { profile: coachProfile } = useCoachProfile();
 
   const {
     conversations,
@@ -315,11 +318,21 @@ ${msgHtml}
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             ) : (
-              <BrainCircuit className="h-5 w-5 text-primary shrink-0" />
+              <div className="relative shrink-0">
+                <BrainCircuit className="h-5 w-5 text-primary" />
+                {coachProfile?.enabled && (
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-green-500 border border-background" title="Personalized coaching active" />
+                )}
+              </div>
             )}
             <span className="font-semibold text-sm text-foreground truncate">
               {showHistory ? "Chat History" : selectedGame ? selectedGame.name : "AI Coach"}
             </span>
+            {!showHistory && coachProfile?.enabled && (
+              <a href="/settings" className="shrink-0" title="Coach profile active — click to edit">
+                <UserCheck className="h-3.5 w-3.5 text-green-500" />
+              </a>
+            )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {!showHistory && (
