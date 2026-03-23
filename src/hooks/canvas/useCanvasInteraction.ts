@@ -193,6 +193,23 @@ export function handleCursor(pos: ResizeHandlePosition): string {
   return map[pos];
 }
 
+// ─── Coordinate scaling ────────────────────────────────────────────────
+
+/** Convert CSS mouse/touch position to canvas-space coordinates */
+function getCanvasCoords(
+  clientX: number,
+  clientY: number,
+  canvas: HTMLCanvasElement,
+  rect: DOMRect,
+): { mx: number; my: number } {
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    mx: (clientX - rect.left) * scaleX,
+    my: (clientY - rect.top) * scaleY,
+  };
+}
+
 // ─── Hook ──────────────────────────────────────────────────────────────
 
 export function useCanvasInteraction(
@@ -266,10 +283,10 @@ export function useCanvasInteraction(
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
+      const canvas = canvasRef.current;
+      const rect = canvas?.getBoundingClientRect();
+      if (!canvas || !rect) return;
+      const { mx, my } = getCanvasCoords(e.clientX, e.clientY, canvas, rect);
 
       // Check resize handles on selected overlay
       if (selectedId) {
@@ -335,10 +352,10 @@ export function useCanvasInteraction(
 
   const onMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
+      const canvas = canvasRef.current;
+      const rect = canvas?.getBoundingClientRect();
+      if (!canvas || !rect) return;
+      const { mx, my } = getCanvasCoords(e.clientX, e.clientY, canvas, rect);
 
       // Resize mode
       if (resizeRef.current) {
@@ -451,10 +468,10 @@ export function useCanvasInteraction(
   const onTouchStart = useCallback(
     (e: React.TouchEvent<HTMLCanvasElement>) => {
       const touch = e.touches[0];
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect || !touch) return;
-      const mx = touch.clientX - rect.left;
-      const my = touch.clientY - rect.top;
+      const canvas = canvasRef.current;
+      const rect = canvas?.getBoundingClientRect();
+      if (!canvas || !rect || !touch) return;
+      const { mx, my } = getCanvasCoords(touch.clientX, touch.clientY, canvas, rect);
       const hit = hitTest(mx, my);
       if (hit) {
         e.preventDefault();
@@ -481,10 +498,10 @@ export function useCanvasInteraction(
       if (!dragRef.current) return;
       const drag = dragRef.current;
       const touch = e.touches[0];
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect || !touch) return;
-      const mx = touch.clientX - rect.left;
-      const my = touch.clientY - rect.top;
+      const canvas = canvasRef.current;
+      const rect = canvas?.getBoundingClientRect();
+      if (!canvas || !rect || !touch) return;
+      const { mx, my } = getCanvasCoords(touch.clientX, touch.clientY, canvas, rect);
 
       if (!drag.hasMoved) {
         const dist = Math.hypot(mx - drag.startX, my - drag.startY);
