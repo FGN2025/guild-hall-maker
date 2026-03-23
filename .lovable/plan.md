@@ -1,16 +1,16 @@
 
 
-## Generate and Store Ecosystem API Key
+## Store ECOSYSTEM_API_KEY Secret
 
-### Plan
+### What
+Store the provided API key as a backend secret named `ECOSYSTEM_API_KEY`.
 
-1. **Generate a secure random 64-character hex key** using a script
-2. **Display the key in chat** so you can copy it for use in external ecosystem apps
-3. **Store it as a backend secret** named `ECOSYSTEM_API_KEY` using the secrets tool — I'll pre-fill the value so you just confirm
+### Key Value
+`cad47cf2d36d60d60510185475f8abd5e6ac20fe9929a31dfd7cbda516dbab64`
 
-### Technical Detail
+### Steps
+1. Use the `add_secret` tool to store the key with name `ECOSYSTEM_API_KEY`
+2. Confirm the edge function `ecosystem-data-api` can now read it via `Deno.env.get("ECOSYSTEM_API_KEY")`
 
-- Key format: 64-character hex string (32 bytes of randomness)
-- The edge function `ecosystem-data-api` already reads from `Deno.env.get("ECOSYSTEM_API_KEY")` — no code changes needed
-- You'll need to configure this same key in any external apps (Academy, Hub, BroadbandWorkforce) that call the ecosystem data API
+No code changes needed — the edge function is already wired to read from this env var.
 
