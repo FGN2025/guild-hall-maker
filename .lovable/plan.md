@@ -1,55 +1,57 @@
 
+Assessment:
+The remaining picking problem is not just “small hit areas.” The current editor still uses broad rectangular hit-testing for every object, which breaks down for layered designs:
 
-## Assessment: Asset Editor Object Picking
+- Shapes intercept clicks in invisible areas:
+  - circles use their full bounding box, so clicks in empty corners still select the circle
+  - lines use a rectangle instead of distance-to-line tolerance
+- Text bounds are approximate, so text can be harder to target accurately than it looks
+- The topmost matching object always wins on first click, so layered items feel sticky
+- Click-through only works after the top layer is already selected, which is not how Canva/Figma-style selection usually feels
+- Drag starts immediately on mousedown, so attempts to “just select” often turn into accidental moves
+- Text still lacks the same direct-manipulation affordances as shapes/logos
 
-### Current Problems
+Recommended approach:
+1. Replace generic bounding-box picking with object-aware hit testing
+   - text: use measured text metrics
+   - circle: ellipse math hit test
+   - line: point-to-segment distance with tolerance
+   - rect/logo: rectangular hit test
+   - ignore transparent/outside regions instead of letting them steal clicks
 
-After reviewing `useCanvasEditor.ts` and `AssetEditorDialog.tsx`, the picking/interaction model has several gaps versus tools like Canva:
+2. Change selection behavior for layered objects
+   - first click selects without dragging
+   - only begin drag after a small movement threshold
+   - when multiple objects overlap, cycle candidates on repeated click at the same point
+   - prefer the smallest/topmost valid candidate instead of the first broad bounding box hit
 
-1. **Tight hit areas** — Hit testing uses exact bounding boxes with zero padding. Small text or thin logos are nearly impossible to click accurately.
-2. **No hover preview** — Cursor changes to "grab" on hover, but there's no visual bounding-box highlight showing *which* object you're about to select. Users click blindly.
-3. **No resize handles** — Objects can only be resized via sidebar sliders. There are no on-canvas drag handles at corners/edges, which is the standard in every graphics editor.
-4. **No keyboard interaction** — No Delete key, no arrow-key nudging, no Escape to deselect. These are basic expectations.
-5. **Overlapping objects are opaque** — When objects stack, there's no way to cycle through or pick the one underneath. The topmost always wins.
-6. **Selection indicator is subtle** — Just a thin blue dashed rect. No corner handles, no rotation indicator — nothing that says "this is interactive."
+3. Improve Canva-like feedback
+   - hover the exact candidate that would be selected
+   - show a clearer selected state for text too
+   - sync hover/selection with the Layers panel so users can confirm what they are targeting
 
-### Proposed Improvements
+4. Add a stronger fallback for complex stacks
+   - “Select next below” action/shortcut
+   - optional temporary lock/isolate from the Layers panel
+   - keep manual layer selection as the escape hatch when canvas picking is ambiguous
 
-#### 1. Expand hit areas with padding (quick win)
-Add 6–8px padding around every overlay's bounding box in `hitTest()`. This makes small text and thin shapes much easier to click without affecting visual appearance.
+5. Clean up related editor issues found during assessment
+   - fix the dialog accessibility warning by adding a description
+   - fix the DropdownMenu ref warning in AssetEditorDialog
+   - consolidate canvas interaction helpers so hit-testing and rendering use the same geometry rules
 
-#### 2. Hover bounding box preview
-In `onMouseMove`, when not dragging, run `hitTest()` and store a `hoveredId`. In `renderCanvas()`, draw a light bounding box (e.g., semi-transparent blue border) around the hovered overlay. This gives users a clear "I'm about to select this" signal before clicking.
+Files to update:
+- src/hooks/canvas/useCanvasInteraction.ts
+- src/hooks/useCanvasEditor.ts
+- src/components/media/AssetEditorDialog.tsx
+- src/hooks/canvas/canvasTypes.ts (only if shared geometry types are needed)
 
-#### 3. On-canvas resize handles
-When an overlay is selected, draw 8 small squares (4 corners + 4 edge midpoints) on the selection bounding box. On mousedown, detect if the click lands on a handle instead of the body — if so, enter resize mode instead of drag mode. During resize, update width/height (and for logos, maintain aspect ratio by default).
+Implementation priority:
+1. Shape-aware hit testing
+2. Click-select vs drag threshold
+3. Better overlap candidate selection/cycling
+4. Text selection parity and stronger visual feedback
+5. Console warning cleanup
 
-#### 4. Keyboard shortcuts
-Add a `keydown` listener on the canvas (make it focusable with `tabIndex={0}`):
-- **Delete / Backspace** → delete selected overlay
-- **Arrow keys** → nudge selected overlay by 1px (10px with Shift)
-- **Escape** → deselect
-- **Tab** → cycle selection through overlays
-
-#### 5. Click-through for stacked objects
-When clicking an already-selected object, cycle to the next object underneath at the same coordinates. This lets users reach buried layers without using the layers panel.
-
-#### 6. Richer selection visuals
-Replace the plain dashed rect with solid corner handles (small filled squares) and a thin solid border. This is the universal "selected object" visual language.
-
-### Files to modify
-
-- **`src/hooks/useCanvasEditor.ts`** — Add `hoveredId` state, expand hit-test padding, implement resize handle detection, add keyboard handler, implement click-through cycling
-- **`src/components/media/AssetEditorDialog.tsx`** — Pass `hoveredId` to rendering, add `tabIndex` and `onKeyDown` to canvas, expose new resize cursor styles
-- **`src/hooks/canvas/canvasTypes.ts`** — Add `ResizeHandle` type for the 8 handle positions
-
-### Implementation order
-
-| Step | Change | Impact |
-|------|--------|--------|
-| 1 | Expand hit-test padding + hover highlight | Biggest UX win, lowest risk |
-| 2 | Keyboard shortcuts (Delete, arrows, Esc) | Essential usability |
-| 3 | Richer selection visuals (corner handles) | Visual clarity |
-| 4 | On-canvas resize handles (drag to resize) | Core Canva-like interaction |
-| 5 | Click-through cycling for stacked objects | Power-user feature |
-
+Expected result:
+Layered text, shapes, and logos should feel much more predictable: clicks should target the visible object under the pointer, first click should select instead of accidentally move, and overlapping items should be easier to cycle through like in modern graphics editors.
