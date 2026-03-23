@@ -39,6 +39,8 @@ export type ShapeOverlay = {
 
 export type Overlay = LogoOverlay | TextOverlay | ShapeOverlay;
 
+export type ResizeHandlePosition = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
+
 export type SnapGuide = {
   orientation: "horizontal" | "vertical";
   position: number;
