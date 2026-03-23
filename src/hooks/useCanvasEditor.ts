@@ -468,7 +468,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     });
 
     return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
-  }, [baseImage, overlays, canvasSize, activeFormat, bgColor]);
+  }, [baseImage, overlays, canvasSize, activeFormat, bgColor, bgOpacity]);
 
   const selectedOverlay = overlays.find((o) => o.id === selectedId) ?? null;
 
