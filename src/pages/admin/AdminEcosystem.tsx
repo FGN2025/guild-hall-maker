@@ -254,22 +254,15 @@ const AdminEcosystem = () => {
           <Label className="font-heading text-sm">Ecosystem API Key</Label>
         </div>
         <p className="text-xs text-muted-foreground">
-          External apps use this key in the <code className="bg-muted px-1 rounded">X-Ecosystem-Key</code> header to pull data. Auto-generated on first API call.
+          External apps use this key in the <code className="bg-muted px-1 rounded">X-Ecosystem-Key</code> header to pull data.
         </p>
-        {loadingKey ? (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
-        ) : apiKey ? (
-          <div className="flex items-center gap-2">
-            <Input value={showKey ? apiKey : "••••••••••••••••"} readOnly className="font-mono text-xs bg-background" />
-            <Button size="icon" variant="ghost" onClick={() => setShowKey(!showKey)}>
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-            <Button size="icon" variant="ghost" onClick={copyKey}><Copy className="h-4 w-4" /></Button>
-            <Button size="sm" variant="outline" onClick={regenerateKey}>Regenerate</Button>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Key will be generated on the first external API call.</p>
-        )}
+        <div className="flex items-center gap-2 p-3 rounded border border-border bg-muted/50">
+          <Input value="••••••••••••••••••••••••" readOnly className="font-mono text-xs bg-background" />
+          <Badge variant="secondary" className="whitespace-nowrap">Managed as backend secret</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          This key is securely stored as a backend secret (<code className="bg-muted px-1 rounded">ECOSYSTEM_API_KEY</code>). Contact a platform administrator to view or rotate it.
+        </p>
       </div>
 
       {/* Calendar Feed */}
