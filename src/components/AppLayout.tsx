@@ -5,7 +5,7 @@ import CoachFloatingButton from "@/components/CoachFloatingButton";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { CoachProvider } from "@/contexts/CoachContext";
 
-const HEADERLESS_ROUTES = ["/tournaments"];
+const HEADERLESS_ROUTES = ["/tournaments", "/dashboard"];
 
 const AppLayout = () => {
   const location = useLocation();
