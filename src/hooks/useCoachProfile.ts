@@ -16,6 +16,7 @@ export interface CoachFile {
   file_name: string;
   file_url: string;
   file_type: string;
+  game_name: string | null;
   created_at: string;
 }
 
@@ -77,7 +78,7 @@ export function useCoachProfile() {
     setSaving(false);
   }, [user, profile]);
 
-  const uploadFile = useCallback(async (file: File) => {
+  const uploadFile = useCallback(async (file: File, gameName?: string) => {
     if (!user) return;
     if (files.length >= 5) {
       toast.error("Maximum 5 files allowed. Delete one first.");
@@ -119,6 +120,7 @@ export function useCoachProfile() {
           file_name: file.name,
           file_url: fileUrl,
           file_type: file.type,
+          game_name: gameName || null,
         })
         .select()
         .single();

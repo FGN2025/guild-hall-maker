@@ -708,6 +708,7 @@ export type Database = {
           file_name: string
           file_type: string
           file_url: string
+          game_name: string | null
           id: string
           user_id: string
         }
@@ -717,6 +718,7 @@ export type Database = {
           file_name: string
           file_type?: string
           file_url: string
+          game_name?: string | null
           id?: string
           user_id: string
         }
@@ -726,6 +728,7 @@ export type Database = {
           file_name?: string
           file_type?: string
           file_url?: string
+          game_name?: string | null
           id?: string
           user_id?: string
         }
