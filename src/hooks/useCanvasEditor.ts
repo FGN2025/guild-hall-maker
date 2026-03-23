@@ -86,6 +86,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [activeFormat, setActiveFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [bgColor, setBgColor] = useState("#1a1a2e");
+  const [bgOpacity, setBgOpacity] = useState(1);
   const [baseImageUrl, setBaseImageUrlState] = useState(initialBaseImageUrl);
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
