@@ -283,10 +283,10 @@ export function useCanvasInteraction(
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
+      const canvas = canvasRef.current;
+      const rect = canvas?.getBoundingClientRect();
+      if (!canvas || !rect) return;
+      const { mx, my } = getCanvasCoords(e.clientX, e.clientY, canvas, rect);
 
       // Check resize handles on selected overlay
       if (selectedId) {
