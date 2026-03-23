@@ -1,30 +1,37 @@
 
 
-## Add Font Family, Bold, Italic, and Underline to Text Overlays
+## Add More Shapes to Canvas Editor (PowerPoint-style)
 
-### What changes
+### Current State
+The editor supports 3 shapes: **rect**, **circle**, **line**. Users expect a richer set like PowerPoint offers.
 
-**1. Extend `TextOverlay` type** (`src/hooks/canvas/canvasTypes.ts`)
-- Add `fontWeight: string` (default `"normal"`, options: `"normal"` | `"bold"`)
-- Add `fontStyle: string` (default `"normal"`, options: `"normal"` | `"italic"`)
-- Add `textDecoration: string` (default `"none"`, options: `"none"` | `"underline"`)
+### New Shapes to Add
+- **Triangle** — equilateral, drawn via 3-point path
+- **Diamond** — rotated rectangle (rhombus)
+- **Rounded Rectangle** — rect with `roundRect` corner radius
+- **Arrow** — horizontal arrow with triangular head
+- **Star** — 5-pointed star
+- **Hexagon** — regular 6-sided polygon
 
-**2. Update canvas rendering** (`src/hooks/useCanvasEditor.ts`)
-- Change `ctx.font` construction from `${fontSize}px ${fontFamily}` to `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`
-- For underline: manually draw a line beneath the text using `measureText` width
-- Apply same logic in the export renderer
+### Files to Edit
 
-**3. Update text hit-testing** (`src/hooks/canvas/useCanvasInteraction.ts`)
-- Include `fontStyle` and `fontWeight` when constructing the font string for `measureText` calls in `getOverlayBounds`
+**1. `src/hooks/canvas/canvasTypes.ts`**
+- Extend `ShapeOverlay.shape` union: `"rect" | "circle" | "line" | "triangle" | "diamond" | "rounded-rect" | "arrow" | "star" | "hexagon"`
+- Add optional `cornerRadius` field for rounded rect
 
-**4. Add UI controls** (`src/components/media/AssetEditorDialog.tsx`)
-- **Font family dropdown** — a `Select` with common web-safe fonts: Sans-serif, Serif, Monospace, Georgia, Verdana, Courier New, Impact, Comic Sans MS, Trebuchet MS, Arial Black
-- **Bold / Italic / Underline toggle buttons** — a row of icon toggles (B, I, U) using the existing `Toggle` component
-- Place these between the Text input and Font Size slider in the text properties panel
+**2. `src/hooks/useCanvasEditor.ts`**
+- Extend `drawShape()` with rendering logic for each new shape using Canvas path APIs
+- Update `addShape()` defaults (sensible width/height per shape)
 
-### Files to edit
-- `src/hooks/canvas/canvasTypes.ts` — add 3 fields to `TextOverlay`
-- `src/hooks/useCanvasEditor.ts` — update font string in render + export, draw underline, set defaults in `addText`
-- `src/hooks/canvas/useCanvasInteraction.ts` — update font string in `getOverlayBounds`
-- `src/components/media/AssetEditorDialog.tsx` — add font picker Select + B/I/U toggles
+**3. `src/hooks/canvas/useCanvasInteraction.ts`**
+- Add geometry-aware hit testing for new shapes (polygon point-in-path tests, or fall back to bounding-box for simplicity with the existing padding)
+
+**4. `src/components/media/AssetEditorDialog.tsx`**
+- Add new shape options to the Shapes dropdown menu with appropriate icons (Triangle, Diamond, Hexagon, Star, ArrowRight from lucide-react)
+
+### Rendering Approach
+Each shape is drawn via `ctx.beginPath()` + polygon vertices, using the overlay's `x, y, width, height` as the bounding box. Fill and stroke use existing `fillColor`, `strokeColor`, `strokeWidth`, `opacity` properties — no new UI controls needed for the properties panel.
+
+### Hit Testing
+Use canvas `ctx.isPointInPath()` for complex polygons, or simple bounding-box hit testing (already works for rect/circle). The bounding box approach is sufficient since all new shapes fit within their `x, y, width, height` bounds.
 
