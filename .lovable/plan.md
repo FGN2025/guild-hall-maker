@@ -1,50 +1,55 @@
 
-## Assessment
 
-The grey bar is not the tournaments sticky header anymore. It is the global `AppLayout` header:
+## Assessment: Asset Editor Object Picking
 
-- `src/components/AppLayout.tsx` always renders:
-  - a fixed-height top header (`h-12`)
-  - `bg-background`
-  - a bottom border
-  - the `SidebarTrigger`
-- Logged-in users on `/tournaments` go through `ConditionalLayout` → `AppLayout`, so that top bar is always present.
-- The tournaments page sticky header is inside `<main>`, below that global header. Negative `top` values can only offset within the padded scroll area; they cannot remove the separate layout header above it.
+### Current Problems
 
-That matches the screenshot: the grey strip with the small sidebar button at the far left is the shared app header, not page-specific spacing.
+After reviewing `useCanvasEditor.ts` and `AssetEditorDialog.tsx`, the picking/interaction model has several gaps versus tools like Canva:
 
-## Recommended fix
+1. **Tight hit areas** — Hit testing uses exact bounding boxes with zero padding. Small text or thin logos are nearly impossible to click accurately.
+2. **No hover preview** — Cursor changes to "grab" on hover, but there's no visual bounding-box highlight showing *which* object you're about to select. Users click blindly.
+3. **No resize handles** — Objects can only be resized via sidebar sliders. There are no on-canvas drag handles at corners/edges, which is the standard in every graphics editor.
+4. **No keyboard interaction** — No Delete key, no arrow-key nudging, no Escape to deselect. These are basic expectations.
+5. **Overlapping objects are opaque** — When objects stack, there's no way to cycle through or pick the one underneath. The topmost always wins.
+6. **Selection indicator is subtle** — Just a thin blue dashed rect. No corner handles, no rotation indicator — nothing that says "this is interactive."
 
-### Best fix
-Make the tournaments page use a “headerless content” mode inside `AppLayout`, then place the sidebar trigger inside the tournaments sticky header.
+### Proposed Improvements
 
-## Implementation plan
+#### 1. Expand hit areas with padding (quick win)
+Add 6–8px padding around every overlay's bounding box in `hitTest()`. This makes small text and thin shapes much easier to click without affecting visual appearance.
 
-1. **Add route-aware header suppression in `AppLayout`**
-   - Use the current route to detect `/tournaments`.
-   - Skip rendering the global `<header>` for that route only.
-   - Let `<main>` expand to full height when the header is hidden.
+#### 2. Hover bounding box preview
+In `onMouseMove`, when not dragging, run `hitTest()` and store a `hoveredId`. In `renderCanvas()`, draw a light bounding box (e.g., semi-transparent blue border) around the hovered overlay. This gives users a clear "I'm about to select this" signal before clicking.
 
-2. **Preserve navigation access**
-   - Add `SidebarTrigger` into `src/pages/Tournaments.tsx` inside the sticky header row.
-   - Keep it visible at least on mobile/tablet so users can still open the sidebar.
-   - Align it with the page title so the sticky area becomes the only top bar.
+#### 3. On-canvas resize handles
+When an overlay is selected, draw 8 small squares (4 corners + 4 edge midpoints) on the selection bounding box. On mousedown, detect if the click lands on a handle instead of the body — if so, enter resize mode instead of drag mode. During resize, update width/height (and for logos, maintain aspect ratio by default).
 
-3. **Adjust tournaments sticky container after header removal**
-   - Remove the compensating negative top hacks that were added to fight the old layout padding/header interaction.
-   - Re-test the sticky container with a simple `top-0` (or a minimal negative offset only if needed because of main padding).
-   - Keep the opaque background and horizontal bleed handling so cards do not show through while scrolling.
+#### 4. Keyboard shortcuts
+Add a `keydown` listener on the canvas (make it focusable with `tabIndex={0}`):
+- **Delete / Backspace** → delete selected overlay
+- **Arrow keys** → nudge selected overlay by 1px (10px with Shift)
+- **Escape** → deselect
+- **Tab** → cycle selection through overlays
 
-4. **Verify no regressions**
-   - Confirm `/tournaments` sits flush to the top with no grey strip.
-   - Confirm sidebar access still works on smaller screens.
-   - Confirm other authenticated pages still keep the shared top header unchanged.
+#### 5. Click-through for stacked objects
+When clicking an already-selected object, cycle to the next object underneath at the same coordinates. This lets users reach buried layers without using the layers panel.
 
-## Files to update
+#### 6. Richer selection visuals
+Replace the plain dashed rect with solid corner handles (small filled squares) and a thin solid border. This is the universal "selected object" visual language.
 
-- `src/components/AppLayout.tsx`
-- `src/pages/Tournaments.tsx`
+### Files to modify
 
-## Why this is the right fix
+- **`src/hooks/useCanvasEditor.ts`** — Add `hoveredId` state, expand hit-test padding, implement resize handle detection, add keyboard handler, implement click-through cycling
+- **`src/components/media/AssetEditorDialog.tsx`** — Pass `hoveredId` to rendering, add `tabIndex` and `onKeyDown` to canvas, expose new resize cursor styles
+- **`src/hooks/canvas/canvasTypes.ts`** — Add `ResizeHandle` type for the 8 handle positions
 
-The current issue is structural, not a sticky-position bug. The page is being rendered underneath a shared layout header. As long as that header exists, a top bar will remain visible no matter how the tournaments sticky header is adjusted. The fix is to remove the shared header for this route and merge its control into the page’s own sticky header.
+### Implementation order
+
+| Step | Change | Impact |
+|------|--------|--------|
+| 1 | Expand hit-test padding + hover highlight | Biggest UX win, lowest risk |
+| 2 | Keyboard shortcuts (Delete, arrows, Esc) | Essential usability |
+| 3 | Richer selection visuals (corner handles) | Visual clarity |
+| 4 | On-canvas resize handles (drag to resize) | Core Canva-like interaction |
+| 5 | Click-through cycling for stacked objects | Power-user feature |
+
