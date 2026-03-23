@@ -93,7 +93,6 @@ const AdminEcosystem = () => {
   }, []);
 
   const fetchAll = () => {
-    fetchApiKey();
     fetchWebhooks();
     fetchLogs();
     fetchMappings();
