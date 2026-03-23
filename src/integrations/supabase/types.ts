@@ -701,6 +701,66 @@ export type Database = {
           },
         ]
       }
+      coach_player_files: {
+        Row: {
+          created_at: string
+          extracted_text: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_text?: string | null
+          file_name: string
+          file_type?: string
+          file_url: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coach_player_profiles: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          notes: string | null
+          stats_summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notes?: string | null
+          stats_summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notes?: string | null
+          stats_summary?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_likes: {
         Row: {
           created_at: string
