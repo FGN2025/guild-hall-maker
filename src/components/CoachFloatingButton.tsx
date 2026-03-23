@@ -21,7 +21,9 @@ import {
   FileText,
   History,
   ArrowLeft,
+  UserCheck,
 } from "lucide-react";
+import { useCoachProfile } from "@/hooks/useCoachProfile";
 import {
   DropdownMenu,
   DropdownMenuContent,

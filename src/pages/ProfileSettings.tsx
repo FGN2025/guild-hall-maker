@@ -473,6 +473,8 @@ const ProfileSettings = () => {
           </CardContent>
         </Card>
 
+        <CoachProfileCard />
+
         <NotificationPreferences />
       </main>
     </div>
