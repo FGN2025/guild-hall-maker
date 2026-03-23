@@ -1,57 +1,43 @@
 
-Assessment:
-The remaining picking problem is not just “small hit areas.” The current editor still uses broad rectangular hit-testing for every object, which breaks down for layered designs:
 
-- Shapes intercept clicks in invisible areas:
-  - circles use their full bounding box, so clicks in empty corners still select the circle
-  - lines use a rectangle instead of distance-to-line tolerance
-- Text bounds are approximate, so text can be harder to target accurately than it looks
-- The topmost matching object always wins on first click, so layered items feel sticky
-- Click-through only works after the top layer is already selected, which is not how Canva/Figma-style selection usually feels
-- Drag starts immediately on mousedown, so attempts to “just select” often turn into accidental moves
-- Text still lacks the same direct-manipulation affordances as shapes/logos
+## Fix: Canvas Coordinate Scaling Bug (Text Picking)
 
-Recommended approach:
-1. Replace generic bounding-box picking with object-aware hit testing
-   - text: use measured text metrics
-   - circle: ellipse math hit test
-   - line: point-to-segment distance with tolerance
-   - rect/logo: rectangular hit test
-   - ignore transparent/outside regions instead of letting them steal clicks
+### Root Cause
 
-2. Change selection behavior for layered objects
-   - first click selects without dragging
-   - only begin drag after a small movement threshold
-   - when multiple objects overlap, cycle candidates on repeated click at the same point
-   - prefer the smallest/topmost valid candidate instead of the first broad bounding box hit
+The canvas element has internal dimensions (e.g., 800x600) but is CSS-scaled down via `max-width: 100%` and `max-height: 60vh`. Mouse coordinates are calculated as:
+```
+mx = e.clientX - rect.left   // CSS pixels
+my = e.clientY - rect.top    // CSS pixels
+```
 
-3. Improve Canva-like feedback
-   - hover the exact candidate that would be selected
-   - show a clearer selected state for text too
-   - sync hover/selection with the Layers panel so users can confirm what they are targeting
+But overlay positions are stored in **canvas pixels**. When the canvas renders at, say, 500px wide CSS but is internally 800px, a click at CSS x=250 should map to canvas x=400. Currently it maps to x=250 — hitting the wrong objects entirely.
 
-4. Add a stronger fallback for complex stacks
-   - “Select next below” action/shortcut
-   - optional temporary lock/isolate from the Layers panel
-   - keep manual layer selection as the escape hatch when canvas picking is ambiguous
+This affects all mouse and touch handlers: `onMouseDown`, `onMouseMove`, `onMouseUp`, `onTouchStart`, `onTouchMove`, `onTouchEnd`.
 
-5. Clean up related editor issues found during assessment
-   - fix the dialog accessibility warning by adding a description
-   - fix the DropdownMenu ref warning in AssetEditorDialog
-   - consolidate canvas interaction helpers so hit-testing and rendering use the same geometry rules
+### Fix
 
-Files to update:
-- src/hooks/canvas/useCanvasInteraction.ts
-- src/hooks/useCanvasEditor.ts
-- src/components/media/AssetEditorDialog.tsx
-- src/hooks/canvas/canvasTypes.ts (only if shared geometry types are needed)
+1. **Add coordinate scaling in `useCanvasInteraction.ts`**
+   - Create a helper that converts CSS mouse position to canvas coordinates:
+     ```
+     scaleX = canvas.width / rect.width
+     scaleY = canvas.height / rect.height
+     mx = (e.clientX - rect.left) * scaleX
+     my = (e.clientY - rect.top) * scaleY
+     ```
+   - Apply this in all 6 mouse/touch handlers
 
-Implementation priority:
-1. Shape-aware hit testing
-2. Click-select vs drag threshold
-3. Better overlap candidate selection/cycling
-4. Text selection parity and stronger visual feedback
-5. Console warning cleanup
+2. **Also scale drag offsets**
+   - When dragging, the offset and snap calculations must use canvas-space coordinates, not CSS-space. The same scaling factor applies to movement deltas during drag and resize.
 
-Expected result:
-Layered text, shapes, and logos should feel much more predictable: clicks should target the visible object under the pointer, first click should select instead of accidentally move, and overlapping items should be easier to cycle through like in modern graphics editors.
+### Files to update
+
+- `src/hooks/canvas/useCanvasInteraction.ts` — Add `getCanvasCoords` helper, update all 6 event handlers to use scaled coordinates
+
+### Why this fixes text picking
+
+Text overlays are positioned at canvas coordinates (e.g., x=40, y=390). The hit test checks if the mouse is within 8px of those coordinates. But when the canvas is CSS-scaled to half size, the mouse reports x=20 for a visual click at x=40 — missing by 20px. With scaling applied, the coordinates will match and text becomes easy to select.
+
+### Scope
+
+This is a single-file, surgical fix. No changes to rendering, no changes to overlay types, no UI changes. Just correct coordinate math.
+
