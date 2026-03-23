@@ -468,10 +468,10 @@ export function useCanvasInteraction(
   const onTouchStart = useCallback(
     (e: React.TouchEvent<HTMLCanvasElement>) => {
       const touch = e.touches[0];
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect || !touch) return;
-      const mx = touch.clientX - rect.left;
-      const my = touch.clientY - rect.top;
+      const canvas = canvasRef.current;
+      const rect = canvas?.getBoundingClientRect();
+      if (!canvas || !rect || !touch) return;
+      const { mx, my } = getCanvasCoords(touch.clientX, touch.clientY, canvas, rect);
       const hit = hitTest(mx, my);
       if (hit) {
         e.preventDefault();
