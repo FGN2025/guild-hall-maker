@@ -339,6 +339,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Password — Use the password reset flow to update your login credentials securely.",
       "Discord Linking — Link your Discord account from Profile Settings. Click 'Link Discord Account' to authorize through Discord's OAuth flow. Once linked, your Discord username and avatar are displayed on your profile.",
       "Re-link / Unlink Discord — Use the Re-link button to update your Discord connection, or Unlink to remove it. Warning: unlinking Discord blocks platform access until you re-link.",
+      "Steam Linking — Link your Steam account to launch games directly from the platform. Your Steam username and ID are shown once connected.",
+      "AI Coach Profile — A dedicated section lets you enable personalized coaching. Add notes about your play style and goals, paste your stats summary, and upload supporting files (screenshots, CSVs, PDFs). The AI Coach uses this data to tailor its advice.",
       "Notification Preferences — Scroll down in Profile Settings to configure which notifications you receive. Toggle In-App and Email independently for each event type (e.g., tournament reminders, prize updates, achievements, points adjustments).",
     ],
   },
