@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import {
-  Globe, Loader2, Plus, Trash2, RefreshCw, Copy, Eye, EyeOff,
+  Globe, Loader2, Plus, Trash2, RefreshCw, Copy,
   ArrowUpDown, Link as LinkIcon, Send, History, ExternalLink
 } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
