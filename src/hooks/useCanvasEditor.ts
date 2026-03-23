@@ -436,7 +436,13 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     const scaleX = exportW / canvasSize.width;
     const scaleY = exportH / canvasSize.height;
 
+    // Always fill bg color first
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, exportW, exportH);
+
     if (baseImage) {
+      const prevAlpha = ctx.globalAlpha;
+      ctx.globalAlpha = bgOpacity;
       if (activeFormat.key !== "original") {
         const { sx, sy, sw, sh } = centerCropRect(
           baseImage.naturalWidth, baseImage.naturalHeight, exportW, exportH
@@ -445,9 +451,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       } else {
         ctx.drawImage(baseImage, 0, 0, exportW, exportH);
       }
-    } else {
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, exportW, exportH);
+      ctx.globalAlpha = prevAlpha;
     }
 
     overlays.forEach((o) => {
