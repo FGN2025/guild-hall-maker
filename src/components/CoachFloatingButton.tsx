@@ -138,6 +138,7 @@ export default function CoachFloatingButton() {
   const activeConvIdRef = useRef<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const { user } = useAuth();
+  const { profile: coachProfile } = useCoachProfile();
 
   const {
     conversations,
