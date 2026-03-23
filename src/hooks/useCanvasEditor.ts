@@ -206,10 +206,16 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       } else if (o.type === "shape") {
         drawShape(ctx, o);
       } else {
-        ctx.font = `${o.fontSize}px ${o.fontFamily}`;
+        const fStyle = o.fontStyle || "normal";
+        const fWeight = o.fontWeight || "normal";
+        ctx.font = `${fStyle} ${fWeight} ${o.fontSize}px ${o.fontFamily}`;
         ctx.fillStyle = o.color;
         ctx.textBaseline = "top";
         ctx.fillText(o.text, o.x, o.y);
+        if (o.textDecoration === "underline") {
+          const tw = ctx.measureText(o.text).width;
+          ctx.fillRect(o.x, o.y + o.fontSize + 1, tw, Math.max(2, o.fontSize / 14));
+        }
       }
 
       const isSelected = o.id === selectedId;
@@ -337,6 +343,9 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       fontSize: defaults?.fontSize ?? 32,
       color: defaults?.color ?? "#ffffff",
       fontFamily: defaults?.fontFamily ?? "sans-serif",
+      fontWeight: defaults?.fontWeight ?? "normal",
+      fontStyle: defaults?.fontStyle ?? "normal",
+      textDecoration: defaults?.textDecoration ?? "none",
       locked: defaults?.locked,
     };
     const next = [...overlays, overlay];
@@ -461,10 +470,16 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       } else if (o.type === "shape") {
         drawShape(ctx, o, scaleX, scaleY);
       } else {
-        ctx.font = `${o.fontSize * scaleX}px ${o.fontFamily}`;
+        const fStyle = o.fontStyle || "normal";
+        const fWeight = o.fontWeight || "normal";
+        ctx.font = `${fStyle} ${fWeight} ${o.fontSize * scaleX}px ${o.fontFamily}`;
         ctx.fillStyle = o.color;
         ctx.textBaseline = "top";
         ctx.fillText(o.text, o.x * scaleX, o.y * scaleY);
+        if (o.textDecoration === "underline") {
+          const tw = ctx.measureText(o.text).width;
+          ctx.fillRect(o.x * scaleX, o.y * scaleY + o.fontSize * scaleX + 1, tw, Math.max(2, (o.fontSize * scaleX) / 14));
+        }
       }
     });
 

@@ -94,7 +94,9 @@ function hitTestOverlay(
 
   // text — use measured width when possible
   if (ctx) {
-    ctx.font = `${o.fontSize}px ${o.fontFamily}`;
+    const fStyle = o.fontStyle || "normal";
+    const fWeight = o.fontWeight || "normal";
+    ctx.font = `${fStyle} ${fWeight} ${o.fontSize}px ${o.fontFamily}`;
     const w = ctx.measureText(o.text).width;
     return (
       mx >= o.x - HIT_PADDING &&
@@ -134,7 +136,9 @@ export function getOverlayBounds(
     return { x: o.x, y: o.y, w: o.width, h: o.height };
   }
   if (ctx) {
-    ctx.font = `${o.fontSize}px ${o.fontFamily}`;
+    const fStyle = o.fontStyle || "normal";
+    const fWeight = o.fontWeight || "normal";
+    ctx.font = `${fStyle} ${fWeight} ${o.fontSize}px ${o.fontFamily}`;
     const w = ctx.measureText(o.text).width;
     return { x: o.x, y: o.y, w, h: o.fontSize };
   }
