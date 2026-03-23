@@ -2278,6 +2278,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "scheduled_posts_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "social_connections_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "scheduled_posts_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -3600,6 +3607,53 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      social_connections_safe: {
+        Row: {
+          account_name: string | null
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          page_id: string | null
+          platform: string | null
+          tenant_id: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          page_id?: string | null
+          platform?: string | null
+          tenant_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          page_id?: string | null
+          platform?: string | null
+          tenant_id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
