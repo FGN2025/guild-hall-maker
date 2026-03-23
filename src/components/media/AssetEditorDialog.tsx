@@ -82,6 +82,8 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     setFormat,
     bgColor,
     setBgColor,
+    bgOpacity,
+    setBgOpacity,
     cursorStyle,
     setBaseImageUrl,
     baseImageUrl: currentBaseImageUrl,
