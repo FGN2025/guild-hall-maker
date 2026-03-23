@@ -504,6 +504,8 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     setFormat,
     bgColor,
     setBgColor,
+    bgOpacity,
+    setBgOpacity,
     cursorStyle: interaction.cursorStyle,
     setBaseImageUrl,
     baseImageUrl,
