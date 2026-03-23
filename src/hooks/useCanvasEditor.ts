@@ -29,6 +29,94 @@ function centerCropRect(
   return { sx, sy, sw, sh };
 }
 
+/** Build a path for polygon-based shapes */
+function buildShapePath(ctx: CanvasRenderingContext2D, o: ShapeOverlay, scaleX: number, scaleY: number) {
+  const x = o.x * scaleX;
+  const y = o.y * scaleY;
+  const w = o.width * scaleX;
+  const h = o.height * scaleY;
+
+  ctx.beginPath();
+  switch (o.shape) {
+    case "triangle":
+      ctx.moveTo(x + w / 2, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x, y + h);
+      ctx.closePath();
+      break;
+    case "diamond":
+      ctx.moveTo(x + w / 2, y);
+      ctx.lineTo(x + w, y + h / 2);
+      ctx.lineTo(x + w / 2, y + h);
+      ctx.lineTo(x, y + h / 2);
+      ctx.closePath();
+      break;
+    case "rounded-rect": {
+      const r = Math.min((o.cornerRadius ?? 12) * scaleX, w / 2, h / 2);
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      break;
+    }
+    case "arrow": {
+      const headW = w * 0.35;
+      const shaftH = h * 0.35;
+      const shaftTop = y + (h - shaftH) / 2;
+      ctx.moveTo(x, shaftTop);
+      ctx.lineTo(x + w - headW, shaftTop);
+      ctx.lineTo(x + w - headW, y);
+      ctx.lineTo(x + w, y + h / 2);
+      ctx.lineTo(x + w - headW, y + h);
+      ctx.lineTo(x + w - headW, shaftTop + shaftH);
+      ctx.lineTo(x, shaftTop + shaftH);
+      ctx.closePath();
+      break;
+    }
+    case "star": {
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const outerRx = w / 2;
+      const outerRy = h / 2;
+      const innerRx = outerRx * 0.38;
+      const innerRy = outerRy * 0.38;
+      for (let i = 0; i < 10; i++) {
+        const angle = (Math.PI / 2) * -1 + (i * Math.PI) / 5;
+        const rx = i % 2 === 0 ? outerRx : innerRx;
+        const ry = i % 2 === 0 ? outerRy : innerRy;
+        const px = cx + Math.cos(angle) * rx;
+        const py = cy + Math.sin(angle) * ry;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      break;
+    }
+    case "hexagon": {
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 2;
+        const px = cx + (w / 2) * Math.cos(angle);
+        const py = cy + (h / 2) * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      break;
+    }
+    default:
+      return false;
+  }
+  return true;
+}
+
 /** Draw a single shape overlay onto a canvas context */
 function drawShape(ctx: CanvasRenderingContext2D, o: ShapeOverlay, scaleX = 1, scaleY = 1) {
   const prevAlpha = ctx.globalAlpha;
@@ -71,6 +159,16 @@ function drawShape(ctx: CanvasRenderingContext2D, o: ShapeOverlay, scaleX = 1, s
     ctx.strokeStyle = o.strokeColor || "#ffffff";
     ctx.lineWidth = (o.strokeWidth || 2) * scaleX;
     ctx.stroke();
+  } else if (buildShapePath(ctx, o, scaleX, scaleY)) {
+    if (o.fillColor) {
+      ctx.fillStyle = o.fillColor;
+      ctx.fill();
+    }
+    if (o.strokeWidth > 0 && o.strokeColor) {
+      ctx.strokeStyle = o.strokeColor;
+      ctx.lineWidth = o.strokeWidth * scaleX;
+      ctx.stroke();
+    }
   }
 
   ctx.globalAlpha = prevAlpha;
