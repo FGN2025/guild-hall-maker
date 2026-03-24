@@ -150,7 +150,6 @@ export default function CoachFloatingButton() {
     deleteConversation,
   } = useCoachConversations();
 
-  // Keep ref in sync
   useEffect(() => {
     activeConvIdRef.current = activeConversationId;
   }, [activeConversationId]);
@@ -232,19 +231,60 @@ export default function CoachFloatingButton() {
     }
   }, [deleteConversation, activeConversationId, clearChat]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const gameName = selectedGame?.name || "General";
     const date = new Date().toISOString().slice(0, 10);
+    const filename = `ai-coach-${gameName.toLowerCase().replace(/\s+/g, "-")}-${date}.md`;
     const header = `# AI Coach Chat — ${gameName}\n_Exported on ${date}_\n`;
     const body = messages
       .map((m) => `**${m.role === "user" ? "You" : "Coach"}:** ${m.content}`)
       .join("\n\n---\n\n");
     const content = `${header}\n---\n\n${body}\n`;
     const blob = new Blob([content], { type: "text/markdown" });
+    const pickerWindow = window as Window & {
+      showSaveFilePicker?: (options?: {
+        suggestedName?: string;
+        types?: Array<{
+          description?: string;
+          accept: Record<string, string[]>;
+        }>;
+      }) => Promise<{
+        createWritable: () => Promise<{
+          write: (data: Blob) => Promise<void>;
+          close: () => Promise<void>;
+        }>;
+      }>;
+    };
+
+    try {
+      if (typeof pickerWindow.showSaveFilePicker === "function") {
+        const fileHandle = await pickerWindow.showSaveFilePicker({
+          suggestedName: filename,
+          types: [
+            {
+              description: "Markdown file",
+              accept: {
+                "text/markdown": [".md"],
+              },
+            },
+          ],
+        });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ai-coach-${gameName.toLowerCase().replace(/\s+/g, "-")}-${date}.md`;
+    a.download = filename;
+    a.style.display = "none";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -384,11 +424,11 @@ ${msgHtml}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleExport}>
+                        <DropdownMenuItem onSelect={() => void handleExport()}>
                           <Download className="h-3.5 w-3.5 mr-2" />
                           Markdown (.md)
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportPdf}>
+                        <DropdownMenuItem onSelect={handleExportPdf}>
                           <FileText className="h-3.5 w-3.5 mr-2" />
                           PDF
                         </DropdownMenuItem>
