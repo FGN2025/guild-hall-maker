@@ -20,6 +20,8 @@ import {
   X,
   Download,
   FileText,
+  Copy,
+  ExternalLink,
   History,
   ArrowLeft,
   UserCheck,
