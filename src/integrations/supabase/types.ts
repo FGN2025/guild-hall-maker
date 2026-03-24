@@ -2123,6 +2123,48 @@ export type Database = {
           },
         ]
       }
+      quest_task_point_awards: {
+        Row: {
+          awarded_at: string
+          enrollment_id: string
+          id: string
+          points_awarded: number
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          enrollment_id: string
+          id?: string
+          points_awarded?: number
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          enrollment_id?: string
+          id?: string
+          points_awarded?: number
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_task_point_awards_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "quest_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_task_point_awards_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "quest_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quest_tasks: {
         Row: {
           created_at: string

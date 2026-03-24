@@ -156,7 +156,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
         .eq("id", enrollmentId);
       if (error) throw error;
 
-      // 3. If completing, award points + record completion + notify
+      // 3. If completing, record completion + XP + notify (points already awarded per-task)
       if (status === "completed" && enrollment && user) {
         const { data: quest } = await supabase
           .from("quests")
@@ -164,37 +164,34 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
           .eq("id", enrollment.quest_id)
           .single();
 
-        const points = (quest as any)?.points_first ?? 0;
         const xpReward = (quest as any)?.xp_reward ?? 0;
         const questName = (quest as any)?.name ?? "Quest";
 
-        // Record completion
+        // Tally points already awarded per-task
+        const { data: taskAwards } = await supabase
+          .from("quest_task_point_awards")
+          .select("points_awarded")
+          .eq("enrollment_id", enrollmentId);
+        const totalAwarded = (taskAwards ?? []).reduce((sum: number, a: any) => sum + (a.points_awarded || 0), 0);
+
+        // Record completion (store total already awarded for reference)
         await supabase.from("quest_completions").insert({
           user_id: enrollment.user_id,
           quest_id: enrollment.quest_id,
-          awarded_points: points,
+          awarded_points: totalAwarded,
           verified_by: user.id,
         });
 
         // Notify the player
         await supabase.from("notifications").insert({
           user_id: enrollment.user_id,
-          title: "Quest Approved!",
-          message: `Your submission for "${questName}" has been approved! You earned ${points} points${xpReward > 0 ? ` and ${xpReward} XP` : ""}.`,
-          type: "quest",
+          title: "Quest Complete!",
+          message: `You completed "${questName}"!${xpReward > 0 ? ` You earned ${xpReward} XP.` : ""} ${totalAwarded} points were awarded across tasks.`,
+          type: "success",
           link: `/quests/${enrollment.quest_id}`,
         });
 
-        // Credit season score
-        if (points > 0) {
-          await supabase.functions.invoke("award-season-points", {
-            body: {
-              winner_id: enrollment.user_id,
-              points_winner: points,
-              game: (quest as any)?.games?.name,
-            },
-          });
-        }
+        // No lump-sum season points — already awarded per-task
 
         // Credit quest XP
         if (xpReward > 0) {
@@ -233,6 +230,14 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
   const updateEvidenceStatusMutation = useMutation({
     mutationFn: async ({ evidenceId, status, reviewer_notes }: { evidenceId: string; status: string; reviewer_notes?: string }) => {
       if (!user) throw new Error("Not authenticated");
+
+      // Get evidence details before updating
+      const { data: evidenceRow } = await supabase
+        .from("quest_evidence")
+        .select("enrollment_id, task_id")
+        .eq("id", evidenceId)
+        .single();
+
       const { error } = await supabase.from("quest_evidence")
         .update({
           status,
@@ -242,6 +247,60 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
         } as any)
         .eq("id", evidenceId);
       if (error) throw error;
+
+      // Per-task point award on approval
+      if (status === "approved" && evidenceRow?.enrollment_id && evidenceRow?.task_id) {
+        const { data: enrollment } = await supabase
+          .from("quest_enrollments")
+          .select("user_id, quest_id")
+          .eq("id", evidenceRow.enrollment_id)
+          .single();
+
+        if (enrollment) {
+          const { data: quest } = await supabase
+            .from("quests")
+            .select("points_first, name, games(name)")
+            .eq("id", enrollment.quest_id)
+            .single();
+
+          const points = (quest as any)?.points_first ?? 0;
+
+          if (points > 0) {
+            // Check for duplicate award
+            const { data: existing } = await supabase
+              .from("quest_task_point_awards")
+              .select("id")
+              .eq("enrollment_id", evidenceRow.enrollment_id)
+              .eq("task_id", evidenceRow.task_id)
+              .maybeSingle();
+
+            if (!existing) {
+              await supabase.from("quest_task_point_awards").insert({
+                enrollment_id: evidenceRow.enrollment_id,
+                task_id: evidenceRow.task_id,
+                user_id: enrollment.user_id,
+                points_awarded: points,
+              } as any);
+
+              await supabase.functions.invoke("award-season-points", {
+                body: {
+                  winner_id: enrollment.user_id,
+                  points_winner: points,
+                  game: (quest as any)?.games?.name,
+                },
+              });
+
+              await supabase.from("notifications").insert({
+                user_id: enrollment.user_id,
+                title: "Task Approved!",
+                message: `A task in "${(quest as any)?.name}" was approved! You earned ${points} point(s).`,
+                type: "success",
+                link: `/quests/${enrollment.quest_id}`,
+              });
+            }
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`${queryKeyPrefix}-quest-review-enrollments`] });
