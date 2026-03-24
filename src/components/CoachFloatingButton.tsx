@@ -437,14 +437,22 @@ ${msgHtml}
                           <Download className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => void handleExport()}>
                           <Download className="h-3.5 w-3.5 mr-2" />
                           Markdown (.md)
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={handleExportPdf}>
                           <FileText className="h-3.5 w-3.5 mr-2" />
-                          PDF
+                          Print / Save as PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={handleCopyChat}>
+                          <Copy className="h-3.5 w-3.5 mr-2" />
+                          Copy to Clipboard
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={handleOpenInNewTab}>
+                          <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                          Open in New Tab
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
