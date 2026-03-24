@@ -1,44 +1,27 @@
 
 
-## Fix: AI Coach "Unauthorized" Error
+## Fix AI Coach Download Not Triggering
 
 ### Root Cause
 
-The frontend (`useCoachChat.ts`, line 67) sends the **anon/publishable key** as the Authorization bearer token:
-
-```typescript
-Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-```
-
-The edge function (`ai-coach/index.ts`, line 222) calls `supabase.auth.getClaims(token)` on this token, which fails because the anon key is not a user JWT. This causes the "Unauthorized" error for **all users** — admins and players alike.
+The download handler creates an `<a>` element and calls `.click()` without appending it to the DOM. In sandboxed/iframe environments (like the Lovable preview), browsers may silently block programmatic clicks on detached elements.
 
 ### Fix
 
-**`src/hooks/useCoachChat.ts`** — Replace the static anon key with the authenticated user's session access token:
+**`src/components/CoachFloatingButton.tsx`** — In both `handleExport` (line 235) and `handleExportPdf` (line 252):
 
-1. Import `supabase` client
-2. Before making the fetch call, retrieve the current session via `supabase.auth.getSession()`
-3. Use the session's `access_token` as the Authorization bearer token
-4. If no session exists, show an error toast and return early
+1. **Markdown export** — Append the anchor to `document.body` before clicking, then remove it:
+   ```typescript
+   const a = document.createElement("a");
+   a.href = url;
+   a.download = `ai-coach-...`;
+   document.body.appendChild(a);
+   a.click();
+   document.body.removeChild(a);
+   URL.revokeObjectURL(url);
+   ```
 
-```typescript
-// Before fetch, get the user's JWT
-const { data: { session } } = await supabase.auth.getSession();
-if (!session?.access_token) {
-  toast({ title: "Error", description: "Please sign in to use the AI Coach.", variant: "destructive" });
-  setIsLoading(false);
-  return;
-}
+2. **PDF export** — The current approach opens a new window and calls `window.print()`. This works for printing but doesn't produce a file download. No change needed here since it's a print-to-PDF flow (browser print dialog).
 
-// Use session token instead of anon key
-Authorization: `Bearer ${session.access_token}`,
-```
-
-This is a single-file change (about 5 lines modified). No edge function changes needed — the backend auth logic is correct, it just needs to receive the right token.
-
-### Technical Details
-
-- The edge function creates a Supabase client with the Authorization header and validates the JWT via `getClaims` — this works correctly when given a real user JWT
-- The `getClaims` call extracts `sub` (user ID) which is used to fetch the player's coaching profile for personalization
-- After this fix, any authenticated user (player or admin) can use the AI Coach; unauthenticated users get a friendly sign-in prompt
+Single file, ~3 lines added to `handleExport`.
 
