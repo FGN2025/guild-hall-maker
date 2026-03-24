@@ -245,6 +245,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Quest Notifications — Opt in to 'New Quests' notifications from your Profile Settings to be alerted when a quest is published.",
       "Approval Notification — When a moderator approves your challenge submission, you'll receive an instant notification confirming approval and the points you earned.",
       "Tip: Challenges and quests with clear task checklists and evidence uploads are the fastest way to earn season points!",
+      "📖 Read the full Challenge Guide → /guide/challenges",
+      "📖 Read the full Quest Guide → /guide/quests",
     ],
   },
   {
