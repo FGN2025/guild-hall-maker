@@ -1,43 +1,56 @@
 
 
-## Add Game Selection to Coach File Uploads
+## Per-Task Point Payouts for Quests
 
-When uploading files to the AI Coach profile, players must select which game the data relates to — either picking from the existing games catalog or entering a custom game name.
+### Current Behavior
+Points are awarded in a single lump sum when a moderator marks the entire quest enrollment as "completed." Individual task evidence approvals don't trigger any point awards.
 
-### Database Change
+### New Behavior
+Each time a moderator **approves** a piece of task evidence, the player earns the quest's `points_first` value for that task. A quest with 5 tasks and `points_first = 1` awards 1 point per approved task = 5 total. The final "completed" status no longer awards points (they've already been earned per-task).
 
-Add a `game_name` column to `coach_player_files`:
+### Changes
 
-```sql
-ALTER TABLE public.coach_player_files
-  ADD COLUMN game_name text;
-```
+**1. Database — New tracking table + trigger**
 
-Nullable so existing files aren't broken.
+Create a `quest_task_point_awards` table to prevent double-awarding:
 
-### Frontend Changes
+| Column | Type |
+|---|---|
+| id | uuid PK |
+| enrollment_id | uuid |
+| task_id | uuid |
+| user_id | uuid |
+| points_awarded | integer |
+| awarded_at | timestamptz |
 
-**`src/components/coach/CoachProfileCard.tsx`**
-- Add a game selector that appears when the upload button is clicked (or inline next to it)
-- Fetch active games from the `games` table for a dropdown
-- Include an "Other" option that reveals a free-text input for unlisted games
-- Store selected game name in state; pass it through to `uploadFile`
-- Display the game name next to each file in the uploaded files list
+Unique constraint on `(enrollment_id, task_id)` to prevent duplicate payouts.
 
-**`src/hooks/useCoachProfile.ts`**
-- Update `uploadFile` signature to accept `gameName: string`
-- Insert `game_name` into the `coach_player_files` row
-- Update `CoachFile` interface to include `game_name`
+**2. Frontend — `AdminQuestsPanel.tsx` evidence approval mutation**
 
-### Edge Function
+Update `updateEvidenceStatusMutation` (line 233): when `status = "approved"`, after updating the evidence row:
+- Look up the quest's `points_first` value
+- Check `quest_task_point_awards` to ensure this task hasn't already been paid
+- Insert into `quest_task_point_awards`
+- Call `award-season-points` edge function for the per-task amount
+- Send a notification to the player: "Task approved! You earned X point(s)"
 
-**`supabase/functions/ai-coach/index.ts`**
-- When injecting file metadata into the system prompt, include the game name so the AI knows which game each file's stats relate to
+**3. Frontend — Quest completion mutation**
 
-### UI Flow
+Update `updateStatusMutation` (line 143): when marking "completed," **skip** the `award-season-points` call since points were already awarded per-task. Still record `quest_completions` (for chain logic, XP, and achievement tracking).
 
-1. Player clicks "Upload File"
-2. A small inline form appears: game selector (dropdown of active games + "Other/custom" option) and the file picker
-3. Both game and file are required before the upload proceeds
-4. Uploaded files list shows game name as a badge/tag next to each file
+**4. Quest Detail page — per-task status visibility**
+
+The `QuestDetail.tsx` already shows per-evidence status badges. No changes needed — players already see which tasks are approved/pending/rejected.
+
+**5. Sidebar points display**
+
+Update the quest detail sidebar to show "Points per task" instead of a single total, so players understand the per-task payout model. Show `+{points_first} per task` and `{points_first × task_count} total possible`.
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| New migration SQL | `quest_task_point_awards` table + RLS |
+| `src/components/quests/AdminQuestsPanel.tsx` | Per-task point award on evidence approval; skip lump-sum on completion |
+| `src/pages/QuestDetail.tsx` | Update sidebar to show per-task point breakdown |
 
