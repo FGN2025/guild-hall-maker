@@ -84,6 +84,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Editing — Tournament creators can update details after creation via the Edit dialog.",
       "Season Points — Points are awarded automatically when a tournament completes, based on your placement.",
       "Tip: Register early — popular tournaments fill up fast!",
+      "📖 Read the full Tournament Guide → /guide/tournaments",
     ],
   },
   {
