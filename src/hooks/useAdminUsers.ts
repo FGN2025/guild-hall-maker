@@ -194,5 +194,35 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  return { users, isLoading, setRole, resendConfirmation, deleteUser };
+  const setTenantRole = useMutation({
+    mutationFn: async ({ userId, tenantId, role }: { userId: string; tenantId: string; role: string | null }) => {
+      if (!role || role === "none") {
+        // Remove tenant_admins record
+        const { error } = await supabase.from("tenant_admins").delete().eq("user_id", userId).eq("tenant_id", tenantId);
+        if (error) throw error;
+      } else {
+        // Check if record exists
+        const { data: existing } = await supabase.from("tenant_admins").select("id").eq("user_id", userId).eq("tenant_id", tenantId).maybeSingle();
+        if (existing) {
+          const { error } = await supabase.from("tenant_admins").update({ role }).eq("id", existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("tenant_admins").insert({ user_id: userId, tenant_id: tenantId, role });
+          if (error) throw error;
+        }
+        // Ensure user_service_interests record exists for this tenant
+        const { data: existingInterest } = await supabase.from("user_service_interests").select("id").eq("user_id", userId).eq("tenant_id", tenantId).maybeSingle();
+        if (!existingInterest) {
+          await supabase.from("user_service_interests").insert({ user_id: userId, tenant_id: tenantId } as any);
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ title: "Tenant role updated" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return { users, isLoading, setRole, setTenantRole, resendConfirmation, deleteUser };
 };
