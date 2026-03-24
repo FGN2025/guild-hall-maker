@@ -150,7 +150,6 @@ export default function CoachFloatingButton() {
     deleteConversation,
   } = useCoachConversations();
 
-  // Keep ref in sync
   useEffect(() => {
     activeConvIdRef.current = activeConversationId;
   }, [activeConversationId]);
@@ -425,28 +424,12 @@ ${msgHtml}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={handleExport}>
+                        <DropdownMenuItem onSelect={() => void handleExport()}>
                           <Download className="h-3.5 w-3.5 mr-2" />
                           Markdown (.md)
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={handleExportPdf}>
                           <FileText className="h-3.5 w-3.5 mr-2" />
-                          PDF
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleNewChat}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-              </>
-            )}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
                           PDF
                         </DropdownMenuItem>
                       </DropdownMenuContent>
