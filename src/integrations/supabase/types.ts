@@ -1145,6 +1145,39 @@ export type Database = {
         }
         Relationships: []
       }
+      guide_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          file_type: string
+          file_url: string
+          guide_slug: string
+          id: string
+          section_id: string
+          sort_order: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          file_type?: string
+          file_url: string
+          guide_slug: string
+          id?: string
+          section_id: string
+          sort_order?: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          file_type?: string
+          file_url?: string
+          guide_slug?: string
+          id?: string
+          section_id?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       ladder_entries: {
         Row: {
           created_at: string

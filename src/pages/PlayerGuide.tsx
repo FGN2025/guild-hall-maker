@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import {
   Accordion,
@@ -83,6 +84,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Editing — Tournament creators can update details after creation via the Edit dialog.",
       "Season Points — Points are awarded automatically when a tournament completes, based on your placement.",
       "Tip: Register early — popular tournaments fill up fast!",
+      "📖 Read the full Tournament Guide → /guide/tournaments",
     ],
   },
   {
@@ -243,6 +245,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Quest Notifications — Opt in to 'New Quests' notifications from your Profile Settings to be alerted when a quest is published.",
       "Approval Notification — When a moderator approves your challenge submission, you'll receive an instant notification confirming approval and the points you earned.",
       "Tip: Challenges and quests with clear task checklists and evidence uploads are the fastest way to earn season points!",
+      "📖 Read the full Challenge Guide → /guide/challenges",
+      "📖 Read the full Quest Guide → /guide/quests",
     ],
   },
   {
@@ -426,6 +430,16 @@ const PlayerGuide = () => {
       content: (
         <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
           {s.bullets.map((b, i) => {
+            const guideLink = b.match(/^📖 (.+?) → (.+)$/);
+            if (guideLink) {
+              return (
+                <li key={i}>
+                  <Link to={guideLink[2]} className="text-primary hover:underline font-semibold">
+                    📖 {guideLink[1]}
+                  </Link>
+                </li>
+              );
+            }
             const dashIdx = b.indexOf(" — ");
             if (dashIdx > 0) {
               return (

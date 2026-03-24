@@ -58,3 +58,20 @@ Build this in two phases:
 
 This keeps each phase reviewable and deployable independently.
 
+## Standalone Player Guides with Media Upload — COMPLETED
+
+Created three dedicated player guide pages with media upload support:
+
+### Pages Created
+- `/guide/tournaments` — Tournament Guide (9 sections)
+- `/guide/challenges` — Challenge Guide (9 sections)
+- `/guide/quests` — Quest Guide (8 sections, including per-task point payouts)
+
+### Media System
+- `guide_media` database table with public read / admin+moderator write RLS
+- `useGuideMedia` hook for fetching and CRUD operations
+- `GuideMediaManager` admin component in Admin Settings for uploading images, videos, and files per section
+- All three guide pages render uploaded media inline within their accordion sections
+
+### Cross-Links
+- Player Guide sections link to the full standalone guides

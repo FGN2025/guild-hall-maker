@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import HeroLogoSettings from "@/components/admin/HeroLogoSettings";
 import AIImageConfigCard from "@/components/admin/AIImageConfigCard";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
+import GuideMediaManager from "@/components/admin/GuideMediaManager";
 
 interface LimitEntry {
   enabled: boolean;
@@ -467,6 +468,8 @@ const AdminSettings = () => {
           </Button>
         </div>
       </div>
+
+      <GuideMediaManager />
     </div>
   );
 };
