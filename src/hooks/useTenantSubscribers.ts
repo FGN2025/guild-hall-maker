@@ -71,6 +71,20 @@ export const useTenantSubscribers = (tenantId: string | undefined) => {
     },
   });
 
+  const updateSubscriber = useMutation({
+    mutationFn: async ({ id, fields }: { id: string; fields: Partial<TenantSubscriber> }) => {
+      const { error } = await supabase.from("tenant_subscribers").update(fields as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-subscribers", tenantId] });
+      toast({ title: "Subscriber updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error updating subscriber", description: err.message, variant: "destructive" });
+    },
+  });
+
   const deleteSubscriber = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("tenant_subscribers").delete().eq("id", id);
@@ -82,5 +96,5 @@ export const useTenantSubscribers = (tenantId: string | undefined) => {
     },
   });
 
-  return { subscribers, isLoading, addSubscriber, bulkInsert, deleteSubscriber };
+  return { subscribers, isLoading, addSubscriber, bulkInsert, updateSubscriber, deleteSubscriber };
 };
