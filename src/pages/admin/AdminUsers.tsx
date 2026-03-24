@@ -195,7 +195,51 @@ const AdminUsers = () => {
                         ) : "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">{u.tenant_name ?? "—"}</TableCell>
-                      <TableCell>{tenantRoleBadge(u.tenant_role)}</TableCell>
+                      <TableCell>
+                        {u.user_id === currentUser?.id ? (
+                          tenantRoleBadge(u.tenant_role)
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            {/* Tenant picker if user has no tenant */}
+                            {!u.tenant_id && (
+                              <Select
+                                value=""
+                                onValueChange={(tId) => {
+                                  // When tenant is picked, we'll need to also pick a role — default to 'admin'
+                                  setTenantRole.mutate({ userId: u.user_id, tenantId: tId, role: "admin" });
+                                }}
+                                disabled={setTenantRole.isPending}
+                              >
+                                <SelectTrigger className="w-[120px] text-xs">
+                                  <SelectValue placeholder="Assign..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {tenants.map((t) => (
+                                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {u.tenant_id && (
+                              <Select
+                                value={u.tenant_role ?? "none"}
+                                onValueChange={(val) => setTenantRole.mutate({ userId: u.user_id, tenantId: u.tenant_id!, role: val })}
+                                disabled={setTenantRole.isPending}
+                              >
+                                <SelectTrigger className="w-[130px] text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  <SelectItem value="admin">Tenant Admin</SelectItem>
+                                  <SelectItem value="manager">Manager</SelectItem>
+                                  <SelectItem value="marketing">Marketing</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>{roleBadge(u.role)}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {new Date(u.created_at).toLocaleDateString()}
