@@ -242,13 +242,24 @@ export default function CoachFloatingButton() {
       .join("\n\n---\n\n");
     const content = `${header}\n---\n\n${body}\n`;
     const blob = new Blob([content], { type: "text/markdown" });
-    const windowWithPicker = window as Window & {
-      showSaveFilePicker?: (options?: any) => Promise<any>;
+    const pickerWindow = window as Window & {
+      showSaveFilePicker?: (options?: {
+        suggestedName?: string;
+        types?: Array<{
+          description?: string;
+          accept: Record<string, string[]>;
+        }>;
+      }) => Promise<{
+        createWritable: () => Promise<{
+          write: (data: Blob) => Promise<void>;
+          close: () => Promise<void>;
+        }>;
+      }>;
     };
 
     try {
-      if (typeof windowWithPicker.showSaveFilePicker === "function") {
-        const fileHandle = await windowWithPicker.showSaveFilePicker({
+      if (typeof pickerWindow.showSaveFilePicker === "function") {
+        const fileHandle = await pickerWindow.showSaveFilePicker({
           suggestedName: filename,
           types: [
             {
@@ -309,13 +320,133 @@ ${msgHtml}
       setTimeout(() => win.print(), 400);
     }
   };
-...
+
+  const suggestions = getSuggestions(selectedGame);
+
+  return (
+    <>
+      {/* Floating Action Button */}
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-300",
+          "bg-primary text-primary-foreground hover:scale-110",
+          "ring-2 ring-primary/30 hover:ring-primary/60",
+          open && "scale-0 opacity-0 pointer-events-none"
+        )}
+        aria-label="Open AI Coach"
+      >
+        <BrainCircuit className="h-6 w-6" />
+        <span className="absolute inset-0 rounded-full animate-ping bg-primary/20 pointer-events-none" />
+      </button>
+
+      {/* Chat Panel */}
+      <div
+        className={cn(
+          "fixed z-50 flex flex-col transition-all duration-300 origin-bottom-right",
+          isMobile
+            ? "inset-0"
+            : "bottom-6 right-6 w-[400px] h-[540px] rounded-2xl",
+          "bg-background/80 backdrop-blur-xl border border-border shadow-2xl",
+          open
+            ? "scale-100 opacity-100 pointer-events-auto"
+            : "scale-90 opacity-0 pointer-events-none"
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {showHistory ? (
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowHistory(false)}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            ) : (
+              <div className="relative shrink-0">
+                <BrainCircuit className="h-5 w-5 text-primary" />
+                {coachProfile?.enabled && (
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-green-500 border border-background" title="Personalized coaching active" />
+                )}
+              </div>
+            )}
+            <span className="font-semibold text-sm text-foreground truncate">
+              {showHistory ? "Chat History" : selectedGame ? selectedGame.name : "AI Coach"}
+            </span>
+            {!showHistory && coachProfile?.enabled && (
+              <a href="/settings" className="shrink-0" title="Coach profile active — click to edit">
+                <UserCheck className="h-3.5 w-3.5 text-green-500" />
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {!showHistory && (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 max-w-[160px]">
+                      <Gamepad2 className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate text-xs">
+                        {selectedGame ? selectedGame.name : "All Games"}
+                      </span>
+                      <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="max-h-[260px] overflow-y-auto">
+                    <DropdownMenuItem onClick={() => handleGameSelect(null)} className={!selectedGame ? "bg-accent" : ""}>
+                      All Games
+                    </DropdownMenuItem>
+                    {games?.map((g) => (
+                      <DropdownMenuItem
+                        key={g.id}
+                        onClick={() => handleGameSelect(g)}
+                        className={selectedGame?.id === g.id ? "bg-accent" : ""}
+                      >
+                        {g.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {user && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground"
+                    onClick={() => { setShowHistory(true); fetchConversations(); }}
+                    title="Chat history"
+                  >
+                    <History className="h-4 w-4" />
+                  </Button>
+                )}
+                {messages.length > 0 && (
+                  <>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Download chat">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={handleExport}>
                           <Download className="h-3.5 w-3.5 mr-2" />
                           Markdown (.md)
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={handleExportPdf}>
                           <FileText className="h-3.5 w-3.5 mr-2" />
+                          PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleNewChat}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+              </>
+            )}
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
                           PDF
                         </DropdownMenuItem>
                       </DropdownMenuContent>
