@@ -1,56 +1,60 @@
 
 
-## Per-Task Point Payouts for Quests
+## Assessment: Media Uploads for Supplemental Player Guides
 
-### Current Behavior
-Points are awarded in a single lump sum when a moderator marks the entire quest enrollment as "completed." Individual task evidence approvals don't trigger any point awards.
+### Current State
 
-### New Behavior
-Each time a moderator **approves** a piece of task evidence, the player earns the quest's `points_first` value for that task. A quest with 5 tasks and `points_first = 1` awards 1 point per approved task = 5 total. The final "completed" status no longer awards points (they've already been earned per-task).
+The three standalone guide pages (`/guide/tournaments`, `/guide/challenges`, `/guide/quests`) **do not exist yet** — they were planned but never implemented. The existing `PlayerGuide.tsx` is a single-page static guide with hardcoded accordion sections. There is no admin-editable content or media attachment system for any guide.
 
-### Changes
+### What "Upload files, images and videos" Requires
 
-**1. Database — New tracking table + trigger**
+To make guide content enrichable with media, we need:
 
-Create a `quest_task_point_awards` table to prevent double-awarding:
+1. **A content storage model** — A database table to store guide media (which guide, ordering, captions, file URLs)
+2. **An admin interface** — A way for admins/moderators to upload and arrange media within each guide section
+3. **A player-facing renderer** — The guide pages display uploaded media inline within sections
 
-| Column | Type |
-|---|---|
-| id | uuid PK |
-| enrollment_id | uuid |
-| task_id | uuid |
-| user_id | uuid |
-| points_awarded | integer |
-| awarded_at | timestamptz |
+### Proposed Architecture
 
-Unique constraint on `(enrollment_id, task_id)` to prevent duplicate payouts.
+**Database: `guide_media` table**
 
-**2. Frontend — `AdminQuestsPanel.tsx` evidence approval mutation**
+| Column | Type | Purpose |
+|---|---|---|
+| id | uuid PK | |
+| guide_slug | text | `tournaments`, `challenges`, `quests` |
+| section_id | text | Matches accordion section ID |
+| file_url | text | Public URL from `app-media` storage |
+| file_type | text | `image`, `video`, `file` |
+| caption | text | Optional description |
+| sort_order | integer | Display order within section |
+| created_at | timestamptz | |
 
-Update `updateEvidenceStatusMutation` (line 233): when `status = "approved"`, after updating the evidence row:
-- Look up the quest's `points_first` value
-- Check `quest_task_point_awards` to ensure this task hasn't already been paid
-- Insert into `quest_task_point_awards`
-- Call `award-season-points` edge function for the per-task amount
-- Send a notification to the player: "Task approved! You earned X point(s)"
+RLS: Public SELECT (guides are public content), admin/moderator INSERT/UPDATE/DELETE.
 
-**3. Frontend — Quest completion mutation**
+**Implementation Steps**
 
-Update `updateStatusMutation` (line 143): when marking "completed," **skip** the `award-season-points` call since points were already awarded per-task. Still record `quest_completions` (for chain logic, XP, and achievement tracking).
+| Step | Effort | Description |
+|---|---|---|
+| 1. Create the 3 guide pages | ~2 hours | Port static content from PlayerGuide sections into dedicated pages with expanded detail |
+| 2. Database migration | ~15 min | `guide_media` table + RLS |
+| 3. `useGuideMedia` hook | ~30 min | Fetch media by guide slug; upload/delete mutations using `app-media` bucket |
+| 4. Admin upload UI | ~1.5 hours | Section in admin settings or inline edit mode on guide pages — pick section, upload file, set caption, reorder |
+| 5. Guide renderer | ~1 hour | Each accordion section queries its media and renders images/videos/download links inline |
+| 6. Testing | ~30 min | Upload flow, display, ordering, delete |
 
-**4. Quest Detail page — per-task status visibility**
+**Total estimate: ~6 hours**
 
-The `QuestDetail.tsx` already shows per-evidence status badges. No changes needed — players already see which tasks are approved/pending/rejected.
+### Dependencies
 
-**5. Sidebar points display**
+- The 3 guide pages must be created first (Step 1)
+- The existing `app-media` storage bucket (public) handles file storage — no new bucket needed
+- The existing `MediaUploader` component pattern can be reused for the admin upload UI
 
-Update the quest detail sidebar to show "Points per task" instead of a single total, so players understand the per-task payout model. Show `+{points_first} per task` and `{points_first × task_count} total possible`.
+### Recommendation
 
-### Files Changed
+Build this in two phases:
+1. **Phase 1**: Create the 3 static guide pages (approved plan already exists)
+2. **Phase 2**: Add the `guide_media` table and admin upload capability
 
-| File | Change |
-|---|---|
-| New migration SQL | `quest_task_point_awards` table + RLS |
-| `src/components/quests/AdminQuestsPanel.tsx` | Per-task point award on evidence approval; skip lump-sum on completion |
-| `src/pages/QuestDetail.tsx` | Update sidebar to show per-task point breakdown |
+This keeps each phase reviewable and deployable independently.
 
