@@ -9,6 +9,7 @@ import { useCoachConversations } from "@/hooks/useCoachConversations";
 import { useGames, Game } from "@/hooks/useGames";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 import {
   BrainCircuit,
   Send,
