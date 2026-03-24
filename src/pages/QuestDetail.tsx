@@ -274,10 +274,23 @@ const QuestDetail = () => {
             <Card>
               <CardContent className="p-5 space-y-4">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Points</span>
-                    <span className="font-mono font-semibold text-foreground">+{q.points_first}</span>
-                  </div>
+                  {tasks.length > 0 ? (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Points per task</span>
+                        <span className="font-mono font-semibold text-foreground">+{q.points_first}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Total possible</span>
+                        <span className="font-mono font-semibold text-primary">+{q.points_first * tasks.length}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Points</span>
+                      <span className="font-mono font-semibold text-foreground">+{q.points_first}</span>
+                    </div>
+                  )}
                   {q.xp_reward > 0 && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground flex items-center gap-1">
