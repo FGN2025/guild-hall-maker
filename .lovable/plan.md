@@ -1,87 +1,50 @@
 
 
-## Tenant Admin Player & Subscriber Management — Edit, Delete, Ban
+## Add Tenant Role Assignment to Admin Users Page
 
-### Current State
+### Problem
+The "Set Role" dropdown on the Admin Users page only manages **platform roles** (User, Moderator, Marketing, Admin). Super Admins cannot assign **tenant roles** (Tenant Admin, Manager, Marketing) from this view — they must go through the tenant invitation workflow instead.
 
-- **Players page** (`/tenant/players`): Read-only table showing legacy + new players with search, CSV/PDF export. No row-level actions.
-- **Subscribers page** (`/tenant/subscribers`): Read-only table with search, pagination, CSV/PDF export. The hook has `deleteSubscriber` but it's not wired to the UI. No edit capability.
-- Players come from two sources: `user_service_interests` (new leads) and `legacy_users` (legacy). Subscribers come from `tenant_subscribers`.
-- Platform-level user deletion/ban exists via the `delete-user` edge function, but only for platform admins.
+### Solution
+Add a second "Set Tenant Role" control per user row that lets Super Admins assign or change a user's tenant role directly. This requires:
+1. Selecting which tenant (if the user isn't already associated with one)
+2. Selecting the tenant role (Admin, Manager, Marketing, or None)
 
-### Proposed Capabilities
+### Implementation
 
-#### 1. Subscriber Management (Edit, Delete)
+**`src/hooks/useAdminUsers.ts`** — Add a `setTenantRole` mutation:
+- Accepts `{ userId, tenantId, role }` (role can be null to remove)
+- If role is null: delete from `tenant_admins` where user_id + tenant_id match
+- If role is set: upsert into `tenant_admins` (insert on conflict update role)
+- Also ensure the user has a `user_service_interests` record for that tenant (so they show up in tenant player lists)
+- Invalidate `admin-users` query on success
 
-**Edit Subscriber Dialog** — Inline edit dialog for `tenant_subscribers` records:
-- Editable fields: first_name, last_name, email, phone, address, zip_code, account_number, plan_name, service_status
-- Uses an `updateSubscriber` mutation (new) in `useTenantSubscribers`
-- Pencil icon per row opens the dialog
+**`src/hooks/useAdminUsers.ts`** — Fix tenant data mapping:
+- Currently `tenantAdminMap` only stores one entry per user (Map key = user_id). This is fine for display but the tenant_id from tenant_admins should also be surfaced. Already done via `tenant_id` field from interests — but a user might have a tenant_admin role without an interest record. Update mapping to also check tenant_admins for tenant association.
 
-**Delete Subscriber** — Trash icon per row with confirmation dialog:
-- Wire existing `deleteSubscriber` mutation to UI
-- Restricted to Tenant Admin role (not Manager)
+**`src/pages/admin/AdminUsers.tsx`** — Add tenant role column controls:
+- Replace the static "Tenant Role" badge column with an interactive control for Super Admins
+- Add a compound selector: if user has no tenant, show a tenant picker dropdown first, then the role dropdown
+- If user already has a tenant association, show just the tenant role dropdown (Admin / Manager / Marketing / Remove)
+- Use the tenants list already fetched via `useTenantsList`
 
-#### 2. Player Management (Edit, Delete, Ban)
+### UI Layout Change
 
-Players are more complex since they map to auth users (new leads) or legacy records.
+The "Set Role" area expands to include a "Set Tenant Role" dropdown next to the existing platform role dropdown. The tenant role dropdown options:
+- **None** — removes tenant_admins record
+- **Tenant Admin**
+- **Manager**  
+- **Marketing**
 
-**Edit Legacy Player** — Dialog to edit `legacy_users` fields:
-- Editable: legacy_username, email, first_name, last_name, address, zip_code, invite_code, status
-- New `updateLegacyPlayer` mutation in `useTenantPlayers`
+When a user has no tenant association and the admin selects a tenant role, a small tenant picker appears inline to choose which tenant to assign them to.
 
-**Edit New Lead** — Limited edit on `user_service_interests` (status, zip_code). Display name changes would require profile access, which is player-owned.
-
-**Delete Player**:
-- Legacy: Delete from `legacy_users` table directly
-- New leads: Delete from `user_service_interests` (removes the lead record, does NOT delete the auth user — that's platform admin territory)
-
-**Ban Player** (new leads only):
-- Tenant admins can flag a player for ban by calling a new edge function `tenant-ban-player` that:
-  - Verifies the caller is a tenant admin for the player's tenant
-  - Inserts into `banned_users` table
-  - Optionally removes the `user_service_interests` record
-- This does NOT delete the auth user (that stays platform admin only) but prevents re-registration
-
-#### 3. UI Changes
-
-**Files to modify/create:**
+### Files Changed
 
 | File | Change |
 |---|---|
-| `src/components/tenant/EditSubscriberDialog.tsx` | New — form dialog for editing subscriber fields |
-| `src/components/tenant/EditPlayerDialog.tsx` | New — form dialog for editing legacy/lead player fields |
-| `src/hooks/useTenantSubscribers.ts` | Add `updateSubscriber` mutation |
-| `src/hooks/useTenantPlayers.ts` | Add `updateLegacyPlayer`, `deleteLegacyPlayer`, `deleteLead` mutations |
-| `src/pages/tenant/TenantSubscribers.tsx` | Add edit/delete action buttons per row |
-| `src/pages/tenant/TenantPlayers.tsx` | Add edit/delete/ban action buttons per row |
-| `supabase/functions/tenant-ban-player/index.ts` | New edge function — tenant-scoped ban |
-| New migration | RLS policies allowing tenant admins to UPDATE/DELETE on `legacy_users` and `tenant_subscribers` scoped to their tenant |
+| `src/hooks/useAdminUsers.ts` | Add `setTenantRole` mutation (upsert/delete on `tenant_admins`) |
+| `src/pages/admin/AdminUsers.tsx` | Add interactive tenant role dropdown in the Tenant Role column; add tenant picker for unassociated users |
 
-#### 4. Access Control
-
-- Only **Tenant Admin** role can edit/delete/ban — Managers get read-only view (existing pattern from subscribers page)
-- RLS ensures tenant admins can only modify records belonging to their own tenant
-- Ban action requires confirmation dialog with explicit "Ban" label
-
-#### 5. Database Migration
-
-```sql
--- Ensure tenant admins can update/delete legacy_users for their tenant
--- (Check existing RLS first — may need new policies)
-
--- Ensure tenant admins can update tenant_subscribers for their tenant
--- (deleteSubscriber mutation exists but RLS may need UPDATE policy)
-```
-
-### Implementation Order
-
-1. Database migration — add UPDATE/DELETE RLS policies for tenant-scoped access
-2. `useTenantSubscribers` — add `updateSubscriber` mutation
-3. `EditSubscriberDialog` component + wire into Subscribers page
-4. Wire delete button into Subscribers page
-5. `useTenantPlayers` — add update/delete mutations
-6. `EditPlayerDialog` component + wire into Players page
-7. `tenant-ban-player` edge function
-8. Wire ban button into Players page (new leads only)
+### Database
+No migration needed — `tenant_admins` table already exists with the right schema. Platform admins already have full access via existing RLS policies (admin role check).
 
