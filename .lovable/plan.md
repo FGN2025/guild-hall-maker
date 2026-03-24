@@ -1,55 +1,87 @@
 
-## Fix AI Coach Export So It Works Even When Browser Downloads Are Blocked
 
-### What’s happening
-The current Markdown export already tries both:
-1. `showSaveFilePicker`
-2. hidden anchor download
+## Tenant Admin Player & Subscriber Management — Edit, Delete, Ban
 
-But in preview/sandboxed iframe environments, **both can still be blocked silently**. That’s why nothing appears in Downloads even after the earlier fixes.
+### Current State
 
-### Recommended fix
-Make export use a **reliable fallback chain with visible user feedback**, instead of assuming the browser saved the file.
+- **Players page** (`/tenant/players`): Read-only table showing legacy + new players with search, CSV/PDF export. No row-level actions.
+- **Subscribers page** (`/tenant/subscribers`): Read-only table with search, pagination, CSV/PDF export. The hook has `deleteSubscriber` but it's not wired to the UI. No edit capability.
+- Players come from two sources: `user_service_interests` (new leads) and `legacy_users` (legacy). Subscribers come from `tenant_subscribers`.
+- Platform-level user deletion/ban exists via the `delete-user` edge function, but only for platform admins.
 
-### Implementation plan
+### Proposed Capabilities
 
-1. **Harden `handleExport` in `src/components/CoachFloatingButton.tsx`**
-   - Keep `showSaveFilePicker` as the first option
-   - If that fails, fall back to a blob URL anchor with:
-     - `target="_blank"`
-     - `rel="noopener"`
-   - If that still fails or is blocked, fall back to opening the export content in a new tab/window as plain rendered text/HTML so the user can manually save it
+#### 1. Subscriber Management (Edit, Delete)
 
-2. **Add explicit success/error toasts**
-   - “Save dialog opened”
-   - “Download started”
-   - “Your browser blocked automatic download — export opened in a new tab instead”
-   - “Export cancelled”
+**Edit Subscriber Dialog** — Inline edit dialog for `tenant_subscribers` records:
+- Editable fields: first_name, last_name, email, phone, address, zip_code, account_number, plan_name, service_status
+- Uses an `updateSubscriber` mutation (new) in `useTenantSubscribers`
+- Pencil icon per row opens the dialog
 
-3. **Add a last-resort manual export path**
-   - Add a second action such as:
-     - “Open Markdown in New Tab”
-     - or “Copy Chat to Clipboard”
-   - This guarantees users can still keep the conversation even when browser downloads are restricted
+**Delete Subscriber** — Trash icon per row with confirmation dialog:
+- Wire existing `deleteSubscriber` mutation to UI
+- Restricted to Tenant Admin role (not Manager)
 
-4. **Keep PDF behavior separate**
-   - PDF currently uses print dialog, which is not a file download
-   - Relabel or clarify that it is “Print / Save as PDF” so expectations are correct
+#### 2. Player Management (Edit, Delete, Ban)
 
-### Why this is the right fix
-The issue is no longer just the anchor element. The real problem is that the app is running in an environment where **automatic file downloads may be restricted**. The export flow needs a fallback that does not depend on the browser writing directly into Downloads.
+Players are more complex since they map to auth users (new leads) or legacy records.
 
-### Files to update
-- `src/components/CoachFloatingButton.tsx`
+**Edit Legacy Player** — Dialog to edit `legacy_users` fields:
+- Editable: legacy_username, email, first_name, last_name, address, zip_code, invite_code, status
+- New `updateLegacyPlayer` mutation in `useTenantPlayers`
 
-### Expected outcome
-After this change, users will always get one of these outcomes:
-- native save dialog
-- direct download
-- new tab with export content ready for manual save
-- clear feedback explaining what happened
+**Edit New Lead** — Limited edit on `user_service_interests` (status, zip_code). Display name changes would require profile access, which is player-owned.
 
-### Technical notes
-- `showSaveFilePicker` only works in supported secure contexts and may be unavailable or restricted in embedded previews
-- hidden anchor downloads can also be blocked inside iframe/sandbox environments
-- opening a new tab with export content is the most dependable non-backend fallback when browser downloads are suppressed
+**Delete Player**:
+- Legacy: Delete from `legacy_users` table directly
+- New leads: Delete from `user_service_interests` (removes the lead record, does NOT delete the auth user — that's platform admin territory)
+
+**Ban Player** (new leads only):
+- Tenant admins can flag a player for ban by calling a new edge function `tenant-ban-player` that:
+  - Verifies the caller is a tenant admin for the player's tenant
+  - Inserts into `banned_users` table
+  - Optionally removes the `user_service_interests` record
+- This does NOT delete the auth user (that stays platform admin only) but prevents re-registration
+
+#### 3. UI Changes
+
+**Files to modify/create:**
+
+| File | Change |
+|---|---|
+| `src/components/tenant/EditSubscriberDialog.tsx` | New — form dialog for editing subscriber fields |
+| `src/components/tenant/EditPlayerDialog.tsx` | New — form dialog for editing legacy/lead player fields |
+| `src/hooks/useTenantSubscribers.ts` | Add `updateSubscriber` mutation |
+| `src/hooks/useTenantPlayers.ts` | Add `updateLegacyPlayer`, `deleteLegacyPlayer`, `deleteLead` mutations |
+| `src/pages/tenant/TenantSubscribers.tsx` | Add edit/delete action buttons per row |
+| `src/pages/tenant/TenantPlayers.tsx` | Add edit/delete/ban action buttons per row |
+| `supabase/functions/tenant-ban-player/index.ts` | New edge function — tenant-scoped ban |
+| New migration | RLS policies allowing tenant admins to UPDATE/DELETE on `legacy_users` and `tenant_subscribers` scoped to their tenant |
+
+#### 4. Access Control
+
+- Only **Tenant Admin** role can edit/delete/ban — Managers get read-only view (existing pattern from subscribers page)
+- RLS ensures tenant admins can only modify records belonging to their own tenant
+- Ban action requires confirmation dialog with explicit "Ban" label
+
+#### 5. Database Migration
+
+```sql
+-- Ensure tenant admins can update/delete legacy_users for their tenant
+-- (Check existing RLS first — may need new policies)
+
+-- Ensure tenant admins can update tenant_subscribers for their tenant
+-- (deleteSubscriber mutation exists but RLS may need UPDATE policy)
+```
+
+### Implementation Order
+
+1. Database migration — add UPDATE/DELETE RLS policies for tenant-scoped access
+2. `useTenantSubscribers` — add `updateSubscriber` mutation
+3. `EditSubscriberDialog` component + wire into Subscribers page
+4. Wire delete button into Subscribers page
+5. `useTenantPlayers` — add update/delete mutations
+6. `EditPlayerDialog` component + wire into Players page
+7. `tenant-ban-player` edge function
+8. Wire ban button into Players page (new leads only)
+
