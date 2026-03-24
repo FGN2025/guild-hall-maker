@@ -468,6 +468,8 @@ const AdminSettings = () => {
           </Button>
         </div>
       </div>
+
+      <GuideMediaManager />
     </div>
   );
 };
