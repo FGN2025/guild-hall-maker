@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const AdminUsers = () => {
   const [search, setSearch] = useState("");
   const [tenantId, setTenantId] = useState<string | undefined>(undefined);
-  const { users, isLoading, setRole, resendConfirmation, deleteUser } = useAdminUsers(search, tenantId);
+  const { users, isLoading, setRole, setTenantRole, resendConfirmation, deleteUser } = useAdminUsers(search, tenantId);
   const { user: currentUser } = useAuth();
 
   // Delete / ban confirm dialog state
