@@ -13,16 +13,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Upload, Plug, History, Download, FileText } from "lucide-react";
+import { Search, Users, Upload, Plug, History, Download, FileText, Pencil, Trash2 } from "lucide-react";
 import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-import { useTenantSubscribers } from "@/hooks/useTenantSubscribers";
+import { useTenantSubscribers, type TenantSubscriber } from "@/hooks/useTenantSubscribers";
 import { useTenantIntegrations, type TenantIntegration } from "@/hooks/useTenantIntegrations";
 import { useSyncLogs } from "@/hooks/useSyncLogs";
 import SubscriberUploader from "@/components/tenant/SubscriberUploader";
 import IntegrationConfigCard from "@/components/tenant/IntegrationConfigCard";
 import BillingConfigDialog from "@/components/tenant/BillingConfigDialog";
 import SyncHistoryPanel from "@/components/tenant/SyncHistoryPanel";
+import EditSubscriberDialog from "@/components/tenant/EditSubscriberDialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const statusColor: Record<string, string> = {
   active: "bg-green-500/10 text-green-600 border-green-500/30",
@@ -33,7 +35,8 @@ const statusColor: Record<string, string> = {
 const TenantSubscribers = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId;
-  const { subscribers, isLoading, bulkInsert } = useTenantSubscribers(tenantId);
+  const isAdmin = tenantInfo?.tenantRole === "admin";
+  const { subscribers, isLoading, bulkInsert, updateSubscriber, deleteSubscriber } = useTenantSubscribers(tenantId);
   const { integrations, saveIntegration, updateIntegration, triggerSync, deleteIntegration } = useTenantIntegrations(tenantId);
   const { logs: syncLogs, isLoading: syncLogsLoading } = useSyncLogs(tenantId);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -47,6 +50,10 @@ const TenantSubscribers = () => {
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<TenantIntegration | null>(null);
   const [selectedProviderType, setSelectedProviderType] = useState<string>("nisc");
+
+  // Edit/Delete state
+  const [editSub, setEditSub] = useState<TenantSubscriber | null>(null);
+  const [deleteSub, setDeleteSub] = useState<TenantSubscriber | null>(null);
 
   if (tenantInfo?.tenantRole === "manager") {
     return <Navigate to="/tenant" replace />;
@@ -73,29 +80,23 @@ const TenantSubscribers = () => {
     inactive: subscribers.filter((s) => s.service_status !== "active").length,
   };
 
+  const exportCols: ExportColumn[] = [
+    { key: "account_number", label: "Account #" },
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "zip_code", label: "ZIP" },
+    { key: "plan_name", label: "Plan" },
+    { key: "service_status", label: "Status" },
+    { key: "source", label: "Source" },
+  ];
+
+  const exportRows = filtered.map(s => ({ ...s, name: [s.first_name, s.last_name].filter(Boolean).join(" ") }));
+
   const availableIntegrations = [
-    {
-      name: "NISC",
-      providerType: "nisc",
-      description: "National Information Solutions Cooperative — sync subscribers from your NISC billing system.",
-    },
-    {
-      name: "GLDS",
-      providerType: "glds",
-      description: "GLDS billing system integration for subscriber data synchronization.",
-    },
-    {
-      name: "manage.fgn.gg",
-      providerType: "manage_fgn",
-      description: "Fiber Gaming Network management portal — centralized subscriber verification and access codes.",
-      comingSoon: true,
-    },
-    {
-      name: "hub.fgn.gg",
-      providerType: "hub_fgn",
-      description: "FGN Partner Hub — creative assets, marketing collateral, web pages, and brand kits.",
-      comingSoon: true,
-    },
+    { name: "NISC", providerType: "nisc", description: "National Information Solutions Cooperative — sync subscribers from your NISC billing system." },
+    { name: "GLDS", providerType: "glds", description: "GLDS billing system integration for subscriber data synchronization." },
+    { name: "manage.fgn.gg", providerType: "manage_fgn", description: "Fiber Gaming Network management portal — centralized subscriber verification and access codes.", comingSoon: true },
+    { name: "hub.fgn.gg", providerType: "hub_fgn", description: "FGN Partner Hub — creative assets, marketing collateral, web pages, and brand kits.", comingSoon: true },
   ];
 
   return (
@@ -122,58 +123,23 @@ const TenantSubscribers = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="subscribers" className="gap-2">
-            <Users className="h-4 w-4" /> Subscribers
-          </TabsTrigger>
-          <TabsTrigger value="upload" className="gap-2">
-            <Upload className="h-4 w-4" /> Upload
-          </TabsTrigger>
-          <TabsTrigger value="integrations" className="gap-2">
-            <Plug className="h-4 w-4" /> Integrations
-          </TabsTrigger>
-          <TabsTrigger value="sync-history" className="gap-2">
-            <History className="h-4 w-4" /> Sync History
-          </TabsTrigger>
+          <TabsTrigger value="subscribers" className="gap-2"><Users className="h-4 w-4" /> Subscribers</TabsTrigger>
+          <TabsTrigger value="upload" className="gap-2"><Upload className="h-4 w-4" /> Upload</TabsTrigger>
+          <TabsTrigger value="integrations" className="gap-2"><Plug className="h-4 w-4" /> Integrations</TabsTrigger>
+          <TabsTrigger value="sync-history" className="gap-2"><History className="h-4 w-4" /> Sync History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscribers" className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             <div className="relative max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, account..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
+              <Input placeholder="Search by name, email, account..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => {
-                const cols: ExportColumn[] = [
-                  { key: "account_number", label: "Account #" },
-                  { key: "name", label: "Name" },
-                  { key: "email", label: "Email" },
-                  { key: "zip_code", label: "ZIP" },
-                  { key: "plan_name", label: "Plan" },
-                  { key: "service_status", label: "Status" },
-                  { key: "source", label: "Source" },
-                ];
-                exportTableCSV(filtered.map(s => ({ ...s, name: [s.first_name, s.last_name].filter(Boolean).join(" ") })), cols, "subscribers.csv");
-              }}>
+              <Button variant="outline" size="sm" onClick={() => exportTableCSV(exportRows, exportCols, "subscribers.csv")}>
                 <Download className="h-4 w-4 mr-1" /> CSV
               </Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                const cols: ExportColumn[] = [
-                  { key: "account_number", label: "Account #" },
-                  { key: "name", label: "Name" },
-                  { key: "email", label: "Email" },
-                  { key: "zip_code", label: "ZIP" },
-                  { key: "plan_name", label: "Plan" },
-                  { key: "service_status", label: "Status" },
-                  { key: "source", label: "Source" },
-                ];
-                exportTablePDF(filtered.map(s => ({ ...s, name: [s.first_name, s.last_name].filter(Boolean).join(" ") })), cols, "Subscribers");
-              }}>
+              <Button variant="outline" size="sm" onClick={() => exportTablePDF(exportRows, exportCols, "Subscribers")}>
                 <FileText className="h-4 w-4 mr-1" /> PDF
               </Button>
             </div>
@@ -185,9 +151,7 @@ const TenantSubscribers = () => {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              {subscribers.length === 0
-                ? "No subscribers yet. Upload a CSV or add them manually."
-                : "No subscribers match your search."}
+              {subscribers.length === 0 ? "No subscribers yet. Upload a CSV or add them manually." : "No subscribers match your search."}
             </div>
           ) : (
             <>
@@ -202,29 +166,33 @@ const TenantSubscribers = () => {
                       <TableHead>Plan</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Source</TableHead>
+                      {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedSubs.map((sub) => (
                       <TableRow key={sub.id}>
-                        <TableCell className="font-medium">
-                          {[sub.first_name, sub.last_name].filter(Boolean).join(" ") || "—"}
-                        </TableCell>
+                        <TableCell className="font-medium">{[sub.first_name, sub.last_name].filter(Boolean).join(" ") || "—"}</TableCell>
                         <TableCell>{sub.account_number || "—"}</TableCell>
                         <TableCell>{sub.email || "—"}</TableCell>
                         <TableCell>{sub.zip_code || "—"}</TableCell>
                         <TableCell>{sub.plan_name || "—"}</TableCell>
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={statusColor[sub.service_status || "inactive"] || ""}
-                          >
-                            {sub.service_status || "unknown"}
-                          </Badge>
+                          <Badge variant="outline" className={statusColor[sub.service_status || "inactive"] || ""}>{sub.service_status || "unknown"}</Badge>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{sub.source || "manual"}</Badge>
-                        </TableCell>
+                        <TableCell><Badge variant="secondary">{sub.source || "manual"}</Badge></TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditSub(sub)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteSub(sub)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -234,23 +202,15 @@ const TenantSubscribers = () => {
                 <Pagination className="mt-4">
                   <PaginationContent>
                     <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => setSubPage((p) => Math.max(1, p - 1))}
-                        className={subPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                      />
+                      <PaginationPrevious onClick={() => setSubPage((p) => Math.max(1, p - 1))} className={subPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
                     </PaginationItem>
                     {Array.from({ length: subTotalPages }, (_, i) => i + 1).map((p) => (
                       <PaginationItem key={p}>
-                        <PaginationLink isActive={p === subPage} onClick={() => setSubPage(p)} className="cursor-pointer">
-                          {p}
-                        </PaginationLink>
+                        <PaginationLink isActive={p === subPage} onClick={() => setSubPage(p)} className="cursor-pointer">{p}</PaginationLink>
                       </PaginationItem>
                     ))}
                     <PaginationItem>
-                      <PaginationNext
-                        onClick={() => setSubPage((p) => Math.min(subTotalPages, p + 1))}
-                        className={subPage === subTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                      />
+                      <PaginationNext onClick={() => setSubPage((p) => Math.min(subTotalPages, p + 1))} className={subPage === subTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
@@ -260,13 +220,7 @@ const TenantSubscribers = () => {
         </TabsContent>
 
         <TabsContent value="upload">
-          {tenantId && (
-            <SubscriberUploader
-              tenantId={tenantId}
-              onImport={(rows) => bulkInsert.mutate(rows as any)}
-              isImporting={bulkInsert.isPending}
-            />
-          )}
+          {tenantId && <SubscriberUploader tenantId={tenantId} onImport={(rows) => bulkInsert.mutate(rows as any)} isImporting={bulkInsert.isPending} />}
         </TabsContent>
 
         <TabsContent value="integrations">
@@ -305,6 +259,7 @@ const TenantSubscribers = () => {
           <SyncHistoryPanel logs={syncLogs} isLoading={syncLogsLoading} />
         </TabsContent>
       </Tabs>
+
       {tenantId && (
         <BillingConfigDialog
           open={configDialogOpen}
@@ -312,12 +267,8 @@ const TenantSubscribers = () => {
           tenantId={tenantId}
           providerType={selectedProviderType}
           existing={selectedIntegration}
-          onSave={(data) => {
-            saveIntegration.mutate(data as any, { onSuccess: () => setConfigDialogOpen(false) });
-          }}
-          onUpdate={(id, fields) => {
-            updateIntegration.mutate({ id, ...fields } as any, { onSuccess: () => setConfigDialogOpen(false) });
-          }}
+          onSave={(data) => { saveIntegration.mutate(data as any, { onSuccess: () => setConfigDialogOpen(false) }); }}
+          onUpdate={(id, fields) => { updateIntegration.mutate({ id, ...fields } as any, { onSuccess: () => setConfigDialogOpen(false) }); }}
           onTestConnection={async (integrationId) => {
             const result = await triggerSync.mutateAsync({ integrationId, dryRun: true, providerType: selectedProviderType });
             return result;
@@ -325,6 +276,24 @@ const TenantSubscribers = () => {
           isSaving={saveIntegration.isPending || updateIntegration.isPending}
         />
       )}
+
+      <EditSubscriberDialog
+        open={!!editSub}
+        onOpenChange={(open) => { if (!open) setEditSub(null); }}
+        subscriber={editSub}
+        onSave={(id, fields) => updateSubscriber.mutate({ id, fields }, { onSuccess: () => setEditSub(null) })}
+        isSaving={updateSubscriber.isPending}
+      />
+
+      <ConfirmDialog
+        open={!!deleteSub}
+        onOpenChange={(open) => { if (!open) setDeleteSub(null); }}
+        title="Delete Subscriber"
+        description={`Remove ${[deleteSub?.first_name, deleteSub?.last_name].filter(Boolean).join(" ") || "this subscriber"} permanently?`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => { if (deleteSub) deleteSubscriber.mutate(deleteSub.id, { onSuccess: () => setDeleteSub(null) }); }}
+      />
     </div>
   );
 };

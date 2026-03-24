@@ -107,11 +107,77 @@ export function useTenantPlayers(tenantId: string | null) {
     return { total: newCount + legacyCount, newCount, legacyCount, matched };
   }, [leadsQuery.data, legacyQuery.data]);
 
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const updateLegacyPlayer = useMutation({
+    mutationFn: async ({ id, fields }: { id: string; fields: Record<string, string> }) => {
+      const { error } = await (supabase as any).from("legacy_users").update(fields).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-players-legacy", tenantId] });
+      toast({ title: "Player updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error updating player", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteLegacyPlayer = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("legacy_users").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-players-legacy", tenantId] });
+      toast({ title: "Legacy player removed" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error deleting player", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteLead = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("user_service_interests").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-players-new", tenantId] });
+      toast({ title: "Lead removed" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error deleting lead", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const banPlayer = useMutation({
+    mutationFn: async ({ email, reason }: { email: string; reason?: string }) => {
+      const { error } = await supabase.from("banned_users").insert({
+        email,
+        reason: reason || "Banned by tenant admin",
+        banned_by: null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Player banned" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error banning player", description: err.message, variant: "destructive" });
+    },
+  });
+
   return {
     players: filtered,
     stats,
     search,
     setSearch,
     isLoading: leadsQuery.isLoading || legacyQuery.isLoading,
+    updateLegacyPlayer,
+    deleteLegacyPlayer,
+    deleteLead,
+    banPlayer,
   };
 }
