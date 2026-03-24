@@ -82,7 +82,7 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
       const roleMap = new Map(roles?.map((r: any) => [r.user_id, r.role]) ?? []);
 
       let result = (profiles ?? []).map((p: any) => {
-        const tId = interestMap.get(p.user_id) as string | undefined;
+        const tId = (interestMap.get(p.user_id) as string | undefined) ?? (tenantAdminMap.get(p.user_id) as any)?.tenant_id ?? undefined;
         return {
           id: p.id,
           user_id: p.user_id,
