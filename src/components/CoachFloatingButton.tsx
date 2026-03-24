@@ -245,7 +245,9 @@ export default function CoachFloatingButton() {
     const a = document.createElement("a");
     a.href = url;
     a.download = `ai-coach-${gameName.toLowerCase().replace(/\s+/g, "-")}-${date}.md`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
