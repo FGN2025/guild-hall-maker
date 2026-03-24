@@ -1,77 +1,44 @@
 
 
-## Assessment: Media Uploads for Supplemental Player Guides
+## Fix: AI Coach "Unauthorized" Error
 
-### Current State
+### Root Cause
 
-The three standalone guide pages (`/guide/tournaments`, `/guide/challenges`, `/guide/quests`) **do not exist yet** — they were planned but never implemented. The existing `PlayerGuide.tsx` is a single-page static guide with hardcoded accordion sections. There is no admin-editable content or media attachment system for any guide.
+The frontend (`useCoachChat.ts`, line 67) sends the **anon/publishable key** as the Authorization bearer token:
 
-### What "Upload files, images and videos" Requires
+```typescript
+Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+```
 
-To make guide content enrichable with media, we need:
+The edge function (`ai-coach/index.ts`, line 222) calls `supabase.auth.getClaims(token)` on this token, which fails because the anon key is not a user JWT. This causes the "Unauthorized" error for **all users** — admins and players alike.
 
-1. **A content storage model** — A database table to store guide media (which guide, ordering, captions, file URLs)
-2. **An admin interface** — A way for admins/moderators to upload and arrange media within each guide section
-3. **A player-facing renderer** — The guide pages display uploaded media inline within sections
+### Fix
 
-### Proposed Architecture
+**`src/hooks/useCoachChat.ts`** — Replace the static anon key with the authenticated user's session access token:
 
-**Database: `guide_media` table**
+1. Import `supabase` client
+2. Before making the fetch call, retrieve the current session via `supabase.auth.getSession()`
+3. Use the session's `access_token` as the Authorization bearer token
+4. If no session exists, show an error toast and return early
 
-| Column | Type | Purpose |
-|---|---|---|
-| id | uuid PK | |
-| guide_slug | text | `tournaments`, `challenges`, `quests` |
-| section_id | text | Matches accordion section ID |
-| file_url | text | Public URL from `app-media` storage |
-| file_type | text | `image`, `video`, `file` |
-| caption | text | Optional description |
-| sort_order | integer | Display order within section |
-| created_at | timestamptz | |
+```typescript
+// Before fetch, get the user's JWT
+const { data: { session } } = await supabase.auth.getSession();
+if (!session?.access_token) {
+  toast({ title: "Error", description: "Please sign in to use the AI Coach.", variant: "destructive" });
+  setIsLoading(false);
+  return;
+}
 
-RLS: Public SELECT (guides are public content), admin/moderator INSERT/UPDATE/DELETE.
+// Use session token instead of anon key
+Authorization: `Bearer ${session.access_token}`,
+```
 
-**Implementation Steps**
+This is a single-file change (about 5 lines modified). No edge function changes needed — the backend auth logic is correct, it just needs to receive the right token.
 
-| Step | Effort | Description |
-|---|---|---|
-| 1. Create the 3 guide pages | ~2 hours | Port static content from PlayerGuide sections into dedicated pages with expanded detail |
-| 2. Database migration | ~15 min | `guide_media` table + RLS |
-| 3. `useGuideMedia` hook | ~30 min | Fetch media by guide slug; upload/delete mutations using `app-media` bucket |
-| 4. Admin upload UI | ~1.5 hours | Section in admin settings or inline edit mode on guide pages — pick section, upload file, set caption, reorder |
-| 5. Guide renderer | ~1 hour | Each accordion section queries its media and renders images/videos/download links inline |
-| 6. Testing | ~30 min | Upload flow, display, ordering, delete |
+### Technical Details
 
-**Total estimate: ~6 hours**
+- The edge function creates a Supabase client with the Authorization header and validates the JWT via `getClaims` — this works correctly when given a real user JWT
+- The `getClaims` call extracts `sub` (user ID) which is used to fetch the player's coaching profile for personalization
+- After this fix, any authenticated user (player or admin) can use the AI Coach; unauthenticated users get a friendly sign-in prompt
 
-### Dependencies
-
-- The 3 guide pages must be created first (Step 1)
-- The existing `app-media` storage bucket (public) handles file storage — no new bucket needed
-- The existing `MediaUploader` component pattern can be reused for the admin upload UI
-
-### Recommendation
-
-Build this in two phases:
-1. **Phase 1**: Create the 3 static guide pages (approved plan already exists)
-2. **Phase 2**: Add the `guide_media` table and admin upload capability
-
-This keeps each phase reviewable and deployable independently.
-
-## Standalone Player Guides with Media Upload — COMPLETED
-
-Created three dedicated player guide pages with media upload support:
-
-### Pages Created
-- `/guide/tournaments` — Tournament Guide (9 sections)
-- `/guide/challenges` — Challenge Guide (9 sections)
-- `/guide/quests` — Quest Guide (8 sections, including per-task point payouts)
-
-### Media System
-- `guide_media` database table with public read / admin+moderator write RLS
-- `useGuideMedia` hook for fetching and CRUD operations
-- `GuideMediaManager` admin component in Admin Settings for uploading images, videos, and files per section
-- All three guide pages render uploaded media inline within their accordion sections
-
-### Cross-Links
-- Player Guide sections link to the full standalone guides
