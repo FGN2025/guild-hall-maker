@@ -1,50 +1,71 @@
 
 
-## Add Tenant Role Assignment to Admin Users Page
+## Tenant Admin Experience Assessment & RLS Bug Fix
 
-### Problem
-The "Set Role" dropdown on the Admin Users page only manages **platform roles** (User, Moderator, Marketing, Admin). Super Admins cannot assign **tenant roles** (Tenant Admin, Manager, Marketing) from this view — they must go through the tenant invitation workflow instead.
+### Findings
 
-### Solution
-Add a second "Set Tenant Role" control per user row that lets Super Admins assign or change a user's tenant role directly. This requires:
-1. Selecting which tenant (if the user isn't already associated with one)
-2. Selecting the tenant role (Admin, Manager, Marketing, or None)
+**1. Active Bug: 403 on `user_service_interests` INSERT (visible in network requests)**
 
-### Implementation
+When a Platform Admin assigns a tenant role via the Admin Users page, the `setTenantRole` mutation tries to insert a `user_service_interests` record for the target user. This fails because the only INSERT policy is:
 
-**`src/hooks/useAdminUsers.ts`** — Add a `setTenantRole` mutation:
-- Accepts `{ userId, tenantId, role }` (role can be null to remove)
-- If role is null: delete from `tenant_admins` where user_id + tenant_id match
-- If role is set: upsert into `tenant_admins` (insert on conflict update role)
-- Also ensure the user has a `user_service_interests` record for that tenant (so they show up in tenant player lists)
-- Invalidate `admin-users` query on success
+```sql
+"Users can insert own interests" — WITH CHECK (auth.uid() = user_id)
+```
 
-**`src/hooks/useAdminUsers.ts`** — Fix tenant data mapping:
-- Currently `tenantAdminMap` only stores one entry per user (Map key = user_id). This is fine for display but the tenant_id from tenant_admins should also be surfaced. Already done via `tenant_id` field from interests — but a user might have a tenant_admin role without an interest record. Update mapping to also check tenant_admins for tenant association.
+There is no admin-level INSERT policy, so platform admins cannot create interest records on behalf of other users. The tenant role itself gets assigned (to `tenant_admins`), but the supporting interest record fails silently.
 
-**`src/pages/admin/AdminUsers.tsx`** — Add tenant role column controls:
-- Replace the static "Tenant Role" badge column with an interactive control for Super Admins
-- Add a compound selector: if user has no tenant, show a tenant picker dropdown first, then the role dropdown
-- If user already has a tenant association, show just the tenant role dropdown (Admin / Manager / Marketing / Remove)
-- Use the tenants list already fetched via `useTenantsList`
+**2. Missing DELETE policy on `user_service_interests`**
 
-### UI Layout Change
+The `deleteLead` mutation in `useTenantPlayers` will also fail — there is no DELETE policy on this table at all.
 
-The "Set Role" area expands to include a "Set Tenant Role" dropdown next to the existing platform role dropdown. The tenant role dropdown options:
-- **None** — removes tenant_admins record
-- **Tenant Admin**
-- **Manager**  
-- **Marketing**
+**3. Tenant Isolation — Confirmed Correct**
 
-When a user has no tenant association and the admin selects a tenant role, a small tenant picker appears inline to choose which tenant to assign them to.
+Code review confirms proper isolation:
+- All tenant data queries are scoped by `tenantId` from `useTenantAdmin()` hook
+- RLS policies use `is_tenant_member(tenant_id, auth.uid())` for SELECT/UPDATE
+- The `TenantRoute` component prevents unauthorized access
+- Non-platform-admins cannot see the tenant picker dropdown
+- Tenant Team page scopes all operations to `tenantInfo.tenantId`
+
+### Fix Plan
+
+**Database migration** — Add missing RLS policies on `user_service_interests`:
+
+1. **Admin INSERT policy**: Allow platform admins to insert records for any user
+2. **Tenant admin DELETE policy**: Allow tenant admins to delete leads for their tenant
+3. **Admin DELETE policy**: Allow platform admins to delete any interest record
+
+```sql
+-- Allow admins to insert interests on behalf of users
+CREATE POLICY "Admins can insert interests"
+  ON public.user_service_interests FOR INSERT TO authenticated
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+-- Allow tenant admins to delete leads for their tenant
+CREATE POLICY "Tenant admins can delete their leads"
+  ON public.user_service_interests FOR DELETE TO authenticated
+  USING (is_tenant_member(tenant_id, auth.uid()));
+
+-- Allow admins to delete any interest
+CREATE POLICY "Admins can delete interests"
+  ON public.user_service_interests FOR DELETE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+```
+
+**Frontend fix** — Make the `setTenantRole` mutation gracefully handle the interest insert failure (it's supplementary, not critical):
+
+In `src/hooks/useAdminUsers.ts` line 216, wrap the interest insert in a try-catch so the tenant role assignment still succeeds even if the interest record fails.
 
 ### Files Changed
 
 | File | Change |
 |---|---|
-| `src/hooks/useAdminUsers.ts` | Add `setTenantRole` mutation (upsert/delete on `tenant_admins`) |
-| `src/pages/admin/AdminUsers.tsx` | Add interactive tenant role dropdown in the Tenant Role column; add tenant picker for unassociated users |
+| New migration SQL | 3 RLS policies on `user_service_interests` |
+| `src/hooks/useAdminUsers.ts` | Wrap interest insert in try-catch (lines 213-217) |
 
-### Database
-No migration needed — `tenant_admins` table already exists with the right schema. Platform admins already have full access via existing RLS policies (admin role check).
+### Summary
+
+- Tenant data isolation is properly enforced via both code and RLS
+- The RLS gap only affects admin operations (INSERT/DELETE on `user_service_interests`), not cross-tenant visibility
+- Fix is a single migration + minor error handling improvement
 
