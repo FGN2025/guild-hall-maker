@@ -430,6 +430,16 @@ const PlayerGuide = () => {
       content: (
         <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
           {s.bullets.map((b, i) => {
+            const guideLink = b.match(/^📖 (.+?) → (.+)$/);
+            if (guideLink) {
+              return (
+                <li key={i}>
+                  <Link to={guideLink[2]} className="text-primary hover:underline font-semibold">
+                    📖 {guideLink[1]}
+                  </Link>
+                </li>
+              );
+            }
             const dashIdx = b.indexOf(" — ");
             if (dashIdx > 0) {
               return (
