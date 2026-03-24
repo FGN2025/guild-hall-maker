@@ -9,6 +9,7 @@ import { useCoachConversations } from "@/hooks/useCoachConversations";
 import { useGames, Game } from "@/hooks/useGames";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 import {
   BrainCircuit,
   Send,
@@ -19,6 +20,8 @@ import {
   X,
   Download,
   FileText,
+  Copy,
+  ExternalLink,
   History,
   ArrowLeft,
   UserCheck,
@@ -231,64 +234,75 @@ export default function CoachFloatingButton() {
     }
   }, [deleteConversation, activeConversationId, clearChat]);
 
-  const handleExport = async () => {
+  const buildMarkdownContent = () => {
     const gameName = selectedGame?.name || "General";
     const date = new Date().toISOString().slice(0, 10);
-    const filename = `ai-coach-${gameName.toLowerCase().replace(/\s+/g, "-")}-${date}.md`;
     const header = `# AI Coach Chat — ${gameName}\n_Exported on ${date}_\n`;
     const body = messages
       .map((m) => `**${m.role === "user" ? "You" : "Coach"}:** ${m.content}`)
       .join("\n\n---\n\n");
-    const content = `${header}\n---\n\n${body}\n`;
-    const blob = new Blob([content], { type: "text/markdown" });
-    const pickerWindow = window as Window & {
-      showSaveFilePicker?: (options?: {
-        suggestedName?: string;
-        types?: Array<{
-          description?: string;
-          accept: Record<string, string[]>;
-        }>;
-      }) => Promise<{
-        createWritable: () => Promise<{
-          write: (data: Blob) => Promise<void>;
-          close: () => Promise<void>;
-        }>;
-      }>;
-    };
+    return { content: `${header}\n---\n\n${body}\n`, gameName, date };
+  };
 
+  const handleExport = async () => {
+    const { content, gameName, date } = buildMarkdownContent();
+    const filename = `ai-coach-${gameName.toLowerCase().replace(/\s+/g, "-")}-${date}.md`;
+    const blob = new Blob([content], { type: "text/markdown" });
+
+    // Try 1: File System Access API
     try {
-      if (typeof pickerWindow.showSaveFilePicker === "function") {
-        const fileHandle = await pickerWindow.showSaveFilePicker({
+      const w = window as any;
+      if (typeof w.showSaveFilePicker === "function") {
+        const fh = await w.showSaveFilePicker({
           suggestedName: filename,
-          types: [
-            {
-              description: "Markdown file",
-              accept: {
-                "text/markdown": [".md"],
-              },
-            },
-          ],
+          types: [{ description: "Markdown file", accept: { "text/markdown": [".md"] } }],
         });
-        const writable = await fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
+        const wr = await fh.createWritable();
+        await wr.write(blob);
+        await wr.close();
+        toast({ title: "Saved", description: "Chat exported successfully." });
         return;
       }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
-      }
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
     }
 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Try 2: Anchor download
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Download started", description: "Check your Downloads folder." });
+    } catch {
+      // Try 3: Open in new tab
+      handleOpenInNewTab();
+    }
+  };
+
+  const handleCopyChat = async () => {
+    const { content } = buildMarkdownContent();
+    try {
+      await navigator.clipboard.writeText(content);
+      toast({ title: "Copied", description: "Chat copied to clipboard." });
+    } catch {
+      toast({ title: "Error", description: "Could not copy to clipboard.", variant: "destructive" });
+    }
+  };
+
+  const handleOpenInNewTab = () => {
+    const { content, gameName, date } = buildMarkdownContent();
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>AI Coach — ${gameName}</title>
+<style>body{font-family:system-ui;max-width:700px;margin:40px auto;padding:0 20px;white-space:pre-wrap;color:#222;line-height:1.6}</style>
+</head><body>${content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</body></html>`;
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
+    toast({ title: "Opened in new tab", description: "Use Ctrl+S / ⌘+S to save." });
   };
 
   const handleExportPdf = () => {
@@ -423,14 +437,22 @@ ${msgHtml}
                           <Download className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => void handleExport()}>
                           <Download className="h-3.5 w-3.5 mr-2" />
                           Markdown (.md)
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={handleExportPdf}>
                           <FileText className="h-3.5 w-3.5 mr-2" />
-                          PDF
+                          Print / Save as PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={handleCopyChat}>
+                          <Copy className="h-3.5 w-3.5 mr-2" />
+                          Copy to Clipboard
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={handleOpenInNewTab}>
+                          <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                          Open in New Tab
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
