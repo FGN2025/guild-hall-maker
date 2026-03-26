@@ -244,6 +244,13 @@ const TenantSubscribers = () => {
                       setSelectedIntegration(configured || null);
                       setSelectedProviderType(integ.providerType);
                       setConfigDialogOpen(true);
+                    } else if (integ.providerType === "fgn_academy" && !configured && tenantId) {
+                      saveIntegration.mutate({
+                        tenant_id: tenantId,
+                        provider_type: "fgn_academy",
+                        display_name: "FGN Academy",
+                        additional_config: {},
+                      });
                     }
                   }}
                   onSync={configured ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
