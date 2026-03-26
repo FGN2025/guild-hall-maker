@@ -83,3 +83,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.provision-tenant]
     verify_jwt = false
+  [functions.sync-to-academy]
+    verify_jwt = false
