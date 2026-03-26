@@ -1,71 +1,61 @@
 
 
-## Tenant Admin Experience Assessment & RLS Bug Fix
+## Enhance Ecosystem Data API for FGN Academy Challenge Import
 
-### Findings
+### Problem
 
-**1. Active Bug: 403 on `user_service_interests` INSERT (visible in network requests)**
+The screenshot shows fgn.academy's "Import Challenge from FGN" dialog failing with "Failed to load challenges from play.fgn.gg". The `ecosystem-data-api` edge function already supports a `challenges` action, but two issues need fixing on play.fgn.gg's side:
 
-When a Platform Admin assigns a tenant role via the Admin Users page, the `setTenantRole` mutation tries to insert a `user_service_interests` record for the target user. This fails because the only INSERT policy is:
+1. **Missing game name**: The response only includes `game_id` (a UUID), not the human-readable game name. The academy needs game names for its "All Games" filter dropdown and display.
+2. **Missing tasks and estimated time**: The response omits `estimated_minutes` and associated `challenge_tasks`, which the academy needs to populate work order fields (XP Reward, Est. Time, Success Criteria visible in the screenshot).
 
+### Plan
+
+**File: `supabase/functions/ecosystem-data-api/index.ts`** — Enhance the `challenges` case:
+
+1. **Join game name**: Change the select to include `games(name)` via the `game_id` foreign key, so each challenge includes the game name.
+2. **Add missing fields**: Include `estimated_minutes` in the select.
+3. **Fetch tasks**: After loading challenges, batch-fetch `challenge_tasks` for the returned challenge IDs and attach them to each challenge in the response.
+4. **Flatten response**: Map `games.name` to a top-level `game_name` field for easy consumption.
+
+Updated select:
 ```sql
-"Users can insert own interests" — WITH CHECK (auth.uid() = user_id)
+id, name, description, game_id, challenge_type, difficulty, points_reward,
+estimated_minutes, start_date, end_date, requires_evidence, cover_image_url,
+created_at, updated_at, games(name)
 ```
 
-There is no admin-level INSERT policy, so platform admins cannot create interest records on behalf of other users. The tenant role itself gets assigned (to `tenant_admins`), but the supporting interest record fails silently.
+After fetching challenges, add:
+```typescript
+const challengeIds = (data || []).map(c => c.id);
+const { data: tasks } = await adminClient
+  .from("challenge_tasks")
+  .select("challenge_id, title, description, display_order")
+  .in("challenge_id", challengeIds)
+  .order("display_order");
 
-**2. Missing DELETE policy on `user_service_interests`**
-
-The `deleteLead` mutation in `useTenantPlayers` will also fail — there is no DELETE policy on this table at all.
-
-**3. Tenant Isolation — Confirmed Correct**
-
-Code review confirms proper isolation:
-- All tenant data queries are scoped by `tenantId` from `useTenantAdmin()` hook
-- RLS policies use `is_tenant_member(tenant_id, auth.uid())` for SELECT/UPDATE
-- The `TenantRoute` component prevents unauthorized access
-- Non-platform-admins cannot see the tenant picker dropdown
-- Tenant Team page scopes all operations to `tenantInfo.tenantId`
-
-### Fix Plan
-
-**Database migration** — Add missing RLS policies on `user_service_interests`:
-
-1. **Admin INSERT policy**: Allow platform admins to insert records for any user
-2. **Tenant admin DELETE policy**: Allow tenant admins to delete leads for their tenant
-3. **Admin DELETE policy**: Allow platform admins to delete any interest record
-
-```sql
--- Allow admins to insert interests on behalf of users
-CREATE POLICY "Admins can insert interests"
-  ON public.user_service_interests FOR INSERT TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
-
--- Allow tenant admins to delete leads for their tenant
-CREATE POLICY "Tenant admins can delete their leads"
-  ON public.user_service_interests FOR DELETE TO authenticated
-  USING (is_tenant_member(tenant_id, auth.uid()));
-
--- Allow admins to delete any interest
-CREATE POLICY "Admins can delete interests"
-  ON public.user_service_interests FOR DELETE TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
+result = (data || []).map(c => ({
+  ...c,
+  game_name: c.games?.name || null,
+  games: undefined,
+  tasks: (tasks || []).filter(t => t.challenge_id === c.id),
+}));
 ```
-
-**Frontend fix** — Make the `setTenantRole` mutation gracefully handle the interest insert failure (it's supplementary, not critical):
-
-In `src/hooks/useAdminUsers.ts` line 216, wrap the interest insert in a try-catch so the tenant role assignment still succeeds even if the interest record fails.
 
 ### Files Changed
 
 | File | Change |
 |---|---|
-| New migration SQL | 3 RLS policies on `user_service_interests` |
-| `src/hooks/useAdminUsers.ts` | Wrap interest insert in try-catch (lines 213-217) |
+| `supabase/functions/ecosystem-data-api/index.ts` | Enhance `challenges` action: join game name, add `estimated_minutes`, attach tasks |
 
-### Summary
+### What This Enables
 
-- Tenant data isolation is properly enforced via both code and RLS
-- The RLS gap only affects admin operations (INSERT/DELETE on `user_service_interests`), not cross-tenant visibility
-- Fix is a single migration + minor error handling improvement
+The fgn.academy "Import Challenge from FGN" dialog will receive:
+- Challenge name, description, difficulty, type
+- Game name (for the filter dropdown)
+- Estimated minutes, points reward (for XP Reward / Est. Time fields)
+- Task list (for success criteria / objectives)
+- Cover image URL
+
+No new secrets or database changes needed — the existing `ECOSYSTEM_API_KEY` auth and `challenge_tasks` table are already in place.
 
