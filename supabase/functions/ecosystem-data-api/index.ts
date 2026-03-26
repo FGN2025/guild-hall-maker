@@ -82,14 +82,31 @@ Deno.serve(async (req) => {
       case "challenges": {
         let q = adminClient
           .from("challenges")
-          .select("id, name, description, game_id, challenge_type, difficulty, points_reward, start_date, end_date, requires_evidence, cover_image_url, created_at, updated_at")
+          .select("id, name, description, game_id, challenge_type, difficulty, points_reward, estimated_minutes, start_date, end_date, requires_evidence, cover_image_url, created_at, updated_at, games(name)")
           .eq("is_active", true)
           .order("created_at", { ascending: false })
           .limit(rowLimit);
         if (since) q = q.gte("updated_at", since);
         const { data, error } = await q;
         if (error) throw error;
-        result = data;
+
+        const challengeIds = (data || []).map((c: any) => c.id);
+        let tasks: any[] = [];
+        if (challengeIds.length > 0) {
+          const { data: taskData } = await adminClient
+            .from("challenge_tasks")
+            .select("challenge_id, title, description, display_order")
+            .in("challenge_id", challengeIds)
+            .order("display_order", { ascending: true });
+          tasks = taskData || [];
+        }
+
+        result = (data || []).map((c: any) => ({
+          ...c,
+          game_name: c.games?.name || null,
+          games: undefined,
+          tasks: tasks.filter((t: any) => t.challenge_id === c.id),
+        }));
         break;
       }
 
