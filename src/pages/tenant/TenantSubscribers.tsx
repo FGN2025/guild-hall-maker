@@ -95,6 +95,7 @@ const TenantSubscribers = () => {
   const availableIntegrations = [
     { name: "NISC", providerType: "nisc", description: "National Information Solutions Cooperative — sync subscribers from your NISC billing system." },
     { name: "GLDS", providerType: "glds", description: "GLDS billing system integration for subscriber data synchronization." },
+    { name: "FGN Academy", providerType: "fgn_academy", description: "FGN Academy LMS — automatically sync challenge completions, points, and player progress to fgn.academy." },
     { name: "manage.fgn.gg", providerType: "manage_fgn", description: "Fiber Gaming Network management portal — centralized subscriber verification and access codes.", comingSoon: true },
     { name: "hub.fgn.gg", providerType: "hub_fgn", description: "FGN Partner Hub — creative assets, marketing collateral, web pages, and brand kits.", comingSoon: true },
   ];
@@ -243,6 +244,13 @@ const TenantSubscribers = () => {
                       setSelectedIntegration(configured || null);
                       setSelectedProviderType(integ.providerType);
                       setConfigDialogOpen(true);
+                    } else if (integ.providerType === "fgn_academy" && !configured && tenantId) {
+                      saveIntegration.mutate({
+                        tenant_id: tenantId,
+                        provider_type: "fgn_academy",
+                        display_name: "FGN Academy",
+                        additional_config: {},
+                      });
                     }
                   }}
                   onSync={configured ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}

@@ -171,6 +171,15 @@ const ModeratorChallenges = () => {
           verified_by: user.id,
         });
 
+        // Fire-and-forget sync to FGN Academy
+        supabase.functions.invoke("sync-to-academy", {
+          body: {
+            user_id: enrollment.user_id,
+            challenge_id: enrollment.challenge_id,
+            awarded_points: points,
+          },
+        }).catch((err: any) => console.warn("Academy sync failed (non-blocking):", err));
+
         // Notify the player
         await supabase.from("notifications").insert({
           user_id: enrollment.user_id,
