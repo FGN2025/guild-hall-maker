@@ -1,27 +1,38 @@
 
 
-## Implement FGN Academy Challenge Sync Integration
+## Add Mock Challenge Data for darcylorincz@gmail.com
 
-### Steps
+### Context
+User `darcylorincz@gmail.com` (user_id: `b6860126-fc33-48b0-8f50-030ffc2adbe2`) currently has **zero** challenge enrollments. We'll insert test data across 3 challenges to simulate different stages of the challenge lifecycle, which will also exercise the academy sync.
 
-1. **Add `FGN_ACADEMY_API_KEY` secret** — Use `add_secret` tool to prompt for the key value
+### Data to Insert
 
-2. **Database migration** — Add `academy_synced` (boolean default false) and `academy_synced_at` (timestamptz) columns to `challenge_completions`
+**1. Challenge Enrollment — Completed (with completion record)**
+- Challenge: "ATS - Champion Challenge" (60 pts, advanced)
+- Enrollment status: `completed`
+- Completion record with `awarded_points = 60`
+- `academy_synced = false` (so sync can be tested)
 
-3. **Create `sync-to-academy` edge function** — Accepts `{ user_id, challenge_id, awarded_points }`, resolves user email, checks tenant has active `fgn_academy` integration, POSTs to academy endpoint with `X-App-Key` header, updates `academy_synced` flag, logs to `ecosystem_sync_log`
+**2. Challenge Enrollment — In Review (with evidence)**
+- Challenge: "ATS - Podium Challenge" (10 pts)
+- Enrollment status: `submitted`
+- 1 evidence record (mock screenshot URL)
 
-4. **Wire into challenge approval flow** — Add fire-and-forget call to `sync-to-academy` in `ModeratorChallenges.tsx` and `AdminChallenges.tsx` after challenge completion INSERT
+**3. Challenge Enrollment — Active (just enrolled)**
+- Challenge: "ATS - Gold Challenge" (10 pts)
+- Enrollment status: `enrolled`
 
-5. **Add FGN Academy integration card** — Add `fgn_academy` provider option to Tenant Settings integrations page so tenant admins can enable/disable the sync
+**4. Season Score Entry**
+- Add/update `season_scores` for the active season (`a4c1209d-...`) with 60 points from the completed challenge
 
-### Files Changed
+### Execution
+Use the database insert tool to run these INSERT statements. No schema changes needed.
 
-| File | Change |
+### Tables Affected
+| Table | Records |
 |---|---|
-| Migration SQL | Add 2 columns to `challenge_completions` |
-| `supabase/functions/sync-to-academy/index.ts` | New edge function |
-| `supabase/config.toml` | Add `verify_jwt = false` for sync-to-academy |
-| `src/pages/moderator/ModeratorChallenges.tsx` | Fire-and-forget sync call after approval |
-| `src/pages/admin/AdminChallenges.tsx` | Same sync call |
-| Tenant Settings integrations section | Add FGN Academy card |
+| `challenge_enrollments` | 3 rows |
+| `challenge_evidence` | 1 row |
+| `challenge_completions` | 1 row |
+| `season_scores` | 1 row (upsert) |
 
