@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Compass, Megaphone,
+  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Compass, Megaphone, RefreshCw,
 } from "lucide-react";
 import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
@@ -58,6 +58,7 @@ const ModeratorChallenges = () => {
   const [editChallenge, setEditChallenge] = useState<any | null>(null);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
+  const [resyncing, setResyncing] = useState<string | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   const { data: challenges = [], isLoading } = useQuery({
@@ -631,6 +632,44 @@ const ModeratorChallenges = () => {
                         disabled={updateStatusMutation.isPending}
                       >
                         <XCircle className="h-3.5 w-3.5" /> Reject Enrollment
+                      </Button>
+                    </div>
+                  )}
+
+                  {enrollment.status === "completed" && isAdmin && (
+                    <div className="flex gap-2 border-t border-border pt-3">
+                      <Button
+                        size="sm" variant="outline" className="gap-1"
+                        disabled={resyncing === enrollment.id}
+                        onClick={async () => {
+                          setResyncing(enrollment.id);
+                          try {
+                            const { data, error } = await supabase.functions.invoke("sync-to-academy", {
+                              body: {
+                                user_id: enrollment.user_id,
+                                challenge_id: enrollment.challenge_id,
+                                awarded_points: 0,
+                              },
+                            });
+                            if (error) throw error;
+                            if (data?.success) {
+                              toast.success("Academy sync completed");
+                            } else {
+                              toast.error(data?.message || "Sync failed");
+                            }
+                          } catch (err: any) {
+                            toast.error("Sync error: " + (err.message || "Unknown"));
+                          } finally {
+                            setResyncing(null);
+                          }
+                        }}
+                      >
+                        {resyncing === enrollment.id ? (
+                          <div className="animate-spin h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full" />
+                        ) : (
+                          <RefreshCw className="h-3.5 w-3.5" />
+                        )}
+                        Retry Academy Sync
                       </Button>
                     </div>
                   )}
