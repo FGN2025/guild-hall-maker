@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import usePageTitle from "@/hooks/usePageTitle";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useParams, Link, useNavigate } from "react-router-dom";
@@ -57,6 +58,23 @@ const ChallengeDetail = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  // Fetch completion record to check academy sync status
+  const { data: completion } = useQuery({
+    queryKey: ["challenge-completion", id, user?.id],
+    enabled: !!id && !!user && enrollment?.status === "completed",
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("challenge_completions")
+        .select("id, academy_synced, academy_sync_note")
+        .eq("user_id", user!.id)
+        .eq("challenge_id", id!)
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -327,9 +345,27 @@ const ChallengeDetail = () => {
                 )}
 
                 {enrollment?.status === "completed" && (
-                  <div className="text-center py-2">
-                    <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto mb-1" />
-                    <p className="text-sm text-green-400 font-medium">Challenge Complete!</p>
+                  <div className="text-center py-2 space-y-3">
+                    <div>
+                      <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto mb-1" />
+                      <p className="text-sm text-green-400 font-medium">Challenge Complete!</p>
+                    </div>
+                    {completion && !(completion as any).academy_synced && (
+                      <div className="bg-accent/30 border border-accent/50 rounded-lg p-3 text-left">
+                        <p className="text-xs text-muted-foreground">
+                          📚 Track your skills on{" "}
+                          <a
+                            href="https://fgn.academy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:text-primary/80"
+                          >
+                            FGN Academy
+                          </a>{" "}
+                          — sign up with the same email to earn credentials and build your Skill Passport.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

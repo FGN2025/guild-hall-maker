@@ -332,6 +332,7 @@ export type Database = {
       }
       challenge_completions: {
         Row: {
+          academy_sync_note: string | null
           academy_synced: boolean
           academy_synced_at: string | null
           awarded_points: number
@@ -342,6 +343,7 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          academy_sync_note?: string | null
           academy_synced?: boolean
           academy_synced_at?: string | null
           awarded_points?: number
@@ -352,6 +354,7 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          academy_sync_note?: string | null
           academy_synced?: boolean
           academy_synced_at?: string | null
           awarded_points?: number

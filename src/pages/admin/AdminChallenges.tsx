@@ -174,13 +174,19 @@ const AdminChallenges = () => {
           verified_by: user.id,
         });
 
-        // Fire-and-forget sync to FGN Academy
+        // Sync to FGN Academy and surface result
         supabase.functions.invoke("sync-to-academy", {
           body: {
             user_id: enrollment.user_id,
             challenge_id: enrollment.challenge_id,
             awarded_points: points,
           },
+        }).then(({ data }) => {
+          if (data?.success) {
+            toast.success("Progress synced to FGN Academy");
+          } else if (data?.user_not_found) {
+            toast.info("Player not yet registered on FGN Academy — sync skipped");
+          }
         }).catch((err: any) => console.warn("Academy sync failed (non-blocking):", err));
 
         // Notify the player

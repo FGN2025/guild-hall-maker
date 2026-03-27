@@ -164,6 +164,14 @@ Deno.serve(async (req) => {
 
     const responseText = await response.text();
     const success = response.ok;
+    const isUserNotFound = !success && response.status === 404;
+
+    // Build a human-readable sync note
+    const syncNote = success
+      ? "Synced successfully"
+      : isUserNotFound
+        ? "user_not_found"
+        : `HTTP ${response.status}: ${responseText.substring(0, 200)}`;
 
     // Update the completion record
     await adminClient
@@ -171,6 +179,7 @@ Deno.serve(async (req) => {
       .update({
         academy_synced: success,
         academy_synced_at: new Date().toISOString(),
+        academy_sync_note: syncNote,
       } as any)
       .eq("user_id", user_id)
       .eq("challenge_id", challenge_id)
@@ -188,7 +197,8 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success,
-      message: success ? "Synced to academy" : `Academy returned ${response.status}`,
+      user_not_found: isUserNotFound,
+      message: success ? "Synced to academy" : isUserNotFound ? "User not registered on FGN Academy" : `Academy returned ${response.status}`,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
