@@ -504,6 +504,7 @@ export type Database = {
       challenges: {
         Row: {
           achievement_id: string | null
+          certification_description: string | null
           challenge_type: string
           cover_image_url: string | null
           created_at: string
@@ -531,6 +532,7 @@ export type Database = {
         }
         Insert: {
           achievement_id?: string | null
+          certification_description?: string | null
           challenge_type?: string
           cover_image_url?: string | null
           created_at?: string
@@ -558,6 +560,7 @@ export type Database = {
         }
         Update: {
           achievement_id?: string | null
+          certification_description?: string | null
           challenge_type?: string
           cover_image_url?: string | null
           created_at?: string
