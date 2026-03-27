@@ -59,6 +59,23 @@ const ChallengeDetail = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
+  // Fetch completion record to check academy sync status
+  const { data: completion } = useQuery({
+    queryKey: ["challenge-completion", id, user?.id],
+    enabled: !!id && !!user && enrollment?.status === "completed",
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("challenge_completions")
+        .select("id, academy_synced, academy_sync_note")
+        .eq("user_id", user!.id)
+        .eq("challenge_id", id!)
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("challenges").delete().eq("id", id!);
