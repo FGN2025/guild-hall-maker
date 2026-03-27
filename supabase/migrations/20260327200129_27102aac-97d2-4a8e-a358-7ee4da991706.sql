@@ -1,0 +1,1 @@
+ALTER TABLE public.challenges ADD COLUMN certification_description text;
