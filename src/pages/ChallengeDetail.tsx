@@ -327,9 +327,27 @@ const ChallengeDetail = () => {
                 )}
 
                 {enrollment?.status === "completed" && (
-                  <div className="text-center py-2">
-                    <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto mb-1" />
-                    <p className="text-sm text-green-400 font-medium">Challenge Complete!</p>
+                  <div className="text-center py-2 space-y-3">
+                    <div>
+                      <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto mb-1" />
+                      <p className="text-sm text-green-400 font-medium">Challenge Complete!</p>
+                    </div>
+                    {completion && !(completion as any).academy_synced && (
+                      <div className="bg-accent/30 border border-accent/50 rounded-lg p-3 text-left">
+                        <p className="text-xs text-muted-foreground">
+                          📚 Track your skills on{" "}
+                          <a
+                            href="https://fgn.academy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:text-primary/80"
+                          >
+                            FGN Academy
+                          </a>{" "}
+                          — sign up with the same email to earn credentials and build your Skill Passport.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

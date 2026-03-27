@@ -1,0 +1,1 @@
+ALTER TABLE public.challenge_completions ADD COLUMN academy_sync_note text;
