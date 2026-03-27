@@ -1,38 +1,39 @@
 
 
-## Add Mock Challenge Data for darcylorincz@gmail.com
+## Add Integration Health Check Endpoint
 
-### Context
-User `darcylorincz@gmail.com` (user_id: `b6860126-fc33-48b0-8f50-030ffc2adbe2`) currently has **zero** challenge enrollments. We'll insert test data across 3 challenges to simulate different stages of the challenge lifecycle, which will also exercise the academy sync.
+### What
+A lightweight endpoint that fgn.academy (or any ecosystem app) can `GET` or `POST` to verify the play.fgn.gg connection is alive. Returns a simple status response without transferring any user/challenge data.
 
-### Data to Insert
+### Approach
+Add a `health` action to the **existing `ecosystem-data-api` edge function** rather than creating a new function. This keeps the authentication pattern consistent — fgn.academy already authenticates via `X-Ecosystem-Key`.
 
-**1. Challenge Enrollment — Completed (with completion record)**
-- Challenge: "ATS - Champion Challenge" (60 pts, advanced)
-- Enrollment status: `completed`
-- Completion record with `awarded_points = 60`
-- `academy_synced = false` (so sync can be tested)
+### How it works
+When `{ "action": "health" }` is sent, the function:
+1. Validates the API key (existing auth flow)
+2. Runs a trivial DB query (`SELECT 1`) to confirm database connectivity
+3. Returns `{ status: "healthy", timestamp, services: { api: true, database: true } }`
 
-**2. Challenge Enrollment — In Review (with evidence)**
-- Challenge: "ATS - Podium Challenge" (10 pts)
-- Enrollment status: `submitted`
-- 1 evidence record (mock screenshot URL)
+No new secrets, no new config.toml entry, no migration needed.
 
-**3. Challenge Enrollment — Active (just enrolled)**
-- Challenge: "ATS - Gold Challenge" (10 pts)
-- Enrollment status: `enrolled`
+### Files Changed
 
-**4. Season Score Entry**
-- Add/update `season_scores` for the active season (`a4c1209d-...`) with 60 points from the completed challenge
-
-### Execution
-Use the database insert tool to run these INSERT statements. No schema changes needed.
-
-### Tables Affected
-| Table | Records |
+| File | Change |
 |---|---|
-| `challenge_enrollments` | 3 rows |
-| `challenge_evidence` | 1 row |
-| `challenge_completions` | 1 row |
-| `season_scores` | 1 row (upsert) |
+| `supabase/functions/ecosystem-data-api/index.ts` | Add `health` action branch before other action handling (~10 lines) |
+
+### Response Format
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-03-27T...",
+  "services": {
+    "api": true,
+    "database": true,
+    "academy_key_configured": true
+  }
+}
+```
+
+fgn.academy can poll this on a schedule (e.g. every 5 minutes) and surface a green/red status indicator.
 
