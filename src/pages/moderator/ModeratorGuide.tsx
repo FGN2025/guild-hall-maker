@@ -115,6 +115,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Bulk Actions — Use 'Approve All & Complete' to approve the entire enrollment at once, or 'Reject Enrollment' to send all items back for revision.",
       "Approval — When you approve an enrollment, a completion record is created and points are awarded to the player's season score automatically.",
       "Rejection — Rejecting sends the enrollment back to the player with your per-evidence feedback so they know exactly what needs revision.",
+      "FGN Academy Sync — Upon approval, the system automatically syncs the completion to FGN Academy. You'll see a toast notification confirming whether the sync succeeded, if the player isn't registered on the academy ('Player not yet registered on FGN Academy'), or if an error occurred.",
+      "Retry Academy Sync — If a sync failed, you can manually re-trigger it using the 'Retry Academy Sync' button in the approval flow.",
       "Completions — The legacy completions tab still allows direct point awards for simpler challenges without evidence workflows.",
       "Notifications — When a new active challenge is created, all registered players are automatically notified with the challenge name and point reward.",
       "Max Enrollments — Optionally limit how many players can enroll in a challenge.",

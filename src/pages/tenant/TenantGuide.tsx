@@ -145,6 +145,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "CSV Export — Export filtered sync history to CSV for reporting.",
       "Auto-Refresh — Sync history updates in real-time as new syncs complete.",
       "Disconnect — Safely remove integration credentials while preserving previously synced data.",
+      "FGN Academy Integration — Enable the FGN Academy integration toggle to automatically sync challenge completions from your players to the academy's Skill Passport. When active, completed challenges are pushed with score, task progress, and skill tags so players can earn credentials and XP on the academy side.",
+      "Academy Sync Status — Sync results are logged per completion. If a player isn't registered on the academy, they'll see a prompt to sign up with the same email address.",
       "Admin Only — Only tenant admins can manage integrations.",
     ],
   },
