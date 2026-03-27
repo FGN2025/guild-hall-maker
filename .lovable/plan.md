@@ -1,39 +1,36 @@
 
 
-## Add Integration Health Check Endpoint
+## Update Test Account with Completed Challenges
 
-### What
-A lightweight endpoint that fgn.academy (or any ecosystem app) can `GET` or `POST` to verify the play.fgn.gg connection is alive. Returns a simple status response without transferring any user/challenge data.
+### Current State
+User `darcylorincz@gmail.com` (`b6860126-fc33-48b0-8f50-030ffc2adbe2`) has:
+- **Champion** — enrolled, completed, has completion record
+- **Podium** — enrolled, status "submitted", 1 evidence (no task link)
+- **Gold** — enrolled, status "enrolled", no evidence
+- **Bronze, Platinum, Silver** — no enrollments at all
 
-### Approach
-Add a `health` action to the **existing `ecosystem-data-api` edge function** rather than creating a new function. This keeps the authentication pattern consistent — fgn.academy already authenticates via `X-Ecosystem-Key`.
+### What Needs to Happen
 
-### How it works
-When `{ "action": "health" }` is sent, the function:
-1. Validates the API key (existing auth flow)
-2. Runs a trivial DB query (`SELECT 1`) to confirm database connectivity
-3. Returns `{ status: "healthy", timestamp, services: { api: true, database: true } }`
+Insert/update data so all 6 challenges show as **completed** with task evidence, enrollments, and completion records.
 
-No new secrets, no new config.toml entry, no migration needed.
+**1. Create missing enrollments** (Bronze, Platinum, Silver) — 3 INSERTs into `challenge_enrollments` with status `completed`
 
-### Files Changed
+**2. Update existing enrollments** (Podium → completed, Gold → completed) — 2 UPDATEs on `challenge_enrollments`
 
-| File | Change |
-|---|---|
-| `supabase/functions/ecosystem-data-api/index.ts` | Add `health` action branch before other action handling (~10 lines) |
+**3. Insert task evidence** for every task across all 6 challenges (26 total tasks) — evidence rows linking each task to its enrollment, using a placeholder screenshot URL
 
-### Response Format
-```json
-{
-  "status": "healthy",
-  "timestamp": "2026-03-27T...",
-  "services": {
-    "api": true,
-    "database": true,
-    "academy_key_configured": true
-  }
-}
-```
+**4. Insert completion records** for the 5 challenges missing them (all except Champion which already has one) — 5 INSERTs into `challenge_completions`
 
-fgn.academy can poll this on a schedule (e.g. every 5 minutes) and surface a green/red status indicator.
+**5. Update season score** — upsert `season_scores` for active season `a4c1209d-...` adding total points from all 6 challenges (60+35+20+10+5+0 = 130 pts)
+
+### Execution
+Run all INSERTs/UPDATEs via database migration tool in a single batch. No schema changes needed.
+
+### Tables Affected
+| Table | Action | Rows |
+|---|---|---|
+| `challenge_enrollments` | 3 INSERT + 2 UPDATE | 5 |
+| `challenge_evidence` | ~26 INSERT | 26 |
+| `challenge_completions` | 5 INSERT | 5 |
+| `season_scores` | 1 UPSERT | 1 |
 
