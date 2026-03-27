@@ -50,6 +50,25 @@ Deno.serve(async (req) => {
     let result: any = null;
 
     switch (action) {
+      case "health": {
+        let dbHealthy = false;
+        try {
+          const { error: dbErr } = await adminClient.from("games").select("id").limit(1);
+          dbHealthy = !dbErr;
+        } catch { dbHealthy = false; }
+
+        const academyKeyConfigured = !!Deno.env.get("FGN_ACADEMY_API_KEY");
+
+        return new Response(JSON.stringify({
+          status: dbHealthy ? "healthy" : "degraded",
+          timestamp: new Date().toISOString(),
+          services: { api: true, database: dbHealthy, academy_key_configured: academyKeyConfigured },
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       case "tournaments": {
         let q = adminClient
           .from("tournaments")
