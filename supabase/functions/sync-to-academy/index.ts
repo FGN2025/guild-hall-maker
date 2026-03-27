@@ -57,7 +57,6 @@ Deno.serve(async (req) => {
       .eq("is_active", true);
 
     if (!integrations || integrations.length === 0) {
-      // No active academy integration — skip silently
       return new Response(JSON.stringify({ success: true, message: "No active academy integration, skipped" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,7 +66,7 @@ Deno.serve(async (req) => {
     // Get challenge details
     const { data: challenge } = await adminClient
       .from("challenges")
-      .select("name, description, difficulty, game_id, games(name)")
+      .select("name, description, difficulty, game_id, points_reward, games(name)")
       .eq("id", challenge_id)
       .single();
 
@@ -78,24 +77,74 @@ Deno.serve(async (req) => {
       .eq("user_id", user_id)
       .single();
 
-    // Build the payload for the academy
+    // Get challenge tasks and their completion status for this user
+    const { data: tasks } = await adminClient
+      .from("challenge_tasks")
+      .select("id, title, display_order")
+      .eq("challenge_id", challenge_id)
+      .order("display_order", { ascending: true });
+
+    // Get evidence for task-level completion status
+    const { data: enrollment } = await adminClient
+      .from("challenge_enrollments")
+      .select("id")
+      .eq("user_id", user_id)
+      .eq("challenge_id", challenge_id)
+      .single();
+
+    let taskEvidence: any[] = [];
+    if (enrollment) {
+      const { data: evidence } = await adminClient
+        .from("challenge_evidence")
+        .select("task_id, status, submitted_at")
+        .eq("enrollment_id", enrollment.id);
+      taskEvidence = evidence || [];
+    }
+
+    // Build task_progress array (both formats accepted by academy)
+    const taskProgress = (tasks || []).map((task: any) => {
+      const ev = taskEvidence.find((e: any) => e.task_id === task.id);
+      const isCompleted = ev?.status === "approved";
+      return {
+        task_id: task.id,
+        title: task.title,
+        completed: isCompleted,
+        status: isCompleted ? "completed" : "pending",
+        completed_at: isCompleted ? ev?.submitted_at : null,
+      };
+    });
+
+    // Calculate score (0–100) from awarded_points / max possible points
+    const maxPoints = (challenge as any)?.points_reward || 0;
+    const actualPoints = awarded_points || 0;
+    const score = maxPoints > 0 ? Math.round((actualPoints / maxPoints) * 100) : (actualPoints > 0 ? 100 : 0);
+
+    // Build FLAT payload matching academy's expected contract
     const payload = {
-      source: "play.fgn.gg",
-      event_type: "challenge_completed",
-      player: {
-        email: userEmail,
+      // Required flat fields
+      user_email: userEmail,
+      challenge_id: challenge_id,
+      score: score,
+      completed_at: new Date().toISOString(),
+
+      // Task progress (both formats: completed boolean + status string)
+      task_progress: taskProgress,
+
+      // Skills verified (free-form tags based on challenge properties)
+      skills_verified: buildSkillsTags(challenge),
+
+      // Metadata for extra context
+      metadata: {
+        source: "play.fgn.gg",
+        external_user_id: user_id,
         display_name: profile?.display_name || userEmail,
-        external_id: user_id,
-      },
-      challenge: {
-        id: challenge_id,
-        name: (challenge as any)?.name || "Unknown Challenge",
+        challenge_name: (challenge as any)?.name || "Unknown Challenge",
         description: (challenge as any)?.description || null,
         difficulty: (challenge as any)?.difficulty || null,
         game_name: (challenge as any)?.games?.name || null,
+        awarded_points: actualPoints,
+        max_points: maxPoints,
       },
-      awarded_points: awarded_points || 0,
-      completed_at: new Date().toISOString(),
     };
 
     // Determine academy URL from integration config, fallback to default
@@ -109,7 +158,6 @@ Deno.serve(async (req) => {
       headers: {
         "Content-Type": "application/json",
         "X-App-Key": academyApiKey,
-        "X-Source-App": "play.fgn.gg",
       },
       body: JSON.stringify(payload),
     });
@@ -153,3 +201,24 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+/** Build free-form skill tags from challenge properties */
+function buildSkillsTags(challenge: any): string[] {
+  const tags: string[] = [];
+  if (!challenge) return tags;
+
+  // Add difficulty as a skill level indicator
+  if (challenge.difficulty) {
+    tags.push(`difficulty:${challenge.difficulty}`);
+  }
+
+  // Add game name as a skill domain
+  if (challenge.games?.name) {
+    tags.push(`game:${challenge.games.name}`);
+  }
+
+  // Generic gaming skill
+  tags.push("gaming-proficiency");
+
+  return tags;
+}
