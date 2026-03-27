@@ -1,25 +1,42 @@
 
 
-## Generate Gap Analysis PDF Report
+## Assessment: play.fgn.gg Changes for Seamless User Journey
 
-### What
-Create a downloadable PDF report documenting the mismatches between the fgn.academy integration guide and the current `sync-to-academy` edge function implementation on play.fgn.gg. This report is intended for the fgn.academy dev team.
+The academy team identified 3 gaps. Here's what **this team** (play.fgn.gg) needs to do:
 
-### Report Sections
-1. **Executive Summary** — High-level status of the integration
-2. **Endpoint Mismatch** — Guide expects `sync-challenge-completion` Supabase function; current code posts to `fgn.academy/api/ecosystem/challenge-completed`
-3. **Payload Structure Gap** — Guide expects flat fields (`user_email`, `challenge_id`, `score`); current code sends nested objects (`player.email`, `challenge.id`)
-4. **Missing Fields** — `score` (0–100), `skills_verified[]`, `task_progress[]`, `metadata` not sent
-5. **Extra/Undocumented Fields** — `source`, `event_type`, `player.display_name`, `player.external_id`, `awarded_points`, `X-Source-App` header
-6. **RLS Consideration** — `challenge_tasks` table must allow anon SELECT for academy import
-7. **Recommendations** — Prioritized action items with ownership suggestions
-8. **Questions for Academy Team** — Open items needing clarification
+### Gap 1: Player-facing progress view — NOT our responsibility
+This is an **fgn.academy UI change** (showing task progress on their Work Order Detail page). play.fgn.gg already sends all necessary data (`task_progress`, `score`, completion status) via the sync. **No action needed from this team.**
 
-### Execution
-- Write a Python script using `reportlab` to generate a styled PDF
-- Output to `/mnt/documents/fgn-academy-gap-analysis.pdf`
-- QA via `pdftoppm` image conversion and inspection
+### Gap 2: Prompt to register on fgn.academy — OUR responsibility
+When a challenge is completed and the sync returns a 404 "User not found," there's no feedback to the player. Two changes needed:
 
-### Files
-No project files changed — this is a standalone artifact.
+1. **Update `sync-to-academy` edge function** — Instead of silently logging the 404, return a structured response indicating the user wasn't found on the academy side.
+
+2. **Show a banner on the ChallengeDetail page** — After a challenge is marked completed, if the academy sync failed with "user not found," display a subtle prompt:
+   > *"Track your skills on FGN Academy — sign up at fgn.academy with the same email to earn credentials."*
+
+   This goes in `src/pages/ChallengeDetail.tsx` within the `enrollment?.status === "completed"` block (line 329). We can check `challenge_completions.academy_synced` to determine if the sync succeeded.
+
+3. **Optionally show the same prompt on the Challenges list page** as a one-time dismissible banner for users who have completions but no successful academy sync.
+
+### Gap 3: Notification when progress syncs — SHARED responsibility
+The notification itself lives on fgn.academy's side. However, play.fgn.gg can enhance the experience by:
+
+1. **Showing a toast notification** when a challenge completion is approved and the academy sync succeeds — "Your progress has been synced to FGN Academy!"
+2. This already partially exists in the admin/moderator approval flow (fire-and-forget call in `AdminChallenges.tsx` line 178 and `ModeratorChallenges.tsx` line 176), but the sync result is never surfaced.
+
+### Implementation Plan
+
+| # | Change | File(s) | Scope |
+|---|--------|---------|-------|
+| 1 | Return `user_not_found` flag from sync edge function when academy returns 404 | `supabase/functions/sync-to-academy/index.ts` | ~5 lines |
+| 2 | Store sync status reason in `challenge_completions` | DB migration — add `academy_sync_note` text column | 1 migration |
+| 3 | Show "Join FGN Academy" banner on completed challenges where `academy_synced = false` | `src/pages/ChallengeDetail.tsx` | ~15 lines |
+| 4 | Surface sync success toast in admin/moderator approval flows | `src/pages/admin/AdminChallenges.tsx`, `src/pages/moderator/ModeratorChallenges.tsx` | ~10 lines each |
+
+### What to Tell the Academy Team
+
+- **Gap 1** is entirely on their side — the data is already in their database from our sync.
+- **Gap 2** — we'll add a player-facing prompt. We need them to confirm the 404 response body format so we can detect "user not found" vs other errors.
+- **Gap 3** — we'll add a toast on our side; they should build their notification feed independently.
 
