@@ -1,36 +1,25 @@
 
 
-## Update Test Account with Completed Challenges
+## Generate Gap Analysis PDF Report
 
-### Current State
-User `darcylorincz@gmail.com` (`b6860126-fc33-48b0-8f50-030ffc2adbe2`) has:
-- **Champion** — enrolled, completed, has completion record
-- **Podium** — enrolled, status "submitted", 1 evidence (no task link)
-- **Gold** — enrolled, status "enrolled", no evidence
-- **Bronze, Platinum, Silver** — no enrollments at all
+### What
+Create a downloadable PDF report documenting the mismatches between the fgn.academy integration guide and the current `sync-to-academy` edge function implementation on play.fgn.gg. This report is intended for the fgn.academy dev team.
 
-### What Needs to Happen
-
-Insert/update data so all 6 challenges show as **completed** with task evidence, enrollments, and completion records.
-
-**1. Create missing enrollments** (Bronze, Platinum, Silver) — 3 INSERTs into `challenge_enrollments` with status `completed`
-
-**2. Update existing enrollments** (Podium → completed, Gold → completed) — 2 UPDATEs on `challenge_enrollments`
-
-**3. Insert task evidence** for every task across all 6 challenges (26 total tasks) — evidence rows linking each task to its enrollment, using a placeholder screenshot URL
-
-**4. Insert completion records** for the 5 challenges missing them (all except Champion which already has one) — 5 INSERTs into `challenge_completions`
-
-**5. Update season score** — upsert `season_scores` for active season `a4c1209d-...` adding total points from all 6 challenges (60+35+20+10+5+0 = 130 pts)
+### Report Sections
+1. **Executive Summary** — High-level status of the integration
+2. **Endpoint Mismatch** — Guide expects `sync-challenge-completion` Supabase function; current code posts to `fgn.academy/api/ecosystem/challenge-completed`
+3. **Payload Structure Gap** — Guide expects flat fields (`user_email`, `challenge_id`, `score`); current code sends nested objects (`player.email`, `challenge.id`)
+4. **Missing Fields** — `score` (0–100), `skills_verified[]`, `task_progress[]`, `metadata` not sent
+5. **Extra/Undocumented Fields** — `source`, `event_type`, `player.display_name`, `player.external_id`, `awarded_points`, `X-Source-App` header
+6. **RLS Consideration** — `challenge_tasks` table must allow anon SELECT for academy import
+7. **Recommendations** — Prioritized action items with ownership suggestions
+8. **Questions for Academy Team** — Open items needing clarification
 
 ### Execution
-Run all INSERTs/UPDATEs via database migration tool in a single batch. No schema changes needed.
+- Write a Python script using `reportlab` to generate a styled PDF
+- Output to `/mnt/documents/fgn-academy-gap-analysis.pdf`
+- QA via `pdftoppm` image conversion and inspection
 
-### Tables Affected
-| Table | Action | Rows |
-|---|---|---|
-| `challenge_enrollments` | 3 INSERT + 2 UPDATE | 5 |
-| `challenge_evidence` | ~26 INSERT | 26 |
-| `challenge_completions` | 5 INSERT | 5 |
-| `season_scores` | 1 UPSERT | 1 |
+### Files
+No project files changed — this is a standalone artifact.
 
