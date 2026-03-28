@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     // Parse input
     const body = await req.json();
     const {
-      cdl_domain, cfr_reference, difficulty, challenge_type,
+      cdl_domain, cfr_reference, reference_type, difficulty, challenge_type,
       game_id, season_id, estimated_minutes, points_reward, created_by,
     } = body;
 
@@ -98,7 +98,8 @@ Deno.serve(async (req) => {
     const prompt = `Generate a CDL Trade Skills challenge for the Fiber Gaming Network platform.
 
 CDL Domain: ${cdl_domain}
-CFR Reference: ${cfr_reference || ""}
+Reference Type: ${reference_type || "federal_cfr"}
+Regulatory Reference: ${cfr_reference || ""}
 Difficulty: ${difficulty || "beginner"}
 Challenge Type: ${challenge_type || "monthly"}
 Points Reward: ${points_reward || 10}
@@ -148,10 +149,19 @@ IMPORTANT:
 - The cover_image_prompt should describe a photorealistic cinematic image suitable for a gaming challenge card
 - Return ONLY the JSON object, no additional text`;
 
-    // Query Open Notebook
-    const notebookUrl = Deno.env.get("OPEN_NOTEBOOK_URL") || "http://72.62.168.228:8502";
+    // Dynamic notebook lookup — check admin_notebook_connections for ATS game
+    const atsGameId = game_id || "f316a9ab-8b32-46e1-b871-7defc9dcb5e5";
+    const { data: nbConn } = await supabase
+      .from("admin_notebook_connections")
+      .select("api_url, notebook_id")
+      .eq("game_id", atsGameId)
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+
+    const notebookUrl = nbConn?.api_url || Deno.env.get("OPEN_NOTEBOOK_URL") || "http://72.62.168.228:8502";
     const notebookPassword = Deno.env.get("OPEN_NOTEBOOK_PASSWORD") || "";
-    const notebookId = "notebook:w6l0wjpi39u5nlpaj0k3";
+    const notebookId = nbConn?.notebook_id || "notebook:w6l0wjpi39u5nlpaj0k3";
 
     const chatUrl = `${notebookUrl}/api/notebooks/${notebookId}/chat`;
 
