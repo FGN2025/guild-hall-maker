@@ -254,7 +254,6 @@ const TenantSubscribers = () => {
                     }
                   }}
                   onSync={configured && integ.providerType !== "fgn_academy" ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
-                  syncDisabledReason={integ.providerType === "fgn_academy" ? "Academy syncs happen automatically when challenges are approved" : undefined}
                   isSyncing={triggerSync.isPending}
                   onDisconnect={configured ? () => deleteIntegration.mutate(configured.id) : undefined}
                   isDisconnecting={deleteIntegration.isPending}
