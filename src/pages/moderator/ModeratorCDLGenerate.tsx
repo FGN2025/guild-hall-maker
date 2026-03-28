@@ -32,6 +32,8 @@ type PageState = "input" | "generating" | "review" | "publishing" | "published";
 const ModeratorCDLGenerate = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isAdminContext = window.location.pathname.startsWith("/admin");
+  const backPath = isAdminContext ? "/admin/challenges" : "/moderator/challenges";
 
   // Input form state
   const [domain, setDomain] = useState("");
@@ -168,7 +170,7 @@ const ModeratorCDLGenerate = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/moderator/challenges")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(backPath)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>

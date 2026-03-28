@@ -226,6 +226,7 @@ const App = () => (
               <Route path="/moderator/redemptions" element={<ModeratorRoute><ModeratorRedemptions /></ModeratorRoute>} />
               <Route path="/moderator/guide" element={<ModeratorRoute><ModeratorGuide /></ModeratorRoute>} />
               <Route path="/moderator/challenges/generate" element={<ModeratorRoute><ModeratorCDLGenerate /></ModeratorRoute>} />
+              <Route path="/admin/challenges/generate" element={<AdminRoute><ModeratorCDLGenerate /></AdminRoute>} />
 
               {/* Tenant routes */}
               <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
