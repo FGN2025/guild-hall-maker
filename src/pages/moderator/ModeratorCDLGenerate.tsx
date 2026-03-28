@@ -16,7 +16,6 @@ import {
   ArrowLeft, ExternalLink, Sparkles,
 } from "lucide-react";
 import { CDL_DOMAINS, ATS_GAME_ID, computePointsBreakdown, buildCoverImagePrompt } from "@/lib/cdlDomainMaps";
-import { CDL_DOMAINS, ATS_GAME_ID, computePointsBreakdown, buildCoverImagePrompt } from "@/lib/cdlDomainMaps";
 
 type ValidationResult = { passed: number; total: number; failures: string[] };
 
