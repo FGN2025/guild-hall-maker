@@ -85,3 +85,7 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.sync-to-academy]
     verify_jwt = false
+  [functions.generate-cdl-challenge]
+    verify_jwt = false
+  [functions.publish-cdl-challenge]
+    verify_jwt = false

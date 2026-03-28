@@ -94,6 +94,7 @@ const ModeratorLadders = lazy(() => import("./pages/moderator/ModeratorLadders")
 const ModeratorRedemptions = lazy(() => import("./pages/moderator/ModeratorRedemptions"));
 const ModeratorAchievements = lazy(() => import("./pages/moderator/ModeratorAchievements"));
 const ModeratorGuide = lazy(() => import("./pages/moderator/ModeratorGuide"));
+const ModeratorCDLGenerate = lazy(() => import("./pages/moderator/ModeratorCDLGenerate"));
 
 // Tenant pages
 const TenantDashboard = lazy(() => import("./pages/tenant/TenantDashboard"));
@@ -224,6 +225,7 @@ const App = () => (
               <Route path="/moderator/achievements" element={<ModeratorRoute><ModeratorAchievements /></ModeratorRoute>} />
               <Route path="/moderator/redemptions" element={<ModeratorRoute><ModeratorRedemptions /></ModeratorRoute>} />
               <Route path="/moderator/guide" element={<ModeratorRoute><ModeratorGuide /></ModeratorRoute>} />
+              <Route path="/moderator/challenges/generate" element={<ModeratorRoute><ModeratorCDLGenerate /></ModeratorRoute>} />
 
               {/* Tenant routes */}
               <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />

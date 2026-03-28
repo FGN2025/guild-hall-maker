@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Compass, Megaphone, RefreshCw,
+  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Compass, Megaphone, RefreshCw, Cpu,
 } from "lucide-react";
 import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
@@ -297,7 +297,10 @@ const ModeratorChallenges = () => {
         </TabsList>
 
         <TabsContent value="challenges">
-          <div className="flex items-center justify-end mb-4">
+          <div className="flex items-center justify-end gap-2 mb-4">
+            <Button variant="outline" className="gap-2" onClick={() => navigate("/moderator/challenges/generate")}>
+              <Cpu className="h-4 w-4" /> Generate with Agent
+            </Button>
             <CreateChallengeDialog
               invalidateQueryKey={["mod-challenges"]}
               trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> New Challenge</Button>}
