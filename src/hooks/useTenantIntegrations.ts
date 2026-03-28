@@ -88,7 +88,10 @@ export const useTenantIntegrations = (tenantId: string | undefined) => {
 
   const triggerSync = useMutation({
     mutationFn: async ({ integrationId, dryRun, providerType }: { integrationId: string; dryRun?: boolean; providerType?: string }) => {
-      const functionName = providerType === "glds" ? "glds-sync" : "nisc-sync";
+      const functionName =
+        providerType === "glds" ? "glds-sync" :
+        providerType === "fgn_academy" ? "sync-to-academy" :
+        "nisc-sync";
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { integrationId, dryRun },
       });

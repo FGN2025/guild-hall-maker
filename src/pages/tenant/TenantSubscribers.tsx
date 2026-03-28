@@ -253,7 +253,7 @@ const TenantSubscribers = () => {
                       });
                     }
                   }}
-                  onSync={configured ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
+                  onSync={configured && integ.providerType !== "fgn_academy" ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
                   isSyncing={triggerSync.isPending}
                   onDisconnect={configured ? () => deleteIntegration.mutate(configured.id) : undefined}
                   isDisconnecting={deleteIntegration.isPending}
