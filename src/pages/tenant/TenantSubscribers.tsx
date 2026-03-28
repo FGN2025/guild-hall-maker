@@ -239,20 +239,24 @@ const TenantSubscribers = () => {
                   lastSyncAt={configured?.last_sync_at}
                   lastSyncStatus={configured?.last_sync_status}
                   lastSyncMessage={configured?.last_sync_message}
-                  onConfigure={() => {
-                    if (integ.providerType === "nisc" || integ.providerType === "glds") {
-                      setSelectedIntegration(configured || null);
-                      setSelectedProviderType(integ.providerType);
-                      setConfigDialogOpen(true);
-                    } else if (integ.providerType === "fgn_academy" && !configured && tenantId) {
-                      saveIntegration.mutate({
-                        tenant_id: tenantId,
-                        provider_type: "fgn_academy",
-                        display_name: "FGN Academy",
-                        additional_config: {},
-                      });
-                    }
-                  }}
+                  onConfigure={
+                    integ.providerType === "fgn_academy" && configured
+                      ? undefined
+                      : () => {
+                          if (integ.providerType === "nisc" || integ.providerType === "glds") {
+                            setSelectedIntegration(configured || null);
+                            setSelectedProviderType(integ.providerType);
+                            setConfigDialogOpen(true);
+                          } else if (integ.providerType === "fgn_academy" && !configured && tenantId) {
+                            saveIntegration.mutate({
+                              tenant_id: tenantId,
+                              provider_type: "fgn_academy",
+                              display_name: "FGN Academy",
+                              additional_config: {},
+                            });
+                          }
+                        }
+                  }
                   onSync={configured && integ.providerType !== "fgn_academy" ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
                   isSyncing={triggerSync.isPending}
                   onDisconnect={configured ? () => deleteIntegration.mutate(configured.id) : undefined}
