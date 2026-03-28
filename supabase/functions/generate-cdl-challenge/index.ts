@@ -20,7 +20,7 @@ function validateChallenge(c: any): { passed: number; total: number; failures: s
     ["8. estimated_minutes is positive integer", Number.isInteger(c.estimated_minutes) && c.estimated_minutes > 0],
     ["9. requires_evidence is true", c.requires_evidence === true],
     ["10. cdl_domain is non-empty string", typeof c.cdl_domain === "string" && c.cdl_domain.trim().length > 0],
-    ["11. cfr_reference starts with '49 CFR' or 'Part'", typeof c.cfr_reference === "string" && (/^49 CFR/.test(c.cfr_reference) || /^Part/.test(c.cfr_reference))],
+    ["11. regulatory_reference is non-empty string", typeof c.cfr_reference === "string" && c.cfr_reference.trim().length > 0],
     ["12. certification_description is non-empty", typeof c.certification_description === "string" && c.certification_description.trim().length > 0],
     ["13. coach_context is non-empty", typeof c.coach_context === "string" && c.coach_context.trim().length > 0],
     ["14. suggested_coach_prompts is array of 3", Array.isArray(c.suggested_coach_prompts) && c.suggested_coach_prompts.length === 3],
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     // Parse input
     const body = await req.json();
     const {
-      cdl_domain, cfr_reference, difficulty, challenge_type,
+      cdl_domain, cfr_reference, reference_type, difficulty, challenge_type,
       game_id, season_id, estimated_minutes, points_reward, created_by,
     } = body;
 
@@ -98,7 +98,8 @@ Deno.serve(async (req) => {
     const prompt = `Generate a CDL Trade Skills challenge for the Fiber Gaming Network platform.
 
 CDL Domain: ${cdl_domain}
-CFR Reference: ${cfr_reference || ""}
+Reference Type: ${reference_type || "federal_cfr"}
+Regulatory Reference: ${cfr_reference || ""}
 Difficulty: ${difficulty || "beginner"}
 Challenge Type: ${challenge_type || "monthly"}
 Points Reward: ${points_reward || 10}
@@ -148,10 +149,19 @@ IMPORTANT:
 - The cover_image_prompt should describe a photorealistic cinematic image suitable for a gaming challenge card
 - Return ONLY the JSON object, no additional text`;
 
-    // Query Open Notebook
-    const notebookUrl = Deno.env.get("OPEN_NOTEBOOK_URL") || "http://72.62.168.228:8502";
+    // Dynamic notebook lookup — check admin_notebook_connections for ATS game
+    const atsGameId = game_id || "f316a9ab-8b32-46e1-b871-7defc9dcb5e5";
+    const { data: nbConn } = await supabase
+      .from("admin_notebook_connections")
+      .select("api_url, notebook_id")
+      .eq("game_id", atsGameId)
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+
+    const notebookUrl = nbConn?.api_url || Deno.env.get("OPEN_NOTEBOOK_URL") || "http://72.62.168.228:8502";
     const notebookPassword = Deno.env.get("OPEN_NOTEBOOK_PASSWORD") || "";
-    const notebookId = "notebook:w6l0wjpi39u5nlpaj0k3";
+    const notebookId = nbConn?.notebook_id || "notebook:w6l0wjpi39u5nlpaj0k3";
 
     const chatUrl = `${notebookUrl}/api/notebooks/${notebookId}/chat`;
 

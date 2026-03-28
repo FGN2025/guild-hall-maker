@@ -4,9 +4,12 @@
  * Source: FGN CDL Agent Lovable Workflow Spec v1.0, Section 6.
  */
 
+export type ReferenceType = "federal_cfr" | "state_training" | "industry_standard" | "other";
+
 export interface CDLDomainConfig {
   label: string;
   cfrReference: string;
+  referenceType: ReferenceType;
   challengeType: "one_time" | "monthly";
   defaultPoints: number;
   defaultMinutes: number;
@@ -15,10 +18,18 @@ export interface CDLDomainConfig {
   taskCount: number;
 }
 
+export const REFERENCE_TYPE_LABELS: Record<ReferenceType, string> = {
+  federal_cfr: "Federal (CFR)",
+  state_training: "State Training Requirement",
+  industry_standard: "Industry Standard",
+  other: "Other",
+};
+
 export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Safe on-road driving — speed management": {
     label: "Safe on-road driving — speed management",
     cfrReference: "49 CFR 383.113(c)",
+    referenceType: "federal_cfr",
     challengeType: "monthly",
     defaultPoints: 10,
     defaultMinutes: 50,
@@ -30,6 +41,7 @@ export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Pre-trip vehicle inspection": {
     label: "Pre-trip vehicle inspection",
     cfrReference: "49 CFR 383.113(a)",
+    referenceType: "federal_cfr",
     challengeType: "one_time",
     defaultPoints: 17,
     defaultMinutes: 65,
@@ -41,6 +53,7 @@ export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Basic vehicle control — backing and parking": {
     label: "Basic vehicle control — backing and parking",
     cfrReference: "49 CFR 383.113(b) (4)(5)",
+    referenceType: "federal_cfr",
     challengeType: "one_time",
     defaultPoints: 20,
     defaultMinutes: 75,
@@ -52,6 +65,7 @@ export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Shifting and transmission operation": {
     label: "Shifting and transmission operation",
     cfrReference: "Part 380 Appendix A",
+    referenceType: "federal_cfr",
     challengeType: "monthly",
     defaultPoints: 11,
     defaultMinutes: 55,
@@ -63,6 +77,7 @@ export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Cargo and weight operations": {
     label: "Cargo and weight operations",
     cfrReference: "49 CFR 383.111(a), Part 392",
+    referenceType: "federal_cfr",
     challengeType: "monthly",
     defaultPoints: 8,
     defaultMinutes: 45,
@@ -74,6 +89,7 @@ export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Coupling and uncoupling": {
     label: "Coupling and uncoupling",
     cfrReference: "Part 380 Appendix A",
+    referenceType: "federal_cfr",
     challengeType: "one_time",
     defaultPoints: 15,
     defaultMinutes: 60,
@@ -85,6 +101,7 @@ export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Hazard and emergency response": {
     label: "Hazard and emergency response",
     cfrReference: "Part 392",
+    referenceType: "federal_cfr",
     challengeType: "monthly",
     defaultPoints: 9,
     defaultMinutes: 50,
@@ -96,6 +113,7 @@ export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Hours of service awareness": {
     label: "Hours of service awareness",
     cfrReference: "49 CFR 383.111(a) (iv)",
+    referenceType: "federal_cfr",
     challengeType: "monthly",
     defaultPoints: 5,
     defaultMinutes: 30,
