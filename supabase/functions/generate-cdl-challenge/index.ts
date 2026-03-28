@@ -20,7 +20,7 @@ function validateChallenge(c: any): { passed: number; total: number; failures: s
     ["8. estimated_minutes is positive integer", Number.isInteger(c.estimated_minutes) && c.estimated_minutes > 0],
     ["9. requires_evidence is true", c.requires_evidence === true],
     ["10. cdl_domain is non-empty string", typeof c.cdl_domain === "string" && c.cdl_domain.trim().length > 0],
-    ["11. cfr_reference starts with '49 CFR' or 'Part'", typeof c.cfr_reference === "string" && (/^49 CFR/.test(c.cfr_reference) || /^Part/.test(c.cfr_reference))],
+    ["11. regulatory_reference is non-empty string", typeof c.cfr_reference === "string" && c.cfr_reference.trim().length > 0],
     ["12. certification_description is non-empty", typeof c.certification_description === "string" && c.certification_description.trim().length > 0],
     ["13. coach_context is non-empty", typeof c.coach_context === "string" && c.coach_context.trim().length > 0],
     ["14. suggested_coach_prompts is array of 3", Array.isArray(c.suggested_coach_prompts) && c.suggested_coach_prompts.length === 3],

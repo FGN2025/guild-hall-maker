@@ -37,6 +37,7 @@ const ModeratorCDLGenerate = () => {
   // Input form state
   const [domain, setDomain] = useState("");
   const [cfrReference, setCfrReference] = useState("");
+  const [referenceType, setReferenceType] = useState<ReferenceType>("federal_cfr");
   const [difficulty, setDifficulty] = useState("beginner");
   const [challengeType, setChallengeType] = useState("monthly");
   const [pointsReward, setPointsReward] = useState(10);
@@ -58,6 +59,7 @@ const ModeratorCDLGenerate = () => {
     const config = CDL_DOMAINS[value];
     if (config) {
       setCfrReference(config.cfrReference);
+      setReferenceType(config.referenceType);
       setChallengeType(config.challengeType);
       setPointsReward(config.defaultPoints);
       setEstimatedMinutes(config.defaultMinutes);
@@ -76,6 +78,7 @@ const ModeratorCDLGenerate = () => {
         body: {
           cdl_domain: domain,
           cfr_reference: cfrReference,
+          reference_type: referenceType,
           difficulty,
           challenge_type: challengeType,
           game_id: ATS_GAME_ID,
@@ -205,10 +208,25 @@ const ModeratorCDLGenerate = () => {
                 </Select>
               </div>
 
-              {/* CFR Reference */}
-              <div className="space-y-2">
-                <Label>CFR Reference</Label>
-                <Input value={cfrReference} onChange={(e) => setCfrReference(e.target.value)} placeholder="49 CFR ..." />
+              {/* Regulatory Reference */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Reference Type</Label>
+                  <Select value={referenceType} onValueChange={(v) => setReferenceType(v as ReferenceType)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(REFERENCE_TYPE_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Reference Citation</Label>
+                  <Input value={cfrReference} onChange={(e) => setCfrReference(e.target.value)} placeholder="e.g. 49 CFR 383.113(c)" />
+                </div>
               </div>
 
               {/* Difficulty */}
