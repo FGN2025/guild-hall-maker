@@ -504,8 +504,12 @@ export type Database = {
       challenges: {
         Row: {
           achievement_id: string | null
+          cdl_domain: string | null
           certification_description: string | null
+          cfr_reference: string | null
           challenge_type: string
+          coach_context: string | null
+          cover_image_prompt: string | null
           cover_image_url: string | null
           created_at: string
           created_by: string
@@ -528,12 +532,17 @@ export type Database = {
           requires_evidence: boolean
           season_id: string | null
           start_date: string | null
+          suggested_coach_prompts: Json | null
           updated_at: string
         }
         Insert: {
           achievement_id?: string | null
+          cdl_domain?: string | null
           certification_description?: string | null
+          cfr_reference?: string | null
           challenge_type?: string
+          coach_context?: string | null
+          cover_image_prompt?: string | null
           cover_image_url?: string | null
           created_at?: string
           created_by: string
@@ -556,12 +565,17 @@ export type Database = {
           requires_evidence?: boolean
           season_id?: string | null
           start_date?: string | null
+          suggested_coach_prompts?: Json | null
           updated_at?: string
         }
         Update: {
           achievement_id?: string | null
+          cdl_domain?: string | null
           certification_description?: string | null
+          cfr_reference?: string | null
           challenge_type?: string
+          coach_context?: string | null
+          cover_image_prompt?: string | null
           cover_image_url?: string | null
           created_at?: string
           created_by?: string
@@ -584,6 +598,7 @@ export type Database = {
           requires_evidence?: boolean
           season_id?: string | null
           start_date?: string | null
+          suggested_coach_prompts?: Json | null
           updated_at?: string
         }
         Relationships: [
