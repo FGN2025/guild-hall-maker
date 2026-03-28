@@ -301,7 +301,10 @@ const AdminChallenges = () => {
         </TabsList>
 
         <TabsContent value="challenges">
-          <div className="flex items-center justify-end mb-4">
+          <div className="flex items-center justify-end gap-3 mb-4">
+            <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/challenges/generate")}>
+              <Cpu className="h-4 w-4" /> Generate with Agent
+            </Button>
             <CreateChallengeDialog
               invalidateQueryKey={["admin-challenges"]}
               trigger={<Button className="gap-2"><Plus className="h-4 w-4" /> New Challenge</Button>}
