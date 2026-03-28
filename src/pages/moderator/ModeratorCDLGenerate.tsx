@@ -15,7 +15,6 @@ import {
   Cpu, CheckCircle2, XCircle, Loader2, Copy, ChevronDown,
   ArrowLeft, ExternalLink, Sparkles,
 } from "lucide-react";
-import ModeratorLayout from "@/components/moderator/ModeratorLayout";
 import { CDL_DOMAINS, ATS_GAME_ID, computePointsBreakdown, buildCoverImagePrompt } from "@/lib/cdlDomainMaps";
 
 type ValidationResult = { passed: number; total: number; failures: string[] };
@@ -166,7 +165,7 @@ const ModeratorCDLGenerate = () => {
   const allPassed = validation && validation.passed === validation.total;
 
   return (
-    <ModeratorLayout>
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -484,7 +483,7 @@ const ModeratorCDLGenerate = () => {
           </Card>
         )}
       </div>
-    </ModeratorLayout>
+    </div>
   );
 };
 
