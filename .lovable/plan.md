@@ -1,34 +1,45 @@
 
 
-## Run Claude Agent Schema Migration
+## Fix: FGN Academy "Sync Now" calls wrong edge function
 
-### What
-Execute the consolidated migration from the Claude Trade Skills Agent team. This adds 5 columns to `challenges` and inserts one `app_settings` row for agent scoring configuration.
+### Root Cause
 
-### Database Migration (single script)
+In `src/hooks/useTenantIntegrations.ts` line 91, the `triggerSync` mutation routes to edge functions with a simple binary check:
 
-**Part 1 — Add 5 columns to `challenges`:**
+```typescript
+const functionName = providerType === "glds" ? "glds-sync" : "nisc-sync";
+```
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `cdl_domain` | text | CDL skill domain the challenge targets |
-| `cfr_reference` | text | FMCSA CFR citation for the CDL domain |
-| `coach_context` | text | AI Coach system context injected on challenge page |
-| `suggested_coach_prompts` | jsonb | Array of challenge-specific coaching prompt suggestions |
-| `cover_image_prompt` | text | Structured image generation prompt for cover art |
+When `providerType` is `"fgn_academy"`, it falls through to `"nisc-sync"`, which returns 403 (Forbidden) because the integration ID belongs to an FGN Academy record, not a NISC one.
 
-All nullable, no defaults — zero impact on existing data or queries.
+### Fix
 
-**Part 2 — Insert `agent_scoring_config` into `app_settings`:**
+Update the function name resolution to handle all three provider types:
 
-A JSON config row controlling points rubric, placement ratios (1st/2nd/3rd/participation), type multipliers, and domain/challenge-level overrides. This is read by the agent when generating challenge JSON.
+```typescript
+const functionName =
+  providerType === "glds" ? "glds-sync" :
+  providerType === "fgn_academy" ? "sync-to-academy" :
+  "nisc-sync";
+```
 
-### Code Changes
-None required. These columns are agent-populated on publish and the config row is read by the external agent. Existing UI and queries are unaffected since all columns are nullable and the config uses the existing `app_settings` key-value pattern.
+However, `sync-to-academy` expects a different payload shape (`user_id`, `challenge_id`, `awarded_points`) — it syncs individual challenge completions, not bulk subscriber data. A tenant-level "Sync Now" for FGN Academy doesn't map to a single edge function call the same way NISC/GLDS do.
+
+Two options for the FGN Academy sync button behavior:
+
+1. **Disable the Sync Now button for FGN Academy** — academy syncs are triggered automatically on challenge approval, not manually. The button is misleading.
+2. **Create a new `sync-all-to-academy` edge function** that iterates all unsynced completions for the tenant and pushes them. This is more useful but more work.
+
+### Recommended approach (Option 1 — quick fix)
+
+- Update `triggerSync` to route `fgn_academy` correctly (prevents the crash)
+- Hide or disable the "Sync Now" button for FGN Academy since it auto-syncs on challenge approval
+- Optionally show a tooltip: "Academy syncs happen automatically when challenges are approved"
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| DB migration | `ALTER TABLE challenges ADD COLUMN ...` ×5 with comments; `INSERT INTO app_settings` for scoring config |
+| `src/hooks/useTenantIntegrations.ts` | Add `fgn_academy` case to function name routing |
+| `src/pages/tenant/TenantSubscribers.tsx` | Conditionally hide/disable Sync Now for `fgn_academy` provider, add explanatory text |
 
