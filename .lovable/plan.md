@@ -1,22 +1,30 @@
 
 
-## Add "Generate with Agent" to Admin Challenges Page + Admin Route
+## Plan: Broaden Reference Types + Dynamic Notebook Lookup
 
-### What Changes
+### Changes
 
-1. **`src/pages/admin/AdminChallenges.tsx`** (~line 304): Add a "Generate with Agent" button next to "New Challenge", navigating to `/admin/challenges/generate`
+**1. Rename "CFR Reference" → "Regulatory Reference" with a type selector**
 
-2. **`src/App.tsx`**: Add a new route `/admin/challenges/generate` wrapped in `AdminRoute`, pointing to the same `ModeratorCDLGenerate` component (it already has RBAC checks for admin/moderator)
+- Add a reference type dropdown: `Federal (CFR)`, `State Training Requirement`, `Industry Standard`, `Other`
+- Rename the text field to "Reference Citation" — free-text, no format restriction
+- Update `cdlDomainMaps.ts` default references to keep their CFR values but allow overrides
+- Update the 18-point validation (check #11) to allow any non-empty reference string instead of requiring "49 CFR" or "Part" prefix — the type dropdown provides the classification instead
 
-3. **`src/pages/moderator/ModeratorCDLGenerate.tsx`**: Update the "Back" navigation to detect whether the user came from `/admin` or `/moderator` and navigate back accordingly (check `location.pathname` or use `navigate(-1)`)
+**2. Dynamic notebook lookup from `admin_notebook_connections`**
+
+- Update `generate-cdl-challenge` edge function to query `admin_notebook_connections` for the notebook tagged to the ATS game (or a new `purpose` field like `cdl-agent`) instead of using the hardcoded `notebook:w6l0wjpi39u5nlpaj0k3`
+- Fall back to the hardcoded ID if no matching connection is found
+- This way, if you change the CDL notebook in Admin → Notebooks, the agent picks it up automatically
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/pages/admin/AdminChallenges.tsx` | Add "Generate with Agent" button (line ~304) |
-| `src/App.tsx` | Add `/admin/challenges/generate` route under AdminRoute |
-| `src/pages/moderator/ModeratorCDLGenerate.tsx` | Make back-navigation context-aware |
+| `src/lib/cdlDomainMaps.ts` | Add `referenceType` field to domain configs (default: `"federal_cfr"`) |
+| `src/pages/moderator/ModeratorCDLGenerate.tsx` | Add reference type dropdown, rename "CFR Reference" label to "Regulatory Reference" |
+| `supabase/functions/generate-cdl-challenge/index.ts` | (a) Query `admin_notebook_connections` for notebook ID instead of hardcoding. (b) Relax validation check #11 to accept any non-empty `regulatory_reference` string. (c) Include `reference_type` in prompt and output. |
 
-No backend changes needed — the edge functions already allow both admin and moderator roles.
+### Schema note
+The `cfr_reference` column on the `challenges` table stays as-is — it can store any reference string regardless of type. The reference type classification lives in the challenge metadata/description rather than needing a new column.
 
