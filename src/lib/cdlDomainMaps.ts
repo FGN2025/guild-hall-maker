@@ -4,9 +4,12 @@
  * Source: FGN CDL Agent Lovable Workflow Spec v1.0, Section 6.
  */
 
+export type ReferenceType = "federal_cfr" | "state_training" | "industry_standard" | "other";
+
 export interface CDLDomainConfig {
   label: string;
   cfrReference: string;
+  referenceType: ReferenceType;
   challengeType: "one_time" | "monthly";
   defaultPoints: number;
   defaultMinutes: number;
@@ -14,6 +17,13 @@ export interface CDLDomainConfig {
   coverImageTheme: string;
   taskCount: number;
 }
+
+export const REFERENCE_TYPE_LABELS: Record<ReferenceType, string> = {
+  federal_cfr: "Federal (CFR)",
+  state_training: "State Training Requirement",
+  industry_standard: "Industry Standard",
+  other: "Other",
+};
 
 export const CDL_DOMAINS: Record<string, CDLDomainConfig> = {
   "Safe on-road driving — speed management": {
