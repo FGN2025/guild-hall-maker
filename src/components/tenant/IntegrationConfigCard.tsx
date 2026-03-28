@@ -95,15 +95,17 @@ const IntegrationConfigCard = ({
           </div>
         )}
         <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            variant={comingSoon ? "secondary" : "outline"}
-            size="sm"
-            disabled={comingSoon}
-            onClick={onConfigure}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            {comingSoon ? "API Endpoints Pending" : isConfigured ? "Edit Settings" : "Configure"}
-          </Button>
+          {(onConfigure || comingSoon) && (
+            <Button
+              variant={comingSoon ? "secondary" : "outline"}
+              size="sm"
+              disabled={comingSoon}
+              onClick={onConfigure}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              {comingSoon ? "API Endpoints Pending" : isConfigured ? "Edit Settings" : "Configure"}
+            </Button>
+          )}
           {isConfigured && !comingSoon && onSync && (
             <Button
               variant="default"
