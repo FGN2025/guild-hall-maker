@@ -50,9 +50,9 @@ const HeroSection = () => {
             Network Gaming Platform
           </p>
           <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6">
-            <span className="text-foreground">FORGE YOUR</span>
+            <span className="text-foreground">PLAY · COMPETE</span>
             <br />
-            <span className="gradient-text">LEGEND PATH</span>
+            <span className="gradient-text">LEARN · REPEAT</span>
           </h1>
           <p className="font-body text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-bold">
             Join Tournaments, climb Leaderboards, and compete with the best.
