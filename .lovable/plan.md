@@ -1,30 +1,58 @@
 
 
-## Plan: Broaden Reference Types + Dynamic Notebook Lookup
+## Challenge ↔ Quest Copy Feature
 
-### Changes
+### Overview
+Add a "Copy to Quest" button on Challenge detail pages and a "Copy to Challenge" button on Quest detail pages (visible to admins/moderators only). Clicking copies the shared fields and tasks into the target type, inserting as `is_active: false` for review before publishing.
 
-**1. Rename "CFR Reference" → "Regulatory Reference" with a type selector**
+### Field Mapping
 
-- Add a reference type dropdown: `Federal (CFR)`, `State Training Requirement`, `Industry Standard`, `Other`
-- Rename the text field to "Reference Citation" — free-text, no format restriction
-- Update `cdlDomainMaps.ts` default references to keep their CFR values but allow overrides
-- Update the 18-point validation (check #11) to allow any non-empty reference string instead of requiring "49 CFR" or "Part" prefix — the type dropdown provides the classification instead
+```text
+Challenge → Quest
+─────────────────
+name, description, difficulty, game_id     → 1:1 copy
+points_first / points_reward               → points_first + points_reward
+estimated_minutes, requires_evidence       → 1:1 copy
+cover_image_url, achievement_id            → 1:1 copy
+challenge_type                             → "one_time"
+cdl_domain, cfr_reference, coach_context   → dropped (quest has no CDL fields)
+chain_id, chain_order, story_intro/outro   → null (no chain assignment)
+xp_reward                                  → 0
+is_active                                  → false
 
-**2. Dynamic notebook lookup from `admin_notebook_connections`**
+Quest → Challenge
+─────────────────
+Same shared fields copied 1:1
+chain_id, chain_order, story fields, xp    → dropped
+challenge_type                             → "one_time"
+is_active                                  → false
+```
 
-- Update `generate-cdl-challenge` edge function to query `admin_notebook_connections` for the notebook tagged to the ATS game (or a new `purpose` field like `cdl-agent`) instead of using the hardcoded `notebook:w6l0wjpi39u5nlpaj0k3`
-- Fall back to the hardcoded ID if no matching connection is found
-- This way, if you change the CDL notebook in Admin → Notebooks, the agent picks it up automatically
+Tasks copy directly: `title`, `description`, `display_order` map 1:1 between `challenge_tasks` and `quest_tasks`.
+
+### Implementation
+
+**1. New hook: `src/hooks/useCopyContent.ts`**
+- `copyChallenge ToQuest(challengeId)` — reads challenge + tasks, inserts into `quests` + `quest_tasks`, navigates to new quest detail page
+- `copyQuestToChallenge(questId)` — reads quest + tasks, inserts into `challenges` + `challenge_tasks`, navigates to new challenge detail page
+- Both append " (Copy)" to the name to avoid confusion
+- Returns `{ copying, copyToQuest, copyToChallenge }` with loading state
+
+**2. ChallengeDetail.tsx (~line 158, admin action bar)**
+- Add "Copy to Quest" button with `Copy` icon between Edit and Delete
+- Wired to `copyToQuest` mutation → on success, toast + navigate to `/quests/{newId}`
+
+**3. QuestDetail.tsx (~line 154, admin action bar)**  
+- Add "Copy to Challenge" button with `Copy` icon between Edit and Delete
+- Wired to `copyToChallenge` mutation → on success, toast + navigate to `/challenges/{newId}`
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/lib/cdlDomainMaps.ts` | Add `referenceType` field to domain configs (default: `"federal_cfr"`) |
-| `src/pages/moderator/ModeratorCDLGenerate.tsx` | Add reference type dropdown, rename "CFR Reference" label to "Regulatory Reference" |
-| `supabase/functions/generate-cdl-challenge/index.ts` | (a) Query `admin_notebook_connections` for notebook ID instead of hardcoding. (b) Relax validation check #11 to accept any non-empty `regulatory_reference` string. (c) Include `reference_type` in prompt and output. |
+| `src/hooks/useCopyContent.ts` | New — shared copy mutations |
+| `src/pages/ChallengeDetail.tsx` | Add "Copy to Quest" button in admin bar |
+| `src/pages/QuestDetail.tsx` | Add "Copy to Challenge" button in admin bar |
 
-### Schema note
-The `cfr_reference` column on the `challenges` table stays as-is — it can store any reference string regardless of type. The reference type classification lives in the challenge metadata/description rather than needing a new column.
+No database or schema changes needed.
 
