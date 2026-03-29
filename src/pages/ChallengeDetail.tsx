@@ -16,7 +16,8 @@ import EvidenceUpload from "@/components/challenges/EvidenceUpload";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
-import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Copy } from "lucide-react";
+import { useCopyContent } from "@/hooks/useCopyContent";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ const ChallengeDetail = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const { copying, copyToQuest } = useCopyContent();
 
   // Fetch completion record to check academy sync status
   const { data: completion } = useQuery({
@@ -158,6 +160,9 @@ const ChallengeDetail = () => {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Edit Challenge
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copyToQuest(id!)} disabled={copying}>
+              <Copy className="h-4 w-4" /> {copying ? "Copying..." : "Copy to Quest"}
             </Button>
             <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setDeleteConfirmOpen(true)}>
               <Trash2 className="h-4 w-4" /> Delete

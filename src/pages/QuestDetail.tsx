@@ -19,7 +19,8 @@ import QuestRankBadge from "@/components/quests/QuestRankBadge";
 import { usePlayerQuestXP } from "@/hooks/usePlayerQuestXP";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
-import { ArrowLeft, Clock, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Sparkles, Lock } from "lucide-react";
+import { ArrowLeft, Clock, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Sparkles, Lock, Copy } from "lucide-react";
+import { useCopyContent } from "@/hooks/useCopyContent";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -59,6 +60,7 @@ const QuestDetail = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const { copying, copyToChallenge } = useCopyContent();
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -154,6 +156,9 @@ const QuestDetail = () => {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Edit Quest
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copyToChallenge(id!)} disabled={copying}>
+              <Copy className="h-4 w-4" /> {copying ? "Copying..." : "Copy to Challenge"}
             </Button>
             {isAdmin && (
               <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setDeleteConfirmOpen(true)}>
