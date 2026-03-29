@@ -60,6 +60,7 @@ const QuestDetail = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const { copying, copyToChallenge } = useCopyContent();
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
