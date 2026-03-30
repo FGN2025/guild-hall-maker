@@ -64,6 +64,7 @@ const AdminChallenges = () => {
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
   const [resyncing, setResyncing] = useState<string | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
+  const { copying, copyToQuest } = useCopyContent();
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["admin-challenges"],
     queryFn: async () => {
