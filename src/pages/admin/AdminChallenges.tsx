@@ -16,12 +16,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu,
+  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
+import { useCopyContent } from "@/hooks/useCopyContent";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
 import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
@@ -63,6 +64,7 @@ const AdminChallenges = () => {
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
   const [resyncing, setResyncing] = useState<string | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
+  const { copying, copyToQuest } = useCopyContent();
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["admin-challenges"],
     queryFn: async () => {
@@ -410,6 +412,9 @@ const AdminChallenges = () => {
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/challenges/${c.id}`)}>
                             <Eye className="h-4 w-4 text-primary" />
                           </Button>
+                          <Button variant="ghost" size="icon" onClick={() => copyToQuest(c.id)} disabled={copying}>
+                            <Copy className="h-4 w-4 text-primary" />
+                          </Button>
                           <Button
                             variant="ghost" size="icon"
                             className="text-destructive hover:bg-destructive/10"
@@ -498,6 +503,9 @@ const AdminChallenges = () => {
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => setPromoData(buildChallengePromo(c))}>
                         <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => copyToQuest(c.id)} disabled={copying}>
+                        <Copy className="h-3.5 w-3.5 mr-1" /> {copying ? "…" : "→ Quest"}
                       </Button>
                       <Button
                         variant="ghost" size="sm"
