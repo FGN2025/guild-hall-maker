@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trophy, Zap } from "lucide-react";
+import { Trophy, Zap, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -81,6 +81,10 @@ const HeroSection = () => {
               alt="National Apprenticeship Week — April 26 – May 2, 2026"
               className="max-h-24 md:max-h-32 mx-auto object-contain"
             />
+          </Link>
+          <Link to="/challenges" className="flex items-center justify-center gap-1.5 mt-2 animate-pulse text-primary font-semibold text-sm">
+            <ArrowDown className="h-4 w-4" />
+            Click Here!
           </Link>
         </div>
       </div>
