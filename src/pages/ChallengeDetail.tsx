@@ -68,7 +68,7 @@ const ChallengeDetail = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("challenge_completions")
-        .select("id, academy_synced, academy_sync_note")
+        .select("id, academy_synced, academy_sync_note, academy_next_step")
         .eq("user_id", user!.id)
         .eq("challenge_id", id!)
         .order("completed_at", { ascending: false })
