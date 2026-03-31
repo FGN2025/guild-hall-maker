@@ -332,6 +332,7 @@ export type Database = {
       }
       challenge_completions: {
         Row: {
+          academy_next_step: Json | null
           academy_sync_note: string | null
           academy_synced: boolean
           academy_synced_at: string | null
@@ -343,6 +344,7 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          academy_next_step?: Json | null
           academy_sync_note?: string | null
           academy_synced?: boolean
           academy_synced_at?: string | null
@@ -354,6 +356,7 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          academy_next_step?: Json | null
           academy_sync_note?: string | null
           academy_synced?: boolean
           academy_synced_at?: string | null
@@ -503,6 +506,8 @@ export type Database = {
       }
       challenges: {
         Row: {
+          academy_next_step_label: string | null
+          academy_next_step_url: string | null
           achievement_id: string | null
           cdl_domain: string | null
           certification_description: string | null
@@ -537,6 +542,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          academy_next_step_label?: string | null
+          academy_next_step_url?: string | null
           achievement_id?: string | null
           cdl_domain?: string | null
           certification_description?: string | null
@@ -571,6 +578,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          academy_next_step_label?: string | null
+          academy_next_step_url?: string | null
           achievement_id?: string | null
           cdl_domain?: string | null
           certification_description?: string | null

@@ -63,10 +63,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get challenge details
+    // Get challenge details (including academy next step fallback fields)
     const { data: challenge } = await adminClient
       .from("challenges")
-      .select("name, description, difficulty, game_id, points_reward, games(name)")
+      .select("name, description, difficulty, game_id, points_reward, games(name), academy_next_step_url, academy_next_step_label")
       .eq("id", challenge_id)
       .single();
 
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       taskEvidence = evidence || [];
     }
 
-    // Build task_progress array (both formats accepted by academy)
+    // Build task_progress array
     const taskProgress = (tasks || []).map((task: any) => {
       const ev = taskEvidence.find((e: any) => e.task_id === task.id);
       const isCompleted = ev?.status === "approved";
@@ -114,26 +114,19 @@ Deno.serve(async (req) => {
       };
     });
 
-    // Calculate score (0–100) from awarded_points / max possible points
+    // Calculate score (0–100)
     const maxPoints = (challenge as any)?.points_reward || 0;
     const actualPoints = awarded_points || 0;
     const score = maxPoints > 0 ? Math.round((actualPoints / maxPoints) * 100) : (actualPoints > 0 ? 100 : 0);
 
     // Build FLAT payload matching academy's expected contract
     const payload = {
-      // Required flat fields
       user_email: userEmail,
       challenge_id: challenge_id,
       score: score,
       completed_at: new Date().toISOString(),
-
-      // Task progress (both formats: completed boolean + status string)
       task_progress: taskProgress,
-
-      // Skills verified (free-form tags based on challenge properties)
       skills_verified: buildSkillsTags(challenge),
-
-      // Metadata for extra context
       metadata: {
         source: "play.fgn.gg",
         external_user_id: user_id,
@@ -166,7 +159,27 @@ Deno.serve(async (req) => {
     const success = response.ok;
     const isUserNotFound = !success && response.status === 404;
 
-    // Build a human-readable sync note
+    // Parse academy response for next_step
+    let academyNextStep: any = null;
+    if (success) {
+      try {
+        const responseJson = JSON.parse(responseText);
+        if (responseJson.next_step && responseJson.next_step.url) {
+          academyNextStep = responseJson.next_step;
+        }
+      } catch { /* response is not JSON or has no next_step */ }
+    }
+
+    // Fall back to challenge-level configured next step
+    if (!academyNextStep && (challenge as any)?.academy_next_step_url) {
+      academyNextStep = {
+        title: (challenge as any).academy_next_step_label || "Continue on FGN Academy",
+        url: (challenge as any).academy_next_step_url,
+        description: "Further skills development is available on FGN Academy.",
+      };
+    }
+
+    // Build sync note
     const syncNote = success
       ? "Synced successfully"
       : isUserNotFound
@@ -180,11 +193,24 @@ Deno.serve(async (req) => {
         academy_synced: success,
         academy_synced_at: new Date().toISOString(),
         academy_sync_note: syncNote,
+        ...(academyNextStep ? { academy_next_step: academyNextStep } : {}),
       } as any)
       .eq("user_id", user_id)
       .eq("challenge_id", challenge_id)
       .order("completed_at", { ascending: false })
       .limit(1);
+
+    // Send in-app notification for academy next step
+    if (academyNextStep) {
+      const nextStepTitle = academyNextStep.title || "Skills Development";
+      await adminClient.from("notifications").insert({
+        user_id,
+        type: "info",
+        title: "Continue Your Skills Journey",
+        message: `📚 "${nextStepTitle}" is available on FGN Academy — continue developing your skills!`,
+        link: academyNextStep.url,
+      });
+    }
 
     // Log to ecosystem_sync_log
     await adminClient.from("ecosystem_sync_log").insert({
@@ -198,6 +224,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success,
       user_not_found: isUserNotFound,
+      academy_next_step: academyNextStep,
       message: success ? "Synced to academy" : isUserNotFound ? "User not registered on FGN Academy" : `Academy returned ${response.status}`,
     }), {
       status: 200,
@@ -216,19 +243,8 @@ Deno.serve(async (req) => {
 function buildSkillsTags(challenge: any): string[] {
   const tags: string[] = [];
   if (!challenge) return tags;
-
-  // Add difficulty as a skill level indicator
-  if (challenge.difficulty) {
-    tags.push(`difficulty:${challenge.difficulty}`);
-  }
-
-  // Add game name as a skill domain
-  if (challenge.games?.name) {
-    tags.push(`game:${challenge.games.name}`);
-  }
-
-  // Generic gaming skill
+  if (challenge.difficulty) tags.push(`difficulty:${challenge.difficulty}`);
+  if (challenge.games?.name) tags.push(`game:${challenge.games.name}`);
   tags.push("gaming-proficiency");
-
   return tags;
 }

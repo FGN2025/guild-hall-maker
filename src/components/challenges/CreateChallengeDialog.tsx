@@ -28,6 +28,8 @@ const defaultForm = {
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
   cover_image_url: "",
   tasks: [] as { title: string; description: string }[],
+  academy_next_step_url: "",
+  academy_next_step_label: "",
 };
 
 const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeDialogProps) => {
@@ -105,6 +107,8 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         cover_image_url: coverUrl,
         game_id: selectedGameId || null,
         achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
+        academy_next_step_url: form.academy_next_step_url || null,
+        academy_next_step_label: form.academy_next_step_label || null,
       } as any).select().single();
       if (error) throw error;
 
@@ -278,6 +282,22 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
             <div className="space-y-2">
               <Label>End Date</Label>
               <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+            </div>
+          </div>
+
+          {/* Academy Next Step */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <Label className="text-base font-display">Academy Next Step (optional)</Label>
+            <p className="text-xs text-muted-foreground">Direct players to an FGN Academy course after completing this challenge.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Next Step Label</Label>
+                <Input value={form.academy_next_step_label} onChange={(e) => setForm({ ...form, academy_next_step_label: e.target.value })} placeholder="e.g. OSHA Safety Fundamentals" />
+              </div>
+              <div className="space-y-1">
+                <Label>Next Step URL</Label>
+                <Input value={form.academy_next_step_url} onChange={(e) => setForm({ ...form, academy_next_step_url: e.target.value })} placeholder="https://fgn.academy/courses/..." />
+              </div>
             </div>
           </div>
 

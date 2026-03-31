@@ -66,6 +66,16 @@ const ModeratorCDLGenerate = () => {
     }
   };
 
+  // Auto-populate academy next step from domain config into generated challenge
+  const getAcademyDefaults = () => {
+    const config = CDL_DOMAINS[domain];
+    if (!config) return {};
+    const defaults: Record<string, string> = {};
+    if (config.academyNextStepUrl) defaults.academy_next_step_url = config.academyNextStepUrl;
+    if (config.academyNextStepLabel) defaults.academy_next_step_label = config.academyNextStepLabel;
+    return defaults;
+  };
+
   const handleGenerate = async () => {
     if (!domain || !user) return;
     setPageState("generating");
@@ -115,6 +125,7 @@ const ModeratorCDLGenerate = () => {
       const challengePayload = {
         ...editChallenge,
         ...points,
+        ...getAcademyDefaults(),
         game_id: ATS_GAME_ID,
         season_id: seasonId,
         requires_evidence: true,

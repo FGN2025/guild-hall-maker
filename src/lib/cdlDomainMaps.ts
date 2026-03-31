@@ -16,6 +16,8 @@ export interface CDLDomainConfig {
   alignment: "STRONG" | "PARTIAL" | "INDIRECT";
   coverImageTheme: string;
   taskCount: number;
+  academyNextStepLabel?: string;
+  academyNextStepUrl?: string;
 }
 
 export const REFERENCE_TYPE_LABELS: Record<ReferenceType, string> = {

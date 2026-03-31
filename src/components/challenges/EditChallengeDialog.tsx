@@ -57,6 +57,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [localTasks, setLocalTasks] = useState<LocalTask[]>([]);
   const [enhancing, setEnhancing] = useState(false);
   const [achievementId, setAchievementId] = useState("");
+  const [academyNextStepUrl, setAcademyNextStepUrl] = useState("");
+  const [academyNextStepLabel, setAcademyNextStepLabel] = useState("");
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active"],
@@ -99,6 +101,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setMaxEnrollments(challenge.max_enrollments ?? "");
       setIsActive(challenge.is_active ?? true);
       setAchievementId(challenge.achievement_id ?? "");
+      setAcademyNextStepUrl(challenge.academy_next_step_url || "");
+      setAcademyNextStepLabel(challenge.academy_next_step_label || "");
     }
   }, [challenge, open]);
 
@@ -186,6 +190,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
         achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
+        academy_next_step_url: academyNextStepUrl || null,
+        academy_next_step_label: academyNextStepLabel || null,
       }).eq("id", challenge.id);
       if (error) throw error;
 
@@ -377,6 +383,22 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
           <div className="flex items-center justify-between">
             <Label>Active</Label>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
+          </div>
+
+          {/* Academy Next Step */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <Label className="text-base font-display">Academy Next Step (optional)</Label>
+            <p className="text-xs text-muted-foreground">Direct players to an FGN Academy course after completing this challenge.</p>
+            <div className="space-y-2">
+              <div>
+                <Label>Next Step Label</Label>
+                <Input value={academyNextStepLabel} onChange={(e) => setAcademyNextStepLabel(e.target.value)} placeholder="e.g. OSHA Safety Fundamentals" />
+              </div>
+              <div>
+                <Label>Next Step URL</Label>
+                <Input value={academyNextStepUrl} onChange={(e) => setAcademyNextStepUrl(e.target.value)} placeholder="https://fgn.academy/courses/..." />
+              </div>
+            </div>
           </div>
 
           {/* Task Management */}
