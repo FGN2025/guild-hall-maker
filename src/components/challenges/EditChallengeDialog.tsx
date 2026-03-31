@@ -190,6 +190,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
         achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
+        academy_next_step_url: academyNextStepUrl || null,
+        academy_next_step_label: academyNextStepLabel || null,
       }).eq("id", challenge.id);
       if (error) throw error;
 
