@@ -1,82 +1,61 @@
 
 
-## Academy Skills Development Notification System
+## Leaderboard: 4 Changes — All-Time Ranking, Challenges Column, Game Filter, Tier Badges
 
-### Concept
+### Change 1 — Fix All-Time Leaderboard Ranking (useLeaderboard.ts)
 
-When a player completes a challenge on play.fgn.gg, the existing `sync-to-academy` edge function already sends completion data. The academy API response can include a `next_step` payload describing the recommended learning path. We capture that response and use it to generate a targeted notification and persistent banner, directing the player to their next skills development opportunity on fgn.academy.
+Rewrite `useLeaderboard` query to be points-based from `season_scores` instead of match-based:
 
-This avoids building a chain/track system on play.fgn.gg — challenges remain standalone, and fgn.academy owns the structured learning journey.
+- Query ALL rows from `season_scores`, group by `user_id`, sum `points`, `wins`, `losses`, `tournaments_played`
+- Sort by total points desc, wins desc as tiebreaker
+- Join `profiles_public` for display info
+- Remove the match_results-based approach entirely (the existing game/tournament/time filters on the All-Time tab can be simplified or removed since the data source changes — keep the filters but they become no-ops or are removed)
+- The `LeaderboardPlayer` interface adds `challenges_completed` and `tier` fields
 
-### How It Works
+The existing All-Time filters (game, tournament, time period) are no longer meaningful since we're aggregating season_scores. Remove the filter bar from the All-Time tab to avoid confusion.
 
-```text
-Player completes challenge
-        │
-        ▼
-sync-to-academy fires ──► Academy API
-        │                      │
-        │              returns next_step:
-        │              { title, url, description }
-        │                      │
-        ▼                      ▼
-Store next_step in         ┌──────────────────┐
-challenge_completions      │ In-app notification│
-(academy_next_step col)    │ + ChallengeDetail  │
-                           │   banner with link  │
-                           └──────────────────┘
-```
+### Change 2 — Add "Challenges" Column (both hooks + Leaderboard.tsx)
 
-### Changes
+**Data fetch**: In both `useLeaderboard` and `useSeasonalLeaderboard`, after gathering user IDs, query `challenge_enrollments` where `status = 'completed'`, group by `user_id`, count per player.
 
-**1. Database migration** — Add `academy_next_step` column to `challenge_completions`
-```sql
-ALTER TABLE public.challenges ADD COLUMN IF NOT EXISTS
-  academy_next_step_url text DEFAULT NULL;
-ALTER TABLE public.challenges ADD COLUMN IF NOT EXISTS
-  academy_next_step_label text DEFAULT NULL;
+For Seasonal: use all-time count as fallback (simpler, avoids complex date-range joins on challenge_enrollments which lacks a direct season_id).
 
-ALTER TABLE public.challenge_completions ADD COLUMN IF NOT EXISTS
-  academy_next_step jsonb DEFAULT NULL;
-```
-- `challenges.academy_next_step_url` + `academy_next_step_label`: Admin-configurable fallback per challenge (e.g., "OSHA Safety Course" → `https://fgn.academy/courses/osha-safety`)
-- `challenge_completions.academy_next_step`: Stores the academy API response per player (personalized next step)
+**UI**: Add a "Challenges" column between Points and Wins in both Seasonal and All-Time table headers and rows. Update grid from `grid-cols-12` layout to accommodate 7 columns (Rank 1, Player 3, Tier 2, Points 1, Challenges 1, Wins 1, Matches 1 → use `grid-cols-14` or adjust spans).
 
-**2. `sync-to-academy` edge function** — Capture academy response
-- Parse the academy API response for a `next_step` object (title, url, description)
-- If present, store it in `challenge_completions.academy_next_step`
-- If the academy doesn't return a next step, fall back to the challenge's configured `academy_next_step_url` / `academy_next_step_label`
-- Send an in-app notification: "Continue your skills journey — [next step title] is available on FGN Academy"
+### Change 4 — Game Filter on Seasonal Tab
 
-**3. `ChallengeDetail.tsx`** — Enhanced completion banner
-- When a completed challenge has `academy_next_step` data (from completion record or challenge fallback), show a styled "Continue Your Training" card with:
-  - The next step title and description
-  - A direct link to fgn.academy course/module
-  - Replaces the current generic "sign up at FGN Academy" message for synced users
+- Add a new query hook `useActiveGames` that fetches from `games` where `is_active = true`, ordered by `display_order asc`
+- Add a game filter `Select` dropdown in the seasonal filter bar, positioned after the Season dropdown
+- State: `seasonalGameFilter` defaulting to `"all"`
+- Filter logic: when a game is selected, query `challenge_enrollments` (status = completed) joined to `challenges` on `challenge_id` where `challenges.game_id = selectedGameId` to get the set of qualifying user_ids. Filter `filteredSeasonalPlayers` to only include those user_ids.
+- Points/Wins/Challenges values remain unfiltered (full-season totals)
 
-**4. Admin challenge form** — Add optional "Academy Next Step" fields
-- In the challenge edit dialogs (`EditChallengeDialog.tsx` and `CreateChallengeDialog.tsx`), add two optional fields:
-  - "Academy Next Step Label" (text, e.g., "OSHA Safety Fundamentals")
-  - "Academy Next Step URL" (url, e.g., `https://fgn.academy/courses/osha-safety`)
-- These serve as the default recommendation when the academy API doesn't return a personalized next step
+### Change 5 — Fix Tier Badges from Challenge Completions
 
-**5. CDL Generate** — Auto-populate academy next step
-- When generating CDL challenges, the AI prompt can suggest a recommended academy course based on the CDL domain, auto-filling the next step fields
+Replace the percentile-based tier calculation with challenge-name-derived tiers:
+
+- In both hooks, after getting user IDs, query `challenge_enrollments` (status = completed) joined to `challenges` to get challenge names per user
+- For each user, scan their completed challenge names for keywords: Champion, Epic, Platinum, Gold, Silver, Bronze (in priority order)
+- Assign the highest-priority match as their tier
+- Default to `"unranked"` if no match
+
+Update `TierBadge` component and `tierConfig` in Leaderboard.tsx:
+- Add entries for `champion`, `epic`, `unranked`
+- Update colors per spec (champion=gold #F59E0B, epic=purple #8B5CF6, platinum=cyan #06B6D4, gold=yellow #EAB308, silver=slate #94A3B8, bronze=orange #D97706, unranked=gray #6B7280)
+- `TierBadge` should always render (show "Unranked" instead of returning null)
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| Migration SQL | Add `academy_next_step_url`, `academy_next_step_label` to `challenges`; add `academy_next_step` jsonb to `challenge_completions` |
-| `supabase/functions/sync-to-academy/index.ts` | Parse academy response for `next_step`, store in completion record, send notification |
-| `src/pages/ChallengeDetail.tsx` | Show "Continue Your Training" card with personalized or fallback next step link |
-| `src/components/challenges/EditChallengeDialog.tsx` | Add optional Academy Next Step fields |
-| `src/components/challenges/CreateChallengeDialog.tsx` | Add optional Academy Next Step fields |
-| `src/pages/moderator/ModeratorCDLGenerate.tsx` | Auto-populate next step from CDL domain config |
+| `src/hooks/useLeaderboard.ts` | Rewrite to aggregate `season_scores` by points; add challenges count + tier from challenge names |
+| `src/hooks/useSeasonalLeaderboard.ts` | Add challenges count + challenge-name-derived tier to `SeasonalPlayer` |
+| `src/pages/Leaderboard.tsx` | Update tierConfig, add Challenges column to both tabs, add game filter to Seasonal tab, remove All-Time filter bar, adjust grid layouts |
 
-### Important Notes
+### Technical Notes
 
-- **No chain system needed on play.fgn.gg** — fgn.academy owns the structured journey. Play.fgn.gg simply points players there after completion.
-- **Graceful fallback** — If academy API doesn't return next steps yet, the admin-configured fallback fields ensure players still get directed to relevant content.
-- **Existing sync unaffected** — This extends the current sync flow without changing the existing contract; it only reads additional data from the response.
+- Both `LeaderboardPlayer` and `SeasonalPlayer` interfaces get `challenges_completed: number` and updated `tier` field
+- Challenge tier derivation query: `challenge_enrollments` inner join `challenges` where enrollment `status = 'completed'`, select `challenges.name` and `user_id`
+- The `(supabase.from as any)` pattern is used for `profiles_public` (view); standard `.from()` for `challenge_enrollments` and `challenges`
+- Grid column layout changes from 12-col to 14-col to fit the new Challenges column
 
