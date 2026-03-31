@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy,
+  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy, GripVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -26,6 +26,14 @@ import { useCopyContent } from "@/hooks/useCopyContent";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
 import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, verticalListSortingStrategy, useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -47,6 +55,62 @@ const ALL_DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"];
 const ALL_STATUSES = ["all", "active", "inactive"];
 
 import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
+// ── Sortable row for DnD ──
+const SortableChallengeRow = ({ challenge: c, dragEnabled, onDetail, onEdit, onDelete, onToggle, onToggleFeatured, onCopy, copying, deleting, navigate }: any) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className="cursor-pointer" onClick={() => onDetail(c)}>
+      {dragEnabled && (
+        <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+          <button className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
+            <GripVertical className="h-4 w-4" />
+          </button>
+        </TableCell>
+      )}
+      <TableCell className="font-medium">{c.name}</TableCell>
+      <TableCell className="text-muted-foreground">{c.games?.name ?? "—"}</TableCell>
+      <TableCell>
+        <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
+      </TableCell>
+      <TableCell className="text-muted-foreground">{typeLabels[c.challenge_type] ?? c.challenge_type}</TableCell>
+      <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2">
+                <Switch checked={c.is_active} onCheckedChange={(checked: boolean) => onToggle(c.id, checked)} />
+                <span className="text-xs text-muted-foreground">{c.is_active ? "Active" : "Inactive"}</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Toggle challenge visibility for players</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </TableCell>
+      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" onClick={() => onToggleFeatured(c.id, !!c.is_featured)}>
+            <Star className={`h-4 w-4 ${c.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onEdit(c)}>
+            <Pencil className="h-4 w-4 text-primary" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate(`/challenges/${c.id}`)}>
+            <Eye className="h-4 w-4 text-primary" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onCopy(c.id)} disabled={copying}>
+            <Copy className="h-4 w-4 text-primary" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => onDelete(c.id, c.name)} disabled={deleting}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
 
 const AdminChallenges = () => {
   usePageTitle("Challenge & Quest Management");
@@ -71,7 +135,7 @@ const AdminChallenges = () => {
       const { data: challengeData, error } = await supabase
         .from("challenges")
         .select("*, games(name, slug, cover_image_url)")
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true });
       if (error) throw error;
 
       const { data: enrollments } = await supabase
@@ -102,6 +166,35 @@ const AdminChallenges = () => {
       return true;
     });
   }, [challenges, search, difficultyFilter, statusFilter]);
+
+  const dragEnabled = !search && difficultyFilter === "all" && statusFilter === "all";
+  const challengeIds = useMemo(() => filtered.map((c: any) => c.id), [filtered]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  const reorderMutation = useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("challenges").update({ display_order: item.display_order } as any).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-challenges"] }),
+    onError: (e: any) => toast.error("Reorder failed: " + e.message),
+  });
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = filtered.findIndex((c: any) => c.id === active.id);
+    const newIndex = filtered.findIndex((c: any) => c.id === over.id);
+    const reordered = arrayMove(filtered, oldIndex, newIndex);
+    reorderMutation.mutate(reordered.map((c: any, i: number) => ({ id: c.id, display_order: i })));
+  };
 
   // ── Mutations ──
   const deleteMutation = useMutation({
@@ -366,9 +459,11 @@ const AdminChallenges = () => {
           ) : viewMode === "list" ? (
             /* ───── LIST VIEW ───── */
             <div className="rounded-lg border border-border overflow-hidden">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {dragEnabled && <TableHead className="w-10" />}
                     <TableHead>Name</TableHead>
                     <TableHead>Game</TableHead>
                     <TableHead>Difficulty</TableHead>
@@ -378,57 +473,28 @@ const AdminChallenges = () => {
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
+                <SortableContext items={challengeIds} strategy={verticalListSortingStrategy}>
                 <TableBody>
                   {filtered.map((c: any) => (
-                    <TableRow key={c.id} className="cursor-pointer" onClick={() => setDetailChallenge(c)}>
-                      <TableCell className="font-medium">{c.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.games?.name ?? "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{typeLabels[c.challenge_type] ?? c.challenge_type}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2">
-                                <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
-                                <span className="text-xs text-muted-foreground">{c.is_active ? "Active" : "Inactive"}</span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>Toggle challenge visibility for players</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: c.id, current: !!c.is_featured })}>
-                            <Star className={`h-4 w-4 ${c.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => setEditChallenge(c)}>
-                            <Pencil className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => navigate(`/challenges/${c.id}`)}>
-                            <Eye className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => copyToQuest(c.id)} disabled={copying}>
-                            <Copy className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button
-                            variant="ghost" size="icon"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(c.id, c.name)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <SortableChallengeRow
+                      key={c.id}
+                      challenge={c}
+                      dragEnabled={dragEnabled}
+                      onDetail={setDetailChallenge}
+                      onEdit={setEditChallenge}
+                      onDelete={handleDelete}
+                      onToggle={(id, checked) => toggleMutation.mutate({ id, is_active: checked })}
+                      onToggleFeatured={(id, current) => toggleFeaturedMutation.mutate({ id, current })}
+                      onCopy={copyToQuest}
+                      copying={copying}
+                      deleting={deleteMutation.isPending}
+                      navigate={navigate}
+                    />
                   ))}
                 </TableBody>
+                </SortableContext>
               </Table>
+              </DndContext>
             </div>
           ) : (
             /* ───── GRID VIEW ───── */
