@@ -385,6 +385,22 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
 
+          {/* Academy Next Step */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <Label className="text-base font-display">Academy Next Step (optional)</Label>
+            <p className="text-xs text-muted-foreground">Direct players to an FGN Academy course after completing this challenge.</p>
+            <div className="space-y-2">
+              <div>
+                <Label>Next Step Label</Label>
+                <Input value={academyNextStepLabel} onChange={(e) => setAcademyNextStepLabel(e.target.value)} placeholder="e.g. OSHA Safety Fundamentals" />
+              </div>
+              <div>
+                <Label>Next Step URL</Label>
+                <Input value={academyNextStepUrl} onChange={(e) => setAcademyNextStepUrl(e.target.value)} placeholder="https://fgn.academy/courses/..." />
+              </div>
+            </div>
+          </div>
+
           {/* Task Management */}
           <div className="space-y-3 pt-2 border-t border-border">
             <div className="flex items-center justify-between">

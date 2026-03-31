@@ -355,22 +355,51 @@ const ChallengeDetail = () => {
                       <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto mb-1" />
                       <p className="text-sm text-green-400 font-medium">Challenge Complete!</p>
                     </div>
-                    {completion && !(completion as any).academy_synced && (
-                      <div className="bg-accent/30 border border-accent/50 rounded-lg p-3 text-left">
-                        <p className="text-xs text-muted-foreground">
-                          📚 Track your skills on{" "}
-                          <a
-                            href="https://fgn.academy"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline hover:text-primary/80"
-                          >
-                            FGN Academy
-                          </a>{" "}
-                          — sign up with the same email to earn credentials and build your Skill Passport.
-                        </p>
-                      </div>
-                    )}
+                    {/* Academy next step — personalized or fallback */}
+                    {(() => {
+                      const nextStep = (completion as any)?.academy_next_step
+                        || (c.academy_next_step_url ? { title: c.academy_next_step_label || "Continue on FGN Academy", url: c.academy_next_step_url, description: "Further skills development is available on FGN Academy." } : null);
+
+                      if (nextStep?.url) {
+                        return (
+                          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 text-left space-y-2">
+                            <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                              🎓 Continue Your Training
+                            </p>
+                            <p className="text-xs text-muted-foreground">{nextStep.description || "Take the next step in your skills development journey."}</p>
+                            <a
+                              href={nextStep.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 underline"
+                            >
+                              {nextStep.title || "Open on FGN Academy"} →
+                            </a>
+                          </div>
+                        );
+                      }
+
+                      // Fallback: not synced, show generic signup
+                      if (completion && !(completion as any).academy_synced) {
+                        return (
+                          <div className="bg-accent/30 border border-accent/50 rounded-lg p-3 text-left">
+                            <p className="text-xs text-muted-foreground">
+                              📚 Track your skills on{" "}
+                              <a
+                                href="https://fgn.academy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline hover:text-primary/80"
+                              >
+                                FGN Academy
+                              </a>{" "}
+                              — sign up with the same email to earn credentials and build your Skill Passport.
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 )}
               </CardContent>

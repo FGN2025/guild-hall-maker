@@ -285,6 +285,22 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
             </div>
           </div>
 
+          {/* Academy Next Step */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <Label className="text-base font-display">Academy Next Step (optional)</Label>
+            <p className="text-xs text-muted-foreground">Direct players to an FGN Academy course after completing this challenge.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Next Step Label</Label>
+                <Input value={form.academy_next_step_label} onChange={(e) => setForm({ ...form, academy_next_step_label: e.target.value })} placeholder="e.g. OSHA Safety Fundamentals" />
+              </div>
+              <div className="space-y-1">
+                <Label>Next Step URL</Label>
+                <Input value={form.academy_next_step_url} onChange={(e) => setForm({ ...form, academy_next_step_url: e.target.value })} placeholder="https://fgn.academy/courses/..." />
+              </div>
+            </div>
+          </div>
+
           {/* Task Builder */}
           <div className="space-y-3 border-t border-border pt-4">
             <div className="flex items-center justify-between">
