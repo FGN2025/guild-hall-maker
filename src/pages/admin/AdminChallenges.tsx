@@ -55,8 +55,64 @@ const ALL_DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"];
 const ALL_STATUSES = ["all", "active", "inactive"];
 
 import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
+// ── Sortable row for DnD ──
+const SortableChallengeRow = ({ challenge: c, dragEnabled, onDetail, onEdit, onDelete, onToggle, onToggleFeatured, onCopy, copying, deleting, navigate }: any) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
-const AdminChallenges = () => {
+  return (
+    <TableRow ref={setNodeRef} style={style} className="cursor-pointer" onClick={() => onDetail(c)}>
+      {dragEnabled && (
+        <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+          <button className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
+            <GripVertical className="h-4 w-4" />
+          </button>
+        </TableCell>
+      )}
+      <TableCell className="font-medium">{c.name}</TableCell>
+      <TableCell className="text-muted-foreground">{c.games?.name ?? "—"}</TableCell>
+      <TableCell>
+        <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
+      </TableCell>
+      <TableCell className="text-muted-foreground">{typeLabels[c.challenge_type] ?? c.challenge_type}</TableCell>
+      <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2">
+                <Switch checked={c.is_active} onCheckedChange={(checked: boolean) => onToggle(c.id, checked)} />
+                <span className="text-xs text-muted-foreground">{c.is_active ? "Active" : "Inactive"}</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Toggle challenge visibility for players</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </TableCell>
+      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" onClick={() => onToggleFeatured(c.id, !!c.is_featured)}>
+            <Star className={`h-4 w-4 ${c.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onEdit(c)}>
+            <Pencil className="h-4 w-4 text-primary" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate(`/challenges/${c.id}`)}>
+            <Eye className="h-4 w-4 text-primary" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onCopy(c.id)} disabled={copying}>
+            <Copy className="h-4 w-4 text-primary" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => onDelete(c.id, c.name)} disabled={deleting}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
+
+
   usePageTitle("Challenge & Quest Management");
   const { user } = useAuth();
   const queryClient = useQueryClient();
