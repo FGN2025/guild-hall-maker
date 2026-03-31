@@ -113,7 +113,7 @@ export const useSeasonalLeaderboard = (seasonId: string | null) => {
           .select("user_id")
           .eq("status", "completed")
           .in("user_id", userIds),
-        supabase
+        (supabase.from as any)("challenge_enrollments")
           .from("challenge_enrollments")
           .select("user_id, challenges!inner(name)")
           .eq("status", "completed")

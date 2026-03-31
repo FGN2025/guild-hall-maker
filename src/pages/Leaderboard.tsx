@@ -83,13 +83,12 @@ const useGameFilteredUserIds = (gameId: string) => {
     queryKey: ["game-filtered-user-ids", gameId],
     enabled: gameId !== "all",
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("challenge_enrollments")
+      const { data, error } = await (supabase.from as any)("challenge_enrollments")
         .select("user_id, challenges!inner(game_id)")
         .eq("status", "completed")
-        .eq("challenges.game_id" as any, gameId);
+        .eq("challenges.game_id", gameId);
       if (error) throw error;
-      const ids = new Set((data ?? []).map((d: any) => d.user_id));
+      const ids = new Set(((data ?? []) as any[]).map((d: any) => d.user_id));
       return ids;
     },
   });

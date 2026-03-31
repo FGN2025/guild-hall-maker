@@ -62,8 +62,7 @@ export const useLeaderboard = () => {
           .select("user_id")
           .eq("status", "completed")
           .in("user_id", playerIds),
-        supabase
-          .from("challenge_enrollments")
+        (supabase.from as any)("challenge_enrollments")
           .select("user_id, challenges!inner(name)")
           .eq("status", "completed")
           .in("user_id", playerIds),
