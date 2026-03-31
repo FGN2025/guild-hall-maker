@@ -101,6 +101,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setMaxEnrollments(challenge.max_enrollments ?? "");
       setIsActive(challenge.is_active ?? true);
       setAchievementId(challenge.achievement_id ?? "");
+      setAcademyNextStepUrl(challenge.academy_next_step_url || "");
+      setAcademyNextStepLabel(challenge.academy_next_step_label || "");
     }
   }, [challenge, open]);
 
