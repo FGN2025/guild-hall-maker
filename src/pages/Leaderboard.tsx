@@ -9,10 +9,11 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Link } from "react-router-dom";
-import { Trophy, Medal, Swords, Crown, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star, Shield, Award, Download, FileText } from "lucide-react";
+import { Trophy, Medal, Swords, Crown, Search, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star, Shield, Award, Download, FileText, Gamepad2 } from "lucide-react";
 import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
-import { useLeaderboard, useLeaderboardFilterOptions, type LeaderboardPlayer } from "@/hooks/useLeaderboard";
+import { useLeaderboard, type LeaderboardPlayer } from "@/hooks/useLeaderboard";
 import { useSeasons, useSeasonalLeaderboard, type SeasonalPlayer } from "@/hooks/useSeasonalLeaderboard";
+import { useGames } from "@/hooks/useGames";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,13 +31,15 @@ import TableSkeleton from "@/components/ui/table-skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import PointsWalletCard from "@/components/shared/PointsWalletCard";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const staggerStyle = (idx: number): CSSProperties => ({
   animationDelay: `${idx * 50}ms`,
   animationFillMode: "both",
 });
 
-type SortKey = "rank" | "total_matches" | "wins" | "points";
+type SortKey = "rank" | "total_matches" | "wins" | "points" | "challenges_completed";
 type SortDir = "asc" | "desc";
 
 const rankColor = (rank: number) => {
@@ -54,16 +57,17 @@ const rankBg = (rank: number) => {
 };
 
 const tierConfig: Record<string, { label: string; color: string; icon: typeof Star }> = {
-  platinum: { label: "Platinum", color: "bg-primary/20 text-primary border-primary/40", icon: Crown },
-  gold: { label: "Gold", color: "bg-warning/20 text-warning border-warning/40", icon: Star },
-  silver: { label: "Silver", color: "bg-foreground/20 text-foreground/70 border-foreground/30", icon: Shield },
-  bronze: { label: "Bronze", color: "bg-warning/10 text-warning/60 border-warning/20", icon: Award },
-  none: { label: "", color: "", icon: Star },
+  champion: { label: "Champion", color: "bg-[#F59E0B]/20 text-[#F59E0B] border-[#F59E0B]/40", icon: Crown },
+  epic: { label: "Epic", color: "bg-[#8B5CF6]/20 text-[#8B5CF6] border-[#8B5CF6]/40", icon: Star },
+  platinum: { label: "Platinum", color: "bg-[#06B6D4]/20 text-[#06B6D4] border-[#06B6D4]/40", icon: Crown },
+  gold: { label: "Gold", color: "bg-[#EAB308]/20 text-[#EAB308] border-[#EAB308]/40", icon: Star },
+  silver: { label: "Silver", color: "bg-[#94A3B8]/20 text-[#94A3B8] border-[#94A3B8]/40", icon: Shield },
+  bronze: { label: "Bronze", color: "bg-[#D97706]/20 text-[#D97706] border-[#D97706]/40", icon: Award },
+  unranked: { label: "Unranked", color: "bg-[#6B7280]/20 text-[#6B7280] border-[#6B7280]/40", icon: Shield },
 };
 
 const TierBadge = ({ tier }: { tier: string }) => {
-  const config = tierConfig[tier];
-  if (!config || tier === "none") return null;
+  const config = tierConfig[tier] || tierConfig.unranked;
   const Icon = config.icon;
   return (
     <Badge variant="outline" className={`${config.color} text-[10px] gap-1 px-1.5 py-0`}>
@@ -73,21 +77,29 @@ const TierBadge = ({ tier }: { tier: string }) => {
   );
 };
 
-const TIME_OPTIONS = [
-  { value: "all", label: "All Time" },
-  { value: "7d", label: "Last 7 Days" },
-  { value: "30d", label: "Last 30 Days" },
-  { value: "90d", label: "Last 90 Days" },
-];
+// Hook for game filter on seasonal tab
+const useGameFilteredUserIds = (gameId: string) => {
+  return useQuery({
+    queryKey: ["game-filtered-user-ids", gameId],
+    enabled: gameId !== "all",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("challenge_enrollments")
+        .select("user_id, challenges!inner(game_id)")
+        .eq("status", "completed")
+        .eq("challenges.game_id" as any, gameId);
+      if (error) throw error;
+      const ids = new Set((data ?? []).map((d: any) => d.user_id));
+      return ids;
+    },
+  });
+};
 
 const Leaderboard = () => {
   usePageTitle("Leaderboard");
   const { isAdmin, isModerator } = useAuth();
   const canExport = isAdmin || isModerator;
   const [tab, setTab] = useState("seasonal");
-  const [game, setGame] = useState("all");
-  const [tournamentId, setTournamentId] = useState("all");
-  const [timePeriod, setTimePeriod] = useState("all");
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -103,12 +115,13 @@ const Leaderboard = () => {
   const { data: seasonalPlayers, isLoading: seasonalLoading } = useSeasonalLeaderboard(effectiveSeasonId);
   const selectedSeason = seasons?.find((s) => s.id === effectiveSeasonId);
 
-  const { games, tournaments } = useLeaderboardFilterOptions();
-  const { data: players, isLoading } = useLeaderboard({ game, tournamentId, timePeriod });
+  // Game filter for seasonal tab
+  const { data: activeGames } = useGames();
+  const [seasonalGameFilter, setSeasonalGameFilter] = useState("all");
+  const { data: gameFilteredIds } = useGameFilteredUserIds(seasonalGameFilter);
 
-  const filteredTournaments = game !== "all"
-    ? tournaments.filter((t) => t.name)
-    : tournaments;
+  // All-Time data
+  const { data: players, isLoading } = useLeaderboard();
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -144,13 +157,20 @@ const Leaderboard = () => {
 
   const filteredSeasonalPlayers = useMemo(() => {
     if (!seasonalPlayers) return [];
-    if (!search.trim()) return seasonalPlayers;
-    const q = search.toLowerCase();
-    return seasonalPlayers.filter((p) =>
-      p.display_name.toLowerCase().includes(q) ||
-      (p.gamer_tag && p.gamer_tag.toLowerCase().includes(q))
-    );
-  }, [seasonalPlayers, search]);
+    let list = [...seasonalPlayers];
+    // Game filter
+    if (seasonalGameFilter !== "all" && gameFilteredIds) {
+      list = list.filter((p) => gameFilteredIds.has(p.user_id));
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((p) =>
+        p.display_name.toLowerCase().includes(q) ||
+        (p.gamer_tag && p.gamer_tag.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [seasonalPlayers, search, seasonalGameFilter, gameFilteredIds]);
 
   const seasonalTotalPages = Math.ceil(filteredSeasonalPlayers.length / lbPageSize);
   const paginatedSeasonal = filteredSeasonalPlayers.slice((seasonalPage - 1) * lbPageSize, seasonalPage * lbPageSize);
@@ -158,9 +178,8 @@ const Leaderboard = () => {
   const allTimeTotalPages = Math.ceil(sortedPlayers.length / lbPageSize);
   const paginatedAllTime = sortedPlayers.slice((allTimePage - 1) * lbPageSize, allTimePage * lbPageSize);
 
-  // Reset pages on filter changes
-  useEffect(() => { setSeasonalPage(1); }, [search, effectiveSeasonId]);
-  useEffect(() => { setAllTimePage(1); }, [search, game, tournamentId, timePeriod, sortKey, sortDir]);
+  useEffect(() => { setSeasonalPage(1); }, [search, effectiveSeasonId, seasonalGameFilter]);
+  useEffect(() => { setAllTimePage(1); }, [search, sortKey, sortDir]);
 
   const renderPagination = (currentPage: number, totalPages: number, setPageFn: (p: number) => void) => {
     if (totalPages <= 1) return null;
@@ -199,6 +218,27 @@ const Leaderboard = () => {
     ? [topThree[1], topThree[0], topThree[2]]
     : topThree;
 
+  // Export columns
+  const seasonalExportCols: ExportColumn[] = [
+    { key: "rank", label: "Rank" },
+    { key: "display_name", label: "Player" },
+    { key: "tier", label: "Tier" },
+    { key: "points", label: "Points" },
+    { key: "challenges_completed", label: "Challenges" },
+    { key: "wins", label: "Wins" },
+    { key: "matches", label: "Matches" },
+  ];
+
+  const allTimeExportCols: ExportColumn[] = [
+    { key: "rank", label: "Rank" },
+    { key: "display_name", label: "Player" },
+    { key: "tier", label: "Tier" },
+    { key: "points", label: "Points" },
+    { key: "challenges_completed", label: "Challenges" },
+    { key: "wins", label: "Wins" },
+    { key: "total_matches", label: "Matches" },
+  ];
+
   return (
     <>
       <PageBackground pageSlug="leaderboard" />
@@ -230,7 +270,7 @@ const Leaderboard = () => {
 
           {/* SEASONAL TAB */}
           <TabsContent value="seasonal" className="mt-6">
-            {/* Season selector */}
+            {/* Season + Game selectors */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
               <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm font-heading text-muted-foreground mr-1">Season:</span>
@@ -246,6 +286,20 @@ const Leaderboard = () => {
                     <SelectItem key={s.id} value={s.id}>
                       {s.name} {s.status === "active" && "(Current)"}
                     </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Gamepad2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+              <span className="text-sm font-heading text-muted-foreground mr-1">Game:</span>
+              <Select value={seasonalGameFilter} onValueChange={setSeasonalGameFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm bg-background border-border">
+                  <SelectValue placeholder="All Games" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Games</SelectItem>
+                  {(activeGames ?? []).map((g) => (
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -276,28 +330,12 @@ const Leaderboard = () => {
               {canExport && filteredSeasonalPlayers.length > 0 && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => {
-                    const cols: ExportColumn[] = [
-                      { key: "rank", label: "Rank" },
-                      { key: "display_name", label: "Player" },
-                      { key: "tier", label: "Tier" },
-                      { key: "points", label: "Points" },
-                      { key: "wins", label: "Wins" },
-                      { key: "matches", label: "Matches" },
-                    ];
-                    exportTableCSV(filteredSeasonalPlayers.map(p => ({ ...p, matches: p.wins + p.losses })), cols, `seasonal_rankings_${selectedSeason?.name || "current"}.csv`);
+                    exportTableCSV(filteredSeasonalPlayers.map(p => ({ ...p, matches: p.wins + p.losses })), seasonalExportCols, `seasonal_rankings_${selectedSeason?.name || "current"}.csv`);
                   }}>
                     <Download className="h-4 w-4 mr-1" /> CSV
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => {
-                    const cols: ExportColumn[] = [
-                      { key: "rank", label: "Rank" },
-                      { key: "display_name", label: "Player" },
-                      { key: "tier", label: "Tier" },
-                      { key: "points", label: "Points" },
-                      { key: "wins", label: "Wins" },
-                      { key: "matches", label: "Matches" },
-                    ];
-                    exportTablePDF(filteredSeasonalPlayers.map(p => ({ ...p, matches: p.wins + p.losses })), cols, `Seasonal Rankings — ${selectedSeason?.name || "Current Season"}`);
+                    exportTablePDF(filteredSeasonalPlayers.map(p => ({ ...p, matches: p.wins + p.losses })), seasonalExportCols, `Seasonal Rankings — ${selectedSeason?.name || "Current Season"}`);
                   }}>
                     <FileText className="h-4 w-4 mr-1" /> PDF
                   </Button>
@@ -307,15 +345,16 @@ const Leaderboard = () => {
 
             {seasonalLoading ? (
               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                <div className="hidden md:grid grid-cols-14 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                   <span className="col-span-1">Rank</span>
                   <span className="col-span-3">Player</span>
                   <span className="col-span-2">Tier</span>
                   <span className="col-span-2 text-center">Points</span>
+                  <span className="col-span-2 text-center">Challenges</span>
                   <span className="col-span-2 text-center">Wins</span>
                   <span className="col-span-2 text-center">Matches</span>
                 </div>
-                <TableSkeleton columns={6} rows={10} showAvatar />
+                <TableSkeleton columns={7} rows={10} showAvatar />
               </div>
             ) : !filteredSeasonalPlayers || filteredSeasonalPlayers.length === 0 ? (
               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm p-12 text-center">
@@ -328,79 +367,81 @@ const Leaderboard = () => {
             ) : (
               <>
                 <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                  <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                  <div className="hidden md:grid grid-cols-14 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                     <span className="col-span-1">Rank</span>
                     <span className="col-span-3">Player</span>
                     <span className="col-span-2">Tier</span>
                     <span className="col-span-2 text-center">Points</span>
+                    <span className="col-span-2 text-center">Challenges</span>
                     <span className="col-span-2 text-center">Wins</span>
                     <span className="col-span-2 text-center">Matches</span>
                   </div>
-                  {paginatedSeasonal.map((p, idx) => {
-                    return (
-                      <div key={p.user_id}>
-                        {/* Mobile layout */}
-                        <div
-                          className="md:hidden flex items-center gap-3 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors animate-fade-in"
-                          style={staggerStyle(idx)}
-                        >
-                          <span className={`font-display font-bold text-lg w-8 shrink-0 ${rankColor(p.rank)}`}>
-                            #{p.rank}
-                          </span>
+                  {paginatedSeasonal.map((p, idx) => (
+                    <div key={p.user_id}>
+                      {/* Mobile */}
+                      <div
+                        className="md:hidden flex items-center gap-3 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors animate-fade-in"
+                        style={staggerStyle(idx)}
+                      >
+                        <span className={`font-display font-bold text-lg w-8 shrink-0 ${rankColor(p.rank)}`}>
+                          #{p.rank}
+                        </span>
+                        <Avatar className="h-8 w-8 shrink-0">
+                          <AvatarImage src={p.avatar_url ?? undefined} />
+                          <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
+                            {p.display_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate block hover:text-primary transition-colors">
+                            {p.display_name}
+                          </Link>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <TierBadge tier={p.tier} />
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-display text-sm text-primary font-bold">{p.points} pts</p>
+                          <p className="text-xs text-muted-foreground">{p.challenges_completed}C / {p.wins}W / {p.wins + p.losses}M</p>
+                        </div>
+                      </div>
+                      {/* Desktop */}
+                      <div
+                        className="hidden md:grid grid-cols-14 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                        style={staggerStyle(idx)}
+                      >
+                        <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
+                          #{p.rank}
+                        </span>
+                        <div className="col-span-3 flex items-center gap-3 min-w-0">
                           <Avatar className="h-8 w-8 shrink-0">
                             <AvatarImage src={p.avatar_url ?? undefined} />
                             <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
                               {p.display_name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate block hover:text-primary transition-colors">
-                              {p.display_name}
-                            </Link>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <TierBadge tier={p.tier} />
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="font-display text-sm text-primary font-bold">{p.points} pts</p>
-                            <p className="text-xs text-muted-foreground">{p.wins}W / {p.wins + p.losses}M</p>
-                          </div>
+                          <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
+                            {p.display_name}
+                          </Link>
                         </div>
-                        {/* Desktop layout */}
-                        <div
-                          className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
-                          style={staggerStyle(idx)}
-                        >
-                          <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
-                            #{p.rank}
-                          </span>
-                          <div className="col-span-3 flex items-center gap-3 min-w-0">
-                            <Avatar className="h-8 w-8 shrink-0">
-                              <AvatarImage src={p.avatar_url ?? undefined} />
-                              <AvatarFallback className="bg-muted text-muted-foreground font-heading text-xs">
-                                {p.display_name.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
-                              {p.display_name}
-                            </Link>
-                          </div>
-                          <div className="col-span-2">
-                            <TierBadge tier={p.tier} />
-                          </div>
-                          <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
-                            {p.points}
-                          </span>
-                          <span className="col-span-2 font-display text-sm text-success font-bold text-center">
-                            {p.wins}
-                          </span>
-                          <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
-                            {p.wins + p.losses}
-                          </span>
+                        <div className="col-span-2">
+                          <TierBadge tier={p.tier} />
                         </div>
+                        <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
+                          {p.points}
+                        </span>
+                        <span className="col-span-2 font-display text-sm text-accent-foreground font-bold text-center">
+                          {p.challenges_completed}
+                        </span>
+                        <span className="col-span-2 font-display text-sm text-success font-bold text-center">
+                          {p.wins}
+                        </span>
+                        <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
+                          {p.wins + p.losses}
+                        </span>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
                 {renderPagination(seasonalPage, seasonalTotalPages, setSeasonalPage)}
               </>
@@ -409,49 +450,6 @@ const Leaderboard = () => {
 
           {/* ALL-TIME TAB */}
           <TabsContent value="alltime" className="mt-6">
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-4 p-4 rounded-xl border border-border bg-card/70 backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm font-heading text-muted-foreground">Filters:</span>
-              </div>
-
-              <Select value={game} onValueChange={(v) => { setGame(v); setTournamentId("all"); }}>
-                <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm bg-background border-border">
-                  <SelectValue placeholder="All Games" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Games</SelectItem>
-                  {games.map((g) => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={tournamentId} onValueChange={setTournamentId}>
-                <SelectTrigger className="w-full sm:w-[200px] h-9 text-sm bg-background border-border">
-                  <SelectValue placeholder="All Tournaments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tournaments</SelectItem>
-                  {filteredTournaments.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={timePeriod} onValueChange={setTimePeriod}>
-                <SelectTrigger className="w-full sm:w-[150px] h-9 text-sm bg-background border-border">
-                  <SelectValue placeholder="All Time" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIME_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Search + Export */}
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-8">
               <div className="relative max-w-sm w-full">
@@ -466,26 +464,12 @@ const Leaderboard = () => {
               {canExport && sortedPlayers.length > 0 && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => {
-                    const cols: ExportColumn[] = [
-                      { key: "rank", label: "Rank" },
-                      { key: "display_name", label: "Player" },
-                      { key: "points", label: "Points" },
-                      { key: "wins", label: "Wins" },
-                      { key: "total_matches", label: "Matches" },
-                    ];
-                    exportTableCSV(sortedPlayers, cols, "alltime_rankings.csv");
+                    exportTableCSV(sortedPlayers, allTimeExportCols, "alltime_rankings.csv");
                   }}>
                     <Download className="h-4 w-4 mr-1" /> CSV
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => {
-                    const cols: ExportColumn[] = [
-                      { key: "rank", label: "Rank" },
-                      { key: "display_name", label: "Player" },
-                      { key: "points", label: "Points" },
-                      { key: "wins", label: "Wins" },
-                      { key: "total_matches", label: "Matches" },
-                    ];
-                    exportTablePDF(sortedPlayers, cols, "All-Time Rankings");
+                    exportTablePDF(sortedPlayers, allTimeExportCols, "All-Time Rankings");
                   }}>
                     <FileText className="h-4 w-4 mr-1" /> PDF
                   </Button>
@@ -495,22 +479,23 @@ const Leaderboard = () => {
 
             {isLoading ? (
               <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                <div className="hidden md:grid grid-cols-14 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                   <span className="col-span-1">Rank</span>
                   <span className="col-span-3">Player</span>
+                  <span className="col-span-2">Tier</span>
                   <span className="col-span-2 text-center">Points</span>
+                  <span className="col-span-2 text-center">Challenges</span>
                   <span className="col-span-2 text-center">Wins</span>
                   <span className="col-span-2 text-center">Matches</span>
-                  <span className="col-span-2" />
                 </div>
-                <TableSkeleton columns={6} rows={10} showAvatar />
+                <TableSkeleton columns={7} rows={10} showAvatar />
               </div>
             ) : !players || players.length === 0 ? (
                <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm p-12 text-center">
                 <Swords className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-heading text-lg text-foreground mb-2">No rankings yet</h3>
                 <p className="text-sm text-muted-foreground font-body">
-                  Rankings will appear once match results are recorded.
+                  Rankings will appear once players earn points.
                 </p>
               </div>
             ) : (
@@ -556,21 +541,24 @@ const Leaderboard = () => {
 
                 {/* Full table */}
                 <div className="rounded-xl border border-border bg-card/70 backdrop-blur-sm overflow-hidden">
-                  <div className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
+                  <div className="hidden md:grid grid-cols-14 gap-2 p-4 border-b border-border text-xs font-display text-muted-foreground uppercase tracking-wider">
                     <button onClick={() => handleSort("rank")} className="col-span-1 flex items-center cursor-pointer hover:text-foreground transition-colors">
                       Rank <SortIcon col="rank" />
                     </button>
                     <span className="col-span-3">Player</span>
+                    <span className="col-span-2">Tier</span>
                     <button onClick={() => handleSort("points")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
                       Points <SortIcon col="points" />
+                    </button>
+                    <button onClick={() => handleSort("challenges_completed")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                      Challenges <SortIcon col="challenges_completed" />
                     </button>
                     <button onClick={() => handleSort("wins")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
                       Wins <SortIcon col="wins" />
                     </button>
-                    <button onClick={() => handleSort("total_matches")} className="col-span-2 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
+                    <button onClick={() => handleSort("total_matches")} className="col-span-1 flex items-center justify-center cursor-pointer hover:text-foreground transition-colors">
                       Matches <SortIcon col="total_matches" />
                     </button>
-                    <span className="col-span-2" />
                   </div>
                   {paginatedAllTime.length === 0 ? (
                     <div className="p-8 text-center text-sm text-muted-foreground font-body">
@@ -597,10 +585,13 @@ const Leaderboard = () => {
                           <Link to={`/player/${p.user_id}`} className="font-heading font-semibold text-foreground text-sm truncate block hover:text-primary transition-colors">
                             {p.display_name}
                           </Link>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <TierBadge tier={p.tier} />
+                          </div>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="font-display text-sm text-primary font-bold">{p.points} pts</p>
-                          <p className="text-xs text-muted-foreground">{p.wins}W / {p.total_matches}M</p>
+                          <p className="text-xs text-muted-foreground">{p.challenges_completed}C / {p.wins}W / {p.total_matches}M</p>
                         </div>
                         {p.rank <= 3 && (
                           <Trophy className={`h-4 w-4 shrink-0 ${rankColor(p.rank)}`} />
@@ -608,7 +599,7 @@ const Leaderboard = () => {
                       </div>
                       {/* Desktop */}
                       <div
-                        className="hidden md:grid grid-cols-12 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
+                        className="hidden md:grid grid-cols-14 gap-2 p-4 border-b border-border/50 hover:bg-muted/50 transition-colors items-center animate-fade-in"
                         style={staggerStyle(idx)}
                       >
                         <span className={`col-span-1 font-display font-bold text-lg ${rankColor(p.rank)}`}>
@@ -625,20 +616,21 @@ const Leaderboard = () => {
                             {p.display_name}
                           </Link>
                         </div>
+                        <div className="col-span-2">
+                          <TierBadge tier={p.tier} />
+                        </div>
                         <span className="col-span-2 font-display text-sm text-primary font-bold text-center">
                           {p.points}
+                        </span>
+                        <span className="col-span-2 font-display text-sm text-accent-foreground font-bold text-center">
+                          {p.challenges_completed}
                         </span>
                         <span className="col-span-2 font-display text-sm text-success font-bold text-center">
                           {p.wins}
                         </span>
-                        <span className="col-span-2 font-body text-sm text-muted-foreground text-center">
+                        <span className="col-span-1 font-body text-sm text-muted-foreground text-center">
                           {p.total_matches}
                         </span>
-                        <div className="col-span-2 flex justify-end">
-                          {p.rank <= 3 && (
-                            <Trophy className={`h-4 w-4 ${rankColor(p.rank)}`} />
-                          )}
-                        </div>
                       </div>
                     </div>
                   ))
