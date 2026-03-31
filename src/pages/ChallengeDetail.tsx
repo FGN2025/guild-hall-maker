@@ -16,7 +16,7 @@ import EvidenceUpload from "@/components/challenges/EvidenceUpload";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
-import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Copy } from "lucide-react";
+import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Copy, ExternalLink, Play } from "lucide-react";
 import { useCopyContent } from "@/hooks/useCopyContent";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -225,21 +225,52 @@ const ChallengeDetail = () => {
                         : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
                       const taskForEvidence = tasks.find((t) => t.id === e.task_id);
 
+                      const ytMatch = e.file_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+                      const twitchClipMatch = e.file_url.match(/clips\.twitch\.tv\/([a-zA-Z0-9_-]+)/);
+                      const twitchVideoMatch = e.file_url.match(/twitch\.tv\/videos\/(\d+)/);
+
                       return (
                         <div key={e.id} className="relative group space-y-1">
-                          <a href={e.file_url} target="_blank" rel="noopener noreferrer">
-                            <div className="rounded-lg border border-border overflow-hidden aspect-video bg-muted">
-                              {e.file_type === "image" ? (
+                          <div className="rounded-lg border border-border overflow-hidden aspect-video bg-muted">
+                            {e.file_type === "image" ? (
+                              <a href={e.file_url} target="_blank" rel="noopener noreferrer">
                                 <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                              ) : e.file_type === "video" ? (
-                                <video src={e.file_url} controls className="w-full h-full object-cover" onClick={(ev) => ev.preventDefault()} />
-                              ) : (
-                                <div className="flex items-center justify-center h-full">
-                                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                              )}
-                            </div>
-                          </a>
+                              </a>
+                            ) : e.file_type === "video" ? (
+                              <video src={e.file_url} controls className="w-full h-full object-cover" />
+                            ) : e.file_type === "video_link" && ytMatch ? (
+                              <iframe
+                                src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                                title="YouTube video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                className="w-full h-full"
+                              />
+                            ) : e.file_type === "video_link" && twitchClipMatch ? (
+                              <iframe
+                                src={`https://clips.twitch.tv/embed?clip=${twitchClipMatch[1]}&parent=${window.location.hostname}`}
+                                title="Twitch clip"
+                                allowFullScreen
+                                className="w-full h-full"
+                              />
+                            ) : e.file_type === "video_link" && twitchVideoMatch ? (
+                              <iframe
+                                src={`https://player.twitch.tv/?video=${twitchVideoMatch[1]}&parent=${window.location.hostname}`}
+                                title="Twitch video"
+                                allowFullScreen
+                                className="w-full h-full"
+                              />
+                            ) : e.file_type === "video_link" ? (
+                              <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center h-full gap-2 hover:bg-accent/50 transition-colors">
+                                <ExternalLink className="h-8 w-8 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">Open video link</span>
+                              </a>
+                            ) : (
+                              <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
+                                <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                              </a>
+                            )}
+                          </div>
                           {canUpload && (
                             <Button
                               variant="destructive"
