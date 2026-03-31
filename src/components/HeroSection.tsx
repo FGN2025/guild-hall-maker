@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
 import ParticlesBackground from "@/components/ParticlesBackground";
+import apprenticeshipLogo from "@/assets/national-apprenticeship-week-2026.png";
 import { supabase } from "@/integrations/supabase/client";
 
 
@@ -73,8 +74,15 @@ const HeroSection = () => {
               </Button>
             </Link>
           </div>
-        </div>
 
+          <Link to="/challenges" className="inline-block mt-4 hover:opacity-80 transition-opacity">
+            <img
+              src={apprenticeshipLogo}
+              alt="National Apprenticeship Week — April 26 – May 2, 2026"
+              className="max-h-24 md:max-h-32 mx-auto object-contain"
+            />
+          </Link>
+        </div>
       </div>
     </section>
   );
