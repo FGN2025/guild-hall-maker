@@ -111,6 +111,35 @@ const AdminChallenges = () => {
     });
   }, [challenges, search, difficultyFilter, statusFilter]);
 
+  const dragEnabled = !search && difficultyFilter === "all" && statusFilter === "all";
+  const challengeIds = useMemo(() => filtered.map((c: any) => c.id), [filtered]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  const reorderMutation = useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("challenges").update({ display_order: item.display_order } as any).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-challenges"] }),
+    onError: (e: any) => toast.error("Reorder failed: " + e.message),
+  });
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = filtered.findIndex((c: any) => c.id === active.id);
+    const newIndex = filtered.findIndex((c: any) => c.id === over.id);
+    const reordered = arrayMove(filtered, oldIndex, newIndex);
+    reorderMutation.mutate(reordered.map((c: any, i: number) => ({ id: c.id, display_order: i })));
+  };
+
   // ── Mutations ──
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
