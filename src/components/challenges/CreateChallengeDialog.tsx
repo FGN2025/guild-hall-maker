@@ -28,6 +28,8 @@ const defaultForm = {
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
   cover_image_url: "",
   tasks: [] as { title: string; description: string }[],
+  academy_next_step_url: "",
+  academy_next_step_label: "",
 };
 
 const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeDialogProps) => {
