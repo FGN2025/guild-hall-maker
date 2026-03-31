@@ -1,5 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LeaderboardPlayer {
@@ -14,139 +13,84 @@ export interface LeaderboardPlayer {
   win_rate: number;
   points: number;
   rank: number;
+  challenges_completed: number;
+  tier: string;
 }
 
-export interface LeaderboardFilters {
-  game: string;
-  tournamentId: string;
-  timePeriod: string;
+const TIER_PRIORITY = ["Champion", "Epic", "Platinum", "Gold", "Silver", "Bronze"];
+
+function deriveTier(challengeNames: string[]): string {
+  for (const keyword of TIER_PRIORITY) {
+    if (challengeNames.some((n) => n.includes(keyword))) {
+      return keyword.toLowerCase();
+    }
+  }
+  return "unranked";
 }
 
-export const useLeaderboard = (filters: LeaderboardFilters) => {
-  const queryClient = useQueryClient();
-
-  // Subscribe to realtime match_results changes to auto-refresh rankings
-  useEffect(() => {
-    const channel = supabase
-      .channel("leaderboard-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "match_results" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["leaderboard", filters] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient, filters]);
-
+export const useLeaderboard = () => {
   return useQuery({
-    queryKey: ["leaderboard", filters],
+    queryKey: ["leaderboard-alltime"],
     queryFn: async () => {
-      // Build match query with filters
-      let matchQuery = supabase
-        .from("match_results")
-        .select("player1_id, player2_id, winner_id, status, tournament_id, completed_at")
-        .eq("status", "completed");
+      // 1. Aggregate season_scores by user_id
+      const { data: scores, error: scoresError } = await supabase
+        .from("season_scores")
+        .select("user_id, points, wins, losses, tournaments_played");
+      if (scoresError) throw scoresError;
+      if (!scores || scores.length === 0) return [] as LeaderboardPlayer[];
 
-      // Time period filter
-      if (filters.timePeriod && filters.timePeriod !== "all") {
-        const now = new Date();
-        let since: Date;
-        switch (filters.timePeriod) {
-          case "7d":
-            since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            break;
-          case "30d":
-            since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            break;
-          case "90d":
-            since = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-            break;
-          default:
-            since = new Date(0);
-        }
-        matchQuery = matchQuery.gte("completed_at", since.toISOString());
-      }
+      const agg: Record<string, { points: number; wins: number; losses: number; tournaments_played: number }> = {};
+      scores.forEach((s) => {
+        if (!agg[s.user_id]) agg[s.user_id] = { points: 0, wins: 0, losses: 0, tournaments_played: 0 };
+        agg[s.user_id].points += s.points;
+        agg[s.user_id].wins += s.wins;
+        agg[s.user_id].losses += s.losses;
+        agg[s.user_id].tournaments_played += s.tournaments_played;
+      });
 
-      // Tournament filter
-      if (filters.tournamentId && filters.tournamentId !== "all") {
-        matchQuery = matchQuery.eq("tournament_id", filters.tournamentId);
-      }
+      const playerIds = Object.keys(agg);
 
-      const { data: matches, error: matchError } = await matchQuery;
-      if (matchError) throw matchError;
-      if (!matches || matches.length === 0) return [] as LeaderboardPlayer[];
+      // 2. Fetch profiles, challenge counts, and challenge names in parallel
+      const [profilesRes, enrollmentsRes, challengeNamesRes] = await Promise.all([
+        playerIds.length > 0
+          ? (supabase.from as any)("profiles_public")
+              .select("user_id, display_name, gamer_tag, avatar_url")
+              .in("user_id", playerIds)
+          : Promise.resolve({ data: [] }),
+        supabase
+          .from("challenge_enrollments")
+          .select("user_id")
+          .eq("status", "completed")
+          .in("user_id", playerIds),
+        (supabase.from as any)("challenge_enrollments")
+          .select("user_id, challenges!inner(name)")
+          .eq("status", "completed")
+          .in("user_id", playerIds),
+      ]);
 
-      // If game filter is active, fetch tournament IDs for that game
-      let validTournamentIds: Set<string> | null = null;
-      if (filters.game && filters.game !== "all") {
-        const { data: tournaments } = await supabase
-          .from("tournaments")
-          .select("id")
-          .eq("game", filters.game);
-        validTournamentIds = new Set((tournaments ?? []).map((t) => t.id));
-      }
+      const profileMap = new Map(((profilesRes.data ?? []) as any[]).map((p: any) => [p.user_id, p]));
 
-      // Aggregate stats per player
-      const stats: Record<string, { wins: number; losses: number; draws: number }> = {};
+      // Count challenges per user
+      const challengeCounts: Record<string, number> = {};
+      (enrollmentsRes.data ?? []).forEach((e: any) => {
+        challengeCounts[e.user_id] = (challengeCounts[e.user_id] || 0) + 1;
+      });
 
-      const ensurePlayer = (id: string) => {
-        if (!stats[id]) stats[id] = { wins: 0, losses: 0, draws: 0 };
-      };
-
-      matches.forEach((m) => {
-        // Skip if game filter active and tournament not matching
-        if (validTournamentIds && !validTournamentIds.has(m.tournament_id)) return;
-
-        const p1 = m.player1_id;
-        const p2 = m.player2_id;
-        if (!p1 && !p2) return;
-
-        if (p1) ensurePlayer(p1);
-        if (p2) ensurePlayer(p2);
-
-        if (!m.winner_id) {
-          if (p1) stats[p1].draws++;
-          if (p2) stats[p2].draws++;
-        } else {
-          stats[m.winner_id].wins++;
-          const loserId = m.winner_id === p1 ? p2 : p1;
-          if (loserId) stats[loserId].losses++;
+      // Gather challenge names per user for tier derivation
+      const userChallengeNames: Record<string, string[]> = {};
+      (challengeNamesRes.data ?? []).forEach((e: any) => {
+        const name = (e as any).challenges?.name;
+        if (name) {
+          if (!userChallengeNames[e.user_id]) userChallengeNames[e.user_id] = [];
+          userChallengeNames[e.user_id].push(name);
         }
       });
 
-      // Fetch profiles for all players
-      const playerIds = Object.keys(stats);
-      const { data: profiles } = playerIds.length > 0
-        ? await (supabase.from as any)("profiles_public")
-            .select("user_id, display_name, gamer_tag, avatar_url")
-            .in("user_id", playerIds)
-        : { data: [] };
-
-      // Fetch all-time points from season_scores
-      const { data: seasonScores } = playerIds.length > 0
-        ? await supabase
-            .from("season_scores")
-            .select("user_id, points")
-            .in("user_id", playerIds)
-        : { data: [] };
-
-      // Aggregate total points per player across all seasons
-      const pointsMap: Record<string, number> = {};
-      (seasonScores ?? []).forEach((s) => {
-        pointsMap[s.user_id] = (pointsMap[s.user_id] || 0) + s.points;
-      });
-
-      // Build leaderboard
+      // 3. Build leaderboard
       const leaderboard: LeaderboardPlayer[] = playerIds.map((uid) => {
-        const s = stats[uid];
-        const profile = (profiles ?? []).find((p) => p.user_id === uid);
-        const total = s.wins + s.losses + s.draws;
-
+        const s = agg[uid];
+        const profile = profileMap.get(uid);
+        const total = s.tournaments_played;
         return {
           user_id: uid,
           display_name: profile?.gamer_tag || profile?.display_name || "Unknown",
@@ -154,17 +98,19 @@ export const useLeaderboard = (filters: LeaderboardFilters) => {
           avatar_url: profile?.avatar_url ?? null,
           wins: s.wins,
           losses: s.losses,
-          draws: s.draws,
+          draws: 0,
           total_matches: total,
           win_rate: total > 0 ? Math.round((s.wins / total) * 100) : 0,
-          points: pointsMap[uid] || 0,
+          points: s.points,
           rank: 0,
+          challenges_completed: challengeCounts[uid] || 0,
+          tier: deriveTier(userChallengeNames[uid] || []),
         };
       });
 
       leaderboard.sort((a, b) => {
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return b.total_matches - a.total_matches;
+        if (b.points !== a.points) return b.points - a.points;
+        return b.wins - a.wins;
       });
 
       leaderboard.forEach((p, i) => {
@@ -174,31 +120,4 @@ export const useLeaderboard = (filters: LeaderboardFilters) => {
       return leaderboard;
     },
   });
-};
-
-export const useLeaderboardFilterOptions = () => {
-  const gamesQuery = useQuery({
-    queryKey: ["leaderboard-games"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("tournaments")
-        .select("game")
-        .order("game");
-      const unique = [...new Set((data ?? []).map((t) => t.game))];
-      return unique;
-    },
-  });
-
-  const tournamentsQuery = useQuery({
-    queryKey: ["leaderboard-tournaments"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("tournaments")
-        .select("id, name")
-        .order("name");
-      return data ?? [];
-    },
-  });
-
-  return { games: gamesQuery.data ?? [], tournaments: tournamentsQuery.data ?? [] };
 };
