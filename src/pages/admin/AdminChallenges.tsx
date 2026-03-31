@@ -112,7 +112,7 @@ const SortableChallengeRow = ({ challenge: c, dragEnabled, onDetail, onEdit, onD
   );
 };
 
-
+const AdminChallenges = () => {
   usePageTitle("Challenge & Quest Management");
   const { user } = useAuth();
   const queryClient = useQueryClient();
