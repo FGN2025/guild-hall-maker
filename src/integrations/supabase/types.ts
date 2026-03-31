@@ -515,6 +515,7 @@ export type Database = {
           created_by: string
           description: string | null
           difficulty: string
+          display_order: number | null
           end_date: string | null
           estimated_minutes: number | null
           game_id: string | null
@@ -548,6 +549,7 @@ export type Database = {
           created_by: string
           description?: string | null
           difficulty?: string
+          display_order?: number | null
           end_date?: string | null
           estimated_minutes?: number | null
           game_id?: string | null
@@ -581,6 +583,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           difficulty?: string
+          display_order?: number | null
           end_date?: string | null
           estimated_minutes?: number | null
           game_id?: string | null
