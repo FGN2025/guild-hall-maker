@@ -403,9 +403,11 @@ const AdminChallenges = () => {
           ) : viewMode === "list" ? (
             /* ───── LIST VIEW ───── */
             <div className="rounded-lg border border-border overflow-hidden">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {dragEnabled && <TableHead className="w-10" />}
                     <TableHead>Name</TableHead>
                     <TableHead>Game</TableHead>
                     <TableHead>Difficulty</TableHead>
@@ -415,57 +417,28 @@ const AdminChallenges = () => {
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
+                <SortableContext items={challengeIds} strategy={verticalListSortingStrategy}>
                 <TableBody>
                   {filtered.map((c: any) => (
-                    <TableRow key={c.id} className="cursor-pointer" onClick={() => setDetailChallenge(c)}>
-                      <TableCell className="font-medium">{c.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.games?.name ?? "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`capitalize ${difficultyColor[c.difficulty] ?? ""}`}>{c.difficulty}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{typeLabels[c.challenge_type] ?? c.challenge_type}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.enrollments_count}</TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2">
-                                <Switch checked={c.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: c.id, is_active: checked })} />
-                                <span className="text-xs text-muted-foreground">{c.is_active ? "Active" : "Inactive"}</span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>Toggle challenge visibility for players</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: c.id, current: !!c.is_featured })}>
-                            <Star className={`h-4 w-4 ${c.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => setEditChallenge(c)}>
-                            <Pencil className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => navigate(`/challenges/${c.id}`)}>
-                            <Eye className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => copyToQuest(c.id)} disabled={copying}>
-                            <Copy className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button
-                            variant="ghost" size="icon"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(c.id, c.name)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <SortableChallengeRow
+                      key={c.id}
+                      challenge={c}
+                      dragEnabled={dragEnabled}
+                      onDetail={setDetailChallenge}
+                      onEdit={setEditChallenge}
+                      onDelete={handleDelete}
+                      onToggle={(id, checked) => toggleMutation.mutate({ id, is_active: checked })}
+                      onToggleFeatured={(id, current) => toggleFeaturedMutation.mutate({ id, current })}
+                      onCopy={copyToQuest}
+                      copying={copying}
+                      deleting={deleteMutation.isPending}
+                      navigate={navigate}
+                    />
                   ))}
                 </TableBody>
+                </SortableContext>
               </Table>
+              </DndContext>
             </div>
           ) : (
             /* ───── GRID VIEW ───── */
