@@ -25,7 +25,7 @@ const Challenges = () => {
         .from("challenges")
         .select("*, games(name, slug, cover_image_url, category)")
         .eq("is_active", true)
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
