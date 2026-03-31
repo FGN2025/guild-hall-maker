@@ -79,7 +79,7 @@ const AdminChallenges = () => {
       const { data: challengeData, error } = await supabase
         .from("challenges")
         .select("*, games(name, slug, cover_image_url)")
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true });
       if (error) throw error;
 
       const { data: enrollments } = await supabase
