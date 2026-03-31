@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy,
+  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy, GripVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -26,6 +26,14 @@ import { useCopyContent } from "@/hooks/useCopyContent";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
 import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, verticalListSortingStrategy, useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
