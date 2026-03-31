@@ -57,6 +57,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [localTasks, setLocalTasks] = useState<LocalTask[]>([]);
   const [enhancing, setEnhancing] = useState(false);
   const [achievementId, setAchievementId] = useState("");
+  const [academyNextStepUrl, setAcademyNextStepUrl] = useState("");
+  const [academyNextStepLabel, setAcademyNextStepLabel] = useState("");
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active"],
