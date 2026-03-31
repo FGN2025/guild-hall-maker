@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trophy, Zap } from "lucide-react";
+import { Trophy, Zap, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
