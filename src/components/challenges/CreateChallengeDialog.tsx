@@ -107,6 +107,8 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         cover_image_url: coverUrl,
         game_id: selectedGameId || null,
         achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
+        academy_next_step_url: form.academy_next_step_url || null,
+        academy_next_step_label: form.academy_next_step_label || null,
       } as any).select().single();
       if (error) throw error;
 
