@@ -82,8 +82,8 @@ const HeroSection = () => {
               className="max-h-24 md:max-h-32 mx-auto object-contain"
             />
           </Link>
-          <Link to="/challenges" className="flex items-center justify-center gap-1.5 mt-2 animate-pulse text-primary font-semibold text-sm">
-            <ArrowDown className="h-4 w-4" />
+          <Link to="/challenges" className="flex items-center justify-center gap-2 mt-2 animate-pulse text-primary font-semibold text-lg">
+            <ArrowUp className="h-7 w-7" />
             Click Here!
           </Link>
         </div>
