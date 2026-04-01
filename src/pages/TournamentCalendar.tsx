@@ -35,6 +35,12 @@ const TournamentCalendar = () => {
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startPadding = getDay(monthStart);
 
+  const NAW_START = new Date(2026, 3, 26); // April 26
+  const NAW_END = new Date(2026, 4, 2);   // May 2
+
+  const isNawDay = (day: Date) =>
+    isWithinInterval(day, { start: NAW_START, end: NAW_END });
+
   const tournamentsByDate = new Map<string, typeof tournaments>();
   tournaments.forEach((t) => {
     const key = format(parseISO(t.start_date), "yyyy-MM-dd");
