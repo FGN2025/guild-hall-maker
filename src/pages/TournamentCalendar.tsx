@@ -1,6 +1,9 @@
 import { useState } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import nawCalendarLogo from "@/assets/naw-calendar-logo-2026.png";
+import nawInfographic from "@/assets/naw-infographic-2026.png";
+import { isWithinInterval } from "date-fns";
 import {
   startOfMonth,
   endOfMonth,
@@ -32,6 +35,12 @@ const TournamentCalendar = () => {
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startPadding = getDay(monthStart);
 
+  const NAW_START = new Date(2026, 3, 26); // April 26
+  const NAW_END = new Date(2026, 4, 2);   // May 2
+
+  const isNawDay = (day: Date) =>
+    isWithinInterval(day, { start: NAW_START, end: NAW_END });
+
   const tournamentsByDate = new Map<string, typeof tournaments>();
   tournaments.forEach((t) => {
     const key = format(parseISO(t.start_date), "yyyy-MM-dd");
@@ -47,24 +56,29 @@ const TournamentCalendar = () => {
           <h1 className="font-display text-3xl font-bold text-foreground">
             Tournament Calendar
           </h1>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="font-heading text-lg font-semibold text-foreground min-w-[180px] text-center">
-              {format(currentMonth, "MMMM yyyy")}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="font-heading text-lg font-semibold text-foreground min-w-[180px] text-center">
+                {format(currentMonth, "MMMM yyyy")}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <a href={nawInfographic} target="_blank" rel="noopener noreferrer" className="shrink-0">
+              <img src={nawCalendarLogo} alt="National Apprenticeship Week 2026" className="h-12 w-auto object-contain" />
+            </a>
           </div>
         </div>
       </div>
@@ -99,12 +113,15 @@ const TournamentCalendar = () => {
               const key = format(day, "yyyy-MM-dd");
               const dayTournaments = tournamentsByDate.get(key) ?? [];
               const today = isToday(day);
+              const naw = isNawDay(day);
 
               return (
                 <div
                   key={key}
                   className={`min-h-[100px] border-b border-r border-border/20 p-1.5 transition-colors ${
-                    today ? "bg-primary/5" : "hover:bg-muted/30"
+                    naw ? "bg-red-700/10 border-l-2 border-l-red-600" : ""
+                  } ${
+                    today ? "bg-primary/5" : !naw ? "hover:bg-muted/30" : ""
                   } ${!isSameMonth(day, currentMonth) ? "opacity-40" : ""}`}
                 >
                   <span
@@ -116,6 +133,15 @@ const TournamentCalendar = () => {
                   >
                     {format(day, "d")}
                   </span>
+
+                  {naw && (
+                    <Link
+                      to="/challenges"
+                      className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold leading-tight bg-red-600 text-white hover:bg-red-700 transition-colors ml-1"
+                    >
+                      NAW
+                    </Link>
+                  )}
 
                   <div className="mt-1 space-y-0.5">
                     {dayTournaments.slice(0, 3).map((t) => (
