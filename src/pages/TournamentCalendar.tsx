@@ -134,6 +134,15 @@ const TournamentCalendar = () => {
                     {format(day, "d")}
                   </span>
 
+                  {naw && (
+                    <Link
+                      to="/challenges"
+                      className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold leading-tight bg-red-600 text-white hover:bg-red-700 transition-colors ml-1"
+                    >
+                      NAW
+                    </Link>
+                  )}
+
                   <div className="mt-1 space-y-0.5">
                     {dayTournaments.slice(0, 3).map((t) => (
                       <button
