@@ -56,24 +56,29 @@ const TournamentCalendar = () => {
           <h1 className="font-display text-3xl font-bold text-foreground">
             Tournament Calendar
           </h1>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="font-heading text-lg font-semibold text-foreground min-w-[180px] text-center">
-              {format(currentMonth, "MMMM yyyy")}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="font-heading text-lg font-semibold text-foreground min-w-[180px] text-center">
+                {format(currentMonth, "MMMM yyyy")}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <a href={nawInfographic} target="_blank" rel="noopener noreferrer" className="shrink-0">
+              <img src={nawCalendarLogo} alt="National Apprenticeship Week 2026" className="h-12 w-auto object-contain" />
+            </a>
           </div>
         </div>
       </div>
