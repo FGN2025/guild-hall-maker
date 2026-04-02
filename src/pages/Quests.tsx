@@ -166,11 +166,11 @@ const Quests = () => {
 
         {gameNames.length > 1 && (
           <div className="flex flex-wrap gap-2">
-            <Badge variant={gameFilter === null ? "default" : "outline"} className="cursor-pointer" onClick={() => setGameFilter(null)}>
+            <Badge variant={gameFilter === null ? "default" : "outline"} className={`cursor-pointer font-semibold ${gameFilter === null ? "" : "text-white bg-card/70 border-white/30 hover:bg-card/90"}`} onClick={() => setGameFilter(null)}>
               All Games
             </Badge>
             {gameNames.map((name) => (
-              <Badge key={name} variant={gameFilter === name ? "default" : "outline"} className="cursor-pointer" onClick={() => setGameFilter(name === gameFilter ? null : name)}>
+              <Badge key={name} variant={gameFilter === name ? "default" : "outline"} className={`cursor-pointer font-semibold ${gameFilter === name ? "" : "text-white bg-card/70 border-white/30 hover:bg-card/90"}`} onClick={() => setGameFilter(name === gameFilter ? null : name)}>
                 {name}
               </Badge>
             ))}
