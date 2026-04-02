@@ -232,7 +232,7 @@ const Quests = () => {
 
             {completedQuests.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                <h2 className="font-display text-lg font-semibold text-white flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-400" />
                   Completed
                 </h2>

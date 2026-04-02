@@ -129,8 +129,8 @@ const Tournaments = () => {
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-[200px] bg-card border-border font-body">
-                <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectTrigger className="w-full sm:w-[200px] bg-card/70 border-white/30 text-white font-body">
+                <ArrowUpDown className="h-4 w-4 mr-2 text-white/70" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
