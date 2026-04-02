@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import usePageTitle from "@/hooks/usePageTitle";
 
 function StatusDot({ server }: { server: GameServer }) {
-  const hasPanelConfig = server.panel_type === "pterodactyl";
+  const hasPanelConfig = server.has_panel === true || server.panel_type === "pterodactyl";
   const { data, isLoading } = useServerStatus(server.id, hasPanelConfig);
 
   if (!hasPanelConfig) return <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" title="No live status" />;
