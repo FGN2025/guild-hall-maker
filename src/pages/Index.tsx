@@ -27,6 +27,8 @@ const Index = () => {
             <a href="/disabled-users" className="text-primary hover:underline">Disabled Users Notice</a>
             <span className="hidden sm:inline">·</span>
             <a href="/for-providers" className="text-primary hover:underline">For Providers</a>
+            <span className="hidden sm:inline">·</span>
+            <a href="mailto:support@fgn.gg" className="text-primary hover:underline">Contact Us</a>
           </div>
           <p className="text-sm text-muted-foreground">
             © 2026 Fibre Gaming Network. All rights reserved.
