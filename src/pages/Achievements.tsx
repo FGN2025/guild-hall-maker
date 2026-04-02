@@ -1,16 +1,60 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlayerAchievements } from "@/hooks/usePlayerAchievements";
 import PlayerAchievements from "@/components/player/PlayerAchievements";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Award, RefreshCw } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import PageBackground from "@/components/PageBackground";
 import usePageTitle from "@/hooks/usePageTitle";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 const Achievements = () => {
   usePageTitle("My Achievements");
   const { session } = useAuth();
-  const { data: achievements, isLoading } = usePlayerAchievements(session?.user?.id);
+  const userId = session?.user?.id;
+  const { data: achievements, isLoading } = usePlayerAchievements(userId);
+  const queryClient = useQueryClient();
+  const [syncing, setSyncing] = useState(false);
+
+  // Check if user has a linked Steam account
+  const { data: profile } = useQuery({
+    queryKey: ["profile-steam", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("steam_id")
+        .eq("user_id", userId!)
+        .single();
+      return data;
+    },
+  });
+
+  const hasSteam = !!profile?.steam_id;
+
+  const handleSyncSteam = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("steam-achievement-sync");
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: "Sync Issue", description: data.error, variant: "destructive" });
+      } else {
+        const msg = `Synced ${data.synced} achievements across ${data.games_checked} games.` +
+          (data.private_games?.length ? ` ${data.private_games.length} game(s) skipped (private profile).` : "");
+        toast({ title: "Steam Sync Complete", description: msg });
+        queryClient.invalidateQueries({ queryKey: ["player-achievements"] });
+      }
+    } catch (err: any) {
+      toast({ title: "Sync Failed", description: err.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const unlocked = achievements?.filter((a) => a.unlocked).length ?? 0;
   const total = achievements?.length ?? 0;
@@ -30,11 +74,25 @@ const Achievements = () => {
                 My Achievements
               </h1>
             </div>
-            {!isLoading && total > 0 && (
-              <span className="text-sm font-display text-muted-foreground">
-                {unlocked}/{total} unlocked
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {hasSteam && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSyncSteam}
+                  disabled={syncing}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+                  {syncing ? "Syncing…" : "Sync Steam"}
+                </Button>
+              )}
+              {!isLoading && total > 0 && (
+                <span className="text-sm font-display text-muted-foreground">
+                  {unlocked}/{total} unlocked
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

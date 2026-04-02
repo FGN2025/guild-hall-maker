@@ -21,6 +21,14 @@ interface AutoCriteria {
   type: string;
   threshold?: number;
   min_matches?: number;
+  steam_app_id?: string;
+  achievement_name?: string;
+}
+
+interface SteamAchievement {
+  steam_app_id: string;
+  achievement_api_name: string;
+  achieved: boolean;
 }
 
 export const usePlayerAchievements = (userId: string | undefined) => {
@@ -28,8 +36,8 @@ export const usePlayerAchievements = (userId: string | undefined) => {
     queryKey: ["player-achievements", userId],
     enabled: !!userId,
     queryFn: async () => {
-      // Fetch definitions, player awards, and match data in parallel
-      const [defsRes, awardsRes, matchesRes] = await Promise.all([
+      // Fetch definitions, player awards, match data, and steam achievements in parallel
+      const [defsRes, awardsRes, matchesRes, steamRes] = await Promise.all([
         supabase.from("achievement_definitions").select("*").eq("is_active", true).order("display_order"),
         supabase.from("player_achievements").select("*").eq("user_id", userId!),
         supabase
@@ -38,11 +46,18 @@ export const usePlayerAchievements = (userId: string | undefined) => {
           .eq("status", "completed")
           .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
           .order("completed_at", { ascending: true }),
+        supabase
+          .from("steam_player_achievements")
+          .select("steam_app_id, achievement_api_name, achieved")
+          .eq("user_id", userId!)
+          .eq("achieved", true),
       ]);
 
       if (defsRes.error) throw defsRes.error;
       if (awardsRes.error) throw awardsRes.error;
       if (matchesRes.error) throw matchesRes.error;
+      // Steam achievements are optional - don't throw on error
+      const steamAchievements: SteamAchievement[] = (steamRes.data as SteamAchievement[] | null) ?? [];
 
       const defs = defsRes.data ?? [];
       const awards = new Map((awardsRes.data ?? []).map((a: any) => [a.achievement_id, a]));
@@ -78,6 +93,14 @@ export const usePlayerAchievements = (userId: string | undefined) => {
           case "tournament_champion": return { pass: tournamentChampion, progress: tournamentChampion ? 1 : 0 };
           case "multi_tournament": return { pass: tournamentIds.size >= (c.threshold ?? 0), progress: Math.min(tournamentIds.size, c.threshold ?? 0) };
           case "iron_will": return { pass: total >= (c.threshold ?? 0) && losses > 0, progress: Math.min(total, c.threshold ?? 0) };
+          case "steam_achievement": {
+            const match = steamAchievements.find(
+              sa => sa.steam_app_id === c.steam_app_id &&
+                    sa.achievement_api_name === c.achievement_name &&
+                    sa.achieved
+            );
+            return { pass: !!match, progress: match ? 1 : 0 };
+          }
           default: return { pass: false, progress: 0 };
         }
       };
