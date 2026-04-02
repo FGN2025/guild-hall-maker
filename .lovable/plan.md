@@ -1,38 +1,25 @@
 
 
-## Fix Calendar Image Visibility
+## Fix Tournaments Page Crash for Unauthenticated Users
 
-### Problem
-The promotional image below the calendar is barely visible against the dark background — same issue as the filter badges earlier. It needs a contrasting container to stand out.
+### Root Cause
+`src/pages/Tournaments.tsx` imports and renders `<SidebarTrigger />` (line 6, 90). This component internally calls `useSidebar()`, which requires a `SidebarProvider` ancestor. When an unauthenticated user visits `/tournaments`, `ConditionalLayout` renders `PublicLayout` (navbar only, no sidebar provider), causing the crash.
 
-### Solution
-Wrap the image in a frosted-glass container with a dark semi-opaque background, blur, and a visible border — matching the pattern used for filter sections.
+Challenges and Quests pages likely don't use `SidebarTrigger`, which is why they work fine for guests.
 
-### Change — `src/pages/TournamentCalendar.tsx` (lines 169–175)
+### Fix — `src/pages/Tournaments.tsx`
 
-Replace the current plain `div` wrapper with a styled container:
+Conditionally render `SidebarTrigger` only when the user is authenticated:
 
-```tsx
-<div className="mt-8 flex justify-center">
-  <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl p-4">
-    <img
-      src="/images/April_2026_calendar_square.png"
-      alt="FGN Tournaments - April 2026"
-      className="w-full max-w-2xl rounded-lg"
-    />
-  </div>
-</div>
-```
+1. The `user` variable from `useAuth()` is already available (line 27)
+2. Replace the unconditional `<SidebarTrigger />` on line 90 with `{user && <SidebarTrigger />}`
+3. Remove the import if no other usage exists (it's only used on line 90)
 
-This adds:
-- `bg-black/50` — dark overlay behind the image for contrast
-- `backdrop-blur-sm` — frosted glass effect
-- `border border-white/20` — visible white border
-- `p-4` — padding so the image doesn't touch edges
+This matches how Challenges and Quests handle the same scenario — they don't render sidebar controls for guests.
 
 ### Files changed
 
 | File | Change |
 |------|--------|
-| `src/pages/TournamentCalendar.tsx` | Wrap image in frosted-glass container for visibility |
+| `src/pages/Tournaments.tsx` | Wrap `SidebarTrigger` in `{user && ...}` guard |
 
