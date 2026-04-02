@@ -52,6 +52,7 @@ const ChallengeDetail = () => {
     submitEvidence, submittingEvidence,
     submitForReview, submittingForReview,
     deleteEvidence, deletingEvidence,
+    unenroll, unenrolling,
   } = useChallengeEnrollment(id);
 
   const [evidenceOpen, setEvidenceOpen] = useState(false);
