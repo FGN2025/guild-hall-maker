@@ -18,6 +18,7 @@ import { useAchievementDefinitions, useAchievementAdmin, useRecentAwards } from 
 import type { AchievementDefinition } from "@/hooks/useAchievementAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 
 import { ACHIEVEMENT_ICON_KEYS, getAchievementIcon } from "@/lib/achievementIcons";
 const ICONS = ACHIEVEMENT_ICON_KEYS;
