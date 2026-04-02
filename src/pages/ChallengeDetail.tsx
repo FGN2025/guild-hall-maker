@@ -16,7 +16,7 @@ import EvidenceUpload from "@/components/challenges/EvidenceUpload";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
-import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Copy, ExternalLink, Play } from "lucide-react";
+import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Copy, ExternalLink, Play, LogOut } from "lucide-react";
 import { useCopyContent } from "@/hooks/useCopyContent";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
