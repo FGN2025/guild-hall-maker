@@ -191,14 +191,16 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden glass-panel border-t border-border/50 animate-slide-up">
           <div className="flex flex-col p-4 gap-2">
-            {activeNavItems.map((item) => {
+            {/* Compete group */}
+            <span className="px-4 pt-2 pb-1 text-xs uppercase tracking-wider text-muted-foreground font-heading">Compete</span>
+            {competeItems.map((item) => {
               const active = location.pathname === item.to;
               return (
                 <Link
                   key={item.to}
                   to={item.to}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                  className={`flex items-center gap-3 pl-8 pr-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
                     active
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -209,21 +211,8 @@ const Navbar = () => {
                 </Link>
               );
             })}
-            {isAdmin && (
-              <Link
-                to="/admin"
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
-                  location.pathname.startsWith("/admin")
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                }`}
-              >
-                <ShieldCheck className="h-5 w-5" />
-                Admin
-              </Link>
-            )}
-            {(isModerator || isAdmin) && (
+            {activeNavItems.map((item) => {
+              const active = location.pathname === item.to;
               <Link
                 to="/moderator"
                 onClick={() => setMobileOpen(false)}
