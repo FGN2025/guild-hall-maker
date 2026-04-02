@@ -1,32 +1,67 @@
 
 
-## Fix Filter Badge and Section Heading Visibility
+## Fix Drag-and-Drop Reorder Requiring Multiple Attempts
 
 ### Root Cause
-The badges use `text-white bg-card/70 border-white/30` but `bg-card` in this dark theme is very close to the background, and at 70% opacity it's nearly invisible. The `border-white/30` (white at 30% opacity) is too faint. The section headings ("Available Quests", "Available Challenges") use `text-white` but without the `neon-text` glow they blend in.
 
-### Fix
+In `handleDragEnd` (line 190–197), `arrayMove` is called on `filtered` (a derived `useMemo` from the query cache), and the new order is sent to the database. However, **no optimistic cache update** is performed — the UI still shows the old order from the stale query cache until `invalidateQueries` fires and the refetch completes. During that brief window the rows snap back to their original positions, making it appear the drag didn't work. If the user drags again before the refetch lands, the second drag operates on stale data, compounding the problem.
 
-**1. Wrap filter badges in a frosted-glass container** so they sit on a visually distinct surface:
-- Add a wrapper `div` with `rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 p-3` around the badge row on both pages
-- This creates a dark translucent panel that lifts the filters off the busy background
+Additionally, the `reorderMutation` fires individual `UPDATE` calls in a `for` loop (line 181–184), which is slow and means the refetch can start before all updates have landed.
 
-**2. Strengthen individual badge styling**:
-- Inactive badges: `text-white bg-white/10 border border-white/40 hover:bg-white/20` (white text on a lightly frosted white-tinted chip with a visible white border)
-- Active badge (selected): keep `variant="default"` which uses the primary cyan fill
+### Fix — `src/pages/admin/AdminChallenges.tsx`
 
-**3. Add `neon-text` to section headings on Quests page** to match Challenges page:
-- "Quest Chains" h2: add `text-white neon-text`
-- "Available Quests" h2: add `neon-text`
-- "Completed" h2: add `neon-text`
+1. **Optimistic cache update in `handleDragEnd`**: Before calling `reorderMutation.mutate()`, use `queryClient.setQueryData` to immediately rewrite the `["admin-challenges"]` cache with the reordered array. This makes the UI reflect the new order instantly.
 
-### Files to update
+2. **Rollback on error**: Store the previous cache snapshot and restore it in the mutation's `onError` callback so a failed save reverts the UI.
+
+3. **Cancel in-flight refetches**: Call `queryClient.cancelQueries({ queryKey: ["admin-challenges"] })` at the start of `handleDragEnd` to prevent a concurrent refetch from overwriting the optimistic update before the mutation completes.
+
+4. **Batch the database writes**: Replace the sequential `for` loop with a single RPC or a `Promise.all` so all `display_order` updates land atomically before the post-mutation refetch.
+
+### Pseudocode
+
+```ts
+const handleDragEnd = async (event: DragEndEvent) => {
+  const { active, over } = event;
+  if (!over || active.id === over.id) return;
+
+  const oldIndex = filtered.findIndex(c => c.id === active.id);
+  const newIndex = filtered.findIndex(c => c.id === over.id);
+  const reordered = arrayMove(filtered, oldIndex, newIndex);
+
+  // 1. Cancel any in-flight refetch
+  await queryClient.cancelQueries({ queryKey: ["admin-challenges"] });
+
+  // 2. Snapshot + optimistic update
+  const previous = queryClient.getQueryData(["admin-challenges"]);
+  queryClient.setQueryData(["admin-challenges"], 
+    reordered.map((c, i) => ({ ...c, display_order: i }))
+  );
+
+  // 3. Persist (batched)
+  reorderMutation.mutate(
+    reordered.map((c, i) => ({ id: c.id, display_order: i })),
+    { onError: () => queryClient.setQueryData(["admin-challenges"], previous) }
+  );
+};
+```
+
+And update the mutation to use `Promise.all` instead of a sequential loop:
+
+```ts
+mutationFn: async (items) => {
+  await Promise.all(items.map(item =>
+    supabase.from("challenges")
+      .update({ display_order: item.display_order })
+      .eq("id", item.id)
+      .then(({ error }) => { if (error) throw error; })
+  ));
+},
+```
+
+### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/pages/Challenges.tsx` | Wrap filter row in frosted container; update inactive badge classes to `text-white bg-white/10 border border-white/40 hover:bg-white/20` |
-| `src/pages/Quests.tsx` | Same filter wrapper and badge treatment; add `neon-text` to section headings |
-
-### Key difference from previous attempt
-Instead of relying on `bg-card/70` (which is nearly the same dark color as the page background), using `bg-white/10` for badges and `bg-black/40 backdrop-blur-sm` for the container creates actual visible contrast through light-on-dark layering.
+| `src/pages/admin/AdminChallenges.tsx` | Add optimistic cache update, rollback on error, cancel in-flight queries, batch DB writes |
 
