@@ -1,0 +1,1 @@
+UPDATE public.app_settings SET value = 'https://youtu.be/p1rkkc6VWo0', updated_at = now() WHERE key = 'featured_video_url';
