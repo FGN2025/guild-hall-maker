@@ -167,11 +167,13 @@ const TournamentCalendar = () => {
       )}
 
       <div className="mt-8 flex justify-center">
-        <img
-          src="/images/April_2026_calendar_square.png"
-          alt="FGN Tournaments - April 2026"
-          className="w-full max-w-2xl rounded-xl border border-border/50"
-        />
+        <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl p-4">
+          <img
+            src="/images/April_2026_calendar_square.png"
+            alt="FGN Tournaments - April 2026"
+            className="w-full max-w-2xl rounded-lg"
+          />
+        </div>
       </div>
     </div>
   );
