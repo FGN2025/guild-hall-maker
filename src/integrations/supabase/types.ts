@@ -3815,6 +3815,71 @@ export type Database = {
         }
         Relationships: []
       }
+      game_servers_public: {
+        Row: {
+          connection_instructions: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          display_order: number | null
+          game: string | null
+          game_id: string | null
+          has_panel: boolean | null
+          id: string | null
+          image_url: string | null
+          ip_address: string | null
+          is_active: boolean | null
+          max_players: number | null
+          name: string | null
+          port: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          connection_instructions?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_order?: number | null
+          game?: string | null
+          game_id?: string | null
+          has_panel?: never
+          id?: string | null
+          image_url?: string | null
+          ip_address?: string | null
+          is_active?: boolean | null
+          max_players?: number | null
+          name?: string | null
+          port?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          connection_instructions?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_order?: number | null
+          game?: string | null
+          game_id?: string | null
+          has_panel?: never
+          id?: string | null
+          image_url?: string | null
+          ip_address?: string | null
+          is_active?: boolean | null
+          max_players?: number | null
+          name?: string | null
+          port?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_servers_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles_public: {
         Row: {
           avatar_url: string | null

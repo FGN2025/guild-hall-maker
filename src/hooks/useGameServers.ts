@@ -16,6 +16,7 @@ export interface GameServer {
   panel_type: string | null;
   panel_url: string | null;
   panel_server_id: string | null;
+  has_panel?: boolean;
   is_active: boolean;
   display_order: number;
   created_by: string;
@@ -31,8 +32,8 @@ export function useGameServers() {
     queryKey: ["game-servers"],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from("game_servers") as any)
-        .select("*, games:game_id(name, cover_image_url)")
+        .from("game_servers_public") as any)
+        .select("*")
         .eq("is_active", true)
         .order("display_order");
       if (error) throw error;

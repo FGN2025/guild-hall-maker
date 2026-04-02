@@ -40,7 +40,7 @@ export const useMediaLibrary = (category?: string) => {
       if (!user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop() ?? "bin";
       const fileName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-      const filePath = `${cat}/${fileName}`;
+      const filePath = `${user.id}/${cat}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage.from("app-media").upload(filePath, file, { contentType: file.type });
       if (uploadError) throw uploadError;
