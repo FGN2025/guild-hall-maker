@@ -160,7 +160,7 @@ const Challenges = () => {
           <div className="flex flex-wrap gap-2">
             <Badge
               variant={gameFilter === null ? "default" : "outline"}
-              className="cursor-pointer"
+              className="cursor-pointer text-foreground font-semibold"
               onClick={() => setGameFilter(null)}
             >
               All Games
@@ -169,7 +169,7 @@ const Challenges = () => {
               <Badge
                 key={name}
                 variant={gameFilter === name ? "default" : "outline"}
-                className="cursor-pointer text-white"
+                className="cursor-pointer text-foreground font-semibold"
                 onClick={() => setGameFilter(name === gameFilter ? null : name)}
               >
                 {name}
@@ -207,7 +207,7 @@ const Challenges = () => {
           <div className="space-y-8">
             {activeChallenges.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-xl font-bold text-white">Available Challenges</h2>
+                <h2 className="font-display text-xl font-bold text-foreground neon-text">Available Challenges</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeChallenges.map((c: any) => (
                     <ChallengeCard
@@ -222,7 +222,7 @@ const Challenges = () => {
 
             {completedChallenges.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-xl font-bold text-white flex items-center gap-2">
+                <h2 className="font-display text-xl font-bold text-foreground neon-text flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-400" />
                   Completed
                 </h2>
