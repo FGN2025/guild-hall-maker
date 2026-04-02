@@ -209,7 +209,7 @@ const Quests = () => {
             {/* Quest Chains */}
             {activeChains.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                <h2 className="font-display text-lg font-semibold text-white neon-text flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
                   Quest Chains
                 </h2>
