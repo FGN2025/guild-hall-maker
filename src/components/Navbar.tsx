@@ -1,14 +1,23 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2, CalendarDays, Target, Gift, SwordIcon, BookOpen, Compass } from "lucide-react";
+import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Settings, BarChart3, Swords, Award, ShieldCheck, Building2, CalendarDays, Target, Gift, SwordIcon, BookOpen, Compass, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
-const navItems = [
+const competeItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/challenges", label: "Challenges", icon: Target },
   { to: "/quests", label: "Quests", icon: Compass },
+];
+
+const navItems = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -23,17 +32,11 @@ const navItems = [
 ];
 
 const authNavItems = [
-  { to: "/tournaments", label: "Tournaments", icon: Trophy },
-  { to: "/challenges", label: "Challenges", icon: Target },
-  { to: "/quests", label: "Quests", icon: Compass },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 const publicNavItems = [
-  { to: "/tournaments", label: "Tournaments", icon: Trophy },
-  { to: "/challenges", label: "Challenges", icon: Target },
-  { to: "/quests", label: "Quests", icon: Compass },
   { to: "/for-providers", label: "For Providers", icon: Building2 },
 ];
 
@@ -62,6 +65,37 @@ const Navbar = () => {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
+          {/* Compete dropdown */}
+          {(() => {
+            const competeActive = competeItems.some(i => location.pathname.startsWith(i.to));
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-heading font-medium tracking-wide transition-all ${
+                      competeActive
+                        ? "text-primary bg-primary/10 neon-border"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <Swords className="h-4 w-4" />
+                    Compete
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {competeItems.map((item) => (
+                    <DropdownMenuItem key={item.to} asChild>
+                      <Link to={item.to} className="flex items-center gap-2 cursor-pointer">
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
           {activeNavItems.map((item) => {
             const active = location.pathname === item.to;
             return (
@@ -157,6 +191,26 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden glass-panel border-t border-border/50 animate-slide-up">
           <div className="flex flex-col p-4 gap-2">
+            {/* Compete group */}
+            <span className="px-4 pt-2 pb-1 text-xs uppercase tracking-wider text-muted-foreground font-heading">Compete</span>
+            {competeItems.map((item) => {
+              const active = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 pl-8 pr-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                    active
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </Link>
+              );
+            })}
             {activeNavItems.map((item) => {
               const active = location.pathname === item.to;
               return (
