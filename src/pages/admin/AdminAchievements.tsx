@@ -156,8 +156,8 @@ const DefForm = ({
             <Input value={steamAchName} onChange={(e) => setSteamAchName(e.target.value)} placeholder="e.g. ACH_WIN_10" />
           </div>
         </div>
-      )
-      </div>
+      )}
+      <div className="grid grid-cols-2 gap-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Display Order</Label>
