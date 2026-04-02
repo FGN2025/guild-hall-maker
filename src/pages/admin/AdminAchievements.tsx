@@ -169,7 +169,7 @@ const DefForm = ({
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button onClick={handle} disabled={!name || !description}>Save</Button>
+        <Button onClick={handle} disabled={!name || !description || (category === "steam" && (!steamGameId || !steamAchName))}>Save</Button>
       </div>
     </div>
   );
