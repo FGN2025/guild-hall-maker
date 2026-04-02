@@ -16,6 +16,7 @@ export interface GameServer {
   panel_type: string | null;
   panel_url: string | null;
   panel_server_id: string | null;
+  has_panel?: boolean;
   is_active: boolean;
   display_order: number;
   created_by: string;
