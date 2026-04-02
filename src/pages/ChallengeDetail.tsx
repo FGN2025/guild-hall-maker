@@ -119,6 +119,7 @@ const ChallengeDetail = () => {
   const status = enrollment?.status ? statusLabel[enrollment.status] : null;
   const canUpload = enrollment && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
   const canSubmit = enrollment && evidence.length > 0 && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
+  const canUnenroll = enrollment && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
 
