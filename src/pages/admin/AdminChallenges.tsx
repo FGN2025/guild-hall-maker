@@ -178,22 +178,45 @@ const AdminChallenges = () => {
 
   const reorderMutation = useMutation({
     mutationFn: async (items: { id: string; display_order: number }[]) => {
-      for (const item of items) {
-        const { error } = await supabase.from("challenges").update({ display_order: item.display_order } as any).eq("id", item.id);
-        if (error) throw error;
-      }
+      await Promise.all(items.map(item =>
+        supabase.from("challenges").update({ display_order: item.display_order } as any).eq("id", item.id)
+          .then(({ error }) => { if (error) throw error; })
+      ));
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-challenges"] }),
-    onError: (e: any) => toast.error("Reorder failed: " + e.message),
   });
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const oldIndex = filtered.findIndex((c: any) => c.id === active.id);
     const newIndex = filtered.findIndex((c: any) => c.id === over.id);
     const reordered = arrayMove(filtered, oldIndex, newIndex);
-    reorderMutation.mutate(reordered.map((c: any, i: number) => ({ id: c.id, display_order: i })));
+    const updatedItems = reordered.map((c: any, i: number) => ({ ...c, display_order: i }));
+
+    // Cancel in-flight refetches so they don't overwrite optimistic update
+    await queryClient.cancelQueries({ queryKey: ["admin-challenges"] });
+
+    // Snapshot for rollback
+    const previous = queryClient.getQueryData(["admin-challenges"]);
+
+    // Optimistic cache update
+    queryClient.setQueryData(["admin-challenges"], (old: any[] | undefined) => {
+      if (!old) return updatedItems;
+      const updateMap = new Map(updatedItems.map((item: any) => [item.id, item.display_order]));
+      return old.map((c: any) => updateMap.has(c.id) ? { ...c, display_order: updateMap.get(c.id) } : c)
+        .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    });
+
+    // Persist to DB with rollback on error
+    reorderMutation.mutate(
+      updatedItems.map((c: any) => ({ id: c.id, display_order: c.display_order })),
+      { onError: () => {
+          queryClient.setQueryData(["admin-challenges"], previous);
+          toast.error("Reorder failed");
+        }
+      }
+    );
   };
 
   // ── Mutations ──
