@@ -393,7 +393,7 @@ const ChallengeDetail = () => {
                     <LogOut className="h-4 w-4" />
                     {unenrolling ? "Unenrolling..." : "Unenroll"}
                   </Button>
-
+                )}
                 {enrollment?.status === "completed" && (
                   <div className="text-center py-2 space-y-3">
                     <div>
