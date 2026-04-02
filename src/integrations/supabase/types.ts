@@ -2652,6 +2652,51 @@ export type Database = {
           },
         ]
       }
+      steam_player_achievements: {
+        Row: {
+          achieved: boolean
+          achievement_api_name: string
+          id: string
+          steam_app_id: string
+          synced_at: string
+          unlock_time: string | null
+          user_id: string
+        }
+        Insert: {
+          achieved?: boolean
+          achievement_api_name: string
+          id?: string
+          steam_app_id: string
+          synced_at?: string
+          unlock_time?: string | null
+          user_id: string
+        }
+        Update: {
+          achieved?: boolean
+          achievement_api_name?: string
+          id?: string
+          steam_app_id?: string
+          synced_at?: string
+          unlock_time?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "steam_player_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "steam_player_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       subscriber_cloud_access: {
         Row: {
           activated_at: string

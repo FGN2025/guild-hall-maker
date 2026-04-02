@@ -89,3 +89,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.publish-cdl-challenge]
     verify_jwt = false
+  [functions.steam-achievement-sync]
+    verify_jwt = false

@@ -18,6 +18,7 @@ import { useAchievementDefinitions, useAchievementAdmin, useRecentAwards } from 
 import type { AchievementDefinition } from "@/hooks/useAchievementAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 
 import { ACHIEVEMENT_ICON_KEYS, getAchievementIcon } from "@/lib/achievementIcons";
 const ICONS = ACHIEVEMENT_ICON_KEYS;
@@ -40,26 +41,51 @@ const DefForm = ({
   onSubmit: (data: Partial<AchievementDefinition>) => void;
   onClose: () => void;
 }) => {
+  const existingCriteria = initial?.auto_criteria as any;
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [icon, setIcon] = useState(initial?.icon ?? "trophy");
   const [tier, setTier] = useState(initial?.tier ?? "bronze");
-  const [category, setCategory] = useState(initial?.category ?? "custom");
+  const [category, setCategory] = useState(
+    existingCriteria?.type === "steam_achievement" ? "steam" : (initial?.category ?? "custom")
+  );
   const [maxProgress, setMaxProgress] = useState<string>(initial?.max_progress?.toString() ?? "");
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
   const [order, setOrder] = useState<string>(initial?.display_order?.toString() ?? "0");
 
+  // Steam-specific fields
+  const [steamGameId, setSteamGameId] = useState<string>(existingCriteria?.steam_app_id ?? "");
+  const [steamAchName, setSteamAchName] = useState<string>(existingCriteria?.achievement_name ?? "");
+
+  // Fetch games with steam_app_id for the dropdown
+  const { data: steamGames } = useQuery({
+    queryKey: ["games-with-steam-id"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("games")
+        .select("steam_app_id, name")
+        .not("steam_app_id", "is", null)
+        .order("name");
+      return data ?? [];
+    },
+  });
+
   const handle = () => {
+    const autoCriteria = category === "steam"
+      ? { type: "steam_achievement", steam_app_id: steamGameId, achievement_name: steamAchName }
+      : null;
+
     onSubmit({
       ...(initial ? { id: initial.id } : {}),
       name,
       description,
       icon,
       tier,
-      category,
+      category: category === "steam" ? "milestone" : category,
       max_progress: maxProgress ? parseInt(maxProgress) : null,
       is_active: isActive,
       display_order: parseInt(order) || 0,
+      ...(autoCriteria ? { auto_criteria: autoCriteria } : {}),
     });
     onClose();
   };
@@ -103,6 +129,7 @@ const DefForm = ({
             <SelectContent>
               <SelectItem value="milestone">Milestone (auto)</SelectItem>
               <SelectItem value="custom">Custom (manual)</SelectItem>
+              <SelectItem value="steam">Steam Achievement (auto)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -111,6 +138,25 @@ const DefForm = ({
           <Input type="number" value={maxProgress} onChange={(e) => setMaxProgress(e.target.value)} placeholder="Optional" />
         </div>
       </div>
+      {category === "steam" && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Game</Label>
+            <Select value={steamGameId} onValueChange={setSteamGameId}>
+              <SelectTrigger><SelectValue placeholder="Select game…" /></SelectTrigger>
+              <SelectContent>
+                {steamGames?.map((g) => (
+                  <SelectItem key={g.steam_app_id!} value={g.steam_app_id!}>{g.name} ({g.steam_app_id})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Steam Achievement API Name</Label>
+            <Input value={steamAchName} onChange={(e) => setSteamAchName(e.target.value)} placeholder="e.g. ACH_WIN_10" />
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Display Order</Label>
@@ -123,7 +169,7 @@ const DefForm = ({
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button onClick={handle} disabled={!name || !description}>Save</Button>
+        <Button onClick={handle} disabled={!name || !description || (category === "steam" && (!steamGameId || !steamAchName))}>Save</Button>
       </div>
     </div>
   );
