@@ -165,15 +165,17 @@ const Quests = () => {
         <PointsWalletCard compact />
 
         {gameNames.length > 1 && (
-          <div className="flex flex-wrap gap-2">
-            <Badge variant={gameFilter === null ? "default" : "outline"} className={`cursor-pointer font-semibold ${gameFilter === null ? "" : "text-white bg-card/70 border-white/30 hover:bg-card/90"}`} onClick={() => setGameFilter(null)}>
-              All Games
-            </Badge>
-            {gameNames.map((name) => (
-              <Badge key={name} variant={gameFilter === name ? "default" : "outline"} className={`cursor-pointer font-semibold ${gameFilter === name ? "" : "text-white bg-card/70 border-white/30 hover:bg-card/90"}`} onClick={() => setGameFilter(name === gameFilter ? null : name)}>
-                {name}
+          <div className="rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 p-3">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={gameFilter === null ? "default" : "outline"} className={`cursor-pointer font-semibold ${gameFilter === null ? "" : "text-white bg-white/10 border border-white/40 hover:bg-white/20"}`} onClick={() => setGameFilter(null)}>
+                All Games
               </Badge>
-            ))}
+              {gameNames.map((name) => (
+                <Badge key={name} variant={gameFilter === name ? "default" : "outline"} className={`cursor-pointer font-semibold ${gameFilter === name ? "" : "text-white bg-white/10 border border-white/40 hover:bg-white/20"}`} onClick={() => setGameFilter(name === gameFilter ? null : name)}>
+                  {name}
+                </Badge>
+              ))}
+            </div>
           </div>
         )}
 
@@ -207,7 +209,7 @@ const Quests = () => {
             {/* Quest Chains */}
             {activeChains.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                <h2 className="font-display text-lg font-semibold text-white neon-text flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
                   Quest Chains
                 </h2>
@@ -221,7 +223,7 @@ const Quests = () => {
 
             {activeQuests.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-white">Available Quests</h2>
+                <h2 className="font-display text-lg font-semibold text-white neon-text">Available Quests</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeQuests.map((q: any) => (
                     <QuestCard key={q.id} quest={q} enrollmentCount={(enrollmentCounts as any)[q.id] || 0} />
@@ -232,7 +234,7 @@ const Quests = () => {
 
             {completedQuests.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-white flex items-center gap-2">
+                <h2 className="font-display text-lg font-semibold text-white neon-text flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-400" />
                   Completed
                 </h2>
