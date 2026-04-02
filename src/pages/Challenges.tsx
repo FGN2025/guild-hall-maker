@@ -169,7 +169,7 @@ const Challenges = () => {
               <Badge
                 key={name}
                 variant={gameFilter === name ? "default" : "outline"}
-                className="cursor-pointer"
+                className="cursor-pointer text-white"
                 onClick={() => setGameFilter(name === gameFilter ? null : name)}
               >
                 {name}
