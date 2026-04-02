@@ -60,6 +60,7 @@ const ChallengeDetail = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [unenrollConfirmOpen, setUnenrollConfirmOpen] = useState(false);
   const { copying, copyToQuest } = useCopyContent();
 
   // Fetch completion record to check academy sync status
