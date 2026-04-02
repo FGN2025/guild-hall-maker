@@ -213,6 +213,37 @@ const Navbar = () => {
             })}
             {activeNavItems.map((item) => {
               const active = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                    active
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </Link>
+              );
+            })}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md font-heading font-medium tracking-wide transition-all ${
+                  location.pathname.startsWith("/admin")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <ShieldCheck className="h-5 w-5" />
+                Admin
+              </Link>
+            )}
+            {(isModerator || isAdmin) && (
               <Link
                 to="/moderator"
                 onClick={() => setMobileOpen(false)}
