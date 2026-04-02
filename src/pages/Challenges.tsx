@@ -160,7 +160,7 @@ const Challenges = () => {
           <div className="flex flex-wrap gap-2">
             <Badge
               variant={gameFilter === null ? "default" : "outline"}
-              className="cursor-pointer"
+              className="cursor-pointer text-foreground font-semibold"
               onClick={() => setGameFilter(null)}
             >
               All Games
@@ -169,7 +169,7 @@ const Challenges = () => {
               <Badge
                 key={name}
                 variant={gameFilter === name ? "default" : "outline"}
-                className="cursor-pointer text-white"
+                className="cursor-pointer text-foreground font-semibold"
                 onClick={() => setGameFilter(name === gameFilter ? null : name)}
               >
                 {name}
