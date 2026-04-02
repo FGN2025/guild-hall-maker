@@ -41,26 +41,51 @@ const DefForm = ({
   onSubmit: (data: Partial<AchievementDefinition>) => void;
   onClose: () => void;
 }) => {
+  const existingCriteria = initial?.auto_criteria as any;
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [icon, setIcon] = useState(initial?.icon ?? "trophy");
   const [tier, setTier] = useState(initial?.tier ?? "bronze");
-  const [category, setCategory] = useState(initial?.category ?? "custom");
+  const [category, setCategory] = useState(
+    existingCriteria?.type === "steam_achievement" ? "steam" : (initial?.category ?? "custom")
+  );
   const [maxProgress, setMaxProgress] = useState<string>(initial?.max_progress?.toString() ?? "");
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
   const [order, setOrder] = useState<string>(initial?.display_order?.toString() ?? "0");
 
+  // Steam-specific fields
+  const [steamGameId, setSteamGameId] = useState<string>(existingCriteria?.steam_app_id ?? "");
+  const [steamAchName, setSteamAchName] = useState<string>(existingCriteria?.achievement_name ?? "");
+
+  // Fetch games with steam_app_id for the dropdown
+  const { data: steamGames } = useQuery({
+    queryKey: ["games-with-steam-id"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("games")
+        .select("steam_app_id, name")
+        .not("steam_app_id", "is", null)
+        .order("name");
+      return data ?? [];
+    },
+  });
+
   const handle = () => {
+    const autoCriteria = category === "steam"
+      ? { type: "steam_achievement", steam_app_id: steamGameId, achievement_name: steamAchName }
+      : null;
+
     onSubmit({
       ...(initial ? { id: initial.id } : {}),
       name,
       description,
       icon,
       tier,
-      category,
+      category: category === "steam" ? "milestone" : category,
       max_progress: maxProgress ? parseInt(maxProgress) : null,
       is_active: isActive,
       display_order: parseInt(order) || 0,
+      ...(autoCriteria ? { auto_criteria: autoCriteria } : {}),
     });
     onClose();
   };
