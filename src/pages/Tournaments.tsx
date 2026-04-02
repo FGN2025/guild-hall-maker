@@ -116,8 +116,8 @@ const Tournaments = () => {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-card border-border font-body">
-                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectTrigger className="w-full sm:w-[180px] bg-card/70 border-white/30 text-white font-body">
+                <Filter className="h-4 w-4 mr-2 text-white/70" />
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
