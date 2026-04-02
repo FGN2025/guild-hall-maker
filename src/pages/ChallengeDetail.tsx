@@ -383,6 +383,17 @@ const ChallengeDetail = () => {
                   </Button>
                 )}
 
+                {canUnenroll && (
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => setUnenrollConfirmOpen(true)}
+                    disabled={unenrolling}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {unenrolling ? "Unenrolling..." : "Unenroll"}
+                  </Button>
+
                 {enrollment?.status === "completed" && (
                   <div className="text-center py-2 space-y-3">
                     <div>
