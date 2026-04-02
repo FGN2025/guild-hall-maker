@@ -158,7 +158,6 @@ const DefForm = ({
         </div>
       )}
       <div className="grid grid-cols-2 gap-4">
-      <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Display Order</Label>
           <Input type="number" value={order} onChange={(e) => setOrder(e.target.value)} />
