@@ -160,7 +160,7 @@ const Challenges = () => {
           <div className="flex flex-wrap gap-2">
             <Badge
               variant={gameFilter === null ? "default" : "outline"}
-              className="cursor-pointer text-foreground font-semibold"
+              className={`cursor-pointer font-semibold ${gameFilter === null ? "" : "text-white bg-card/70 border-white/30 hover:bg-card/90"}`}
               onClick={() => setGameFilter(null)}
             >
               All Games
@@ -169,7 +169,7 @@ const Challenges = () => {
               <Badge
                 key={name}
                 variant={gameFilter === name ? "default" : "outline"}
-                className="cursor-pointer text-foreground font-semibold"
+                className={`cursor-pointer font-semibold ${gameFilter === name ? "" : "text-white bg-card/70 border-white/30 hover:bg-card/90"}`}
                 onClick={() => setGameFilter(name === gameFilter ? null : name)}
               >
                 {name}
