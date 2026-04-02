@@ -1,28 +1,38 @@
 
 
-## Add Unenroll Function to Challenges
+## Fix Calendar Image Visibility
 
-### Changes
+### Problem
+The promotional image below the calendar is barely visible against the dark background — same issue as the filter badges earlier. It needs a contrasting container to stand out.
 
-**1. `src/hooks/useChallengeEnrollment.ts`** — Add an `unenroll` mutation:
-- Delete the enrollment row from `challenge_enrollments` where `id = enrollment.id`
-- Also delete all associated `challenge_evidence` rows for that enrollment first (cascade may handle this, but explicit is safer)
-- Invalidate `challenge-enrollment` and `challenge-evidence` queries on success
-- Export `unenroll` and `unenrolling` from the hook
+### Solution
+Wrap the image in a frosted-glass container with a dark semi-opaque background, blur, and a visible border — matching the pattern used for filter sections.
 
-**2. `src/pages/ChallengeDetail.tsx`** — Add unenroll button + confirmation dialog:
-- Destructure `unenroll` and `unenrolling` from the hook
-- Show an "Unenroll" button in the sidebar when the user is enrolled but NOT completed/submitted (i.e. status is `enrolled`, `in_progress`, or `rejected`)
-- Wrap in a confirmation `AlertDialog` warning that evidence will be lost
-- On confirm, call `unenroll()` and navigate stays on the page (enrollment clears, enroll button reappears)
+### Change — `src/pages/TournamentCalendar.tsx` (lines 169–175)
 
-### Unenroll eligibility
-Users can unenroll when status is `enrolled`, `in_progress`, or `rejected`. Users who have `submitted` or `completed` cannot unenroll — their work is already under/past review.
+Replace the current plain `div` wrapper with a styled container:
+
+```tsx
+<div className="mt-8 flex justify-center">
+  <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl p-4">
+    <img
+      src="/images/April_2026_calendar_square.png"
+      alt="FGN Tournaments - April 2026"
+      className="w-full max-w-2xl rounded-lg"
+    />
+  </div>
+</div>
+```
+
+This adds:
+- `bg-black/50` — dark overlay behind the image for contrast
+- `backdrop-blur-sm` — frosted glass effect
+- `border border-white/20` — visible white border
+- `p-4` — padding so the image doesn't touch edges
 
 ### Files changed
 
 | File | Change |
 |------|--------|
-| `src/hooks/useChallengeEnrollment.ts` | Add `unenrollMutation` that deletes evidence then enrollment row |
-| `src/pages/ChallengeDetail.tsx` | Add unenroll button with confirmation dialog in sidebar |
+| `src/pages/TournamentCalendar.tsx` | Wrap image in frosted-glass container for visibility |
 
