@@ -496,6 +496,26 @@ const ChallengeDetail = () => {
           </AlertDialog>
         </>
       )}
+
+      <AlertDialog open={unenrollConfirmOpen} onOpenChange={setUnenrollConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unenroll from Challenge</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unenroll? All submitted evidence will be permanently removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => unenroll()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {unenrolling ? "Unenrolling..." : "Unenroll"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
