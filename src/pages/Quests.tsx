@@ -221,7 +221,7 @@ const Quests = () => {
 
             {activeQuests.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-foreground">Available Quests</h2>
+                <h2 className="font-display text-lg font-semibold text-white">Available Quests</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeQuests.map((q: any) => (
                     <QuestCard key={q.id} quest={q} enrollmentCount={(enrollmentCounts as any)[q.id] || 0} />
