@@ -107,7 +107,7 @@ const Tournaments = () => {
           {/* Search / Filter bar */}
           <div className="flex flex-col sm:flex-row gap-3 mt-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
               <Input
                 placeholder="Search by name or game..."
                 value={search}
@@ -116,8 +116,8 @@ const Tournaments = () => {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-card border-border font-body">
-                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectTrigger className="w-full sm:w-[180px] bg-card/70 border-white/30 text-white font-body">
+                <Filter className="h-4 w-4 mr-2 text-white/70" />
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
@@ -129,8 +129,8 @@ const Tournaments = () => {
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-[200px] bg-card border-border font-body">
-                <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectTrigger className="w-full sm:w-[200px] bg-card/70 border-white/30 text-white font-body">
+                <ArrowUpDown className="h-4 w-4 mr-2 text-white/70" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>

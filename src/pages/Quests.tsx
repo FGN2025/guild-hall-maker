@@ -166,11 +166,11 @@ const Quests = () => {
 
         {gameNames.length > 1 && (
           <div className="flex flex-wrap gap-2">
-            <Badge variant={gameFilter === null ? "default" : "outline"} className="cursor-pointer" onClick={() => setGameFilter(null)}>
+            <Badge variant={gameFilter === null ? "default" : "outline"} className={`cursor-pointer font-semibold ${gameFilter === null ? "" : "text-white bg-card/70 border-white/30 hover:bg-card/90"}`} onClick={() => setGameFilter(null)}>
               All Games
             </Badge>
             {gameNames.map((name) => (
-              <Badge key={name} variant={gameFilter === name ? "default" : "outline"} className="cursor-pointer" onClick={() => setGameFilter(name === gameFilter ? null : name)}>
+              <Badge key={name} variant={gameFilter === name ? "default" : "outline"} className={`cursor-pointer font-semibold ${gameFilter === name ? "" : "text-white bg-card/70 border-white/30 hover:bg-card/90"}`} onClick={() => setGameFilter(name === gameFilter ? null : name)}>
                 {name}
               </Badge>
             ))}
@@ -221,7 +221,7 @@ const Quests = () => {
 
             {activeQuests.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-foreground">Available Quests</h2>
+                <h2 className="font-display text-lg font-semibold text-white">Available Quests</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeQuests.map((q: any) => (
                     <QuestCard key={q.id} quest={q} enrollmentCount={(enrollmentCounts as any)[q.id] || 0} />
@@ -232,7 +232,7 @@ const Quests = () => {
 
             {completedQuests.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                <h2 className="font-display text-lg font-semibold text-white flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-400" />
                   Completed
                 </h2>
