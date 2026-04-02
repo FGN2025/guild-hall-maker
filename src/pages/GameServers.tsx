@@ -23,7 +23,7 @@ function StatusDot({ server }: { server: GameServer }) {
 }
 
 function PlayerCount({ server }: { server: GameServer }) {
-  const hasPanelConfig = server.panel_type === "pterodactyl";
+  const hasPanelConfig = server.has_panel === true || server.panel_type === "pterodactyl";
   const { data } = useServerStatus(server.id, hasPanelConfig);
 
   if (data?.current_players != null) {
