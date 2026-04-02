@@ -133,7 +133,7 @@ const Challenges = () => {
             {challenges.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground font-body">Overall Progress</span>
+                  <span className="text-white font-body">Overall Progress</span>
                   <span className="font-mono text-foreground">{completedIds.size} / {challenges.length}</span>
                 </div>
                 <Progress
