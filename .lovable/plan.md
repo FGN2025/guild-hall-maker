@@ -1,33 +1,61 @@
 
+## Make page filters bright white and readable
 
-## Add "Compete" Dropdown to Navbar
+### What’s causing it
+The current filter UI is using theme colors intended for normal surfaces, not for text sitting directly on top of a busy dark/cyan background image.
 
-### Problem
-Tournaments, Challenges, and Quests occupy three separate nav slots. The user wants them grouped into a single "Compete" dropdown in the navbar, while each page retains its own search/filter controls.
+- `src/components/ui/badge.tsx`
+  - `outline` badges only use `text-foreground`
+  - they do not add a stronger background, border glow, or white text treatment
+- `src/pages/Challenges.tsx`
+  - the game filter badges use `variant="outline"` with `text-foreground`
+- `src/pages/Quests.tsx`
+  - the game filter badges use the default badge styles, so inactive items still inherit the weaker outline text treatment
+- `src/pages/Tournaments.tsx`
+  - the filter controls use muted icon/text styling inside `SelectTrigger` / search UI, so they also read dim against the dark backdrop
 
-### Changes — `src/components/Navbar.tsx`
+### Why it looks grey
+`text-foreground` in this theme is a soft off-white, and `muted-foreground` is intentionally grey. On top of the hex/cyber background, that combination loses contrast. The issue is not the data or filter logic — it is purely the visual styling.
 
-1. **Import** `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem` from `@/components/ui/dropdown-menu` and `ChevronDown` from lucide-react
+### Implementation plan
 
-2. **Define `competeItems`** array:
-   - `{ to: "/tournaments", label: "Tournaments", icon: Trophy }`
-   - `{ to: "/challenges", label: "Challenges", icon: Target }`
-   - `{ to: "/quests", label: "Quests", icon: Compass }`
+1. **Create a stronger reusable filter appearance**
+   - Update the filter chip styling so inactive filters are:
+     - `text-white`
+     - more visible border (`border-white/30` or theme-equivalent)
+     - subtle dark/glass background (`bg-background/60` or `bg-card/70`)
+   - Keep active filters more prominent with primary accent fill/glow
 
-3. **Remove those three entries** from `navItems`, `authNavItems`, and `publicNavItems`
+2. **Fix Challenges page filters**
+   - In `src/pages/Challenges.tsx`, replace the current badge classes with a dedicated high-contrast filter-chip class set
+   - Keep the existing filtering logic exactly as-is
 
-4. **Desktop nav**: Before the remaining flat links, render a `DropdownMenu`:
-   - Trigger: styled like existing nav links, showing `Swords` icon + "Compete" + `ChevronDown`
-   - Active highlight when pathname starts with `/tournaments`, `/challenges`, or `/quests`
-   - Content: three `DropdownMenuItem` entries, each wrapping a `Link` with icon + label
+3. **Fix Quests page filters**
+   - Apply the same high-contrast chip treatment in `src/pages/Quests.tsx`
+   - Also align section headings/progress labels with the stronger readable styling already expected on the Challenges page
 
-5. **Mobile nav**: Replace the three separate links with a "Compete" group header (`text-xs uppercase text-muted-foreground`) and the three links indented with `pl-8`, keeping click-to-close behavior
+4. **Improve Tournaments filter controls**
+   - In `src/pages/Tournaments.tsx`, make the visible filter text/icons bright white where appropriate:
+     - search icon
+     - selected values in dropdown triggers
+     - any muted labels in the filter row
+   - Keep borders/backgrounds strong enough to separate controls from the page background
 
-### Files Changed
+5. **Optional shared cleanup**
+   - If the same chip pattern will be reused, extend `Badge` with a dedicated filter-friendly variant instead of repeating page-level classes
+   - Otherwise, keep the fix page-local to avoid unintended global badge changes elsewhere in admin/tenant screens
 
-| File | Change |
-|------|--------|
-| `src/components/Navbar.tsx` | Group 3 items into "Compete" dropdown on desktop; grouped section on mobile |
+### Files to update
+- `src/pages/Challenges.tsx`
+- `src/pages/Quests.tsx`
+- `src/pages/Tournaments.tsx`
+- possibly `src/components/ui/badge.tsx` if we make the filter style reusable
 
-No changes to Tournaments, Challenges, or Quests pages — their filters remain as-is.
-
+### Technical notes
+- Avoid relying on plain `text-foreground` for chips over image-heavy headers/backgrounds
+- Prefer a combination of:
+  - `text-white`
+  - semi-opaque dark background
+  - visible border
+  - optional `neon-text` only for headings, not small filter labels
+- No backend or data changes are needed
