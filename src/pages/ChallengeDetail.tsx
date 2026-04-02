@@ -16,7 +16,7 @@ import EvidenceUpload from "@/components/challenges/EvidenceUpload";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
-import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Copy, ExternalLink, Play } from "lucide-react";
+import { ArrowLeft, Clock, Users, Signal, Gamepad2, CheckCircle2, Send, Image as ImageIcon, Trash2, Pencil, Copy, ExternalLink, Play, LogOut } from "lucide-react";
 import { useCopyContent } from "@/hooks/useCopyContent";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,7 @@ const ChallengeDetail = () => {
     submitEvidence, submittingEvidence,
     submitForReview, submittingForReview,
     deleteEvidence, deletingEvidence,
+    unenroll, unenrolling,
   } = useChallengeEnrollment(id);
 
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -59,6 +60,7 @@ const ChallengeDetail = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [unenrollConfirmOpen, setUnenrollConfirmOpen] = useState(false);
   const { copying, copyToQuest } = useCopyContent();
 
   // Fetch completion record to check academy sync status
@@ -117,6 +119,7 @@ const ChallengeDetail = () => {
   const status = enrollment?.status ? statusLabel[enrollment.status] : null;
   const canUpload = enrollment && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
   const canSubmit = enrollment && evidence.length > 0 && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
+  const canUnenroll = enrollment && ["enrolled", "in_progress", "rejected"].includes(enrollment.status);
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
 
@@ -380,6 +383,17 @@ const ChallengeDetail = () => {
                   </Button>
                 )}
 
+                {canUnenroll && (
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => setUnenrollConfirmOpen(true)}
+                    disabled={unenrolling}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {unenrolling ? "Unenrolling..." : "Unenroll"}
+                  </Button>
+                )}
                 {enrollment?.status === "completed" && (
                   <div className="text-center py-2 space-y-3">
                     <div>
@@ -482,6 +496,26 @@ const ChallengeDetail = () => {
           </AlertDialog>
         </>
       )}
+
+      <AlertDialog open={unenrollConfirmOpen} onOpenChange={setUnenrollConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unenroll from Challenge</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unenroll? All submitted evidence will be permanently removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => unenroll()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {unenrolling ? "Unenrolling..." : "Unenroll"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

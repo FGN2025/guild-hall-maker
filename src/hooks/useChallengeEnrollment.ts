@@ -104,6 +104,30 @@ export const useChallengeEnrollment = (challengeId: string | undefined) => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const unenrollMutation = useMutation({
+    mutationFn: async () => {
+      if (!enrollment) throw new Error("Not enrolled");
+      // Delete evidence first, then enrollment
+      const { error: evError } = await supabase
+        .from("challenge_evidence")
+        .delete()
+        .eq("enrollment_id", enrollment.id);
+      if (evError) throw evError;
+      const { error } = await supabase
+        .from("challenge_enrollments")
+        .delete()
+        .eq("id", enrollment.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["challenge-enrollment", challengeId] });
+      queryClient.invalidateQueries({ queryKey: ["challenge-evidence"] });
+      queryClient.invalidateQueries({ queryKey: ["challenge-enrollment-counts"] });
+      toast.success("Unenrolled from challenge");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return {
     enrollment,
     evidence,
@@ -116,5 +140,7 @@ export const useChallengeEnrollment = (challengeId: string | undefined) => {
     submittingForReview: submitForReviewMutation.isPending,
     deleteEvidence: deleteEvidenceMutation.mutate,
     deletingEvidence: deleteEvidenceMutation.isPending,
+    unenroll: unenrollMutation.mutate,
+    unenrolling: unenrollMutation.isPending,
   };
 };
