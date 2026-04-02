@@ -129,6 +129,7 @@ const DefForm = ({
             <SelectContent>
               <SelectItem value="milestone">Milestone (auto)</SelectItem>
               <SelectItem value="custom">Custom (manual)</SelectItem>
+              <SelectItem value="steam">Steam Achievement (auto)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -136,6 +137,26 @@ const DefForm = ({
           <Label>Max Progress</Label>
           <Input type="number" value={maxProgress} onChange={(e) => setMaxProgress(e.target.value)} placeholder="Optional" />
         </div>
+      </div>
+      {category === "steam" && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Game</Label>
+            <Select value={steamGameId} onValueChange={setSteamGameId}>
+              <SelectTrigger><SelectValue placeholder="Select game…" /></SelectTrigger>
+              <SelectContent>
+                {steamGames?.map((g) => (
+                  <SelectItem key={g.steam_app_id!} value={g.steam_app_id!}>{g.name} ({g.steam_app_id})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Steam Achievement API Name</Label>
+            <Input value={steamAchName} onChange={(e) => setSteamAchName(e.target.value)} placeholder="e.g. ACH_WIN_10" />
+          </div>
+        </div>
+      )
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
