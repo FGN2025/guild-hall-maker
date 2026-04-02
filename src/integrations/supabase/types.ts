@@ -3788,6 +3788,33 @@ export type Database = {
       }
     }
     Views: {
+      ecosystem_webhooks_safe: {
+        Row: {
+          created_at: string | null
+          event_type: string | null
+          id: string | null
+          is_active: boolean | null
+          target_app: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          target_app?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          target_app?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       profiles_public: {
         Row: {
           avatar_url: string | null

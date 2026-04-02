@@ -14,6 +14,33 @@ function json(body: unknown, status = 200) {
   });
 }
 
+/** Validate that the given api_url is in the admin_notebook_connections allowlist or matches the env default */
+async function validateApiUrl(apiUrl: string, defaultUrl: string | undefined): Promise<boolean> {
+  // If using the configured default, allow it
+  if (defaultUrl && apiUrl.replace(/\/$/, "") === defaultUrl.replace(/\/$/, "")) {
+    return true;
+  }
+
+  // Check against the allowlist in the database
+  const adminClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  const { data } = await adminClient
+    .from("admin_notebook_connections")
+    .select("api_url")
+    .eq("is_active", true);
+
+  if (!data) return false;
+
+  const normalizedInput = apiUrl.replace(/\/$/, "").toLowerCase();
+  return data.some(
+    (row: { api_url: string }) => row.api_url.replace(/\/$/, "").toLowerCase() === normalizedInput
+  );
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -44,14 +71,26 @@ serve(async (req) => {
 
     const url = new URL(req.url);
 
+    // Helper to resolve and validate the api_url
+    async function resolveBaseUrl(rawUrl: string | null): Promise<string | null> {
+      const target = rawUrl || NOTEBOOK_URL!;
+      const isAllowed = await validateApiUrl(target, NOTEBOOK_URL);
+      if (!isAllowed) return null;
+      return target.replace(/\/$/, "");
+    }
+
     // --- GET actions ---
     if (req.method === "GET") {
       const action = url.searchParams.get("action");
 
+      const baseUrl = await resolveBaseUrl(url.searchParams.get("api_url"));
+      if (baseUrl === null) {
+        return json({ error: "Provided api_url is not in the allowed list" }, 403);
+      }
+
       if (action === "health") {
-        const apiUrl = url.searchParams.get("api_url") || NOTEBOOK_URL;
         try {
-          const r = await fetch(`${apiUrl.replace(/\/$/, "")}/health`, { headers });
+          const r = await fetch(`${baseUrl}/health`, { headers });
           const text = await r.text();
           return json({ status: r.ok ? "healthy" : "error", code: r.status, body: text });
         } catch (e) {
@@ -60,8 +99,7 @@ serve(async (req) => {
       }
 
       if (action === "notebooks") {
-        const apiUrl = url.searchParams.get("api_url") || NOTEBOOK_URL;
-        const r = await fetch(`${apiUrl.replace(/\/$/, "")}/api/notebooks`, { headers });
+        const r = await fetch(`${baseUrl}/api/notebooks`, { headers });
         if (!r.ok) {
           const t = await r.text();
           return json({ error: `Upstream error ${r.status}`, detail: t }, r.status);
@@ -77,7 +115,11 @@ serve(async (req) => {
     if (req.method === "POST") {
       const body = await req.json();
       const { action, api_url } = body;
-      const baseUrl = (api_url || NOTEBOOK_URL).replace(/\/$/, "");
+
+      const baseUrl = await resolveBaseUrl(api_url || null);
+      if (baseUrl === null) {
+        return json({ error: "Provided api_url is not in the allowed list" }, 403);
+      }
 
       if (action === "health") {
         try {
@@ -140,6 +182,6 @@ serve(async (req) => {
     return json({ error: "Method not allowed" }, 405);
   } catch (e) {
     console.error("notebook-proxy error:", e);
-    return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return json({ error: "Internal server error" }, 500);
   }
 });

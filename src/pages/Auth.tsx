@@ -177,7 +177,7 @@ const Auth = () => {
           // Check if user is already confirmed via backend lookup
           try {
             const { data: confirmData } = await supabase.functions.invoke("check-users-confirmed", {
-              body: { user_ids: [data.user!.id] },
+              body: { user_ids: [data.user!.id], mode: "self_check" },
             });
             const isAlreadyConfirmed = confirmData?.confirmed?.[data.user!.id];
             if (isAlreadyConfirmed) {
