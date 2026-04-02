@@ -1,36 +1,17 @@
 
 
-## Fix Mutable Search Path on `compute_quest_rank`
+## Make Filters and Section Titles More Visible
 
 ### Problem
-The `compute_quest_rank(xp integer)` function is missing an explicit `SET search_path` directive, which the security scanner flags as a "warn" level issue.
+The "Available Challenges" / "Completed" section headings and the game filter badges use muted/grey text that blends into the dark background, making them hard to read.
 
-### Fix — Single Migration
+### Changes
 
-Recreate the function with `SET search_path TO 'public'` added:
+**File: `src/pages/Challenges.tsx`**
 
-```sql
-CREATE OR REPLACE FUNCTION public.compute_quest_rank(xp integer)
-  RETURNS text
-  LANGUAGE sql
-  IMMUTABLE
-  SET search_path TO 'public'
-AS $$
-  SELECT CASE
-    WHEN xp >= 1000 THEN 'master'
-    WHEN xp >= 600  THEN 'expert'
-    WHEN xp >= 300  THEN 'journeyman'
-    WHEN xp >= 100  THEN 'apprentice'
-    ELSE 'novice'
-  END;
-$$;
-```
+1. **Section headings** — Change "Available Challenges" and "Completed" `h2` elements from `text-foreground` to `text-white` with added `text-xl` for better visibility
+2. **Game filter badges** — Add `text-white` to the outline-variant badges so unselected filters are bright white instead of grey
+3. **"Overall Progress" label** — Change from `text-muted-foreground` to `text-white` to match
 
-No code file changes needed — this is a database-only fix.
-
-### Files Changed
-
-| File | Change |
-|------|--------|
-| New migration | `ALTER` `compute_quest_rank` to include `SET search_path TO 'public'` |
+These are purely cosmetic text color changes — no logic or structural modifications.
 
