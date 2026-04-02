@@ -165,6 +165,14 @@ const TournamentCalendar = () => {
           </div>
         </div>
       )}
+
+      <div className="mt-8 flex justify-center">
+        <video
+          src="/videos/April_2026_calendar_square.mp4"
+          controls
+          className="w-full max-w-2xl rounded-xl border border-border/50"
+        />
+      </div>
     </div>
   );
 };
