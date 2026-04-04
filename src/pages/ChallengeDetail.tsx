@@ -160,11 +160,11 @@ const ChallengeDetail = () => {
 
         {/* Admin action bar */}
         {(isAdmin || isModerator) && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditOpen(true)}>
+          <div className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5 text-white border-white/40 hover:bg-white/10" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Edit Challenge
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copyToQuest(id!)} disabled={copying}>
+            <Button variant="outline" size="sm" className="gap-1.5 text-white border-white/40 hover:bg-white/10" onClick={() => copyToQuest(id!)} disabled={copying}>
               <Copy className="h-4 w-4" /> {copying ? "Copying..." : "Copy to Quest"}
             </Button>
             <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setDeleteConfirmOpen(true)}>
