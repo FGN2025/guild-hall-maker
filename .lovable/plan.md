@@ -1,25 +1,38 @@
 
 
-## Fix Tournaments Page Crash for Unauthenticated Users
+## Fix Admin Action Bar Visibility on Challenge Detail Page
 
-### Root Cause
-`src/pages/Tournaments.tsx` imports and renders `<SidebarTrigger />` (line 6, 90). This component internally calls `useSidebar()`, which requires a `SidebarProvider` ancestor. When an unauthenticated user visits `/tournaments`, `ConditionalLayout` renders `PublicLayout` (navbar only, no sidebar provider), causing the crash.
+### Problem
+The "Edit Challenge", "Copy to Quest", and "Delete" buttons on the Challenge Detail page are barely legible against the dark background — same visibility issue fixed previously on filter sections and the calendar image.
 
-Challenges and Quests pages likely don't use `SidebarTrigger`, which is why they work fine for guests.
+### Fix — `src/pages/ChallengeDetail.tsx` (lines 162–174)
 
-### Fix — `src/pages/Tournaments.tsx`
+Wrap the admin action bar in a frosted-glass container matching the established pattern:
 
-Conditionally render `SidebarTrigger` only when the user is authenticated:
+```tsx
+{(isAdmin || isModerator) && (
+  <div className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2">
+    <Button variant="outline" size="sm" className="gap-1.5 text-white border-white/40 hover:bg-white/10">
+      <Pencil className="h-4 w-4" /> Edit Challenge
+    </Button>
+    <Button variant="outline" size="sm" className="gap-1.5 text-white border-white/40 hover:bg-white/10" onClick={() => copyToQuest(id!)} disabled={copying}>
+      <Copy className="h-4 w-4" /> {copying ? "Copying..." : "Copy to Quest"}
+    </Button>
+    <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setDeleteConfirmOpen(true)}>
+      <Trash2 className="h-4 w-4" /> Delete
+    </Button>
+  </div>
+)}
+```
 
-1. The `user` variable from `useAuth()` is already available (line 27)
-2. Replace the unconditional `<SidebarTrigger />` on line 90 with `{user && <SidebarTrigger />}`
-3. Remove the import if no other usage exists (it's only used on line 90)
-
-This matches how Challenges and Quests handle the same scenario — they don't render sidebar controls for guests.
+Changes:
+- Outer container gets `bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl` for the frosted-glass look
+- Outline buttons get `text-white border-white/40 hover:bg-white/10` for bright legible text and borders
+- Destructive button stays as-is (already high contrast red)
 
 ### Files changed
 
 | File | Change |
 |------|--------|
-| `src/pages/Tournaments.tsx` | Wrap `SidebarTrigger` in `{user && ...}` guard |
+| `src/pages/ChallengeDetail.tsx` | Wrap admin action bar in frosted-glass container, brighten button text/borders |
 
