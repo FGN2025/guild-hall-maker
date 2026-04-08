@@ -130,6 +130,11 @@ const AdminLegacyUsers = () => {
             <Button onClick={handleBulkMigrate} disabled={migrating} variant="default">
               {migrating ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Migrating...</> : "Migrate All Legacy Users"}
             </Button>
+            {migrationLog.length > 0 && (
+              <div className="mt-4 rounded-md border bg-muted/30 p-3 max-h-48 overflow-auto text-xs font-mono space-y-1">
+                {migrationLog.map((line, i) => <div key={i}>{line}</div>)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
