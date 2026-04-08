@@ -107,19 +107,6 @@ Deno.serve(async (req) => {
       for (const legacy of batch) {
         const em = legacy.email.trim().toLowerCase();
         try {
-          // Check if auth user already exists with this email
-          const { data: existingUsers } = await adminClient.auth.admin.listUsers({
-            perPage: 1,
-            page: 1,
-          });
-
-          // Use admin API to look up by email
-          const { data: lookupData } = await adminClient
-            .from("profiles")
-            .select("user_id")
-            .ilike("display_name", em) // won't match, just need a way to check
-            .limit(0);
-
           // Try creating the user — if email exists, it'll fail and we auto-match
           const randomPassword = crypto.randomUUID() + "!Aa1";
 
