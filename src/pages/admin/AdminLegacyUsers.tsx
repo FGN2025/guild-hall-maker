@@ -31,7 +31,8 @@ function parseCSV(text: string): Record<string, string>[] {
 
 const AdminLegacyUsers = () => {
   const [importing, setImporting] = useState(false);
-  const [migrating, setMigrating] = useState(false);
+  const [migrating, setMigrating] = false);
+  const [migrationLog, setMigrationLog] = useState<string[]>([]);
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
   const queryClient = useQueryClient();
 
