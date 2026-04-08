@@ -31,6 +31,7 @@ function parseCSV(text: string): Record<string, string>[] {
 
 const AdminLegacyUsers = () => {
   const [importing, setImporting] = useState(false);
+  const [migrating, setMigrating] = useState(false);
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
   const queryClient = useQueryClient();
 
@@ -68,10 +69,43 @@ const AdminLegacyUsers = () => {
     }
   };
 
+  const handleBulkMigrate = async () => {
+    if (!confirm("This will create auth accounts for all unmatched legacy users with emails (~4,400 users). This may take several minutes. Proceed?")) return;
+    setMigrating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bulk-register-legacy-users", {
+        body: { batch_size: 50 },
+      });
+      if (error) throw error;
+      toast.success(`Migration complete: ${data.created} created, ${data.auto_matched} auto-matched, ${data.skipped} skipped.`);
+      if (data.errors?.length) {
+        data.errors.slice(0, 5).forEach((e: string) => toast.error(e));
+      }
+      queryClient.invalidateQueries({ queryKey: ["legacy-users"] });
+      queryClient.invalidateQueries({ queryKey: ["legacy-user-stats"] });
+    } catch (err: any) {
+      toast.error(err.message || "Migration failed");
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-3xl font-display font-bold text-foreground">Legacy Import</h1>
+
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" />Bulk Migrate Legacy Users</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Create auth accounts for all unmatched legacy users with emails. They will be pre-confirmed and can log in using "Forgot Password" to set their new password.
+            </p>
+            <Button onClick={handleBulkMigrate} disabled={migrating} variant="default">
+              {migrating ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Migrating...</> : "Migrate All Legacy Users"}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5" />Import Legacy Users CSV</CardTitle></CardHeader>
