@@ -31,26 +31,29 @@ export const EmailChangeEmail = ({
 }: EmailChangeEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Confirm your new email for FGN</Preview>
+    <Preview>Confirm your new FGN email address</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
           <Img src="https://yrhwzmkenjgiujhofucx.supabase.co/storage/v1/object/public/email-assets/fgn-logo.png" alt="FGN" width="120" height="auto" style={logo} />
         </Section>
-        <Heading style={h1}>Confirm your new email</Heading>
+        <Heading style={h1}>Confirm your email change</Heading>
         <Text style={text}>
           You requested to change your FGN email from{' '}
-          <Link href={`mailto:${email}`} style={link}>{email}</Link> to{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
-        </Text>
-        <Text style={text}>
-          Hit the button below to lock it in:
+          <Link href={`mailto:${email}`} style={link}>
+            {email}
+          </Link>{' '}
+          to{' '}
+          <Link href={`mailto:${newEmail}`} style={link}>
+            {newEmail}
+          </Link>
+          .
         </Text>
         <Button style={button} href={confirmationUrl}>
           Confirm Email Change
         </Button>
         <Text style={footer}>
-          Didn't request this? Secure your account immediately.
+          If you didn't request this change, please secure your account immediately.
         </Text>
       </Container>
     </Body>

@@ -29,7 +29,7 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>You've been invited to FGN</Preview>
+    <Preview>You've been invited to join FGN</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
@@ -37,17 +37,17 @@ export const InviteEmail = ({
         </Section>
         <Heading style={h1}>You've been invited</Heading>
         <Text style={text}>
-          Someone invited you to join{' '}
+          You've been invited to join{' '}
           <Link href={siteUrl} style={link}>
             <strong>FGN — Fibre Gaming Network</strong>
           </Link>
-          . Accept the invite below to create your account and start competing.
+          . Accept below to create your account and start competing.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Accept &amp; Join
+          Accept Invitation
         </Button>
         <Text style={footer}>
-          Wasn't expecting this? You can safely ignore this email.
+          If you weren't expecting this invitation, you can safely ignore this email.
         </Text>
       </Container>
     </Body>

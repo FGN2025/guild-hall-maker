@@ -93,3 +93,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.bulk-register-legacy-users]
     verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
