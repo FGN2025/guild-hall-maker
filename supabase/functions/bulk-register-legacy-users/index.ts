@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const batchSize = body.batch_size ?? 100;
     const dryRun = body.dry_run ?? false;
+    const maxCount = body.max_count ?? 0; // 0 = process all
 
     // Fetch all unmatched legacy users with emails, deduplicated by email
     const allLegacy: any[] = [];
