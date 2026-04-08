@@ -1,50 +1,40 @@
 
 
-## Fix Password Reset Emails — Sender Domain Mismatch
+## Fix Password Reset Email Delivery
 
 ### Root Cause
 
-The password reset emails are **not being delivered at all**. The edge function logs confirm every attempt fails with:
+The auth-email-hook uses the **old direct-send pattern** (`sendLovableEmail` + `callback_url`). The email API has migrated to a queue-based response format — it now returns `{"success":true, "status":"queued", "workflow_id":"..."}` instead of `{"message_id":"..."}`. The hook checks for `message_id`, doesn't find it, and returns a **502 error** to Supabase Auth.
 
-```
-403 {"type":"no_matching_sender","message":"No sender domain matches the requested sender domain"}
-```
+This causes Supabase Auth to **retry the webhook 5+ times** for every single password reset request (visible in logs). The email may or may not eventually deliver from the queue, but the retries create duplicate sends and token confusion — leading to the `otp_expired` error the user saw.
 
-The `auth-email-hook` has `SENDER_DOMAIN = "fgn.gg"` (line 39), but the verified email domain is `notify.fgn.gg`. The email API rejects every send because `fgn.gg` is not a verified sender domain — only the subdomain `notify.fgn.gg` is.
+Additionally, the email queue infrastructure (`enqueue_email` RPC, pgmq queues, `process-email-queue` cron) does not exist in the database, so upgrading to the queue pattern requires setting that up first.
 
-This affects **all auth emails** — password reset, signup confirmation, magic links, everything.
+### Fix — Upgrade auth-email-hook to Queue-Based Pattern
 
-### Fix
+This is a 3-step process using built-in tooling:
 
-**File: `supabase/functions/auth-email-hook/index.ts`** — Change line 39:
+1. **Set up email queue infrastructure** — Call `setup_email_infra` to create pgmq queues, RPC wrappers, cron job, and supporting tables (`email_send_log`, `email_send_state`, etc.)
 
-```typescript
-// Before
-const SENDER_DOMAIN = "fgn.gg"
+2. **Re-scaffold auth-email-hook** — Call `scaffold_auth_email_templates` with `confirm_overwrite: true` to upgrade the hook from the old `sendLovableEmail` pattern to the new `enqueue_email` RPC pattern. This preserves the existing branded templates (recovery, signup, etc.) while replacing the broken send logic.
 
-// After
-const SENDER_DOMAIN = "notify.fgn.gg"
-```
+3. **Re-apply brand styling** — After scaffolding, re-read each template file and restore the FGN branding (dark header, cyan button, Orbitron font, logo) since the scaffold tool resets templates to defaults.
 
-Then redeploy the edge function.
+4. **Deploy** — Redeploy `auth-email-hook` with the updated code.
 
-### Additional Improvement — Upgrade to Queue-Based Sending
+### What This Fixes
 
-The current auth-email-hook uses the old direct-send pattern (`sendLovableEmail` + `callback_url`). This means failed sends have no retry mechanism — the email is lost. The newer queue-based pattern enqueues emails to pgmq with automatic retries, rate-limit handling, and dead-letter routing.
-
-After fixing the sender domain (the critical fix), I will re-scaffold the auth-email-hook to use the queue pattern, preserve the existing branded templates, and redeploy.
+- Recovery emails will be reliably enqueued and delivered via the queue dispatcher
+- No more false 502 errors causing retry storms
+- Automatic retry on rate-limits or transient failures
+- Dead-letter routing for permanently failed sends
+- The `otp_expired` issue goes away because only one email is sent per request
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `supabase/functions/auth-email-hook/index.ts` | Fix `SENDER_DOMAIN` from `fgn.gg` to `notify.fgn.gg`, then redeploy |
-
-### Impact
-
-This fix unblocks:
-- Password reset for all users (including the ~4,400 legacy users)
-- Signup confirmation emails
-- Magic link emails
-- All other auth emails
+| Database (via setup_email_infra) | Create pgmq queues, email tables, cron job |
+| `supabase/functions/auth-email-hook/index.ts` | Re-scaffold to queue-based pattern |
+| `supabase/functions/_shared/email-templates/*.tsx` | Restore FGN branding after scaffold |
 
