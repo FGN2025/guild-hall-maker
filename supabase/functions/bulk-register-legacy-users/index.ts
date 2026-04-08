@@ -80,7 +80,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const uniqueUsers = Array.from(emailMap.values());
+    let uniqueUsers = Array.from(emailMap.values());
+    if (maxCount > 0) {
+      uniqueUsers = uniqueUsers.slice(0, maxCount);
+    }
 
     if (dryRun) {
       return new Response(JSON.stringify({
