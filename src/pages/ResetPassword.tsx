@@ -15,22 +15,49 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [canReset, setCanReset] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event from the auth state change
+    let settled = false;
+    const grant = () => {
+      if (!settled) {
+        settled = true;
+        setCanReset(true);
+        setChecking(false);
+      }
+    };
+
+    // 1. Check URL hash for recovery markers
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery")) {
+      grant();
+    }
+
+    // 2. Listen for PASSWORD_RECOVERY event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
-        setIsRecovery(true);
+        grant();
       }
     });
 
-    // Also check hash for type=recovery
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      setIsRecovery(true);
-    }
+    // 3. Check if a session already exists (token was already exchanged)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        grant();
+      }
+      // If nothing granted after session check, mark as invalid
+      if (!settled) {
+        // Give a short delay for the auth event to fire
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            setChecking(false);
+          }
+        }, 2000);
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -60,7 +87,22 @@ const ResetPassword = () => {
     setLoading(false);
   };
 
-  if (!isRecovery) {
+  // Still checking — show spinner
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-background grid-bg flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="glass-panel rounded-xl p-8 text-center">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-sm text-muted-foreground">Verifying reset link…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Invalid link
+  if (!canReset) {
     return (
       <div className="min-h-screen bg-background grid-bg flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -83,6 +125,7 @@ const ResetPassword = () => {
     );
   }
 
+  // Valid — show reset form
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
