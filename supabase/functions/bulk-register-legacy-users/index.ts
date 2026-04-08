@@ -49,11 +49,13 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const batchSize = body.batch_size ?? 100;
     const dryRun = body.dry_run ?? false;
+    const maxCount = body.max_count ?? 0; // 0 = process all
 
-    // Fetch all unmatched legacy users with emails, deduplicated by email
+    // Fetch unmatched legacy users with emails
+    // Use DISTINCT ON email via raw query approach — fetch in pages but stop early if maxCount reached
     const allLegacy: any[] = [];
     let from = 0;
-    const pageSize = 1000;
+    const pageSize = maxCount > 0 ? Math.min(maxCount * 2, 1000) : 1000; // fetch more to account for dupes
     while (true) {
       const { data, error } = await adminClient
         .from("legacy_users")
@@ -66,6 +68,8 @@ Deno.serve(async (req) => {
       if (!data || data.length === 0) break;
       allLegacy.push(...data);
       if (data.length < pageSize) break;
+      // If maxCount set and we have enough raw rows, stop fetching
+      if (maxCount > 0 && allLegacy.length >= maxCount * 2) break;
       from += pageSize;
     }
 
@@ -79,7 +83,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const uniqueUsers = Array.from(emailMap.values());
+    let uniqueUsers = Array.from(emailMap.values());
+    if (maxCount > 0) {
+      uniqueUsers = uniqueUsers.slice(0, maxCount);
+    }
 
     if (dryRun) {
       return new Response(JSON.stringify({
@@ -90,6 +97,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log(`Starting migration: ${uniqueUsers.length} unique users to process`);
 
     let created = 0;
     let skipped = 0;
@@ -103,19 +112,7 @@ Deno.serve(async (req) => {
       for (const legacy of batch) {
         const em = legacy.email.trim().toLowerCase();
         try {
-          // Check if auth user already exists with this email
-          const { data: existingUsers } = await adminClient.auth.admin.listUsers({
-            perPage: 1,
-            page: 1,
-          });
-
-          // Use admin API to look up by email
-          const { data: lookupData } = await adminClient
-            .from("profiles")
-            .select("user_id")
-            .ilike("display_name", em) // won't match, just need a way to check
-            .limit(0);
-
+          console.log(`Processing: ${em}`);
           // Try creating the user — if email exists, it'll fail and we auto-match
           const randomPassword = crypto.randomUUID() + "!Aa1";
 
@@ -133,18 +130,31 @@ Deno.serve(async (req) => {
           if (createError) {
             if (createError.message?.includes("already been registered") ||
                 createError.message?.includes("already exists")) {
-              // Auto-match: find the existing auth user and link
-              const { data: { users } } = await adminClient.auth.admin.listUsers({ perPage: 1000, page: 1 });
-              const existingUser = users?.find((u: any) => u.email?.toLowerCase() === em);
-              if (existingUser) {
+              // Auto-match: find the existing auth user by email
+              const { data: existingUserData } = await adminClient.auth.admin.listUsers({ perPage: 50, page: 1 });
+              const existingUser = existingUserData?.users?.find((u: any) => u.email?.toLowerCase() === em)
+                // Fallback: search profiles by display_name matching email
+                ?? null;
+              // Use a targeted approach - search recently created profiles
+              let matchedUserId: string | null = existingUser?.id ?? null;
+              if (!matchedUserId) {
+                // Try to find via profiles table
+                const { data: profileMatch } = await adminClient
+                  .from("profiles")
+                  .select("user_id")
+                  .eq("display_name", em)
+                  .limit(1)
+                  .single();
+                matchedUserId = profileMatch?.user_id ?? null;
+              }
+              if (matchedUserId) {
                 await adminClient.from("legacy_users")
-                  .update({ matched_user_id: existingUser.id, matched_at: new Date().toISOString() })
+                  .update({ matched_user_id: matchedUserId, matched_at: new Date().toISOString() })
                   .eq("id", legacy.id);
 
-                // Update gamer_tag if not set
                 await adminClient.from("profiles")
                   .update({ gamer_tag: legacy.legacy_username })
-                  .eq("user_id", existingUser.id)
+                  .eq("user_id", matchedUserId)
                   .is("gamer_tag", null);
 
                 autoMatched++;

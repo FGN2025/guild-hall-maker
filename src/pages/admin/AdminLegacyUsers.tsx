@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -32,6 +32,7 @@ function parseCSV(text: string): Record<string, string>[] {
 const AdminLegacyUsers = () => {
   const [importing, setImporting] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [migrationLog, setMigrationLog] = useState<string[]>([]);
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
   const queryClient = useQueryClient();
 
@@ -70,21 +71,46 @@ const AdminLegacyUsers = () => {
   };
 
   const handleBulkMigrate = async () => {
-    if (!confirm("This will create auth accounts for all unmatched legacy users with emails (~4,400 users). This may take several minutes. Proceed?")) return;
+    if (!confirm("This will create auth accounts for unmatched legacy users in chunks of 200. Continue?")) return;
     setMigrating(true);
+    setMigrationLog([]);
+    const chunkSize = 200;
+    let totalCreated = 0;
+    let totalMatched = 0;
+    let totalSkipped = 0;
+    let chunk = 1;
+
     try {
-      const { data, error } = await supabase.functions.invoke("bulk-register-legacy-users", {
-        body: { batch_size: 50 },
-      });
-      if (error) throw error;
-      toast.success(`Migration complete: ${data.created} created, ${data.auto_matched} auto-matched, ${data.skipped} skipped.`);
-      if (data.errors?.length) {
-        data.errors.slice(0, 5).forEach((e: string) => toast.error(e));
+      while (true) {
+        setMigrationLog(prev => [...prev, `Processing chunk ${chunk} (${chunkSize} users)...`]);
+        const { data, error } = await supabase.functions.invoke("bulk-register-legacy-users", {
+          body: { batch_size: 50, max_count: chunkSize },
+        });
+        if (error) throw error;
+
+        totalCreated += data.created || 0;
+        totalMatched += data.auto_matched || 0;
+        totalSkipped += data.skipped || 0;
+        const processed = data.total_processed || 0;
+
+        setMigrationLog(prev => [...prev, `Chunk ${chunk}: ${data.created} created, ${data.auto_matched} matched, ${data.skipped} skipped (${processed} processed)`]);
+
+        if (data.errors?.length) {
+          setMigrationLog(prev => [...prev, ...data.errors.slice(0, 3).map((e: string) => `  Error: ${e}`)]);
+        }
+
+        // If fewer than chunkSize were processed, we're done
+        if (processed < chunkSize) break;
+        chunk++;
       }
+
+      toast.success(`Migration complete: ${totalCreated} created, ${totalMatched} auto-matched, ${totalSkipped} skipped.`);
+      setMigrationLog(prev => [...prev, `✅ Done! ${totalCreated} created, ${totalMatched} matched, ${totalSkipped} skipped.`]);
       queryClient.invalidateQueries({ queryKey: ["legacy-users"] });
       queryClient.invalidateQueries({ queryKey: ["legacy-user-stats"] });
     } catch (err: any) {
       toast.error(err.message || "Migration failed");
+      setMigrationLog(prev => [...prev, `❌ Error: ${err.message}`]);
     } finally {
       setMigrating(false);
     }
@@ -104,6 +130,11 @@ const AdminLegacyUsers = () => {
             <Button onClick={handleBulkMigrate} disabled={migrating} variant="default">
               {migrating ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Migrating...</> : "Migrate All Legacy Users"}
             </Button>
+            {migrationLog.length > 0 && (
+              <div className="mt-4 rounded-md border bg-muted/30 p-3 max-h-48 overflow-auto text-xs font-mono space-y-1">
+                {migrationLog.map((line, i) => <div key={i}>{line}</div>)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
