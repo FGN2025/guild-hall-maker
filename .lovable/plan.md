@@ -1,40 +1,80 @@
 
+## Fix password reset flow and verify unintended tenant access
 
-## Fix Password Reset Email Delivery
+### What’s actually happening
+1. The password reset link is reaching `/reset-password`, but the page is showing a false “Invalid Reset Link” state because it only trusts:
+   - the `PASSWORD_RECOVERY` auth event, or
+   - `type=recovery` in the URL hash.
+2. On hosted auth flows, the token/hash can be consumed and cleared before `ResetPassword.tsx` checks it, so the page ends up at `/reset-password#` and incorrectly renders the error.
+3. The later appearance of the Tenant area is a separate issue:
+   - I do **not** see any reset-password code that grants admin/tenant access.
+   - Tenant access is shown only when a `tenant_admins` row already exists for that user.
+   - The most likely source is an existing tenant admin record or a previously claimed tenant invitation, not the reset flow itself.
 
-### Root Cause
+## Implementation plan
 
-The auth-email-hook uses the **old direct-send pattern** (`sendLovableEmail` + `callback_url`). The email API has migrated to a queue-based response format — it now returns `{"success":true, "status":"queued", "workflow_id":"..."}` instead of `{"message_id":"..."}`. The hook checks for `message_id`, doesn't find it, and returns a **502 error** to Supabase Auth.
+### 1) Make the reset page accept a valid recovery session
+Update `src/pages/ResetPassword.tsx` so it does not rely only on the hash/event.
 
-This causes Supabase Auth to **retry the webhook 5+ times** for every single password reset request (visible in logs). The email may or may not eventually deliver from the queue, but the retries create duplicate sends and token confusion — leading to the `otp_expired` error the user saw.
+Proposed behavior:
+- Add a small “checking reset link” state on mount.
+- Treat the page as valid if **any** of these are true:
+  - hash contains recovery markers,
+  - auth event is `PASSWORD_RECOVERY`,
+  - a current authenticated session already exists while the user is on `/reset-password`.
+- Only show “Invalid Reset Link” after those checks fail.
 
-Additionally, the email queue infrastructure (`enqueue_email` RPC, pgmq queues, `process-email-queue` cron) does not exist in the database, so upgrading to the queue pattern requires setting that up first.
+This removes the false error screen when the token was already exchanged successfully.
 
-### Fix — Upgrade auth-email-hook to Queue-Based Pattern
+### 2) Keep the user on the reset form until password update is completed
+In `src/pages/ResetPassword.tsx`:
+- do not show the invalid state while recovery/session detection is still resolving,
+- let the user set the new password immediately once the session is present,
+- after successful password update, redirect to the normal player experience.
 
-This is a 3-step process using built-in tooling:
+### 3) Audit why darcy@wtfast.com is seeing tenant access
+Do a backend data check for that email and review:
+- `tenant_admins`
+- `tenant_invitations`
+- any claimed invitation history tied to that email
 
-1. **Set up email queue infrastructure** — Call `setup_email_infra` to create pgmq queues, RPC wrappers, cron job, and supporting tables (`email_send_log`, `email_send_state`, etc.)
+Expected outcome:
+- If the user is truly designated as tenant staff, the current UI is behaving correctly.
+- If not, remove the unintended tenant assignment and any stale pending invite so future logins stay player-only.
 
-2. **Re-scaffold auth-email-hook** — Call `scaffold_auth_email_templates` with `confirm_overwrite: true` to upgrade the hook from the old `sendLovableEmail` pattern to the new `enqueue_email` RPC pattern. This preserves the existing branded templates (recovery, signup, etc.) while replacing the broken send logic.
+### 4) Do not change role gating unless the audit proves bad data
+The current app logic appears correct:
+- Tenant UI is only exposed when `useTenantAdmin()` finds a `tenant_admins` record.
+- I would **not** change `AuthContext`, `TenantRoute`, or sidebar role checks as the first fix.
+- This looks like a data assignment problem, not a client-side privilege escalation problem.
 
-3. **Re-apply brand styling** — After scaffolding, re-read each template file and restore the FGN branding (dark header, cyan button, Orbitron font, logo) since the scaffold tool resets templates to defaults.
+### 5) Optional hardening for future safety
+If you want to prevent this class of confusion going forward, I recommend a follow-up change:
+- stop silently claiming staff invitations on login,
+- instead require an explicit “Accept tenant staff invite” confirmation step.
 
-4. **Deploy** — Redeploy `auth-email-hook` with the updated code.
+That keeps normal subscribers from being elevated by surprise if an old or mistaken invitation exists for their email.
 
-### What This Fixes
+## Files / areas involved
+- `src/pages/ResetPassword.tsx` — primary fix
+- backend data audit for `tenant_admins` and `tenant_invitations`
+- no role-routing code changes unless the audit shows a real logic bug
 
-- Recovery emails will be reliably enqueued and delivered via the queue dispatcher
-- No more false 502 errors causing retry storms
-- Automatic retry on rate-limits or transient failures
-- Dead-letter routing for permanently failed sends
-- The `otp_expired` issue goes away because only one email is sent per request
+## Technical details
+```text
+Current failure:
+reset email -> recovery link opens -> auth client exchanges token -> URL hash cleared
+-> ResetPassword only checks hash/event -> false "Invalid Reset Link"
 
-### Files Changed
+Planned fix:
+reset email -> recovery link opens -> page checks hash OR PASSWORD_RECOVERY OR active session
+-> show reset form -> update password -> send user to normal app flow
+```
 
-| File | Change |
-|------|--------|
-| Database (via setup_email_infra) | Create pgmq queues, email tables, cron job |
-| `supabase/functions/auth-email-hook/index.ts` | Re-scaffold to queue-based pattern |
-| `supabase/functions/_shared/email-templates/*.tsx` | Restore FGN branding after scaffold |
-
+## Validation steps
+1. Request reset from the public URL.
+2. Open the email link.
+3. Confirm `/reset-password` shows the password form immediately, not the invalid-link card.
+4. Set a new password successfully.
+5. Confirm the user lands in normal player access.
+6. Verify whether `darcy@wtfast.com` truly has a tenant admin assignment; if not, remove it and retest login.
