@@ -71,21 +71,46 @@ const AdminLegacyUsers = () => {
   };
 
   const handleBulkMigrate = async () => {
-    if (!confirm("This will create auth accounts for all unmatched legacy users with emails (~4,400 users). This may take several minutes. Proceed?")) return;
+    if (!confirm("This will create auth accounts for unmatched legacy users in chunks of 200. Continue?")) return;
     setMigrating(true);
+    setMigrationLog([]);
+    const chunkSize = 200;
+    let totalCreated = 0;
+    let totalMatched = 0;
+    let totalSkipped = 0;
+    let chunk = 1;
+
     try {
-      const { data, error } = await supabase.functions.invoke("bulk-register-legacy-users", {
-        body: { batch_size: 50 },
-      });
-      if (error) throw error;
-      toast.success(`Migration complete: ${data.created} created, ${data.auto_matched} auto-matched, ${data.skipped} skipped.`);
-      if (data.errors?.length) {
-        data.errors.slice(0, 5).forEach((e: string) => toast.error(e));
+      while (true) {
+        setMigrationLog(prev => [...prev, `Processing chunk ${chunk} (${chunkSize} users)...`]);
+        const { data, error } = await supabase.functions.invoke("bulk-register-legacy-users", {
+          body: { batch_size: 50, max_count: chunkSize },
+        });
+        if (error) throw error;
+
+        totalCreated += data.created || 0;
+        totalMatched += data.auto_matched || 0;
+        totalSkipped += data.skipped || 0;
+        const processed = data.total_processed || 0;
+
+        setMigrationLog(prev => [...prev, `Chunk ${chunk}: ${data.created} created, ${data.auto_matched} matched, ${data.skipped} skipped (${processed} processed)`]);
+
+        if (data.errors?.length) {
+          setMigrationLog(prev => [...prev, ...data.errors.slice(0, 3).map((e: string) => `  Error: ${e}`)]);
+        }
+
+        // If fewer than chunkSize were processed, we're done
+        if (processed < chunkSize) break;
+        chunk++;
       }
+
+      toast.success(`Migration complete: ${totalCreated} created, ${totalMatched} auto-matched, ${totalSkipped} skipped.`);
+      setMigrationLog(prev => [...prev, `✅ Done! ${totalCreated} created, ${totalMatched} matched, ${totalSkipped} skipped.`]);
       queryClient.invalidateQueries({ queryKey: ["legacy-users"] });
       queryClient.invalidateQueries({ queryKey: ["legacy-user-stats"] });
     } catch (err: any) {
       toast.error(err.message || "Migration failed");
+      setMigrationLog(prev => [...prev, `❌ Error: ${err.message}`]);
     } finally {
       setMigrating(false);
     }
