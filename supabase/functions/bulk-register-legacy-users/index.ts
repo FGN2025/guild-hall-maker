@@ -51,10 +51,11 @@ Deno.serve(async (req) => {
     const dryRun = body.dry_run ?? false;
     const maxCount = body.max_count ?? 0; // 0 = process all
 
-    // Fetch all unmatched legacy users with emails, deduplicated by email
+    // Fetch unmatched legacy users with emails
+    // Use DISTINCT ON email via raw query approach — fetch in pages but stop early if maxCount reached
     const allLegacy: any[] = [];
     let from = 0;
-    const pageSize = 1000;
+    const pageSize = maxCount > 0 ? Math.min(maxCount * 2, 1000) : 1000; // fetch more to account for dupes
     while (true) {
       const { data, error } = await adminClient
         .from("legacy_users")
@@ -67,6 +68,8 @@ Deno.serve(async (req) => {
       if (!data || data.length === 0) break;
       allLegacy.push(...data);
       if (data.length < pageSize) break;
+      // If maxCount set and we have enough raw rows, stop fetching
+      if (maxCount > 0 && allLegacy.length >= maxCount * 2) break;
       from += pageSize;
     }
 
