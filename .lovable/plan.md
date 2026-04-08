@@ -1,86 +1,71 @@
 
 
-## Assessment: Ensuring All Legacy Users Can Log In
+## Test Plan: Legacy User Migration Process
 
-### Current State
+### Overview
 
-| Metric | Count |
-|--------|-------|
-| Legacy user records | 4,739 |
-| Already matched to registered accounts | 4 |
-| Unmatched with email | 4,719 |
-| Unmatched without email (cannot recover) | 16 |
-| Unique unmatched emails | 4,429 |
-| Duplicate emails (same email across providers) | 235 |
-| Emails overlapping with existing auth accounts | 6 |
-| Currently registered users | 21 |
+This is a 4-phase test covering the entire flow: dry run, small batch migration, login detection, and password reset. All tests use real data already in the database.
 
-### What Already Works
+### Phase 1 — Dry Run Verification
 
-1. **Login + Forgot Password** — The Auth page has sign-in with email/password and a "Forgot Password?" link that calls `resetPasswordForEmail` with a redirect to `/reset-password`. The ResetPassword page handles the `PASSWORD_RECOVERY` event correctly.
-2. **Legacy matching on signup** — When a new user signs up, `match-legacy-user` is invoked to auto-match by email and carry over their `legacy_username` as `gamer_tag`.
-3. **Repeated signup detection** — If someone tries to sign up with an email that already has an account, the system detects it and switches to sign-in mode.
+**Goal**: Confirm the edge function reads data correctly without creating any accounts.
 
-### The Problem
+1. Log in as an admin user
+2. Navigate to Admin → Legacy Import
+3. Open browser dev tools (Network tab)
+4. Invoke the function with `dry_run: true` by temporarily adding a dry-run button, OR use the edge function test tool to call `bulk-register-legacy-users` with `{ "dry_run": true }`
+5. **Expected result**: Response contains `total_legacy` (~4,719), `unique_emails` (~4,429), `dry_run: true`
+6. **Verify**: No new rows in `profiles`, no `matched_user_id` updates in `legacy_users`
 
-Legacy users (4,719 with emails) have never created accounts on the new platform. They **cannot** log in because no `auth.users` record exists for them. They would need to go through the full signup flow (ZIP check → subscriber verify → account creation → email confirmation → Discord linking).
+### Phase 2 — Small Batch Migration (5 users)
 
-### Recommended Plan
+**Goal**: Confirm accounts are created correctly with profile and tenant linkage.
 
-**Goal**: Let legacy users enter their email, land in the system with minimal friction, and have their legacy data automatically linked.
+1. Call the edge function with `{ "batch_size": 5 }` — it will process all users but in batches of 5 (to test batching logic). To limit the actual scope, we can check the first few results.
+2. **Verify in the database after the run**:
+   - `legacy_users` rows now have `matched_user_id` and `matched_at` populated
+   - Corresponding `profiles` rows exist with `gamer_tag` = `legacy_username`
+   - `user_service_interests` rows exist for users that had a `tenant_id`
+   - Auth accounts are pre-confirmed (`email_confirmed_at` is set)
+3. **Check for duplicates**: The 6 emails overlapping with existing auth accounts should be auto-matched (not create duplicate accounts)
 
-#### Option A — Magic Link Login for Legacy Users (Recommended)
+### Phase 3 — Login Flow for Migrated Legacy User
 
-Add a "Returning Player? Log in with email" flow that:
+**Goal**: Confirm the Auth page detects legacy users and guides them to password reset.
 
-1. **New UI on Auth page**: Add a "Returning Player" tab/button alongside Login and Sign Up
-2. **Edge function `login-legacy-user`**: Accepts an email, checks if it exists in `legacy_users` (unmatched), and if so:
-   - Creates an `auth.users` account via `admin.createUser()` with a random password and `email_confirm: true` (pre-confirmed)
-   - Creates their profile with `gamer_tag` from `legacy_username`
-   - Links them to their tenant via `user_service_interests`
-   - Marks the legacy record as matched
-   - Sends a magic link via `admin.generateLink()` so they can set their own password
-3. **On first login**: The user lands on a "Set Your Password" prompt so future logins use email/password
-4. **Duplicate handling**: For 235 duplicate emails, match the first unmatched record; subsequent ones stay for manual review
+1. Pick one email from the newly migrated batch
+2. Go to `/auth` (logged out)
+3. Enter the email and any random password, click "Sign In"
+4. **Expected**: Toast message appears: "Welcome back! ... A password reset link has been sent to your email."
+5. **Verify**: `resetPasswordForEmail` was called (check Network tab for the Supabase auth request)
 
-#### Option B — Bulk Pre-Registration (Simpler but requires password reset)
+### Phase 4 — Password Reset End-to-End
 
-1. **Admin edge function `bulk-register-legacy-users`**: Creates `auth.users` accounts for all 4,429 unique unmatched emails with random passwords and `email_confirm: true`
-2. **Auto-match and link profiles** with legacy data (gamer_tag, tenant)
-3. **Users log in via "Forgot Password?"** to set their password on first visit
-4. No UI changes needed — existing login + forgot password flow handles everything
+**Goal**: Confirm a migrated legacy user can set a password and log in.
 
-#### Option C — Hybrid (Best UX, recommended)
+1. Check the inbox for the email from Phase 3 — a password reset email should arrive
+2. Click the reset link — should redirect to `/reset-password`
+3. Set a new password
+4. Log in with the email + new password
+5. **Expected**: Successful login, user lands on `/dashboard`
+6. **Verify**: Profile shows the legacy `gamer_tag`, user appears in the correct tenant's player list
 
-Combine both: bulk pre-register all legacy users so they exist in auth, then on the Auth page detect legacy users at login time and guide them to "Forgot Password?" if their first attempt fails.
+### Phase 5 — Unmatched Legacy User Detection (pre-migration)
 
-1. **`bulk-register-legacy-users` edge function** — Admin-triggered, processes all 4,429 unique emails:
-   - Creates auth accounts (pre-confirmed, random password)
-   - Sets profile gamer_tag from legacy_username
-   - Creates `user_service_interests` for tenant linkage
-   - Marks legacy records as matched
-   - Skips 6 emails that already overlap with existing auth accounts (auto-match those instead)
-   - For 235 duplicate emails, picks the first record per email
-2. **Auth page enhancement** — After a failed login attempt, check if the email exists in `legacy_users` and show a targeted message: "Welcome back! It looks like you need to set a new password for the updated platform. Check your email for a reset link." Then auto-trigger `resetPasswordForEmail`.
-3. **No changes to signup flow** — New users still go through ZIP check → signup as today
+**Goal**: Confirm the Auth page handles users who haven't been migrated yet.
 
-### What I Recommend: Option C (Hybrid)
+1. Before running the full migration, find a legacy email that is still unmatched (`matched_user_id IS NULL`)
+2. Try to log in with that email on `/auth`
+3. **Expected**: Toast says "Welcome back! Your account from our previous platform was found. Please use 'Forgot Password' below to set a new password."
+4. This user cannot reset password yet (no auth account exists) — the message correctly tells them to use Forgot Password, but the reset email won't arrive until the bulk migration runs
 
-This gives the best experience because:
-- Legacy users just go to login, type their email, get guided to reset their password
-- No new signup friction — they're already registered
-- Legacy data (username, tenant) is preserved automatically
-- The 16 users without emails are unrecoverable and can re-register normally
+### How to Execute
 
-### Files to Create/Change
+I can run Phases 1-2 right now using the edge function test tool and database queries to verify results. Phases 3-5 require manual browser testing on the preview.
 
-| File | Change |
-|------|--------|
-| `supabase/functions/bulk-register-legacy-users/index.ts` | New edge function to bulk-create auth accounts for legacy users |
-| `src/pages/Auth.tsx` | After failed login, detect legacy email and auto-trigger password reset with helpful message |
-| `src/pages/admin/AdminLegacyUsers.tsx` | Add "Migrate All" button to trigger bulk registration |
+### Risks to Watch
 
-### Database Changes
-
-None required — existing tables (`legacy_users`, `profiles`, `user_service_interests`) already have the right schema. The edge function uses `matched_user_id` and `matched_at` columns that already exist.
+- **Timeout**: The full migration of ~4,400 users may exceed the edge function timeout (default 60s). If it does, we'll need to add pagination/chunking with multiple calls.
+- **Rate limits**: Supabase `admin.createUser` may have rate limits that slow bulk creation.
+- **The `listUsers` call on line 137**: For auto-matching, the function calls `listUsers({ perPage: 1000, page: 1 })` for every duplicate email — this is inefficient and may miss users beyond page 1. This should be flagged for improvement.
 
