@@ -98,6 +98,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    console.log(`Starting migration: ${uniqueUsers.length} unique users to process`);
+
     let created = 0;
     let skipped = 0;
     let autoMatched = 0;
@@ -110,6 +112,7 @@ Deno.serve(async (req) => {
       for (const legacy of batch) {
         const em = legacy.email.trim().toLowerCase();
         try {
+          console.log(`Processing: ${em}`);
           // Try creating the user — if email exists, it'll fail and we auto-match
           const randomPassword = crypto.randomUUID() + "!Aa1";
 
