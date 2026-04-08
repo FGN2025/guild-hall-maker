@@ -149,6 +149,47 @@ const Auth = () => {
     if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) {
+        // Check if this is a legacy user who needs to reset their password
+        try {
+          const { data: legacyCheck } = await (supabase as any)
+            .from("legacy_users")
+            .select("id, legacy_username")
+            .ilike("email", email.trim())
+            .is("matched_user_id", null)
+            .limit(1);
+
+          if (legacyCheck && legacyCheck.length > 0) {
+            // Legacy user not yet migrated — tell them to use Forgot Password
+            toast.info("Welcome back! Your account from our previous platform was found. Please use 'Forgot Password' below to set a new password.");
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // ignore lookup failure
+        }
+
+        // Check if legacy user was already migrated but needs password reset
+        try {
+          const { data: matchedLegacy } = await (supabase as any)
+            .from("legacy_users")
+            .select("id, legacy_username, matched_user_id")
+            .ilike("email", email.trim())
+            .not("matched_user_id", "is", null)
+            .limit(1);
+
+          if (matchedLegacy && matchedLegacy.length > 0 && error.message?.includes("Invalid login credentials")) {
+            // Auto-trigger password reset for migrated legacy user
+            await supabase.auth.resetPasswordForEmail(email.trim(), {
+              redirectTo: `${window.location.origin}/reset-password`,
+            });
+            toast.info("Welcome back! We've sent you a password reset link so you can set your new password. Check your email!");
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // ignore
+        }
+
         toast.error(error.message);
       } else {
         // Claim any pending tenant invitations silently
