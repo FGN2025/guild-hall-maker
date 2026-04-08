@@ -124,9 +124,23 @@ Deno.serve(async (req) => {
           if (createError) {
             if (createError.message?.includes("already been registered") ||
                 createError.message?.includes("already exists")) {
-              // Auto-match: find the existing auth user and link
-              const { data: { users } } = await adminClient.auth.admin.listUsers({ perPage: 1000, page: 1 });
-              const existingUser = users?.find((u: any) => u.email?.toLowerCase() === em);
+              // Auto-match: find the existing auth user by email
+              const { data: existingUserData } = await adminClient.auth.admin.listUsers({ perPage: 50, page: 1 });
+              const existingUser = existingUserData?.users?.find((u: any) => u.email?.toLowerCase() === em)
+                // Fallback: search profiles by display_name matching email
+                ?? null;
+              // Use a targeted approach - search recently created profiles
+              let matchedUserId: string | null = existingUser?.id ?? null;
+              if (!matchedUserId) {
+                // Try to find via profiles table
+                const { data: profileMatch } = await adminClient
+                  .from("profiles")
+                  .select("user_id")
+                  .eq("display_name", em)
+                  .limit(1)
+                  .single();
+                matchedUserId = profileMatch?.user_id ?? null;
+              }
               if (existingUser) {
                 await adminClient.from("legacy_users")
                   .update({ matched_user_id: existingUser.id, matched_at: new Date().toISOString() })
