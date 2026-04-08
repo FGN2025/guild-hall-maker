@@ -141,15 +141,14 @@ Deno.serve(async (req) => {
                   .single();
                 matchedUserId = profileMatch?.user_id ?? null;
               }
-              if (existingUser) {
+              if (matchedUserId) {
                 await adminClient.from("legacy_users")
-                  .update({ matched_user_id: existingUser.id, matched_at: new Date().toISOString() })
+                  .update({ matched_user_id: matchedUserId, matched_at: new Date().toISOString() })
                   .eq("id", legacy.id);
 
-                // Update gamer_tag if not set
                 await adminClient.from("profiles")
                   .update({ gamer_tag: legacy.legacy_username })
-                  .eq("user_id", existingUser.id)
+                  .eq("user_id", matchedUserId)
                   .is("gamer_tag", null);
 
                 autoMatched++;
