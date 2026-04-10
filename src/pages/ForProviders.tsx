@@ -293,7 +293,150 @@ const ForProviders = () => {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Contact / Schedule a Meeting */}
+      <section id="contact-form" className="py-16 border-t border-border">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-display font-bold text-foreground mb-2">Schedule a Meeting</h2>
+              <p className="text-muted-foreground">
+                Interested in learning more? Fill out the form below and we'll reach out to schedule a conversation.
+              </p>
+            </div>
+
+            {contactSubmitted ? (
+              <Card className="bg-card border-primary/30">
+                <CardContent className="pt-8 pb-8 text-center space-y-3">
+                  <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
+                  <h3 className="font-heading text-xl font-semibold text-foreground">We've received your inquiry!</h3>
+                  <p className="text-muted-foreground">A member of our team will contact you within 1–2 business days.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-card border-border">
+                <CardContent className="pt-6">
+                  <Form {...contactForm}>
+                    <form onSubmit={contactForm.handleSubmit(onContactSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={contactForm.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>First Name</FormLabel>
+                              <FormControl><Input placeholder="Jane" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={contactForm.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Last Name</FormLabel>
+                              <FormControl><Input placeholder="Smith" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={contactForm.control}
+                        name="contactEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl><Input type="email" placeholder="jane@example.com" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={contactForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone <span className="text-muted-foreground">(optional)</span></FormLabel>
+                            <FormControl><Input type="tel" placeholder="(555) 123-4567" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={contactForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>I am a…</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select your role" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="broadband_operator">Broadband Operator</SelectItem>
+                                <SelectItem value="marketing_director">Marketing Director</SelectItem>
+                                <SelectItem value="executive">Executive</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={contactForm.control}
+                        name="message"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Message <span className="text-muted-foreground">(optional)</span></FormLabel>
+                            <FormControl><Textarea placeholder="Tell us about your organization and goals…" rows={4} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={contactForm.control}
+                          name="preferredDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Preferred Date <span className="text-muted-foreground">(optional)</span></FormLabel>
+                              <FormControl><Input type="date" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={contactForm.control}
+                          name="preferredTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Preferred Time <span className="text-muted-foreground">(optional)</span></FormLabel>
+                              <FormControl><Input type="time" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <Button type="submit" className="w-full font-heading tracking-wide" size="lg" disabled={contactSubmitting}>
+                        {contactSubmitting ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting…</>
+                        ) : (
+                          "Request a Meeting"
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </section>
+
       <footer className="border-t border-border py-12">
         <div className="container mx-auto px-4 text-center">
           <p className="font-display text-sm tracking-widest text-primary mb-4">FGN</p>
