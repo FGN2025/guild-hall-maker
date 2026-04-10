@@ -139,7 +139,7 @@ const ForProviders = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="font-heading tracking-wide text-lg px-8"
+                className="font-heading tracking-wide text-lg px-8 border-primary text-primary shadow-[0_0_20px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_30px_hsl(var(--primary)/0.6)] hover:bg-primary/10 transition-shadow"
                 onClick={() => document.getElementById("contact-form")?.scrollIntoView({ behavior: "smooth" })}
               >
                 <Calendar className="mr-2 h-5 w-5" />
