@@ -151,6 +151,7 @@ const App = () => (
               <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
               <Route path="/embed/calendar/:configId" element={<EmbedCalendar />} />
               <Route path="/for-providers" element={<ForProviders />} />
+              <Route path="/4-providers" element={<ForProviders />} />
               <Route path="/pages/:tenantSlug/:pageSlug" element={<WebPageView />} />
 
               {/* Authenticated but Discord-exempt */}
