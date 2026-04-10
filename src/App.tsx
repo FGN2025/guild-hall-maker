@@ -78,6 +78,7 @@ const AdminDiscordBypass = lazy(() => import("./pages/admin/AdminDiscordBypass")
 const AdminGameServers = lazy(() => import("./pages/admin/AdminGameServers"));
 const GameServers = lazy(() => import("./pages/GameServers"));
 const AdminCloudGaming = lazy(() => import("./pages/admin/AdminCloudGaming"));
+const AdminInquiries = lazy(() => import("./pages/admin/AdminInquiries"));
 const WhitePaper = lazy(() => import("./pages/WhitePaper"));
 const ForProviders = lazy(() => import("./pages/ForProviders"));
 const TournamentGuide = lazy(() => import("./pages/guides/TournamentGuide"));
@@ -214,6 +215,7 @@ const App = () => (
               <Route path="/admin/ecosystem" element={<AdminRoute><AdminEcosystem /></AdminRoute>} />
               <Route path="/admin/game-servers" element={<AdminRoute><AdminGameServers /></AdminRoute>} />
               <Route path="/admin/cloud-gaming" element={<AdminRoute><AdminCloudGaming /></AdminRoute>} />
+              <Route path="/admin/inquiries" element={<AdminRoute><AdminInquiries /></AdminRoute>} />
 
               {/* Moderator routes */}
               <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />

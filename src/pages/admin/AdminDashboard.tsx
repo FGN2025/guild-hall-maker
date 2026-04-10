@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Trophy, Image, BarChart3, Target, Compass } from "lucide-react";
+import { Users, Trophy, Image, BarChart3, Target, Compass, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 
@@ -10,13 +10,14 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [profiles, tournaments, challenges, quests, media, seasons] = await Promise.all([
+      const [profiles, tournaments, challenges, quests, media, seasons, inquiries] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("tournaments").select("id", { count: "exact", head: true }),
         supabase.from("challenges").select("id", { count: "exact", head: true }),
         supabase.from("quests").select("id", { count: "exact", head: true }),
         supabase.from("media_library").select("id", { count: "exact", head: true }),
         supabase.from("seasons").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("provider_inquiries").select("id", { count: "exact", head: true }),
       ]);
       return {
         users: profiles.count ?? 0,
@@ -25,6 +26,7 @@ const AdminDashboard = () => {
         quests: quests.count ?? 0,
         media: media.count ?? 0,
         seasons: seasons.count ?? 0,
+        inquiries: inquiries.count ?? 0,
       };
     },
   });
@@ -36,6 +38,7 @@ const AdminDashboard = () => {
     { label: "Quests", value: stats?.quests ?? 0, icon: Compass, to: "/admin/challenges", color: "text-cyan-400" },
     { label: "Media Assets", value: stats?.media ?? 0, icon: Image, to: "/admin/media", color: "text-green-400" },
     { label: "Active Seasons", value: stats?.seasons ?? 0, icon: BarChart3, to: "/admin/seasons", color: "text-purple-400" },
+    { label: "Provider Inquiries", value: stats?.inquiries ?? 0, icon: MessageSquare, to: "/admin/inquiries", color: "text-pink-400" },
   ];
 
   return (
