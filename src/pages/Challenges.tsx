@@ -17,7 +17,11 @@ import PointsWalletCard from "@/components/shared/PointsWalletCard";
 const Challenges = () => {
   usePageTitle("Challenges");
   const { user } = useAuth();
-  const [gameFilter, setGameFilter] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const gameFilter = searchParams.get("game") || null;
+  const setGameFilter = (name: string | null) => {
+    setSearchParams(name ? { game: name } : {}, { replace: true });
+  };
 
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["player-challenges"],
