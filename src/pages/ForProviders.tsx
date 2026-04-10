@@ -178,7 +178,7 @@ const ForProviders = () => {
             <Card className="bg-card border-primary/30 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
               <CardHeader>
-                <CardTitle className="font-display text-2xl text-foreground">Tenant Basic</CardTitle>
+                <CardTitle className="font-display text-2xl text-foreground">Tenant Pro</CardTitle>
                 <CardDescription className="text-muted-foreground">
                   Full-featured gaming engagement platform
                 </CardDescription>
@@ -197,7 +197,6 @@ const ForProviders = () => {
                     "Embeddable event calendar",
                     "ZIP-code coverage mapping",
                     "Dedicated team roles (Admin, Manager, Marketing)",
-                    "Billing system integration (NISC, GLDS)",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
