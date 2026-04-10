@@ -2067,6 +2067,45 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_inquiries: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          message: string | null
+          phone: string | null
+          preferred_date: string | null
+          preferred_time: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          message?: string | null
+          phone?: string | null
+          preferred_date?: string | null
+          preferred_time?: string | null
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          message?: string | null
+          phone?: string | null
+          preferred_date?: string | null
+          preferred_time?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
       quest_chain_completions: {
         Row: {
           bonus_points_awarded: number

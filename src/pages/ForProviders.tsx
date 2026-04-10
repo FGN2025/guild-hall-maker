@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Building2, CheckCircle2, Zap, Users, BarChart3, Shield, Loader2 } from "lucide-react";
+import { Building2, CheckCircle2, Zap, Users, BarChart3, Shield, Loader2, Calendar } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +23,19 @@ const formSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters").max(128),
 });
 
+const contactSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(50),
+  lastName: z.string().trim().min(1, "Last name is required").max(50),
+  contactEmail: z.string().trim().email("Please enter a valid email").max(255),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  role: z.string().min(1, "Please select a role"),
+  message: z.string().trim().max(1000).optional().or(z.literal("")),
+  preferredDate: z.string().optional().or(z.literal("")),
+  preferredTime: z.string().optional().or(z.literal("")),
+});
+
 type FormValues = z.infer<typeof formSchema>;
+type ContactFormValues = z.infer<typeof contactSchema>;
 
 const features = [
   { icon: Users, title: "Player Management", desc: "Manage subscribers, leads, and player engagement" },
@@ -33,6 +47,8 @@ const features = [
 const ForProviders = () => {
   usePageTitle("For Providers");
   const [submitting, setSubmitting] = useState(false);
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [contactSubmitted, setContactSubmitted] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -62,6 +78,34 @@ const ForProviders = () => {
     }
   };
 
+  const contactForm = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: { firstName: "", lastName: "", contactEmail: "", phone: "", role: "", message: "", preferredDate: "", preferredTime: "" },
+  });
+
+  const onContactSubmit = async (values: ContactFormValues) => {
+    setContactSubmitting(true);
+    try {
+      const { error } = await supabase.from("provider_inquiries").insert({
+        first_name: values.firstName,
+        last_name: values.lastName,
+        email: values.contactEmail,
+        phone: values.phone || null,
+        role: values.role,
+        message: values.message || null,
+        preferred_date: values.preferredDate || null,
+        preferred_time: values.preferredTime || null,
+      });
+      if (error) throw error;
+      toast.success("Thank you! We'll be in touch shortly.");
+      setContactSubmitted(true);
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    } finally {
+      setContactSubmitting(false);
+    }
+  };
+
   const password = form.watch("password");
 
   return (
@@ -84,13 +128,24 @@ const ForProviders = () => {
               FGN gives broadband providers a turnkey competitive gaming platform—tournaments, challenges,
               cloud gaming, and community—all under your brand. Reduce churn and boost engagement.
             </p>
-            <Button
-              size="lg"
-              className="font-heading tracking-wide text-lg px-8"
-              onClick={() => document.getElementById("signup-form")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              Get Started — $850/mo
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                size="lg"
+                className="font-heading tracking-wide text-lg px-8"
+                onClick={() => document.getElementById("signup-form")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                Get Started — $850/mo
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="font-heading tracking-wide text-lg px-8"
+                onClick={() => document.getElementById("contact-form")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                Schedule a Meeting
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -238,7 +293,150 @@ const ForProviders = () => {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Contact / Schedule a Meeting */}
+      <section id="contact-form" className="py-16 border-t border-border">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-display font-bold text-foreground mb-2">Schedule a Meeting</h2>
+              <p className="text-muted-foreground">
+                Interested in learning more? Fill out the form below and we'll reach out to schedule a conversation.
+              </p>
+            </div>
+
+            {contactSubmitted ? (
+              <Card className="bg-card border-primary/30">
+                <CardContent className="pt-8 pb-8 text-center space-y-3">
+                  <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
+                  <h3 className="font-heading text-xl font-semibold text-foreground">We've received your inquiry!</h3>
+                  <p className="text-muted-foreground">A member of our team will contact you within 1–2 business days.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-card border-border">
+                <CardContent className="pt-6">
+                  <Form {...contactForm}>
+                    <form onSubmit={contactForm.handleSubmit(onContactSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={contactForm.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>First Name</FormLabel>
+                              <FormControl><Input placeholder="Jane" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={contactForm.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Last Name</FormLabel>
+                              <FormControl><Input placeholder="Smith" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={contactForm.control}
+                        name="contactEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl><Input type="email" placeholder="jane@example.com" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={contactForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone <span className="text-muted-foreground">(optional)</span></FormLabel>
+                            <FormControl><Input type="tel" placeholder="(555) 123-4567" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={contactForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>I am a…</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select your role" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="broadband_operator">Broadband Operator</SelectItem>
+                                <SelectItem value="marketing_director">Marketing Director</SelectItem>
+                                <SelectItem value="executive">Executive</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={contactForm.control}
+                        name="message"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Message <span className="text-muted-foreground">(optional)</span></FormLabel>
+                            <FormControl><Textarea placeholder="Tell us about your organization and goals…" rows={4} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={contactForm.control}
+                          name="preferredDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Preferred Date <span className="text-muted-foreground">(optional)</span></FormLabel>
+                              <FormControl><Input type="date" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={contactForm.control}
+                          name="preferredTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Preferred Time <span className="text-muted-foreground">(optional)</span></FormLabel>
+                              <FormControl><Input type="time" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <Button type="submit" className="w-full font-heading tracking-wide" size="lg" disabled={contactSubmitting}>
+                        {contactSubmitting ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting…</>
+                        ) : (
+                          "Request a Meeting"
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </section>
+
       <footer className="border-t border-border py-12">
         <div className="container mx-auto px-4 text-center">
           <p className="font-display text-sm tracking-widest text-primary mb-4">FGN</p>
