@@ -39,6 +39,7 @@ const AdminDashboard = () => {
     { label: "Media Assets", value: stats?.media ?? 0, icon: Image, to: "/admin/media", color: "text-green-400" },
     { label: "Active Seasons", value: stats?.seasons ?? 0, icon: BarChart3, to: "/admin/seasons", color: "text-purple-400" },
     { label: "Provider Inquiries", value: stats?.inquiries ?? 0, icon: MessageSquare, to: "/admin/inquiries", color: "text-pink-400" },
+  ];
 
   return (
     <div>
