@@ -47,6 +47,8 @@ const features = [
 const ForProviders = () => {
   usePageTitle("For Providers");
   const [submitting, setSubmitting] = useState(false);
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [contactSubmitted, setContactSubmitted] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
