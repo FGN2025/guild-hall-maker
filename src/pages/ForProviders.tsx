@@ -23,7 +23,19 @@ const formSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters").max(128),
 });
 
+const contactSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(50),
+  lastName: z.string().trim().min(1, "Last name is required").max(50),
+  contactEmail: z.string().trim().email("Please enter a valid email").max(255),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  role: z.string().min(1, "Please select a role"),
+  message: z.string().trim().max(1000).optional().or(z.literal("")),
+  preferredDate: z.string().optional().or(z.literal("")),
+  preferredTime: z.string().optional().or(z.literal("")),
+});
+
 type FormValues = z.infer<typeof formSchema>;
+type ContactFormValues = z.infer<typeof contactSchema>;
 
 const features = [
   { icon: Users, title: "Player Management", desc: "Manage subscribers, leads, and player engagement" },
