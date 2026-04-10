@@ -19,6 +19,7 @@ const sidebarItems = [
   { to: "/admin/game-servers", label: "Game Servers", icon: Server },
   { to: "/admin/cloud-gaming", label: "Cloud Gaming", icon: Cloud },
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
+  { to: "/admin/inquiries", label: "Provider Inquiries", icon: MessageSquare },
   { to: "/admin/notebooks", label: "Notebooks", icon: BookOpen },
   { to: "/admin/legacy-users", label: "Legacy Import", icon: Archive },
   { to: "/admin/settings", label: "Settings", icon: Settings },

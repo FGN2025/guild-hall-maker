@@ -215,6 +215,7 @@ const App = () => (
               <Route path="/admin/ecosystem" element={<AdminRoute><AdminEcosystem /></AdminRoute>} />
               <Route path="/admin/game-servers" element={<AdminRoute><AdminGameServers /></AdminRoute>} />
               <Route path="/admin/cloud-gaming" element={<AdminRoute><AdminCloudGaming /></AdminRoute>} />
+              <Route path="/admin/inquiries" element={<AdminRoute><AdminInquiries /></AdminRoute>} />
 
               {/* Moderator routes */}
               <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
