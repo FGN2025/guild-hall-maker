@@ -1,17 +1,25 @@
 
 
-## Duplicate For Providers page at /4-providers
+## Send admin notification emails for new Provider Inquiries and Access Requests
 
 ### Summary
-Add a route alias so `/4-providers` serves the same page as `/for-providers`, fixing the incorrect link from the email campaign.
+When a new provider inquiry is submitted or a new access request is created, send an email notification to darcy@fgn.gg and mj@fgn.gg.
 
-### Changes
+### How it works
 
-**`src/App.tsx`**
-- Add one new `<Route>` entry right after the existing `/for-providers` route:
-  ```tsx
-  <Route path="/4-providers" element={<ForProviders />} />
-  ```
+**1. Update `send-notification-email` edge function**
+- Add a new type `new_provider_inquiry` to the Payload interface
+- When triggered, send a styled notification email to both `darcy@fgn.gg` and `mj@fgn.gg` with the inquiry details (name, email, role, message)
 
-That's it — no new files needed. Both URLs will render the same component.
+**2. Update `ForProviders.tsx` contact form submission**
+- After the successful insert into `provider_inquiries`, invoke `send-notification-email` with type `new_provider_inquiry` and the form data as `record`
+
+**3. Update Access Requests notification**
+- The existing `access_request_new` type currently sends to all admin users by looking up `user_roles`. Change it to instead send directly to `darcy@fgn.gg` and `mj@fgn.gg` (or add them as explicit recipients alongside the admin lookup — whichever you prefer). This ensures the two specific people always get notified regardless of their admin role status.
+
+### Files touched
+| File | Change |
+|------|--------|
+| `supabase/functions/send-notification-email/index.ts` | Add `new_provider_inquiry` type; update `access_request_new` to include darcy@ and mj@ |
+| `src/pages/ForProviders.tsx` | Invoke notification email after inquiry insert |
 
