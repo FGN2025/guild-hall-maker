@@ -78,6 +78,34 @@ const ForProviders = () => {
     }
   };
 
+  const contactForm = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: { firstName: "", lastName: "", contactEmail: "", phone: "", role: "", message: "", preferredDate: "", preferredTime: "" },
+  });
+
+  const onContactSubmit = async (values: ContactFormValues) => {
+    setContactSubmitting(true);
+    try {
+      const { error } = await supabase.from("provider_inquiries").insert({
+        first_name: values.firstName,
+        last_name: values.lastName,
+        email: values.contactEmail,
+        phone: values.phone || null,
+        role: values.role,
+        message: values.message || null,
+        preferred_date: values.preferredDate || null,
+        preferred_time: values.preferredTime || null,
+      });
+      if (error) throw error;
+      toast.success("Thank you! We'll be in touch shortly.");
+      setContactSubmitted(true);
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    } finally {
+      setContactSubmitting(false);
+    }
+  };
+
   const password = form.watch("password");
 
   return (
