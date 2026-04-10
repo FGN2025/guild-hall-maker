@@ -1,7 +1,6 @@
-import { useState } from "react";
 import nawLogo from "@/assets/national-apprenticeship-week-2026.png";
 import nawInfographic from "@/assets/naw-infographic-2026.png";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
