@@ -6,8 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ADMIN_NOTIFY_EMAILS = ["darcy@fgn.gg", "mj@fgn.gg"];
+
 interface Payload {
-  type: "redemption_update" | "new_challenge" | "new_quest" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed" | "access_request_approved" | "access_request_new" | "moderator_request";
+  type: "redemption_update" | "new_challenge" | "new_quest" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed" | "access_request_approved" | "access_request_new" | "moderator_request" | "new_provider_inquiry";
   record?: Record<string, unknown>;
   old_record?: Record<string, unknown>;
   target_email?: string;
@@ -269,35 +271,48 @@ Deno.serve(async (req) => {
           </div>`,
       });
     } else if (type === "access_request_new") {
-      // Notify all admins about new access request
-      const { data: adminRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-
-      if (adminRoles) {
-        for (const role of adminRoles) {
-          const { data: userData } = await supabase.auth.admin.getUserById(role.user_id);
-          if (userData?.user?.email) {
-            const rec = record || {};
-            emails.push({
-              to: userData.user.email,
-              subject: `📋 New Access Request — FGN`,
-              html: `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
-                  <h1 style="color: #00f0ff;">New Access Request</h1>
-                  <p>A new user is requesting access to the FGN platform:</p>
-                  <ul>
-                    <li><strong>Name:</strong> ${rec.display_name || "Not provided"}</li>
-                    <li><strong>Email:</strong> ${rec.email || "Unknown"}</li>
-                    <li><strong>ZIP Code:</strong> ${rec.zip_code || "Unknown"}</li>
-                  </ul>
-                  <p>Review this request in the <a href="https://play.fgn.gg/admin/access-requests" style="color: #00f0ff;">Admin Panel</a>.</p>
-                  <p style="color: #888; font-size: 12px;">— FGN Platform</p>
-                </div>`,
-            });
-          }
-        }
+      const rec = record || {};
+      for (const adminEmail of ADMIN_NOTIFY_EMAILS) {
+        emails.push({
+          to: adminEmail,
+          subject: `📋 New Access Request — FGN`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">New Access Request</h1>
+              <p>A new user is requesting access to the FGN platform:</p>
+              <ul>
+                <li><strong>Name:</strong> ${rec.display_name || "Not provided"}</li>
+                <li><strong>Email:</strong> ${rec.email || "Unknown"}</li>
+                <li><strong>ZIP Code:</strong> ${rec.zip_code || "Unknown"}</li>
+              </ul>
+              <p>Review this request in the <a href="https://play.fgn.gg/admin/access-requests" style="color: #00f0ff;">Admin Panel</a>.</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
+      }
+    } else if (type === "new_provider_inquiry") {
+      const rec = record || {};
+      for (const adminEmail of ADMIN_NOTIFY_EMAILS) {
+        emails.push({
+          to: adminEmail,
+          subject: `📩 New Provider Inquiry — FGN`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">New Provider Inquiry</h1>
+              <p>A potential broadband provider has submitted an inquiry:</p>
+              <ul>
+                <li><strong>Name:</strong> ${rec.first_name || ""} ${rec.last_name || ""}</li>
+                <li><strong>Email:</strong> ${rec.email || "Unknown"}</li>
+                <li><strong>Phone:</strong> ${rec.phone || "Not provided"}</li>
+                <li><strong>Role:</strong> ${rec.role || "Not specified"}</li>
+                ${rec.preferred_date ? `<li><strong>Preferred Date:</strong> ${rec.preferred_date}</li>` : ""}
+                ${rec.preferred_time ? `<li><strong>Preferred Time:</strong> ${rec.preferred_time}</li>` : ""}
+              </ul>
+              ${rec.message ? `<p><strong>Message:</strong></p><p>${rec.message}</p>` : ""}
+              <p>Review inquiries in the <a href="https://play.fgn.gg/admin" style="color: #00f0ff;">Admin Panel</a>.</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
       }
     }
 
