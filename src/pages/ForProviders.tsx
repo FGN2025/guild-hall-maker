@@ -178,7 +178,7 @@ const ForProviders = () => {
             <Card className="bg-card border-primary/30 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
               <CardHeader>
-                <CardTitle className="font-display text-2xl text-foreground">Tenant Pro</CardTitle>
+                <CardTitle className="font-display text-2xl text-foreground">Broadband Pro</CardTitle>
                 <CardDescription className="text-muted-foreground">
                   Full-featured gaming engagement platform
                 </CardDescription>
