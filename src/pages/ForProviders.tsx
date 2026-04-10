@@ -86,13 +86,24 @@ const ForProviders = () => {
               FGN gives broadband providers a turnkey competitive gaming platform—tournaments, challenges,
               cloud gaming, and community—all under your brand. Reduce churn and boost engagement.
             </p>
-            <Button
-              size="lg"
-              className="font-heading tracking-wide text-lg px-8"
-              onClick={() => document.getElementById("signup-form")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              Get Started — $850/mo
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                size="lg"
+                className="font-heading tracking-wide text-lg px-8"
+                onClick={() => document.getElementById("signup-form")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                Get Started — $850/mo
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="font-heading tracking-wide text-lg px-8"
+                onClick={() => document.getElementById("contact-form")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                Schedule a Meeting
+              </Button>
+            </div>
           </div>
         </div>
       </section>
