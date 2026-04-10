@@ -97,6 +97,24 @@ const ForProviders = () => {
         preferred_time: values.preferredTime || null,
       });
       if (error) throw error;
+
+      // Notify admins about the new inquiry
+      await supabase.functions.invoke("send-notification-email", {
+        body: {
+          type: "new_provider_inquiry",
+          record: {
+            first_name: values.firstName,
+            last_name: values.lastName,
+            email: values.contactEmail,
+            phone: values.phone || null,
+            role: values.role,
+            message: values.message || null,
+            preferred_date: values.preferredDate || null,
+            preferred_time: values.preferredTime || null,
+          },
+        },
+      });
+
       toast.success("Thank you! We'll be in touch shortly.");
       setContactSubmitted(true);
     } catch (err: any) {
