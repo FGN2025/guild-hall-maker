@@ -1,21 +1,17 @@
 
 
-## Add "Copy Filtered Link" button to Admin Challenges page
+## Fix: Stats bar should reflect the active game filter
 
-### Summary
-Add a game filter dropdown and a "Copy Link" button to the admin Challenges oversight tab. Admins select a game, click the button, and get a shareable URL like `/challenges?game=Farm+Simulator+2025` copied to their clipboard — ready to paste into emails or invitations.
+### Problem
+The filtered challenge link works correctly — only ATS challenges are displayed and the filter tab is highlighted. However, the stats bar at the top still shows totals for **all** challenges (e.g. "67 Available"), which makes it look like nothing is filtered.
 
-### Changes
+### Fix
 
-**`src/pages/admin/AdminChallenges.tsx`**
-1. Add a new game filter `Select` dropdown (populated from unique game names in the challenges list) to the existing filter bar
-2. Add a "Copy Filtered Link" button (with a `Link` or `Share2` icon) next to the filters
-3. When clicked, it builds the public URL using the published domain (`https://guild-hall-maker.lovable.app/challenges?game=GameName`) and copies it to the clipboard with a toast confirmation
-4. If no game is selected (showing "All Games"), the button copies the unfiltered `/challenges` link
-5. The game filter also filters the displayed challenges in the admin table, consistent with the other filters
+**`src/pages/Challenges.tsx`**
+- Update the four stat cards (Available, Enrolled, Completed, Progress) to use `filtered` challenges instead of the unfiltered `challenges` array
+- Update the progress bar to also use `filtered` counts
+- This way, when a user lands on `/challenges?game=American+Truck+Simulator`, the stats reflect only ATS challenges (e.g. "6 Available" instead of "67")
 
-### UX
-- The button label: **"Copy Share Link"** with a share icon
-- Toast on copy: `"Filtered challenge link copied to clipboard!"`
-- Works alongside existing search, difficulty, and status filters
+### Scope
+One file, ~6 line changes. No database changes.
 
