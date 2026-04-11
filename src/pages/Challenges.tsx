@@ -64,8 +64,8 @@ const Challenges = () => {
     },
   });
 
-  const completedIds = new Set(myEnrollments.filter((e: any) => e.status === "completed").map((e: any) => e.challenge_id));
-  const enrolledIds = new Set(myEnrollments.map((e: any) => e.challenge_id));
+  const allCompletedIds = new Set(myEnrollments.filter((e: any) => e.status === "completed").map((e: any) => e.challenge_id));
+  const allEnrolledIds = new Set(myEnrollments.map((e: any) => e.challenge_id));
 
   // Get unique game names for filter tabs
   const gameNames = [...new Set(challenges.map((c: any) => c.games?.name).filter(Boolean))].sort();
