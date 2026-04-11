@@ -107,9 +107,9 @@ const Challenges = () => {
         {user ? (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
+               <Card>
                 <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold font-mono text-primary">{challenges.length}</p>
+                  <p className="text-2xl font-bold font-mono text-primary">{filtered.length}</p>
                   <p className="text-xs text-muted-foreground">Available</p>
                 </CardContent>
               </Card>
@@ -128,8 +128,8 @@ const Challenges = () => {
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold font-mono text-accent-foreground">
-                    {challenges.length > 0
-                      ? Math.round((completedIds.size / challenges.length) * 100)
+                    {filtered.length > 0
+                      ? Math.round((completedIds.size / filtered.length) * 100)
                       : 0}%
                   </p>
                   <p className="text-xs text-muted-foreground">Progress</p>
@@ -138,14 +138,14 @@ const Challenges = () => {
             </div>
 
             {/* Progress bar */}
-            {challenges.length > 0 && (
+            {filtered.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-white font-body">Overall Progress</span>
-                  <span className="font-mono text-foreground">{completedIds.size} / {challenges.length}</span>
+                  <span className="text-muted-foreground font-body">Overall Progress</span>
+                  <span className="font-mono text-foreground">{completedIds.size} / {filtered.length}</span>
                 </div>
                 <Progress
-                  value={challenges.length > 0 ? (completedIds.size / challenges.length) * 100 : 0}
+                  value={filtered.length > 0 ? (completedIds.size / filtered.length) * 100 : 0}
                   className="h-3"
                 />
               </div>
