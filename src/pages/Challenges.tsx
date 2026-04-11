@@ -74,6 +74,11 @@ const Challenges = () => {
     ? challenges.filter((c: any) => c.games?.name === gameFilter)
     : challenges;
 
+  // Filtered enrollment sets for stats
+  const filteredIds = new Set(filtered.map((c: any) => c.id));
+  const completedIds = new Set(myEnrollments.filter((e: any) => e.status === "completed" && filteredIds.has(e.challenge_id)).map((e: any) => e.challenge_id));
+  const enrolledIds = new Set(myEnrollments.filter((e: any) => filteredIds.has(e.challenge_id)).map((e: any) => e.challenge_id));
+
   const activeChallenges = filtered.filter((c: any) => !completedIds.has(c.id));
   const completedChallenges = filtered.filter((c: any) => completedIds.has(c.id));
 
