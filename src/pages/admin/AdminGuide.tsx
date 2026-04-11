@@ -499,6 +499,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "XP Rewards — Quests award XP in addition to season points. The XP feeds into a five-tier rank system (Novice → Apprentice → Journeyman → Expert → Master) tracked per player.",
       "Chain Completion — When a player finishes all quests in a chain, bonus points are awarded automatically via a database trigger, and an optional achievement badge is granted.",
       "Players view active challenges at /challenges and quests at /quests, and can see which ones they've already completed.",
+      "Game Filter & Share Links — Use the Game filter dropdown on the Admin Challenges page to select a specific game, then click 'Copy Share Link' to generate a public URL (e.g. /challenges?game=American+Truck+Simulator). Share this link in emails or invitations so recipients land on a pre-filtered view showing only that game's challenges.",
+      "Filtered Stats — When a user opens a filtered link, the stats bar (Available, Enrolled, Completed, Progress) reflects only the filtered game's challenges, not the full catalog.",
       "Post-Publication Task Editing — Admins and Moderators can add, edit, reorder, and remove tasks on published challenges directly from the Edit dialog on the challenge detail page.",
       "Approval Notifications — When a challenge submission is approved, the player automatically receives an in-app notification with the challenge name and points earned.",
       "FGN Academy Sync — When a challenge is approved, the system automatically syncs the completion to FGN Academy's Skill Passport. The payload includes score (0–100, normalized from awarded vs max points), task-level progress, and free-form skill tags (difficulty, game, gaming-proficiency).",
