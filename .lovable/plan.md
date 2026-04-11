@@ -1,20 +1,19 @@
 
 
-## Fix: Share link uses hardcoded domain — doesn't work in preview
+## Update Admin and Player Guides with Challenge Filtering Feature
 
-### Problem
-The "Copy Share Link" button hardcodes the published domain (`https://guild-hall-maker.lovable.app`). When you test the link in the Lovable preview environment (which runs on a different domain), you're either:
-1. Opening the published site (which may have an older deployment without the filtering code)
-2. Or testing by navigating within the preview, where the URL doesn't include the `?game=` parameter
+### Summary
+Add documentation about the new URL-based game filtering on the Challenges page and the admin "Copy Share Link" button to both guides.
 
-### Fix
+### Changes
 
-**`src/pages/admin/AdminChallenges.tsx`**
-- Replace the hardcoded domain with `window.location.origin` so the share link works in whichever environment you're currently in (preview or published)
-- Change: `const base = "https://guild-hall-maker.lovable.app/challenges"` → `const base = \`${window.location.origin}/challenges\``
+**`src/pages/admin/AdminGuide.tsx`** — Challenges section (~line 501, after the "Players view active challenges" bullet)
+- Add bullet: "Game Filter & Share Links — Use the Game filter dropdown on the Admin Challenges page to select a specific game, then click 'Copy Share Link' to generate a public URL (e.g. /challenges?game=American+Truck+Simulator). Share this link in emails or invitations so recipients land on a pre-filtered view showing only that game's challenges."
+- Add bullet: "Filtered Stats — When a user opens a filtered link, the stats bar (Available, Enrolled, Completed, Progress) reflects only the filtered game's challenges, not the full catalog."
 
-This single-line change ensures the copied URL matches the environment you're testing in. Once published, the link will automatically use the published domain.
+**`src/pages/PlayerGuide.tsx`** — Challenges section (~line 235, after the "Game-Specific" bullet)
+- Add bullet: "Filtered Links — You may receive a link that takes you directly to challenges for a specific game (e.g. /challenges?game=Farm+Simulator+2025). The page will pre-select that game's tab and show only its challenges, stats, and progress."
 
 ### Scope
-One file, one line change. No database changes.
+Two files, three new bullet points total. No database changes.
 
