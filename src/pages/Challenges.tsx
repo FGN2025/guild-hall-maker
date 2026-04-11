@@ -205,7 +205,7 @@ const Challenges = () => {
               </div>
             ))}
           </div>
-        ) : challenges.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
               <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
