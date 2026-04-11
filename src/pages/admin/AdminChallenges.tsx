@@ -176,7 +176,7 @@ const AdminChallenges = () => {
   const dragEnabled = !search && difficultyFilter === "all" && statusFilter === "all" && gameFilter === "all";
 
   const handleCopyShareLink = async () => {
-    const base = "https://guild-hall-maker.lovable.app/challenges";
+    const base = `${window.location.origin}/challenges`;
     const url = gameFilter !== "all" ? `${base}?game=${encodeURIComponent(gameFilter)}` : base;
     await navigator.clipboard.writeText(url);
     toast.success("Filtered challenge link copied to clipboard!");
