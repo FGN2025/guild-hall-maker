@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy, GripVertical,
+  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy, GripVertical, Share2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -122,6 +122,7 @@ const AdminChallenges = () => {
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [gameFilter, setGameFilter] = useState("all");
   const [detailChallenge, setDetailChallenge] = useState<any | null>(null);
   const [editChallenge, setEditChallenge] = useState<any | null>(null);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
@@ -154,8 +155,13 @@ const AdminChallenges = () => {
     },
   });
 
+  const gameNames = useMemo(() => {
+    return [...new Set(challenges.map((c: any) => c.games?.name).filter(Boolean))].sort() as string[];
+  }, [challenges]);
+
   const filtered = useMemo(() => {
     return challenges.filter((c: any) => {
+      if (gameFilter !== "all" && (c.games?.name ?? "") !== gameFilter) return false;
       if (difficultyFilter !== "all" && c.difficulty !== difficultyFilter) return false;
       if (statusFilter === "active" && !c.is_active) return false;
       if (statusFilter === "inactive" && c.is_active) return false;
@@ -165,9 +171,16 @@ const AdminChallenges = () => {
       }
       return true;
     });
-  }, [challenges, search, difficultyFilter, statusFilter]);
+  }, [challenges, search, difficultyFilter, statusFilter, gameFilter]);
 
-  const dragEnabled = !search && difficultyFilter === "all" && statusFilter === "all";
+  const dragEnabled = !search && difficultyFilter === "all" && statusFilter === "all" && gameFilter === "all";
+
+  const handleCopyShareLink = async () => {
+    const base = "https://guild-hall-maker.lovable.app/challenges";
+    const url = gameFilter !== "all" ? `${base}?game=${encodeURIComponent(gameFilter)}` : base;
+    await navigator.clipboard.writeText(url);
+    toast.success("Filtered challenge link copied to clipboard!");
+  };
   const challengeIds = useMemo(() => filtered.map((c: any) => c.id), [filtered]);
 
   // DnD sensors
@@ -463,6 +476,20 @@ const AdminChallenges = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={gameFilter} onValueChange={setGameFilter}>
+              <SelectTrigger className="w-full sm:w-52">
+                <SelectValue placeholder="Game" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Games</SelectItem>
+                {gameNames.map((g) => (
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" className="gap-2 whitespace-nowrap" onClick={handleCopyShareLink}>
+              <Share2 className="h-4 w-4" /> Copy Share Link
+            </Button>
             <div className="flex gap-1">
               <Button variant={viewMode === "list" ? "default" : "outline"} size="icon" onClick={() => setViewMode("list")}>
                 <List className="h-4 w-4" />
