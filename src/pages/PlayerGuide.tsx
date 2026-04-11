@@ -233,6 +233,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Participation Points — Even if you don't win, you earn participation points for attempting challenges.",
       "Progress Tracking — Track which challenges you've completed and how many points you've earned.",
       "Game-Specific — Some challenges are tied to specific games; others are open to any game on the platform.",
+      "Filtered Links — You may receive a link that takes you directly to challenges for a specific game (e.g. /challenges?game=Farm+Simulator+2025). The page will pre-select that game's tab and show only its challenges, stats, and progress.",
       "Max Completions — Certain challenges limit how many players can complete them, so act fast!",
       "Notifications — Get notified when a new challenge drops so you never miss an opportunity.",
       "Quests — Quests work like challenges with their own separate catalog, enrollment, evidence upload, and completion flow. Browse active quests at /quests.",
