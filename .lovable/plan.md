@@ -1,22 +1,21 @@
 
 
-## Support URL-based game filter on Challenges page
+## Add "Copy Filtered Link" button to Admin Challenges page
 
 ### Summary
-Allow linking directly to a filtered Challenges page via a query parameter, e.g. `/challenges?game=Farm+Simulator+2025`. This lets you share filtered links in invitations and emails. The existing filter tabs continue to work — clicking a tab updates the URL, and arriving with a `?game=` param pre-selects that filter.
+Add a game filter dropdown and a "Copy Link" button to the admin Challenges oversight tab. Admins select a game, click the button, and get a shareable URL like `/challenges?game=Farm+Simulator+2025` copied to their clipboard — ready to paste into emails or invitations.
 
 ### Changes
 
-**`src/pages/Challenges.tsx`**
-- Import `useSearchParams` from `react-router-dom`
-- Initialize `gameFilter` state from `searchParams.get("game")` instead of `null`
-- When a filter tab is clicked, update both local state and the URL search param
-- When "All Games" is clicked, remove the `game` param from the URL
+**`src/pages/admin/AdminChallenges.tsx`**
+1. Add a new game filter `Select` dropdown (populated from unique game names in the challenges list) to the existing filter bar
+2. Add a "Copy Filtered Link" button (with a `Link` or `Share2` icon) next to the filters
+3. When clicked, it builds the public URL using the published domain (`https://guild-hall-maker.lovable.app/challenges?game=GameName`) and copies it to the clipboard with a toast confirmation
+4. If no game is selected (showing "All Games"), the button copies the unfiltered `/challenges` link
+5. The game filter also filters the displayed challenges in the admin table, consistent with the other filters
 
-No new files, no database changes. Just a small update to the existing Challenges page component.
-
-### Example URLs
-- `/challenges` — shows all challenges (current behavior)
-- `/challenges?game=Farm+Simulator+2025` — lands with Farm Simulator 2025 pre-selected
-- `/challenges?game=American+Truck+Simulator` — lands with ATS pre-selected
+### UX
+- The button label: **"Copy Share Link"** with a share icon
+- Toast on copy: `"Filtered challenge link copied to clipboard!"`
+- Works alongside existing search, difficulty, and status filters
 
