@@ -1,24 +1,34 @@
 
 
-## Activate 6 CE Fiber Challenges
+## Add "Data Center" Game to the Catalog
 
-### Summary
-Set `is_active = true` for the 6 CE fiber challenges using the database insert tool (UPDATE statement).
+### What
+Insert a new game record for "Data Center" — a data center technician simulation game on Steam that will be used for building challenges.
 
-### SQL
+### Details
+- **Name**: Data Center
+- **Slug**: data-center
+- **Category**: General (simulation-style; no exact "Simulation" category exists in the current list)
+- **Steam App ID**: 4170200
+- **Platform Tags**: PC
+- **is_active**: true
+- **display_order**: 46 (next after current max of 45)
+- **Description**: A data center technician simulation game where players manage and maintain data center infrastructure.
+
+### Implementation
+Single SQL INSERT into the `games` table using the data insert tool. No code changes needed.
+
 ```sql
-UPDATE challenges
-SET is_active = true
-WHERE id IN (
-  '034e8cf3-8832-4c05-a572-67af46dc9971',
-  'c8298ef1-d359-4536-958f-533e66f7ee4a',
-  '5e9ace81-fcc3-49f9-9013-5321d2e04d56',
-  'd8b601c3-ff40-46c6-aa4b-55da7711c8ce',
-  '57da5f29-5a4e-4148-a738-319e7a33252c',
-  '4ce440c1-be75-4700-a8fa-4a80f6d1fbde'
+INSERT INTO games (name, slug, category, steam_app_id, platform_tags, is_active, display_order, description)
+VALUES (
+  'Data Center',
+  'data-center',
+  'General',
+  '4170200',
+  ARRAY['PC'],
+  true,
+  46,
+  'A data center technician simulation game where players build, manage, and maintain data center infrastructure. Available on Steam.'
 );
 ```
-
-### Scope
-One UPDATE statement, no code changes.
 
