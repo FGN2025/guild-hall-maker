@@ -73,6 +73,7 @@ export const useNotifications = () => {
         },
         (payload: any) => {
           queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["notifications-unread-count", user.id] });
           // Play sound + show browser notification
           const row = payload.new;
           if (row) {
@@ -98,6 +99,7 @@ export const useNotifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count", user?.id] });
     },
   });
 
@@ -113,10 +115,11 @@ export const useNotifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count", user?.id] });
     },
   });
 
-  const unreadCount = (query.data ?? []).filter((n) => !n.is_read).length;
+  const unreadCount = unreadCountQuery.data ?? 0;
 
   return { ...query, unreadCount, markAsRead, markAllAsRead };
 };
