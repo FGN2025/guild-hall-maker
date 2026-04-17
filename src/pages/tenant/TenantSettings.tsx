@@ -122,7 +122,7 @@ const TenantSettings = () => {
         </p>
       </div>
 
-      {isAdmin && !isSubscribed && <TenantBillingCard />}
+      {!roleLoading && isAdmin && isPlatformAdminMode && !isSubscribed && <TenantBillingCard />}
 
       <Card>
         <CardHeader>
