@@ -1,96 +1,60 @@
 
 
-## Tenant Branding: Logo + Custom Banner Plan
+## P0: Make Third-Party Embeds Actually Work
 
-### Goal
-When a logged-in **subscriber** of a tenant (or a tenant staff member) browses the player portal, they see their tenant's **logo** in the navbar/sidebar and a **custom banner** (built in our existing Web Page editor) at the top of core pages. Guests and unaffiliated users see the default FGN branding.
+### Problem
+`SectionPreview` and `WebPageView` render `embed_code` via `dangerouslySetInnerHTML`. Browsers treat `<script>` tags injected this way as **inert** — they never execute. So when a tenant pastes a CommonNinja, Twitter, TikTok, or X widget snippet into an `embed_widget` section, the loader script never fires and the widget container stays empty.
 
-### What already exists (reuse, don't rebuild)
-- `tenants` table has `logo_url`, `primary_color`, `accent_color` ✅
-- `TenantLayout` already applies brand colors as CSS vars (admin portal only) ✅
-- `web_pages` + `web_page_sections` editor + `SectionPreview` already supports `hero`, `banner`, `text_block`, `cta`, `featured_events`, etc. ✅ — perfect for "build banner in our editor"
-- `tenant_subscribers` table already maps customers to tenants ✅
-- `PageHero` / `PageBackground` components exist for per-page imagery ✅
+The homepage `TickerEmbed.tsx` already solved this for one specific case (CommonNinja SDK) but that logic isn't reusable.
 
-### Architecture
+### Solution
+Build a reusable `<EmbeddedHtml />` component that:
+1. Renders the HTML into a container
+2. Walks the DOM, finds every `<script>` tag, clones it into a real DOM script node, and appends it (this is the standard pattern that forces browser execution)
+3. Preserves `src`, `type`, `async`, `defer`, and inline script content
+4. Cleans up on unmount
+
+Use it everywhere embed HTML is rendered.
+
+### Files to change
+
+**New**
+- `src/components/shared/EmbeddedHtml.tsx` — reusable script-rehydrating embed renderer
+
+**Modified**
+- `src/components/webpages/SectionPreview.tsx` — replace `dangerouslySetInnerHTML` in the `embed_widget` case with `<EmbeddedHtml html={c.embed_code} />`
+- `src/components/TickerEmbed.tsx` — refactor to use `<EmbeddedHtml />` (removes the duplicated CommonNinja-specific logic)
+- `src/lib/exportWebPage.ts` — fix the standalone HTML export so embed scripts come through intact (currently `esc()` would break script content if applied; verify embed_code is passed through raw with a comment noting tenant-trusted source)
+
+### How it works (technical)
 
 ```text
-User logs in
+<EmbeddedHtml html={...}>
    │
    ▼
-Resolve "active tenant" for this user:
-   1. tenant_admins.user_id  → staff
-   2. tenant_subscribers (match by email/zip) → subscriber
-   3. else → none (default FGN branding)
-   │
-   ▼
-TenantBrandingContext provides:
-  { tenant, logoUrl, primaryColor, accentColor, bannerPageSlug }
-   │
-   ├─► Navbar/AppSidebar logo swap (with FGN fallback)
-   ├─► CSS vars --tenant-primary / --tenant-accent on <html>
-   └─► <TenantBannerSlot pageSlug="dashboard"/> at top of pages
+1. useRef container <div>
+2. useEffect:
+     container.innerHTML = html      // injects markup
+     for each <script> in container:
+        create new <script> element
+        copy attributes (src, type, async, defer)
+        copy text content
+        replace original with new node
+        → browser sees a fresh script, executes it
+3. cleanup: container.innerHTML = ''
 ```
 
-### Database changes (one migration)
+This is the well-known "script rehydration" trick used by every framework that renders third-party HTML.
 
-1. **Subscriber linking** — add nullable `user_id` to `tenant_subscribers` so we can match a logged-in user to their tenant deterministically (auto-link on login by email match).
-   ```sql
-   ALTER TABLE tenant_subscribers ADD COLUMN user_id uuid REFERENCES auth.users(id);
-   CREATE INDEX ON tenant_subscribers(user_id);
-   ```
-2. **Per-tenant banner pages** — extend `web_pages` so a tenant can mark one page as their "branded banner" set:
-   ```sql
-   ALTER TABLE web_pages ADD COLUMN is_tenant_banner boolean DEFAULT false;
-   -- Partial unique: only one active banner page per tenant
-   CREATE UNIQUE INDEX one_banner_per_tenant ON web_pages(tenant_id) 
-     WHERE is_tenant_banner = true AND is_published = true;
-   ```
-3. **RLS** — banner pages are readable by:
-   - tenant staff (existing policy)
-   - users in `tenant_subscribers` for that tenant
-   - NOT public anon, NOT other tenants' subscribers
-4. **Helper function**:
-   ```sql
-   CREATE FUNCTION get_user_tenant(_user_id uuid) RETURNS uuid
-   -- Returns tenant_id from tenant_admins OR tenant_subscribers, else NULL
-   ```
+### Trust & safety note
+Embed code is authored only by tenant staff (RLS protected) — same trust boundary as today. No new XSS surface introduced; we're just letting already-saved scripts execute as intended. Sandbox toggle is **out of scope for P0** (deferred to P1).
 
-### New code
-
-**Hook** `src/hooks/useUserTenantBranding.ts`
-- Calls `get_user_tenant(auth.uid())`, fetches tenant row + banner web_page + sections.
-- Returns `{ tenant, bannerSections, isLoading }`. Cached 5 min.
-
-**Provider** `src/contexts/TenantBrandingContext.tsx`
-- Wraps `<AppLayout>`; applies `--tenant-primary/--tenant-accent` CSS vars to `<html>` (mirrors existing TenantLayout logic).
-
-**Component** `src/components/branding/TenantBannerSlot.tsx`
-- Renders banner sections via existing `<SectionPreview>` if branding active; nothing otherwise.
-- Drop into `AppLayout` `<main>` top, above `<Outlet/>`.
-
-**Navbar/Sidebar logo swap**
-- `Navbar.tsx` (line 60) and `AppSidebar.tsx`: if `branding.tenant?.logo_url`, render tenant logo + tenant name; else FGN logo. Co-brand pattern: "POWERED BY FGN" small text below tenant logo.
-
-**Tenant editor entry point**
-- In `TenantSidebar`, add nav item **"Branding & Banner"** → reuses existing `WebPageEditor` filtered to `is_tenant_banner = true` page (auto-create if missing). No new editor needed.
-- "Branding" tab also shows current logo (already editable in TenantSettings) and a live preview of how the player portal looks with their banner.
-
-### Auto-link subscribers to users
-When a user signs in/registers, a trigger or `claim_subscriber_record()` function matches their auth email to `tenant_subscribers.email` and stamps `user_id`. This is what powers branding visibility.
-
-### Visibility rules summary
-
-| Viewer | Logo | Banner | Colors |
-|---|---|---|---|
-| Tenant staff | Tenant | Tenant | Tenant |
-| Linked subscriber | Tenant (co-branded) | Tenant | Tenant |
-| Other logged-in user | FGN | None | FGN |
-| Guest | FGN | None | FGN |
-| Platform admin | Selected tenant (existing switcher) | Selected | Selected |
-
-### Out of scope (can follow up)
-- Per-page banner overrides (one banner page per tenant for v1)
-- Custom fonts per tenant
-- Tenant-specific email templates
+### Test plan
+1. Open the preview (already on `/community`); navigate to **Tenant → Web Pages**.
+2. Open or create a page, add an **Embed Widget** section.
+3. Paste a CommonNinja snippet (copy from homepage `homepage_ticker_embed` setting or a fresh widget). Save.
+4. Switch to Preview tab → confirm the widget renders.
+5. Open `/pages/{tenantSlug}/{pageSlug}` (Published view) → confirm the widget renders.
+6. Visit `/` (homepage) → confirm `TickerEmbed` still works after refactor.
+7. Check console for script errors.
 
