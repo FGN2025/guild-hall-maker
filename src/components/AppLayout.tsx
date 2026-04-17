@@ -33,7 +33,9 @@ const AppLayout = () => {
               </main>
             </div>
           </div>
-          <CoachFloatingButton />
+          <Suspense fallback={null}>
+            <CoachFloatingButton />
+          </Suspense>
           <ScrollToTopButton />
         </SidebarProvider>
       </CoachProvider>
