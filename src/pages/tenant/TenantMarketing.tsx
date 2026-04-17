@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock } from "lucide-react";
 import SocialAccountsManager from "@/components/marketing/SocialAccountsManager";
 import ScheduledPostsCalendar from "@/components/marketing/ScheduledPostsCalendar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
@@ -18,13 +18,29 @@ import TenantCodes from "./TenantCodes";
 import TenantWebPages from "./TenantWebPages";
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 
+const VALID_TABS = ["campaigns", "assets", "codes", "webpages", "social", "scheduled"] as const;
+
 const TenantMarketing = () => {
   const { campaigns, isLoading } = useMarketingCampaigns(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { tenantInfo } = useTenantAdmin();
+
+  const tabParam = searchParams.get("tab");
+  const activeTab = (VALID_TABS as readonly string[]).includes(tabParam || "")
+    ? (tabParam as string)
+    : "campaigns";
+  const handleTabChange = (val: string) => {
+    if (val === "campaigns") {
+      searchParams.delete("tab");
+    } else {
+      searchParams.set("tab", val);
+    }
+    setSearchParams(searchParams, { replace: true });
+  };
 
   // Fetch asset counts + first thumbnail per campaign in a single query
   const { data: assetSummaryRaw } = useQuery({
@@ -81,7 +97,7 @@ const TenantMarketing = () => {
         <p className="text-sm text-muted-foreground mt-1">Campaigns, assets, codes, and web pages in one place</p>
       </div>
 
-      <Tabs defaultValue="campaigns" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="bg-muted">
           <TabsTrigger value="campaigns" className="gap-2 font-heading">
             <Megaphone className="h-4 w-4" /> Campaigns
