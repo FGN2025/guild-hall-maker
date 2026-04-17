@@ -158,27 +158,6 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
             </Link>
           );
         })}
-
-        <div className="mt-6 mb-2 px-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading">
-            FGN Ecosystem
-          </p>
-        </div>
-        {ecosystemApps.map((app) => (
-          <button
-            key={app.target}
-            onClick={() => requestMagicLink(app.target)}
-            disabled={loading !== null}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide text-muted-foreground hover:text-foreground hover:bg-secondary transition-all disabled:opacity-50 w-full text-left"
-          >
-            {loading === app.target ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ExternalLink className="h-4 w-4" />
-            )}
-            {app.label}
-          </button>
-        ))}
       </nav>
       <div className="p-4 border-t border-border">
         <Link
