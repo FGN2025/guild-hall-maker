@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe } from "lucide-react";
-import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -54,15 +53,9 @@ const allSidebarItems = [
   { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];
 
-const ecosystemApps = [
-  { target: "play" as const, label: "Play" },
-  { target: "manage" as const, label: "Manage" },
-  { target: "hub" as const, label: "Hub" },
-];
 
 const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatformAdmin, allTenants, selectedTenantId, onTenantChange }: TenantSidebarProps) => {
   const location = useLocation();
-  const { requestMagicLink, loading } = useEcosystemAuth();
 
   const sidebarItems = allSidebarItems.filter((item) => item.roles.includes(tenantRole));
 
@@ -165,27 +158,6 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
             </Link>
           );
         })}
-
-        <div className="mt-6 mb-2 px-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest font-heading">
-            FGN Ecosystem
-          </p>
-        </div>
-        {ecosystemApps.map((app) => (
-          <button
-            key={app.target}
-            onClick={() => requestMagicLink(app.target)}
-            disabled={loading !== null}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide text-muted-foreground hover:text-foreground hover:bg-secondary transition-all disabled:opacity-50 w-full text-left"
-          >
-            {loading === app.target ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ExternalLink className="h-4 w-4" />
-            )}
-            {app.label}
-          </button>
-        ))}
       </nav>
       <div className="p-4 border-t border-border">
         <Link
