@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { useTenantBilling } from "@/hooks/useTenantBilling";
 
 const TenantSettings = () => {
   const { tenantInfo } = useTenantAdmin();
+  const { isAdmin } = useAuth();
   const { config: cloudGamingConfig } = useTenantCloudGaming(tenantInfo?.tenantId);
   const { isSubscribed } = useTenantBilling();
   const queryClient = useQueryClient();
@@ -120,7 +122,7 @@ const TenantSettings = () => {
         </p>
       </div>
 
-      {!isSubscribed && <TenantBillingCard />}
+      {isAdmin && !isSubscribed && <TenantBillingCard />}
 
       <Card>
         <CardHeader>
