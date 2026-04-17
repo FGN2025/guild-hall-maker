@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Gamepad2, Lock, Sparkles } from "lucide-react";
@@ -123,4 +124,4 @@ const QuestCard = ({ quest, enrollmentCount = 0, isLocked = false, lockMessage, 
   return <Link to={`/quests/${q.id}`}>{cardContent}</Link>;
 };
 
-export default QuestCard;
+export default memo(QuestCard);

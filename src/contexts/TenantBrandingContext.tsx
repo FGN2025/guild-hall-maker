@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, ReactNode } from "react";
 import { useUserTenantBranding, type TenantBranding } from "@/hooks/useUserTenantBranding";
 
 interface Ctx {
@@ -54,8 +54,13 @@ export const TenantBrandingProvider = ({ children }: { children: ReactNode }) =>
     };
   }, [branding?.primaryColor, branding?.accentColor]);
 
+  const value = useMemo(
+    () => ({ branding: branding ?? null, isLoading }),
+    [branding, isLoading]
+  );
+
   return (
-    <TenantBrandingContext.Provider value={{ branding: branding ?? null, isLoading }}>
+    <TenantBrandingContext.Provider value={value}>
       {children}
     </TenantBrandingContext.Provider>
   );
