@@ -2,7 +2,7 @@ import { useState } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useNavigate, Link } from "react-router-dom";
 import nawCalendarLogo from "@/assets/naw-calendar-logo-2026.png";
-import nawInfographic from "@/assets/naw-infographic-2026.png";
+import nawInfographic from "@/assets/naw-infographic-2026.jpg";
 import { isWithinInterval } from "date-fns";
 import {
   startOfMonth,
