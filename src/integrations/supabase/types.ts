@@ -3416,6 +3416,7 @@ export type Database = {
           synced_at: string | null
           tenant_id: string
           updated_at: string
+          user_id: string | null
           zip_code: string | null
         }
         Insert: {
@@ -3434,6 +3435,7 @@ export type Database = {
           synced_at?: string | null
           tenant_id: string
           updated_at?: string
+          user_id?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -3452,6 +3454,7 @@ export type Database = {
           synced_at?: string | null
           tenant_id?: string
           updated_at?: string
+          user_id?: string | null
           zip_code?: string | null
         }
         Relationships: [
@@ -3899,6 +3902,7 @@ export type Database = {
           description: string | null
           id: string
           is_published: boolean
+          is_tenant_banner: boolean
           slug: string
           tenant_id: string | null
           title: string
@@ -3910,6 +3914,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean
+          is_tenant_banner?: boolean
           slug: string
           tenant_id?: string | null
           title: string
@@ -3921,6 +3926,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean
+          is_tenant_banner?: boolean
           slug?: string
           tenant_id?: string | null
           title?: string
@@ -4131,6 +4137,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_user_tenant: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
