@@ -48,12 +48,12 @@ export const useUserTenantBranding = () => {
       if (!tenant) return null;
 
       // Look up published banner page
-      const { data: bannerPage } = await supabase
+      const { data: bannerPage } = await (supabase
         .from("web_pages")
         .select("id")
         .eq("tenant_id", tenant.id)
-        .eq("is_tenant_banner" as any, true)
-        .eq("is_published", true)
+        .eq("is_published", true) as any)
+        .eq("is_tenant_banner", true)
         .maybeSingle();
 
       let bannerSections: WebPageSection[] = [];
