@@ -70,23 +70,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRoleLoading(false);
     fetchingRef.current = false;
 
-    // Fetch subscription status for tenant staff
+    // Subscription status: hydrate from cache immediately, refresh in background.
+    // Never blocks roleLoading or page render.
     if (isTenant) {
-      try {
-        const { data: subData } = await supabase.functions.invoke("check-subscription", {
-          body: { userId },
-        });
-        const status = subData?.status;
-        if (status === "active" || status === "trialing") {
-          setSubscriptionStatus("active");
-        } else if (status === "past_due") {
-          setSubscriptionStatus("past_due");
-        } else {
-          setSubscriptionStatus("inactive");
+      const cacheKey = `fgn_sub_status_${userId}`;
+      const cached = localStorage.getItem(cacheKey);
+      let cachedFresh = false;
+      if (cached) {
+        try {
+          const { status, ts } = JSON.parse(cached);
+          setSubscriptionStatus(
+            status === "active" || status === "trialing"
+              ? "active"
+              : status === "past_due"
+              ? "past_due"
+              : "inactive"
+          );
+          cachedFresh = Date.now() - ts < 5 * 60 * 1000;
+        } catch {
+          // ignore malformed cache
         }
-      } catch {
-        setSubscriptionStatus("inactive");
       }
+
+      if (cachedFresh) return;
+
+      // Background refresh (fire-and-forget)
+      supabase.functions
+        .invoke("check-subscription", { body: { userId } })
+        .then(({ data }) => {
+          const status = data?.status;
+          const mapped: SubscriptionStatus =
+            status === "active" || status === "trialing"
+              ? "active"
+              : status === "past_due"
+              ? "past_due"
+              : "inactive";
+          setSubscriptionStatus(mapped);
+          localStorage.setItem(cacheKey, JSON.stringify({ status, ts: Date.now() }));
+        })
+        .catch(() => {
+          if (!cached) setSubscriptionStatus("inactive");
+        });
     } else {
       setSubscriptionStatus("inactive");
     }
