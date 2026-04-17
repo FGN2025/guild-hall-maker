@@ -1,47 +1,46 @@
 
 
-The user wants the FGN Ecosystem section (Play/Manage/Hub buttons) removed from sidebars for Platform Admins, and a full impact assessment before removal.
+## Root cause
 
-## Impact Assessment
+The current code is:
+```tsx
+{isAdmin && !isSubscribed && <TenantBillingCard />}
+```
 
-**Files referencing `useEcosystemAuth` / ecosystem magic links:**
-- `src/components/tenant/TenantSidebar.tsx` — renders Play/Manage/Hub buttons
-- `src/hooks/useEcosystemAuth.ts` — hook calling `ecosystem-magic-link` edge function
-- `src/pages/admin/AdminEcosystem.tsx` — admin page for ecosystem config (separate, not in scope)
+Two issues:
+1. **No `roleLoading` guard** — during the brief window before `user_roles` resolves, `isAdmin` is `false` then flips. Also, on a stale cache the prior render can show the card. The "stack overflow" pattern flagged this exact bug.
+2. **`isAdmin` alone is fragile** — it's true for Platform Admins even when they're not in tenant-switching mode. Using `isPlatformAdminMode` from `useTenantAdmin` makes the intent explicit ("Platform Admin viewing the tenant portal"), and naturally hides it from every Tenant Admin/Manager/Marketing user.
 
-**Backend dependencies (KEEP — not in scope):**
-- `supabase/functions/ecosystem-magic-link/index.ts` — still needed for inbound cross-app links
-- `supabase/functions/validate-ecosystem-token/index.ts` — token validation endpoint
-- `supabase/functions/ecosystem-data-api/index.ts` — data API for spoke apps
-- `supabase/functions/ecosystem-webhook-dispatch/index.ts` — webhook dispatcher
-- `supabase/functions/ecosystem-calendar-feed/index.ts` — calendar feed
-- `/admin/ecosystem` page and underlying `ecosystem_*` tables
+## Fix
 
-**Verdict:** Removing the sidebar buttons is safe. The hook `useEcosystemAuth` is only consumed by `TenantSidebar.tsx`, so it can be deleted too. All edge functions and the AdminEcosystem page remain functional and untouched.
+**File:** `src/pages/tenant/TenantSettings.tsx`
 
-## Changes
+1. Pull `roleLoading` from `useAuth()`.
+2. Pull `isPlatformAdminMode` from `useTenantAdmin()`.
+3. Replace the gate with a strict check that requires roles to be loaded AND the user to be a Platform Admin in tenant-switching mode:
 
-### 1. `src/components/tenant/TenantSidebar.tsx`
-- Remove the `ecosystemApps` array
-- Remove the `useEcosystemAuth()` hook call
-- Remove the entire "FGN Ecosystem" nav section (header label + buttons map)
-- Clean up unused imports: `ExternalLink`, `Loader2`, `useEcosystemAuth`
+```tsx
+const { isAdmin, roleLoading } = useAuth();
+const { tenantInfo, isPlatformAdminMode } = useTenantAdmin();
+...
+{!roleLoading && isAdmin && isPlatformAdminMode && !isSubscribed && (
+  <TenantBillingCard />
+)}
+```
 
-### 2. `src/hooks/useEcosystemAuth.ts`
-- Delete the file (no remaining consumers after sidebar cleanup)
+This guarantees:
+- **Platform Admin in tenant mode** → sees the card (can subscribe on behalf of the tenant).
+- **Tenant Admin / Manager / Marketing** → never sees the card (they're not `isAdmin`).
+- **No flash** during initial role fetch.
 
-### 3. Verify no other sidebars reference it
-- `AdminSidebar.tsx`, `ModeratorSidebar.tsx`, `MarketingSidebar.tsx` — confirmed none use `useEcosystemAuth` based on prior search
+## Verify no other entry points
 
-## Out of Scope (Preserved)
-- `/admin/ecosystem` admin configuration page
-- All `ecosystem-*` edge functions (inbound cross-app integration still works)
-- Database tables: `ecosystem_webhooks`, `ecosystem_sync_log`, ecosystem tokens
+Confirmed `TenantBillingCard` is only imported in `TenantSettings.tsx` (single usage). No other pages render it.
 
 ## Test
-1. As Platform Admin on `/tenant/settings` → no "FGN Ecosystem" header or Play/Manage/Hub buttons
-2. As Tenant Admin on any `/tenant/*` page → same; no buttons
-3. `/admin/ecosystem` still loads and functions normally
-4. No console errors; no broken imports
-5. Inbound magic links from other apps still authenticate users (edge function untouched)
+1. Sign in as Platform Admin → `/tenant/settings` → Billing card visible (if no active sub).
+2. Sign in as Tenant Admin (no platform role) → `/tenant/settings` → no Billing card.
+3. Sign in as Tenant Manager / Marketing → `/tenant/settings` → no Billing card.
+4. Hard reload as a tenant-only user → no flash of the Billing card during role fetch.
+5. After Platform Admin subscribes → card disappears (existing `!isSubscribed` behavior preserved).
 
