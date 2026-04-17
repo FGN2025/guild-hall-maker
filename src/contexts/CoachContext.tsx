@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, ReactNode } from "react";
 
 interface CoachContextType {
   isOpen: boolean;
@@ -11,9 +11,6 @@ export const useCoach = () => useContext(CoachContext);
 
 export const CoachProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
-  return (
-    <CoachContext.Provider value={{ isOpen, setIsOpen }}>
-      {children}
-    </CoachContext.Provider>
-  );
+  const value = useMemo(() => ({ isOpen, setIsOpen }), [isOpen]);
+  return <CoachContext.Provider value={value}>{children}</CoachContext.Provider>;
 };
