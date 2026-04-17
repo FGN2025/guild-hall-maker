@@ -24,11 +24,11 @@ const TenantBranding = () => {
     let cancelled = false;
     (async () => {
       // 1. Look for an existing banner page
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase
         .from("web_pages")
         .select("id")
-        .eq("tenant_id", tenantId)
-        .eq("is_tenant_banner" as any, true)
+        .eq("tenant_id", tenantId) as any)
+        .eq("is_tenant_banner", true)
         .maybeSingle();
 
       if (cancelled) return;
