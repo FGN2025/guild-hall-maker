@@ -132,7 +132,7 @@ const MediaGrid = ({ media, onDelete, isDeleting, onUpdateCategory, onBulkDelete
                 <Checkbox checked={isSelected} className="h-5 w-5 bg-background/80 backdrop-blur-sm" />
               </div>
               {item.file_type === "image" || (item.file_type === "embed" && item.url && item.url !== "embed") ? (
-                <img src={item.url} alt={item.file_name} className="w-full h-full object-cover" />
+                <img src={item.url} alt={item.file_name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <Icon className="h-10 w-10 text-muted-foreground" />
               )}

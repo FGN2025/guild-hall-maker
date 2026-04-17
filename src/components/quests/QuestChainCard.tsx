@@ -15,7 +15,7 @@ const QuestChainCard = ({ chain }: QuestChainCardProps) => {
     <Card className="overflow-hidden hover:border-primary/40 transition-all group cursor-pointer h-full">
       <div className="relative h-32 overflow-hidden">
         {chain.cover_image_url ? (
-          <img src={chain.cover_image_url} alt={chain.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          <img src={chain.cover_image_url} alt={chain.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10 flex items-center justify-center">
             <Sparkles className="h-10 w-10 text-primary/50" />
