@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Calendar, Users, GitBranch, Settings, Trophy } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
@@ -149,4 +150,4 @@ const TournamentCard = ({
   );
 };
 
-export default TournamentCard;
+export default memo(TournamentCard);

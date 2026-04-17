@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Signal, Gamepad2 } from "lucide-react";
@@ -85,4 +86,4 @@ const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) =
   );
 };
 
-export default ChallengeCard;
+export default memo(ChallengeCard);
