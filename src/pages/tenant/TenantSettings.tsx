@@ -19,8 +19,8 @@ import { useTenantCloudGaming } from "@/hooks/useTenantCloudGaming";
 import { useTenantBilling } from "@/hooks/useTenantBilling";
 
 const TenantSettings = () => {
-  const { tenantInfo } = useTenantAdmin();
-  const { isAdmin } = useAuth();
+  const { tenantInfo, isPlatformAdminMode } = useTenantAdmin();
+  const { isAdmin, roleLoading } = useAuth();
   const { config: cloudGamingConfig } = useTenantCloudGaming(tenantInfo?.tenantId);
   const { isSubscribed } = useTenantBilling();
   const queryClient = useQueryClient();
@@ -122,7 +122,7 @@ const TenantSettings = () => {
         </p>
       </div>
 
-      {isAdmin && !isSubscribed && <TenantBillingCard />}
+      {!roleLoading && isAdmin && isPlatformAdminMode && !isSubscribed && <TenantBillingCard />}
 
       <Card>
         <CardHeader>
