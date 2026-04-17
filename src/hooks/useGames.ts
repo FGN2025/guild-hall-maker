@@ -22,10 +22,16 @@ export interface Game {
 export type GameInsert = Omit<Game, "id" | "created_at" | "updated_at">;
 export type GameUpdate = Partial<GameInsert>;
 
+// Games rarely change — cache aggressively across the session.
+const GAMES_STALE = 10 * 60_000;
+const GAMES_GC = 30 * 60_000;
+
 // Public: only active games
 export const useGames = () => {
   return useQuery({
     queryKey: ["games"],
+    staleTime: GAMES_STALE,
+    gcTime: GAMES_GC,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("games" as any)
@@ -43,6 +49,8 @@ export const useGames = () => {
 export const useAdminGames = () => {
   return useQuery({
     queryKey: ["admin-games"],
+    staleTime: GAMES_STALE,
+    gcTime: GAMES_GC,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("games" as any)
@@ -58,6 +66,8 @@ export const useAdminGames = () => {
 export const useGameBySlug = (slug: string) => {
   return useQuery({
     queryKey: ["game", slug],
+    staleTime: GAMES_STALE,
+    gcTime: GAMES_GC,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("games" as any)

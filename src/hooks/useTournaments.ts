@@ -16,30 +16,51 @@ export const useTournaments = () => {
   const queryClient = useQueryClient();
 
   const tournamentsQuery = useQuery({
-    queryKey: ["tournaments"],
+    queryKey: ["tournaments", user?.id ?? null],
+    staleTime: 60_000,
     queryFn: async () => {
-      const { data: tournaments, error } = await supabase
-        .from("tournaments")
-        .select("*")
-        .order("start_date", { ascending: true });
+      // Fetch tournaments, per-tournament registration aggregates, user's own
+      // registrations, and game covers in parallel. We avoid pulling every
+      // registration row globally (privacy + perf).
+      const [tournamentsRes, gamesRes, myRegsRes] = await Promise.all([
+        supabase
+          .from("tournaments")
+          .select("*")
+          .order("start_date", { ascending: true }),
+        supabase.from("games").select("name, cover_image_url"),
+        user
+          ? supabase
+              .from("tournament_registrations")
+              .select("tournament_id")
+              .eq("user_id", user.id)
+          : Promise.resolve({ data: [] as { tournament_id: string }[] }),
+      ]);
 
-      if (error) throw error;
+      if (tournamentsRes.error) throw tournamentsRes.error;
+      const tournaments = tournamentsRes.data ?? [];
 
-      const { data: registrations } = await supabase
-        .from("tournament_registrations")
-        .select("tournament_id, user_id");
+      // Per-tournament registration counts (one query, scoped by IDs)
+      const tournamentIds = tournaments.map((t) => t.id);
+      const countsMap = new Map<string, number>();
+      if (tournamentIds.length > 0) {
+        const { data: regRows } = await supabase
+          .from("tournament_registrations")
+          .select("tournament_id")
+          .in("tournament_id", tournamentIds);
+        (regRows ?? []).forEach((r: any) => {
+          countsMap.set(r.tournament_id, (countsMap.get(r.tournament_id) ?? 0) + 1);
+        });
+      }
 
-      const { data: games } = await supabase
-        .from("games")
-        .select("name, cover_image_url");
-
+      const myRegSet = new Set(
+        ((myRegsRes as any).data ?? []).map((r: any) => r.tournament_id as string)
+      );
       const gameCovers = new Map(
-        (games ?? []).map((g: any) => [g.name, g.cover_image_url])
+        (gamesRes.data ?? []).map((g: any) => [g.name, g.cover_image_url])
       );
 
       const now = new Date();
-      return (tournaments ?? []).map((t) => {
-        const regs = (registrations ?? []).filter((r) => r.tournament_id === t.id);
+      return tournaments.map((t) => {
         const isPast = new Date(t.start_date) < now;
         const effective_status =
           (t.status === "open" || t.status === "upcoming") && isPast
@@ -47,8 +68,8 @@ export const useTournaments = () => {
             : t.status;
         return {
           ...t,
-          registrations_count: regs.length,
-          is_registered: user ? regs.some((r) => r.user_id === user.id) : false,
+          registrations_count: countsMap.get(t.id) ?? 0,
+          is_registered: myRegSet.has(t.id),
           game_cover_url: gameCovers.get(t.game) ?? null,
           effective_status,
         } as Tournament;
