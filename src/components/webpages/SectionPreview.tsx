@@ -51,7 +51,7 @@ const SectionPreview = ({ section }: Props) => {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4">
           {items.map((item, i) => (
             <div key={i} className="space-y-1">
-              <img src={item.image_url} alt={item.caption || ""} className="rounded-lg w-full aspect-video object-cover" />
+              <img src={item.image_url} alt={item.caption || ""} className="rounded-lg w-full aspect-video object-cover" loading="lazy" decoding="async" />
               {item.caption && <p className="text-xs text-muted-foreground text-center">{item.caption}</p>}
             </div>
           ))}

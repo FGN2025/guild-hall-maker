@@ -122,7 +122,7 @@ const FeaturedEventsPreview = ({ maxItems, types, showStats = true }: Props) => 
           <div key={`${e.type}-${e.id}`} className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
             <div className="relative h-24 bg-muted overflow-hidden">
               {e.imageUrl ? (
-                <img src={e.imageUrl} alt={e.title} className="w-full h-full object-cover" />
+                <img src={e.imageUrl} alt={e.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                   <span className="font-display text-xs text-foreground/60 uppercase tracking-widest">{e.game || e.type}</span>
