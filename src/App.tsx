@@ -112,6 +112,7 @@ const TenantGuide = lazy(() => import("./pages/tenant/TenantGuide"));
 const TenantCodes = lazy(() => import("./pages/tenant/TenantCodes"));
 const TenantMarketingAssets = lazy(() => import("./pages/tenant/TenantMarketingAssets"));
 const TenantWebPages = lazy(() => import("./pages/tenant/TenantWebPages"));
+const TenantBranding = lazy(() => import("./pages/tenant/TenantBranding"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -244,6 +245,7 @@ const App = () => (
               <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
               <Route path="/tenant/codes" element={<TenantRoute><TenantCodes /></TenantRoute>} />
               <Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />
+              <Route path="/tenant/branding" element={<TenantRoute><TenantBranding /></TenantRoute>} />
 
               <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<NotFound />} />

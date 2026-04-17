@@ -3,6 +3,7 @@ import { Trophy, LayoutDashboard, Users, Shield, Gamepad2, Menu, X, LogOut, Sett
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserTenantBranding } from "@/hooks/useUserTenantBranding";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import {
   DropdownMenu,
@@ -46,6 +47,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut, isAdmin, isModerator } = useAuth();
   const { isTenantAdmin } = useTenantAdmin();
+  const { data: branding } = useUserTenantBranding();
   const activeNavItems = user ? authNavItems : publicNavItems;
 
   const handleSignOut = async () => {
@@ -57,10 +59,24 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-border/50">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2 group">
-          <Gamepad2 className="h-7 w-7 text-primary" />
-          <span className="font-display text-xl font-bold tracking-wider text-foreground group-hover:text-primary transition-colors">
-            FGN
-          </span>
+          {branding?.logoUrl ? (
+            <>
+              <img src={branding.logoUrl} alt={branding.name} className="h-8 w-8 rounded object-contain" />
+              <div className="flex flex-col leading-none">
+                <span className="font-display text-base font-bold tracking-wider text-foreground group-hover:text-primary transition-colors">
+                  {branding.name}
+                </span>
+                <span className="text-[9px] uppercase tracking-widest text-muted-foreground">Powered by FGN</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <Gamepad2 className="h-7 w-7 text-primary" />
+              <span className="font-display text-xl font-bold tracking-wider text-foreground group-hover:text-primary transition-colors">
+                FGN
+              </span>
+            </>
+          )}
         </Link>
 
         {/* Desktop nav */}
