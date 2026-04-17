@@ -1,6 +1,7 @@
 import { WebPageSection } from "@/hooks/useWebPages";
 import ReactMarkdown from "react-markdown";
 import FeaturedEventsPreview from "./FeaturedEventsPreview";
+import EmbeddedHtml from "@/components/shared/EmbeddedHtml";
 
 interface Props {
   section: WebPageSection;
@@ -84,7 +85,7 @@ const SectionPreview = ({ section }: Props) => {
             <img src={c.thumbnail_url} alt={c.label || "Widget"} className="h-24 rounded-md object-cover mb-3" />
           )}
           {c.embed_code ? (
-            <div dangerouslySetInnerHTML={{ __html: c.embed_code }} className="rounded-lg overflow-hidden" />
+            <EmbeddedHtml html={c.embed_code} className="rounded-lg overflow-hidden" />
           ) : (
             <div className="border-2 border-dashed border-border rounded-lg p-8 text-center text-muted-foreground text-sm">No embed code</div>
           )}
