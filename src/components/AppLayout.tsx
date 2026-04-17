@@ -1,11 +1,13 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import CoachFloatingButton from "@/components/CoachFloatingButton";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { CoachProvider } from "@/contexts/CoachContext";
 import { TenantBrandingProvider } from "@/contexts/TenantBrandingContext";
 import TenantBannerSlot from "@/components/branding/TenantBannerSlot";
+
+const CoachFloatingButton = lazy(() => import("@/components/CoachFloatingButton"));
 
 const HEADERLESS_ROUTES = ["/tournaments", "/dashboard"];
 
@@ -31,7 +33,9 @@ const AppLayout = () => {
               </main>
             </div>
           </div>
-          <CoachFloatingButton />
+          <Suspense fallback={null}>
+            <CoachFloatingButton />
+          </Suspense>
           <ScrollToTopButton />
         </SidebarProvider>
       </CoachProvider>
