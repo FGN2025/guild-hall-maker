@@ -22,15 +22,34 @@ export const useNotifications = () => {
   const query = useQuery({
     queryKey: ["notifications", user?.id],
     enabled: !!user,
+    // Realtime invalidates this; raise staleTime to skip refetches on mount.
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")
-        .select("*")
+        .select("id, user_id, type, title, message, link, is_read, created_at")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
       return (data ?? []) as Notification[];
+    },
+  });
+
+  // Lightweight unread count (only id+is_read filtered) — kept fresh independently
+  // so the bell badge doesn't require loading the full sheet payload.
+  const unreadCountQuery = useQuery({
+    queryKey: ["notifications-unread-count", user?.id],
+    enabled: !!user,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .eq("is_read", false);
+      if (error) throw error;
+      return count ?? 0;
     },
   });
 
@@ -54,6 +73,7 @@ export const useNotifications = () => {
         },
         (payload: any) => {
           queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["notifications-unread-count", user.id] });
           // Play sound + show browser notification
           const row = payload.new;
           if (row) {
@@ -79,6 +99,7 @@ export const useNotifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count", user?.id] });
     },
   });
 
@@ -94,10 +115,11 @@ export const useNotifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count", user?.id] });
     },
   });
 
-  const unreadCount = (query.data ?? []).filter((n) => !n.is_read).length;
+  const unreadCount = unreadCountQuery.data ?? 0;
 
   return { ...query, unreadCount, markAsRead, markAllAsRead };
 };

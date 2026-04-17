@@ -39,6 +39,7 @@ export const useDashboard = () => {
   const registeredTournamentsQuery = useQuery({
     queryKey: ["dashboard-tournaments", user?.id],
     enabled: !!user,
+    staleTime: 60_000,
     queryFn: async () => {
       const { data: regs, error: regsError } = await supabase
         .from("tournament_registrations")
@@ -50,28 +51,33 @@ export const useDashboard = () => {
 
       const tournamentIds = regs.map((r) => r.tournament_id);
 
-      const { data: tournaments, error: tError } = await supabase
-        .from("tournaments")
-        .select("*")
-        .in("id", tournamentIds)
-        .order("start_date", { ascending: true });
+      const [tournamentsRes, allRegsRes] = await Promise.all([
+        supabase
+          .from("tournaments")
+          .select("id, name, game, status, start_date, format, max_participants, prize_pool")
+          .in("id", tournamentIds)
+          .order("start_date", { ascending: true }),
+        supabase
+          .from("tournament_registrations")
+          .select("tournament_id")
+          .in("tournament_id", tournamentIds),
+      ]);
 
-      if (tError) throw tError;
+      if (tournamentsRes.error) throw tournamentsRes.error;
 
-      // Get registration counts for these tournaments
-      const { data: allRegs } = await supabase
-        .from("tournament_registrations")
-        .select("tournament_id")
-        .in("tournament_id", tournamentIds);
+      const countsMap = new Map<string, number>();
+      (allRegsRes.data ?? []).forEach((r: any) => {
+        countsMap.set(r.tournament_id, (countsMap.get(r.tournament_id) ?? 0) + 1);
+      });
 
-      return (tournaments ?? []).map((t) => ({
+      return (tournamentsRes.data ?? []).map((t: any) => ({
         id: t.id,
         name: t.name,
         game: t.game,
         status: t.status,
         start_date: t.start_date,
         format: t.format,
-        registrations_count: (allRegs ?? []).filter((r) => r.tournament_id === t.id).length,
+        registrations_count: countsMap.get(t.id) ?? 0,
         max_participants: t.max_participants,
         prize_pool: t.prize_pool,
       })) as RegisteredTournament[];
@@ -81,10 +87,11 @@ export const useDashboard = () => {
   const matchesQuery = useQuery({
     queryKey: ["dashboard-matches", user?.id],
     enabled: !!user,
+    staleTime: 60_000,
     queryFn: async () => {
       const { data: matches, error } = await supabase
         .from("match_results")
-        .select("*")
+        .select("id, tournament_id, player1_id, player2_id, player1_score, player2_score, winner_id, status, round, match_number, completed_at, created_at")
         .or(`player1_id.eq.${user!.id},player2_id.eq.${user!.id}`)
         .order("created_at", { ascending: false })
         .limit(10);
