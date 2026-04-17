@@ -3,6 +3,7 @@ import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCoach } from "@/contexts/CoachContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useTenantBranding } from "@/contexts/TenantBrandingContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import {
@@ -68,6 +69,7 @@ export function AppSidebar() {
   const { isAdmin, isModerator, isMarketing, signOut } = useAuth();
   const { setIsOpen: openCoach } = useCoach();
   const { isTenantAdmin } = useTenantAdmin();
+  const { branding } = useTenantBranding();
 
   const handleSignOut = async () => {
     await signOut();
@@ -78,10 +80,24 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <NavLink to="/" className="flex items-center gap-2 group">
-          <Joystick className="h-6 w-6 text-primary shrink-0" />
-          <span className="font-display text-lg font-bold tracking-wider text-sidebar-foreground group-hover:text-primary transition-colors group-data-[collapsible=icon]:hidden">
-            FGN
-          </span>
+          {branding?.logoUrl ? (
+            <>
+              <img src={branding.logoUrl} alt={branding.name} className="h-6 w-6 rounded object-contain shrink-0" />
+              <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
+                <span className="font-display text-sm font-bold tracking-wider text-sidebar-foreground group-hover:text-primary transition-colors truncate">
+                  {branding.name}
+                </span>
+                <span className="text-[8px] uppercase tracking-widest text-muted-foreground">Powered by FGN</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <Joystick className="h-6 w-6 text-primary shrink-0" />
+              <span className="font-display text-lg font-bold tracking-wider text-sidebar-foreground group-hover:text-primary transition-colors group-data-[collapsible=icon]:hidden">
+                FGN
+              </span>
+            </>
+          )}
         </NavLink>
       </SidebarHeader>
 

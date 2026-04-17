@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, ExternalLink, Loader2, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import {
   Select,
@@ -48,6 +49,7 @@ const allSidebarItems = [
   { to: "/tenant/marketing", label: "Marketing", icon: Megaphone, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
   { to: "/tenant/codes", label: "Codes", icon: KeyRound, roles: ['admin'] },
+  { to: "/tenant/branding", label: "Branding & Banner", icon: Palette, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin', 'manager'] },
   { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];
