@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import DiscordRoleManager from "@/components/admin/DiscordRoleManager";
+import EcosystemSyncHealth from "@/components/admin/EcosystemSyncHealth";
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -55,7 +56,7 @@ const EVENT_TYPES = [
   "season.points_awarded",
 ];
 
-const TARGET_APPS = ["academy", "simu-cdl", "broadband"];
+const TARGET_APPS = ["academy", "manage", "hub", "broadband"];
 
 /* ───────── component ───────── */
 const ecosystemApps = [
@@ -404,6 +405,9 @@ const AdminEcosystem = () => {
           </div>
         )}
       </div>
+
+      {/* Sync Health */}
+      <EcosystemSyncHealth />
 
       {/* Sync Logs */}
       <div className="rounded-lg border border-border bg-card p-6 space-y-4">
