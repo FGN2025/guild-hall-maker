@@ -113,6 +113,7 @@ const PrizeFormDialog = ({ open, onOpenChange, title, initial, onSubmit, isPendi
             <div className="space-y-2">
               <Label>Points Cost</Label>
               <Input type="number" min={0} value={form.points_cost} onChange={(e) => setForm({ ...form, points_cost: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Recommended bands: Common 50–150 · Rare 200–400 · Epic 500–800 · Legendary 1000+</p>
             </div>
             <div className="space-y-2">
               <Label>Quantity (blank = unlimited)</Label>
