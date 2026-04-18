@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { useCloudGames, type CloudGame } from "@/hooks/useCloudGames";
 import CloudGameFormDialog from "@/components/admin/CloudGameFormDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -34,7 +33,7 @@ const AdminCloudGaming = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -155,7 +154,7 @@ const AdminCloudGaming = () => {
         }}
         variant="destructive"
       />
-    </AdminLayout>
+    </>
   );
 };
 
