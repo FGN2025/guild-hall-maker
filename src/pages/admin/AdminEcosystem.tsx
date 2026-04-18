@@ -55,7 +55,7 @@ const EVENT_TYPES = [
   "season.points_awarded",
 ];
 
-const TARGET_APPS = ["academy", "simu-cdl", "broadband"];
+const TARGET_APPS = ["academy", "manage", "hub", "broadband"];
 
 /* ───────── component ───────── */
 const ecosystemApps = [
