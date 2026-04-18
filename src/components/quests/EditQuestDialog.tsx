@@ -15,6 +15,7 @@ import { useImageLimits } from "@/hooks/useImageLimits";
 import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
+import PointsInput from "@/components/shared/PointsInput";
 
 interface EditQuestDialogProps {
   quest: any;
@@ -53,6 +54,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
   const [enhancingDesc, setEnhancingDesc] = useState(false);
   const [achievementId, setAchievementId] = useState("");
+  const [pointsOverrideReason, setPointsOverrideReason] = useState("");
 
   const enhanceDescription = async () => {
     if (!name.trim()) { toast.error("Enter a quest name first"); return; }
@@ -160,6 +162,7 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
       setMaxEnrollments(quest.max_enrollments ?? "");
       setIsActive(quest.is_active ?? true);
       setAchievementId(quest.achievement_id ?? "");
+      setPointsOverrideReason(quest.points_override_reason || "");
     }
   }, [quest, open]);
 
@@ -218,6 +221,8 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
         max_enrollments: maxEnrollments || null,
         is_active: isActive,
         achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
+        points_override_reason: pointsOverrideReason.trim() || null,
+        points_overridden_by: pointsOverrideReason.trim() ? user?.id ?? null : null,
       } as any).eq("id", quest.id);
       if (error) throw error;
     },
@@ -289,11 +294,17 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
               <Input type="number" value={estimatedMinutes} onChange={(e) => setEstimatedMinutes(e.target.value ? Number(e.target.value) : "")} />
             </div>
           </div>
-          <div>
-            <Label>Quest Points</Label>
-            <Input type="number" value={pointsFirst} onChange={(e) => setPointsFirst(Number(e.target.value))} />
-            <p className="text-xs text-muted-foreground mt-1">Season points awarded on completion</p>
-          </div>
+          <PointsInput
+            kind="quest"
+            difficulty={difficulty}
+            type={challengeType}
+            value={pointsFirst}
+            onChange={setPointsFirst}
+            overrideReason={pointsOverrideReason}
+            onOverrideReasonChange={setPointsOverrideReason}
+            label="Quest Points"
+          />
+          <p className="text-xs text-muted-foreground -mt-1">Season points awarded on completion</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Start Date</Label>

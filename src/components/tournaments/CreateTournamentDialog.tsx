@@ -19,6 +19,7 @@ import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 import { useDiscordRoles } from "@/hooks/useDiscordRoles";
 import AchievementPicker from "@/components/shared/AchievementPicker";
+import PointsInput from "@/components/shared/PointsInput";
 
 interface Props {
   onCreate: (data: {
@@ -73,6 +74,8 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
   const [achievementId, setAchievementId] = useState("");
+  const [difficulty, setDifficulty] = useState("beginner");
+  const [pointsOverrideReason, setPointsOverrideReason] = useState("");
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -315,10 +318,26 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             />
           </div>
           <div className="space-y-2">
-            <Label className="font-heading text-sm">Participation Points</Label>
-            <p className="text-xs text-muted-foreground">Points awarded per match played</p>
-            <Input type="number" min={0} value={pointsParticipation} onChange={(e) => setPointsParticipation(e.target.value)} className="bg-card border-border font-body max-w-[120px]" />
+            <Label className="font-heading text-sm">Difficulty</Label>
+            <Select value={difficulty} onValueChange={setDifficulty}>
+              <SelectTrigger className="bg-card border-border font-body max-w-[200px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          <PointsInput
+            kind="tournament"
+            difficulty={difficulty}
+            placement="participation"
+            value={parseInt(pointsParticipation) || 0}
+            onChange={(v) => setPointsParticipation(String(v))}
+            overrideReason={pointsOverrideReason}
+            onOverrideReasonChange={setPointsOverrideReason}
+            label="Participation Points (per match)"
+          />
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Discord Role (on registration)</Label>
