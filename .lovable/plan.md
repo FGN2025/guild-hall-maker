@@ -1,29 +1,24 @@
 
-The user wants to defer the push-to-academy automation. So I'll drop the trigger/backfill work and focus on the remaining gaps from the prior audit + what's needed to make the pull-based model reliable.
 
-Reviewing what we know:
-- Academy pulls from `ecosystem-data-api` (now working for tournaments after the fix)
-- `sync-to-academy` exists but is only manually invoked from AdminChallenges — user says that's fine for now
-- Outstanding issues identified earlier:
-  1. `simu-cdl` listed as webhook target but NOT in magic-link whitelist (UI mismatch)
-  2. API key permanently masked — no reveal/rotate UX
-  3. No sync health visibility in the Ecosystem tab
-  4. Achievement push gap — user is deferring this
-  5. Need to confirm Academy can actually reach all the data it needs (achievements, completions, player progress) via the current pull endpoints
+## Plan: Remove Duplicate Admin Sidebar
 
-Let me also think about what the Academy needs to consume to issue/track work orders:
-- challenges list (template) ✓ working
-- challenge completions (who finished what) — need to verify endpoint exists
-- player_achievements (badge data) — need to verify endpoint exists
-- season_stats / player_progress — endpoints exist per earlier test
+### Root cause
+`AdminRoute` (in `src/components/admin/AdminRoute.tsx` line 28) already wraps its children in `<AdminLayout>` — which renders the `AdminSidebar`. Two admin pages incorrectly wrap themselves in `<AdminLayout>` again, causing the layout to nest:
+`AdminLayout (from AdminRoute) → AdminLayout (from page) → content` → two sidebars side-by-side.
 
-I should propose a focused, scoped plan. Keep it tight.
+### Affected files
+1. `src/pages/admin/AdminCloudGaming.tsx` — visible bug per screenshot
+2. `src/pages/admin/AdminLegacyUsers.tsx` — same bug, just not noticed yet
 
-Plan structure:
-1. Fix UI/data inconsistencies (simu-cdl mismatch)
-2. Verify & document the pull-side completeness (challenge completions endpoint)
-3. Add visibility (sync health card)
-4. Improve API key UX (reveal for super-admin, rotate)
-5. Document the Academy integration contract
+All other admin pages (e.g. `AdminEcosystem`, `AdminTournaments`, `AdminGameServers`) correctly return their content directly with no `AdminLayout` wrapper.
 
-No code changes in this turn — present plan for approval.
+### Fix
+For each affected file:
+- Remove the `import AdminLayout from "@/components/admin/AdminLayout";` line
+- Replace the outer `<AdminLayout>...</AdminLayout>` JSX wrapper with a plain fragment `<>...</>` (or just return the inner `<div className="space-y-6">` directly)
+
+No changes needed to `AdminRoute`, `AdminLayout`, `AdminSidebar`, or routing — those are correct.
+
+### Verification
+After the fix, `/admin/cloud-gaming` and `/admin/legacy-users` should display a single Admin Dashboard sidebar matching every other admin page.
+
