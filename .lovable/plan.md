@@ -1,47 +1,29 @@
 
-The user wants two things:
-1. A detailed summary of every feature/function in the Admin → Ecosystem tab
-2. End-to-end testing of those features in the live preview
+The user wants to defer the push-to-academy automation. So I'll drop the trigger/backfill work and focus on the remaining gaps from the prior audit + what's needed to make the pull-based model reliable.
 
-This is a research + verification task. I'll need to:
-- Read `src/pages/admin/AdminEcosystem.tsx` and any sub-components/hooks it uses
-- Inspect related edge functions (`ecosystem-data-api`, `ecosystem-magic-link`, `ecosystem-webhook-dispatch`, `ecosystem-calendar-feed`, `validate-ecosystem-token`)
-- Check related DB tables (`ecosystem_sync_log`, webhook tables, etc.)
-- Use browser tools to navigate to /admin/ecosystem and exercise each control
-- Use `supabase--curl_edge_functions` and `supabase--read_query` to verify backend behavior
-- Produce a structured summary with a pass/fail/observations table per feature
+Reviewing what we know:
+- Academy pulls from `ecosystem-data-api` (now working for tournaments after the fix)
+- `sync-to-academy` exists but is only manually invoked from AdminChallenges — user says that's fine for now
+- Outstanding issues identified earlier:
+  1. `simu-cdl` listed as webhook target but NOT in magic-link whitelist (UI mismatch)
+  2. API key permanently masked — no reveal/rotate UX
+  3. No sync health visibility in the Ecosystem tab
+  4. Achievement push gap — user is deferring this
+  5. Need to confirm Academy can actually reach all the data it needs (achievements, completions, player progress) via the current pull endpoints
 
-Since this requires browser automation + edge function calls + DB reads (write-capable tools), I'll present this plan for approval before switching to default mode to execute.
+Let me also think about what the Academy needs to consume to issue/track work orders:
+- challenges list (template) ✓ working
+- challenge completions (who finished what) — need to verify endpoint exists
+- player_achievements (badge data) — need to verify endpoint exists
+- season_stats / player_progress — endpoints exist per earlier test
 
-## Plan: Audit & Test the Admin Ecosystem Tab
+I should propose a focused, scoped plan. Keep it tight.
 
-### Phase 1 — Code discovery (read-only)
-- Read `src/pages/admin/AdminEcosystem.tsx` and identify every tab, card, button, form, and table it renders
-- Read supporting components (e.g., any `EcosystemSyncPanel`, `WebhookManager`, `MagicLinkTester` if present)
-- Inspect related edge functions: `ecosystem-data-api`, `ecosystem-magic-link`, `ecosystem-webhook-dispatch`, `ecosystem-calendar-feed`, `validate-ecosystem-token`
-- Check relevant tables: `ecosystem_sync_log`, any webhook config / dispatch tables, ecosystem keys storage
-- Cross-reference the existing memory: `mem://architecture/ecosystem-integration` and `mem://auth/cross-app-magic-links`
+Plan structure:
+1. Fix UI/data inconsistencies (simu-cdl mismatch)
+2. Verify & document the pull-side completeness (challenge completions endpoint)
+3. Add visibility (sync health card)
+4. Improve API key UX (reveal for super-admin, rotate)
+5. Document the Academy integration contract
 
-### Phase 2 — Live testing in preview
-For each feature surfaced in Phase 1, exercise it on `/admin/ecosystem`:
-- Navigate via `browser--navigate_to_sandbox` to `/admin/ecosystem`
-- `observe` → `act` per control (tab switches, button clicks, form submissions, copy-to-clipboard, etc.)
-- Capture screenshots at meaningful checkpoints (not every action)
-- Skip destructive operations unless they are clearly safe (e.g., test webhook dispatch to a known test target — confirm with you first if anything looks risky)
-
-### Phase 3 — Backend verification
-- Hit `ecosystem-data-api` via `supabase--curl_edge_functions` for each documented action: `health`, `tournaments`, `tenant-events`, `challenges`, `quests`, `achievements`, `season-stats`, `player-progress`
-- Pull recent `ecosystem_sync_log` rows via `supabase--read_query` to confirm UI activity is recorded
-- Tail `supabase--edge_function_logs` for any errors during testing
-
-### Phase 4 — Deliverable
-A single structured report containing:
-1. **Feature inventory** — every UI element with purpose
-2. **Test results table** — Feature | Action taken | Expected | Observed | Status (✅ / ⚠️ / ❌)
-3. **Backend health** — edge function + DB confirmations
-4. **Issues & recommendations** — anything broken, confusing, or off-spec
-
-### Guardrails
-- No code changes during this audit — purely investigative
-- Will pause and ask before any action that could send real notifications, mutate production data, or trigger external webhook endpoints
-- If the preview requires login I'll stop and ask you to log in first
+No code changes in this turn — present plan for approval.
