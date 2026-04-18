@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       case "tournaments": {
         let q = adminClient
           .from("tournaments")
-          .select("id, name, game_id, status, start_date, end_date, max_participants, prize_pool, created_at, updated_at")
+          .select("id, name, game, status, start_date, end_date, max_participants, prize_pool, created_at, updated_at")
           .in("status", ["published", "in_progress", "completed"])
           .order("start_date", { ascending: false })
           .limit(rowLimit);
