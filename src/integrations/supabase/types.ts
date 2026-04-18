@@ -531,6 +531,8 @@ export type Database = {
           max_enrollments: number | null
           name: string
           points_first: number
+          points_overridden_by: string | null
+          points_override_reason: string | null
           points_participation: number
           points_reward: number
           points_second: number
@@ -567,6 +569,8 @@ export type Database = {
           max_enrollments?: number | null
           name: string
           points_first?: number
+          points_overridden_by?: string | null
+          points_override_reason?: string | null
           points_participation?: number
           points_reward?: number
           points_second?: number
@@ -603,6 +607,8 @@ export type Database = {
           max_enrollments?: number | null
           name?: string
           points_first?: number
+          points_overridden_by?: string | null
+          points_override_reason?: string | null
           points_participation?: number
           points_reward?: number
           points_second?: number
@@ -1924,6 +1930,72 @@ export type Database = {
           },
         ]
       }
+      points_realignment_log: {
+        Row: {
+          batch_id: string
+          field_name: string
+          id: string
+          item_id: string
+          item_type: string
+          new_value: number | null
+          old_value: number | null
+          performed_at: string
+          performed_by: string
+          rubric_version: number
+        }
+        Insert: {
+          batch_id: string
+          field_name: string
+          id?: string
+          item_id: string
+          item_type: string
+          new_value?: number | null
+          old_value?: number | null
+          performed_at?: string
+          performed_by: string
+          rubric_version?: number
+        }
+        Update: {
+          batch_id?: string
+          field_name?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          new_value?: number | null
+          old_value?: number | null
+          performed_at?: string
+          performed_by?: string
+          rubric_version?: number
+        }
+        Relationships: []
+      }
+      points_rubric_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          id: string
+          new_value: Json
+          note: string | null
+          previous_value: Json | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_value: Json
+          note?: string | null
+          previous_value?: Json | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_value?: Json
+          note?: string | null
+          previous_value?: Json | null
+        }
+        Relationships: []
+      }
       prize_redemptions: {
         Row: {
           created_at: string
@@ -2419,6 +2491,8 @@ export type Database = {
           max_enrollments: number | null
           name: string
           points_first: number
+          points_overridden_by: string | null
+          points_override_reason: string | null
           points_participation: number
           points_reward: number
           points_second: number
@@ -2451,6 +2525,8 @@ export type Database = {
           max_enrollments?: number | null
           name: string
           points_first?: number
+          points_overridden_by?: string | null
+          points_override_reason?: string | null
           points_participation?: number
           points_reward?: number
           points_second?: number
@@ -2483,6 +2559,8 @@ export type Database = {
           max_enrollments?: number | null
           name?: string
           points_first?: number
+          points_overridden_by?: string | null
+          points_override_reason?: string | null
           points_participation?: number
           points_reward?: number
           points_second?: number
@@ -3700,6 +3778,8 @@ export type Database = {
           max_participants: number
           name: string
           points_first: number
+          points_overridden_by: string | null
+          points_override_reason: string | null
           points_participation: number
           points_second: number
           points_third: number
@@ -3731,6 +3811,8 @@ export type Database = {
           max_participants?: number
           name: string
           points_first?: number
+          points_overridden_by?: string | null
+          points_override_reason?: string | null
           points_participation?: number
           points_second?: number
           points_third?: number
@@ -3762,6 +3844,8 @@ export type Database = {
           max_participants?: number
           name?: string
           points_first?: number
+          points_overridden_by?: string | null
+          points_override_reason?: string | null
           points_participation?: number
           points_second?: number
           points_third?: number
