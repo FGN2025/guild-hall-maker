@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,7 +116,7 @@ const AdminLegacyUsers = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <h1 className="text-3xl font-display font-bold text-foreground">Legacy Import</h1>
 
@@ -174,7 +173,7 @@ const AdminLegacyUsers = () => {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+    </>
   );
 };
 
