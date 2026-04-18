@@ -15,6 +15,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
+import PointsInput from "@/components/shared/PointsInput";
 
 interface CreateQuestDialogProps {
   invalidateQueryKey: string[];
@@ -29,6 +30,7 @@ const defaultForm = {
   cover_image_url: "",
   story_intro: "", story_outro: "", xp_reward: "0",
   tasks: [] as { title: string; description: string }[],
+  points_override_reason: "",
 };
 
 const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogProps) => {
@@ -177,6 +179,8 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
         story_outro: form.story_outro || null,
         xp_reward: parseInt(form.xp_reward) || 0,
         achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
+        points_override_reason: form.points_override_reason?.trim() || null,
+        points_overridden_by: form.points_override_reason?.trim() ? user.id : null,
       } as any).select().single();
       if (error) throw error;
 
@@ -355,11 +359,17 @@ const CreateQuestDialog = ({ invalidateQueryKey, trigger }: CreateQuestDialogPro
             <Label>Requires evidence upload</Label>
           </div>
 
-          <div className="space-y-2">
-            <Label>Quest Points</Label>
-            <Input type="number" min={0} value={form.points_first} onChange={(e) => setForm({ ...form, points_first: e.target.value })} placeholder="10" />
-            <p className="text-xs text-muted-foreground">Season points awarded on completion</p>
-          </div>
+          <PointsInput
+            kind="quest"
+            difficulty={form.difficulty}
+            type={form.challenge_type}
+            value={parseInt(form.points_first) || 0}
+            onChange={(v) => setForm({ ...form, points_first: String(v) })}
+            overrideReason={form.points_override_reason}
+            onOverrideReasonChange={(r) => setForm({ ...form, points_override_reason: r })}
+            label="Quest Points"
+          />
+          <p className="text-xs text-muted-foreground -mt-1">Season points awarded on completion</p>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

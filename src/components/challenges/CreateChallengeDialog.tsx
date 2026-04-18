@@ -15,6 +15,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
+import PointsInput from "@/components/shared/PointsInput";
 
 interface CreateChallengeDialogProps {
   invalidateQueryKey: string[];
@@ -30,6 +31,7 @@ const defaultForm = {
   tasks: [] as { title: string; description: string }[],
   academy_next_step_url: "",
   academy_next_step_label: "",
+  points_override_reason: "",
 };
 
 const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeDialogProps) => {
@@ -109,6 +111,8 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         achievement_id: achievementId && achievementId !== "none" ? achievementId : null,
         academy_next_step_url: form.academy_next_step_url || null,
         academy_next_step_label: form.academy_next_step_label || null,
+        points_override_reason: form.points_override_reason?.trim() || null,
+        points_overridden_by: form.points_override_reason?.trim() ? user.id : null,
       } as any).select().single();
       if (error) throw error;
 
@@ -269,10 +273,15 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
             <Label>Requires evidence upload</Label>
           </div>
 
-          <div className="space-y-2">
-            <Label>Points</Label>
-            <Input type="number" min={0} value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} placeholder="10" />
-          </div>
+          <PointsInput
+            kind="challenge"
+            difficulty={form.difficulty}
+            type={form.challenge_type}
+            value={parseInt(form.points) || 0}
+            onChange={(v) => setForm({ ...form, points: String(v) })}
+            overrideReason={form.points_override_reason}
+            onOverrideReasonChange={(r) => setForm({ ...form, points_override_reason: r })}
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
