@@ -20,6 +20,7 @@ export interface PointsRubric {
   };
   prize_bands: Record<string, [number, number]>;
   deviation_warning_threshold: number;
+  monthly_player_cap?: number;
 }
 
 export const DEFAULT_RUBRIC: PointsRubric = {
