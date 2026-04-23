@@ -11,16 +11,37 @@ interface NotebookConnection {
   api_url: string;
   notebook_id: string;
   name: string;
+  game_id: string | null;
 }
 
-async function fetchActiveConnections(): Promise<NotebookConnection[]> {
-  const supabase = createClient(
+async function fetchActiveConnections(gameId?: string | null): Promise<NotebookConnection[]> {
+  const supa = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
-  const { data, error } = await supabase
+
+  if (gameId) {
+    const { data: gameConns } = await supa
+      .from("admin_notebook_connections")
+      .select("api_url, notebook_id, name, game_id")
+      .eq("is_active", true)
+      .eq("game_id", gameId);
+
+    const { data: globalConns } = await supa
+      .from("admin_notebook_connections")
+      .select("api_url, notebook_id, name, game_id")
+      .eq("is_active", true)
+      .is("game_id", null);
+
+    return [
+      ...((gameConns ?? []) as NotebookConnection[]),
+      ...((globalConns ?? []) as NotebookConnection[]),
+    ];
+  }
+
+  const { data, error } = await supa
     .from("admin_notebook_connections")
-    .select("api_url, notebook_id, name")
+    .select("api_url, notebook_id, name, game_id")
     .eq("is_active", true);
   if (error) {
     console.warn("Failed to fetch notebook connections:", error.message);
