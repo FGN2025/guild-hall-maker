@@ -2045,36 +2045,42 @@ export type Database = {
           created_at: string
           created_by: string
           description: string | null
+          dollar_value: number | null
           id: string
           image_url: string | null
           is_active: boolean
           name: string
           points_cost: number
           quantity_available: number | null
+          rarity: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by: string
           description?: string | null
+          dollar_value?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean
           name: string
           points_cost?: number
           quantity_available?: number | null
+          rarity?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string
           description?: string | null
+          dollar_value?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean
           name?: string
           points_cost?: number
           quantity_available?: number | null
+          rarity?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4119,6 +4125,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_redemption_spend: {
+        Row: {
+          month: string | null
+          redemption_count: number | null
+          total_dollar_spend: number | null
+          total_points_spent: number | null
+        }
+        Relationships: []
       }
       profiles_public: {
         Row: {

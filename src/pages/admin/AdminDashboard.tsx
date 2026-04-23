@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Trophy, Image, BarChart3, Target, Compass, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
+import PrizeBudgetCard from "@/components/admin/PrizeBudgetCard";
 
 const AdminDashboard = () => {
   usePageTitle("Admin Dashboard");
@@ -45,6 +46,7 @@ const AdminDashboard = () => {
     <div>
       <h1 className="font-display text-3xl font-bold text-foreground mb-8">Admin Dashboard</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <PrizeBudgetCard />
         {cards.map((c) => (
           <Link key={c.label} to={c.to}>
             <Card className="hover:border-primary/50 transition-colors cursor-pointer">
