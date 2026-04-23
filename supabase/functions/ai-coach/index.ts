@@ -261,7 +261,7 @@ serve(async (req) => {
 
     // Fetch notebook context and player profile in parallel
     const [notebookContext, playerProfileContext] = await Promise.all([
-      searchQuery ? searchNotebooks(searchQuery) : Promise.resolve(""),
+      searchQuery ? searchNotebooks(searchQuery, game?.id || null) : Promise.resolve(""),
       fetchPlayerProfile(userId),
     ]);
 
