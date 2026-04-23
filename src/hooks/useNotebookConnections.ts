@@ -81,7 +81,6 @@ export function useNotebookConnections() {
     });
     if (error) throw error;
 
-    // Update health status in DB if we have a connection ID
     if (connectionId) {
       await supabase
         .from("admin_notebook_connections" as any)
@@ -104,6 +103,30 @@ export function useNotebookConnections() {
     return data;
   };
 
+  const fetchSources = async (apiUrl: string, notebookId: string) => {
+    const { data, error } = await supabase.functions.invoke("notebook-proxy", {
+      body: { action: "sources", api_url: apiUrl, notebook_id: notebookId },
+    });
+    if (error) throw error;
+    return data;
+  };
+
+  const fetchNotes = async (apiUrl: string, notebookId: string) => {
+    const { data, error } = await supabase.functions.invoke("notebook-proxy", {
+      body: { action: "notes", api_url: apiUrl, notebook_id: notebookId },
+    });
+    if (error) throw error;
+    return data;
+  };
+
+  const searchNotebook = async (apiUrl: string, notebookId: string, query: string) => {
+    const { data, error } = await supabase.functions.invoke("notebook-proxy", {
+      body: { action: "search", api_url: apiUrl, notebook_id: notebookId, query },
+    });
+    if (error) throw error;
+    return data;
+  };
+
   return {
     connections: query.data ?? [],
     isLoading: query.isLoading,
@@ -112,5 +135,8 @@ export function useNotebookConnections() {
     deleteConnection,
     testHealth,
     fetchNotebooks,
+    fetchSources,
+    fetchNotes,
+    searchNotebook,
   };
 }
