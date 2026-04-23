@@ -11,16 +11,37 @@ interface NotebookConnection {
   api_url: string;
   notebook_id: string;
   name: string;
+  game_id: string | null;
 }
 
-async function fetchActiveConnections(): Promise<NotebookConnection[]> {
-  const supabase = createClient(
+async function fetchActiveConnections(gameId?: string | null): Promise<NotebookConnection[]> {
+  const supa = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
-  const { data, error } = await supabase
+
+  if (gameId) {
+    const { data: gameConns } = await supa
+      .from("admin_notebook_connections")
+      .select("api_url, notebook_id, name, game_id")
+      .eq("is_active", true)
+      .eq("game_id", gameId);
+
+    const { data: globalConns } = await supa
+      .from("admin_notebook_connections")
+      .select("api_url, notebook_id, name, game_id")
+      .eq("is_active", true)
+      .is("game_id", null);
+
+    return [
+      ...((gameConns ?? []) as NotebookConnection[]),
+      ...((globalConns ?? []) as NotebookConnection[]),
+    ];
+  }
+
+  const { data, error } = await supa
     .from("admin_notebook_connections")
-    .select("api_url, notebook_id, name")
+    .select("api_url, notebook_id, name, game_id")
     .eq("is_active", true);
   if (error) {
     console.warn("Failed to fetch notebook connections:", error.message);
@@ -29,8 +50,8 @@ async function fetchActiveConnections(): Promise<NotebookConnection[]> {
   return (data ?? []) as NotebookConnection[];
 }
 
-async function searchNotebooks(query: string): Promise<string> {
-  const connections = await fetchActiveConnections();
+async function searchNotebooks(query: string, gameId?: string | null): Promise<string> {
+  const connections = await fetchActiveConnections(gameId);
   if (connections.length === 0) return "";
 
   const NOTEBOOK_PASS = Deno.env.get("OPEN_NOTEBOOK_PASSWORD");
@@ -38,42 +59,41 @@ async function searchNotebooks(query: string): Promise<string> {
   const MAX_TOTAL = 8;
   const MAX_PER_NOTEBOOK = 3;
 
-  await Promise.all(
-    connections.map(async (conn) => {
-      if (allPassages.length >= MAX_TOTAL) return;
-      try {
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (NOTEBOOK_PASS) headers["Authorization"] = `Bearer ${NOTEBOOK_PASS}`;
+  // Process sequentially to respect priority ordering (game-specific first)
+  for (const conn of connections) {
+    if (allPassages.length >= MAX_TOTAL) break;
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (NOTEBOOK_PASS) headers["Authorization"] = `Bearer ${NOTEBOOK_PASS}`;
 
-        const res = await fetch(`${conn.api_url.replace(/\/$/, "")}/api/search`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ query, notebook_id: conn.notebook_id }),
-        });
+      const res = await fetch(`${conn.api_url.replace(/\/$/, "")}/api/search`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ query, notebook_id: conn.notebook_id }),
+      });
 
-        if (!res.ok) {
-          console.warn(`Notebook search failed for "${conn.name}":`, res.status);
-          await res.text();
-          return;
-        }
-
-        const data = await res.json();
-        const items = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.results)
-          ? data.results
-          : [];
-
-        for (const item of items.slice(0, MAX_PER_NOTEBOOK)) {
-          if (allPassages.length >= MAX_TOTAL) break;
-          const text = item.content || item.text || item.snippet || JSON.stringify(item);
-          if (text) allPassages.push(`[Source: ${conn.name}]: ${text}`);
-        }
-      } catch (e) {
-        console.warn(`Notebook search error for "${conn.name}":`, e);
+      if (!res.ok) {
+        console.warn(`Notebook search failed for "${conn.name}":`, res.status);
+        await res.text();
+        continue;
       }
-    })
-  );
+
+      const data = await res.json();
+      const items = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+        ? data.results
+        : [];
+
+      for (const item of items.slice(0, MAX_PER_NOTEBOOK)) {
+        if (allPassages.length >= MAX_TOTAL) break;
+        const text = item.content || item.text || item.snippet || JSON.stringify(item);
+        if (text) allPassages.push(`[Source: ${conn.name}]: ${text}`);
+      }
+    } catch (e) {
+      console.warn(`Notebook search error for "${conn.name}":`, e);
+    }
+  }
 
   if (allPassages.length === 0) return "";
   return "\n\n## Relevant Knowledge Base Content:\n" + allPassages.join("\n\n");
@@ -241,7 +261,7 @@ serve(async (req) => {
 
     // Fetch notebook context and player profile in parallel
     const [notebookContext, playerProfileContext] = await Promise.all([
-      searchQuery ? searchNotebooks(searchQuery) : Promise.resolve(""),
+      searchQuery ? searchNotebooks(searchQuery, game?.id || null) : Promise.resolve(""),
       fetchPlayerProfile(userId),
     ]);
 
