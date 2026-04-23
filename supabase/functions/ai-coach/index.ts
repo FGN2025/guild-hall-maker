@@ -50,8 +50,8 @@ async function fetchActiveConnections(gameId?: string | null): Promise<NotebookC
   return (data ?? []) as NotebookConnection[];
 }
 
-async function searchNotebooks(query: string): Promise<string> {
-  const connections = await fetchActiveConnections();
+async function searchNotebooks(query: string, gameId?: string | null): Promise<string> {
+  const connections = await fetchActiveConnections(gameId);
   if (connections.length === 0) return "";
 
   const NOTEBOOK_PASS = Deno.env.get("OPEN_NOTEBOOK_PASSWORD");
@@ -59,42 +59,41 @@ async function searchNotebooks(query: string): Promise<string> {
   const MAX_TOTAL = 8;
   const MAX_PER_NOTEBOOK = 3;
 
-  await Promise.all(
-    connections.map(async (conn) => {
-      if (allPassages.length >= MAX_TOTAL) return;
-      try {
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (NOTEBOOK_PASS) headers["Authorization"] = `Bearer ${NOTEBOOK_PASS}`;
+  // Process sequentially to respect priority ordering (game-specific first)
+  for (const conn of connections) {
+    if (allPassages.length >= MAX_TOTAL) break;
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (NOTEBOOK_PASS) headers["Authorization"] = `Bearer ${NOTEBOOK_PASS}`;
 
-        const res = await fetch(`${conn.api_url.replace(/\/$/, "")}/api/search`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ query, notebook_id: conn.notebook_id }),
-        });
+      const res = await fetch(`${conn.api_url.replace(/\/$/, "")}/api/search`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ query, notebook_id: conn.notebook_id }),
+      });
 
-        if (!res.ok) {
-          console.warn(`Notebook search failed for "${conn.name}":`, res.status);
-          await res.text();
-          return;
-        }
-
-        const data = await res.json();
-        const items = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.results)
-          ? data.results
-          : [];
-
-        for (const item of items.slice(0, MAX_PER_NOTEBOOK)) {
-          if (allPassages.length >= MAX_TOTAL) break;
-          const text = item.content || item.text || item.snippet || JSON.stringify(item);
-          if (text) allPassages.push(`[Source: ${conn.name}]: ${text}`);
-        }
-      } catch (e) {
-        console.warn(`Notebook search error for "${conn.name}":`, e);
+      if (!res.ok) {
+        console.warn(`Notebook search failed for "${conn.name}":`, res.status);
+        await res.text();
+        continue;
       }
-    })
-  );
+
+      const data = await res.json();
+      const items = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+        ? data.results
+        : [];
+
+      for (const item of items.slice(0, MAX_PER_NOTEBOOK)) {
+        if (allPassages.length >= MAX_TOTAL) break;
+        const text = item.content || item.text || item.snippet || JSON.stringify(item);
+        if (text) allPassages.push(`[Source: ${conn.name}]: ${text}`);
+      }
+    } catch (e) {
+      console.warn(`Notebook search error for "${conn.name}":`, e);
+    }
+  }
 
   if (allPassages.length === 0) return "";
   return "\n\n## Relevant Knowledge Base Content:\n" + allPassages.join("\n\n");
