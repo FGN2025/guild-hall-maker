@@ -54,6 +54,12 @@ export default {
         },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
+        brand: {
+          perf: "hsl(var(--brand-pillar-perf))",
+          play: "hsl(var(--brand-pillar-play))",
+          path: "hsl(var(--brand-pillar-path))",
+          fiber: "hsl(var(--brand-pillar-fiber))",
+        },
         neon: "hsl(var(--neon-glow))",
         "neon-accent": "hsl(var(--neon-accent))",
         sidebar: {
