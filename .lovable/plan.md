@@ -1,50 +1,83 @@
+# FGN Brand Guide — Implementation Plan
 
+Based on your decisions:
+1. **Both name expansions are valid, audience-specific:** "Fiber Gaming Network" for the player app (play.fgn.gg), "Federated Generative Network" for the marketing/business site (fgn.business).
+2. **Player app gains an optional light "Enterprise mode"** for embedding in provider portals.
+3. **CTA colors locked per property:** violet on marketing, cyan on the app.
 
-# Plan: Admin AI Coach Source Management
+---
 
-## Summary
-Enhance the Admin Notebooks page to give admins full visibility and control over the AI Coach's knowledge sources, and fix the game-scoped search so the coach prioritizes relevant notebooks.
+## Master Palette (single source of truth, both properties)
 
-## Changes
+| Token | Role | HEX | HSL |
+|---|---|---|---|
+| `fgn.ink` | Dark surface | `#0B0F14` | `216 28% 6%` |
+| `fgn.cloud` | Light surface | `#F6F8FB` | `214 27% 97%` |
+| `fgn.cyan` | Play pillar / **app primary CTA** | `#00D4D4` | `180 100% 42%` |
+| `fgn.violet` | Performance pillar / **marketing primary CTA** | `#7C3AED` | `262 83% 58%` |
+| `fgn.azure` | Fiber/Network | `#2E8BFF` | `214 100% 59%` |
+| `fgn.amber` | Pathways pillar | `#F59E0B` | `38 92% 50%` |
 
-### 1. Add "Browse Sources" panel to AdminNotebooks
-- For each connection card, add a "Sources" button that opens a dialog listing all documents/sources in that notebook (calls the existing `notebook-proxy` `sources` action)
-- Display source name, type, and size where available
-- No new edge function needed -- the proxy already supports this
+Pillar locks (never change, on either site):
+Performance → Violet · Play → Cyan · Pathways → Amber · Fiber → Azure.
 
-### 2. Add "Test Search" dialog
-- Add a search input on the AdminNotebooks page where admins can type a query and see the ranked results the coach would retrieve
-- Calls the existing `notebook-proxy` `search` action with the connection's notebook ID
-- Shows result snippets with source attribution so admins can verify quality
+---
 
-### 3. Add Edit Connection support
-- Add an "Edit" button to each connection card opening a pre-filled dialog
-- Allow changing name, API URL, notebook ID, and game assignment
-- Uses the existing `updateConnection` mutation from `useNotebookConnections`
+## Changes to make in this repo
 
-### 4. Fix game-scoped notebook search in ai-coach
-- Currently `searchNotebooks()` queries ALL active connections regardless of the selected game
-- Modify the function to accept a `game_id` parameter
-- When a game is selected, prioritize connections linked to that game (search those first, then fall back to global/unlinked notebooks if under the result cap)
-- This ensures game-specific notebooks are weighted correctly
+### 1. `BRAND.md` (new, root)
+Single-page brand guide capturing palette, pillar locks, typography rules, logo + naming rules ("Fiber Gaming Network" for app, "Federated Generative Network" for marketing), and the arcade-vs-enterprise mode definition. This is the artifact you can hand to the fgn.business team.
 
-### 5. Add "Notes" viewer (read-only)
-- For each connection, add a "Notes" button to view saved notes in the notebook (calls existing `notebook-proxy` `notes` action)
-- Read-only display since note creation happens in Open Notebook directly
+### 2. `src/index.css` — retune tokens to master palette
+- Update `:root` (arcade/dark) primary from `180 100% 45%` → `180 100% 42%` (cyan exact match).
+- Update `:root` accent from `280 80% 55%` → `262 83% 58%` (violet exact match).
+- Background from `220 20% 4%` → `216 28% 6%` (ink exact match).
+- Add four pillar tokens used by both modes:
+  ```
+  --brand-pillar-perf:  262 83% 58%;
+  --brand-pillar-play:  180 100% 42%;
+  --brand-pillar-path:   38 92% 50%;
+  --brand-pillar-fiber: 214 100% 59%;
+  ```
+- Refresh `.light` block to be the **Enterprise mode** spec: `fgn.cloud` background, **violet primary**, cyan demoted to accent, no neon glow utilities (already gated by `:is(.light)`).
 
-## Files to create
-- None (all changes to existing files)
+### 3. `tailwind.config.ts` — expose pillar colors
+Add a `brand` color group so components can write `text-brand-perf`, `bg-brand-play/10`, etc.:
+```ts
+brand: {
+  perf:  "hsl(var(--brand-pillar-perf))",
+  play:  "hsl(var(--brand-pillar-play))",
+  path:  "hsl(var(--brand-pillar-path))",
+  fiber: "hsl(var(--brand-pillar-fiber))",
+}
+```
 
-## Files to modify
-- `src/pages/admin/AdminNotebooks.tsx` -- Add Sources dialog, Search dialog, Edit dialog, Notes viewer
-- `supabase/functions/ai-coach/index.ts` -- Add game-scoped notebook filtering to `searchNotebooks()`
-- `src/hooks/useNotebookConnections.ts` -- Add `fetchSources`, `fetchNotes`, `searchNotebook` helper functions
+### 4. Enterprise mode for embedding (`?mode=enterprise`)
+Small addition to `src/main.tsx` (or a new `BrandModeProvider` mounted in `App.tsx`):
+- On boot, if URL has `?mode=enterprise` **or** the page is inside an `<iframe>` whose parent origin is on an allowlist (provider portals), force `next-themes` to `light` and add a `enterprise` class to `<html>`.
+- The `enterprise` class scopes overrides in `index.css` to swap the **primary CTA from cyan to violet** (`--primary: 262 83% 58%`) so the embed matches marketing.
+- Persist the choice in `localStorage` so deep navigation inside the iframe stays in enterprise mode.
+- No change to `ThemeToggle.tsx` behaviour for normal users — enterprise mode is opt-in via URL/embed only.
 
-## Database changes
-- None required (all infrastructure already exists)
+### 5. Hero & Navbar copy alignment
+- `src/components/HeroSection.tsx`: keep "Fiber Gaming Network" alt text (correct for app audience). No visual change required — the existing cyan + violet gradient already maps to the new tokens once `index.css` is retuned.
+- `src/components/Navbar.tsx`: no copy change. The "Powered by FGN" subline stays.
 
-## Technical details
-- The `notebook-proxy` already has `sources`, `notes`, and `search` POST actions -- the admin UI just needs to call them via `supabase.functions.invoke("notebook-proxy", { body: {...} })`
-- Game-scoped search: query `admin_notebook_connections` with `game_id` filter first, then `game_id IS NULL` for global notebooks, respecting the existing `MAX_TOTAL=8` cap
-- Edit dialog reuses the same form layout as the Add dialog but pre-populates fields
+### 6. Memory updates
+- Add `mem://style/brand-guide` summarizing palette + pillar locks + the audience-specific naming rule.
+- Update Core line in `mem://index.md` to reference the locked palette and the two-mode system (arcade/enterprise) so future edits don't drift.
 
+---
+
+## Out of scope (intentionally)
+- Redesign of fgn.business — we only **publish** the palette so they can align next; we do not edit that codebase here.
+- Changing the player app's default look. Arcade mode stays the default; enterprise mode is opt-in via embed.
+- Font swap. Orbitron/Rajdhani/Inter stack stays; enterprise mode just down-weights Orbitron via existing `:is(.light)` rules already in `index.css` (no new font work needed now).
+
+---
+
+## Acceptance check after build
+- Visual: hero, primary buttons, and nav links on `/` and `/dashboard` look unchanged (numerically tiny color shift only).
+- Pillar usage: a quick grep should show no hard-coded pillar hexes — components use `text-brand-*` / `bg-brand-*` tokens going forward (existing usages can be migrated opportunistically, not in a sweep).
+- Enterprise embed: visiting `/?mode=enterprise` renders with `fgn.cloud` background and **violet** primary buttons; refreshing keeps the mode.
+- `BRAND.md` exists at repo root and is linkable.

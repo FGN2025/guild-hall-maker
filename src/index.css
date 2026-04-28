@@ -6,7 +6,8 @@
 
 @layer base {
   :root {
-    --background: 220 20% 4%;
+    /* FGN Master Palette — Arcade mode (default for play.fgn.gg) */
+    --background: 216 28% 6%;          /* fgn.ink */
     --foreground: 180 10% 92%;
 
     --card: 220 18% 8%;
@@ -15,8 +16,8 @@
     --popover: 220 18% 8%;
     --popover-foreground: 180 10% 92%;
 
-    --primary: 180 100% 45%;
-    --primary-foreground: 220 20% 4%;
+    --primary: 180 100% 42%;            /* fgn.cyan — app primary CTA */
+    --primary-foreground: 216 28% 6%;
 
     --secondary: 220 15% 15%;
     --secondary-foreground: 180 10% 85%;
@@ -24,7 +25,7 @@
     --muted: 220 15% 12%;
     --muted-foreground: 220 10% 55%;
 
-    --accent: 280 80% 55%;
+    --accent: 262 83% 58%;              /* fgn.violet */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -32,13 +33,19 @@
 
     --border: 220 15% 16%;
     --input: 220 15% 16%;
-    --ring: 180 100% 45%;
+    --ring: 180 100% 42%;
 
     --radius: 0.5rem;
 
     --neon-glow: 180 100% 50%;
-    --neon-accent: 280 80% 55%;
+    --neon-accent: 262 83% 58%;
     --surface-glass: 220 20% 10%;
+
+    /* FGN pillar locks — same on every property */
+    --brand-pillar-perf:  262 83% 58%;  /* Performance → fgn.violet */
+    --brand-pillar-play:  180 100% 42%; /* Play → fgn.cyan */
+    --brand-pillar-path:   38 92% 50%;  /* Pathways → fgn.amber */
+    --brand-pillar-fiber: 214 100% 59%; /* Fiber/Network → fgn.azure */
 
     --sidebar-background: 220 20% 6%;
     --sidebar-foreground: 180 10% 85%;
@@ -54,25 +61,28 @@
   }
 
   .light {
-    --background: 220 20% 96%;
-    --foreground: 220 20% 10%;
+    /* FGN Master Palette — Enterprise mode */
+    --background: 214 27% 97%;          /* fgn.cloud */
+    --foreground: 216 28% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 216 28% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 216 28% 12%;
 
-    --primary: 180 100% 30%;
+    /* In light/enterprise mode, violet becomes the primary CTA */
+    --primary: 262 83% 58%;             /* fgn.violet */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 90%;
-    --secondary-foreground: 220 20% 20%;
+    --secondary-foreground: 216 28% 20%;
 
     --muted: 220 15% 92%;
     --muted-foreground: 220 10% 40%;
 
-    --accent: 280 80% 50%;
+    /* Cyan demoted to accent in enterprise mode */
+    --accent: 180 100% 35%;             /* fgn.cyan (slightly darkened for AA on white) */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -80,20 +90,26 @@
 
     --border: 220 15% 85%;
     --input: 220 15% 85%;
-    --ring: 180 100% 30%;
+    --ring: 262 83% 58%;
 
-    --neon-glow: 180 100% 35%;
-    --neon-accent: 280 80% 50%;
-    --surface-glass: 220 20% 95%;
+    --neon-glow: 262 83% 58%;
+    --neon-accent: 180 100% 35%;
+    --surface-glass: 214 27% 95%;
 
-    --sidebar-background: 220 20% 98%;
-    --sidebar-foreground: 220 20% 20%;
-    --sidebar-primary: 180 100% 30%;
+    /* Pillar locks stay identical across modes */
+    --brand-pillar-perf:  262 83% 58%;
+    --brand-pillar-play:  180 100% 35%;
+    --brand-pillar-path:   38 92% 45%;
+    --brand-pillar-fiber: 214 100% 50%;
+
+    --sidebar-background: 214 27% 98%;
+    --sidebar-foreground: 216 28% 20%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 92%;
-    --sidebar-accent-foreground: 220 20% 20%;
+    --sidebar-accent-foreground: 216 28% 20%;
     --sidebar-border: 220 15% 85%;
-    --sidebar-ring: 180 100% 30%;
+    --sidebar-ring: 262 83% 58%;
 
     --success: 145 70% 35%;
     --warning: 38 92% 45%;

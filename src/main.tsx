@@ -3,10 +3,15 @@ import { ThemeProvider } from "next-themes";
 import ErrorBoundary from "./components/ErrorBoundary";
 import App from "./App.tsx";
 import "./index.css";
+import { bootstrapBrandMode, detectBrandMode } from "./lib/brandMode";
+
+// Apply FGN brand mode (arcade vs enterprise) before React mounts to avoid flash.
+bootstrapBrandMode();
+const initialTheme = detectBrandMode() === "enterprise" ? "light" : "dark";
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
-    <ThemeProvider attribute="class" defaultTheme="dark">
+    <ThemeProvider attribute="class" defaultTheme={initialTheme}>
       <App />
     </ThemeProvider>
   </ErrorBoundary>
