@@ -312,6 +312,11 @@ const ModeratorTournaments = () => {
                 <Badge variant="outline" className={`absolute top-3 left-3 capitalize ${statusColor[t.status] ?? ""}`}>
                   {t.status.replace("_", " ")}
                 </Badge>
+                {t.archived_at && (
+                  <Badge variant="outline" className="absolute top-12 left-3 bg-muted/90 text-muted-foreground border-border">
+                    Archived
+                  </Badge>
+                )}
                 <button
                   className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-background transition-colors"
                   onClick={(e) => { e.stopPropagation(); toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured }); }}
