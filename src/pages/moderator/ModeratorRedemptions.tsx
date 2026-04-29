@@ -157,6 +157,22 @@ const ModeratorRedemptions = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const archivePrizeMutation = useMutation({
+    mutationFn: async ({ id, archive }: { id: string; archive: boolean }) => {
+      const { error } = await supabase
+        .from("prizes")
+        .update({ archived_at: archive ? new Date().toISOString() : null } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["mod-prizes"] });
+      toast.success(vars.archive ? "Prize archived!" : "Prize restored!");
+      setArchivePrize(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const updateRedemptionMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       if (!user) throw new Error("Not authenticated");
