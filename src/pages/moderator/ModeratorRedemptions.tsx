@@ -42,9 +42,15 @@ const ModeratorRedemptions = () => {
   const { data: prizes = [], isLoading: prizesLoading } = useQuery({
     queryKey: ["mod-prizes"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("prizes").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("prizes")
+        .select("*, prize_redemptions(id)")
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).map((p: any) => ({
+        ...p,
+        redemption_count: Array.isArray(p.prize_redemptions) ? p.prize_redemptions.length : 0,
+      }));
     },
   });
 
