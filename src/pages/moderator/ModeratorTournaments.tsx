@@ -362,10 +362,19 @@ const ModeratorTournaments = () => {
                   <Button variant="outline" size="sm" onClick={() => setPromoData(buildTournamentPromo(t))}>
                     <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
                   </Button>
+                  <Button
+                    variant="ghost" size="sm"
+                    className="ml-auto"
+                    title={t.archived_at ? "Unarchive" : "Archive"}
+                    onClick={() => archiveMutation.mutate({ id: t.id, archive: !t.archived_at })}
+                    disabled={archiveMutation.isPending}
+                  >
+                    {t.archived_at ? <ArchiveRestore className="h-3.5 w-3.5 text-primary" /> : <Archive className="h-3.5 w-3.5" />}
+                  </Button>
                   {isAdmin && (
                     <Button
                       variant="ghost" size="sm"
-                      className="ml-auto text-destructive hover:bg-destructive/10"
+                      className="text-destructive hover:bg-destructive/10"
                       onClick={() => handleDelete(t.id, t.name)}
                       disabled={deleteMutation.isPending}
                     >
