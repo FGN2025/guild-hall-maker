@@ -1,10 +1,11 @@
-import { Calendar, Users, Trophy, ArrowRight, Gamepad2, Target, Compass, Clock, Star } from "lucide-react";
+import { Calendar, Users, Trophy, ArrowRight, Gamepad2, Target, Compass, Clock, Star, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FeaturedEvent {
   id: string;
