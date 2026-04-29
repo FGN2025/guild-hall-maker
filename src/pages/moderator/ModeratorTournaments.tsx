@@ -47,6 +47,7 @@ const ModeratorTournaments = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showArchived, setShowArchived] = useState(false);
+  const [featuredOnly, setFeaturedOnly] = useState(false);
   const [detailTournament, setDetailTournament] = useState<any | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
 
@@ -85,6 +86,7 @@ const ModeratorTournaments = () => {
     return tournaments.filter((t: any) => {
       const isArchived = !!t.archived_at;
       if (showArchived ? !isArchived : isArchived) return false;
+      if (featuredOnly && !t.is_featured) return false;
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -92,7 +94,7 @@ const ModeratorTournaments = () => {
       }
       return true;
     });
-  }, [tournaments, search, statusFilter, showArchived]);
+  }, [tournaments, search, statusFilter, showArchived, featuredOnly]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -213,6 +215,16 @@ const ModeratorTournaments = () => {
           <Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
           <Label htmlFor="show-archived" className="text-sm cursor-pointer whitespace-nowrap">Show archived</Label>
         </div>
+        <Button
+          type="button"
+          variant={featuredOnly ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFeaturedOnly((v) => !v)}
+          className="whitespace-nowrap"
+        >
+          <Star className={`h-4 w-4 mr-1.5 ${featuredOnly ? "fill-primary-foreground" : "text-primary"}`} />
+          Featured only
+        </Button>
       </div>
 
       {isLoading ? (
@@ -249,8 +261,15 @@ const ModeratorTournaments = () => {
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured })}>
-                        <Star className={`h-4 w-4 ${t.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                      <Button
+                        variant={t.is_featured ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured })}
+                        title={t.is_featured ? "Remove from Featured Events" : "Add to Featured Events"}
+                      >
+                        <Star className={`h-3.5 w-3.5 mr-1 ${t.is_featured ? "fill-primary-foreground" : "text-primary"}`} />
+                        {t.is_featured ? "Featured" : "Feature"}
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
                         <Pencil className="h-4 w-4 text-primary" />
@@ -317,9 +336,16 @@ const ModeratorTournaments = () => {
                     Archived
                   </Badge>
                 )}
+                {t.is_featured && (
+                  <Badge variant="outline" className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground border-primary">
+                    <Star className="h-3 w-3 mr-1 fill-primary-foreground" />
+                    Featured
+                  </Badge>
+                )}
                 <button
                   className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-background transition-colors"
                   onClick={(e) => { e.stopPropagation(); toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured }); }}
+                  title={t.is_featured ? "Remove from Featured Events" : "Add to Featured Events"}
                 >
                   <Star className={`h-4 w-4 ${t.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
                 </button>

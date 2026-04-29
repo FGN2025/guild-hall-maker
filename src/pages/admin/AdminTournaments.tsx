@@ -228,8 +228,15 @@ const AdminTournaments = () => {
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured })}>
-                        <Star className={`h-4 w-4 ${t.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                      <Button
+                        variant={t.is_featured ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured })}
+                        title={t.is_featured ? "Remove from Featured Events" : "Add to Featured Events"}
+                      >
+                        <Star className={`h-3.5 w-3.5 mr-1 ${t.is_featured ? "fill-primary-foreground" : "text-primary"}`} />
+                        {t.is_featured ? "Featured" : "Feature"}
                       </Button>
                       {(t.status === "in_progress" || t.status === "completed") && (
                         <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/bracket`)}>
@@ -282,9 +289,16 @@ const AdminTournaments = () => {
                 <Badge variant="outline" className={`absolute top-3 left-3 capitalize ${statusColor[t.status] ?? ""}`}>
                   {t.status.replace("_", " ")}
                 </Badge>
+                {t.is_featured && (
+                  <Badge variant="outline" className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground border-primary">
+                    <Star className="h-3 w-3 mr-1 fill-primary-foreground" />
+                    Featured
+                  </Badge>
+                )}
                 <button
                   className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-background transition-colors"
                   onClick={(e) => { e.stopPropagation(); toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured }); }}
+                  title={t.is_featured ? "Remove from Featured Events" : "Add to Featured Events"}
                 >
                   <Star className={`h-4 w-4 ${t.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
                 </button>
