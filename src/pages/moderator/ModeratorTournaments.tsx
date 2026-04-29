@@ -209,6 +209,10 @@ const ModeratorTournaments = () => {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2 px-3 rounded-md border border-border bg-card/40">
+          <Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
+          <Label htmlFor="show-archived" className="text-sm cursor-pointer whitespace-nowrap">Show archived</Label>
+        </div>
       </div>
 
       {isLoading ? (
