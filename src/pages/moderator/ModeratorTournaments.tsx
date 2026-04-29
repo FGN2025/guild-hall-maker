@@ -336,9 +336,16 @@ const ModeratorTournaments = () => {
                     Archived
                   </Badge>
                 )}
+                {t.is_featured && (
+                  <Badge variant="outline" className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground border-primary">
+                    <Star className="h-3 w-3 mr-1 fill-primary-foreground" />
+                    Featured
+                  </Badge>
+                )}
                 <button
                   className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-background transition-colors"
                   onClick={(e) => { e.stopPropagation(); toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured }); }}
+                  title={t.is_featured ? "Remove from Featured Events" : "Add to Featured Events"}
                 >
                   <Star className={`h-4 w-4 ${t.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
                 </button>
