@@ -285,72 +285,131 @@ const ModeratorRedemptions = () => {
         </TabsContent>
 
         <TabsContent value="catalog">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
+              <Label htmlFor="show-archived" className="text-sm cursor-pointer">
+                Show archived
+              </Label>
+            </div>
             <Button className="gap-2" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> Add Prize
             </Button>
           </div>
 
-          {prizesLoading ? (
-            <div className="flex justify-center py-16">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-            </div>
-          ) : prizes.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground font-body">No prizes in catalog. Add your first prize above.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {prizes.map((p: any) => (
-                <Card key={p.id} className={!p.is_active ? "opacity-50" : ""}>
-                  {p.image_url && (
-                    <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="font-display text-base">{p.name}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => setEditPrize(p)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => setDeletePrize(p)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                        <Switch
-                          checked={p.is_active}
-                          onCheckedChange={(checked) => togglePrizeMutation.mutate({ id: p.id, is_active: checked })}
-                        />
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {p.description && <p className="text-xs text-muted-foreground mb-3">{p.description}</p>}
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="font-mono">{p.points_cost} pts</Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {p.quantity_available != null ? `${p.quantity_available} left` : "Unlimited"}
-                      </span>
-                    </div>
+          {(() => {
+            const visiblePrizes = prizes.filter((p: any) => showArchived ? !!p.archived_at : !p.archived_at);
+            if (prizesLoading) {
+              return (
+                <div className="flex justify-center py-16">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+                </div>
+              );
+            }
+            if (visiblePrizes.length === 0) {
+              return (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-body">
+                      {showArchived ? "No archived prizes." : "No prizes in catalog. Add your first prize above."}
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
+              );
+            }
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {visiblePrizes.map((p: any) => {
+                  const isArchived = !!p.archived_at;
+                  const hasRedemptions = (p.redemption_count ?? 0) > 0;
+                  return (
+                    <Card key={p.id} className={isArchived ? "opacity-60 border-dashed" : !p.is_active ? "opacity-50" : ""}>
+                      {p.image_url && (
+                        <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                          <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <CardTitle className="font-display text-base flex items-center gap-2">
+                            {p.name}
+                            {isArchived && (
+                              <Badge variant="outline" className="text-[10px] uppercase">Archived</Badge>
+                            )}
+                          </CardTitle>
+                          <div className="flex items-center gap-1">
+                            {!isArchived && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => setEditPrize(p)}
+                                title="Edit"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {isArchived ? (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-primary hover:text-primary"
+                                onClick={() => archivePrizeMutation.mutate({ id: p.id, archive: false })}
+                                title="Restore"
+                              >
+                                <ArchiveRestore className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : hasRedemptions ? (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-amber-400 hover:text-amber-300"
+                                onClick={() => setArchivePrize(p)}
+                                title="Archive (preserves history)"
+                              >
+                                <Archive className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={() => setDeletePrize(p)}
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {!isArchived && (
+                              <Switch
+                                checked={p.is_active}
+                                onCheckedChange={(checked) => togglePrizeMutation.mutate({ id: p.id, is_active: checked })}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {p.description && <p className="text-xs text-muted-foreground mb-3">{p.description}</p>}
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <Badge variant="secondary" className="font-mono">{p.points_cost} pts</Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {p.quantity_available != null ? `${p.quantity_available} left` : "Unlimited"}
+                          </span>
+                          {hasRedemptions && (
+                            <span className="text-xs text-muted-foreground">
+                              · {p.redemption_count} redemption{p.redemption_count === 1 ? "" : "s"}
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </TabsContent>
       </Tabs>
 
