@@ -119,6 +119,22 @@ const ModeratorTournaments = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, archive }: { id: string; archive: boolean }) => {
+      const { error } = await supabase
+        .from("tournaments")
+        .update({ archived_at: archive ? new Date().toISOString() : null } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["mod-tournaments"] });
+      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
+      toast.success(vars.archive ? "Tournament archived" : "Tournament unarchived");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, current }: { id: string; current: boolean }) => {
       const { error } = await supabase.from("tournaments").update({ is_featured: !current } as any).eq("id", id);
