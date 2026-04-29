@@ -11,8 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Trophy, Trash2, LayoutGrid, List, Search, Calendar, Users, GitBranch, Settings,
-  Gamepad2, FileText, Plus, Eye, Megaphone, Pencil, Star,
+  Gamepad2, FileText, Plus, Eye, Megaphone, Pencil, Star, Archive, ArchiveRestore,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { EventPromoEditorDialog, buildTournamentPromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +46,7 @@ const ModeratorTournaments = () => {
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showArchived, setShowArchived] = useState(false);
   const [detailTournament, setDetailTournament] = useState<any | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
 
@@ -80,6 +83,8 @@ const ModeratorTournaments = () => {
 
   const filtered = useMemo(() => {
     return tournaments.filter((t: any) => {
+      const isArchived = !!t.archived_at;
+      if (showArchived ? !isArchived : isArchived) return false;
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -87,7 +92,7 @@ const ModeratorTournaments = () => {
       }
       return true;
     });
-  }, [tournaments, search, statusFilter]);
+  }, [tournaments, search, statusFilter, showArchived]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -110,6 +115,22 @@ const ModeratorTournaments = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mod-tournaments"] });
       toast.success("Tournament deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, archive }: { id: string; archive: boolean }) => {
+      const { error } = await supabase
+        .from("tournaments")
+        .update({ archived_at: archive ? new Date().toISOString() : null } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["mod-tournaments"] });
+      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
+      toast.success(vars.archive ? "Tournament archived" : "Tournament unarchived");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -188,6 +209,10 @@ const ModeratorTournaments = () => {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2 px-3 rounded-md border border-border bg-card/40">
+          <Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
+          <Label htmlFor="show-archived" className="text-sm cursor-pointer whitespace-nowrap">Show archived</Label>
+        </div>
       </div>
 
       {isLoading ? (
@@ -241,6 +266,14 @@ const ModeratorTournaments = () => {
                           <GitBranch className="h-4 w-4 text-primary" />
                         </Button>
                       )}
+                      <Button
+                        variant="ghost" size="icon"
+                        title={t.archived_at ? "Unarchive" : "Archive"}
+                        onClick={() => archiveMutation.mutate({ id: t.id, archive: !t.archived_at })}
+                        disabled={archiveMutation.isPending}
+                      >
+                        {t.archived_at ? <ArchiveRestore className="h-4 w-4 text-primary" /> : <Archive className="h-4 w-4 text-muted-foreground" />}
+                      </Button>
                       {isAdmin && (
                         <Button
                           variant="ghost" size="icon"
@@ -279,6 +312,11 @@ const ModeratorTournaments = () => {
                 <Badge variant="outline" className={`absolute top-3 left-3 capitalize ${statusColor[t.status] ?? ""}`}>
                   {t.status.replace("_", " ")}
                 </Badge>
+                {t.archived_at && (
+                  <Badge variant="outline" className="absolute top-12 left-3 bg-muted/90 text-muted-foreground border-border">
+                    Archived
+                  </Badge>
+                )}
                 <button
                   className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-background transition-colors"
                   onClick={(e) => { e.stopPropagation(); toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured }); }}
@@ -329,10 +367,19 @@ const ModeratorTournaments = () => {
                   <Button variant="outline" size="sm" onClick={() => setPromoData(buildTournamentPromo(t))}>
                     <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
                   </Button>
+                  <Button
+                    variant="ghost" size="sm"
+                    className="ml-auto"
+                    title={t.archived_at ? "Unarchive" : "Archive"}
+                    onClick={() => archiveMutation.mutate({ id: t.id, archive: !t.archived_at })}
+                    disabled={archiveMutation.isPending}
+                  >
+                    {t.archived_at ? <ArchiveRestore className="h-3.5 w-3.5 text-primary" /> : <Archive className="h-3.5 w-3.5" />}
+                  </Button>
                   {isAdmin && (
                     <Button
                       variant="ghost" size="sm"
-                      className="ml-auto text-destructive hover:bg-destructive/10"
+                      className="text-destructive hover:bg-destructive/10"
                       onClick={() => handleDelete(t.id, t.name)}
                       disabled={deleteMutation.isPending}
                     >

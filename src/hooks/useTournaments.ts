@@ -26,6 +26,7 @@ export const useTournaments = () => {
         supabase
           .from("tournaments")
           .select("*")
+          .is("archived_at", null)
           .order("start_date", { ascending: true }),
         supabase.from("games").select("name, cover_image_url"),
         user
