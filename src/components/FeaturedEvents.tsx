@@ -31,6 +31,8 @@ const typeBadgeStyle: Record<string, string> = {
 };
 
 const FeaturedEvents = () => {
+  const { isAdmin, isModerator } = useAuth();
+  const canManage = isAdmin || isModerator;
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["featured-events"],
     queryFn: async () => {
