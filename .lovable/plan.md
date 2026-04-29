@@ -1,42 +1,51 @@
-# Hide past tournaments + add archive system
+# Surface the "Featured" toggle more prominently for Admins + Moderators
 
 ## Why
 
-The player Tournaments page currently shows tournaments whose `start_date` is in the past — they appear under the "Open" filter while you're registered, and "Past / Closed" exposes them too. You want past tournaments completely off the player-facing page, with a clean way to archive them (without nuking match history, registrations, or points already awarded).
-
-The database currently has 32 tournaments with `start_date` before today still flagged `upcoming`/`open`/`completed`. They all need to be archived in a single sweep, and the system needs to keep auto-archiving as new tournaments age out.
+The capability to feature/unfeature a tournament, challenge, or quest already exists for both Admin and Moderator — it lives as a small star icon on each item's row/card. The complaint is that it's hard to find and there's no single place to see "what's currently featured on the homepage." Goal: make it obvious where to manage Featured Events without rebuilding any of the underlying mutations or permissions.
 
 ## Approach
 
-Reuse the soft-delete pattern we just built for the Prize Catalog: an `archived_at` flag on `tournaments` that hides them from the player view but preserves all history (registrations, brackets, points, achievements).
+Two complementary changes, both purely UI:
+
+1. A new **"Featured Events" management screen** at `/moderator/featured` (Admin + Moderator) that aggregates every featured tournament, challenge, and quest in one list, with an unfeature/feature-more button per row.
+2. **In-place visual upgrades** on the existing Tournament/Challenge/Quest manager screens so the star toggle is unmistakable and filterable.
+
+Same DB writes as today (`is_featured` boolean), same role gating (Admin + Moderator). Nothing new server-side.
 
 ## Changes
 
-### 1. Database
-- Add `archived_at timestamptz NULL` column + index to `tournaments`.
-- One-time data backfill: set `archived_at = now()` on every tournament where `start_date < now() - interval '7 days'` AND `archived_at IS NULL`. This sweeps the existing past tournaments older than 7 days. Tournaments inside the 7-day window stay visible for results/recap.
+### 1. New `/moderator/featured` page (also linked from Admin sidebar)
+- Sections: Featured Tournaments / Featured Challenges / Featured Quests / Tenant Events.
+- Each row shows cover image, title, type badge, status, start date (where applicable), and a single "Remove from Featured" button.
+- A "+ Add to Featured" button at the top of each section opens a search dialog filtered by type so the moderator can pick from non-featured items and toggle them on without leaving the page.
+- Empty-state per section: "Nothing featured yet — add one to surface it on the homepage."
+- Live count chip: "5 items currently featured on the homepage."
 
-### 2. Player Tournaments page (`/tournaments`)
-- Filter out archived tournaments at the query level in `useTournaments.ts` (`.is("archived_at", null)`).
-- Remove the "Past / Closed" option from the status filter dropdown — the player view becomes upcoming/active only.
-- "Registered" filter still works, scoped to non-archived tournaments.
+### 2. Moderator/Admin sidebar entry
+- Add **Featured Events** under the Compete group (visible to Admin + Moderator only). Star icon. Routes to `/moderator/featured`.
+- Same link mounted in the Admin Dashboard quick-actions card.
 
-### 3. Moderator Tournaments page (`/moderator/tournaments`)
-- Add an "Archive" action on each tournament row alongside the existing actions.
-- Add a "Show archived" toggle and an "Unarchive" action so mods can restore one if needed.
-- Archived tournaments stay fully visible in moderator views (bracket, manage, results) — only the player-facing list filters them out.
+### 3. Make the inline star toggle obvious
+- On `ModeratorTournaments` and `AdminTournaments` (list + grid), `ModeratorChallenges`/`AdminChallenges`, and `AdminQuestsPanel`:
+  - Replace the bare star icon with a labeled pill button: filled gold "★ Featured" when on, outlined "☆ Feature" when off.
+  - Add a "Featured only" filter chip alongside the existing status filters so mods can quickly find what's currently surfaced.
+  - Add a small "Featured on homepage" badge on the card hero (grid view) so featured items are visually distinct in the catalog itself.
 
-### 4. Auto-archive going forward
-- Schedule a daily `pg_cron` job that sets `archived_at = now()` on any non-archived tournament where `start_date < now() - interval '7 days'`.
-- Result: a tournament stays on the player page for 7 days after its start date (so finished events get a brief recap window), then disappears automatically. Mods can still unarchive manually.
+### 4. Empty-state nudge on Featured Events homepage section
+- The current empty state says "No featured events yet — check back soon!" Add an Admin/Moderator-only secondary CTA: "Manage Featured Events →" linking to `/moderator/featured`.
 
 ## Out of scope
 
-- No changes to tournament registrations, bracket data, match results, points awarded, or Discord role logic.
-- No changes to the tournament calendar export — it can decide separately whether to include archived events.
-- No edits to `TournamentManage.tsx` or bracket pages — archived tournaments remain fully manageable for moderators.
+- No DB schema changes. `is_featured` and the existing mutations stay as-is.
+- No change to who can toggle (still Admin + Moderator). Tenant Admin / Marketing roles are not added.
+- No reordering / priority weighting (Featured Events still orders by `start_date` / `created_at` as it does today). Happy to add a `featured_order` column if you want drag-to-reorder later.
+- No changes to challenges/quests content rules — only their featured surfacing.
 
 ## Technical notes
 
-- Files touched: schema migration on `tournaments`, `src/hooks/useTournaments.ts`, `src/pages/Tournaments.tsx` (filter dropdown), `src/pages/moderator/ModeratorTournaments.tsx` (+ likely `useTournamentManagement.ts`), and a `pg_cron` schedule entry inserted via the data tool (not the migration tool, per project conventions).
-- Backfill runs in the same schema migration as a single `UPDATE` so all qualifying past tournaments are archived the moment the migration applies.
+- Files touched:
+  - **New**: `src/pages/moderator/ModeratorFeaturedEvents.tsx`, route added in `src/App.tsx`, sidebar entry in `src/components/moderator/ModeratorSidebar.tsx` + `src/components/admin/...` if applicable.
+  - **Modified**: `src/pages/moderator/ModeratorTournaments.tsx`, `src/pages/admin/AdminTournaments.tsx`, `src/pages/moderator/ModeratorChallenges.tsx`, `src/pages/admin/AdminChallenges.tsx`, `src/components/quests/AdminQuestsPanel.tsx`, `src/components/FeaturedEvents.tsx` (only the empty-state CTA).
+- Reuses the existing `toggleFeaturedMutation` pattern in each manager so no new API surface is introduced.
+- Access control is enforced via the existing `ModeratorRoute` wrapper — no RLS changes needed.
