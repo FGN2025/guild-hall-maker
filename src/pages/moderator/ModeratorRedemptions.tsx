@@ -35,6 +35,8 @@ const ModeratorRedemptions = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [editPrize, setEditPrize] = useState<any | null>(null);
   const [deletePrize, setDeletePrize] = useState<any | null>(null);
+  const [archivePrize, setArchivePrize] = useState<any | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   // Prizes
   const { data: prizes = [], isLoading: prizesLoading } = useQuery({
