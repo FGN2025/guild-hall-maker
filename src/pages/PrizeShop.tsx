@@ -53,6 +53,7 @@ const PrizeShop = () => {
         .from("prizes")
         .select("*")
         .eq("is_active", true)
+        .is("archived_at", null)
         .order("points_cost", { ascending: true });
       if (error) throw error;
       return data ?? [];
