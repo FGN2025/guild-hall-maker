@@ -83,6 +83,8 @@ const ModeratorTournaments = () => {
 
   const filtered = useMemo(() => {
     return tournaments.filter((t: any) => {
+      const isArchived = !!t.archived_at;
+      if (showArchived ? !isArchived : isArchived) return false;
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -90,7 +92,7 @@ const ModeratorTournaments = () => {
       }
       return true;
     });
-  }, [tournaments, search, statusFilter]);
+  }, [tournaments, search, statusFilter, showArchived]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
