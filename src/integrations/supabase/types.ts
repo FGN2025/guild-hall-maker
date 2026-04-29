@@ -3773,6 +3773,7 @@ export type Database = {
       tournaments: {
         Row: {
           achievement_id: string | null
+          archived_at: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -3806,6 +3807,7 @@ export type Database = {
         }
         Insert: {
           achievement_id?: string | null
+          archived_at?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -3839,6 +3841,7 @@ export type Database = {
         }
         Update: {
           achievement_id?: string | null
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
