@@ -89,6 +89,7 @@ const QuestGuide = lazy(() => import("./pages/guides/QuestGuide"));
 // Moderator pages
 const ModeratorDashboard = lazy(() => import("./pages/moderator/ModeratorDashboard"));
 const ModeratorTournaments = lazy(() => import("./pages/moderator/ModeratorTournaments"));
+const ModeratorFeaturedEvents = lazy(() => import("./pages/moderator/ModeratorFeaturedEvents"));
 const ModeratorMatches = lazy(() => import("./pages/moderator/ModeratorMatches"));
 const ModeratorPoints = lazy(() => import("./pages/moderator/ModeratorPoints"));
 const ModeratorChallenges = lazy(() => import("./pages/moderator/ModeratorChallenges"));
@@ -224,6 +225,7 @@ const App = () => (
               {/* Moderator routes */}
               <Route path="/moderator" element={<ModeratorRoute><ModeratorDashboard /></ModeratorRoute>} />
               <Route path="/moderator/tournaments" element={<ModeratorRoute><ModeratorTournaments /></ModeratorRoute>} />
+              <Route path="/moderator/featured" element={<ModeratorRoute><ModeratorFeaturedEvents /></ModeratorRoute>} />
               <Route path="/moderator/matches" element={<ModeratorRoute><ModeratorMatches /></ModeratorRoute>} />
               <Route path="/moderator/points" element={<ModeratorRoute><ModeratorPoints /></ModeratorRoute>} />
               <Route path="/moderator/challenges" element={<ModeratorRoute><ModeratorChallenges /></ModeratorRoute>} />
