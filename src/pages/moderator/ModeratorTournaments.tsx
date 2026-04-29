@@ -215,6 +215,16 @@ const ModeratorTournaments = () => {
           <Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
           <Label htmlFor="show-archived" className="text-sm cursor-pointer whitespace-nowrap">Show archived</Label>
         </div>
+        <Button
+          type="button"
+          variant={featuredOnly ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFeaturedOnly((v) => !v)}
+          className="whitespace-nowrap"
+        >
+          <Star className={`h-4 w-4 mr-1.5 ${featuredOnly ? "fill-primary-foreground" : "text-primary"}`} />
+          Featured only
+        </Button>
       </div>
 
       {isLoading ? (
@@ -251,8 +261,15 @@ const ModeratorTournaments = () => {
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured })}>
-                        <Star className={`h-4 w-4 ${t.is_featured ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                      <Button
+                        variant={t.is_featured ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => toggleFeaturedMutation.mutate({ id: t.id, current: !!t.is_featured })}
+                        title={t.is_featured ? "Remove from Featured Events" : "Add to Featured Events"}
+                      >
+                        <Star className={`h-3.5 w-3.5 mr-1 ${t.is_featured ? "fill-primary-foreground" : "text-primary"}`} />
+                        {t.is_featured ? "Featured" : "Feature"}
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/tournaments/${t.id}/manage`)}>
                         <Pencil className="h-4 w-4 text-primary" />
