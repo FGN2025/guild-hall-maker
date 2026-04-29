@@ -266,6 +266,14 @@ const ModeratorTournaments = () => {
                           <GitBranch className="h-4 w-4 text-primary" />
                         </Button>
                       )}
+                      <Button
+                        variant="ghost" size="icon"
+                        title={t.archived_at ? "Unarchive" : "Archive"}
+                        onClick={() => archiveMutation.mutate({ id: t.id, archive: !t.archived_at })}
+                        disabled={archiveMutation.isPending}
+                      >
+                        {t.archived_at ? <ArchiveRestore className="h-4 w-4 text-primary" /> : <Archive className="h-4 w-4 text-muted-foreground" />}
+                      </Button>
                       {isAdmin && (
                         <Button
                           variant="ghost" size="icon"
