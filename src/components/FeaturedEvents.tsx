@@ -155,9 +155,16 @@ const FeaturedEvents = () => {
               Featured Events
             </h2>
           </div>
-          <Link to="/tournaments" className="hidden sm:flex items-center gap-1 text-primary font-heading font-medium hover:underline">
-            View all <ArrowRight className="h-4 w-4" />
-          </Link>
+          <div className="flex items-center gap-4">
+            {canManage && (
+              <Link to="/moderator/featured" className="hidden sm:flex items-center gap-1 text-primary font-heading font-medium hover:underline">
+                <Sparkles className="h-4 w-4" /> Manage Featured
+              </Link>
+            )}
+            <Link to="/tournaments" className="hidden sm:flex items-center gap-1 text-primary font-heading font-medium hover:underline">
+              View all <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
 
         {isLoading ? (
@@ -181,6 +188,16 @@ const FeaturedEvents = () => {
             >
               Browse Games <ArrowRight className="h-4 w-4" />
             </Link>
+            {canManage && (
+              <div className="mt-4">
+                <Link
+                  to="/moderator/featured"
+                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary font-heading"
+                >
+                  <Sparkles className="h-4 w-4" /> Manage Featured Events
+                </Link>
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
