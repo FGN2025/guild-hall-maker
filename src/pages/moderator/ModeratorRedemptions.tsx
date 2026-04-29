@@ -458,6 +458,29 @@ const ModeratorRedemptions = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Archive confirmation */}
+      <AlertDialog open={!!archivePrize} onOpenChange={(open) => { if (!open) setArchivePrize(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Prize</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{archivePrize?.name}" has {archivePrize?.redemption_count} redemption
+              {archivePrize?.redemption_count === 1 ? "" : "s"} on record, so it can't be permanently
+              deleted. Archiving hides it from the player Prize Shop and the catalog while keeping
+              all redemption history intact. You can restore it anytime from the "Show archived" view.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => archivePrize && archivePrizeMutation.mutate({ id: archivePrize.id, archive: true })}
+            >
+              {archivePrizeMutation.isPending ? "Archiving..." : "Archive"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
