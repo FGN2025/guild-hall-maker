@@ -47,6 +47,7 @@ const ModeratorTournaments = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showArchived, setShowArchived] = useState(false);
+  const [featuredOnly, setFeaturedOnly] = useState(false);
   const [detailTournament, setDetailTournament] = useState<any | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
 
