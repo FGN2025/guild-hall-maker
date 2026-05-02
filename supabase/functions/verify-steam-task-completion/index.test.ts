@@ -99,26 +99,34 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     return jsonResp({});
   }
 
+  // PostgREST: when supabase-js calls .single() / .maybeSingle() it sends
+  // Accept: application/vnd.pgrst.object+json and expects a single object,
+  // not an array. Detect and respond accordingly.
+  const accept = new Headers(init?.headers ?? {}).get("Accept") ?? "";
+  const wantsSingle = accept.includes("vnd.pgrst.object");
+  const respond = (row: unknown) => jsonResp(wantsSingle ? row : [row]);
+
   // --- Supabase PostgREST table calls ---
   if (url.includes("/rest/v1/challenge_tasks")) {
-    return jsonResp([pickTaskRow()]);
+    return respond(pickTaskRow());
   }
   if (url.includes("/rest/v1/challenges")) {
-    return jsonResp([{ id: CHALLENGE_ID, game_id: GAME_ID }]);
+    return respond({ id: CHALLENGE_ID, game_id: GAME_ID });
   }
   if (url.includes("/rest/v1/games")) {
-    return jsonResp([{ steam_app_id: STEAM_APP_ID, name: "CS2" }]);
+    return respond({ steam_app_id: STEAM_APP_ID, name: "CS2" });
   }
   if (url.includes("/rest/v1/challenge_enrollments")) {
-    return jsonResp([{ id: ENROLLMENT_ID, user_id: USER_ID, status: "active" }]);
+    return respond({ id: ENROLLMENT_ID, user_id: USER_ID, status: "active" });
   }
   if (url.includes("/rest/v1/profiles")) {
-    return jsonResp([
-      { steam_id: currentScenario.steamLinked === false ? null : STEAM_ID },
-    ]);
+    return respond({ steam_id: currentScenario.steamLinked === false ? null : STEAM_ID });
   }
   if (url.includes("/rest/v1/challenge_evidence")) {
-    if (method === "GET") return jsonResp([]); // no existing evidence
+    if (method === "GET") {
+      // maybeSingle on no rows: return null object or empty array
+      return wantsSingle ? jsonResp(null) : jsonResp([]);
+    }
     if (method === "POST" || method === "PATCH") return jsonResp([{ id: "ev-1" }]);
   }
   if (
