@@ -52,9 +52,74 @@ const TaskChecklist = ({
   canUpload,
 }: TaskChecklistProps) => {
   const [checkingTaskId, setCheckingTaskId] = useState<string | null>(null);
-  const [lastReason, setLastReason] = useState<Record<string, string>>({});
+  const [lastFailure, setLastFailure] = useState<Record<string, { code: string; message: string; details?: any }>>({});
 
   if (tasks.length === 0) return null;
+
+  const friendlyFor = (
+    code: string,
+    fallback: string,
+    details?: any
+  ): { title: string; message: string; Icon: typeof AlertCircle; tone: "warn" | "error" | "info"; actionHref?: string; actionLabel?: string } => {
+    switch (code) {
+      case "not_linked":
+        return {
+          title: "Steam account not linked",
+          message: "Link your Steam account to enable auto-verification.",
+          Icon: Link2Off,
+          tone: "warn",
+          actionHref: "/profile-settings",
+          actionLabel: "Link Steam",
+        };
+      case "profile_private":
+        return {
+          title: "Steam profile is private",
+          message: "Set your Steam profile and game details to public, then try again.",
+          Icon: Lock,
+          tone: "warn",
+        };
+      case "achievement_locked":
+        return {
+          title: "Achievement not unlocked",
+          message: details?.achievement
+            ? `Unlock "${details.achievement}" in-game, then re-check.`
+            : "Unlock the required achievement in-game, then re-check.",
+          Icon: Trophy,
+          tone: "warn",
+        };
+      case "insufficient_playtime":
+        return {
+          title: "Not enough playtime yet",
+          message:
+            typeof details?.remaining === "number"
+              ? `${details.minutes}/${details.required} min played — ${details.remaining} more to go.`
+              : fallback,
+          Icon: Timer,
+          tone: "warn",
+        };
+      case "game_not_owned":
+        return {
+          title: "Game not in library",
+          message: "We couldn't find this game in your Steam library, or it's hidden by privacy settings.",
+          Icon: ShieldAlert,
+          tone: "warn",
+        };
+      case "api_error":
+        return {
+          title: "Steam is unreachable",
+          message: "Steam didn't respond. Wait a moment and try again.",
+          Icon: WifiOff,
+          tone: "error",
+        };
+      default:
+        return {
+          title: "Not verified yet",
+          message: fallback || "Criteria not met yet.",
+          Icon: AlertCircle,
+          tone: "warn",
+        };
+    }
+  };
 
   const handleSteamCheck = async (taskId: string) => {
     if (!enrollmentId) return;
@@ -66,17 +131,21 @@ const TaskChecklist = ({
       if (error) throw error;
       if (data?.ok) {
         toast.success(data.alreadyApproved ? "Already auto-approved." : "Auto-approved from Steam!");
-        setLastReason((p) => ({ ...p, [taskId]: "" }));
+        setLastFailure((p) => {
+          const { [taskId]: _omit, ...rest } = p;
+          return rest;
+        });
         onSteamRecheck?.();
       } else {
-        const reason = data?.reason || "Criteria not met yet.";
-        setLastReason((p) => ({ ...p, [taskId]: reason }));
-        toast.message("Steam check: criteria not met", { description: reason });
+        const code = data?.reasonCode || "not_met";
+        const friendly = friendlyFor(code, data?.reason || "", data?.details);
+        setLastFailure((p) => ({ ...p, [taskId]: { code, message: friendly.message, details: data?.details } }));
+        toast.message(friendly.title, { description: friendly.message });
       }
     } catch (err: any) {
       const msg = err?.message || "Steam API error";
-      setLastReason((p) => ({ ...p, [taskId]: msg }));
-      toast.error(msg);
+      setLastFailure((p) => ({ ...p, [taskId]: { code: "api_error", message: msg } }));
+      toast.error("Steam is unreachable", { description: msg });
     } finally {
       setCheckingTaskId(null);
     }
