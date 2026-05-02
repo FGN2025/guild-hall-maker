@@ -179,12 +179,31 @@ if (!captured) throw new Error("Handler was not registered via Deno.serve");
 // deno-lint-ignore no-explicit-any
 const handler: (req: Request) => Promise<Response> | Response = captured as any;
 
+// Build a structurally valid (unsigned) JWT so supabase-js can decode it.
+// Local verification will fail (no JWKS match) and the lib will fall back
+// to /auth/v1/user, which our fetch stub answers.
+function makeFakeJwt() {
+  const enc = (o: unknown) =>
+    btoa(JSON.stringify(o)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const header = enc({ alg: "HS256", typ: "JWT", kid: "stub" });
+  const payload = enc({
+    sub: USER_ID,
+    aud: "authenticated",
+    role: "authenticated",
+    iss: "https://stub.supabase.co/auth/v1",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    iat: Math.floor(Date.now() / 1000),
+  });
+  return `${header}.${payload}.stub-signature`;
+}
+const FAKE_JWT = makeFakeJwt();
+
 function call(taskId: string) {
   return handler(
     new Request("http://localhost/verify", {
       method: "POST",
       headers: {
-        Authorization: "Bearer test-token",
+        Authorization: `Bearer ${FAKE_JWT}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ taskId, enrollmentId: ENROLLMENT_ID }),
