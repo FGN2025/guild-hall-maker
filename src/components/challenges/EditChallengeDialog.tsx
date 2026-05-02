@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
 import PointsInput from "@/components/shared/PointsInput";
+import TaskVerificationEditor from "@/components/challenges/TaskVerificationEditor";
 
 interface EditChallengeDialogProps {
   challenge: any;
@@ -243,7 +244,14 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         if (t.id && !t._isNew) {
           const { error: upErr } = await supabase
             .from("challenge_tasks")
-            .update({ title: t.title, description: t.description || null, display_order: i })
+            .update({
+              title: t.title,
+              description: t.description || null,
+              display_order: i,
+              verification_type: t.verification_type,
+              steam_achievement_api_name: t.steam_achievement_api_name,
+              steam_playtime_minutes: t.steam_playtime_minutes,
+            } as any)
             .eq("id", t.id);
           if (upErr) throw upErr;
         }
@@ -257,7 +265,10 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             title: t.title.trim(),
             description: t.description || null,
             display_order: visibleBeforeInsert.length + idx,
-          }))
+            verification_type: t.verification_type,
+            steam_achievement_api_name: t.steam_achievement_api_name,
+            steam_playtime_minutes: t.steam_playtime_minutes,
+          })) as any
         );
         if (insErr) throw insErr;
       }
