@@ -86,9 +86,17 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = typeof input === "string" ? input : input.toString();
   const method = (init?.method ?? "GET").toUpperCase();
 
-  // --- Supabase auth getClaims (calls /auth/v1/user) ---
+  // --- Supabase auth: JWKS lookup (return empty so lib falls back to /user) ---
+  if (url.includes("/auth/v1/.well-known/jwks.json") || url.includes("/auth/v1/jwks")) {
+    return jsonResp({ keys: [] });
+  }
+  // --- Supabase auth getClaims fallback (calls /auth/v1/user) ---
   if (url.includes("/auth/v1/user")) {
-    return jsonResp({ id: USER_ID, sub: USER_ID });
+    return jsonResp({ id: USER_ID, aud: "authenticated", role: "authenticated", email: "test@example.com" });
+  }
+  // --- Supabase auth settings ---
+  if (url.includes("/auth/v1/settings")) {
+    return jsonResp({});
   }
 
   // --- Supabase PostgREST table calls ---
