@@ -6,7 +6,7 @@ interface Task {
   title: string;
   description?: string;
   display_order: number;
-  verification_type?: "manual" | "steam_achievement" | "steam_playtime" | null;
+  verification_type?: string | null;
   steam_achievement_api_name?: string | null;
   steam_playtime_minutes?: number | null;
 }
