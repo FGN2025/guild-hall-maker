@@ -226,7 +226,7 @@ Deno.test({ name: "Steam achievement unlocked -> auto-approved", sanitizeOps: fa
   assertEquals(res.status, 200);
   assertEquals(body.ok, true);
   assertEquals(body.autoApproved, true);
-});
+}});
 
 Deno.test({ name: "Steam achievement NOT unlocked -> failure with progress", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "achievement", achievementUnlocked: false, steamLinked: true };
@@ -235,7 +235,7 @@ Deno.test({ name: "Steam achievement NOT unlocked -> failure with progress", san
   assertEquals(res.status, 200);
   assertEquals(body.ok, false);
   assertEquals(typeof body.reason, "string");
-});
+}});
 
 Deno.test({ name: "Steam playtime threshold met -> auto-approved", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "playtime", playtimeMinutes: 120, steamLinked: true };
@@ -244,7 +244,7 @@ Deno.test({ name: "Steam playtime threshold met -> auto-approved", sanitizeOps: 
   assertEquals(res.status, 200);
   assertEquals(body.ok, true);
   assertEquals(body.autoApproved, true);
-});
+}});
 
 Deno.test({ name: "Steam playtime below threshold -> failure", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "playtime", playtimeMinutes: 10, steamLinked: true };
@@ -252,7 +252,7 @@ Deno.test({ name: "Steam playtime below threshold -> failure", sanitizeOps: fals
   const body = await res.json();
   assertEquals(res.status, 200);
   assertEquals(body.ok, false);
-});
+}});
 
 Deno.test({ name: "Steam account not linked -> failure", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "achievement", achievementUnlocked: true, steamLinked: false };
@@ -261,7 +261,7 @@ Deno.test({ name: "Steam account not linked -> failure", sanitizeOps: false, san
   assertEquals(res.status, 200);
   assertEquals(body.ok, false);
   assertEquals(body.reason, "Steam account not linked");
-});
+}});
 
 Deno.test({ name: "Manual task rejects Steam verification call", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "manual", steamLinked: true };
@@ -269,7 +269,7 @@ Deno.test({ name: "Manual task rejects Steam verification call", sanitizeOps: fa
   const body = await res.json();
   assertEquals(res.status, 400);
   assertEquals(body.ok, false);
-});
+}});
 
 // Restore fetch when all tests done (best-effort).
 addEventListener("unload", () => {
