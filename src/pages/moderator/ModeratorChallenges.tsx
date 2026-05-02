@@ -593,33 +593,44 @@ const ModeratorChallenges = () => {
                             {e.reviewer_notes && <p className="text-xs text-muted-foreground italic">Moderator: {e.reviewer_notes}</p>}
 
                             {e.status !== "approved" && enrollment.status === "submitted" && (
-                              <div className="flex items-center gap-2 pt-1">
-                                <Input
-                                  placeholder="Feedback notes (optional)..."
-                                  className="text-xs h-8 flex-1"
-                                  value={evidenceNotes[e.id] || ""}
-                                  onChange={(ev) => setEvidenceNotes(prev => ({ ...prev, [e.id]: ev.target.value }))}
+                              <div className="space-y-1.5 pt-1">
+                                <RejectionReasonSelect
+                                  value={evidenceReason[e.id] ?? null}
+                                  onChange={(code) => setEvidenceReason((p) => ({ ...p, [e.id]: code }))}
+                                  disabled={updateEvidenceStatusMutation.isPending}
                                 />
-                                <Button
-                                  size="sm" variant="outline" className="gap-1 h-8 text-xs"
-                                  onClick={() => {
-                                    updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "approved", reviewer_notes: evidenceNotes[e.id] });
-                                    setEvidenceNotes(prev => { const n = { ...prev }; delete n[e.id]; return n; });
-                                  }}
-                                  disabled={updateEvidenceStatusMutation.isPending}
-                                >
-                                  <CheckCircle2 className="h-3 w-3" /> Approve
-                                </Button>
-                                <Button
-                                  size="sm" variant="destructive" className="gap-1 h-8 text-xs"
-                                  onClick={() => {
-                                    updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "rejected", reviewer_notes: evidenceNotes[e.id] });
-                                    setEvidenceNotes(prev => { const n = { ...prev }; delete n[e.id]; return n; });
-                                  }}
-                                  disabled={updateEvidenceStatusMutation.isPending}
-                                >
-                                  <XCircle className="h-3 w-3" /> Reject
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    placeholder="Feedback notes (optional)..."
+                                    className="text-xs h-8 flex-1"
+                                    value={evidenceNotes[e.id] || ""}
+                                    onChange={(ev) => setEvidenceNotes((prev) => ({ ...prev, [e.id]: ev.target.value }))}
+                                  />
+                                  <Button
+                                    size="sm" variant="outline" className="gap-1 h-8 text-xs"
+                                    onClick={() => {
+                                      // Approval ignores the reason code; pass raw note only.
+                                      updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "approved", reviewer_notes: evidenceNotes[e.id] });
+                                      setEvidenceNotes((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
+                                      setEvidenceReason((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
+                                    }}
+                                    disabled={updateEvidenceStatusMutation.isPending}
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" /> Approve
+                                  </Button>
+                                  <Button
+                                    size="sm" variant="destructive" className="gap-1 h-8 text-xs"
+                                    onClick={() => {
+                                      const composed = encodeReviewerNotes(evidenceReason[e.id] ?? null, evidenceNotes[e.id] || "");
+                                      updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "rejected", reviewer_notes: composed });
+                                      setEvidenceNotes((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
+                                      setEvidenceReason((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
+                                    }}
+                                    disabled={updateEvidenceStatusMutation.isPending}
+                                  >
+                                    <XCircle className="h-3 w-3" /> Reject
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>
