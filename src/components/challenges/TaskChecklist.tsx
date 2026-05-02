@@ -161,7 +161,7 @@ const TaskChecklist = ({
           const steam = isSteamTask(task);
           const autoApproved = steam && ev?.status === "approved" && ev?.file_type === "steam_auto";
           const status = ev?.status;
-          const transientReason = lastReason[task.id];
+          const failure = lastFailure[task.id];
           const checking = checkingTaskId === task.id;
 
           // Build verification status block (Steam-only)
