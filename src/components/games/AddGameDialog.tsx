@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Game, GameInsert } from "@/hooks/useGames";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 
-const CATEGORIES = ["General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Strategy", "RPG", "Puzzle", "Adventure"];
+const CATEGORIES = ["General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Strategy", "RPG", "Puzzle", "Adventure", "Simulation"];
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
