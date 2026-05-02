@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Loader2, ImageIcon, FileText } from "lucide-react";
+import { Upload, X, Loader2, ImageIcon, FileText, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import { toast } from "@/hooks/use-toast";
 import type { Game, GameInsert } from "@/hooks/useGames";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
+import GuideWriterDialog from "@/components/games/GuideWriterDialog";
 
 const CATEGORIES = ["General", "Fighting", "Shooter", "Sports", "Party", "Racing", "Strategy", "RPG", "Puzzle", "Adventure", "Simulation"];
 
@@ -45,6 +46,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const [steamAppId, setSteamAppId] = useState("");
   const [uploadingRules, setUploadingRules] = useState(false);
   const rulesFileInputRef = useRef<HTMLInputElement>(null);
+  const [writerOpen, setWriterOpen] = useState(false);
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -219,9 +221,36 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
             <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} />
           </div>
           <div>
-            <Label>User Guide</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>User Guide</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                onClick={() => setWriterOpen(true)}
+                disabled={!editGame}
+                title={editGame ? "Generate or enrich using the linked Open Notebook" : "Save the game first to enable the AI writer"}
+              >
+                <Sparkles className="h-4 w-4" />
+                AI Writer
+              </Button>
+            </div>
             <Textarea value={guideContent} onChange={e => setGuideContent(e.target.value)} rows={6} placeholder="Markdown or plain text..." />
+            {!editGame && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Save the game first, then re-open to use the AI Writer (it needs the linked Open Notebook).
+              </p>
+            )}
           </div>
+          <GuideWriterDialog
+            open={writerOpen}
+            onOpenChange={setWriterOpen}
+            gameId={editGame?.id ?? null}
+            gameName={name}
+            existingGuide={guideContent}
+            onApply={(md) => setGuideContent(md)}
+          />
           <div>
             <Label>Tournament Rules PDF</Label>
             {tournamentRulesUrl && (
