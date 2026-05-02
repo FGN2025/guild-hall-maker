@@ -207,22 +207,51 @@ const TaskChecklist = ({
                 </div>
               );
             } else {
-              // Pending Steam verification
+              // Pending Steam verification — show requirement + last failure (if any) with friendly mapping.
               const target =
                 task.verification_type === "steam_achievement"
                   ? `Needs achievement: "${task.steam_achievement_api_name}"`
                   : `Needs playtime ≥ ${task.steam_playtime_minutes} min`;
+
+              const friendly = failure
+                ? friendlyFor(failure.code, failure.message, failure.details)
+                : null;
+              const toneClass =
+                friendly?.tone === "error"
+                  ? "border-destructive/40 bg-destructive/10"
+                  : friendly?.tone === "warn"
+                    ? "border-yellow-500/30 bg-yellow-500/5"
+                    : "";
+              const toneText =
+                friendly?.tone === "error"
+                  ? "text-destructive"
+                  : friendly?.tone === "warn"
+                    ? "text-yellow-200"
+                    : "text-muted-foreground";
+
               statusBlock = (
                 <div className="mt-2 space-y-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
                   <div className="flex items-start gap-1.5">
                     <Gamepad2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-foreground leading-snug">{target}</p>
-                      {transientReason && (
-                        <p className="text-[11px] text-yellow-300 leading-snug mt-0.5">{transientReason}</p>
-                      )}
-                    </div>
+                    <p className="text-[11px] text-foreground leading-snug">{target}</p>
                   </div>
+                  {friendly && (
+                    <div className={`flex items-start gap-1.5 rounded-md border px-2 py-1.5 ${toneClass}`}>
+                      <friendly.Icon className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${toneText}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[11px] font-medium leading-snug ${toneText}`}>{friendly.title}</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{friendly.message}</p>
+                        {friendly.actionHref && friendly.actionLabel && (
+                          <Link
+                            to={friendly.actionHref}
+                            className="text-[11px] text-primary underline underline-offset-2 mt-0.5 inline-block"
+                          >
+                            {friendly.actionLabel}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   {canUpload && enrollmentId && (
                     <Button
                       variant="outline"
