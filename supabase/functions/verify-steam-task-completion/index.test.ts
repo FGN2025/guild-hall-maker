@@ -47,7 +47,7 @@ function jsonResp(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json" },
-  }});
+  });
 }
 
 function pickTaskRow() {
@@ -88,15 +88,15 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
 
   // --- Supabase auth: JWKS lookup (return empty so lib falls back to /user) ---
   if (url.includes("/auth/v1/.well-known/jwks.json") || url.includes("/auth/v1/jwks")) {
-    return jsonResp({ keys: [] }});
+    return jsonResp({ keys: [] });
   }
   // --- Supabase auth getClaims fallback (calls /auth/v1/user) ---
   if (url.includes("/auth/v1/user")) {
-    return jsonResp({ id: USER_ID, aud: "authenticated", role: "authenticated", email: "test@example.com" }});
+    return jsonResp({ id: USER_ID, aud: "authenticated", role: "authenticated", email: "test@example.com" });
   }
   // --- Supabase auth settings ---
   if (url.includes("/auth/v1/settings")) {
-    return jsonResp({}});
+    return jsonResp({});
   }
 
   // PostgREST: when supabase-js calls .single() / .maybeSingle() it sends
@@ -111,16 +111,16 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     return respond(pickTaskRow());
   }
   if (url.includes("/rest/v1/challenges")) {
-    return respond({ id: CHALLENGE_ID, game_id: GAME_ID }});
+    return respond({ id: CHALLENGE_ID, game_id: GAME_ID });
   }
   if (url.includes("/rest/v1/games")) {
-    return respond({ steam_app_id: STEAM_APP_ID, name: "CS2" }});
+    return respond({ steam_app_id: STEAM_APP_ID, name: "CS2" });
   }
   if (url.includes("/rest/v1/challenge_enrollments")) {
-    return respond({ id: ENROLLMENT_ID, user_id: USER_ID, status: "active" }});
+    return respond({ id: ENROLLMENT_ID, user_id: USER_ID, status: "active" });
   }
   if (url.includes("/rest/v1/profiles")) {
-    return respond({ steam_id: currentScenario.steamLinked === false ? null : STEAM_ID }});
+    return respond({ steam_id: currentScenario.steamLinked === false ? null : STEAM_ID });
   }
   if (url.includes("/rest/v1/challenge_evidence")) {
     if (method === "GET") {
@@ -151,7 +151,7 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
           },
         ],
       },
-    }});
+    });
   }
   if (url.includes("IPlayerService/GetOwnedGames")) {
     return jsonResp({
@@ -163,11 +163,11 @@ globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
           },
         ],
       },
-    }});
+    });
   }
 
   // Fallthrough — fail loudly so tests catch missed stubs.
-  return new Response(`Unstubbed fetch: ${method} ${url}`, { status: 599 }});
+  return new Response(`Unstubbed fetch: ${method} ${url}`, { status: 599 });
 };
 
 // Import the handler AFTER fetch is patched. The module calls Deno.serve(),
@@ -193,7 +193,7 @@ const handler: (req: Request) => Promise<Response> | Response = captured as any;
 function makeFakeJwt() {
   const enc = (o: unknown) =>
     btoa(JSON.stringify(o)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const header = enc({ alg: "HS256", typ: "JWT", kid: "stub" }});
+  const header = enc({ alg: "HS256", typ: "JWT", kid: "stub" });
   const payload = enc({
     sub: USER_ID,
     aud: "authenticated",
@@ -201,7 +201,7 @@ function makeFakeJwt() {
     iss: "https://stub.supabase.co/auth/v1",
     exp: Math.floor(Date.now() / 1000) + 3600,
     iat: Math.floor(Date.now() / 1000),
-  }});
+  });
   return `${header}.${payload}.stub-signature`;
 }
 const FAKE_JWT = makeFakeJwt();
@@ -226,7 +226,7 @@ Deno.test({ name: "Steam achievement unlocked -> auto-approved", sanitizeOps: fa
   assertEquals(res.status, 200);
   assertEquals(body.ok, true);
   assertEquals(body.autoApproved, true);
-}});
+});
 
 Deno.test({ name: "Steam achievement NOT unlocked -> failure with progress", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "achievement", achievementUnlocked: false, steamLinked: true };
@@ -235,7 +235,7 @@ Deno.test({ name: "Steam achievement NOT unlocked -> failure with progress", san
   assertEquals(res.status, 200);
   assertEquals(body.ok, false);
   assertEquals(typeof body.reason, "string");
-}});
+});
 
 Deno.test({ name: "Steam playtime threshold met -> auto-approved", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "playtime", playtimeMinutes: 120, steamLinked: true };
@@ -244,7 +244,7 @@ Deno.test({ name: "Steam playtime threshold met -> auto-approved", sanitizeOps: 
   assertEquals(res.status, 200);
   assertEquals(body.ok, true);
   assertEquals(body.autoApproved, true);
-}});
+});
 
 Deno.test({ name: "Steam playtime below threshold -> failure", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "playtime", playtimeMinutes: 10, steamLinked: true };
@@ -252,7 +252,7 @@ Deno.test({ name: "Steam playtime below threshold -> failure", sanitizeOps: fals
   const body = await res.json();
   assertEquals(res.status, 200);
   assertEquals(body.ok, false);
-}});
+});
 
 Deno.test({ name: "Steam account not linked -> failure", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "achievement", achievementUnlocked: true, steamLinked: false };
@@ -261,7 +261,7 @@ Deno.test({ name: "Steam account not linked -> failure", sanitizeOps: false, san
   assertEquals(res.status, 200);
   assertEquals(body.ok, false);
   assertEquals(body.reason, "Steam account not linked");
-}});
+});
 
 Deno.test({ name: "Manual task rejects Steam verification call", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   currentScenario = { task: "manual", steamLinked: true };
@@ -269,9 +269,9 @@ Deno.test({ name: "Manual task rejects Steam verification call", sanitizeOps: fa
   const body = await res.json();
   assertEquals(res.status, 400);
   assertEquals(body.ok, false);
-}});
+});
 
 // Restore fetch when all tests done (best-effort).
 addEventListener("unload", () => {
   globalThis.fetch = originalFetch;
-}});
+});
