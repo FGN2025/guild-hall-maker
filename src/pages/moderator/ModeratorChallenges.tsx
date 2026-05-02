@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
+import RejectionReasonSelect, { encodeReviewerNotes } from "@/components/challenges/RejectionReasonSelect";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
