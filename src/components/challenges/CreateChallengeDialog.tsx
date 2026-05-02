@@ -16,6 +16,15 @@ import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
 import PointsInput from "@/components/shared/PointsInput";
+import TaskVerificationEditor, { type VerificationType } from "@/components/challenges/TaskVerificationEditor";
+
+type TaskDraft = {
+  title: string;
+  description: string;
+  verification_type: VerificationType;
+  steam_achievement_api_name: string | null;
+  steam_playtime_minutes: number | null;
+};
 
 interface CreateChallengeDialogProps {
   invalidateQueryKey: string[];
@@ -28,7 +37,7 @@ const defaultForm = {
   points: "10",
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
   cover_image_url: "",
-  tasks: [] as { title: string; description: string }[],
+  tasks: [] as TaskDraft[],
   academy_next_step_url: "",
   academy_next_step_label: "",
   points_override_reason: "",
@@ -51,7 +60,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
   const { data: games = [] } = useQuery({
     queryKey: ["create-challenge-games"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("games").select("id, name").eq("is_active", true).order("name");
+      const { data, error } = await supabase.from("games").select("id, name, steam_app_id").eq("is_active", true).order("name");
       if (error) throw error;
       return data ?? [];
     },
