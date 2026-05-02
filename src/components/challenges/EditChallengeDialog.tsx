@@ -481,7 +481,6 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
                       steamPlaytimeMinutes={task.steam_playtime_minutes}
                       onChange={(next) => updateTaskVerification(index, next)}
                     />
-                    />
                   </div>
                   <Button
                     type="button"
