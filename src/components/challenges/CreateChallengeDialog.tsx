@@ -332,24 +332,34 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
                 <Plus className="h-3 w-3" /> Add Task
               </Button>
             </div>
-            {form.tasks.map((t, i) => (
-              <div key={i} className="flex gap-2 items-start">
-                <div className="flex-1 space-y-1">
-                  <Input
-                    value={t.title}
-                    onChange={(e) => updateTask(i, "title", e.target.value)}
-                    placeholder={`Task ${i + 1} title...`}
-                  />
-                  <Input
-                    value={t.description}
-                    onChange={(e) => updateTask(i, "description", e.target.value)}
-                    placeholder="Optional description..."
-                    className="text-sm"
-                  />
+            {form.tasks.map((t, i) => {
+              const selectedGame = games.find((g: any) => g.id === selectedGameId);
+              return (
+                <div key={i} className="flex gap-2 items-start">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      value={t.title}
+                      onChange={(e) => updateTask(i, "title", e.target.value)}
+                      placeholder={`Task ${i + 1} title...`}
+                    />
+                    <Input
+                      value={t.description}
+                      onChange={(e) => updateTask(i, "description", e.target.value)}
+                      placeholder="Optional description..."
+                      className="text-sm"
+                    />
+                    <TaskVerificationEditor
+                      steamAppId={selectedGame?.steam_app_id ?? null}
+                      verificationType={t.verification_type}
+                      steamAchievementApiName={t.steam_achievement_api_name}
+                      steamPlaytimeMinutes={t.steam_playtime_minutes}
+                      onChange={(next) => updateTaskVerification(i, next)}
+                    />
+                  </div>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => removeTask(i)}>✕</Button>
                 </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => removeTask(i)}>✕</Button>
-              </div>
-            ))}
+              );
+            })}
             {form.tasks.length === 0 && (
               <p className="text-xs text-muted-foreground">No tasks added. Players can submit general evidence.</p>
             )}
