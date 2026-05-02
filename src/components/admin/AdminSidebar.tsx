@@ -22,6 +22,7 @@ const sidebarItems = [
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/inquiries", label: "Provider Inquiries", icon: MessageSquare },
   { to: "/admin/notebooks", label: "Notebooks", icon: BookOpen },
+  { to: "/admin/steam", label: "Steam Integration", icon: Gamepad2 },
   { to: "/admin/legacy-users", label: "Legacy Import", icon: Archive },
   { to: "/admin/settings", label: "Settings", icon: Settings },
   { to: "/admin/guide", label: "Admin Guide", icon: BookOpen },
