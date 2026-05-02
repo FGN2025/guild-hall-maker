@@ -258,7 +258,7 @@ Deno.test({ name: "Steam account not linked -> failure", sanitizeOps: false, san
   currentScenario = { task: "achievement", achievementUnlocked: true, steamLinked: false };
   const res = await call(TASK_ACHIEVEMENT_ID);
   const body = await res.json();
-  assertEquals(res.status, 200);
+  assertEquals(res.status, 400);
   assertEquals(body.ok, false);
   assertEquals(body.reason, "Steam account not linked");
 }});
