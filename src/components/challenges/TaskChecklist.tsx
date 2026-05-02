@@ -180,21 +180,66 @@ const TaskChecklist = ({
                 </div>
               );
             } else if (hasEvidence && status === "pending") {
+              const criterion = steam
+                ? task.verification_type === "steam_achievement"
+                  ? `Achievement "${task.steam_achievement_api_name}" — couldn't auto-verify via Steam, sent for manual review.`
+                  : `Playtime ≥ ${task.steam_playtime_minutes} min — couldn't auto-verify via Steam, sent for manual review.`
+                : null;
               statusBlock = (
-                <div className="mt-2 flex items-start gap-1.5 rounded-md border border-yellow-500/30 bg-yellow-500/5 px-2 py-1.5">
-                  <Clock className="h-3.5 w-3.5 text-yellow-400 mt-0.5 shrink-0" />
-                  <p className="text-[11px] text-yellow-200 leading-snug">
-                    Manual evidence submitted — awaiting moderator review.
-                  </p>
+                <div className="mt-2 space-y-1.5 rounded-md border border-yellow-500/30 bg-yellow-500/5 px-2 py-1.5">
+                  <div className="flex items-start gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-yellow-400 mt-0.5 shrink-0" />
+                    <p className="text-[11px] text-yellow-200 leading-snug">
+                      Manual evidence submitted — awaiting moderator review.
+                    </p>
+                  </div>
+                  {(criterion || ev?.notes) && (
+                    <div className="rounded-md border border-yellow-500/20 bg-background/40 px-2 py-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-yellow-300/80">What needs review</p>
+                      {criterion && (
+                        <p className="text-[11px] text-foreground leading-snug mt-0.5">{criterion}</p>
+                      )}
+                      {ev?.notes && (
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                          <span className="text-foreground/80">Your note:</span> {ev.notes}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             } else if (hasEvidence && status === "rejected") {
+              const criterion = steam
+                ? task.verification_type === "steam_achievement"
+                  ? `Achievement "${task.steam_achievement_api_name}" was not detected on your Steam account.`
+                  : `Playtime requirement of ${task.steam_playtime_minutes} min was not met on Steam.`
+                : null;
               statusBlock = (
-                <div className="mt-2 flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5">
-                  <AlertCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-                  <p className="text-[11px] text-destructive leading-snug">
-                    Rejected{ev?.reviewer_notes ? `: ${ev.reviewer_notes}` : "."} Re-run a Steam check or upload new evidence.
-                  </p>
+                <div className="mt-2 space-y-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5">
+                  <div className="flex items-start gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                    <p className="text-[11px] text-destructive leading-snug">
+                      Rejected — re-run a Steam check or upload new evidence.
+                    </p>
+                  </div>
+                  {(ev?.reviewer_notes || criterion || ev?.notes) && (
+                    <div className="rounded-md border border-destructive/30 bg-background/40 px-2 py-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-destructive/80">What needs review</p>
+                      {criterion && (
+                        <p className="text-[11px] text-foreground leading-snug mt-0.5">{criterion}</p>
+                      )}
+                      {ev?.reviewer_notes && (
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                          <span className="text-foreground/80">Reviewer:</span> {ev.reviewer_notes}
+                        </p>
+                      )}
+                      {ev?.notes && (
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                          <span className="text-foreground/80">Your note:</span> {ev.notes}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             } else if (!steamEnabled) {
