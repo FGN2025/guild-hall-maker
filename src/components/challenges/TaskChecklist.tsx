@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { CheckCircle2, Circle, Upload, Gamepad2, Loader2, AlertCircle, Clock, Info } from "lucide-react";
+import { CheckCircle2, Circle, Upload, Gamepad2, Loader2, AlertCircle, Clock, Info, Link2Off, Lock, Trophy, Timer, WifiOff, ShieldAlert } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
