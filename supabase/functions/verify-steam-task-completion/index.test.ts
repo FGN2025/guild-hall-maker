@@ -168,7 +168,8 @@ await import("./index.ts");
 (Deno as any).serve = originalServe;
 
 if (!captured) throw new Error("Handler was not registered via Deno.serve");
-const handler = captured;
+// deno-lint-ignore no-explicit-any
+const handler: (req: Request) => Promise<Response> | Response = captured as any;
 
 function call(taskId: string) {
   return handler(
