@@ -18,7 +18,7 @@ const AdminSteamIntegration = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("games")
-        .select("id, name, slug, steam_app_id, image_url")
+        .select("id, name, slug, steam_app_id")
         .order("name");
       if (error) throw error;
       return data ?? [];
