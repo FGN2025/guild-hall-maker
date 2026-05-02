@@ -58,6 +58,7 @@ const ModeratorChallenges = () => {
   const [editChallenge, setEditChallenge] = useState<any | null>(null);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
+  const [evidenceReason, setEvidenceReason] = useState<Record<string, string | null>>({});
   const [resyncing, setResyncing] = useState<string | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
 
