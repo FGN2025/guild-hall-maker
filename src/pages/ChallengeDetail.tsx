@@ -113,7 +113,12 @@ const ChallengeDetail = () => {
   const c = challenge as ChallengeRow;
   const gameName = c.games?.name;
   const coverUrl = c.cover_image_url || c.games?.cover_image_url || "/placeholder.svg";
-  const evidenceTaskIds = new Set(evidence.map((e) => e.task_id).filter(Boolean));
+  const evidenceTaskIds = new Set(evidence.map((e) => e.task_id).filter(Boolean) as string[]);
+  const evidenceByTask = new Map<string, any>();
+  for (const e of evidence) {
+    if (e.task_id) evidenceByTask.set(e.task_id, e);
+  }
+  const steamEnabled = !!c.games?.steam_app_id;
   const tasksComplete = tasks.length > 0 ? tasks.filter((t) => evidenceTaskIds.has(t.id)).length : 0;
   const progress = tasks.length > 0 ? (tasksComplete / tasks.length) * 100 : 0;
   const status = enrollment?.status ? statusLabel[enrollment.status] : null;
