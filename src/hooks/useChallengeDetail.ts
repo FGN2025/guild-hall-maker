@@ -8,7 +8,7 @@ export const useChallengeDetail = (challengeId: string | undefined) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("challenges")
-        .select("*, games(name, slug, cover_image_url, category)")
+        .select("*, games(name, slug, cover_image_url, category, steam_app_id)")
         .eq("id", challengeId!)
         .single();
       if (error) throw error;

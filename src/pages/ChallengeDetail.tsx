@@ -458,7 +458,14 @@ const ChallengeDetail = () => {
         onOpenChange={setEvidenceOpen}
         taskId={activeTaskId}
         taskTitle={activeTask?.title}
+        enrollmentId={enrollment?.id}
+        verificationType={(activeTask as any)?.verification_type ?? "manual"}
+        steamPlaytimeMinutes={(activeTask as any)?.steam_playtime_minutes ?? null}
+        steamEnabled={!!(c.games as any)?.steam_app_id}
         onSubmit={submitEvidence}
+        onSteamAutoApproved={() => {
+          queryClient.invalidateQueries({ queryKey: ["challenge-evidence", enrollment?.id] });
+        }}
       />
 
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
