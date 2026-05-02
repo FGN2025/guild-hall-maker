@@ -16,6 +16,15 @@ import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
 import PointsInput from "@/components/shared/PointsInput";
+import TaskVerificationEditor, { type VerificationType } from "@/components/challenges/TaskVerificationEditor";
+
+type TaskDraft = {
+  title: string;
+  description: string;
+  verification_type: VerificationType;
+  steam_achievement_api_name: string | null;
+  steam_playtime_minutes: number | null;
+};
 
 interface CreateChallengeDialogProps {
   invalidateQueryKey: string[];
@@ -28,7 +37,7 @@ const defaultForm = {
   points: "10",
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
   cover_image_url: "",
-  tasks: [] as { title: string; description: string }[],
+  tasks: [] as TaskDraft[],
   academy_next_step_url: "",
   academy_next_step_label: "",
   points_override_reason: "",
@@ -51,7 +60,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
   const { data: games = [] } = useQuery({
     queryKey: ["create-challenge-games"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("games").select("id, name").eq("is_active", true).order("name");
+      const { data, error } = await supabase.from("games").select("id, name, steam_app_id").eq("is_active", true).order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -122,8 +131,11 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
           title: t.title,
           description: t.description || null,
           display_order: i,
+          verification_type: t.verification_type,
+          steam_achievement_api_name: t.steam_achievement_api_name,
+          steam_playtime_minutes: t.steam_playtime_minutes,
         }));
-        const { error: taskError } = await supabase.from("challenge_tasks").insert(tasks);
+        const { error: taskError } = await supabase.from("challenge_tasks").insert(tasks as any);
         if (taskError) throw taskError;
       }
     },
@@ -140,10 +152,12 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
     onError: (e: any) => toast.error(e.message),
   });
 
-  const addTask = () => setForm(f => ({ ...f, tasks: [...f.tasks, { title: "", description: "" }] }));
+  const addTask = () => setForm(f => ({ ...f, tasks: [...f.tasks, { title: "", description: "", verification_type: "manual", steam_achievement_api_name: null, steam_playtime_minutes: null }] }));
   const removeTask = (i: number) => setForm(f => ({ ...f, tasks: f.tasks.filter((_, idx) => idx !== i) }));
-  const updateTask = (i: number, field: string, val: string) =>
+  const updateTask = (i: number, field: keyof TaskDraft, val: any) =>
     setForm(f => ({ ...f, tasks: f.tasks.map((t, idx) => idx === i ? { ...t, [field]: val } : t) }));
+  const updateTaskVerification = (i: number, next: { verification_type: VerificationType; steam_achievement_api_name: string | null; steam_playtime_minutes: number | null }) =>
+    setForm(f => ({ ...f, tasks: f.tasks.map((t, idx) => idx === i ? { ...t, ...next } : t) }));
 
   const enhanceDescription = async () => {
     setEnhancing(true);
@@ -318,24 +332,34 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
                 <Plus className="h-3 w-3" /> Add Task
               </Button>
             </div>
-            {form.tasks.map((t, i) => (
-              <div key={i} className="flex gap-2 items-start">
-                <div className="flex-1 space-y-1">
-                  <Input
-                    value={t.title}
-                    onChange={(e) => updateTask(i, "title", e.target.value)}
-                    placeholder={`Task ${i + 1} title...`}
-                  />
-                  <Input
-                    value={t.description}
-                    onChange={(e) => updateTask(i, "description", e.target.value)}
-                    placeholder="Optional description..."
-                    className="text-sm"
-                  />
+            {form.tasks.map((t, i) => {
+              const selectedGame = games.find((g: any) => g.id === selectedGameId);
+              return (
+                <div key={i} className="flex gap-2 items-start">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      value={t.title}
+                      onChange={(e) => updateTask(i, "title", e.target.value)}
+                      placeholder={`Task ${i + 1} title...`}
+                    />
+                    <Input
+                      value={t.description}
+                      onChange={(e) => updateTask(i, "description", e.target.value)}
+                      placeholder="Optional description..."
+                      className="text-sm"
+                    />
+                    <TaskVerificationEditor
+                      steamAppId={selectedGame?.steam_app_id ?? null}
+                      verificationType={t.verification_type}
+                      steamAchievementApiName={t.steam_achievement_api_name}
+                      steamPlaytimeMinutes={t.steam_playtime_minutes}
+                      onChange={(next) => updateTaskVerification(i, next)}
+                    />
+                  </div>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => removeTask(i)}>✕</Button>
                 </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => removeTask(i)}>✕</Button>
-              </div>
-            ))}
+              );
+            })}
             {form.tasks.length === 0 && (
               <p className="text-xs text-muted-foreground">No tasks added. Players can submit general evidence.</p>
             )}
