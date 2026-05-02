@@ -66,6 +66,7 @@ const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminGames = lazy(() => import("./pages/admin/AdminGames"));
 const AdminNotebooks = lazy(() => import("./pages/admin/AdminNotebooks"));
+const AdminSteamIntegration = lazy(() => import("./pages/admin/AdminSteamIntegration"));
 const AdminSeasons = lazy(() => import("./pages/admin/AdminSeasons"));
 const AdminAchievements = lazy(() => import("./pages/admin/AdminAchievements"));
 const AdminGuide = lazy(() => import("./pages/admin/AdminGuide"));
