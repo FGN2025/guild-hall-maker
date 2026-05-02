@@ -474,6 +474,14 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
                       onChange={(e) => updateTask(index, "description", e.target.value)}
                       className="h-8 text-sm"
                     />
+                    <TaskVerificationEditor
+                      steamAppId={selectedGameSteamAppId}
+                      verificationType={task.verification_type}
+                      steamAchievementApiName={task.steam_achievement_api_name}
+                      steamPlaytimeMinutes={task.steam_playtime_minutes}
+                      onChange={(next) => updateTaskVerification(index, next)}
+                    />
+                    />
                   </div>
                   <Button
                     type="button"
