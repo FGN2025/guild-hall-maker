@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .single();
     if (!profile?.steam_id) {
-      return json({ ok: false, reason: "Steam account not linked" }, 400);
+      return json({ ok: false, reasonCode: "not_linked", reason: "Steam account not linked" }, 400);
     }
     const steamId = profile.steam_id;
 
@@ -104,17 +104,32 @@ Deno.serve(async (req) => {
 
     let passed = false;
     let progressMessage = "";
+    let reasonCode: string | undefined;
+    let details: Record<string, unknown> | undefined;
     let evidenceUrl = `https://steamcommunity.com/profiles/${steamId}`;
 
     if (task.verification_type === "steam_achievement") {
       // Pull achievements for this app
       const url = `${STEAM_API_BASE}/ISteamUserStats/GetPlayerAchievements/v0001?appid=${steamAppId}&key=${steamApiKey}&steamid=${steamId}&format=json`;
-      const res = await fetch(url);
+      let res: Response;
+      try {
+        res = await fetch(url);
+      } catch (_e) {
+        return json({ ok: false, reasonCode: "api_error", reason: "Couldn't reach Steam right now. Try again in a moment." }, 200);
+      }
+      if (!res.ok) {
+        return json({
+          ok: false,
+          reasonCode: "api_error",
+          reason: `Steam returned an error (${res.status}). Try again shortly.`,
+        }, 200);
+      }
       const j = await res.json().catch(() => null);
       if (!j?.playerstats?.success || !j?.playerstats?.achievements) {
         return json({
           ok: false,
-          reason: "Steam profile is private or has no achievements for this game.",
+          reasonCode: "profile_private",
+          reason: "Your Steam profile or game details are private. Set them to public to enable auto-verification.",
         }, 200);
       }
       const now = new Date().toISOString();
@@ -138,17 +153,32 @@ Deno.serve(async (req) => {
         passed = true;
         evidenceUrl = `https://steamcommunity.com/profiles/${steamId}/stats/${steamAppId}/achievements/`;
       } else {
-        progressMessage = `Achievement "${task.steam_achievement_api_name}" not yet unlocked.`;
+        reasonCode = "achievement_locked";
+        progressMessage = `Achievement "${task.steam_achievement_api_name}" hasn't been unlocked on your Steam account yet.`;
+        details = { achievement: task.steam_achievement_api_name };
       }
     } else if (task.verification_type === "steam_playtime") {
       const url = `${STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/?key=${steamApiKey}&steamid=${steamId}&include_appinfo=false&include_played_free_games=true&format=json&appids_filter[0]=${steamAppId}`;
-      const res = await fetch(url);
+      let res: Response;
+      try {
+        res = await fetch(url);
+      } catch (_e) {
+        return json({ ok: false, reasonCode: "api_error", reason: "Couldn't reach Steam right now. Try again in a moment." }, 200);
+      }
+      if (!res.ok) {
+        return json({
+          ok: false,
+          reasonCode: "api_error",
+          reason: `Steam returned an error (${res.status}). Try again shortly.`,
+        }, 200);
+      }
       const j = await res.json().catch(() => null);
       const owned = j?.response?.games?.[0];
       if (!owned) {
         return json({
           ok: false,
-          reason: "Game not found in your Steam library or your library is private.",
+          reasonCode: "game_not_owned",
+          reason: "We couldn't find this game in your Steam library, or your library is set to private.",
         }, 200);
       }
       const minutes = owned.playtime_forever ?? 0;
@@ -165,12 +195,14 @@ Deno.serve(async (req) => {
       if (minutes >= required) {
         passed = true;
       } else {
-        progressMessage = `Playtime: ${minutes}/${required} minutes.`;
+        reasonCode = "insufficient_playtime";
+        progressMessage = `You've played ${minutes} of ${required} required minutes (${Math.max(0, required - minutes)} to go).`;
+        details = { minutes, required, remaining: Math.max(0, required - minutes) };
       }
     }
 
     if (!passed) {
-      return json({ ok: false, reason: progressMessage || "Criteria not met yet." }, 200);
+      return json({ ok: false, reasonCode: reasonCode ?? "not_met", reason: progressMessage || "Criteria not met yet.", details }, 200);
     }
 
     // Auto-approve: insert (or update) evidence row as approved.

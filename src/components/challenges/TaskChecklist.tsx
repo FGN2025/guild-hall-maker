@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { CheckCircle2, Circle, Upload, Gamepad2, Loader2, AlertCircle, Clock, Info } from "lucide-react";
+import { CheckCircle2, Circle, Upload, Gamepad2, Loader2, AlertCircle, Clock, Info, Link2Off, Lock, Trophy, Timer, WifiOff, ShieldAlert } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -51,9 +52,74 @@ const TaskChecklist = ({
   canUpload,
 }: TaskChecklistProps) => {
   const [checkingTaskId, setCheckingTaskId] = useState<string | null>(null);
-  const [lastReason, setLastReason] = useState<Record<string, string>>({});
+  const [lastFailure, setLastFailure] = useState<Record<string, { code: string; message: string; details?: any }>>({});
 
   if (tasks.length === 0) return null;
+
+  const friendlyFor = (
+    code: string,
+    fallback: string,
+    details?: any
+  ): { title: string; message: string; Icon: typeof AlertCircle; tone: "warn" | "error" | "info"; actionHref?: string; actionLabel?: string } => {
+    switch (code) {
+      case "not_linked":
+        return {
+          title: "Steam account not linked",
+          message: "Link your Steam account to enable auto-verification.",
+          Icon: Link2Off,
+          tone: "warn",
+          actionHref: "/profile-settings",
+          actionLabel: "Link Steam",
+        };
+      case "profile_private":
+        return {
+          title: "Steam profile is private",
+          message: "Set your Steam profile and game details to public, then try again.",
+          Icon: Lock,
+          tone: "warn",
+        };
+      case "achievement_locked":
+        return {
+          title: "Achievement not unlocked",
+          message: details?.achievement
+            ? `Unlock "${details.achievement}" in-game, then re-check.`
+            : "Unlock the required achievement in-game, then re-check.",
+          Icon: Trophy,
+          tone: "warn",
+        };
+      case "insufficient_playtime":
+        return {
+          title: "Not enough playtime yet",
+          message:
+            typeof details?.remaining === "number"
+              ? `${details.minutes}/${details.required} min played — ${details.remaining} more to go.`
+              : fallback,
+          Icon: Timer,
+          tone: "warn",
+        };
+      case "game_not_owned":
+        return {
+          title: "Game not in library",
+          message: "We couldn't find this game in your Steam library, or it's hidden by privacy settings.",
+          Icon: ShieldAlert,
+          tone: "warn",
+        };
+      case "api_error":
+        return {
+          title: "Steam is unreachable",
+          message: "Steam didn't respond. Wait a moment and try again.",
+          Icon: WifiOff,
+          tone: "error",
+        };
+      default:
+        return {
+          title: "Not verified yet",
+          message: fallback || "Criteria not met yet.",
+          Icon: AlertCircle,
+          tone: "warn",
+        };
+    }
+  };
 
   const handleSteamCheck = async (taskId: string) => {
     if (!enrollmentId) return;
@@ -65,17 +131,21 @@ const TaskChecklist = ({
       if (error) throw error;
       if (data?.ok) {
         toast.success(data.alreadyApproved ? "Already auto-approved." : "Auto-approved from Steam!");
-        setLastReason((p) => ({ ...p, [taskId]: "" }));
+        setLastFailure((p) => {
+          const { [taskId]: _omit, ...rest } = p;
+          return rest;
+        });
         onSteamRecheck?.();
       } else {
-        const reason = data?.reason || "Criteria not met yet.";
-        setLastReason((p) => ({ ...p, [taskId]: reason }));
-        toast.message("Steam check: criteria not met", { description: reason });
+        const code = data?.reasonCode || "not_met";
+        const friendly = friendlyFor(code, data?.reason || "", data?.details);
+        setLastFailure((p) => ({ ...p, [taskId]: { code, message: friendly.message, details: data?.details } }));
+        toast.message(friendly.title, { description: friendly.message });
       }
     } catch (err: any) {
       const msg = err?.message || "Steam API error";
-      setLastReason((p) => ({ ...p, [taskId]: msg }));
-      toast.error(msg);
+      setLastFailure((p) => ({ ...p, [taskId]: { code: "api_error", message: msg } }));
+      toast.error("Steam is unreachable", { description: msg });
     } finally {
       setCheckingTaskId(null);
     }
@@ -91,7 +161,7 @@ const TaskChecklist = ({
           const steam = isSteamTask(task);
           const autoApproved = steam && ev?.status === "approved" && ev?.file_type === "steam_auto";
           const status = ev?.status;
-          const transientReason = lastReason[task.id];
+          const failure = lastFailure[task.id];
           const checking = checkingTaskId === task.id;
 
           // Build verification status block (Steam-only)
@@ -137,22 +207,51 @@ const TaskChecklist = ({
                 </div>
               );
             } else {
-              // Pending Steam verification
+              // Pending Steam verification — show requirement + last failure (if any) with friendly mapping.
               const target =
                 task.verification_type === "steam_achievement"
                   ? `Needs achievement: "${task.steam_achievement_api_name}"`
                   : `Needs playtime ≥ ${task.steam_playtime_minutes} min`;
+
+              const friendly = failure
+                ? friendlyFor(failure.code, failure.message, failure.details)
+                : null;
+              const toneClass =
+                friendly?.tone === "error"
+                  ? "border-destructive/40 bg-destructive/10"
+                  : friendly?.tone === "warn"
+                    ? "border-yellow-500/30 bg-yellow-500/5"
+                    : "";
+              const toneText =
+                friendly?.tone === "error"
+                  ? "text-destructive"
+                  : friendly?.tone === "warn"
+                    ? "text-yellow-200"
+                    : "text-muted-foreground";
+
               statusBlock = (
                 <div className="mt-2 space-y-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
                   <div className="flex items-start gap-1.5">
                     <Gamepad2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-foreground leading-snug">{target}</p>
-                      {transientReason && (
-                        <p className="text-[11px] text-yellow-300 leading-snug mt-0.5">{transientReason}</p>
-                      )}
-                    </div>
+                    <p className="text-[11px] text-foreground leading-snug">{target}</p>
                   </div>
+                  {friendly && (
+                    <div className={`flex items-start gap-1.5 rounded-md border px-2 py-1.5 ${toneClass}`}>
+                      <friendly.Icon className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${toneText}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[11px] font-medium leading-snug ${toneText}`}>{friendly.title}</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{friendly.message}</p>
+                        {friendly.actionHref && friendly.actionLabel && (
+                          <Link
+                            to={friendly.actionHref}
+                            className="text-[11px] text-primary underline underline-offset-2 mt-0.5 inline-block"
+                          >
+                            {friendly.actionLabel}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   {canUpload && enrollmentId && (
                     <Button
                       variant="outline"
