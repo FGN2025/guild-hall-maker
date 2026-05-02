@@ -171,16 +171,34 @@ const GuideWriterDialog = ({ open, onOpenChange, gameId, gameName, existingGuide
 
           {preview && (
             <div className="space-y-2">
-              <Label>Preview (Markdown)</Label>
-              <Textarea
-                value={preview}
-                onChange={(e) => setPreview(e.target.value)}
-                rows={18}
-                className="font-mono text-xs"
-              />
-              <p className="text-xs text-muted-foreground">
-                You can edit the preview before applying. Applying replaces the User Guide field; you still need to click <strong>Save Changes</strong>.
-              </p>
+              <Label>Preview</Label>
+              <Tabs defaultValue="rendered" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="rendered">Rendered</TabsTrigger>
+                  <TabsTrigger value="markdown">Markdown</TabsTrigger>
+                </TabsList>
+                <TabsContent value="rendered">
+                  <div className="rounded-md border border-border bg-background/40 p-4 max-h-[60vh] overflow-y-auto">
+                    <div className="prose prose-invert max-w-none font-heading text-sm text-muted-foreground leading-relaxed [&_h1]:font-display [&_h1]:text-xl [&_h1]:font-bold [&_h1]:tracking-wider [&_h1]:text-foreground [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:font-display [&_h2]:text-lg [&_h2]:font-bold [&_h2]:tracking-wider [&_h2]:text-foreground [&_h2]:mt-6 [&_h2]:mb-2 [&_h3]:font-display [&_h3]:text-base [&_h3]:font-semibold [&_h3]:tracking-wider [&_h3]:text-foreground [&_h3]:mt-4 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_p]:mb-2 [&_strong]:text-foreground [&_code]:bg-secondary [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs">
+                      <ReactMarkdown>{preview}</ReactMarkdown>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This is how the guide will appear to players. Switch to the Markdown tab to edit.
+                  </p>
+                </TabsContent>
+                <TabsContent value="markdown">
+                  <Textarea
+                    value={preview}
+                    onChange={(e) => setPreview(e.target.value)}
+                    rows={18}
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Edit the Markdown source. Applying replaces the User Guide field; you still need to click <strong>Save Changes</strong>.
+                  </p>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </div>
