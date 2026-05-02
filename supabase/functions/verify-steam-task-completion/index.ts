@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .single();
     if (!profile?.steam_id) {
-      return json({ ok: false, reason: "Steam account not linked" }, 400);
+      return json({ ok: false, reasonCode: "not_linked", reason: "Steam account not linked" }, 400);
     }
     const steamId = profile.steam_id;
 
