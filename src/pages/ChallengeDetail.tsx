@@ -206,6 +206,12 @@ const ChallengeDetail = () => {
                   <TaskChecklist
                     tasks={tasks}
                     evidenceTaskIds={evidenceTaskIds}
+                    evidenceByTask={evidenceByTask}
+                    enrollmentId={enrollment?.id}
+                    steamEnabled={steamEnabled}
+                    onSteamRecheck={() =>
+                      queryClient.invalidateQueries({ queryKey: ["challenge-evidence", enrollment?.id] })
+                    }
                     canUpload={!!canUpload}
                     onUploadEvidence={(taskId) => {
                       setActiveTaskId(taskId);
