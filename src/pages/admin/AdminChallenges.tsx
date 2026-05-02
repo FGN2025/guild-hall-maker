@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
 import { useCopyContent } from "@/hooks/useCopyContent";
 import EditChallengeDialog from "@/components/challenges/EditChallengeDialog";
+import RejectionReasonSelect, { encodeReviewerNotes } from "@/components/challenges/RejectionReasonSelect";
 import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import {
