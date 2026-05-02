@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Upload } from "lucide-react";
+import { CheckCircle2, Circle, Upload, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Task {
@@ -6,6 +6,9 @@ interface Task {
   title: string;
   description?: string;
   display_order: number;
+  verification_type?: "manual" | "steam_achievement" | "steam_playtime" | null;
+  steam_achievement_api_name?: string | null;
+  steam_playtime_minutes?: number | null;
 }
 
 interface TaskChecklistProps {
@@ -37,8 +40,16 @@ const TaskChecklist = ({ tasks, evidenceTaskIds, onUploadEvidence, canUpload }: 
                 <Circle className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${hasEvidence ? "text-green-400" : "text-foreground"}`}>
+                <p className={`text-sm font-medium flex items-center gap-1.5 ${hasEvidence ? "text-green-400" : "text-foreground"}`}>
                   {task.title}
+                  {(task.verification_type === "steam_achievement" || task.verification_type === "steam_playtime") && (
+                    <Gamepad2
+                      className="h-3.5 w-3.5 text-primary shrink-0"
+                      aria-label="Auto-verified via Steam"
+                    >
+                      <title>Auto-verified via Steam</title>
+                    </Gamepad2>
+                  )}
                 </p>
                 {task.description && (
                   <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
