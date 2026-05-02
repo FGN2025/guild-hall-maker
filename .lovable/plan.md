@@ -1,51 +1,76 @@
-# Surface the "Featured" toggle more prominently for Admins + Moderators
+# Steam-Powered Challenge Task Auto-Approval
 
-## Why
+## What exists today
 
-The capability to feature/unfeature a tournament, challenge, or quest already exists for both Admin and Moderator — it lives as a small star icon on each item's row/card. The complaint is that it's hard to find and there's no single place to see "what's currently featured on the homepage." Goal: make it obvious where to manage Featured Events without rebuilding any of the underlying mutations or permissions.
+- `profiles.steam_id` + `steam_username` populated via `steam-openid-callback` (OpenID flow already live).
+- `games.steam_app_id` (nullable) — used by Steam launch link in `GameDetail` and the achievement admin picker.
+- `steam_player_achievements` table: per-user, per-app, per-achievement rows (`achieved`, `unlock_time`, `synced_at`).
+- `steam-achievement-sync` edge function: pulls `GetPlayerAchievements` for every game with a `steam_app_id`, 5-min cooldown, handles private profiles.
+- `usePlayerAchievements` already evaluates `auto_criteria.type === 'steam_achievement'` against synced rows for the global achievement system.
+- `challenge_tasks` is currently very thin: `id, challenge_id, title, description, display_order`. No verification metadata.
+- Evidence flow (`EvidenceUpload` + `challenge_evidence`) is fully manual: image/video upload or URL → moderator approves.
 
-## Approach
+## Goal
 
-Two complementary changes, both purely UI:
+For challenge tasks tied to a Steam-enabled game, auto-detect completion from the player's Steam log (achievements unlocked and/or playtime) and auto-approve the evidence record. If the game has no `steam_app_id` or the user hasn't linked Steam, fall back to today's manual upload + moderator review.
 
-1. A new **"Featured Events" management screen** at `/moderator/featured` (Admin + Moderator) that aggregates every featured tournament, challenge, and quest in one list, with an unfeature/feature-more button per row.
-2. **In-place visual upgrades** on the existing Tournament/Challenge/Quest manager screens so the star toggle is unmistakable and filterable.
+## Scope of changes
 
-Same DB writes as today (`is_featured` boolean), same role gating (Admin + Moderator). Nothing new server-side.
+### 1. Make `steam_app_id` mandatory for new Steam-category games
+- `AddGameDialog`: when a "Steam" platform/category is selected, require `steam_app_id` (client validation + clear helper text). Existing rows untouched (no backfill, no DB constraint — would break legacy non-Steam games).
+- Surface a warning badge in `AdminGames` for any Steam game missing the ID.
 
-## Changes
+### 2. Add verification metadata to `challenge_tasks` (migration)
+New nullable columns:
+- `verification_type` text — `'manual' | 'steam_achievement' | 'steam_playtime'` (default `'manual'`).
+- `steam_achievement_api_name` text — required when type = `steam_achievement`.
+- `steam_playtime_minutes` integer — required when type = `steam_playtime`.
+- (Game is already implied via `challenges.game_id`, so we read `steam_app_id` through that join — no duplicate column.)
 
-### 1. New `/moderator/featured` page (also linked from Admin sidebar)
-- Sections: Featured Tournaments / Featured Challenges / Featured Quests / Tenant Events.
-- Each row shows cover image, title, type badge, status, start date (where applicable), and a single "Remove from Featured" button.
-- A "+ Add to Featured" button at the top of each section opens a search dialog filtered by type so the moderator can pick from non-featured items and toggle them on without leaving the page.
-- Empty-state per section: "Nothing featured yet — add one to surface it on the homepage."
-- Live count chip: "5 items currently featured on the homepage."
+Validation trigger (not CHECK, per project rules) ensures the right column is set per type.
 
-### 2. Moderator/Admin sidebar entry
-- Add **Featured Events** under the Compete group (visible to Admin + Moderator only). Star icon. Routes to `/moderator/featured`.
-- Same link mounted in the Admin Dashboard quick-actions card.
+### 3. Task editor UI (admin/moderator)
+In `CreateChallengeDialog` / `EditChallengeDialog` task rows:
+- Show verification selector only if the parent challenge's game has a `steam_app_id`.
+- `Steam achievement` → searchable picker fed by Steam `GetSchemaForGame` (new helper; same key as sync).
+- `Steam playtime` → numeric "minutes required".
+- Otherwise lock to `Manual upload`.
 
-### 3. Make the inline star toggle obvious
-- On `ModeratorTournaments` and `AdminTournaments` (list + grid), `ModeratorChallenges`/`AdminChallenges`, and `AdminQuestsPanel`:
-  - Replace the bare star icon with a labeled pill button: filled gold "★ Featured" when on, outlined "☆ Feature" when off.
-  - Add a "Featured only" filter chip alongside the existing status filters so mods can quickly find what's currently surfaced.
-  - Add a small "Featured on homepage" badge on the card hero (grid view) so featured items are visually distinct in the catalog itself.
+### 4. Auto-approval edge function: `verify-steam-task-completion`
+Triggered when:
+- A user opens a challenge task (lazy check), and
+- On demand from `EvidenceUpload` ("Check Steam progress" button shown only for Steam-verified tasks when the user has `steam_id`).
 
-### 4. Empty-state nudge on Featured Events homepage section
-- The current empty state says "No featured events yet — check back soon!" Add an Admin/Moderator-only secondary CTA: "Manage Featured Events →" linking to `/moderator/featured`.
+Logic:
+1. Load task → get `verification_type`, `challenge.game_id` → `games.steam_app_id`.
+2. Run a fresh per-user/per-game Steam call (reusing the sync function's per-app code path; refactor that loop into a shared helper). Respect the 5-min per-user cooldown.
+3. For `steam_achievement`: check `steam_player_achievements` row matches and `achieved = true`.
+4. For `steam_playtime`: call `IPlayerService/GetOwnedGames` (new — currently unused) and compare `playtime_forever` (minutes) ≥ threshold. Cache the playtime in a new tiny `steam_player_playtime` table to avoid hammering the API.
+5. On pass: insert a `challenge_evidence` row with `file_type='steam_auto'`, `file_url` pointing to a Steam profile / achievement permalink, plus auto-approve it (mirror moderator approval path so the existing point-deduction / completion triggers fire).
 
-## Out of scope
+### 5. Player-facing UX in `EvidenceUpload`
+When the task is Steam-verified:
+- Top of dialog: "This task can auto-complete from your Steam account."
+- If `profile.steam_id` is null → CTA to link Steam (existing flow).
+- If linked → "Check Steam now" button → calls the new edge function → on success, closes dialog and shows toast; on miss, shows current progress (e.g., "0 / 120 minutes played") and still allows manual upload as a fallback.
+- Manual `Upload File` / `Video Link` tabs remain available for any task (resilience for private profiles, Steam outages, or non-Steam games).
 
-- No DB schema changes. `is_featured` and the existing mutations stay as-is.
-- No change to who can toggle (still Admin + Moderator). Tenant Admin / Marketing roles are not added.
-- No reordering / priority weighting (Featured Events still orders by `start_date` / `created_at` as it does today). Happy to add a `featured_order` column if you want drag-to-reorder later.
-- No changes to challenges/quests content rules — only their featured surfacing.
+### 6. Guardrails
+- Never auto-approve if game has no `steam_app_id` (fallback to manual).
+- Never auto-approve if user has no `steam_id` linked.
+- Private Steam profile → graceful message + manual fallback.
+- Re-uses existing `should_notify` / completion triggers — no parallel approval path.
+
+## Out of scope (call out for later)
+- Backfilling `steam_app_id` on existing Steam games (admin tool, not auto).
+- Pulling Steam stats other than achievements + playtime (e.g., per-stat thresholds like "kills > 100"). Possible v2 once `GetUserStatsForGame` is wired.
+- Cross-store equivalents (Epic, Xbox, PlayStation).
 
 ## Technical notes
 
-- Files touched:
-  - **New**: `src/pages/moderator/ModeratorFeaturedEvents.tsx`, route added in `src/App.tsx`, sidebar entry in `src/components/moderator/ModeratorSidebar.tsx` + `src/components/admin/...` if applicable.
-  - **Modified**: `src/pages/moderator/ModeratorTournaments.tsx`, `src/pages/admin/AdminTournaments.tsx`, `src/pages/moderator/ModeratorChallenges.tsx`, `src/pages/admin/AdminChallenges.tsx`, `src/components/quests/AdminQuestsPanel.tsx`, `src/components/FeaturedEvents.tsx` (only the empty-state CTA).
-- Reuses the existing `toggleFeaturedMutation` pattern in each manager so no new API surface is introduced.
-- Access control is enforced via the existing `ModeratorRoute` wrapper — no RLS changes needed.
+- `STEAM_API_KEY` secret already exists.
+- New endpoints used: `IPlayerService/GetOwnedGames/v1` (playtime), `ISteamUserStats/GetSchemaForGame/v2` (achievement picker). Both keyed.
+- Refactor `steam-achievement-sync/index.ts` to export a `syncUserGame(userId, steamId, appId)` helper consumed by both the bulk sync and the new verifier.
+- New table `steam_player_playtime (user_id, steam_app_id, minutes_played, synced_at)` with the same RLS pattern as `steam_player_achievements`.
+- Validation trigger on `challenge_tasks` enforces `verification_type` field consistency.
+- All migrations idempotent (`IF NOT EXISTS`, `ON CONFLICT DO NOTHING`) per project rules.

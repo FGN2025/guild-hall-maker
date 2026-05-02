@@ -1,12 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Upload, Loader2, Image as ImageIcon, Link, ExternalLink } from "lucide-react";
+import { Upload, Loader2, Image as ImageIcon, Link, ExternalLink, Gamepad2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface EvidenceUploadProps {
@@ -14,7 +16,15 @@ interface EvidenceUploadProps {
   onOpenChange: (open: boolean) => void;
   taskId?: string;
   taskTitle?: string;
+  enrollmentId?: string;
+  /** Verification metadata from the task. */
+  verificationType?: "manual" | "steam_achievement" | "steam_playtime" | null;
+  steamPlaytimeMinutes?: number | null;
+  /** Whether the parent challenge has a Steam-enabled game. */
+  steamEnabled?: boolean;
   onSubmit: (data: { taskId?: string; fileUrl: string; fileType: string; notes?: string }) => Promise<void>;
+  /** Called after a successful Steam auto-approval so the parent can refetch evidence. */
+  onSteamAutoApproved?: () => void;
 }
 
 const extractYouTubeId = (url: string): string | null => {
@@ -31,7 +41,19 @@ const isValidVideoUrl = (url: string): boolean => {
   }
 };
 
-const EvidenceUpload = ({ open, onOpenChange, taskId, taskTitle, onSubmit }: EvidenceUploadProps) => {
+const EvidenceUpload = ({
+  open,
+  onOpenChange,
+  taskId,
+  taskTitle,
+  enrollmentId,
+  verificationType,
+  steamPlaytimeMinutes,
+  steamEnabled,
+  onSubmit,
+  onSteamAutoApproved,
+}: EvidenceUploadProps) => {
+  const { user } = useAuth();
   const [mode, setMode] = useState<"upload" | "link">("upload");
   const [uploading, setUploading] = useState(false);
   const [notes, setNotes] = useState("");
@@ -39,7 +61,27 @@ const EvidenceUpload = ({ open, onOpenChange, taskId, taskTitle, onSubmit }: Evi
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [fileType, setFileType] = useState("image");
   const [videoLink, setVideoLink] = useState("");
+  const [checkingSteam, setCheckingSteam] = useState(false);
+  const [steamProgress, setSteamProgress] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const isSteamTask =
+    !!steamEnabled && (verificationType === "steam_achievement" || verificationType === "steam_playtime");
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile-steam-id", user?.id],
+    enabled: !!user && isSteamTask && open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("steam_id, steam_username")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data as { steam_id: string | null; steam_username: string | null } | null;
+    },
+  });
+
+  const hasSteamLinked = !!profile?.steam_id;
 
   const resetState = () => {
     setMode("upload");
@@ -48,7 +90,12 @@ const EvidenceUpload = ({ open, onOpenChange, taskId, taskTitle, onSubmit }: Evi
     setUploadedUrl(null);
     setFileType("image");
     setVideoLink("");
+    setSteamProgress(null);
   };
+
+  useEffect(() => {
+    if (!open) resetState();
+  }, [open]);
 
   const handleOpenChange = (o: boolean) => {
     if (!o) resetState();
@@ -58,20 +105,16 @@ const EvidenceUpload = ({ open, onOpenChange, taskId, taskTitle, onSubmit }: Evi
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
       const path = `challenge-evidence/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("app-media").upload(path, file);
       if (uploadError) throw uploadError;
-
       const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
       setUploadedUrl(urlData.publicUrl);
       setFileType(file.type.startsWith("image") ? "image" : file.type.startsWith("video") ? "video" : "file");
-      if (file.type.startsWith("image")) {
-        setPreviewUrl(URL.createObjectURL(file));
-      }
+      if (file.type.startsWith("image")) setPreviewUrl(URL.createObjectURL(file));
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
     } finally {
@@ -104,6 +147,34 @@ const EvidenceUpload = ({ open, onOpenChange, taskId, taskTitle, onSubmit }: Evi
     }
   };
 
+  const handleSteamCheck = async () => {
+    if (!taskId || !enrollmentId) return;
+    setCheckingSteam(true);
+    setSteamProgress(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-steam-task-completion", {
+        body: { taskId, enrollmentId },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        if (data.alreadyApproved) {
+          toast.success("This task is already auto-approved.");
+        } else {
+          toast.success("Task auto-approved from your Steam account!");
+        }
+        onSteamAutoApproved?.();
+        resetState();
+        onOpenChange(false);
+      } else {
+        setSteamProgress(data?.reason || "Criteria not met yet.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Steam check failed");
+    } finally {
+      setCheckingSteam(false);
+    }
+  };
+
   const isReady = mode === "upload" ? !!uploadedUrl && !uploading : !!uploadedUrl && isValidVideoUrl(videoLink);
 
   return (
@@ -115,6 +186,51 @@ const EvidenceUpload = ({ open, onOpenChange, taskId, taskTitle, onSubmit }: Evi
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
+          {isSteamTask && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <Gamepad2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">
+                    This task can auto-complete from your Steam account.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {verificationType === "steam_achievement"
+                      ? "We'll check your Steam achievements for this game."
+                      : `We'll check your Steam playtime (need ${steamPlaytimeMinutes ?? 0} min).`}
+                  </p>
+                </div>
+              </div>
+              {!hasSteamLinked ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => (window.location.href = "/profile-settings")}
+                >
+                  Link your Steam account
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={handleSteamCheck}
+                  disabled={checkingSteam}
+                >
+                  {checkingSteam ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  {checkingSteam ? "Checking Steam..." : "Check Steam now"}
+                </Button>
+              )}
+              {steamProgress && (
+                <p className="text-xs text-yellow-400">{steamProgress} You can still upload manual evidence below.</p>
+              )}
+            </div>
+          )}
+
           <Tabs value={mode} onValueChange={(v) => { setMode(v as "upload" | "link"); setUploadedUrl(null); setPreviewUrl(null); setVideoLink(""); }}>
             <TabsList className="w-full">
               <TabsTrigger value="upload" className="flex-1 gap-1.5">

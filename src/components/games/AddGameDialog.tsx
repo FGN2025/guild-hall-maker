@@ -114,6 +114,15 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const tags = platformTags.split(",").map(t => t.trim()).filter(Boolean);
+    const isSteamGame = tags.some(t => t.toLowerCase() === "steam") || category.toLowerCase() === "steam";
+    if (isSteamGame && !steamAppId.trim()) {
+      toast({
+        title: "Steam App ID required",
+        description: "Steam-platform games must include a Steam App ID so player progress can be auto-verified.",
+        variant: "destructive",
+      });
+      return;
+    }
     const payload: any = {
       name, slug: slug || slugify(name), description: description || null,
       category, cover_image_url: coverImageUrl || null,
@@ -270,9 +279,11 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
             />
           </div>
           <div>
-            <Label>Steam App ID</Label>
+            <Label>Steam App ID {(/steam/i.test(platformTags) || /steam/i.test(category)) && <span className="text-destructive">*</span>}</Label>
             <Input value={steamAppId} onChange={e => setSteamAppId(e.target.value)} placeholder="e.g. 730 for CS2" />
-            <p className="text-xs text-muted-foreground mt-1">Find at store.steampowered.com — the number in the URL.</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Required for Steam-platform games — enables auto-verification of challenge tasks from a player's Steam achievements and playtime.
+            </p>
           </div>
           <div>
             <Label>Platform Tags (comma separated)</Label>

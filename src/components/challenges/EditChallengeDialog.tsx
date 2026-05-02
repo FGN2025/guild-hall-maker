@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
 import PointsInput from "@/components/shared/PointsInput";
+import TaskVerificationEditor from "@/components/challenges/TaskVerificationEditor";
 
 interface EditChallengeDialogProps {
   challenge: any;
@@ -29,6 +30,9 @@ interface LocalTask {
   title: string;
   description: string;
   display_order: number;
+  verification_type: "manual" | "steam_achievement" | "steam_playtime";
+  steam_achievement_api_name: string | null;
+  steam_playtime_minutes: number | null;
   _isNew?: boolean;
   _deleted?: boolean;
 }
@@ -63,13 +67,15 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [pointsOverrideReason, setPointsOverrideReason] = useState("");
 
   const { data: games = [] } = useQuery({
-    queryKey: ["games-active"],
+    queryKey: ["games-active-with-steam"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("games").select("id, name").eq("is_active", true).order("name");
+      const { data, error } = await supabase.from("games").select("id, name, steam_app_id").eq("is_active", true).order("name");
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  const selectedGameSteamAppId = (games.find((g: any) => g.id === gameId) as any)?.steam_app_id ?? null;
 
   const { data: existingTasks = [] } = useQuery({
     queryKey: ["challenge-tasks-edit", challenge?.id],
@@ -112,11 +118,14 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   useEffect(() => {
     if (open && existingTasks.length >= 0) {
       setLocalTasks(
-        existingTasks.map((t) => ({
+        existingTasks.map((t: any) => ({
           id: t.id,
           title: t.title,
           description: t.description || "",
           display_order: t.display_order,
+          verification_type: (t.verification_type ?? "manual") as LocalTask["verification_type"],
+          steam_achievement_api_name: t.steam_achievement_api_name ?? null,
+          steam_playtime_minutes: t.steam_playtime_minutes ?? null,
         }))
       );
     }
@@ -134,12 +143,27 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const addTask = () => {
     setLocalTasks((prev) => [
       ...prev,
-      { title: "", description: "", display_order: prev.length, _isNew: true },
+      {
+        title: "",
+        description: "",
+        display_order: prev.length,
+        verification_type: "manual",
+        steam_achievement_api_name: null,
+        steam_playtime_minutes: null,
+        _isNew: true,
+      },
     ]);
   };
 
   const updateTask = (index: number, field: "title" | "description", value: string) => {
     setLocalTasks((prev) => prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)));
+  };
+
+  const updateTaskVerification = (
+    index: number,
+    next: { verification_type: LocalTask["verification_type"]; steam_achievement_api_name: string | null; steam_playtime_minutes: number | null },
+  ) => {
+    setLocalTasks((prev) => prev.map((t, i) => (i === index ? { ...t, ...next } : t)));
   };
 
   const removeTask = (index: number) => {
@@ -220,7 +244,14 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         if (t.id && !t._isNew) {
           const { error: upErr } = await supabase
             .from("challenge_tasks")
-            .update({ title: t.title, description: t.description || null, display_order: i })
+            .update({
+              title: t.title,
+              description: t.description || null,
+              display_order: i,
+              verification_type: t.verification_type,
+              steam_achievement_api_name: t.steam_achievement_api_name,
+              steam_playtime_minutes: t.steam_playtime_minutes,
+            } as any)
             .eq("id", t.id);
           if (upErr) throw upErr;
         }
@@ -234,7 +265,10 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             title: t.title.trim(),
             description: t.description || null,
             display_order: visibleBeforeInsert.length + idx,
-          }))
+            verification_type: t.verification_type,
+            steam_achievement_api_name: t.steam_achievement_api_name,
+            steam_playtime_minutes: t.steam_playtime_minutes,
+          })) as any
         );
         if (insErr) throw insErr;
       }
@@ -439,6 +473,14 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
                       value={task.description}
                       onChange={(e) => updateTask(index, "description", e.target.value)}
                       className="h-8 text-sm"
+                    />
+                    <TaskVerificationEditor
+                      steamAppId={selectedGameSteamAppId}
+                      verificationType={task.verification_type}
+                      steamAchievementApiName={task.steam_achievement_api_name}
+                      steamPlaytimeMinutes={task.steam_playtime_minutes}
+                      onChange={(next) => updateTaskVerification(index, next)}
+                    />
                     />
                   </div>
                   <Button

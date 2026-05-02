@@ -476,7 +476,10 @@ export type Database = {
           description: string | null
           display_order: number
           id: string
+          steam_achievement_api_name: string | null
+          steam_playtime_minutes: number | null
           title: string
+          verification_type: string
         }
         Insert: {
           challenge_id: string
@@ -484,7 +487,10 @@ export type Database = {
           description?: string | null
           display_order?: number
           id?: string
+          steam_achievement_api_name?: string | null
+          steam_playtime_minutes?: number | null
           title: string
+          verification_type?: string
         }
         Update: {
           challenge_id?: string
@@ -492,7 +498,10 @@ export type Database = {
           description?: string | null
           display_order?: number
           id?: string
+          steam_achievement_api_name?: string | null
+          steam_playtime_minutes?: number | null
           title?: string
+          verification_type?: string
         }
         Relationships: [
           {
@@ -2909,6 +2918,30 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      steam_player_playtime: {
+        Row: {
+          id: string
+          minutes_played: number
+          steam_app_id: string
+          synced_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          minutes_played?: number
+          steam_app_id: string
+          synced_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          minutes_played?: number
+          steam_app_id?: string
+          synced_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       subscriber_cloud_access: {
         Row: {
