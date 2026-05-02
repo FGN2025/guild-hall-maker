@@ -66,6 +66,7 @@ const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminGames = lazy(() => import("./pages/admin/AdminGames"));
 const AdminNotebooks = lazy(() => import("./pages/admin/AdminNotebooks"));
+const AdminSteamIntegration = lazy(() => import("./pages/admin/AdminSteamIntegration"));
 const AdminSeasons = lazy(() => import("./pages/admin/AdminSeasons"));
 const AdminAchievements = lazy(() => import("./pages/admin/AdminAchievements"));
 const AdminGuide = lazy(() => import("./pages/admin/AdminGuide"));
@@ -209,6 +210,7 @@ const App = () => (
               <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
               <Route path="/admin/games" element={<AdminRoute><AdminGames /></AdminRoute>} />
               <Route path="/admin/notebooks" element={<AdminRoute><AdminNotebooks /></AdminRoute>} />
+              <Route path="/admin/steam" element={<AdminRoute><AdminSteamIntegration /></AdminRoute>} />
               <Route path="/admin/seasons" element={<AdminRoute><AdminSeasons /></AdminRoute>} />
               <Route path="/admin/achievements" element={<AdminRoute><AdminAchievements /></AdminRoute>} />
               <Route path="/admin/guide" element={<MarketingRoute><AdminGuide /></MarketingRoute>} />
