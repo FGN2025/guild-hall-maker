@@ -1,38 +1,29 @@
-## Finish Steam Verification Integration
+## Context
 
-Three remaining items from the previous turn.
+The AI Writer outputs Markdown into `games.guide_content`. End users **already see it formatted** — `src/pages/GameDetail.tsx` (line 120) renders it with `ReactMarkdown` inside a styled `prose` container, so headings, bullets, bold, code, etc. all look correct on the player-facing Game Detail page.
 
-### 1. Confirm EditChallengeDialog fix
-The stray `/>` was already removed (lines 477–483 now show a clean `TaskVerificationEditor` block). No further change needed; build should pass.
+The only place Markdown still appears as raw text (`## Heading`, `- bullet`) is inside the **AI Writer preview itself** (`GuideWriterDialog.tsx`), which uses a plain `<Textarea>`. That's why it feels unformatted — admins are looking at the editor, not the rendered output.
 
-### 2. Wire `TaskVerificationEditor` into `CreateChallengeDialog`
-Mirror the EditChallengeDialog approach so newly-created challenges can also configure Steam-based auto-verification per task.
+## What to change
 
-Changes to `src/components/challenges/CreateChallengeDialog.tsx`:
-- Extend the local task shape from `{ title, description }` to also include:
-  - `verification_type: "manual" | "steam_achievement" | "steam_playtime"` (default `"manual"`)
-  - `steam_achievement_api_name: string | null`
-  - `steam_playtime_minutes: number | null`
-- Look up the selected game's `steam_app_id` from the existing `games` query (extend the select to include `steam_app_id`).
-- Render `<TaskVerificationEditor>` inside each task row, passing the game's `steamAppId` and the per-task fields, with an `onChange` that updates that task entry.
-- In `createMutation`, include the three new columns when inserting into `challenge_tasks`.
-- Reset the new fields in `defaultForm` / `addTask`.
+Add a **Rendered / Markdown toggle** to the preview area in `GuideWriterDialog.tsx` so admins can see exactly how the guide will look to players before clicking Apply.
 
-### 3. Steam icon on `TaskChecklist`
-Show a small Steam-style indicator next to tasks that have automated Steam verification configured, so players know they can use the "Check Steam now" flow.
+### UI
 
-Changes to `src/components/challenges/TaskChecklist.tsx`:
-- Extend the `Task` interface with optional `verification_type`, `steam_achievement_api_name`, `steam_playtime_minutes`.
-- When `verification_type` is `"steam_achievement"` or `"steam_playtime"`, render a `Gamepad2` icon (lucide) with a tooltip / title like `"Auto-verified via Steam"` next to the task title.
-- Use semantic tokens (`text-primary` / `text-accent`) — no hardcoded colors.
-- Update the `useChallengeDetail` hook's task select (if not already) to return the new columns so they reach this component. (Verify first; if already returned, no change.)
+In the preview section (only shown after a generation):
 
-### Out of scope
-- No DB migrations (already applied last turn).
-- No edge function changes.
-- No changes to admin task list UIs beyond the create dialog.
+- A small `Tabs` control above the preview with two tabs:
+  - **Rendered** (default) — shows the Markdown formatted using the same `ReactMarkdown` + `prose` styling block that `GameDetail.tsx` uses, so it matches the player view 1:1.
+  - **Markdown** — shows the existing editable `<Textarea>` (so admins can still tweak the source before applying).
+- The "Apply to User Guide" button keeps applying the current Markdown source — editing only happens in the Markdown tab.
 
-### Verification
-- Build passes (no TS errors).
-- Open Create Challenge dialog with a Steam game selected → verification editor appears per task.
-- Open a challenge detail page where a task has Steam verification → gamepad icon shows next to that task.
+### Files
+
+- `src/components/games/GuideWriterDialog.tsx` — wrap the preview in `Tabs`, import `ReactMarkdown`, copy the `prose` className from `GameDetail.tsx` so the preview matches the player view exactly.
+
+No changes to the edge function, the database, or `AddGameDialog.tsx`. The "User Guide" field on the edit form stays a raw Markdown textarea (it's the editor), and the player-facing render is already formatted.
+
+## Out of scope
+
+- Replacing the User Guide textarea on the Add/Edit Game form with a WYSIWYG editor (separate, larger change — ask if you want this too).
+- Changing the player-facing render (already formatted).
