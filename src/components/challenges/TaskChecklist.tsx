@@ -228,11 +228,23 @@ const TaskChecklist = ({
                       {criterion && (
                         <p className="text-[11px] text-foreground leading-snug mt-0.5">{criterion}</p>
                       )}
-                      {ev?.reviewer_notes && (
-                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                          <span className="text-foreground/80">Reviewer:</span> {ev.reviewer_notes}
-                        </p>
-                      )}
+                      {ev?.reviewer_notes && (() => {
+                        const m = ev.reviewer_notes.match(/^\[([a-z0-9_]+)\]\s*(.*)$/i);
+                        const code = m?.[1];
+                        const rest = m?.[2] ?? ev.reviewer_notes;
+                        return (
+                          <div className="mt-0.5">
+                            {code && (
+                              <span className="inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-destructive/20 text-destructive mr-1.5 align-middle">
+                                {code}
+                              </span>
+                            )}
+                            <span className="text-[11px] text-muted-foreground leading-snug">
+                              <span className="text-foreground/80">Reviewer:</span> {rest}
+                            </span>
+                          </div>
+                        );
+                      })()}
                       {ev?.notes && (
                         <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
                           <span className="text-foreground/80">Your note:</span> {ev.notes}
