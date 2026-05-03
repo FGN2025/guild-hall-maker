@@ -89,7 +89,7 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; bullets: st
       "Match Results Are Locked — Once a moderator records a match score, the result is final. If you believe a result is wrong, contact the tournament moderator via Discord — they can adjust if warranted.",
       "Leaderboard Impact — Tournament points feed directly into the seasonal leaderboard. Consistent top finishes rocket you up the rankings.",
       "Prize Shop — Accumulated season points can be redeemed in the Prize Shop for real rewards. Only 'Points Available' is spendable; lifetime 'Points' is for ranking only.",
-      "FGN Academy Credit — If your tenant has FGN Academy enabled, tournament participation and placements can contribute to your Skill Passport. New to the academy? You'll see a 'Join FGN Academy' prompt after your first qualifying result — sign up with the same email and your history is auto-claimed.",
+      "Join FGN Academy Prompt — If your tenant has FGN Academy enabled and you haven't registered on FGN Academy yet, your first qualifying tournament result surfaces a 'Join FGN Academy' prompt with a one-click sign-up link. Use the same email address you use here on FGN. After you register, your past tournament participation and placements are auto-claimed onto your Skill Passport within a few minutes, and future results sync automatically — no extra steps.",
     ],
   },
   {

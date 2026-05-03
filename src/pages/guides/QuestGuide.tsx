@@ -72,7 +72,7 @@ const sectionData: { id: string; icon: typeof Scroll; title: string; bullets: st
     title: "FGN Academy Credit",
     bullets: [
       "Skill Passport Sync — If your tenant has FGN Academy enabled, completed quests sync to your Skill Passport with score, task progress, and skill tags. Credentials and external XP are tracked on the academy side.",
-      "Not Registered Yet? — On your first approval, you'll see a 'Join FGN Academy' prompt with a direct sign-up link. Use the same email — past completions are auto-claimed once you register.",
+      "Join FGN Academy Prompt — If you haven't registered on FGN Academy yet, your first approved task surfaces a 'Join FGN Academy' prompt with a one-click sign-up link. Use the same email address you use here on FGN. After you register, your past quest completions are auto-claimed onto your Skill Passport within a few minutes, and future approvals sync automatically — no extra steps.",
       "Career Paths — Quests aligned to CDL or Fiber Tech career paths feed into TIRAP-recognized training records. Look for these in the quest catalog if workforce credentials matter to you.",
       "Next-Step Recommendations — After certain quest completions, the academy may surface follow-on training recommendations in your in-app notifications. Worth checking if you're working a career path.",
     ],
