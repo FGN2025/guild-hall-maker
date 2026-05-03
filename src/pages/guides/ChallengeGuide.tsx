@@ -87,7 +87,7 @@ const sectionData: { id: string; icon: typeof Target; title: string; bullets: st
       "Reviewer Feedback — Moderators can leave notes explaining why evidence was approved or rejected. Read these before re-uploading.",
       "Rejection Recovery — If evidence is rejected, review the feedback, then delete and re-upload improved evidence. The slot stays open until your next submission.",
       "Approval Notification — When a moderator approves your submission, you receive an instant notification confirming approval and the points earned.",
-      "FGN Academy 'Join' Prompt — If your tenant has FGN Academy sync enabled and you haven't registered on the academy yet, your first approval will surface a 'Join FGN Academy' prompt with a one-click link. Sign up with the same email you use here and your past completions are auto-claimed onto your Skill Passport.",
+      "Join FGN Academy Prompt — If your tenant has FGN Academy sync enabled and you haven't registered on FGN Academy yet, your first approved challenge surfaces a 'Join FGN Academy' prompt with a one-click sign-up link. Use the same email address you use here on FGN. After you register, your past challenge completions are auto-claimed onto your Skill Passport within a few minutes, and future approvals sync automatically — no extra steps.",
       "Already on the Academy? — Approved completions sync silently in the background — score, task progress, and skill tags push automatically. Watch your Academy dashboard for credential updates.",
       "Timeline — Review times vary depending on moderator availability. Most reviews happen within 24–48 hours.",
     ],
