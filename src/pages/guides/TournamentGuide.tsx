@@ -82,11 +82,14 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; bullets: st
     icon: Award,
     title: "Points & Prizes",
     bullets: [
-      "Season Points — Points are awarded automatically when a tournament completes, based on your final placement.",
-      "Placement Tiers — 1st, 2nd, and 3rd place typically earn the most points. Participation points are also awarded to all competitors.",
-      "Prize Pools — Some tournaments offer prize pools described on the detail page. Prizes may include physical items, gift cards, or platform perks.",
+      "Season Points — Points are awarded automatically when a tournament completes, based on your final placement. The payout hits both your lifetime 'Points' (leaderboard) and your spendable 'Points Available' (Prize Shop).",
+      "Single Participation Payout — Tournaments pay participation points once per event, not per match. Showing up and being seeded earns the participation amount; placement bonuses (1st/2nd/3rd) stack on top.",
+      "Placement Tiers — 1st, 2nd, and 3rd place typically earn the most points. The exact split is set by the organizer when the tournament is created.",
+      "Prize Pools — Some tournaments offer prize pools described on the detail page. Prizes may include physical items, gift cards, or platform perks. In 'Value' mode, the points pool is split among the top three using a configurable percentage (default 50/30/20).",
+      "Match Results Are Locked — Once a moderator records a match score, the result is final. If you believe a result is wrong, contact the tournament moderator via Discord — they can adjust if warranted.",
       "Leaderboard Impact — Tournament points feed directly into the seasonal leaderboard. Consistent top finishes rocket you up the rankings.",
-      "Prize Shop — Accumulated season points can be redeemed in the Prize Shop for real rewards.",
+      "Prize Shop — Accumulated season points can be redeemed in the Prize Shop for real rewards. Only 'Points Available' is spendable; lifetime 'Points' is for ranking only.",
+      "FGN Academy Credit — If your tenant has FGN Academy enabled, tournament participation and placements can contribute to your Skill Passport. New to the academy? You'll see a 'Join FGN Academy' prompt after your first qualifying result — sign up with the same email and your history is auto-claimed.",
     ],
   },
   {
