@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
 import { useGuideMedia } from "@/hooks/useGuideMedia";
+import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Trophy; title: string; bullets: string[] }[] = [
   {

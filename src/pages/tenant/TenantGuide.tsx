@@ -29,6 +29,7 @@ import {
   CreditCard,
   Cloud,
 } from "lucide-react";
+import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
