@@ -412,6 +412,27 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Preferences — Customize which notifications you receive from Profile Settings (/profile). Toggle In-App and Email independently for each of the 8 event types, including Points Adjustments.",
       "Defaults — All notification channels are enabled by default. Changes take effect immediately.",
       "Tip: Check your notifications regularly to stay on top of challenge deadlines, points awards, and prize approvals!",
+  {
+    id: "discord-gate",
+    icon: Lock,
+    title: "Discord Verification Gate",
+    bullets: [
+      "Why It Matters — Discord linking is a mandatory secondary gate for players. Without it, you cannot register for tournaments or post in the community.",
+      "When You're Asked — Right after sign-up and email verification, you'll be redirected to Link Discord. You cannot skip this step as a player.",
+      "Bypass Requests — If you can't link Discord (account suspended, regional restrictions, etc.), you can request a bypass from the linking screen. Admins review these manually.",
+      "Staff Exemption — Admins, Moderators, and Marketing staff are exempt from this gate. If you've just been promoted, the requirement disappears automatically on your next visit.",
+      "Re-link / Unlink — From Profile Settings, you can swap Discord accounts. Unlinking blocks platform access until you re-link.",
+    ],
+  },
+  {
+    id: "featured-events",
+    icon: CalendarDays,
+    title: "Featured Events Carousel",
+    bullets: [
+      "Where — The home page surfaces a Featured Events carousel that highlights tournaments and tenant events selected by staff.",
+      "What's In It — Each card shows the event title, hero image, game, date, and a quick CTA into the registration page.",
+      "Public — Featured events are visible to guests too, so you can share the home page link with friends who haven't joined yet.",
+      "Mobile Friendly — The carousel uses fixed minimum heights to behave correctly on iOS Safari, so the layout stays consistent on mobile.",
     ],
   },
 ];
