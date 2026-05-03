@@ -9,12 +9,24 @@ import { bootstrapBrandMode, detectBrandMode } from "./lib/brandMode";
 bootstrapBrandMode();
 const initialTheme = detectBrandMode() === "enterprise" ? "light" : "dark";
 
+// Clear any stale persisted theme from next-themes so the brand-mode default wins
+// on every load. Users can still toggle via ThemeToggle during the session.
+try {
+  const stored = window.localStorage.getItem("theme");
+  if (stored && stored !== initialTheme) {
+    window.localStorage.removeItem("theme");
+  }
+} catch {
+  /* ignore */
+}
+
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <ThemeProvider
       attribute="class"
       defaultTheme={initialTheme}
       enableSystem={false}
+      forcedTheme={initialTheme === "dark" ? "dark" : undefined}
     >
       <App />
     </ThemeProvider>
