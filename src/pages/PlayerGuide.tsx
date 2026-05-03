@@ -39,6 +39,7 @@ import {
   Server,
 } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
+import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
@@ -356,11 +357,11 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: Moon,
     title: "Dark & Light Theme",
     bullets: [
-      "FGN supports both dark and light themes so you can play in comfort.",
-      "Toggle Location — Find the Theme button in the sidebar footer. Click it to reveal Light, Dark, and System options.",
-      "Instant Switch — Selecting a theme applies it immediately across the entire platform.",
-      "Persisted Preference — Your chosen theme is saved and persists across sessions and page reloads.",
-      "System Mode — Choose 'System' to automatically match your device's dark/light preference.",
+      "FGN now defaults to Dark mode on every load — the dark cyber aesthetic is part of the brand experience.",
+      "Toggle Location — Find the Theme button in the sidebar footer. The toggle offers Dark and Light only (System mode has been removed so the platform always opens in its intended look).",
+      "Instant Switch — Selecting Light applies it immediately for the rest of your session.",
+      "Reset Each Visit — Reloading or returning later will bring back Dark mode by design. Your selection is no longer persisted across sessions to keep the platform on-brand.",
+      "Tip: If a complex background ever makes text hard to read, the platform layers a frosted-glass panel on top to keep contrast high — you don't need to change themes for readability.",
     ],
   },
   {
@@ -412,6 +413,27 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Preferences — Customize which notifications you receive from Profile Settings (/profile). Toggle In-App and Email independently for each of the 8 event types, including Points Adjustments.",
       "Defaults — All notification channels are enabled by default. Changes take effect immediately.",
       "Tip: Check your notifications regularly to stay on top of challenge deadlines, points awards, and prize approvals!",
+  {
+    id: "discord-gate",
+    icon: Lock,
+    title: "Discord Verification Gate",
+    bullets: [
+      "Why It Matters — Discord linking is a mandatory secondary gate for players. Without it, you cannot register for tournaments or post in the community.",
+      "When You're Asked — Right after sign-up and email verification, you'll be redirected to Link Discord. You cannot skip this step as a player.",
+      "Bypass Requests — If you can't link Discord (account suspended, regional restrictions, etc.), you can request a bypass from the linking screen. Admins review these manually.",
+      "Staff Exemption — Admins, Moderators, and Marketing staff are exempt from this gate. If you've just been promoted, the requirement disappears automatically on your next visit.",
+      "Re-link / Unlink — From Profile Settings, you can swap Discord accounts. Unlinking blocks platform access until you re-link.",
+    ],
+  },
+  {
+    id: "featured-events",
+    icon: CalendarDays,
+    title: "Featured Events Carousel",
+    bullets: [
+      "Where — The home page surfaces a Featured Events carousel that highlights tournaments and tenant events selected by staff.",
+      "What's In It — Each card shows the event title, hero image, game, date, and a quick CTA into the registration page.",
+      "Public — Featured events are visible to guests too, so you can share the home page link with friends who haven't joined yet.",
+      "Mobile Friendly — The carousel uses fixed minimum heights to behave correctly on iOS Safari, so the layout stays consistent on mobile.",
     ],
   },
 ];
@@ -525,6 +547,11 @@ ${sectionBlocks}
           className="pl-9"
         />
       </div>
+
+      <QuickReferenceCard
+        audience="player"
+        intro="What you can do on FGN at a glance — plus the achievement tiers and quest XP ranks you can earn."
+      />
 
       {filteredSections.length > 0 && (
         <nav className="glass-panel rounded-lg px-4 py-3 border border-border/60">

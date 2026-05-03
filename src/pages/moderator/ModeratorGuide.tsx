@@ -23,6 +23,7 @@ import {
   LayoutDashboard,
   Award,
 } from "lucide-react";
+import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
@@ -300,6 +301,8 @@ ${sectionBlocks}
           className="pl-9"
         />
       </div>
+
+      <QuickReferenceCard audience="moderator" intro="What moderators can do, achievement tiers, quest XP ranks, and the challenge/quest enrollment flow." />
 
       {filteredSections.length > 0 && (
         <nav className="border border-border rounded-lg bg-card/50 px-4 py-3">

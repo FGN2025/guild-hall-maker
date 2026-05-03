@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
 import { useGuideMedia } from "@/hooks/useGuideMedia";
+import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Trophy; title: string; bullets: string[] }[] = [
   {
@@ -232,6 +233,8 @@ const TournamentGuide = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search topics…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+
+        <QuickReferenceCard audience="tournament" intro="The tournament status flow and achievement tiers you can earn." />
 
         {filteredSections.length > 0 && (
           <nav className="glass-panel rounded-lg px-4 py-3 border border-border/60">
