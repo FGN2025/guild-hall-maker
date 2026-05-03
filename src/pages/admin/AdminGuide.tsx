@@ -820,34 +820,6 @@ ${sectionBlocks}
         </nav>
       )}
 
-      {filteredPermissions.length > 0 && (
-        <div className="border border-border rounded-lg overflow-hidden bg-card/50">
-          <div className="px-4 py-3 border-b border-border">
-            <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary">Quick-Reference Permissions</h2>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted-foreground">
-                <th className="text-left px-4 py-2 font-heading font-medium">Feature</th>
-                <th className="text-center px-4 py-2 font-heading font-medium">Admin</th>
-                <th className="text-center px-4 py-2 font-heading font-medium">Marketing</th>
-                <th className="text-center px-4 py-2 font-heading font-medium">Manager</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPermissions.map((row) => (
-                <tr key={row.feature} className="border-b border-border/50 last:border-0">
-                  <td className="px-4 py-2">{row.feature}</td>
-                  <td className="text-center px-4 py-2">{row.admin ? "✅" : "—"}</td>
-                  <td className="text-center px-4 py-2">{row.marketing ? "✅" : "—"}</td>
-                  <td className="text-center px-4 py-2">{row.manager ? "✅" : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
       {filteredSections.length > 0 ? (
         <Accordion type="multiple" defaultValue={search.trim() ? filteredSections.map(s => s.id) : []} key={search} className="space-y-2">
           {filteredSections.map((section) => (
@@ -871,9 +843,9 @@ ${sectionBlocks}
             </AccordionItem>
           ))}
         </Accordion>
-      ) : filteredPermissions.length === 0 ? (
+      ) : (
         <p className="text-muted-foreground text-sm text-center py-8">No results found for &ldquo;{search}&rdquo;</p>
-      ) : null}
+      )}
 
       {showTop && (
         <Button
