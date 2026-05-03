@@ -47,6 +47,7 @@ import {
   Cloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
     id: "overview",
