@@ -26,7 +26,6 @@ createRoot(document.getElementById("root")!).render(
       attribute="class"
       defaultTheme={initialTheme}
       enableSystem={false}
-      forcedTheme={initialTheme === "dark" ? "dark" : undefined}
     >
       <App />
     </ThemeProvider>
