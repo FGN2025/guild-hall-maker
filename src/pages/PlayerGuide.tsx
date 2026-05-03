@@ -356,11 +356,11 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: Moon,
     title: "Dark & Light Theme",
     bullets: [
-      "FGN supports both dark and light themes so you can play in comfort.",
-      "Toggle Location — Find the Theme button in the sidebar footer. Click it to reveal Light, Dark, and System options.",
-      "Instant Switch — Selecting a theme applies it immediately across the entire platform.",
-      "Persisted Preference — Your chosen theme is saved and persists across sessions and page reloads.",
-      "System Mode — Choose 'System' to automatically match your device's dark/light preference.",
+      "FGN now defaults to Dark mode on every load — the dark cyber aesthetic is part of the brand experience.",
+      "Toggle Location — Find the Theme button in the sidebar footer. The toggle offers Dark and Light only (System mode has been removed so the platform always opens in its intended look).",
+      "Instant Switch — Selecting Light applies it immediately for the rest of your session.",
+      "Reset Each Visit — Reloading or returning later will bring back Dark mode by design. Your selection is no longer persisted across sessions to keep the platform on-brand.",
+      "Tip: If a complex background ever makes text hard to read, the platform layers a frosted-glass panel on top to keep contrast high — you don't need to change themes for readability.",
     ],
   },
   {
