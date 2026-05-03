@@ -722,53 +722,6 @@ const sections = sectionData.map((s) => ({
   ),
 }));
 
-const permissionRows = [
-  { feature: "Admin Dashboard", admin: true, marketing: false, manager: false },
-  { feature: "User Management", admin: true, marketing: false, manager: false },
-  { feature: "Access Requests", admin: true, marketing: false, manager: false },
-  { feature: "Tournament Management", admin: true, marketing: false, manager: false },
-  { feature: "Badge / Achievement System", admin: true, marketing: false, manager: true },
-  { feature: "Games Management", admin: true, marketing: false, manager: false },
-  { feature: "Season Management", admin: true, marketing: false, manager: false },
-  { feature: "Media Library", admin: true, marketing: false, manager: false },
-  { feature: "Asset Editor", admin: true, marketing: true, manager: false },
-  { feature: "AI Image Config", admin: true, marketing: false, manager: false },
-  { feature: "Page Appearance & Backgrounds", admin: true, marketing: false, manager: false },
-  { feature: "Bypass Codes", admin: true, marketing: false, manager: false },
-  { feature: "App Settings", admin: true, marketing: false, manager: false },
-  { feature: "AI Coach Configuration", admin: true, marketing: false, manager: false },
-  { feature: "Notebook Connections", admin: true, marketing: false, manager: false },
-  { feature: "Legacy User Import", admin: true, marketing: false, manager: false },
-  { feature: "Deep Stats & Skill Insights", admin: true, marketing: false, manager: true },
-  { feature: "Community Moderation", admin: true, marketing: false, manager: false },
-  { feature: "Ecosystem Navigation", admin: true, marketing: false, manager: false },
-  { feature: "Marketing Campaigns", admin: true, marketing: true, manager: false },
-  { feature: "Marketing → Web Pages", admin: true, marketing: true, manager: false },
-  { feature: "Marketing → Calendar Embeds", admin: true, marketing: true, manager: false },
-  { feature: "Social Accounts (Connect/Manage)", admin: true, marketing: true, manager: false },
-  { feature: "Scheduled Posts (View/Manage)", admin: true, marketing: true, manager: false },
-  { feature: "Legal Pages (view)", admin: true, marketing: true, manager: true },
-  { feature: "Challenges & Quests", admin: true, marketing: false, manager: true },
-  { feature: "Quest Chains (Manage)", admin: true, marketing: false, manager: true },
-  { feature: "Prize Shop (Manage Prizes)", admin: true, marketing: false, manager: true },
-  { feature: "Prize Redemptions (Review)", admin: true, marketing: false, manager: true },
-  { feature: "Notification System (Auto)", admin: true, marketing: false, manager: true },
-  { feature: "Ranked Ladders (Manage)", admin: true, marketing: false, manager: true },
-  { feature: "Tenant Dashboard", admin: true, marketing: false, manager: true },
-  { feature: "Tenant Leads", admin: true, marketing: false, manager: true },
-  { feature: "Tenant Events", admin: true, marketing: true, manager: true },
-  { feature: "Tenant Marketing Assets", admin: true, marketing: true, manager: true },
-  { feature: "Tenant Codes", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Codes (read-only)", admin: false, marketing: true, manager: false },
-  { feature: "Tenant Web Pages", admin: true, marketing: true, manager: false },
-  { feature: "Tenant ZIP Codes", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Subscribers", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Integrations", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Team Management", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Billing & Subscription", admin: true, marketing: false, manager: false },
-  { feature: "Cloud Gaming Management", admin: true, marketing: false, manager: false },
-];
-
 const AdminGuide = () => {
   const [search, setSearch] = useState("");
   const [showTop, setShowTop] = useState(false);
@@ -780,10 +733,6 @@ const AdminGuide = () => {
   }, []);
 
   const handlePrint = () => {
-    const permRows = permissionRows
-      .map((r) => `<tr><td>${r.feature}</td><td style="text-align:center">${r.admin ? "✅" : "—"}</td><td style="text-align:center">${r.marketing ? "✅" : "—"}</td><td style="text-align:center">${r.manager ? "✅" : "—"}</td></tr>`)
-      .join("");
-
     const sectionBlocks = sectionData
       .map((s) => {
         const items = s.bullets.map((b) => `<li>${b}</li>`).join("");
