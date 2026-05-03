@@ -225,9 +225,54 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tip: Just do your normal workflows — the notification system handles player communication automatically.",
     ],
   },
-];
-
-const ModeratorGuide = () => {
+  {
+    id: "challenge-unenrollment-lock",
+    icon: Shield,
+    title: "Challenge Unenrollment Lock",
+    bullets: [
+      "Hard Rule — Once a player has submitted evidence or had their enrollment marked Completed, the Unenroll action is permanently blocked for both the player and moderators.",
+      "Why — Protects the audit trail. Submitted/approved work cannot be silently removed; this preserves point payouts, FGN Academy syncs, and leaderboard integrity.",
+      "What's Still Allowed — You can still Reject the enrollment to send specific evidence back for revision; rejection does not delete the enrollment.",
+      "Recovery — If a player asks to be removed after submitting, escalate to an Admin. Admins can intervene at the database level if a legitimate cleanup is needed.",
+      "UI Cue — The Unenroll button is hidden (or disabled with a tooltip) on enrollments that have any submitted evidence or a 'completed' status. No action you take in the moderator panel will re-enable it.",
+    ],
+  },
+  {
+    id: "ai-quest-narratives",
+    icon: BookOpen,
+    title: "AI Quest Narratives",
+    bullets: [
+      "Where — In the Quests editor (Moderator → Challenges & Quests → Quests tab), the story_intro and story_outro fields each have a Sparkles (✨) button.",
+      "What It Does — Generates rich, on-theme narrative text for the quest opener and closer using the platform's AI gateway. No API key required from you.",
+      "RAG Boost — If the quest's linked game has a Notebook Connection configured (Admin → Notebooks), the generator pulls game-specific lore and mechanics for higher-quality output.",
+      "Iterating — Re-click Sparkles to generate alternates. Edit the result freely — what you save is what players see.",
+      "Chains — The same Sparkles affordance is available on quest chain story_intro and story_outro fields so an entire chain can have a coherent arc.",
+      "Tip: Write a short prompt-style hint in the field first (e.g., 'cyberpunk heist tone'), then click Sparkles — it uses your seed text as steering.",
+    ],
+  },
+  {
+    id: "post-publication-edits",
+    icon: Settings,
+    title: "Post-Publication Editing",
+    bullets: [
+      "Live Edits — You can edit a published challenge or quest at any time from its detail page or the management list. Changes apply immediately to all enrolled players.",
+      "Task Edits — Add, rename, reorder, or remove tasks on existing challenges and quests via the Edit dialog.",
+      "Impact on In-Flight Enrollments — Existing approved evidence stays attached to its task. If you remove a task, prior approved evidence for it is preserved in the audit log but no longer counted toward completion.",
+      "Player Notification — Players are not automatically notified of mid-flight edits. For material changes (point value, task list), post in the relevant Discord channel so participants aren't surprised.",
+      "Safe Edits — Cosmetic changes (description, cover image, tags) are always safe. Structural changes (task list, points-per-task) should be made before significant evidence has been submitted when possible.",
+    ],
+  },
+  {
+    id: "competition-oversight",
+    icon: LayoutDashboard,
+    title: "Unified Competition Oversight",
+    bullets: [
+      "One Dashboard — The Moderator dashboard surfaces tournaments, challenges, and quests through unified action buttons so you can triage everything from one place.",
+      "Bidirectional Copying — Use the duplicate action on any tournament, challenge, or quest to spin up a near-identical copy with '(Copy)' appended to the title. Edit the copy in place — the original is untouched.",
+      "Bracket Resets — On any in-progress tournament with no completed matches, the Reset Bracket action returns the event to Open status for re-seeding.",
+      "Tip: Duplicate is the fastest way to run a recurring event with the same task list, prize structure, and rules.",
+    ],
+  },
   const [search, setSearch] = useState("");
   const [showTop, setShowTop] = useState(false);
 
