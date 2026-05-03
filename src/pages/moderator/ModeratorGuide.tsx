@@ -22,6 +22,8 @@ import {
   Users,
   LayoutDashboard,
   Award,
+  BookOpen,
+  Settings,
 } from "lucide-react";
 import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
@@ -273,6 +275,9 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tip: Duplicate is the fastest way to run a recurring event with the same task list, prize structure, and rules.",
     ],
   },
+];
+
+const ModeratorGuide = () => {
   const [search, setSearch] = useState("");
   const [showTop, setShowTop] = useState(false);
 
