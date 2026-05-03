@@ -247,7 +247,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Quest Notifications — Opt in to 'New Quests' notifications from your Profile Settings to be alerted when a quest is published.",
       "Approval Notification — When a moderator approves your challenge submission, you'll receive an instant notification confirming approval and the points you earned.",
       "FGN Academy Sync — When you complete a challenge, your progress is automatically synced to FGN Academy's Skill Passport. Your score, task-level progress, and skill tags are sent so you can earn credentials and XP on the academy side.",
-      "Academy Registration Prompt — If you haven't signed up on FGN Academy yet, you'll see a 'Join FGN Academy' banner on your completed challenge page prompting you to register with the same email address to track your skills.",
+      "Join FGN Academy Prompt — If you haven't registered on FGN Academy yet, you'll see a 'Join FGN Academy' banner on your completed challenge, quest, or tournament page with a one-click sign-up link. Use the same email address you use here on FGN. After you register, your past completions and results are auto-claimed onto your Skill Passport within a few minutes, and future approvals sync automatically — no extra steps.",
       "Tip: Challenges and quests with clear task checklists and evidence uploads are the fastest way to earn season points!",
       "📖 Read the full Challenge Guide → /guide/challenges",
       "📖 Read the full Quest Guide → /guide/quests",
