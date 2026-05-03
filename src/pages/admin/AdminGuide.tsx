@@ -722,53 +722,6 @@ const sections = sectionData.map((s) => ({
   ),
 }));
 
-const permissionRows = [
-  { feature: "Admin Dashboard", admin: true, marketing: false, manager: false },
-  { feature: "User Management", admin: true, marketing: false, manager: false },
-  { feature: "Access Requests", admin: true, marketing: false, manager: false },
-  { feature: "Tournament Management", admin: true, marketing: false, manager: false },
-  { feature: "Badge / Achievement System", admin: true, marketing: false, manager: true },
-  { feature: "Games Management", admin: true, marketing: false, manager: false },
-  { feature: "Season Management", admin: true, marketing: false, manager: false },
-  { feature: "Media Library", admin: true, marketing: false, manager: false },
-  { feature: "Asset Editor", admin: true, marketing: true, manager: false },
-  { feature: "AI Image Config", admin: true, marketing: false, manager: false },
-  { feature: "Page Appearance & Backgrounds", admin: true, marketing: false, manager: false },
-  { feature: "Bypass Codes", admin: true, marketing: false, manager: false },
-  { feature: "App Settings", admin: true, marketing: false, manager: false },
-  { feature: "AI Coach Configuration", admin: true, marketing: false, manager: false },
-  { feature: "Notebook Connections", admin: true, marketing: false, manager: false },
-  { feature: "Legacy User Import", admin: true, marketing: false, manager: false },
-  { feature: "Deep Stats & Skill Insights", admin: true, marketing: false, manager: true },
-  { feature: "Community Moderation", admin: true, marketing: false, manager: false },
-  { feature: "Ecosystem Navigation", admin: true, marketing: false, manager: false },
-  { feature: "Marketing Campaigns", admin: true, marketing: true, manager: false },
-  { feature: "Marketing → Web Pages", admin: true, marketing: true, manager: false },
-  { feature: "Marketing → Calendar Embeds", admin: true, marketing: true, manager: false },
-  { feature: "Social Accounts (Connect/Manage)", admin: true, marketing: true, manager: false },
-  { feature: "Scheduled Posts (View/Manage)", admin: true, marketing: true, manager: false },
-  { feature: "Legal Pages (view)", admin: true, marketing: true, manager: true },
-  { feature: "Challenges & Quests", admin: true, marketing: false, manager: true },
-  { feature: "Quest Chains (Manage)", admin: true, marketing: false, manager: true },
-  { feature: "Prize Shop (Manage Prizes)", admin: true, marketing: false, manager: true },
-  { feature: "Prize Redemptions (Review)", admin: true, marketing: false, manager: true },
-  { feature: "Notification System (Auto)", admin: true, marketing: false, manager: true },
-  { feature: "Ranked Ladders (Manage)", admin: true, marketing: false, manager: true },
-  { feature: "Tenant Dashboard", admin: true, marketing: false, manager: true },
-  { feature: "Tenant Leads", admin: true, marketing: false, manager: true },
-  { feature: "Tenant Events", admin: true, marketing: true, manager: true },
-  { feature: "Tenant Marketing Assets", admin: true, marketing: true, manager: true },
-  { feature: "Tenant Codes", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Codes (read-only)", admin: false, marketing: true, manager: false },
-  { feature: "Tenant Web Pages", admin: true, marketing: true, manager: false },
-  { feature: "Tenant ZIP Codes", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Subscribers", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Integrations", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Team Management", admin: true, marketing: false, manager: false },
-  { feature: "Tenant Billing & Subscription", admin: true, marketing: false, manager: false },
-  { feature: "Cloud Gaming Management", admin: true, marketing: false, manager: false },
-];
-
 const AdminGuide = () => {
   const [search, setSearch] = useState("");
   const [showTop, setShowTop] = useState(false);
@@ -780,10 +733,6 @@ const AdminGuide = () => {
   }, []);
 
   const handlePrint = () => {
-    const permRows = permissionRows
-      .map((r) => `<tr><td>${r.feature}</td><td style="text-align:center">${r.admin ? "✅" : "—"}</td><td style="text-align:center">${r.marketing ? "✅" : "—"}</td><td style="text-align:center">${r.manager ? "✅" : "—"}</td></tr>`)
-      .join("");
-
     const sectionBlocks = sectionData
       .map((s) => {
         const items = s.bullets.map((b) => `<li>${b}</li>`).join("");
@@ -803,8 +752,6 @@ const AdminGuide = () => {
 </style></head><body>
 <h1>Admin &amp; Manager Guide</h1>
 <p style="color:#888;font-size:12px">Reference documentation for platform administrators and tenant managers.</p>
-<h2>Quick-Reference Permissions</h2>
-<table><thead><tr><th>Feature</th><th style="text-align:center">Admin</th><th style="text-align:center">Marketing</th><th style="text-align:center">Manager</th></tr></thead><tbody>${permRows}</tbody></table>
 ${sectionBlocks}
 </body></html>`;
 
@@ -819,12 +766,6 @@ ${sectionBlocks}
     if (!search.trim()) return sections;
     const q = search.toLowerCase();
     return sections.filter((s) => s.title.toLowerCase().includes(q));
-  }, [search]);
-
-  const filteredPermissions = useMemo(() => {
-    if (!search.trim()) return permissionRows;
-    const q = search.toLowerCase();
-    return permissionRows.filter((r) => r.feature.toLowerCase().includes(q));
   }, [search]);
 
   return (
@@ -879,34 +820,6 @@ ${sectionBlocks}
         </nav>
       )}
 
-      {filteredPermissions.length > 0 && (
-        <div className="border border-border rounded-lg overflow-hidden bg-card/50">
-          <div className="px-4 py-3 border-b border-border">
-            <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary">Quick-Reference Permissions</h2>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted-foreground">
-                <th className="text-left px-4 py-2 font-heading font-medium">Feature</th>
-                <th className="text-center px-4 py-2 font-heading font-medium">Admin</th>
-                <th className="text-center px-4 py-2 font-heading font-medium">Marketing</th>
-                <th className="text-center px-4 py-2 font-heading font-medium">Manager</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPermissions.map((row) => (
-                <tr key={row.feature} className="border-b border-border/50 last:border-0">
-                  <td className="px-4 py-2">{row.feature}</td>
-                  <td className="text-center px-4 py-2">{row.admin ? "✅" : "—"}</td>
-                  <td className="text-center px-4 py-2">{row.marketing ? "✅" : "—"}</td>
-                  <td className="text-center px-4 py-2">{row.manager ? "✅" : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
       {filteredSections.length > 0 ? (
         <Accordion type="multiple" defaultValue={search.trim() ? filteredSections.map(s => s.id) : []} key={search} className="space-y-2">
           {filteredSections.map((section) => (
@@ -930,9 +843,9 @@ ${sectionBlocks}
             </AccordionItem>
           ))}
         </Accordion>
-      ) : filteredPermissions.length === 0 ? (
+      ) : (
         <p className="text-muted-foreground text-sm text-center py-8">No results found for &ldquo;{search}&rdquo;</p>
-      ) : null}
+      )}
 
       {showTop && (
         <Button

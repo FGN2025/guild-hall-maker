@@ -301,6 +301,43 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tip: Notifications appear in-app via the bell icon. Key events may also trigger email alerts based on your notification preferences.",
     ],
   },
+  {
+    id: "academy-opt-in",
+    icon: Plug,
+    title: "FGN Academy Opt-In Toggle",
+    bullets: [
+      "Where — Subscribers → Integrations tab. Look for the FGN Academy card.",
+      "What It Does — When enabled, every challenge or quest your players complete is automatically pushed to the FGN Academy Skill Passport with score, task progress, and skill tags. Players can earn external credentials and XP on the academy side.",
+      "Per-Tenant — The toggle is scoped to your tenant only. Other tenants on the platform decide independently.",
+      "Player Sync Status — If a player isn't yet registered on FGN Academy, the sync logs that fact and prompts the player to sign up using the same email address. Already-registered players sync silently.",
+      "Retry — Failed syncs can be re-triggered from the moderator approval flow ('Retry Academy Sync' button) or by re-approving the enrollment.",
+      "Next-Step Notifications — When a sync succeeds, the academy may automatically recommend follow-on training based on the player's progress. These post-completion notifications are part of the Academy integration — no extra config needed.",
+      "Off by Default — New tenants start with the toggle disabled. Turn it on once you're ready for completions to flow downstream.",
+      "Admin Only — Only Tenant Admins can flip this toggle. Managers and Marketing users can see the integration status but cannot change it.",
+    ],
+  },
+  {
+    id: "events-vs-tournaments",
+    icon: Calendar,
+    title: "Events vs Tournaments — Naming",
+    bullets: [
+      "Strict Nomenclature — In the Tenant Portal we always say 'Events'. The platform-wide term 'Tournaments' is reserved for FGN-organized competitions managed by platform Admins/Mods.",
+      "Functional Parity — Tenant Events use the same engine as Tournaments (brackets, registration, points, prizes), so any tournament-style operation you've seen elsewhere works the same here.",
+      "Public Pages — Your events live at /events/your-tenant-slug and inherit your tenant logo and brand colors automatically.",
+      "Tip: When writing copy for your audience, keep using 'Event' to avoid confusion with platform-wide tournaments.",
+    ],
+  },
+  {
+    id: "academy-credentialing",
+    icon: FileText,
+    title: "Academy Credentialing & Career Paths",
+    bullets: [
+      "Skill Passport — Once Academy sync is on, every approved completion contributes to your players' Skill Passport — a portable credential record that follows them across FGN Academy.",
+      "Career Path Challenges — Look for CDL (commercial driver) and Fiber Tech challenges in the platform catalog. These are aligned to TIRAP (Transportation Industry Registered Apprenticeship Program) and similar workforce frameworks.",
+      "Why It Matters For Tenants — Broadband providers running Fiber Tech career challenges can document hands-on training automatically; the Skill Passport becomes a recruiting and retention asset.",
+      "Visibility — Your tenant doesn't manage the academy curriculum directly, but enabling the integration means your players' work is recognized in that ecosystem.",
+    ],
+  },
 ];
 
 const TenantGuide = () => {

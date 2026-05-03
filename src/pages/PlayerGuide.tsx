@@ -413,6 +413,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Preferences — Customize which notifications you receive from Profile Settings (/profile). Toggle In-App and Email independently for each of the 8 event types, including Points Adjustments.",
       "Defaults — All notification channels are enabled by default. Changes take effect immediately.",
       "Tip: Check your notifications regularly to stay on top of challenge deadlines, points awards, and prize approvals!",
+    ],
+  },
   {
     id: "discord-gate",
     icon: Lock,
