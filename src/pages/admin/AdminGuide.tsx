@@ -854,6 +854,8 @@ ${sectionBlocks}
         />
       </div>
 
+      <QuickReferenceCard audience="admin" intro="Role × capability matrix, achievement tiers, quest XP ranks, and tournament/challenge status flows." />
+
       {filteredSections.length > 0 && (
         <nav className="border border-border rounded-lg bg-card/50 px-4 py-3">
           <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary mb-2">Table of Contents</h2>
