@@ -11,7 +11,11 @@ const initialTheme = detectBrandMode() === "enterprise" ? "light" : "dark";
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
-    <ThemeProvider attribute="class" defaultTheme={initialTheme}>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme={initialTheme}
+      enableSystem={false}
+    >
       <App />
     </ThemeProvider>
   </ErrorBoundary>
