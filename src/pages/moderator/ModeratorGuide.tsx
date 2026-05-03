@@ -302,6 +302,8 @@ ${sectionBlocks}
         />
       </div>
 
+      <QuickReferenceCard audience="moderator" intro="What moderators can do, achievement tiers, quest XP ranks, and the challenge/quest enrollment flow." />
+
       {filteredSections.length > 0 && (
         <nav className="border border-border rounded-lg bg-card/50 px-4 py-3">
           <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary mb-2">Table of Contents</h2>

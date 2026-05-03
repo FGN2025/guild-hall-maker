@@ -234,6 +234,8 @@ const TournamentGuide = () => {
           <Input placeholder="Search topics…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
 
+        <QuickReferenceCard audience="tournament" intro="The tournament status flow and achievement tiers you can earn." />
+
         {filteredSections.length > 0 && (
           <nav className="glass-panel rounded-lg px-4 py-3 border border-border/60">
             <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary mb-2">Table of Contents</h2>
