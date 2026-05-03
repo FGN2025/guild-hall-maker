@@ -548,6 +548,11 @@ ${sectionBlocks}
         />
       </div>
 
+      <QuickReferenceCard
+        audience="player"
+        intro="What you can do on FGN at a glance — plus the achievement tiers and quest XP ranks you can earn."
+      />
+
       {filteredSections.length > 0 && (
         <nav className="glass-panel rounded-lg px-4 py-3 border border-border/60">
           <h2 className="font-heading font-semibold text-sm uppercase tracking-widest text-primary mb-2">Table of Contents</h2>
