@@ -39,6 +39,7 @@ import {
   Server,
 } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
+import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
