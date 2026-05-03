@@ -752,8 +752,6 @@ const AdminGuide = () => {
 </style></head><body>
 <h1>Admin &amp; Manager Guide</h1>
 <p style="color:#888;font-size:12px">Reference documentation for platform administrators and tenant managers.</p>
-<h2>Quick-Reference Permissions</h2>
-<table><thead><tr><th>Feature</th><th style="text-align:center">Admin</th><th style="text-align:center">Marketing</th><th style="text-align:center">Manager</th></tr></thead><tbody>${permRows}</tbody></table>
 ${sectionBlocks}
 </body></html>`;
 
@@ -768,12 +766,6 @@ ${sectionBlocks}
     if (!search.trim()) return sections;
     const q = search.toLowerCase();
     return sections.filter((s) => s.title.toLowerCase().includes(q));
-  }, [search]);
-
-  const filteredPermissions = useMemo(() => {
-    if (!search.trim()) return permissionRows;
-    const q = search.toLowerCase();
-    return permissionRows.filter((r) => r.feature.toLowerCase().includes(q));
   }, [search]);
 
   return (
