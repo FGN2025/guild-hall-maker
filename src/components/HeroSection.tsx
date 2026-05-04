@@ -75,7 +75,10 @@ const HeroSection = () => {
             </Link>
           </div>
 
-          <Link to="/challenges" className="inline-block mt-4 hover:opacity-80 transition-opacity">
+          <p className="mt-6 font-bold text-foreground text-lg md:text-xl">
+            Thank You for Attending our Skills Challenges During:
+          </p>
+          <Link to="/challenges" className="inline-block mt-2 hover:opacity-80 transition-opacity">
             <img
               src={apprenticeshipLogo}
               alt="National Apprenticeship Week — April 26 – May 2, 2026"
