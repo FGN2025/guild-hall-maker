@@ -76,7 +76,7 @@ const HeroSection = () => {
           </div>
 
           <p className="mt-6 font-bold text-foreground text-lg md:text-xl">
-            Thank You for Attending our Skills Challenges During:
+            Thank You for Competing in our Skills Challenges During:
           </p>
           <Link to="/challenges" className="inline-block mt-2 hover:opacity-80 transition-opacity">
             <img
