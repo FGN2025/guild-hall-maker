@@ -208,7 +208,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tournament Starting — When you change a tournament to 'In Progress', all registered players are notified.",
       "Match Completed — Both players are notified when you record a match result.",
       "Challenge Published — All players are notified when you create a new active challenge.",
-      "Redemption Updates — Players are notified when you approve, fulfill, or deny a redemption.",
+      "Redemption Updates — Players are notified by the system when a redemption is approved, fulfilled, or denied (handled by Admins).",
       "Challenge Approved — When a moderator approves a challenge enrollment, the player receives a notification with the challenge name and points awarded.",
       "Points Adjusted — When you award or deduct points from the Points page, the player receives an automatic in-app notification and email with the amount and reason.",
       "Achievement Earned — Players are notified when badges are awarded.",
