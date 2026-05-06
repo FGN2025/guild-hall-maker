@@ -46,7 +46,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Moderator Dashboard",
     bullets: [
       "The Moderator Dashboard provides a quick overview of platform activity relevant to your role.",
-      "Quick Stats — See counts of active tournaments, pending redemptions, open challenges, and active ladders at a glance.",
+      "Quick Stats — See counts of active tournaments, open challenges, and active ladders at a glance.",
       "Recent Activity — Review recently completed matches and newly registered players.",
       "Quick Links — Jump directly to any moderator function from the dashboard.",
     ],
