@@ -97,6 +97,7 @@ const ModeratorRedemptions = () => {
         description: values.description || null,
         points_cost: parseInt(values.points_cost) || 0,
         quantity_available: values.quantity_available ? parseInt(values.quantity_available) : null,
+        max_per_user_per_month: values.max_per_user_per_month ? parseInt(values.max_per_user_per_month) : null,
         image_url,
         created_by: user.id,
       });
