@@ -47,7 +47,12 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
     queryKey: ["admin-users", search, tenantId],
     queryFn: async () => {
       // Fetch all profiles
-      let query = supabase.from("profiles").select("*").order("created_at", { ascending: false });
+      let query = supabase
+        .from("profiles")
+        .select(
+          "id, user_id, display_name, gamer_tag, discord_id, discord_username, avatar_url, created_at"
+        )
+        .order("created_at", { ascending: false });
       if (search) {
         query = query.or(`display_name.ilike.%${search}%,gamer_tag.ilike.%${search}%`);
       }
