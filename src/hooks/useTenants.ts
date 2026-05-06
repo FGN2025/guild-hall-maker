@@ -205,7 +205,12 @@ export function useTenantAdmins(tenantId: string | null) {
       queryClient.invalidateQueries({ queryKey: ["tenant-admins", tenantId] });
       toast.success("Admin added.");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: any) => {
+      const msg = /registered as a player/i.test(err?.message ?? "")
+        ? "This user is registered as a player and cannot be added to the team."
+        : err.message;
+      toast.error(msg);
+    },
   });
 
   const removeAdmin = useMutation({
