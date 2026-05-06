@@ -124,6 +124,8 @@ const Navbar = () => {
               <Link
                 key={item.to}
                 to={item.to}
+                onMouseEnter={() => prefetchRoute(item.to)}
+                onFocus={() => prefetchRoute(item.to)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-heading font-medium tracking-wide transition-all ${
                   active
                     ? "text-primary bg-primary/10 neon-border"
