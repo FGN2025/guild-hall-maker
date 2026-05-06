@@ -432,6 +432,7 @@ const ModeratorRedemptions = () => {
           description: editPrize.description ?? "",
           points_cost: String(editPrize.points_cost),
           quantity_available: editPrize.quantity_available != null ? String(editPrize.quantity_available) : "",
+          max_per_user_per_month: editPrize.max_per_user_per_month != null ? String(editPrize.max_per_user_per_month) : "",
           image_url: editPrize.image_url,
         } : undefined}
         onSubmit={(values, imageFile) => updatePrizeMutation.mutate({ id: editPrize.id, values, imageFile })}
