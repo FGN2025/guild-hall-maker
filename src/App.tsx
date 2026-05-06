@@ -61,6 +61,7 @@ const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminTournaments = lazy(() => import("./pages/admin/AdminTournaments"));
 const AdminChallenges = lazy(() => import("./pages/admin/AdminChallenges"));
+const AdminRedemptions = lazy(() => import("./pages/admin/AdminRedemptions"));
 const AdminBypassCodes = lazy(() => import("./pages/admin/AdminBypassCodes"));
 const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
