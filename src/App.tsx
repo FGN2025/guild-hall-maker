@@ -95,7 +95,7 @@ const ModeratorMatches = lazy(() => import("./pages/moderator/ModeratorMatches")
 const ModeratorPoints = lazy(() => import("./pages/moderator/ModeratorPoints"));
 const ModeratorChallenges = lazy(() => import("./pages/moderator/ModeratorChallenges"));
 const ModeratorLadders = lazy(() => import("./pages/moderator/ModeratorLadders"));
-const ModeratorRedemptions = lazy(() => import("./pages/moderator/ModeratorRedemptions"));
+
 const ModeratorAchievements = lazy(() => import("./pages/moderator/ModeratorAchievements"));
 const ModeratorGuide = lazy(() => import("./pages/moderator/ModeratorGuide"));
 const ModeratorCDLGenerate = lazy(() => import("./pages/moderator/ModeratorCDLGenerate"));
