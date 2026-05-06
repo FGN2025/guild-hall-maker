@@ -13,6 +13,7 @@ export interface PrizeFormValues {
   description: string;
   points_cost: string;
   quantity_available: string;
+  max_per_user_per_month: string;
 }
 
 interface PrizeFormDialogProps {
