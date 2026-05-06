@@ -74,6 +74,15 @@ const PrizeShop = () => {
     },
   });
 
+  // Count current-month redemptions per prize (pending/approved/fulfilled count toward cap)
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const monthlyCounts = new Map<string, number>();
+  for (const r of myRedemptions as any[]) {
+    if (!["pending", "approved", "fulfilled"].includes(r.status)) continue;
+    if (new Date(r.created_at) < monthStart) continue;
+    monthlyCounts.set(r.prize_id, (monthlyCounts.get(r.prize_id) ?? 0) + 1);
+  }
+
   const redeemMutation = useMutation({
     mutationFn: async (prize: any) => {
       if (!user) throw new Error("Not authenticated");
