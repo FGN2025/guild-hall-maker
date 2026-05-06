@@ -74,6 +74,15 @@ const PrizeShop = () => {
     },
   });
 
+  // Count current-month redemptions per prize (pending/approved/fulfilled count toward cap)
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const monthlyCounts = new Map<string, number>();
+  for (const r of myRedemptions as any[]) {
+    if (!["pending", "approved", "fulfilled"].includes(r.status)) continue;
+    if (new Date(r.created_at) < monthStart) continue;
+    monthlyCounts.set(r.prize_id, (monthlyCounts.get(r.prize_id) ?? 0) + 1);
+  }
+
   const redeemMutation = useMutation({
     mutationFn: async (prize: any) => {
       if (!user) throw new Error("Not authenticated");
@@ -163,8 +172,12 @@ const PrizeShop = () => {
                 {prizes.map((prize: any) => {
                   const canAfford = availablePoints >= prize.points_cost;
                   const outOfStock = prize.quantity_available !== null && prize.quantity_available <= 0;
+                  const monthCap: number | null = prize.max_per_user_per_month ?? null;
+                  const usedThisMonth = monthlyCounts.get(prize.id) ?? 0;
+                  const limitReached = monthCap !== null && usedThisMonth >= monthCap;
+                  const disabled = !canAfford || outOfStock || limitReached;
                   return (
-                    <Card key={prize.id} className={`transition-colors glow-card ${canAfford && !outOfStock ? "hover:border-primary/40" : "opacity-60"}`}>
+                    <Card key={prize.id} className={`transition-colors glow-card ${!disabled ? "hover:border-primary/40" : "opacity-60"}`}>
                       <CardContent className="p-5 flex flex-col h-full">
                         {prize.image_url && (
                           <div className="aspect-video rounded-md overflow-hidden mb-4 bg-muted">
@@ -174,6 +187,11 @@ const PrizeShop = () => {
                         <h3 className="font-display font-semibold text-foreground text-lg mb-1">{prize.name}</h3>
                         {prize.description && (
                           <p className="text-sm text-muted-foreground font-body mb-4 flex-1">{prize.description}</p>
+                        )}
+                        {monthCap !== null && (
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Limit: {usedThisMonth} / {monthCap} this month
+                          </p>
                         )}
                         <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
                           <div className="flex items-center gap-2">
@@ -188,10 +206,10 @@ const PrizeShop = () => {
                           </div>
                           <Button
                             size="sm"
-                            disabled={!canAfford || outOfStock}
+                            disabled={disabled}
                             onClick={() => setConfirmPrize(prize)}
                           >
-                            {outOfStock ? "Sold Out" : canAfford ? "Redeem" : "Not Enough"}
+                            {outOfStock ? "Sold Out" : limitReached ? "Monthly Limit" : canAfford ? "Redeem" : "Not Enough"}
                           </Button>
                         </div>
                       </CardContent>

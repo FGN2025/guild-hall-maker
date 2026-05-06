@@ -13,6 +13,7 @@ export interface PrizeFormValues {
   description: string;
   points_cost: string;
   quantity_available: string;
+  max_per_user_per_month: string;
 }
 
 interface PrizeFormDialogProps {
@@ -24,7 +25,7 @@ interface PrizeFormDialogProps {
   isPending: boolean;
 }
 
-const empty: PrizeFormValues = { name: "", description: "", points_cost: "", quantity_available: "" };
+const empty: PrizeFormValues = { name: "", description: "", points_cost: "", quantity_available: "", max_per_user_per_month: "" };
 
 const PrizeFormDialog = ({ open, onOpenChange, title, initial, onSubmit, isPending }: PrizeFormDialogProps) => {
   const { getPreset } = useImageLimits();
@@ -119,6 +120,17 @@ const PrizeFormDialog = ({ open, onOpenChange, title, initial, onSubmit, isPendi
               <Label>Quantity (blank = unlimited)</Label>
               <Input type="number" min={0} value={form.quantity_available} onChange={(e) => setForm({ ...form, quantity_available: e.target.value })} />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Max per user / month (blank = unlimited)</Label>
+            <Input
+              type="number"
+              min={1}
+              value={form.max_per_user_per_month}
+              onChange={(e) => setForm({ ...form, max_per_user_per_month: e.target.value })}
+              placeholder="e.g. 1"
+            />
+            <p className="text-xs text-muted-foreground">Caps how many of this prize a single player can redeem in the current calendar month. Pending requests count toward the limit.</p>
           </div>
           <Button
             onClick={() => onSubmit(form, imageFile)}

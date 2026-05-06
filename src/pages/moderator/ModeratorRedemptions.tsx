@@ -97,6 +97,7 @@ const ModeratorRedemptions = () => {
         description: values.description || null,
         points_cost: parseInt(values.points_cost) || 0,
         quantity_available: values.quantity_available ? parseInt(values.quantity_available) : null,
+        max_per_user_per_month: values.max_per_user_per_month ? parseInt(values.max_per_user_per_month) : null,
         image_url,
         created_by: user.id,
       });
@@ -119,6 +120,7 @@ const ModeratorRedemptions = () => {
         description: values.description || null,
         points_cost: parseInt(values.points_cost) || 0,
         quantity_available: values.quantity_available ? parseInt(values.quantity_available) : null,
+        max_per_user_per_month: values.max_per_user_per_month ? parseInt(values.max_per_user_per_month) : null,
       };
       if (image_url !== undefined) payload.image_url = image_url;
       const { error } = await supabase.from("prizes").update(payload).eq("id", id);
@@ -432,6 +434,7 @@ const ModeratorRedemptions = () => {
           description: editPrize.description ?? "",
           points_cost: String(editPrize.points_cost),
           quantity_available: editPrize.quantity_available != null ? String(editPrize.quantity_available) : "",
+          max_per_user_per_month: editPrize.max_per_user_per_month != null ? String(editPrize.max_per_user_per_month) : "",
           image_url: editPrize.image_url,
         } : undefined}
         onSubmit={(values, imageFile) => updatePrizeMutation.mutate({ id: editPrize.id, values, imageFile })}

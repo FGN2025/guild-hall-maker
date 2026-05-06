@@ -2059,6 +2059,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          max_per_user_per_month: number | null
           name: string
           points_cost: number
           quantity_available: number | null
@@ -2074,6 +2075,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          max_per_user_per_month?: number | null
           name: string
           points_cost?: number
           quantity_available?: number | null
@@ -2089,6 +2091,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          max_per_user_per_month?: number | null
           name?: string
           points_cost?: number
           quantity_available?: number | null
