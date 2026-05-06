@@ -120,6 +120,7 @@ const ModeratorRedemptions = () => {
         description: values.description || null,
         points_cost: parseInt(values.points_cost) || 0,
         quantity_available: values.quantity_available ? parseInt(values.quantity_available) : null,
+        max_per_user_per_month: values.max_per_user_per_month ? parseInt(values.max_per_user_per_month) : null,
       };
       if (image_url !== undefined) payload.image_url = image_url;
       const { error } = await supabase.from("prizes").update(payload).eq("id", id);
