@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDialog";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
+import PlacementValidatorPanel from "@/components/tournaments/PlacementValidatorPanel";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
