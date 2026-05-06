@@ -10,20 +10,22 @@ import { ArrowLeft, Calendar, Users, Trophy, MapPin, Clock } from "lucide-react"
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const TenantEventDetail = () => {
   usePageTitle("Event Detail");
   const { tenantSlug, eventId } = useParams<{ tenantSlug: string; eventId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const { data: tenant, isLoading: tl } = usePublicTenantBySlug(tenantSlug);
   const { data: event, isLoading: el } = usePublicTenantEvent(eventId);
   const { data: assets } = usePublicEventAssets(eventId);
   const [registering, setRegistering] = useState(false);
 
+  const myRegKey = ["my-event-reg", eventId, user?.id];
   const { data: myReg } = useQuery({
-    queryKey: ["my-event-reg", eventId, user?.id],
+    queryKey: myRegKey,
     enabled: !!eventId && !!user,
     queryFn: async () => {
       const { data } = await supabase
@@ -44,12 +46,22 @@ const TenantEventDetail = () => {
     setRegistering(true);
     const { error } = await supabase
       .from("tenant_event_registrations" as any)
-      .insert({ event_id: eventId, user_id: user.id } as any);
+      .upsert(
+        { event_id: eventId, user_id: user.id } as any,
+        { onConflict: "event_id,user_id", ignoreDuplicates: true } as any
+      );
     setRegistering(false);
     if (error) {
-      toast.error(error.message.includes("duplicate") ? "You're already registered!" : error.message);
+      // Treat duplicate as success — they're already registered
+      if (error.message?.toLowerCase().includes("duplicate")) {
+        toast.success("You're already registered!");
+        await qc.invalidateQueries({ queryKey: myRegKey });
+      } else {
+        toast.error(error.message);
+      }
     } else {
       toast.success("Registered successfully!");
+      await qc.invalidateQueries({ queryKey: myRegKey });
     }
   };
 
