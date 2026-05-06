@@ -273,6 +273,25 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         awardSeasonPoints(winnerId, loserId, participationPts, participationPts, t?.game);
       }
 
+      // If this was the FINAL match of a single-elimination bracket, auto-award placements
+      if (winnerId && tournamentId) {
+        const allMatches = matchesQuery.data ?? [];
+        const maxRound = Math.max(...allMatches.map((m) => m.round));
+        const t = tournamentQuery.data;
+        const isSingleElim = (t?.format ?? "").toLowerCase().includes("single");
+        if (match.round === maxRound && isSingleElim) {
+          try {
+            const { error: pErr } = await supabase.functions.invoke("award-tournament-placements", {
+              body: { tournament_id: tournamentId },
+            });
+            if (pErr) console.error("Placement award failed:", pErr);
+            else toast.success("Placement points awarded (1st / 2nd / 3rd)");
+          } catch (err) {
+            console.error("Placement award error:", err);
+          }
+        }
+      }
+
       // Send score posted email
       if (tournamentId) {
         sendTournamentEmail({ type: "score_posted", tournament_id: tournamentId, match_id: matchId });
