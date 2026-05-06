@@ -96,7 +96,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Season Scope — Points are tied to the currently active season.",
       "Audit Trail — All manual adjustments are logged with the moderator who made them and a timestamp.",
       "Automatic Awards — Tournament placement points are awarded automatically and don't need manual entry.",
-      "Spending — Points are only deducted from 'Points Available' when a moderator approves a prize redemption; pending or denied requests leave the balance unchanged.",
+      "Spending — Points are only deducted from 'Points Available' when an admin approves a prize redemption; pending or denied requests leave the balance unchanged.",
       "Leaderboard Export — Moderators (and Admins) can export Seasonal or All-Time player rankings as CSV or PDF from the Leaderboard page using the export buttons next to the search filter.",
     ],
   },
