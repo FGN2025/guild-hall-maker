@@ -60,11 +60,6 @@ const AppLayout = () => {
       </CoachProvider>
     </TenantBrandingProvider>
   );
-          <ScrollToTopButton />
-        </SidebarProvider>
-      </CoachProvider>
-    </TenantBrandingProvider>
-  );
 };
 
 export default AppLayout;
