@@ -11,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { prefetchRoute } from "@/lib/routePrefetch";
 
 const competeItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
@@ -102,7 +103,12 @@ const Navbar = () => {
                 <DropdownMenuContent align="start">
                   {competeItems.map((item) => (
                     <DropdownMenuItem key={item.to} asChild>
-                      <Link to={item.to} className="flex items-center gap-2 cursor-pointer">
+                      <Link
+                        to={item.to}
+                        onMouseEnter={() => prefetchRoute(item.to)}
+                        onFocus={() => prefetchRoute(item.to)}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
                         <item.icon className="h-4 w-4" />
                         {item.label}
                       </Link>
@@ -118,6 +124,8 @@ const Navbar = () => {
               <Link
                 key={item.to}
                 to={item.to}
+                onMouseEnter={() => prefetchRoute(item.to)}
+                onFocus={() => prefetchRoute(item.to)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-heading font-medium tracking-wide transition-all ${
                   active
                     ? "text-primary bg-primary/10 neon-border"

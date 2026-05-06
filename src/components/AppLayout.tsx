@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
@@ -9,11 +9,28 @@ import TenantBannerSlot from "@/components/branding/TenantBannerSlot";
 
 const CoachFloatingButton = lazy(() => import("@/components/CoachFloatingButton"));
 
+// Mount the Coach widget only after the browser is idle so its
+// markdown + chat dependencies don't compete with first paint.
+const useDeferredMount = (delay = 1500) => {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const ric =
+      (window as any).requestIdleCallback ??
+      ((cb: () => void) => setTimeout(cb, delay));
+    const cic =
+      (window as any).cancelIdleCallback ?? ((id: number) => clearTimeout(id));
+    const id = ric(() => setReady(true), { timeout: delay });
+    return () => cic(id);
+  }, [delay]);
+  return ready;
+};
+
 const HEADERLESS_ROUTES = ["/tournaments", "/dashboard"];
 
 const AppLayout = () => {
   const location = useLocation();
   const hideHeader = HEADERLESS_ROUTES.includes(location.pathname);
+  const coachReady = useDeferredMount(1500);
 
   return (
     <TenantBrandingProvider>
@@ -33,9 +50,11 @@ const AppLayout = () => {
               </main>
             </div>
           </div>
-          <Suspense fallback={null}>
-            <CoachFloatingButton />
-          </Suspense>
+          {coachReady && (
+            <Suspense fallback={null}>
+              <CoachFloatingButton />
+            </Suspense>
+          )}
           <ScrollToTopButton />
         </SidebarProvider>
       </CoachProvider>

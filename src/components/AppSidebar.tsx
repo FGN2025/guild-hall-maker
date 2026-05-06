@@ -45,6 +45,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
+import { prefetchRoute } from "@/lib/routePrefetch";
 
 const mainNav = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
@@ -112,6 +113,8 @@ export function AppSidebar() {
                     <NavLink
                       to={item.to}
                       end
+                      onMouseEnter={() => prefetchRoute(item.to)}
+                      onFocus={() => prefetchRoute(item.to)}
                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >

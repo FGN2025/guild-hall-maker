@@ -19,6 +19,11 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    // Pre-bundle these in dev so the browser doesn't fetch hundreds of icon
+    // modules individually on first load. Drastically improves dev FCP.
+    include: ["lucide-react", "react-router-dom", "@tanstack/react-query"],
+  },
   build: {
     rollupOptions: {
       output: {
