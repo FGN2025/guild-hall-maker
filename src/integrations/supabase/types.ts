@@ -3771,6 +3771,44 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_placements: {
+        Row: {
+          awarded_at: string
+          awarded_by: string | null
+          id: string
+          place: number
+          points_awarded: number
+          tournament_id: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          awarded_by?: string | null
+          id?: string
+          place: number
+          points_awarded?: number
+          tournament_id: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          awarded_by?: string | null
+          id?: string
+          place?: number
+          points_awarded?: number
+          tournament_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_placements_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_registrations: {
         Row: {
           id: string
