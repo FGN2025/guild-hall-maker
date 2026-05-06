@@ -25,7 +25,7 @@ interface PrizeFormDialogProps {
   isPending: boolean;
 }
 
-const empty: PrizeFormValues = { name: "", description: "", points_cost: "", quantity_available: "" };
+const empty: PrizeFormValues = { name: "", description: "", points_cost: "", quantity_available: "", max_per_user_per_month: "" };
 
 const PrizeFormDialog = ({ open, onOpenChange, title, initial, onSubmit, isPending }: PrizeFormDialogProps) => {
   const { getPreset } = useImageLimits();
