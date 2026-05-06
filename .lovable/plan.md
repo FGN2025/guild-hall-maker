@@ -1,29 +1,61 @@
-## Context
+# Restrict Players from Tenant Admin Role
 
-The AI Writer outputs Markdown into `games.guide_content`. End users **already see it formatted** — `src/pages/GameDetail.tsx` (line 120) renders it with `ReactMarkdown` inside a styled `prose` container, so headings, bullets, bold, code, etc. all look correct on the player-facing Game Detail page.
+## Problem
+Soccepro64 (a player who registered through Huxley's ZIP signup) was added to `tenant_admins` with role `admin`, granting access to Huxley's tenant dashboard. He has no platform-level role, only this tenant_admins row. The row was added via the Team page (`/tenant/team`) by another Huxley admin clicking "Add" with role=Admin.
 
-The only place Markdown still appears as raw text (`## Heading`, `- bullet`) is inside the **AI Writer preview itself** (`GuideWriterDialog.tsx`), which uses a plain `<Textarea>`. That's why it feels unformatted — admins are looking at the editor, not the rendered output.
+There is no enforcement preventing a registered player (subscriber/lead) from being elevated to tenant_admin. Any tenant admin can mistakenly do this from the Team page.
 
-## What to change
+## Goal
+Players (users who registered as subscribers / have `user_service_interests` or `tenant_subscribers` records, i.e. not staff via invite/provisioning) must never appear in `tenant_admins`.
 
-Add a **Rendered / Markdown toggle** to the preview area in `GuideWriterDialog.tsx` so admins can see exactly how the guide will look to players before clicking Apply.
+## Approach: Database trigger (strongest enforcement)
 
-### UI
+### 1. Define "is a player"
+A user is considered a player if **any** of these are true:
+- A row exists in `user_service_interests` for them, OR
+- A row exists in `tenant_subscribers` linked to their `user_id`
 
-In the preview section (only shown after a generation):
+These are populated only by the ZIP-code signup flow. Staff added via `tenant_invitations` / `provision-tenant` / Platform Admin assignment do not get these rows.
 
-- A small `Tabs` control above the preview with two tabs:
-  - **Rendered** (default) — shows the Markdown formatted using the same `ReactMarkdown` + `prose` styling block that `GameDetail.tsx` uses, so it matches the player view 1:1.
-  - **Markdown** — shows the existing editable `<Textarea>` (so admins can still tweak the source before applying).
-- The "Apply to User Guide" button keeps applying the current Markdown source — editing only happens in the Markdown tab.
+### 2. BEFORE INSERT/UPDATE trigger on `public.tenant_admins`
+Reject the row if the target `user_id` is a player. Exception: Platform admins (`has_role(user_id, 'admin')`) bypass — they can hold any role.
 
-### Files
+```sql
+CREATE OR REPLACE FUNCTION public.prevent_player_tenant_admin()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  -- Platform admins are exempt
+  IF public.has_role(NEW.user_id, 'admin') THEN
+    RETURN NEW;
+  END IF;
 
-- `src/components/games/GuideWriterDialog.tsx` — wrap the preview in `Tabs`, import `ReactMarkdown`, copy the `prose` className from `GameDetail.tsx` so the preview matches the player view exactly.
+  IF EXISTS (SELECT 1 FROM public.user_service_interests WHERE user_id = NEW.user_id)
+     OR EXISTS (SELECT 1 FROM public.tenant_subscribers WHERE user_id = NEW.user_id) THEN
+    RAISE EXCEPTION 'Cannot grant tenant team access to a registered player. The user signed up as a subscriber and must remain a player-only account.'
+      USING ERRCODE = '42501';
+  END IF;
 
-No changes to the edge function, the database, or `AddGameDialog.tsx`. The "User Guide" field on the edit form stays a raw Markdown textarea (it's the editor), and the player-facing render is already formatted.
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_prevent_player_tenant_admin
+BEFORE INSERT OR UPDATE OF user_id, role ON public.tenant_admins
+FOR EACH ROW EXECUTE FUNCTION public.prevent_player_tenant_admin();
+```
+
+### 3. Cleanup existing data
+- Delete soccepro64's row: `tenant_admins` where `user_id='02689eee-0885-43a4-b0c5-5dd217280365'` and `tenant_id='b93a1fc0-...'`.
+- Audit query: list all current `tenant_admins` rows whose `user_id` is also in `user_service_interests`/`tenant_subscribers` and is not a platform admin. Present the list to the user before bulk-removal (separate step, not auto-deleted).
+
+### 4. UI safety net (small)
+On `TenantTeam.tsx` "Search User → Add", catch the trigger error and surface a clear toast: "This user is registered as a player and cannot be added to the team."
+
+## Files / changes
+- New migration: trigger + function above.
+- Insert (data) tool: delete soccepro's `tenant_admins` row.
+- `src/pages/tenant/TenantTeam.tsx`: improve `handleAdd` error toast to detect the error code/message.
 
 ## Out of scope
-
-- Replacing the User Guide textarea on the Add/Edit Game form with a WYSIWYG editor (separate, larger change — ask if you want this too).
-- Changing the player-facing render (already formatted).
+- Changing how `provision-tenant` or invite claims work — those paths don't touch subscriber accounts.
+- Modifying RLS (trigger is sufficient and uniform across all callers including service-role).
+- Auto-purging other historical rows (will be presented as a list first).
