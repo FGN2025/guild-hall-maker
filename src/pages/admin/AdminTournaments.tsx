@@ -441,6 +441,10 @@ const AdminTournaments = () => {
                   </Button>
                 )}
 
+                {(detailTournament.status === "in_progress" || detailTournament.status === "completed") && (
+                  <PlacementValidatorPanel tournamentId={detailTournament.id} game={detailTournament.game} />
+                )}
+
                 <Button
                   variant="outline"
                   className="w-full py-5 border-destructive/30 text-destructive hover:bg-destructive/10"
