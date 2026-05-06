@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
+import PlacementValidatorPanel from "@/components/tournaments/PlacementValidatorPanel";
 import { EventPromoEditorDialog, buildTournamentPromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import {
