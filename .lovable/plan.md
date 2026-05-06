@@ -1,61 +1,50 @@
-# Restrict Players from Tenant Admin Role
+## Assessment
 
-## Problem
-Soccepro64 (a player who registered through Huxley's ZIP signup) was added to `tenant_admins` with role `admin`, granting access to Huxley's tenant dashboard. He has no platform-level role, only this tenant_admins row. The row was added via the Team page (`/tenant/team`) by another Huxley admin clicking "Add" with role=Admin.
+The issue is most likely caused by incomplete legacy-player linkage, not by tenant admin roles.
 
-There is no enforcement preventing a registered player (subscriber/lead) from being elevated to tenant_admin. Any tenant admin can mistakenly do this from the Team page.
+What I found:
+- Legacy users whose usernames start with **A-D** were bulk-migrated first: **1,212 legacy rows / 1,154 users are matched to auth accounts**.
+- Those matched A-D users have **0 `user_service_interests` rows** and **0 `tenant_subscribers` rows** for their legacy tenant.
+- The bulk migration code attempts to create `user_service_interests` with `upsert(... onConflict: "user_id,tenant_id")`, but the database does **not** have a matching unique constraint/index. That makes the tenant-link step fail silently while the legacy match still succeeds.
+- The standalone `match-legacy-user` function also only updates `legacy_users.matched_user_id` and the profile gamer tag; it does **not** create the durable tenant/player link.
+- The public event detail page inserts `tenant_event_registrations`, but after success it does not refresh the “my registration” query, so users may still see “Register Now” until a reload.
 
-## Goal
-Players (users who registered as subscribers / have `user_service_interests` or `tenant_subscribers` records, i.e. not staff via invite/provisioning) must never appear in `tenant_admins`.
+## Recommended fix plan
 
-## Approach: Database trigger (strongest enforcement)
+### 1. Add a database-level unique index for player tenant links
+Create a unique index on `user_service_interests(user_id, tenant_id)` so the app can safely treat the player↔tenant link as one durable registration record.
 
-### 1. Define "is a player"
-A user is considered a player if **any** of these are true:
-- A row exists in `user_service_interests` for them, OR
-- A row exists in `tenant_subscribers` linked to their `user_id`
+This makes future `upsert(... onConflict: "user_id,tenant_id")` calls valid and prevents duplicate player registration rows.
 
-These are populated only by the ZIP-code signup flow. Staff added via `tenant_invitations` / `provision-tenant` / Platform Admin assignment do not get these rows.
+### 2. Backfill existing matched legacy users into `user_service_interests`
+For every `legacy_users` row with:
+- `matched_user_id IS NOT NULL`
+- `tenant_id IS NOT NULL`
 
-### 2. BEFORE INSERT/UPDATE trigger on `public.tenant_admins`
-Reject the row if the target `user_id` is a player. Exception: Platform admins (`has_role(user_id, 'admin')`) bypass — they can hold any role.
+create a `user_service_interests` row if one does not already exist.
 
-```sql
-CREATE OR REPLACE FUNCTION public.prevent_player_tenant_admin()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  -- Platform admins are exempt
-  IF public.has_role(NEW.user_id, 'admin') THEN
-    RETURN NEW;
-  END IF;
+Use safe idempotent SQL so existing staff/player exceptions are not modified and repeated runs do not create duplicates.
 
-  IF EXISTS (SELECT 1 FROM public.user_service_interests WHERE user_id = NEW.user_id)
-     OR EXISTS (SELECT 1 FROM public.tenant_subscribers WHERE user_id = NEW.user_id) THEN
-    RAISE EXCEPTION 'Cannot grant tenant team access to a registered player. The user signed up as a subscriber and must remain a player-only account.'
-      USING ERRCODE = '42501';
-  END IF;
+### 3. Fix legacy matching so future users are linked once
+Update `supabase/functions/match-legacy-user/index.ts` to:
+- Fetch `tenant_id` and `zip_code` from `legacy_users`
+- After setting `matched_user_id`, create/upsert the matching `user_service_interests` row
+- Keep the role restriction intact: this only creates player linkage, not tenant staff access
 
-  RETURN NEW;
-END $$;
+### 4. Fix bulk legacy migration so it does not silently miss tenant links
+Update `supabase/functions/bulk-register-legacy-users/index.ts` to:
+- Use the new unique index-backed upsert
+- Check and report errors from the tenant-link step instead of ignoring them
+- Also create the tenant link when an existing auth user is auto-matched
 
-CREATE TRIGGER trg_prevent_player_tenant_admin
-BEFORE INSERT OR UPDATE OF user_id, role ON public.tenant_admins
-FOR EACH ROW EXECUTE FUNCTION public.prevent_player_tenant_admin();
-```
+### 5. Make public event registration idempotent and visibly persistent
+Update `src/pages/TenantEventDetail.tsx` to:
+- Use `upsert` or gracefully handle duplicate registrations as success
+- Refetch/invalidate the current user’s event registration query after success
+- Ensure the button changes to “Registered” immediately after registration
 
-### 3. Cleanup existing data
-- Delete soccepro64's row: `tenant_admins` where `user_id='02689eee-0885-43a4-b0c5-5dd217280365'` and `tenant_id='b93a1fc0-...'`.
-- Audit query: list all current `tenant_admins` rows whose `user_id` is also in `user_service_interests`/`tenant_subscribers` and is not a platform admin. Present the list to the user before bulk-removal (separate step, not auto-deleted).
-
-### 4. UI safety net (small)
-On `TenantTeam.tsx` "Search User → Add", catch the trigger error and surface a clear toast: "This user is registered as a player and cannot be added to the team."
-
-## Files / changes
-- New migration: trigger + function above.
-- Insert (data) tool: delete soccepro's `tenant_admins` row.
-- `src/pages/tenant/TenantTeam.tsx`: improve `handleAdd` error toast to detect the error code/message.
-
-## Out of scope
-- Changing how `provision-tenant` or invite claims work — those paths don't touch subscriber accounts.
-- Modifying RLS (trigger is sufficient and uniform across all callers including service-role).
-- Auto-purging other historical rows (will be presented as a list first).
+### 6. Validate with targeted checks
+After implementation:
+- Query A-D matched legacy users and confirm they now have tenant player links
+- Test a known A-D legacy account path: sign in/reset password → visit a tenant event → register once → revisit event → still shows registered
+- Confirm a duplicate event registration attempt does not ask for full platform registration again and does not create duplicate rows
