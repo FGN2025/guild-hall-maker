@@ -63,10 +63,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find unmatched legacy user by email
+    // Find unmatched legacy user by email (include tenant + zip for player↔tenant link)
     const { data: legacyUser } = await adminClient
       .from("legacy_users")
-      .select("id, legacy_username")
+      .select("id, legacy_username, tenant_id, zip_code")
       .ilike("email", email)
       .is("matched_user_id", null)
       .limit(1)
@@ -90,6 +90,25 @@ Deno.serve(async (req) => {
       .from("profiles")
       .update({ gamer_tag: legacyUser.legacy_username })
       .eq("user_id", userId);
+
+    // Create durable player↔tenant link so they don't need to "register" again
+    // for each event. Idempotent via unique (user_id, tenant_id) index.
+    if (legacyUser.tenant_id) {
+      const { error: linkErr } = await adminClient
+        .from("user_service_interests")
+        .upsert(
+          {
+            user_id: userId,
+            tenant_id: legacyUser.tenant_id,
+            zip_code: legacyUser.zip_code ?? "",
+            status: "legacy",
+          },
+          { onConflict: "user_id,tenant_id" }
+        );
+      if (linkErr) {
+        console.error("match-legacy-user: failed to upsert tenant link", linkErr);
+      }
+    }
 
     return new Response(
       JSON.stringify({
