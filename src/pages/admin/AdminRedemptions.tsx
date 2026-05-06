@@ -29,7 +29,7 @@ async function uploadPrizeImage(file: File, label: string): Promise<string> {
   return data.publicUrl;
 }
 
-const ModeratorRedemptions = () => {
+const AdminRedemptions = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
@@ -488,4 +488,4 @@ const ModeratorRedemptions = () => {
   );
 };
 
-export default ModeratorRedemptions;
+export default AdminRedemptions;
