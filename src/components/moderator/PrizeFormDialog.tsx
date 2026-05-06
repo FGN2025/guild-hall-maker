@@ -121,6 +121,17 @@ const PrizeFormDialog = ({ open, onOpenChange, title, initial, onSubmit, isPendi
               <Input type="number" min={0} value={form.quantity_available} onChange={(e) => setForm({ ...form, quantity_available: e.target.value })} />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label>Max per user / month (blank = unlimited)</Label>
+            <Input
+              type="number"
+              min={1}
+              value={form.max_per_user_per_month}
+              onChange={(e) => setForm({ ...form, max_per_user_per_month: e.target.value })}
+              placeholder="e.g. 1"
+            />
+            <p className="text-xs text-muted-foreground">Caps how many of this prize a single player can redeem in the current calendar month. Pending requests count toward the limit.</p>
+          </div>
           <Button
             onClick={() => onSubmit(form, imageFile)}
             disabled={isPending || !form.name.trim()}
