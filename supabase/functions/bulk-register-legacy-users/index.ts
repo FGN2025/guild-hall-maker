@@ -157,6 +157,19 @@ Deno.serve(async (req) => {
                   .eq("user_id", matchedUserId)
                   .is("gamer_tag", null);
 
+                // Also create the durable player↔tenant link for auto-matched users
+                if (legacy.tenant_id) {
+                  const { error: linkErr } = await adminClient
+                    .from("user_service_interests")
+                    .upsert({
+                      user_id: matchedUserId,
+                      tenant_id: legacy.tenant_id,
+                      zip_code: legacy.zip_code || "",
+                      status: "legacy",
+                    }, { onConflict: "user_id,tenant_id" });
+                  if (linkErr) errors.push(`${em} link: ${linkErr.message}`);
+                }
+
                 autoMatched++;
               } else {
                 skipped++;
@@ -185,12 +198,13 @@ Deno.serve(async (req) => {
 
           // Create tenant linkage if tenant_id exists
           if (legacy.tenant_id) {
-            await adminClient.from("user_service_interests").upsert({
+            const { error: linkErr } = await adminClient.from("user_service_interests").upsert({
               user_id: userId,
               tenant_id: legacy.tenant_id,
               zip_code: legacy.zip_code || "",
-              status: "new",
-            }, { onConflict: "user_id,tenant_id" }).select();
+              status: "legacy",
+            }, { onConflict: "user_id,tenant_id" });
+            if (linkErr) errors.push(`${em} link: ${linkErr.message}`);
           }
 
           // Mark legacy record as matched
