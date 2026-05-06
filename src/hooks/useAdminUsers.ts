@@ -60,7 +60,7 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
       if (error) throw error;
 
       // Fetch all roles
-      const { data: roles, error: rolesError } = await supabase.from("user_roles").select("*");
+      const { data: roles, error: rolesError } = await supabase.from("user_roles").select("user_id, role");
       if (rolesError) throw rolesError;
 
       // Fetch user_service_interests for tenant association
