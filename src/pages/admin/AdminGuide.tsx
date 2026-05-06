@@ -547,7 +547,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "The platform includes an automated notification system that alerts players via in-app notifications and email across 8 event types.",
       "In-App Notifications — Players see a bell icon in the sidebar with an unread count badge. Clicking opens a slide-out panel with all notifications.",
       "Real-Time Delivery — Notifications are pushed instantly via real-time subscriptions — no page refresh needed.",
-      "Prize Redemption Alerts — When a moderator approves, fulfills, or denies a redemption, the player is automatically notified with the prize name and new status.",
+      "Prize Redemption Alerts — When an admin approves, fulfills, or denies a redemption, the player is automatically notified with the prize name and new status.",
       "New Challenge Alerts — When a new active challenge is created from the Moderator Dashboard, all registered players receive a notification with the challenge name and point reward.",
       "Points Adjusted — When a moderator or admin awards or deducts points via the Points management page, the player automatically receives an in-app notification and email with the amount and reason. Awards display as 'Points Awarded'; deductions as 'Points Deducted'. This is driven by a database trigger on the point_adjustments table.",
       "Tournament Starting — When a tournament status changes to 'In Progress', all registered players are notified that it's live.",
