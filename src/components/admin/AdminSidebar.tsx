@@ -10,6 +10,7 @@ const sidebarItems = [
   { to: "/admin/seasons", label: "Seasons", icon: Calendar },
   { to: "/admin/achievements", label: "Achievements", icon: Award },
   { to: "/admin/points-rubric", label: "Points Rubric", icon: Coins },
+  { to: "/admin/redemptions", label: "Redemptions", icon: Gift },
   { to: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { to: "/admin/media", label: "Media Library", icon: Image },
   { to: "/admin/users", label: "Users", icon: Users },
