@@ -301,6 +301,10 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       toast.success("Score updated!");
       queryClient.invalidateQueries({ queryKey: ["manage-matches", tournamentId] });
       queryClient.invalidateQueries({ queryKey: ["bracket-matches", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["manage-tournament", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+      queryClient.invalidateQueries({ queryKey: ["tournament-placements", tournamentId] });
     },
     onError: (err: Error) => toast.error(err.message || "Failed to update score"),
   });
