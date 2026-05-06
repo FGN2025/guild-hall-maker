@@ -188,6 +188,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    if (user) {
+      try {
+        localStorage.removeItem(`fgn_roles_${user.id}`);
+        localStorage.removeItem(`fgn_sub_status_${user.id}`);
+      } catch {
+        /* ignore */
+      }
+    }
     await supabase.auth.signOut();
   };
 
