@@ -510,6 +510,10 @@ const ModeratorTournaments = () => {
                   </Button>
                 )}
 
+                {(detailTournament.status === "in_progress" || detailTournament.status === "completed") && (
+                  <PlacementValidatorPanel tournamentId={detailTournament.id} game={detailTournament.game} />
+                )}
+
                 {isAdmin && (
                   <Button
                     variant="outline"
