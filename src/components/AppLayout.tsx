@@ -32,9 +32,6 @@ const AppLayout = () => {
   const hideHeader = HEADERLESS_ROUTES.includes(location.pathname);
   const coachReady = useDeferredMount(1500);
 
-  const location = useLocation();
-  const hideHeader = HEADERLESS_ROUTES.includes(location.pathname);
-
   return (
     <TenantBrandingProvider>
       <CoachProvider>
@@ -53,9 +50,16 @@ const AppLayout = () => {
               </main>
             </div>
           </div>
-          <Suspense fallback={null}>
-            <CoachFloatingButton />
-          </Suspense>
+          {coachReady && (
+            <Suspense fallback={null}>
+              <CoachFloatingButton />
+            </Suspense>
+          )}
+          <ScrollToTopButton />
+        </SidebarProvider>
+      </CoachProvider>
+    </TenantBrandingProvider>
+  );
           <ScrollToTopButton />
         </SidebarProvider>
       </CoachProvider>
