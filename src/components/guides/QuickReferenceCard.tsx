@@ -55,7 +55,7 @@ const ROLE_CAPABILITIES: Capability[] = [
   { capability: "Score matches / advance brackets", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Approve challenge / quest evidence", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Adjust player points", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
-  { capability: "Manage prize redemptions", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
+  { capability: "Manage prize redemptions", player: "n", moderator: "n", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Award / revoke achievements", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Manage games catalog & AI Guide Writer", player: "n", moderator: "n", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Manage users & roles", player: "n", moderator: "n", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },

@@ -61,6 +61,7 @@ const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminTournaments = lazy(() => import("./pages/admin/AdminTournaments"));
 const AdminChallenges = lazy(() => import("./pages/admin/AdminChallenges"));
+const AdminRedemptions = lazy(() => import("./pages/admin/AdminRedemptions"));
 const AdminBypassCodes = lazy(() => import("./pages/admin/AdminBypassCodes"));
 const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
@@ -95,7 +96,7 @@ const ModeratorMatches = lazy(() => import("./pages/moderator/ModeratorMatches")
 const ModeratorPoints = lazy(() => import("./pages/moderator/ModeratorPoints"));
 const ModeratorChallenges = lazy(() => import("./pages/moderator/ModeratorChallenges"));
 const ModeratorLadders = lazy(() => import("./pages/moderator/ModeratorLadders"));
-const ModeratorRedemptions = lazy(() => import("./pages/moderator/ModeratorRedemptions"));
+
 const ModeratorAchievements = lazy(() => import("./pages/moderator/ModeratorAchievements"));
 const ModeratorGuide = lazy(() => import("./pages/moderator/ModeratorGuide"));
 const ModeratorCDLGenerate = lazy(() => import("./pages/moderator/ModeratorCDLGenerate"));
@@ -233,7 +234,7 @@ const App = () => (
               <Route path="/moderator/challenges" element={<ModeratorRoute><ModeratorChallenges /></ModeratorRoute>} />
               <Route path="/moderator/ladders" element={<ModeratorRoute><ModeratorLadders /></ModeratorRoute>} />
               <Route path="/moderator/achievements" element={<ModeratorRoute><ModeratorAchievements /></ModeratorRoute>} />
-              <Route path="/moderator/redemptions" element={<ModeratorRoute><ModeratorRedemptions /></ModeratorRoute>} />
+              <Route path="/admin/redemptions" element={<AdminRoute><AdminRedemptions /></AdminRoute>} />
               <Route path="/moderator/guide" element={<ModeratorRoute><ModeratorGuide /></ModeratorRoute>} />
               <Route path="/moderator/challenges/generate" element={<ModeratorRoute><ModeratorCDLGenerate /></ModeratorRoute>} />
               <Route path="/admin/challenges/generate" element={<AdminRoute><ModeratorCDLGenerate /></AdminRoute>} />

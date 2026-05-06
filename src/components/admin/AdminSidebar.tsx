@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target, ShieldCheck, Server, Cloud, LogOut, MessageSquare, Coins } from "lucide-react";
+import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target, ShieldCheck, Server, Cloud, LogOut, MessageSquare, Coins, Gift } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const sidebarItems = [
@@ -10,6 +10,7 @@ const sidebarItems = [
   { to: "/admin/seasons", label: "Seasons", icon: Calendar },
   { to: "/admin/achievements", label: "Achievements", icon: Award },
   { to: "/admin/points-rubric", label: "Points Rubric", icon: Coins },
+  { to: "/admin/redemptions", label: "Redemptions", icon: Gift },
   { to: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { to: "/admin/media", label: "Media Library", icon: Image },
   { to: "/admin/users", label: "Users", icon: Users },
