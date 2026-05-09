@@ -6,6 +6,11 @@ const ParticlesBackground = () => {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Respect users that prefer reduced motion — skip the engine entirely.
+    if (typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
     }).then(() => setReady(true));
