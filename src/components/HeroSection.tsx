@@ -1,18 +1,25 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Trophy, Zap, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import heroBg from "@/assets/hero-bg.jpg";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
-import ParticlesBackground from "@/components/ParticlesBackground";
 import apprenticeshipLogo from "@/assets/national-apprenticeship-week-2026.png";
 import { supabase } from "@/integrations/supabase/client";
+import { useDeferredMount } from "@/hooks/useDeferredMount";
 
+// Particles engine is heavy (~30-40KB) — defer past first paint.
+const ParticlesBackground = lazy(() => import("@/components/ParticlesBackground"));
 
+const LOGO_CACHE_KEY = "fgn_hero_logo_url";
 
 const HeroSection = () => {
-  const [logoUrl, setLogoUrl] = useState<string>(defaultLogo);
-  
+  const [logoUrl, setLogoUrl] = useState<string>(() => {
+    if (typeof window === "undefined") return defaultLogo;
+    return localStorage.getItem(LOGO_CACHE_KEY) || defaultLogo;
+  });
+
+  // Mount particles only after browser idle so they don't block FCP.
+  const particlesReady = useDeferredMount(1200);
 
   useEffect(() => {
     supabase
@@ -21,30 +28,41 @@ const HeroSection = () => {
       .eq("key", "hero_logo_url")
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setLogoUrl(data.value);
+        if (data?.value && data.value !== logoUrl) {
+          setLogoUrl(data.value);
+          try { localStorage.setItem(LOGO_CACHE_KEY, data.value); } catch {}
+        }
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background image */}
+      {/* Background gradient */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
       </div>
 
-      {/* Particles network */}
-      <ParticlesBackground />
+      {/* Particles network — deferred */}
+      {particlesReady && (
+        <Suspense fallback={null}>
+          <ParticlesBackground />
+        </Suspense>
+      )}
 
       {/* Grid overlay */}
       <div className="absolute inset-0 grid-bg opacity-20 z-[2]" />
 
       <div className="relative z-10 container mx-auto px-4 text-center">
         <div className="animate-slide-up">
-          {/* Hero Logo */}
+          {/* Hero Logo — fixed height to prevent CLS */}
           <img
             src={logoUrl}
             alt="Fiber Gaming Network"
-            className="max-h-20 md:max-h-28 mx-auto mb-6 object-contain"
+            width={420}
+            height={112}
+            fetchPriority="high"
+            className="max-h-20 md:max-h-28 w-auto mx-auto mb-6 object-contain"
           />
 
           <p className="font-display text-base md:text-xl lg:text-2xl tracking-[0.3em] text-primary mb-4 uppercase font-bold">
@@ -82,7 +100,10 @@ const HeroSection = () => {
             <img
               src={apprenticeshipLogo}
               alt="National Apprenticeship Week — April 26 – May 2, 2026"
-              className="max-h-24 md:max-h-32 mx-auto object-contain"
+              width={480}
+              height={128}
+              loading="lazy"
+              className="max-h-24 md:max-h-32 w-auto mx-auto object-contain"
             />
           </Link>
           <Link to="/challenges" className="flex items-center justify-center gap-2 mt-2 animate-pulse text-primary font-semibold text-lg">

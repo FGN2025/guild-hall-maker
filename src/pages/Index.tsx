@@ -1,9 +1,12 @@
+import { lazy, Suspense } from "react";
 import HeroSection from "@/components/HeroSection";
-import TickerEmbed from "@/components/TickerEmbed";
-import FeaturedVideo from "@/components/FeaturedVideo";
-import FeaturedEvents from "@/components/FeaturedEvents";
 import Navbar from "@/components/Navbar";
 import usePageTitle from "@/hooks/usePageTitle";
+
+// Below-the-fold sections — lazy load so they don't block FCP/LCP.
+const TickerEmbed = lazy(() => import("@/components/TickerEmbed"));
+const FeaturedVideo = lazy(() => import("@/components/FeaturedVideo"));
+const FeaturedEvents = lazy(() => import("@/components/FeaturedEvents"));
 
 const Index = () => {
   usePageTitle("Home");
@@ -11,9 +14,11 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
-      <TickerEmbed />
-      <FeaturedVideo />
-      <FeaturedEvents />
+      <Suspense fallback={null}>
+        <TickerEmbed />
+        <FeaturedVideo />
+        <FeaturedEvents />
+      </Suspense>
       <footer className="border-t border-border py-12">
         <div className="container mx-auto px-4 text-center">
           <p className="font-display text-sm tracking-widest text-primary mb-4">FGN</p>

@@ -234,10 +234,10 @@ const App = () => (
               <Route path="/moderator/challenges" element={<ModeratorRoute><ModeratorChallenges /></ModeratorRoute>} />
               <Route path="/moderator/ladders" element={<ModeratorRoute><ModeratorLadders /></ModeratorRoute>} />
               <Route path="/moderator/achievements" element={<ModeratorRoute><ModeratorAchievements /></ModeratorRoute>} />
-              <Route path="/admin/redemptions" element={<AdminRoute><AdminRedemptions /></AdminRoute>} />
               <Route path="/moderator/guide" element={<ModeratorRoute><ModeratorGuide /></ModeratorRoute>} />
               <Route path="/moderator/challenges/generate" element={<ModeratorRoute><ModeratorCDLGenerate /></ModeratorRoute>} />
               <Route path="/admin/challenges/generate" element={<AdminRoute><ModeratorCDLGenerate /></AdminRoute>} />
+              <Route path="/admin/redemptions" element={<AdminRoute><AdminRedemptions /></AdminRoute>} />
 
               {/* Tenant routes */}
               <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
