@@ -51,17 +51,37 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     const payloadStr = JSON.stringify({ event_type, payload, timestamp: new Date().toISOString() });
 
+    // Phase E HMAC contract (academy receiver):
+    //   header  : X-Play-Signature
+    //   alg     : HMAC-SHA256, lowercase hex over the RAW request body
+    //   secret  : PLAY_WEBHOOK_SECRET (shared, env)
+    // For non-academy targets we keep the legacy per-row secret + X-FGN-Signature header.
+    const playWebhookSecret = Deno.env.get("PLAY_WEBHOOK_SECRET") || "";
+
     for (const webhook of webhooks) {
       try {
-        const signature = await hmacSign(webhook.secret_key, payloadStr);
+        const isAcademy = webhook.target_app === "fgn_academy";
+        const signingSecret = isAcademy ? playWebhookSecret : webhook.secret_key;
+
+        if (isAcademy && !playWebhookSecret) {
+          throw new Error("PLAY_WEBHOOK_SECRET is not configured");
+        }
+
+        const signature = await hmacSign(signingSecret, payloadStr);
+
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          "X-FGN-Event": event_type,
+        };
+        if (isAcademy) {
+          headers["X-Play-Signature"] = signature;
+        } else {
+          headers["X-FGN-Signature"] = signature;
+        }
 
         const res = await fetch(webhook.webhook_url, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-FGN-Signature": signature,
-            "X-FGN-Event": event_type,
-          },
+          headers,
           body: payloadStr,
         });
 

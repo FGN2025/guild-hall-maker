@@ -29,12 +29,25 @@ No code redeploy required to change modes — just update the secret.
 - Function: `ecosystem-webhook-dispatch`
 - Event type: `challenge_completion`
 - Payload: identical to the Phase D direct-POST body (same `user_email`, `challenge_id`, `score`, `task_progress`, `skills_verified`, `metadata`)
-- Headers added by dispatcher: `X-FGN-Signature` (HMAC-SHA-256 hex of body using each subscriber's `secret_key`), `X-FGN-Event: challenge_completion`
-- Wrapper envelope: `{ event_type, payload, timestamp }` (signed string is the full envelope JSON)
+- Wrapper envelope (signed body): `{ event_type, payload, timestamp }`
+
+### HMAC contract (academy receiver)
+
+| Field | Value |
+|---|---|
+| Header | `X-Play-Signature` |
+| Algorithm | HMAC-SHA256, lowercase hex |
+| Signed bytes | the **raw request body** (the envelope JSON above) |
+| Secret | `PLAY_WEBHOOK_SECRET` (env) — shared with academy out-of-band |
+| Companion header | `X-FGN-Event: challenge_completion` |
+
+Receiver rollout: **shadow → lenient → strict**. Academy is currently in unsigned/shadow mode; flip strict 48h after clean matches.
+
+For non-academy targets, the dispatcher falls back to the legacy `X-FGN-Signature` header signed with each row's `secret_key`.
 
 ## Subscribing the academy receiver
 
-Insert a row into `ecosystem_webhooks`:
+Insert a row into `ecosystem_webhooks` (the `secret_key` column is ignored for `fgn_academy` — `PLAY_WEBHOOK_SECRET` is used instead):
 
 ```sql
 insert into public.ecosystem_webhooks
@@ -42,7 +55,7 @@ insert into public.ecosystem_webhooks
 values
   ('fgn_academy', 'challenge_completion',
    'https://fgn.academy/api/ecosystem/challenge-completed',
-   '<shared HMAC secret>', true);
+   'unused-see-PLAY_WEBHOOK_SECRET', true);
 ```
 
 Until that row exists and `is_active = true`, `live`/`shadow` dispatches will no-op with `dispatched: 0`.
