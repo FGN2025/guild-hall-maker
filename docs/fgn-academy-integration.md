@@ -114,3 +114,16 @@ Admins can trigger a one-off sync of a specific challenge completion to Academy 
 ## 9. Contact
 
 For key rotation, integration questions, or to request the push roadmap to be prioritized, contact the platform administrators.
+
+---
+
+## 10. Header Migration (Cutover Window)
+
+The integration is migrating from `X-App-Key` (legacy, backed by `FGN_ACADEMY_API_KEY`) to `X-Ecosystem-Key` (new, backed by `ECOSYSTEM_API_KEY`), aligning Academy outbound calls with the rest of the ecosystem.
+
+During the 14-day cutover window, `sync-to-academy` sends **both** headers on every request. Academy may validate either one. After cutover (P-3), only `X-Ecosystem-Key` will be sent and the `FGN_ACADEMY_API_KEY` secret will be retired.
+
+- Legacy: `X-App-Key: <FGN_ACADEMY_API_KEY>`
+- New: `X-Ecosystem-Key: <ECOSYSTEM_API_KEY>`
+
+The function logs which header names were sent on each request (names only, never values) and includes the header set in `ecosystem_sync_log.error_message` on failure for auditing.
