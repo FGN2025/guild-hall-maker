@@ -145,19 +145,69 @@ Deno.serve(async (req) => {
     const academyUrl = (integration.additional_config as any)?.api_url
       || "https://fgn.academy/api/ecosystem/challenge-completed";
 
+    // ----- Phase E routing flag (reversible) -----
+    // PHASE_E_ROUTING_MODE:
+    //   "off"    (default) — direct POST to academy with X-Ecosystem-Key (legacy/Phase D path)
+    //   "shadow" — direct POST is authoritative; ALSO fire HMAC-signed webhook dispatch
+    //              for parity validation. Webhook failures are logged, never block.
+    //   "live"   — HMAC-signed ecosystem-webhook-dispatch is authoritative.
+    //              Direct POST is skipped. Flip back to "off"/"shadow" to revert instantly.
+    const phaseEMode = (Deno.env.get("PHASE_E_ROUTING_MODE") || "off").toLowerCase();
+    const phaseELive = phaseEMode === "live";
+    const phaseEShadow = phaseEMode === "shadow";
+    console.log(`phase E routing mode: ${phaseEMode}`);
+
+    // Fire-and-forget webhook dispatch helper for shadow/live modes
+    const dispatchPhaseE = async (): Promise<{ ok: boolean; status: number; body: string }> => {
+      try {
+        const dispatchRes = await fetch(`${supabaseUrl}/functions/v1/ecosystem-webhook-dispatch`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({
+            event_type: "challenge_completion",
+            payload,
+          }),
+        });
+        const txt = await dispatchRes.text();
+        console.log(`phase E dispatch -> ${dispatchRes.status}`);
+        return { ok: dispatchRes.ok, status: dispatchRes.status, body: txt.substring(0, 200) };
+      } catch (e: any) {
+        console.error("phase E dispatch error:", e?.message);
+        return { ok: false, status: 0, body: e?.message || "dispatch error" };
+      }
+    };
+
     // Ecosystem-key auth (legacy X-App-Key retired in P-3).
     const outboundHeaders: Record<string, string> = {
       "Content-Type": "application/json",
       "X-Ecosystem-Key": ecosystemApiKey,
     };
-    console.log("academy sync headers: X-Ecosystem-Key");
 
-    // POST to the academy
-    const response = await fetch(academyUrl, {
-      method: "POST",
-      headers: outboundHeaders,
-      body: JSON.stringify(payload),
-    });
+    let response: Response;
+    if (phaseELive) {
+      // Phase E live: webhook dispatch is authoritative. Synthesize a Response so
+      // downstream branches (next_step, completion update, logging) keep working.
+      const dispatched = await dispatchPhaseE();
+      response = new Response(dispatched.body || "{}", {
+        status: dispatched.ok ? 200 : (dispatched.status || 502),
+        headers: { "Content-Type": "application/json" },
+      });
+    } else {
+      // Phase D direct POST (default + shadow modes)
+      response = await fetch(academyUrl, {
+        method: "POST",
+        headers: outboundHeaders,
+        body: JSON.stringify(payload),
+      });
+      // Shadow: fire webhook in parallel for parity validation, do not await result for blocking
+      if (phaseEShadow) {
+        // intentional: await so logs land in this invocation, but failures don't override `response`
+        await dispatchPhaseE();
+      }
+    }
 
     const responseText = await response.text();
     const success = response.ok;
