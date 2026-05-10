@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
       data_type: "challenge_completion",
       records_synced: success ? 1 : 0,
       status: success ? "success" : "error",
-      error_message: success ? null : `HTTP ${response.status} [headers:${headerNames.join("+")}]: ${responseText.substring(0, 480)}`,
+      error_message: success ? null : `HTTP ${response.status}: ${responseText.substring(0, 480)}`,
     });
 
     return new Response(JSON.stringify({
