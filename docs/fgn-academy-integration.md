@@ -107,7 +107,7 @@ Until push is enabled, Academy should rely on `since`-filtered polls of `player-
 
 ## 8. Manual Push (Today)
 
-Admins can trigger a one-off sync of a specific challenge completion to Academy via the **Admin → Challenges** UI. This invokes the `sync-to-academy` edge function, which posts to Academy using the `FGN_ACADEMY_API_KEY` secret. This is the only push path currently active.
+Admins can trigger a one-off sync of a specific challenge completion to Academy via the **Admin → Challenges** UI. This invokes the `sync-to-academy` edge function, which posts to Academy with the `X-Ecosystem-Key` header (backed by the `ECOSYSTEM_API_KEY` secret). This is the only push path currently active.
 
 ---
 
@@ -117,13 +117,6 @@ For key rotation, integration questions, or to request the push roadmap to be pr
 
 ---
 
-## 10. Header Migration (Cutover Window)
+## 10. Header Migration (Completed)
 
-The integration is migrating from `X-App-Key` (legacy, backed by `FGN_ACADEMY_API_KEY`) to `X-Ecosystem-Key` (new, backed by `ECOSYSTEM_API_KEY`), aligning Academy outbound calls with the rest of the ecosystem.
-
-During the 14-day cutover window, `sync-to-academy` sends **both** headers on every request. Academy may validate either one. After cutover (P-3), only `X-Ecosystem-Key` will be sent and the `FGN_ACADEMY_API_KEY` secret will be retired.
-
-- Legacy: `X-App-Key: <FGN_ACADEMY_API_KEY>`
-- New: `X-Ecosystem-Key: <ECOSYSTEM_API_KEY>`
-
-The function logs which header names were sent on each request (names only, never values) and includes the header set in `ecosystem_sync_log.error_message` on failure for auditing.
+The integration previously supported a legacy `X-App-Key` header (backed by `FGN_ACADEMY_API_KEY`). As of P-3, the cutover is complete: `sync-to-academy` sends only `X-Ecosystem-Key` (backed by `ECOSYSTEM_API_KEY`), and the `FGN_ACADEMY_API_KEY` secret has been retired.

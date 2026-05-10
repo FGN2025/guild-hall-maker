@@ -8,9 +8,9 @@ play.fgn.gg automatically syncs challenge completion data to fgn.academy's Skill
 
 ## 2. Authentication
 
-**Header:** `X-App-Key: <FGN_ACADEMY_API_KEY>`
+**Header:** `X-Ecosystem-Key: <ECOSYSTEM_API_KEY>`
 
-This is a long-lived static key shared between both systems. No OAuth tokens or refresh flows required. The `X-App-Key` header is the only auth header used.
+This is a long-lived static key shared between both systems. No OAuth tokens or refresh flows required. The `X-Ecosystem-Key` header is the only auth header used. (The legacy `X-App-Key`/`FGN_ACADEMY_API_KEY` was retired in P-3.)
 
 ## 3. Canonical Endpoint
 
@@ -124,7 +124,7 @@ During migration, the academy's normalization layer also accepts nested payloads
 
 **URL:** `POST {supabase_url}/functions/v1/health-check-play`
 
-**Auth:** `X-App-Key` header
+**Auth:** `X-Ecosystem-Key` header
 
 Returns service status without transferring data. Use for connection monitoring.
 
@@ -143,7 +143,7 @@ Flat is required. Academy adds a normalization layer for transitional nested pay
 Free-form tags. play.fgn.gg defines its own tags (`difficulty:X`, `game:X`, `gaming-proficiency`). No fixed taxonomy enforced.
 
 **Q5: X-Source-App header?**
-Removed. `X-App-Key` is the only auth header. Source identification moved to `metadata.source` field.
+Removed. `X-Ecosystem-Key` is the only auth header. Source identification moved to `metadata.source` field.
 
 **Q6: Extra fields?**
 Extra context (`display_name`, `difficulty`, `game_name`, `awarded_points`, `max_points`) goes in the `metadata{}` object.
