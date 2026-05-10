@@ -15,9 +15,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const academyApiKey = Deno.env.get("FGN_ACADEMY_API_KEY");
+    const ecosystemApiKey = Deno.env.get("ECOSYSTEM_API_KEY");
 
-    if (!academyApiKey) {
-      console.error("FGN_ACADEMY_API_KEY secret is not configured");
+    if (!academyApiKey && !ecosystemApiKey) {
+      console.error("Neither FGN_ACADEMY_API_KEY nor ECOSYSTEM_API_KEY is configured");
       return new Response(JSON.stringify({ error: "Academy API key not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -145,13 +146,23 @@ Deno.serve(async (req) => {
     const academyUrl = (integration.additional_config as any)?.api_url
       || "https://fgn.academy/api/ecosystem/challenge-completed";
 
+    // Build dual-header set during cutover window. Send whichever keys we have.
+    const outboundHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    const headerNames: string[] = [];
+    if (academyApiKey) {
+      outboundHeaders["X-App-Key"] = academyApiKey;
+      headerNames.push("X-App-Key");
+    }
+    if (ecosystemApiKey) {
+      outboundHeaders["X-Ecosystem-Key"] = ecosystemApiKey;
+      headerNames.push("X-Ecosystem-Key");
+    }
+    console.log(`academy sync headers: ${headerNames.join(",")}`);
+
     // POST to the academy
     const response = await fetch(academyUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-App-Key": academyApiKey,
-      },
+      headers: outboundHeaders,
       body: JSON.stringify(payload),
     });
 
@@ -218,7 +229,7 @@ Deno.serve(async (req) => {
       data_type: "challenge_completion",
       records_synced: success ? 1 : 0,
       status: success ? "success" : "error",
-      error_message: success ? null : `HTTP ${response.status}: ${responseText.substring(0, 500)}`,
+      error_message: success ? null : `HTTP ${response.status} [headers:${headerNames.join("+")}]: ${responseText.substring(0, 480)}`,
     });
 
     return new Response(JSON.stringify({
