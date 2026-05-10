@@ -8,9 +8,9 @@ play.fgn.gg automatically syncs challenge completion data to fgn.academy's Skill
 
 ## 2. Authentication
 
-**Header:** `X-App-Key: <FGN_ACADEMY_API_KEY>`
+**Header:** `X-Ecosystem-Key: <ECOSYSTEM_API_KEY>`
 
-This is a long-lived static key shared between both systems. No OAuth tokens or refresh flows required. The `X-App-Key` header is the only auth header used.
+This is a long-lived static key shared between both systems. No OAuth tokens or refresh flows required. The `X-Ecosystem-Key` header is the only auth header used. (The legacy `X-App-Key`/`FGN_ACADEMY_API_KEY` was retired in P-3.)
 
 ## 3. Canonical Endpoint
 
