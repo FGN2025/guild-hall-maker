@@ -124,7 +124,7 @@ During migration, the academy's normalization layer also accepts nested payloads
 
 **URL:** `POST {supabase_url}/functions/v1/health-check-play`
 
-**Auth:** `X-App-Key` header
+**Auth:** `X-Ecosystem-Key` header
 
 Returns service status without transferring data. Use for connection monitoring.
 
