@@ -143,7 +143,7 @@ Flat is required. Academy adds a normalization layer for transitional nested pay
 Free-form tags. play.fgn.gg defines its own tags (`difficulty:X`, `game:X`, `gaming-proficiency`). No fixed taxonomy enforced.
 
 **Q5: X-Source-App header?**
-Removed. `X-App-Key` is the only auth header. Source identification moved to `metadata.source` field.
+Removed. `X-Ecosystem-Key` is the only auth header. Source identification moved to `metadata.source` field.
 
 **Q6: Extra fields?**
 Extra context (`display_name`, `difficulty`, `game_name`, `awarded_points`, `max_points`) goes in the `metadata{}` object.
