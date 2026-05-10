@@ -146,13 +146,23 @@ Deno.serve(async (req) => {
     const academyUrl = (integration.additional_config as any)?.api_url
       || "https://fgn.academy/api/ecosystem/challenge-completed";
 
+    // Build dual-header set during cutover window. Send whichever keys we have.
+    const outboundHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    const headerNames: string[] = [];
+    if (academyApiKey) {
+      outboundHeaders["X-App-Key"] = academyApiKey;
+      headerNames.push("X-App-Key");
+    }
+    if (ecosystemApiKey) {
+      outboundHeaders["X-Ecosystem-Key"] = ecosystemApiKey;
+      headerNames.push("X-Ecosystem-Key");
+    }
+    console.log(`academy sync headers: ${headerNames.join(",")}`);
+
     // POST to the academy
     const response = await fetch(academyUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-App-Key": academyApiKey,
-      },
+      headers: outboundHeaders,
       body: JSON.stringify(payload),
     });
 
