@@ -57,12 +57,10 @@ Deno.serve(async (req) => {
           dbHealthy = !dbErr;
         } catch { dbHealthy = false; }
 
-        const academyKeyConfigured = !!Deno.env.get("FGN_ACADEMY_API_KEY");
-
         return new Response(JSON.stringify({
           status: dbHealthy ? "healthy" : "degraded",
           timestamp: new Date().toISOString(),
-          services: { api: true, database: dbHealthy, academy_key_configured: academyKeyConfigured },
+          services: { api: true, database: dbHealthy },
         }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
