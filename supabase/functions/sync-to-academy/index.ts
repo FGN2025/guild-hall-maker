@@ -15,9 +15,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const academyApiKey = Deno.env.get("FGN_ACADEMY_API_KEY");
+    const ecosystemApiKey = Deno.env.get("ECOSYSTEM_API_KEY");
 
-    if (!academyApiKey) {
-      console.error("FGN_ACADEMY_API_KEY secret is not configured");
+    if (!academyApiKey && !ecosystemApiKey) {
+      console.error("Neither FGN_ACADEMY_API_KEY nor ECOSYSTEM_API_KEY is configured");
       return new Response(JSON.stringify({ error: "Academy API key not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
