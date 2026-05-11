@@ -191,6 +191,24 @@ const ChallengeDetail = () => {
               </Card>
             )}
 
+            {Array.isArray((c as any).skill_tags) && (c as any).skill_tags.length > 0 && (
+              <Card>
+                <CardContent className="p-5">
+                  <h2 className="font-display text-lg font-semibold text-foreground mb-3">Skills You'll Build</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {(c as any).skill_tags.map((tag: string) => (
+                      <Badge key={tag} variant="outline" className="border-primary/30 text-primary/90" title={tag}>
+                        {getSkillLabel(tag)}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    These competencies sync to your FGN Academy Skill Passport on completion.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Tasks */}
             {tasks.length > 0 && (
               <Card>
