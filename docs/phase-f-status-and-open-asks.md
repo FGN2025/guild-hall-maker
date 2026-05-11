@@ -12,9 +12,9 @@
 
 1. **`metadata.external_attempt_id`** — ✅ **SHIPPED (PR P-3, May 2026).** Stable per-enrollment uuid backed by `challenge_enrollments.external_attempt_id` (unique, defaulted via `gen_random_uuid()`). Safe to use as a hard idempotency key.
 2. **`metadata.external_user_id`** — ✅ **SHIPPED (PR P-3, May 2026).** Sent on every `challenge_completion` push. Safe to key `play_identity` on it.
-3. **PR P-2 rollout window** — still open. How long do we accept both `X-App-Key` and `X-Ecosystem-Key` before hard-failing legacy? We proposed **14 days**.
+3. **PR P-2 rollout window** — ✅ **CONFIRMED 14 days (2026-05-11).** Academy proposed 14 days from cutover for dual-accept `X-App-Key` / `X-Ecosystem-Key`; Play accepts. Schedule the strict-mode flip on day 15 post-cutover; we'll cut all outbound calls over to `X-Ecosystem-Key` before then. Ping us on the cutover date so we can mark T0 in our log.
 4. **PR P-3 tenant fields** — ✅ **SHIPPED (May 2026).** Final shape: `metadata.tenant_id` (uuid \| null), `metadata.tenant_slug` (string \| null), `metadata.tenant_name` (string \| null). All three are `null` for staff/unaffiliated users.
-5. **Webhook HMAC scheme** (for Phase E receiver) — still open. Header name + canonical string format when you're ready.
+5. **Webhook HMAC scheme** (for Phase E receiver) — ✅ **FINALIZED 2026-05-10.** Header `X-Play-Signature`, HMAC-SHA256 lowercase hex over the raw request body, secret `PLAY_WEBHOOK_SECRET`. Companion header `X-FGN-Event: challenge_completion`. Implemented in `ecosystem-webhook-dispatch`. Awaiting rotated `PLAY_WEBHOOK_SECRET` from Academy via OneTimeSecret to flip `PHASE_E_ROUTING_MODE` from `off` → `shadow`. Webhook row already inserted (`fgn_academy` / `challenge_completion` / active).
 
 ## Heads-up (not a blocker)
 
@@ -105,11 +105,32 @@ Copy-pasteable. Source: `src/lib/skillTaxonomy.ts`.
 
 ### Cross-reference for Academy docs
 
-The canonical cross-reference on Play side is **`docs/play-fgn-gg-integration-guide.md` §7 + "Skills Taxonomy (May 2026)"**. On Academy side, link from your top-level ecosystem integration guide (the one that already documents `challenge_completion` payloads) — **not** just `cdl-quest.md`, since the taxonomy spans CDL, OSHA, Fiber, and Gaming. If you want a per-track companion doc (`cdl-quest.md`, `osha-overlay.md`, `fiber-tech.md`), each can deep-link to the relevant namespace section above.
+The canonical cross-reference on Play side is **`docs/play-fgn-gg-integration-guide.md` §7 + "Skills Taxonomy (May 2026)"**. Academy mirrored §7 verbatim into their own `docs/phase-f-status-and-open-asks.md` and added the cross-links:
+- Top-level: `docs/api/README.md` → single link to §7 (not duplicated per-track).
+- Per-track deep-links: `cdl-quest.md` and `cdl-exchange.md` point at the `cdl:` slice + §7 anchor.
+- `docs/api/public-catalog/skills.md` notes legacy game-scoped key here vs namespace-prefixed tags in cross-app payloads.
+- `osha-overlay.md` / `fiber-tech.md` deferred until those integration partners ship — not blocking v1.
+
+### Academy-side impact (confirmed 2026-05-11)
+- `skill_credentials.skills_verified[]` accepts namespaced tags as-is — no schema change.
+- Profile / Skill Passport renders `namespace:tag` via human-label lookup, falls back to title-cased tag for unknowns (matches our "fail open on known prefix" rule).
+- `/public-catalog/skills` stays game-scoped today; adding a `namespace` field is a planned follow-up PR, not a v1 blocker.
 
 ### Asks for Academy
-1. **Confirm** Academy will accept and surface arbitrary `<namespace>:<skill>` tags without an allow-list update on your side.
-2. **Coordination question:** should we align the canonical OSHA / CDL / Fiber tag list with Academy's `challenge_tracks.gate_mode` taxonomy now, or keep them independent for one more iteration?
-3. **Re-asking from above** so we can close before P1 (in-app Skill Passport render) starts:
-   - PR P-2 14-day legacy `X-App-Key` window — confirm acceptable?
-   - Webhook HMAC scheme (header name + canonical string format) for the Phase E receiver.
+1. ✅ **Confirmed.** Academy accepts arbitrary `<namespace>:<skill>` tags without an allow-list update.
+2. **Coordination question (still open, non-blocking):** align the canonical OSHA / CDL / Fiber tag list with Academy's `challenge_tracks.gate_mode` taxonomy now, or keep them independent for one more iteration?
+3. ✅ Both follow-ups closed: PR P-2 14-day window confirmed; HMAC scheme finalized 2026-05-10. See §"Asks still open from plan v3 §3" above.
+
+---
+
+## Phase E flip — current state (2026-05-11)
+
+| Prereq | Status |
+|---|---|
+| `ecosystem-webhook-dispatch` deployed with `X-Play-Signature` + HMAC-SHA256 | ✅ |
+| `ecosystem_webhooks` row (`fgn_academy` / `challenge_completion`) active | ✅ |
+| `PLAY_WEBHOOK_SECRET` set in edge-function secrets | ✅ (placeholder — awaiting Academy rotation) |
+| `PHASE_E_ROUTING_MODE` | `off` (default) |
+
+**Next step:** Academy delivers rotated `PLAY_WEBHOOK_SECRET` via OneTimeSecret → we update the secret → flip `PHASE_E_ROUTING_MODE` to `shadow` for 24–48h parity check → flip to `live`. Reversible at any time per `docs/phase-e-routing-flag.md`.
+
