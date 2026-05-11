@@ -132,8 +132,6 @@ const Dashboard = () => {
     { label: "Win Rate", value: stats.matchesPlayed > 0 ? `${stats.winRate}%` : "—", icon: TrendingUp },
     { label: "Matches Played", value: stats.matchesPlayed, icon: Swords },
     { label: "Matches Won", value: stats.matchesWon, icon: Target },
-    { label: "Total Earned", value: stats.totalPointsEarned, icon: Wallet },
-    { label: "Spendable Points", value: stats.pointsAvailable, icon: Coins },
   ];
 
   return (
