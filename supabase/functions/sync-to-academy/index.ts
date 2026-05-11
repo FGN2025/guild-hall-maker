@@ -87,10 +87,26 @@ Deno.serve(async (req) => {
     // Get evidence for task-level completion status
     const { data: enrollment } = await adminClient
       .from("challenge_enrollments")
-      .select("id")
+      .select("id, external_attempt_id")
       .eq("user_id", user_id)
       .eq("challenge_id", challenge_id)
       .single();
+
+    // Resolve tenant context (P-3 metadata additions)
+    let tenantId: string | null = null;
+    let tenantSlug: string | null = null;
+    let tenantName: string | null = null;
+    const { data: tId } = await adminClient.rpc("get_user_tenant", { _user_id: user_id });
+    if (tId) {
+      tenantId = tId as string;
+      const { data: t } = await adminClient
+        .from("tenants")
+        .select("slug, name")
+        .eq("id", tenantId)
+        .single();
+      tenantSlug = (t as any)?.slug ?? null;
+      tenantName = (t as any)?.name ?? null;
+    }
 
     let taskEvidence: any[] = [];
     if (enrollment) {
