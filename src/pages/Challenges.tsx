@@ -232,10 +232,12 @@ const Challenges = () => {
 
             {completedChallenges.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
-                  <CheckCircle2 className="h-8 w-8 text-green-400" />
-                  Completed
-                </h2>
+                <div className="inline-flex items-center gap-3 rounded-lg bg-background/95 backdrop-blur-sm px-4 py-2">
+                  <h2 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
+                    <CheckCircle2 className="h-8 w-8 text-green-400" />
+                    Completed
+                  </h2>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {completedChallenges.map((c: any) => (
                     <ChallengeCard
