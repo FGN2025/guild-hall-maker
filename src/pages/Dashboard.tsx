@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, Target, Swords, TrendingUp, Calendar, Clock, Users, Gamepad2, Compass, Wallet, Coins, GraduationCap, ExternalLink, ArrowRight } from "lucide-react";
+import { Trophy, Target, Swords, TrendingUp, Calendar, Clock, Users, Gamepad2, Compass, GraduationCap, ExternalLink, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useDashboard, type ActivitySummary, type DashboardActivityItem } from "@/hooks/useDashboard";
