@@ -1,38 +1,77 @@
-# Academy Handoff Message — Phase E Shadow Active
+# Player Dashboard — Add Quests, Challenges & Academy Skill Passport
 
-## Goal
-Produce a single self-contained message you can paste into the Academy team's chat (or the FiberTech Academy Lovable project chat) so their AI/dev team can stand up the HMAC receiver and start the parity window.
+Counting mode: **Lifetime** (every row in `*_completions` for the user, no season filter).
 
-## Optional pre-send sanity check (read-only)
-Before drafting, I can peek at the FiberTech Academy project to confirm:
-- Whether `play-webhook-receiver` (or equivalent) edge function already exists at the URL we have registered (`https://vfzjfkcwromssjnlrhoo.supabase.co/functions/v1/play-webhook-receiver`)
-- Whether they already verify `X-Play-Signature` against `PLAY_WEBHOOK_SECRET`
-- Whether any of the new P-3 metadata fields (`external_attempt_id`, `tenant_id`, `tenant_slug`, `tenant_name`) are already consumed
+## Gaps closed
 
-If any gaps surface, I'll call them out explicitly in the message ("you still need to do X") instead of assuming parity.
+| Today | After |
+|---|---|
+| Only `tournament_registrations` + `match_results` are read | + `challenge_enrollments`, `challenge_completions`, `quest_enrollments`, `quest_completions` |
+| 4 stat tiles all about tournaments | 2 rows × 4 tiles covering tournaments, challenges, quests, points |
+| No surface for active/recent challenges or quests | Two new panels under the existing tournaments/matches grid |
+| No link to FGN Academy even when the player is synced | Conditional Skill Passport card under the Points Wallet |
 
-## Message structure
-Single Markdown block, ~250 lines, copy-paste ready. Sections:
+## Layout
 
-1. **TL;DR** — one paragraph: shadow is live now, your authoritative path is unchanged, here's what to do.
-2. **What changed** — the dual-send table (direct POST + HMAC webhook).
-3. **HMAC contract** — header name, algorithm, signed bytes, secret name, plus a Node verifier snippet.
-4. **Payload reference** — the full JSON shape with the new P-3 metadata fields highlighted.
-5. **What we need from you** — numbered checklist:
-   - Stand up receiver in shadow/lenient mode (log every verify result)
-   - Confirm receipt counts after ~24h
-   - Flip to strict after 48h of clean matches
-   - Persist the new metadata fields
-6. **Rollback** — kill switch (flip `PHASE_E_ROUTING_MODE` back to `off`).
-7. **Reference docs** — file paths in our repo they can request verbatim.
+```
+WELCOME BACK
+Player Dashboard
+─────────────────────────────────────────────────────────────
+[Tournaments Reg] [Challenges Done] [Quests Done]   [Win Rate]   ← row 1
+[Matches Played]  [Matches Won]     [Total Earned]  [Spendable]  ← row 2
 
-## Delivery format
-I'll output the message inside a fenced ```` ```markdown ```` block in chat so you can copy it cleanly. No file changes.
+[ Points Wallet (existing) ................................ ]
+[ Academy Skill Passport ↗ (only if academyLinked) ........ ]   ← NEW
+
+┌─ My Tournaments (existing) ─┐ ┌─ Recent Matches (existing) ┐
+└─────────────────────────────┘ └─────────────────────────────┘
+┌─ My Challenges (NEW) ───────┐ ┌─ My Quests (NEW) ──────────┐
+│ active first, then          │ │ active first, then         │
+│ recent completed (≤30d),    │ │ recent completed (≤30d),   │
+│ capped at 5                 │ │ capped at 5                │
+└─────────────────────────────┘ └─────────────────────────────┘
+```
+
+## Work
+
+### 1. `src/hooks/useDashboard.ts` — extend
+Add two parallel react-query queries (`staleTime: 60_000`, `enabled: !!user`):
+
+- **Challenges:** read `challenge_enrollments` for user → batch `challenges(id, name, game_id, points_reward, image_url)` lookup → `challenge_completions(challenge_id, awarded_points, completed_at, academy_synced)` for the same set. Return `{ active, completed, totalCompleted, totalPoints, academyLinked }` where `academyLinked = completions.some(c => c.academy_synced === true)`.
+- **Quests:** same shape against `quest_enrollments` + `quests` + `quest_completions` (no academy field).
+
+Extend `DashboardStats`:
+```ts
+{
+  tournamentsRegistered, matchesPlayed, matchesWon, winRate,
+  challengesCompleted, questsCompleted,
+  totalPointsEarned, pointsAvailable
+}
+```
+
+Fold a third query for `profiles.points` + `profiles.points_available` so the two new "points" tiles render in the same pass as the rest.
+
+### 2. `src/pages/Dashboard.tsx` — restructure
+- Replace 4-tile grid with 2 rows × 4 tiles (`grid grid-cols-2 lg:grid-cols-4`). Keep `glow-card` + cyan icon styling. Icons: `Target` (challenges), `Compass` (quests), `Wallet` (Total Earned), `Coins` (Spendable).
+- Add **Academy Skill Passport** card directly under `<PointsWalletCard />`, rendered only when `academyLinked`. Slim card: small academy mark + heading "FGN Academy Skill Passport" + subline; right side outline button "Open Skill Passport ↗" → opens computed URL in new tab.
+- Add **My Challenges** + **My Quests** panels in a new `grid lg:grid-cols-2 gap-6` row beneath the existing tournaments/matches grid. Empty states with "Browse Challenges" / "Browse Quests" CTAs. Rows show name, status badge, points chip (`+N pts` completed, `N pts` active), → `/challenges/:id` or `/quests/:id`.
+- Extend skeleton state to cover 8 stat tiles + 4 panels.
+
+### 3. Academy URL helper (NEW: `src/lib/academyPassport.ts`)
+- One react-query call (5min staleTime) for the active `tenant_integrations` row where `provider_type='fgn_academy' and is_active=true`.
+- `base = additional_config.passport_base_url ?? stripApiPath(additional_config.api_url) ?? 'https://fgn.academy'`
+- `passportUrl = ${base}/passport?email=${encodeURIComponent(user.email)}`
+- Single string change later if Academy lands a different route.
+
+### 4. Verification
+- React Query devtools: 4 dashboard queries + 1 cached integration lookup.
+- Smoke as a player with one synced challenge completion: academy card appears, "Open Skill Passport" opens with the email querystring.
+- Regression: tournament tiles + matches list visually unchanged.
 
 ## Out of scope
-- Posting to their workspace directly (not possible — see capability note above)
-- Changing payload shape further (P-3 already shipped)
-- Flipping to `live` mode (gated on their 48h clean-match confirmation)
-
-## Question before I draft
-Do you want me to **run the pre-send sanity check** against the FiberTech Academy project first (adds 1-2 read-only tool calls but lets the message say exactly what they still owe), or **draft the generic message immediately** assuming nothing about their current state?
+- No DB migrations (all tables exist).
+- No edge function changes — Phase E shadow stays on.
+- No write paths (un-enroll, submit) on the dashboard.
+- No tenant-event surface.
+- No season toggle (lifetime-only per your call). Easy follow-up later.
+- No backfill of `academy_synced` for historical rows.
