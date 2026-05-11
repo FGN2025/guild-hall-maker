@@ -15,6 +15,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
+import SkillTagsPicker from "@/components/shared/SkillTagsPicker";
 import PointsInput from "@/components/shared/PointsInput";
 import TaskVerificationEditor, { type VerificationType } from "@/components/challenges/TaskVerificationEditor";
 
