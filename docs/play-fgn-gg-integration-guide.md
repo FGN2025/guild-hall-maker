@@ -165,3 +165,11 @@ Shipped. Payload now includes `metadata.external_attempt_id` (stable per-enrollm
 ## 11. Pass/Fail Threshold
 
 A score of **70 or above** is treated as a pass (`completed` status). Below 70 is `failed`. XP and credentials are only awarded on pass.
+
+## Skills Taxonomy (May 2026)
+
+Play challenges carry a curated `skill_tags` array (admin-editable) that is forwarded to Academy as `skills_verified` on `challenge_completion` events. See `src/lib/skillTaxonomy.ts` for the canonical list.
+
+Format: `<namespace>:<skill>` (lowercase). Namespaces: `cdl:`, `osha:`, `fiber:`, `gaming:`. A `difficulty:<level>` tag is always appended.
+
+If a challenge has no curated tags, the legacy heuristic (`game:<name>`, `gaming-proficiency`, `difficulty:<level>`) is sent so untagged challenges keep flowing.

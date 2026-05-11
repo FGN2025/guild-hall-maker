@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     // Get challenge details (including academy next step fallback fields)
     const { data: challenge } = await adminClient
       .from("challenges")
-      .select("name, description, difficulty, game_id, points_reward, games(name), academy_next_step_url, academy_next_step_label")
+      .select("name, description, difficulty, game_id, points_reward, skill_tags, games(name), academy_next_step_url, academy_next_step_label")
       .eq("id", challenge_id)
       .single();
 
@@ -313,12 +313,29 @@ Deno.serve(async (req) => {
   }
 });
 
-/** Build free-form skill tags from challenge properties */
+/**
+ * Build skill tags forwarded to Academy as `skills_verified`.
+ * - If admins curated `challenge.skill_tags`, send those verbatim (primary signal).
+ * - Otherwise fall back to the legacy heuristic so untagged challenges keep working.
+ * - Difficulty is always appended as a secondary metadata-style tag.
+ */
 function buildSkillsTags(challenge: any): string[] {
   const tags: string[] = [];
   if (!challenge) return tags;
+
+  const curated: string[] = Array.isArray(challenge.skill_tags) ? challenge.skill_tags : [];
+  const cleaned = curated
+    .filter((t) => typeof t === "string" && t.trim().length > 0)
+    .map((t) => t.trim().toLowerCase());
+
+  if (cleaned.length > 0) {
+    tags.push(...cleaned);
+  } else {
+    if (challenge.games?.name) tags.push(`game:${challenge.games.name}`);
+    tags.push("gaming-proficiency");
+  }
+
   if (challenge.difficulty) tags.push(`difficulty:${challenge.difficulty}`);
-  if (challenge.games?.name) tags.push(`game:${challenge.games.name}`);
-  tags.push("gaming-proficiency");
-  return tags;
+  return Array.from(new Set(tags));
 }
+

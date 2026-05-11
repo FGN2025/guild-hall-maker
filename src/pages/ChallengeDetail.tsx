@@ -21,6 +21,7 @@ import { useCopyContent } from "@/hooks/useCopyContent";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getSkillLabel } from "@/lib/skillTaxonomy";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -186,6 +187,24 @@ const ChallengeDetail = () => {
                 <CardContent className="p-5">
                   <h2 className="font-display text-lg font-semibold text-foreground mb-2">Description</h2>
                   <p className="text-muted-foreground font-body whitespace-pre-wrap">{c.description}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {Array.isArray((c as any).skill_tags) && (c as any).skill_tags.length > 0 && (
+              <Card>
+                <CardContent className="p-5">
+                  <h2 className="font-display text-lg font-semibold text-foreground mb-3">Skills You'll Build</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {(c as any).skill_tags.map((tag: string) => (
+                      <Badge key={tag} variant="outline" className="border-primary/30 text-primary/90" title={tag}>
+                        {getSkillLabel(tag)}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    These competencies sync to your FGN Academy Skill Passport on completion.
+                  </p>
                 </CardContent>
               </Card>
             )}

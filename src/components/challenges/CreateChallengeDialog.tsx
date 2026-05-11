@@ -15,6 +15,7 @@ import { validateAndToast } from "@/lib/imageValidation";
 import { useImageLimits } from "@/hooks/useImageLimits";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
+import SkillTagsPicker from "@/components/shared/SkillTagsPicker";
 import PointsInput from "@/components/shared/PointsInput";
 import TaskVerificationEditor, { type VerificationType } from "@/components/challenges/TaskVerificationEditor";
 
@@ -41,6 +42,7 @@ const defaultForm = {
   academy_next_step_url: "",
   academy_next_step_label: "",
   points_override_reason: "",
+  skill_tags: [] as string[],
 };
 
 const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeDialogProps) => {
@@ -122,6 +124,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         academy_next_step_label: form.academy_next_step_label || null,
         points_override_reason: form.points_override_reason?.trim() || null,
         points_overridden_by: form.points_override_reason?.trim() ? user.id : null,
+        skill_tags: form.skill_tags,
       } as any).select().single();
       if (error) throw error;
 
@@ -281,6 +284,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
           </div>
 
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
+          <SkillTagsPicker value={form.skill_tags} onChange={(tags) => setForm({ ...form, skill_tags: tags })} />
 
           <div className="flex items-center gap-3">
             <Switch checked={form.requires_evidence} onCheckedChange={(v) => setForm({ ...form, requires_evidence: v })} />

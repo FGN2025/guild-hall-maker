@@ -26,3 +26,35 @@ OSHA challenges don't have work orders in your prod feed — we seeded **4 stub 
 - `d098fcac…`
 
 …our seeded rows will collide on the unique index. **Ping us before you do** and we'll swap them out.
+
+---
+
+## Update — skills taxonomy (Play side, May 2026)
+
+### What changed
+`skills_verified` on `challenge_completion` payloads is now a curated list of **competency tags** instead of `difficulty:*` / `game:*` placeholders. Field name and shape (`string[]`) are unchanged — **no contract break**.
+
+Examples:
+```json
+"skills_verified": ["osha:fall-protection", "osha:ppe", "difficulty:intermediate"]
+"skills_verified": ["cdl:pre-trip", "cdl:hazard-perception", "difficulty:advanced"]
+"skills_verified": ["fiber:splicing", "fiber:otdr", "difficulty:beginner"]
+```
+
+### Tag format
+- Lowercase, namespace-prefixed: `<namespace>:<skill>`
+- Initial namespaces: `cdl:`, `osha:`, `fiber:`, `gaming:`
+- `difficulty:<level>` is always appended as a secondary metadata-style tag
+
+### Fallback behavior
+Challenges that have **not** been re-tagged yet still emit the legacy triple (`game:<name>`, `gaming-proficiency`, `difficulty:<level>`). Expect a mix of curated and legacy payloads during the rollout window — no flag day.
+
+### Source of truth
+Living list in `src/lib/skillTaxonomy.ts` on Play. We commit to namespace-prefixed lowercase tags. Please key any Skill Passport mappings on the **prefix** so unknown skills in a known namespace fail open instead of being dropped.
+
+### Asks for Academy
+1. **Confirm** Academy will accept and surface arbitrary `<namespace>:<skill>` tags without an allow-list update on your side.
+2. **Coordination question:** should we align the canonical OSHA / CDL / Fiber tag list with Academy's `challenge_tracks.gate_mode` taxonomy now, or keep them independent for one more iteration?
+3. **Re-asking from above** so we can close before P1 (in-app Skill Passport render) starts:
+   - PR P-2 14-day legacy `X-App-Key` window — confirm acceptable?
+   - Webhook HMAC scheme (header name + canonical string format) for the Phase E receiver.

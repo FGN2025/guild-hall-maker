@@ -1,45 +1,72 @@
-## Goal
+# P0 — Skill Tags on Challenges
 
-Make every "points" number a player sees represent the same thing, sourced from the same query, with consistent labels and formatting. Selected policy: **lifetime wallet, lifetime total earned**.
+Goal: give every Play challenge a real competency taxonomy, expose it to admins/mods, and forward it to Academy via `sync-to-academy` so the Skill Passport finally reflects what players actually demonstrated.
 
-## Source of truth
+## What we're building
 
-One shared hook reads `season_scores` for the user with **no season filter**:
+1. **DB**: `challenges.skill_tags text[]` (nullable, default `'{}'`), GIN index for filtering. No data backfill — leave existing rows empty; staff curates as they edit.
+2. **Shared taxonomy module** (`src/lib/skillTaxonomy.ts`): canonical list of competencies grouped by track, plus helpers (`ALL_SKILL_TAGS`, `SKILL_GROUPS`, `getSkillLabel(tag)`, `isValidSkillTag(tag)`). Initial groups (extensible):
+   - `cdl:*` — `cdl:pre-trip`, `cdl:backing`, `cdl:logbook`, `cdl:hazard-perception`, `cdl:fuel-mgmt` (sourced from `src/lib/cdlDomainMaps.ts`)
+   - `osha:*` — `osha:fall-protection`, `osha:ppe`, `osha:lockout-tagout`, `osha:hazcom`
+   - `fiber:*` — `fiber:splicing`, `fiber:otdr`, `fiber:installation`, `fiber:troubleshooting`
+   - `gaming:*` — `gaming:aim`, `gaming:strategy`, `gaming:teamwork`, `gaming:macro`, `gaming:micro`
+3. **Admin/Mod UI**: a `SkillTagsPicker` (multi-select with grouped sections + search) added to:
+   - `CreateChallengeDialog` and `EditChallengeDialog`
+   - `ModeratorChallenges` edit flow (uses same picker via shared component)
+   - CDL Generator output (pre-fills `cdl:*` tags it knows about)
+4. **Edge function**: rewrite `buildSkillsTags()` in `supabase/functions/sync-to-academy/index.ts` to:
+   - If `challenge.skill_tags` is non-empty → send those verbatim.
+   - Else → fall back to current heuristic (`difficulty:*`, `game:*`, `gaming-proficiency`) so legacy challenges keep working.
+   - Always append `difficulty:<level>` as metadata, but keep competencies as the primary signal.
+5. **Read surfaces**: show tags as small pills on `ChallengeCard` and `ChallengeDetail` so players see the skills they'll earn before enrolling.
 
-- `pointsAvailable` = `sum(season_scores.points_available)` → spendable wallet (lifetime)
-- `totalPointsEarned` = `sum(season_scores.points)` → career earned (lifetime)
+## Out of scope (P1+)
 
-After this change the same user should see, everywhere on the site:
-- **Spendable: 473 pts**
-- **Total Earned: 1043 pts**
-
-The current 425 / 435 figures (active-season only) disappear from the UI.
-
-## Changes
-
-### 1. `src/components/shared/PointsWalletCard.tsx`
-- Remove the `seasons.status='active'` filter from the `player-season-score` query so it sums across all seasons.
-- Keep the same component shape (compact + full variants); only the data source changes.
-- Result: every page that already uses `PointsWalletCard` (Dashboard, PrizeShop, Leaderboard, PlayerProfile, Quests, Challenges) becomes consistent automatically.
-
-### 2. `src/pages/Dashboard.tsx`
-- Remove the standalone `Total Earned` and `Spendable Points` tiles from the 8-tile grid (they duplicate what `PointsWalletCard` shows two rows below). New grid is 6 tiles: Registered Tournaments, Challenges Completed, Quests Completed, Win Rate, Matches Played, Matches Won — switch the grid to `lg:grid-cols-3` (or keep 4-col and let it wrap). This eliminates the 1043 vs 435 / 473 vs 425 conflict by having a **single** points surface on the page.
-- `PointsWalletCard` directly under the stat grid remains the one place points are shown.
-
-### 3. `src/hooks/useDashboard.ts`
-- Drop `pointsQuery` and the `totalPointsEarned` / `pointsAvailable` fields from `DashboardStats` (no longer rendered).
-- Saves one query per dashboard load.
-
-### 4. Labeling/formatting consistency in `PointsWalletCard`
-- Both numbers render with the same unit suffix (`pts`) and same mono font.
-- Labels: **"Spendable"** (primary, large) and **"Lifetime Earned"** (secondary, muted) — "Lifetime" makes the scope explicit so it's never confused with season scores again.
-
-## Out of scope
-- No DB migration, no trigger changes, no edge functions.
-- No change to redemption logic — `trg_deduct_points_on_approval` continues to deduct from `points_available`. Lifetime spendable already matches how the trigger works.
-- Seasonal Leaderboard continues to read season-scoped data (different product surface, intentional).
-- The 48-pt gap between lifetime spendable (473) and active-season spendable (425) becomes invisible to the player and is treated as legitimate carry-over — no backfill needed.
+- Pulling/rendering Academy Skill Passport in-app (P1)
+- Skill-driven discovery / recommendations (P2)
+- New webhook events (P3)
+- Track-aware completion UX (P4)
 
 ## Technical notes
-- `season_scores` is per `(user_id, season_id)`. Summing across all rows gives the lifetime view directly; no new tables or views needed.
-- React-query keys stay stable (`player-season-score`, user-scoped) so cache invalidation on point changes still works.
+
+- Migration is additive only (`ADD COLUMN IF NOT EXISTS`, GIN index, no constraint changes). No RLS changes required — existing `challenges` policies cover the new column.
+- `SkillTagsPicker` reuses shadcn `Command` + `Popover` (same pattern as `AchievementPicker`).
+- `sync-to-academy` payload contract is unchanged — we keep the `skills_verified: string[]` field name. Academy already accepts arbitrary strings, so no breaking change.
+- Validation: `isValidSkillTag` is advisory in the UI (warns on free-form tags) but the edge function does **not** filter unknown tags, so Academy can keep evolving its taxonomy independently.
+
+## Files touched
+
+```text
+supabase/migrations/<ts>_challenge_skill_tags.sql        (new)
+src/lib/skillTaxonomy.ts                                  (new)
+src/components/shared/SkillTagsPicker.tsx                 (new)
+src/components/challenges/CreateChallengeDialog.tsx       (edit)
+src/components/challenges/EditChallengeDialog.tsx         (edit)
+src/components/challenges/ChallengeCard.tsx               (edit — render pills)
+src/pages/ChallengeDetail.tsx                             (edit — render pills)
+src/pages/moderator/ModeratorCDLGenerate.tsx              (edit — pre-fill cdl:* tags)
+supabase/functions/sync-to-academy/index.ts               (edit — buildSkillsTags)
+docs/phase-f-status-and-open-asks.md                      (edit — note new tag shape)
+docs/play-fgn-gg-integration-guide.md                     (edit — taxonomy reference)
+```
+
+## Validation
+
+1. Create a challenge with `osha:fall-protection` + `osha:ppe`; verify `challenges.skill_tags` persists.
+2. Approve evidence → check `sync-logs` payload contains `skills_verified: ["osha:fall-protection","osha:ppe"]`.
+3. Legacy challenge (no tags) approval still emits the old `difficulty:*` / `game:*` / `gaming-proficiency` triple.
+4. Pills render on `/challenges` and `/challenges/:id`.
+
+## Communication to Academy devs (sent at end of P0)
+
+Append to `docs/phase-f-status-and-open-asks.md` a new section **"Update — skills taxonomy (Play side)"** with:
+
+- **What changed:** `skills_verified` on `challenge_completion` payloads is now a curated list of competency tags (e.g. `osha:fall-protection`, `cdl:pre-trip`, `fiber:splicing`, `gaming:aim`) instead of `difficulty:*`/`game:*` placeholders. Field name and shape (`string[]`) unchanged — no contract break.
+- **Fallback behavior:** Challenges that haven't been re-tagged yet still emit the legacy triple (`difficulty:<level>`, `game:<name>`, `gaming-proficiency`). Expect a mix during the rollout window.
+- **Taxonomy source of truth:** living list in `src/lib/skillTaxonomy.ts` (we'll mirror it into the integration guide). We commit to namespace-prefixed lowercase tags (`<track>:<skill>`); please key any Skill Passport mappings on the prefix so unknown skills in a known namespace fail open instead of being dropped.
+- **Asks for Academy:**
+  1. Confirm Academy will accept and surface arbitrary `<namespace>:<skill>` tags without an allow-list update.
+  2. Should we coordinate the canonical OSHA / CDL / Fiber tag list with Academy's `challenge_tracks.gate_mode` taxonomy now, or keep them independent for one more iteration?
+  3. Still open from Phase F: **PR P-2 14-day legacy `X-App-Key` window** + **webhook HMAC scheme** for Phase E receiver — re-asking so we can close them before P1 (in-app Passport render) starts.
+
+Format the message so it can be copy-pasted into the cross-team channel.

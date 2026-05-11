@@ -5,6 +5,7 @@ import { Clock, Users, Signal, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSkillLabel } from "@/lib/skillTaxonomy";
 
 interface ChallengeCardProps {
   challenge: any;
@@ -77,6 +78,20 @@ const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) =
               +{c.points_first} pts
             </Badge>
           </div>
+          {Array.isArray(c.skill_tags) && c.skill_tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {c.skill_tags.slice(0, 3).map((tag: string) => (
+                <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary/90">
+                  {getSkillLabel(tag)}
+                </Badge>
+              ))}
+              {c.skill_tags.length > 3 && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border text-muted-foreground">
+                  +{c.skill_tags.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
           {c.achievement_id && (
             <AchievementBadgeDisplay achievementId={c.achievement_id} compact />
           )}

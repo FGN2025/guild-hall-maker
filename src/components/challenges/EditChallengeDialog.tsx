@@ -15,6 +15,7 @@ import { useImageLimits } from "@/hooks/useImageLimits";
 import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
+import SkillTagsPicker from "@/components/shared/SkillTagsPicker";
 import PointsInput from "@/components/shared/PointsInput";
 import TaskVerificationEditor from "@/components/challenges/TaskVerificationEditor";
 
@@ -65,6 +66,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [academyNextStepUrl, setAcademyNextStepUrl] = useState("");
   const [academyNextStepLabel, setAcademyNextStepLabel] = useState("");
   const [pointsOverrideReason, setPointsOverrideReason] = useState("");
+  const [skillTags, setSkillTags] = useState<string[]>([]);
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active-with-steam"],
@@ -112,6 +114,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setAcademyNextStepUrl(challenge.academy_next_step_url || "");
       setAcademyNextStepLabel(challenge.academy_next_step_label || "");
       setPointsOverrideReason(challenge.points_override_reason || "");
+      setSkillTags(Array.isArray(challenge.skill_tags) ? challenge.skill_tags : []);
     }
   }, [challenge, open]);
 
@@ -221,6 +224,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         academy_next_step_label: academyNextStepLabel || null,
         points_override_reason: pointsOverrideReason.trim() || null,
         points_overridden_by: pointsOverrideReason.trim() ? user?.id ?? null : null,
+        skill_tags: skillTags,
       }).eq("id", challenge.id);
       if (error) throw error;
 
@@ -420,6 +424,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             <Input type="number" value={maxEnrollments} onChange={(e) => setMaxEnrollments(e.target.value ? Number(e.target.value) : "")} placeholder="Unlimited" />
           </div>
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
+          <SkillTagsPicker value={skillTags} onChange={setSkillTags} />
           <div className="flex items-center justify-between">
             <Label>Requires Evidence</Label>
             <Switch checked={requiresEvidence} onCheckedChange={setRequiresEvidence} />

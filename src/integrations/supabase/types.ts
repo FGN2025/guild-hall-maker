@@ -551,6 +551,7 @@ export type Database = {
           points_third: number
           requires_evidence: boolean
           season_id: string | null
+          skill_tags: string[]
           start_date: string | null
           suggested_coach_prompts: Json | null
           updated_at: string
@@ -589,6 +590,7 @@ export type Database = {
           points_third?: number
           requires_evidence?: boolean
           season_id?: string | null
+          skill_tags?: string[]
           start_date?: string | null
           suggested_coach_prompts?: Json | null
           updated_at?: string
@@ -627,6 +629,7 @@ export type Database = {
           points_third?: number
           requires_evidence?: boolean
           season_id?: string | null
+          skill_tags?: string[]
           start_date?: string | null
           suggested_coach_prompts?: Json | null
           updated_at?: string
