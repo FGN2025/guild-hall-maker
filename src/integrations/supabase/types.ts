@@ -381,6 +381,7 @@ export type Database = {
         Row: {
           challenge_id: string
           enrolled_at: string
+          external_attempt_id: string
           id: string
           status: string
           updated_at: string
@@ -389,6 +390,7 @@ export type Database = {
         Insert: {
           challenge_id: string
           enrolled_at?: string
+          external_attempt_id?: string
           id?: string
           status?: string
           updated_at?: string
@@ -397,6 +399,7 @@ export type Database = {
         Update: {
           challenge_id?: string
           enrolled_at?: string
+          external_attempt_id?: string
           id?: string
           status?: string
           updated_at?: string
