@@ -238,7 +238,21 @@ const ModeratorChallenges = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // ── Evidence review queries ──
+  const forceSubmitMutation = useMutation({
+    mutationFn: async (enrollmentId: string) => {
+      const { error } = await supabase
+        .from("challenge_enrollments")
+        .update({ status: "submitted", updated_at: new Date().toISOString() })
+        .eq("id", enrollmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mod-review-enrollments"] });
+      toast.success("Enrollment marked as submitted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const { data: reviewTasks = [] } = useQuery({
     queryKey: ["mod-review-tasks", reviewChallengeId],
     enabled: !!reviewChallengeId,
