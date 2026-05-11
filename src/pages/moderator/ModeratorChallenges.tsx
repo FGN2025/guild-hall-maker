@@ -370,6 +370,17 @@ const ModeratorChallenges = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={gameFilter} onValueChange={setGameFilter}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Game" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Games</SelectItem>
+                {gameOptions.map((g) => (
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex gap-1">
               <Button variant={viewMode === "list" ? "default" : "outline"} size="icon" onClick={() => setViewMode("list")}>
                 <List className="h-4 w-4" />
