@@ -5,6 +5,7 @@ import { Clock, Users, Signal, Gamepad2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSkillLabel } from "@/lib/skillTaxonomy";
 
 interface ChallengeCardProps {
   challenge: any;
