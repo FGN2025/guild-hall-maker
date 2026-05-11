@@ -16,17 +16,10 @@ const PointsWalletCard = ({ compact = false }: Props) => {
     queryKey: ["player-season-score", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data: activeSeasons } = await supabase
-        .from("seasons")
-        .select("id")
-        .eq("status", "active");
-      if (!activeSeasons || activeSeasons.length === 0) return null;
-      const seasonIds = activeSeasons.map((s: any) => s.id);
       const { data: scores } = await supabase
         .from("season_scores")
         .select("points, points_available")
-        .eq("user_id", user!.id)
-        .in("season_id", seasonIds);
+        .eq("user_id", user!.id);
       if (!scores || scores.length === 0) return null;
       return {
         points: scores.reduce((sum: number, s: any) => sum + (s.points ?? 0), 0),
@@ -62,11 +55,11 @@ const PointsWalletCard = ({ compact = false }: Props) => {
       <CardContent className="p-4 flex items-center gap-4">
         <ShoppingBag className="h-5 w-5 text-primary shrink-0" />
         <div>
-          <p className="text-xs text-muted-foreground">Available</p>
+          <p className="text-xs text-muted-foreground">Spendable</p>
           <p className="text-xl font-bold font-mono text-primary">{available} pts</p>
         </div>
         <div className="border-l border-border pl-4">
-          <p className="text-xs text-muted-foreground">Total Earned</p>
+          <p className="text-xs text-muted-foreground">Lifetime Earned</p>
           <p className="text-sm font-mono text-muted-foreground">{earned} pts</p>
         </div>
         <Link

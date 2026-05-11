@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, Target, Swords, TrendingUp, Calendar, Clock, Users, Gamepad2, Compass, Wallet, Coins, GraduationCap, ExternalLink, ArrowRight } from "lucide-react";
+import { Trophy, Target, Swords, TrendingUp, Calendar, Clock, Users, Gamepad2, Compass, GraduationCap, ExternalLink, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useDashboard, type ActivitySummary, type DashboardActivityItem } from "@/hooks/useDashboard";
@@ -132,8 +132,6 @@ const Dashboard = () => {
     { label: "Win Rate", value: stats.matchesPlayed > 0 ? `${stats.winRate}%` : "—", icon: TrendingUp },
     { label: "Matches Played", value: stats.matchesPlayed, icon: Swords },
     { label: "Matches Won", value: stats.matchesWon, icon: Target },
-    { label: "Total Earned", value: stats.totalPointsEarned, icon: Wallet },
-    { label: "Spendable Points", value: stats.pointsAvailable, icon: Coins },
   ];
 
   return (
@@ -154,7 +152,7 @@ const Dashboard = () => {
         {isLoading ? (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="rounded-xl border border-border bg-card p-5 animate-pulse" style={{ animationDelay: `${i * 60}ms` }}>
                   <Skeleton className="h-5 w-5 mb-3 rounded" />
                   <Skeleton className="h-8 w-16 mb-1" />
