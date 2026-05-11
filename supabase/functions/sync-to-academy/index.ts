@@ -146,6 +146,10 @@ Deno.serve(async (req) => {
       metadata: {
         source: "play.fgn.gg",
         external_user_id: user_id,
+        external_attempt_id: (enrollment as any)?.external_attempt_id ?? null,
+        tenant_id: tenantId,
+        tenant_slug: tenantSlug,
+        tenant_name: tenantName,
         display_name: profile?.display_name || userEmail,
         challenge_name: (challenge as any)?.name || "Unknown Challenge",
         description: (challenge as any)?.description || null,
