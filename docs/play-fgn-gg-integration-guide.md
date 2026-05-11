@@ -53,6 +53,12 @@ play.fgn.gg sends a flat payload. All top-level fields use underscore naming.
   "skills_verified": ["difficulty:intermediate", "game:Rocket League", "gaming-proficiency"],
   "metadata": {
     "source": "play.fgn.gg",
+    "external_user_id": "uuid-of-play-user",
+    "external_attempt_id": "uuid-of-enrollment-row",
+    "tenant_id": "uuid-of-tenant-or-null",
+    "tenant_slug": "acme-fiber",
+    "tenant_name": "Acme Fiber",
+    "display_name": "PlayerOne",
     "game_name": "Rocket League",
     "difficulty": "intermediate",
     "awarded_points": 850,
@@ -72,6 +78,11 @@ play.fgn.gg sends a flat payload. All top-level fields use underscore naming.
 | `task_progress` | array | No | Per-task completion status (see §5) |
 | `skills_verified` | string[] | No | Free-form skill tags (no fixed taxonomy) |
 | `metadata` | object | No | Extra context fields; academy may store or ignore |
+| `metadata.external_user_id` | uuid | Recommended | Stable Play user id — use to key `play_identity` instead of fuzzy email matching |
+| `metadata.external_attempt_id` | uuid | Recommended | Stable per-enrollment id — use as hard idempotency key for completion events |
+| `metadata.tenant_id` | uuid \| null | Optional | Play tenant the user belongs to; `null` for staff/unaffiliated |
+| `metadata.tenant_slug` | string \| null | Optional | Tenant slug for cohort dashboards |
+| `metadata.tenant_name` | string \| null | Optional | Tenant display name |
 
 ## 5. task_progress Format
 
@@ -147,6 +158,9 @@ Removed. `X-Ecosystem-Key` is the only auth header. Source identification moved 
 
 **Q6: Extra fields?**
 Extra context (`display_name`, `difficulty`, `game_name`, `awarded_points`, `max_points`) goes in the `metadata{}` object.
+
+**Q7: P-3 metadata additions (May 2026)?**
+Shipped. Payload now includes `metadata.external_attempt_id` (stable per-enrollment uuid), `metadata.external_user_id` (stable Play user uuid), and `metadata.tenant_id` / `tenant_slug` / `tenant_name`. Academy may key idempotency on `external_attempt_id`, key `play_identity` on `external_user_id`, and stamp tenant cohorts off `tenant_*`. Payload is byte-identical between the direct POST and the HMAC webhook envelope used by Phase E.
 
 ## 11. Pass/Fail Threshold
 
