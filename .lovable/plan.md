@@ -1,25 +1,59 @@
 ## Plan
 
-### 1. Filter by Game — Oversight + Evidence Review
+### 1. Update `updateStatusMutation` on both review pages
 
-Both `src/pages/moderator/ModeratorChallenges.tsx` and `src/pages/admin/AdminChallenges.tsx`:
+In both `src/pages/moderator/ModeratorChallenges.tsx` and `src/pages/admin/AdminChallenges.tsx`, extend `updateStatusMutation` so when the enrollment status flips, the underlying `challenge_evidence` rows are flipped to match. This eliminates the "still pending" badges after an enrollment is approved/rejected.
 
-- **Oversight tab**: add a `gameFilter` `Select` next to the existing Difficulty/Status filters. Options derived from `[...new Set(challenges.map(c => c.games?.name).filter(Boolean))].sort()` plus an "All Games" option. (AdminChallenges already has this pattern at line 161/166 — port the same `useMemo` + `Select` to ModeratorChallenges.)
-- **Evidence Review tab**: add the same Game `Select` above the "Select Challenge to Review" dropdown. When a game is chosen, the challenge picker only lists that game's challenges. Picking a different game clears `reviewChallengeId`.
-- One shared `gameFilter` state per page covers both tabs (consistent context as the user switches tabs).
+After the existing `challenge_enrollments` update succeeds and before the points/notification side effects:
 
-### 2. Mirror recent fixes into AdminChallenges
+```ts
+if (status === "completed") {
+  await supabase.from("challenge_evidence")
+    .update({
+      status: "approved",
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("enrollment_id", enrollmentId)
+    .neq("status", "approved");
+} else if (status === "rejected") {
+  await supabase.from("challenge_evidence")
+    .update({
+      status: "rejected",
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("enrollment_id", enrollmentId)
+    .eq("status", "pending");
+}
+```
 
-Port the four moderator-side improvements into `src/pages/admin/AdminChallenges.tsx` so admins get the same Evidence Review UX at `/admin/challenges`:
+Then in `onSuccess`, also invalidate `["mod-review-enrollments"]` (and the admin equivalent) so per-task badges re-render immediately.
 
-1. **Per-task evidence grouping** — iterate `reviewTasks`, render each task's evidence; tasks with zero evidence show a dashed "No evidence uploaded for this task yet" tile (replaces the empty media placeholder).
-2. **Submission-state notice** — when `enrollment.status` is not `submitted/completed/rejected`, show the yellow "Awaiting player submission" banner explaining why approve buttons are hidden.
-3. **Force submit (admin)** — button inside that banner that flips the enrollment to `submitted` via the same mutation, so admins can unblock test/stuck enrollments without bothering the player.
-4. **video_link rendering** — YouTube + Twitch (clip & video) iframe branches matching `ChallengeDetail.tsx` lines 242–276, plus `preload="metadata"` on `<video>` tags, so YouTube/Twitch evidence renders inline instead of falling through to a generic icon.
+### 2. Backfill migration
+
+One-time SQL to fix historical records (e.g. RacerX's FS25 Bronze) where the enrollment was already marked completed but evidence stayed pending:
+
+```sql
+UPDATE public.challenge_evidence ce
+SET status = 'approved', reviewed_at = now()
+FROM public.challenge_enrollments en
+WHERE ce.enrollment_id = en.id
+  AND en.status = 'completed'
+  AND ce.status = 'pending';
+
+UPDATE public.challenge_evidence ce
+SET status = 'rejected', reviewed_at = now()
+FROM public.challenge_enrollments en
+WHERE ce.enrollment_id = en.id
+  AND en.status = 'rejected'
+  AND ce.status = 'pending';
+```
+
+No schema or RLS changes — moderators/admins already have update rights on `challenge_evidence` via the existing per-evidence approval flow.
 
 ### Files
 
-- `src/pages/moderator/ModeratorChallenges.tsx` — add Game filter to Oversight + Evidence Review.
-- `src/pages/admin/AdminChallenges.tsx` — add Game filter to Evidence Review (Oversight already has one), plus the four ported fixes.
-
-No DB, RLS, or routing changes. ModeratorRoute already permits admins, and AdminSidebar already links to `/admin/challenges`.
+- `src/pages/moderator/ModeratorChallenges.tsx` — extend `updateStatusMutation`, add cache invalidation.
+- `src/pages/admin/AdminChallenges.tsx` — same change.
+- New migration — backfill historical evidence rows.
