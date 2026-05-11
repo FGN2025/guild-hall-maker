@@ -175,6 +175,11 @@ const AdminChallenges = () => {
     });
   }, [challenges, search, difficultyFilter, statusFilter, gameFilter]);
 
+  const reviewChallenges = useMemo(() => {
+    if (gameFilter === "all") return challenges;
+    return challenges.filter((c: any) => (c.games?.name ?? "") === gameFilter);
+  }, [challenges, gameFilter]);
+
   const dragEnabled = !search && difficultyFilter === "all" && statusFilter === "all" && gameFilter === "all";
 
   const handleCopyShareLink = async () => {
