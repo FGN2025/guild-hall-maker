@@ -42,6 +42,7 @@ const defaultForm = {
   academy_next_step_url: "",
   academy_next_step_label: "",
   points_override_reason: "",
+  skill_tags: [] as string[],
 };
 
 const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeDialogProps) => {
