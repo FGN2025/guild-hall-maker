@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import PointsWalletCard from "@/components/shared/PointsWalletCard";
-import { useAcademyPassportUrl } from "@/lib/academyPassport";
+import { useAcademyPassport } from "@/lib/academyPassport";
 
 const ActivityPanel = ({
   title,
@@ -101,7 +101,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [, setOnboardingChecked] = useState(false);
-  const passportUrl = useAcademyPassportUrl(user?.email);
+  const { openPassport } = useAcademyPassport({ email: user?.email });
 
   useEffect(() => {
     if (!user) return;
@@ -209,7 +209,7 @@ const Dashboard = () => {
                 <Button
                   variant="outline"
                   className="font-heading border-accent/40 text-accent hover:bg-accent/10 shrink-0"
-                  onClick={() => window.open(passportUrl, "_blank", "noopener,noreferrer")}
+                  onClick={() => openPassport()}
                 >
                   Open Skill Passport
                   <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
