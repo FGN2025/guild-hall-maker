@@ -55,11 +55,11 @@ const PointsWalletCard = ({ compact = false }: Props) => {
       <CardContent className="p-4 flex items-center gap-4">
         <ShoppingBag className="h-5 w-5 text-primary shrink-0" />
         <div>
-          <p className="text-xs text-muted-foreground">Available</p>
+          <p className="text-xs text-muted-foreground">Spendable</p>
           <p className="text-xl font-bold font-mono text-primary">{available} pts</p>
         </div>
         <div className="border-l border-border pl-4">
-          <p className="text-xs text-muted-foreground">Total Earned</p>
+          <p className="text-xs text-muted-foreground">Lifetime Earned</p>
           <p className="text-sm font-mono text-muted-foreground">{earned} pts</p>
         </div>
         <Link
