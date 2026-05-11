@@ -1,72 +1,65 @@
-# P0 — Skill Tags on Challenges
+## P1 — Skill Passport link-out (Play side), config-driven URL
 
-Goal: give every Play challenge a real competency taxonomy, expose it to admins/mods, and forward it to Academy via `sync-to-academy` so the Skill Passport finally reflects what players actually demonstrated.
+### Context
+- Decision: **link-out only** from `/dashboard`, no in-app passport render.
+- Current button hits `https://fgn.academy/passport?email=<urlencoded>` and 404s.
+- URL/auth contract is now logged as **§9 P1 BLOCKER** in `docs/phase-f-status-and-open-asks.md` (Option A: canonical slug URL, Option B: HMAC magic-link — Option B preferred).
+- Academy still owes the explicit decision per §9. Nothing on Play hard-codes either choice yet.
 
-## What we're building
+### Goal
+Land Play's Skill Passport link-out in a shape that can flip to Academy's final answer **via config only, no redeploy**, while the §9 decision is pending. Today's button still 404s, so step 2 also gives us a less-broken interim default.
 
-1. **DB**: `challenges.skill_tags text[]` (nullable, default `'{}'`), GIN index for filtering. No data backfill — leave existing rows empty; staff curates as they edit.
-2. **Shared taxonomy module** (`src/lib/skillTaxonomy.ts`): canonical list of competencies grouped by track, plus helpers (`ALL_SKILL_TAGS`, `SKILL_GROUPS`, `getSkillLabel(tag)`, `isValidSkillTag(tag)`). Initial groups (extensible):
-   - `cdl:*` — `cdl:pre-trip`, `cdl:backing`, `cdl:logbook`, `cdl:hazard-perception`, `cdl:fuel-mgmt` (sourced from `src/lib/cdlDomainMaps.ts`)
-   - `osha:*` — `osha:fall-protection`, `osha:ppe`, `osha:lockout-tagout`, `osha:hazcom`
-   - `fiber:*` — `fiber:splicing`, `fiber:otdr`, `fiber:installation`, `fiber:troubleshooting`
-   - `gaming:*` — `gaming:aim`, `gaming:strategy`, `gaming:teamwork`, `gaming:macro`, `gaming:micro`
-3. **Admin/Mod UI**: a `SkillTagsPicker` (multi-select with grouped sections + search) added to:
-   - `CreateChallengeDialog` and `EditChallengeDialog`
-   - `ModeratorChallenges` edit flow (uses same picker via shared component)
-   - CDL Generator output (pre-fills `cdl:*` tags it knows about)
-4. **Edge function**: rewrite `buildSkillsTags()` in `supabase/functions/sync-to-academy/index.ts` to:
-   - If `challenge.skill_tags` is non-empty → send those verbatim.
-   - Else → fall back to current heuristic (`difficulty:*`, `game:*`, `gaming-proficiency`) so legacy challenges keep working.
-   - Always append `difficulty:<level>` as metadata, but keep competencies as the primary signal.
-5. **Read surfaces**: show tags as small pills on `ChallengeCard` and `ChallengeDetail` so players see the skills they'll earn before enrolling.
+### Step 1 — Make the URL fully config-driven
+Edit `src/lib/academyPassport.ts` to read additional knobs from the active `tenant_integrations` row (`provider_type = 'fgn_academy'`, `is_active = true`):
 
-## Out of scope (P1+)
+- `passport_base_url` (already supported) — host root, default `https://fgn.academy`.
+- `passport_path_template` (new) — e.g. `/passport/{slug}` or `/passport?email={email}`. Supports placeholders: `{email}`, `{external_user_id}`, `{slug}`. Default kept as `/passport?email={email}` until §9 lands.
+- `passport_link_mode` (new) — `"direct" | "magic_link"`. Default `"direct"`.
 
-- Pulling/rendering Academy Skill Passport in-app (P1)
-- Skill-driven discovery / recommendations (P2)
-- New webhook events (P3)
-- Track-aware completion UX (P4)
+Direct mode: substitute placeholders against `{ email, external_user_id, slug }` resolved from the current user (email from auth, external_user_id from `profiles`/sync metadata, slug from a future Academy lookup). Missing placeholder → fall back to email.
 
-## Technical notes
+Hook surface stays `useAcademyPassportUrl(...)` returning a string URL, so `Dashboard.tsx` doesn't change in direct mode.
 
-- Migration is additive only (`ADD COLUMN IF NOT EXISTS`, GIN index, no constraint changes). No RLS changes required — existing `challenges` policies cover the new column.
-- `SkillTagsPicker` reuses shadcn `Command` + `Popover` (same pattern as `AchievementPicker`).
-- `sync-to-academy` payload contract is unchanged — we keep the `skills_verified: string[]` field name. Academy already accepts arbitrary strings, so no breaking change.
-- Validation: `isValidSkillTag` is advisory in the UI (warns on free-form tags) but the edge function does **not** filter unknown tags, so Academy can keep evolving its taxonomy independently.
+### Step 2 — Magic-link path (only wired up; dormant until Academy picks Option B)
+Add edge function `supabase/functions/academy-passport-link/index.ts`:
+- Loads active `fgn_academy` integration.
+- Resolves caller's `email` + `external_user_id` from session.
+- POSTs to Academy's magic-link endpoint (URL from `additional_config.passport_magic_link_endpoint`) with `X-Play-Signature` HMAC-SHA256 over the canonical body, reusing the **§6-finalized scheme** and `PLAY_WEBHOOK_SECRET`.
+- Returns `{ url }`.
 
-## Files touched
+In `passport_link_mode === "magic_link"`, `Dashboard.tsx` invokes the function on click and opens `data.url` in a new tab; show a toast on failure. Do NOT pre-resolve on hover (avoid burning one-time tokens).
 
-```text
-supabase/migrations/<ts>_challenge_skill_tags.sql        (new)
-src/lib/skillTaxonomy.ts                                  (new)
-src/components/shared/SkillTagsPicker.tsx                 (new)
-src/components/challenges/CreateChallengeDialog.tsx       (edit)
-src/components/challenges/EditChallengeDialog.tsx         (edit)
-src/components/challenges/ChallengeCard.tsx               (edit — render pills)
-src/pages/ChallengeDetail.tsx                             (edit — render pills)
-src/pages/moderator/ModeratorCDLGenerate.tsx              (edit — pre-fill cdl:* tags)
-supabase/functions/sync-to-academy/index.ts               (edit — buildSkillsTags)
-docs/phase-f-status-and-open-asks.md                      (edit — note new tag shape)
-docs/play-fgn-gg-integration-guide.md                     (edit — taxonomy reference)
-```
+Function ships disabled-by-default (no config row points at it yet) so it's safe to land before Academy confirms.
 
-## Validation
+### Step 3 — Update §9 with the Play-side delivery shape
+Append to `docs/phase-f-status-and-open-asks.md` §9:
 
-1. Create a challenge with `osha:fall-protection` + `osha:ppe`; verify `challenges.skill_tags` persists.
-2. Approve evidence → check `sync-logs` payload contains `skills_verified: ["osha:fall-protection","osha:ppe"]`.
-3. Legacy challenge (no tags) approval still emits the old `difficulty:*` / `game:*` / `gaming-proficiency` triple.
-4. Pills render on `/challenges` and `/challenges/:id`.
+> **Play-side status (2026-05-11):** Link-out is now config-driven via `tenant_integrations.additional_config`:
+> - `passport_base_url`, `passport_path_template` (placeholders: `{email}`, `{external_user_id}`, `{slug}`), `passport_link_mode` (`direct` | `magic_link`).
+> - Option A (canonical URL): Academy confirms template → Play updates one config row, no redeploy.
+> - Option B (magic-link): edge function `academy-passport-link` is shipped and dormant. To activate, Academy provides the endpoint URL + confirms it accepts the §6 HMAC scheme keyed on `external_user_id`; Play sets `passport_link_mode='magic_link'` + `passport_magic_link_endpoint=<url>` in the same row.
+> - Today's default (`/passport?email={email}`) still 404s — pending §9 decision before we change the default.
 
-## Communication to Academy devs (sent at end of P0)
+### Step 4 — Verify on `/dashboard`
+- Direct mode with default template: confirm button still opens (will still 404 until Academy answers §9 — expected).
+- Direct mode with hand-set `passport_path_template='/passport/{email}'` via a temporary admin update: confirm URL is built correctly and opens in a new tab.
+- Magic-link mode: covered by a follow-up smoke once Academy delivers the endpoint.
 
-Append to `docs/phase-f-status-and-open-asks.md` a new section **"Update — skills taxonomy (Play side)"** with:
+### Step 5 — Communications back to Academy devs
+Single message in §9 update:
 
-- **What changed:** `skills_verified` on `challenge_completion` payloads is now a curated list of competency tags (e.g. `osha:fall-protection`, `cdl:pre-trip`, `fiber:splicing`, `gaming:aim`) instead of `difficulty:*`/`game:*` placeholders. Field name and shape (`string[]`) unchanged — no contract break.
-- **Fallback behavior:** Challenges that haven't been re-tagged yet still emit the legacy triple (`difficulty:<level>`, `game:<name>`, `gaming-proficiency`). Expect a mix during the rollout window.
-- **Taxonomy source of truth:** living list in `src/lib/skillTaxonomy.ts` (we'll mirror it into the integration guide). We commit to namespace-prefixed lowercase tags (`<track>:<skill>`); please key any Skill Passport mappings on the prefix so unknown skills in a known namespace fail open instead of being dropped.
-- **Asks for Academy:**
-  1. Confirm Academy will accept and surface arbitrary `<namespace>:<skill>` tags without an allow-list update.
-  2. Should we coordinate the canonical OSHA / CDL / Fiber tag list with Academy's `challenge_tracks.gate_mode` taxonomy now, or keep them independent for one more iteration?
-  3. Still open from Phase F: **PR P-2 14-day legacy `X-App-Key` window** + **webhook HMAC scheme** for Phase E receiver — re-asking so we can close them before P1 (in-app Passport render) starts.
+> Play P1 link-out is config-flipped, not code-flipped. We're holding on §9 — please confirm Option A or B and the missing fields:
+> - Option A: final path template + lookup key (`email`, `external_user_id`, or `slug`) + slug-resolution endpoint if any.
+> - Option B: magic-link endpoint URL + confirmation it accepts §6 `X-Play-Signature` (HMAC-SHA256, `PLAY_WEBHOOK_SECRET`) keyed on PR P-3 `external_user_id`.
+> No Play redeploy needed once you answer — we flip a single `tenant_integrations` row.
 
-Format the message so it can be copy-pasted into the cross-team channel.
+### Out of scope (deferred)
+- Rendering passport tiles/skills inside Play.
+- Caching Academy passport data locally.
+- Per-tenant overrides of the passport URL (current row is global; revisit if a partner needs a white-labeled Academy host).
+
+### Files touched
+- `src/lib/academyPassport.ts` — config-driven URL + optional async magic-link path.
+- `src/pages/Dashboard.tsx` — minimal change to handle async click in magic-link mode (toast on failure).
+- `supabase/functions/academy-passport-link/index.ts` (new) — dormant until Academy picks Option B.
+- `docs/phase-f-status-and-open-asks.md` — §9 update with Play-side delivery shape + ask back to Academy.
