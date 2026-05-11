@@ -134,3 +134,46 @@ The canonical cross-reference on Play side is **`docs/play-fgn-gg-integration-gu
 
 **Next step:** Academy delivers rotated `PLAY_WEBHOOK_SECRET` via OneTimeSecret → we update the secret → flip `PHASE_E_ROUTING_MODE` to `shadow` for 24–48h parity check → flip to `live`. Reversible at any time per `docs/phase-e-routing-flag.md`.
 
+
+
+---
+
+## §9 companion — Play-side delivery shape (2026-05-11)
+
+Cross-references §9 (P1 BLOCKER — Skill Passport URL contract).
+
+The Play-side link-out is now **fully config-driven**. No code change required when Academy lands on Option A or Option B — Play flips a single `tenant_integrations` row (`provider_type='fgn_academy'`, `is_active=true`).
+
+### Knobs in `tenant_integrations.additional_config`
+
+| Key | Type | Purpose |
+|---|---|---|
+| `passport_base_url` | string | Host root (default `https://fgn.academy`). |
+| `passport_path_template` | string | Path with placeholders. Supported: `{email}`, `{external_user_id}`, `{slug}`. Default `/passport?email={email}` (still 404s — pending §9). |
+| `passport_link_mode` | `"direct"` \| `"magic_link"` | Default `"direct"`. |
+| `passport_magic_link_endpoint` | string | Required when `passport_link_mode='magic_link'`. Academy's POST endpoint that returns `{ url }`. |
+
+### Option A activation (canonical URL)
+Set `passport_path_template` to Academy's confirmed pattern, e.g.:
+- `/passport/{external_user_id}`
+- `/passport/{slug}` (requires Academy slug-resolution endpoint we'd need to wire separately)
+- `/u/{email}/skill-passport`
+
+### Option B activation (magic-link, preferred)
+Edge function `supabase/functions/academy-passport-link` is **shipped and dormant**. It:
+1. Verifies caller via `Authorization: Bearer <jwt>`.
+2. Loads the active `fgn_academy` integration row.
+3. POSTs `{ email, external_user_id, timestamp }` (canonical JSON) to `passport_magic_link_endpoint` with:
+   - `X-Play-Signature: <hex HMAC-SHA256>` over the raw body, secret `PLAY_WEBHOOK_SECRET` (same scheme as §6).
+   - `X-FGN-Event: passport_magic_link`.
+4. Expects `{ url }` back, opens it client-side in a new tab.
+
+To activate: Academy provides endpoint URL → Play sets `passport_link_mode='magic_link'` + `passport_magic_link_endpoint=<url>` in the same row. No redeploy.
+
+### Asks still open (re-stated for §9)
+1. **Option A or B?** Option B preferred (reuses PR P-3 `external_user_id` + §6 HMAC scheme; preserves Academy session/auth).
+2. **If Option A:** final path template + lookup key (`email` / `external_user_id` / `slug`). If `slug`, also provide the slug-resolution endpoint.
+3. **If Option B:** endpoint URL + confirmation it accepts `X-Play-Signature` HMAC-SHA256 with `PLAY_WEBHOOK_SECRET`, keyed on PR P-3 `external_user_id`.
+
+### Today's behavior
+Default template `/passport?email={email}` still returns 404 on `https://fgn.academy/passport?email=<urlencoded>`. We're holding the default until §9 lands rather than guessing.
