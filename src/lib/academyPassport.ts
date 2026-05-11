@@ -100,13 +100,21 @@ export const useAcademyPassport = (params: {
           "academy-passport-link",
           {
             body: {
-              email: params.email ?? null,
-              external_user_id: params.externalUserId ?? null,
+              external_user_id: params.externalUserId ?? undefined,
+              intent: "view_passport",
             },
           },
         );
+        if (data?.error === "user_not_linked") {
+          toast({
+            title: "Connect your Academy account",
+            description:
+              "We couldn't find a linked FGN Academy profile. Complete an Academy challenge to link it.",
+          });
+          return;
+        }
         if (error || !data?.url) {
-          throw new Error(error?.message || "No magic link returned");
+          throw new Error(error?.message || data?.error || "No magic link returned");
         }
         window.open(data.url, "_blank", "noopener,noreferrer");
         return;
