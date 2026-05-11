@@ -232,8 +232,8 @@ const Challenges = () => {
 
             {completedChallenges.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-display text-xl font-bold text-white neon-text flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-400" />
+                <h2 className="font-display text-2xl font-bold text-white flex items-center gap-2 [text-shadow:0_0_12px_rgba(255,255,255,0.85),0_0_24px_rgba(34,211,238,0.6)]">
+                  <CheckCircle2 className="h-6 w-6 text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.9)]" />
                   Completed
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
