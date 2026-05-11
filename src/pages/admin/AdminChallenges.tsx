@@ -294,6 +294,19 @@ const AdminChallenges = () => {
         .eq("id", enrollmentId);
       if (error) throw error;
 
+      // 2b. Sync evidence rows to match enrollment outcome
+      if (status === "completed") {
+        await supabase.from("challenge_evidence")
+          .update({ status: "approved", reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
+          .eq("enrollment_id", enrollmentId)
+          .neq("status", "approved");
+      } else if (status === "rejected") {
+        await supabase.from("challenge_evidence")
+          .update({ status: "rejected", reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
+          .eq("enrollment_id", enrollmentId)
+          .eq("status", "pending");
+      }
+
       // 3. If completing, award points
       if (status === "completed" && enrollment && user) {
         const { data: challenge } = await supabase
