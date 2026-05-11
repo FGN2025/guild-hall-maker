@@ -562,16 +562,33 @@ const ModeratorChallenges = () => {
 
         {/* ═══════ EVIDENCE REVIEW TAB ═══════ */}
         <TabsContent value="review" className="mt-4 space-y-4">
-          <div className="space-y-2">
-            <Label>Select Challenge to Review</Label>
-            <Select value={reviewChallengeId || ""} onValueChange={setReviewChallengeId}>
-              <SelectTrigger><SelectValue placeholder="Choose a challenge..." /></SelectTrigger>
-              <SelectContent>
-                {challenges.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Filter by Game</Label>
+              <Select
+                value={gameFilter}
+                onValueChange={(v) => { setGameFilter(v); setReviewChallengeId(null); }}
+              >
+                <SelectTrigger><SelectValue placeholder="All Games" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Games</SelectItem>
+                  {gameOptions.map((g) => (
+                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Select Challenge to Review</Label>
+              <Select value={reviewChallengeId || ""} onValueChange={setReviewChallengeId}>
+                <SelectTrigger><SelectValue placeholder="Choose a challenge..." /></SelectTrigger>
+                <SelectContent>
+                  {reviewChallenges.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}{c.games?.name ? ` — ${c.games.name}` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {reviewChallengeId && reviewEnrollments.length === 0 && (
