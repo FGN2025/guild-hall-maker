@@ -424,6 +424,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             <Input type="number" value={maxEnrollments} onChange={(e) => setMaxEnrollments(e.target.value ? Number(e.target.value) : "")} placeholder="Unlimited" />
           </div>
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
+          <SkillTagsPicker value={skillTags} onChange={setSkillTags} />
           <div className="flex items-center justify-between">
             <Label>Requires Evidence</Label>
             <Switch checked={requiresEvidence} onCheckedChange={setRequiresEvidence} />
