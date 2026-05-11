@@ -56,6 +56,7 @@ const ModeratorChallenges = () => {
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [gameFilter, setGameFilter] = useState("all");
   const [detailChallenge, setDetailChallenge] = useState<any | null>(null);
   const [editChallenge, setEditChallenge] = useState<any | null>(null);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
