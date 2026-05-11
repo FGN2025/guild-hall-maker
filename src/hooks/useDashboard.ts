@@ -9,8 +9,6 @@ export interface DashboardStats {
   winRate: number;
   challengesCompleted: number;
   questsCompleted: number;
-  totalPointsEarned: number;
-  pointsAvailable: number;
 }
 
 export interface RegisteredTournament {
