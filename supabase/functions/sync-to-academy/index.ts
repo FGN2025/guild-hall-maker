@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     // Get challenge details (including academy next step fallback fields)
     const { data: challenge } = await adminClient
       .from("challenges")
-      .select("name, description, difficulty, game_id, points_reward, games(name), academy_next_step_url, academy_next_step_label")
+      .select("name, description, difficulty, game_id, points_reward, skill_tags, games(name), academy_next_step_url, academy_next_step_label")
       .eq("id", challenge_id)
       .single();
 
