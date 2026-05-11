@@ -53,6 +53,12 @@ play.fgn.gg sends a flat payload. All top-level fields use underscore naming.
   "skills_verified": ["difficulty:intermediate", "game:Rocket League", "gaming-proficiency"],
   "metadata": {
     "source": "play.fgn.gg",
+    "external_user_id": "uuid-of-play-user",
+    "external_attempt_id": "uuid-of-enrollment-row",
+    "tenant_id": "uuid-of-tenant-or-null",
+    "tenant_slug": "acme-fiber",
+    "tenant_name": "Acme Fiber",
+    "display_name": "PlayerOne",
     "game_name": "Rocket League",
     "difficulty": "intermediate",
     "awarded_points": 850,
@@ -72,6 +78,11 @@ play.fgn.gg sends a flat payload. All top-level fields use underscore naming.
 | `task_progress` | array | No | Per-task completion status (see §5) |
 | `skills_verified` | string[] | No | Free-form skill tags (no fixed taxonomy) |
 | `metadata` | object | No | Extra context fields; academy may store or ignore |
+| `metadata.external_user_id` | uuid | Recommended | Stable Play user id — use to key `play_identity` instead of fuzzy email matching |
+| `metadata.external_attempt_id` | uuid | Recommended | Stable per-enrollment id — use as hard idempotency key for completion events |
+| `metadata.tenant_id` | uuid \| null | Optional | Play tenant the user belongs to; `null` for staff/unaffiliated |
+| `metadata.tenant_slug` | string \| null | Optional | Tenant slug for cohort dashboards |
+| `metadata.tenant_name` | string \| null | Optional | Tenant display name |
 
 ## 5. task_progress Format
 
