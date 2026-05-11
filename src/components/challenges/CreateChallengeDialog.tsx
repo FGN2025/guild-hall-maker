@@ -284,6 +284,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
           </div>
 
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
+          <SkillTagsPicker value={form.skill_tags} onChange={(tags) => setForm({ ...form, skill_tags: tags })} />
 
           <div className="flex items-center gap-3">
             <Switch checked={form.requires_evidence} onCheckedChange={(v) => setForm({ ...form, requires_evidence: v })} />
