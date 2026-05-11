@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
   Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Compass, Megaphone, RefreshCw, Cpu,
+  AlertCircle, Send, FileQuestion,
 } from "lucide-react";
 import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
@@ -237,7 +238,21 @@ const ModeratorChallenges = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // ── Evidence review queries ──
+  const forceSubmitMutation = useMutation({
+    mutationFn: async (enrollmentId: string) => {
+      const { error } = await supabase
+        .from("challenge_enrollments")
+        .update({ status: "submitted", updated_at: new Date().toISOString() })
+        .eq("id", enrollmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mod-review-enrollments"] });
+      toast.success("Enrollment marked as submitted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const { data: reviewTasks = [] } = useQuery({
     queryKey: ["mod-review-tasks", reviewChallengeId],
     enabled: !!reviewChallengeId,
@@ -544,6 +559,93 @@ const ModeratorChallenges = () => {
             const taskMap: Record<string, any> = {};
             (reviewTasks as any[]).forEach((t: any) => { taskMap[t.id] = t; });
 
+            const evidenceByTask: Record<string, any[]> = {};
+            const generalEvidence: any[] = [];
+            (enrollment.challenge_evidence ?? []).forEach((ev: any) => {
+              if (ev.task_id) {
+                (evidenceByTask[ev.task_id] ||= []).push(ev);
+              } else {
+                generalEvidence.push(ev);
+              }
+            });
+
+            const isSubmitted = enrollment.status === "submitted";
+            const hasAnyEvidence = (enrollment.challenge_evidence ?? []).length > 0;
+
+            const renderEvidenceItem = (e: any) => {
+              const evStatusColor = e.status === "approved"
+                ? "bg-green-500/20 text-green-400 border-green-500/30"
+                : e.status === "rejected"
+                ? "bg-red-500/20 text-red-400 border-red-500/30"
+                : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+
+              return (
+                <div key={e.id} className="rounded-lg border border-border p-3 space-y-2 bg-card/50">
+                  <div className="flex items-center justify-end gap-2">
+                    <Badge className={`text-xs shrink-0 ${evStatusColor}`}>{e.status || "pending"}</Badge>
+                  </div>
+
+                  <div className="rounded border border-border overflow-hidden aspect-video max-w-xs bg-muted">
+                    {e.file_type === "image" ? (
+                      <a href={e.file_url} target="_blank" rel="noopener noreferrer">
+                        <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
+                      </a>
+                    ) : e.file_type === "video" ? (
+                      <video src={e.file_url} controls preload="metadata" className="w-full h-full object-cover" />
+                    ) : (
+                      <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
+                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                      </a>
+                    )}
+                  </div>
+
+                  {e.notes && <p className="text-xs text-muted-foreground">{e.notes}</p>}
+                  {e.reviewer_notes && <p className="text-xs text-muted-foreground italic">Moderator: {e.reviewer_notes}</p>}
+
+                  {e.status !== "approved" && isSubmitted && (
+                    <div className="space-y-1.5 pt-1">
+                      <RejectionReasonSelect
+                        value={evidenceReason[e.id] ?? null}
+                        onChange={(code) => setEvidenceReason((p) => ({ ...p, [e.id]: code }))}
+                        disabled={updateEvidenceStatusMutation.isPending}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Feedback notes (optional)..."
+                          className="text-xs h-8 flex-1"
+                          value={evidenceNotes[e.id] || ""}
+                          onChange={(ev) => setEvidenceNotes((prev) => ({ ...prev, [e.id]: ev.target.value }))}
+                        />
+                        <Button
+                          size="sm" variant="outline" className="gap-1 h-8 text-xs"
+                          onClick={() => {
+                            updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "approved", reviewer_notes: evidenceNotes[e.id] });
+                            setEvidenceNotes((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
+                            setEvidenceReason((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
+                          }}
+                          disabled={updateEvidenceStatusMutation.isPending}
+                        >
+                          <CheckCircle2 className="h-3 w-3" /> Approve
+                        </Button>
+                        <Button
+                          size="sm" variant="destructive" className="gap-1 h-8 text-xs"
+                          onClick={() => {
+                            const composed = encodeReviewerNotes(evidenceReason[e.id] ?? null, evidenceNotes[e.id] || "");
+                            updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "rejected", reviewer_notes: composed });
+                            setEvidenceNotes((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
+                            setEvidenceReason((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
+                          }}
+                          disabled={updateEvidenceStatusMutation.isPending}
+                        >
+                          <XCircle className="h-3 w-3" /> Reject
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            };
+
             return (
               <Card key={enrollment.id}>
                 <CardContent className="p-4 space-y-4">
@@ -555,83 +657,42 @@ const ModeratorChallenges = () => {
                     <Badge variant="outline" className="capitalize">{enrollment.status}</Badge>
                   </div>
 
-                  {enrollment.challenge_evidence?.length > 0 && (
-                    <div className="space-y-3">
-                      {enrollment.challenge_evidence.map((e: any) => {
-                        const task = e.task_id ? taskMap[e.task_id] : null;
-                        const evStatusColor = e.status === "approved"
-                          ? "bg-green-500/20 text-green-400 border-green-500/30"
-                          : e.status === "rejected"
-                          ? "bg-red-500/20 text-red-400 border-red-500/30"
-                          : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+                  {!isSubmitted && enrollment.status !== "completed" && enrollment.status !== "rejected" && (
+                    <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 flex items-start gap-2 text-xs">
+                      <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 space-y-1">
+                        <p className="font-medium text-yellow-300">Awaiting player submission</p>
+                        <p className="text-muted-foreground">
+                          The player must tap <span className="font-medium">Submit for Review</span> on the challenge page before moderators can approve.
+                          {hasAnyEvidence ? " Evidence has been uploaded but not yet submitted." : " No evidence uploaded yet."}
+                        </p>
+                        {isAdmin && hasAnyEvidence && (
+                          <Button
+                            size="sm" variant="outline" className="gap-1 h-7 text-xs mt-2"
+                            onClick={() => forceSubmitMutation.mutate(enrollment.id)}
+                            disabled={forceSubmitMutation.isPending}
+                          >
+                            <Send className="h-3 w-3" /> Force submit (admin)
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
+                  {(reviewTasks as any[]).length > 0 && (
+                    <div className="space-y-4">
+                      {(reviewTasks as any[]).map((task: any) => {
+                        const items = evidenceByTask[task.id] ?? [];
                         return (
-                          <div key={e.id} className="rounded-lg border border-border p-3 space-y-2 bg-card/50">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                {task && <span className="text-xs font-medium text-muted-foreground truncate">Task: {task.title}</span>}
-                                {!task && <span className="text-xs text-muted-foreground">General evidence</span>}
+                          <div key={task.id} className="space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground">Task: {task.title}</p>
+                            {items.length === 0 ? (
+                              <div className="rounded-lg border border-dashed border-border p-4 flex items-center gap-2 text-xs text-muted-foreground bg-muted/20">
+                                <FileQuestion className="h-4 w-4" />
+                                No evidence uploaded for this task yet.
                               </div>
-                              <Badge className={`text-xs shrink-0 ${evStatusColor}`}>{e.status || "pending"}</Badge>
-                            </div>
-
-                            <div className="rounded border border-border overflow-hidden aspect-video max-w-xs bg-muted">
-                              {e.file_type === "image" ? (
-                                <a href={e.file_url} target="_blank" rel="noopener noreferrer">
-                                  <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
-                                </a>
-                              ) : e.file_type === "video" ? (
-                                <video src={e.file_url} controls className="w-full h-full object-cover" />
-                              ) : (
-                                <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
-                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                </a>
-                              )}
-                            </div>
-
-                            {e.notes && <p className="text-xs text-muted-foreground">{e.notes}</p>}
-                            {e.reviewer_notes && <p className="text-xs text-muted-foreground italic">Moderator: {e.reviewer_notes}</p>}
-
-                            {e.status !== "approved" && enrollment.status === "submitted" && (
-                              <div className="space-y-1.5 pt-1">
-                                <RejectionReasonSelect
-                                  value={evidenceReason[e.id] ?? null}
-                                  onChange={(code) => setEvidenceReason((p) => ({ ...p, [e.id]: code }))}
-                                  disabled={updateEvidenceStatusMutation.isPending}
-                                />
-                                <div className="flex items-center gap-2">
-                                  <Input
-                                    placeholder="Feedback notes (optional)..."
-                                    className="text-xs h-8 flex-1"
-                                    value={evidenceNotes[e.id] || ""}
-                                    onChange={(ev) => setEvidenceNotes((prev) => ({ ...prev, [e.id]: ev.target.value }))}
-                                  />
-                                  <Button
-                                    size="sm" variant="outline" className="gap-1 h-8 text-xs"
-                                    onClick={() => {
-                                      // Approval ignores the reason code; pass raw note only.
-                                      updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "approved", reviewer_notes: evidenceNotes[e.id] });
-                                      setEvidenceNotes((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
-                                      setEvidenceReason((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
-                                    }}
-                                    disabled={updateEvidenceStatusMutation.isPending}
-                                  >
-                                    <CheckCircle2 className="h-3 w-3" /> Approve
-                                  </Button>
-                                  <Button
-                                    size="sm" variant="destructive" className="gap-1 h-8 text-xs"
-                                    onClick={() => {
-                                      const composed = encodeReviewerNotes(evidenceReason[e.id] ?? null, evidenceNotes[e.id] || "");
-                                      updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "rejected", reviewer_notes: composed });
-                                      setEvidenceNotes((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
-                                      setEvidenceReason((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
-                                    }}
-                                    disabled={updateEvidenceStatusMutation.isPending}
-                                  >
-                                    <XCircle className="h-3 w-3" /> Reject
-                                  </Button>
-                                </div>
-                              </div>
+                            ) : (
+                              <div className="space-y-3">{items.map(renderEvidenceItem)}</div>
                             )}
                           </div>
                         );
@@ -639,7 +700,14 @@ const ModeratorChallenges = () => {
                     </div>
                   )}
 
-                  {enrollment.status === "submitted" && (
+                  {generalEvidence.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">General evidence</p>
+                      <div className="space-y-3">{generalEvidence.map(renderEvidenceItem)}</div>
+                    </div>
+                  )}
+
+                  {isSubmitted && (
                     <div className="flex gap-2 border-t border-border pt-3">
                       <Button
                         size="sm" className="gap-1"
