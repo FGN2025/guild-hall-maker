@@ -224,6 +224,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         academy_next_step_label: academyNextStepLabel || null,
         points_override_reason: pointsOverrideReason.trim() || null,
         points_overridden_by: pointsOverrideReason.trim() ? user?.id ?? null : null,
+        skill_tags: skillTags,
       }).eq("id", challenge.id);
       if (error) throw error;
 
