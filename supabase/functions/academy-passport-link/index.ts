@@ -87,12 +87,18 @@ Deno.serve(async (req) => {
       return json(500, { error: "PLAY_WEBHOOK_SECRET not set" });
     }
 
+    const ECOSYSTEM_API_KEY = Deno.env.get("ECOSYSTEM_API_KEY");
+    if (!ECOSYSTEM_API_KEY) {
+      return json(500, { error: "ECOSYSTEM_API_KEY not set" });
+    }
+
     const reqBody = await req.json().catch(() => ({}));
-    const payload = {
-      email: reqBody.email ?? user.email ?? null,
-      external_user_id: reqBody.external_user_id ?? null,
-      timestamp: new Date().toISOString(),
+    const payload: Record<string, unknown> = {
+      external_user_id: reqBody.external_user_id ?? user.id,
     };
+    if (typeof reqBody.intent === "string") payload.intent = reqBody.intent;
+    if (typeof reqBody.ttl_seconds === "number") payload.ttl_seconds = reqBody.ttl_seconds;
+
     const canonical = JSON.stringify(payload);
     const signature = await hmacHex(PLAY_WEBHOOK_SECRET, canonical);
 
@@ -101,10 +107,19 @@ Deno.serve(async (req) => {
       headers: {
         "Content-Type": "application/json",
         "X-Play-Signature": signature,
+        "X-Ecosystem-Key": ECOSYSTEM_API_KEY,
         "X-FGN-Event": "passport_magic_link",
       },
       body: canonical,
     });
+
+    if (academyRes.status === 404) {
+      const detail = await academyRes.json().catch(() => ({}));
+      return json(404, {
+        error: "user_not_linked",
+        detail,
+      });
+    }
 
     if (!academyRes.ok) {
       const text = await academyRes.text().catch(() => "");
@@ -118,7 +133,11 @@ Deno.serve(async (req) => {
     if (!data?.url || typeof data.url !== "string") {
       return json(502, { error: "Academy did not return a url" });
     }
-    return json(200, { url: data.url });
+    return json(200, {
+      url: data.url,
+      expires_at: data.expires_at ?? null,
+      user_resolved: data.user_resolved ?? true,
+    });
   } catch (err) {
     return json(500, {
       error: err instanceof Error ? err.message : "Unknown error",
