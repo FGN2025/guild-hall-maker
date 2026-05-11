@@ -66,6 +66,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [academyNextStepUrl, setAcademyNextStepUrl] = useState("");
   const [academyNextStepLabel, setAcademyNextStepLabel] = useState("");
   const [pointsOverrideReason, setPointsOverrideReason] = useState("");
+  const [skillTags, setSkillTags] = useState<string[]>([]);
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active-with-steam"],
