@@ -15,6 +15,7 @@ import { useImageLimits } from "@/hooks/useImageLimits";
 import { useAuth } from "@/contexts/AuthContext";
 import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import AchievementPicker from "@/components/shared/AchievementPicker";
+import SkillTagsPicker from "@/components/shared/SkillTagsPicker";
 import PointsInput from "@/components/shared/PointsInput";
 import TaskVerificationEditor from "@/components/challenges/TaskVerificationEditor";
 
