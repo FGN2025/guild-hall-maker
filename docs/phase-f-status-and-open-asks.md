@@ -52,6 +52,61 @@ Challenges that have **not** been re-tagged yet still emit the legacy triple (`g
 ### Source of truth
 Living list in `src/lib/skillTaxonomy.ts` on Play. We commit to namespace-prefixed lowercase tags. Please key any Skill Passport mappings on the **prefix** so unknown skills in a known namespace fail open instead of being dropped.
 
+### Full taxonomy snapshot (v1, May 2026)
+
+Copy-pasteable. Source: `src/lib/skillTaxonomy.ts`.
+
+**`cdl:` — Commercial Driving (FMCSA 49 CFR 383)**
+| Tag | Label |
+|-----|-------|
+| `cdl:pre-trip` | Pre-Trip Inspection |
+| `cdl:backing` | Backing & Parking |
+| `cdl:speed-management` | Speed Management |
+| `cdl:logbook` | Hours of Service / Logbook |
+| `cdl:hazard-perception` | Hazard Perception |
+| `cdl:fuel-mgmt` | Fuel Management |
+| `cdl:cargo-securement` | Cargo Securement |
+| `cdl:hazmat-awareness` | Hazmat Awareness |
+
+**`osha:` — Workplace Safety (OSHA 10/30)**
+| Tag | Label |
+|-----|-------|
+| `osha:fall-protection` | Fall Protection |
+| `osha:ppe` | Personal Protective Equipment |
+| `osha:lockout-tagout` | Lockout / Tagout |
+| `osha:hazcom` | Hazard Communication |
+| `osha:electrical-safety` | Electrical Safety |
+| `osha:ladder-safety` | Ladder & Scaffold Safety |
+| `osha:confined-space` | Confined Space Entry |
+
+**`fiber:` — Broadband Tech (OSP / ISP)**
+| Tag | Label |
+|-----|-------|
+| `fiber:splicing` | Fusion Splicing |
+| `fiber:otdr` | OTDR Testing |
+| `fiber:installation` | Installation & Drop |
+| `fiber:troubleshooting` | Troubleshooting |
+| `fiber:termination` | Connector Termination |
+| `fiber:documentation` | As-Built Documentation |
+
+**`gaming:` — Transferable Esports Skills**
+| Tag | Label |
+|-----|-------|
+| `gaming:aim` | Aim & Mechanics |
+| `gaming:strategy` | Strategy & Game Sense |
+| `gaming:teamwork` | Teamwork & Communication |
+| `gaming:macro` | Macro / Map Awareness |
+| `gaming:micro` | Micro / Execution |
+| `gaming:vod-review` | VOD Review & Adaptation |
+
+**Always appended:** `difficulty:beginner` | `difficulty:intermediate` | `difficulty:advanced` | `difficulty:expert` (mirrors `challenges.difficulty`).
+
+**Legacy fallback (untagged challenges only):** `game:<games.name>`, `gaming-proficiency`, `difficulty:<level>`.
+
+### Cross-reference for Academy docs
+
+The canonical cross-reference on Play side is **`docs/play-fgn-gg-integration-guide.md` §7 + "Skills Taxonomy (May 2026)"**. On Academy side, link from your top-level ecosystem integration guide (the one that already documents `challenge_completion` payloads) — **not** just `cdl-quest.md`, since the taxonomy spans CDL, OSHA, Fiber, and Gaming. If you want a per-track companion doc (`cdl-quest.md`, `osha-overlay.md`, `fiber-tech.md`), each can deep-link to the relevant namespace section above.
+
 ### Asks for Academy
 1. **Confirm** Academy will accept and surface arbitrary `<namespace>:<skill>` tags without an allow-list update on your side.
 2. **Coordination question:** should we align the canonical OSHA / CDL / Fiber tag list with Academy's `challenge_tracks.gate_mode` taxonomy now, or keep them independent for one more iteration?
