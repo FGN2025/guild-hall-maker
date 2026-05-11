@@ -12,9 +12,9 @@
 
 1. **`metadata.external_attempt_id`** — ✅ **SHIPPED (PR P-3, May 2026).** Stable per-enrollment uuid backed by `challenge_enrollments.external_attempt_id` (unique, defaulted via `gen_random_uuid()`). Safe to use as a hard idempotency key.
 2. **`metadata.external_user_id`** — ✅ **SHIPPED (PR P-3, May 2026).** Sent on every `challenge_completion` push. Safe to key `play_identity` on it.
-3. **PR P-2 rollout window** — still open. How long do we accept both `X-App-Key` and `X-Ecosystem-Key` before hard-failing legacy? We proposed **14 days**.
+3. **PR P-2 rollout window** — ✅ **CONFIRMED 14 days (2026-05-11).** Academy proposed 14 days from cutover for dual-accept `X-App-Key` / `X-Ecosystem-Key`; Play accepts. Schedule the strict-mode flip on day 15 post-cutover; we'll cut all outbound calls over to `X-Ecosystem-Key` before then. Ping us on the cutover date so we can mark T0 in our log.
 4. **PR P-3 tenant fields** — ✅ **SHIPPED (May 2026).** Final shape: `metadata.tenant_id` (uuid \| null), `metadata.tenant_slug` (string \| null), `metadata.tenant_name` (string \| null). All three are `null` for staff/unaffiliated users.
-5. **Webhook HMAC scheme** (for Phase E receiver) — still open. Header name + canonical string format when you're ready.
+5. **Webhook HMAC scheme** (for Phase E receiver) — ✅ **FINALIZED 2026-05-10.** Header `X-Play-Signature`, HMAC-SHA256 lowercase hex over the raw request body, secret `PLAY_WEBHOOK_SECRET`. Companion header `X-FGN-Event: challenge_completion`. Implemented in `ecosystem-webhook-dispatch`. Awaiting rotated `PLAY_WEBHOOK_SECRET` from Academy via OneTimeSecret to flip `PHASE_E_ROUTING_MODE` from `off` → `shadow`. Webhook row already inserted (`fgn_academy` / `challenge_completion` / active).
 
 ## Heads-up (not a blocker)
 
