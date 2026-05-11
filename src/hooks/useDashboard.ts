@@ -295,23 +295,6 @@ export const useDashboard = () => {
     },
   });
 
-  const pointsQuery = useQuery({
-    queryKey: ["dashboard-points", user?.id],
-    enabled: !!user,
-    staleTime: 60_000,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("season_scores")
-        .select("points, points_available")
-        .eq("user_id", user!.id);
-      const rows = (data ?? []) as any[];
-      return {
-        totalPointsEarned: rows.reduce((s, r) => s + (r.points ?? 0), 0),
-        pointsAvailable: rows.reduce((s, r) => s + (r.points_available ?? 0), 0),
-      };
-    },
-  });
-
   const completedMatches = matchesQuery.data?.filter((m) => m.result !== "pending") ?? [];
   const wonMatches = matchesQuery.data?.filter((m) => m.result === "W") ?? [];
 
@@ -322,8 +305,6 @@ export const useDashboard = () => {
     winRate: completedMatches.length > 0 ? Math.round((wonMatches.length / completedMatches.length) * 100) : 0,
     challengesCompleted: challengesQuery.data?.totalCompleted ?? 0,
     questsCompleted: questsQuery.data?.totalCompleted ?? 0,
-    totalPointsEarned: pointsQuery.data?.totalPointsEarned ?? 0,
-    pointsAvailable: pointsQuery.data?.pointsAvailable ?? 0,
   };
 
   const emptyActivity: ActivitySummary = {
@@ -344,7 +325,6 @@ export const useDashboard = () => {
       registeredTournamentsQuery.isLoading ||
       matchesQuery.isLoading ||
       challengesQuery.isLoading ||
-      questsQuery.isLoading ||
-      pointsQuery.isLoading,
+      questsQuery.isLoading,
   };
 };
