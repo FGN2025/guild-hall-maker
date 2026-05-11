@@ -90,18 +90,29 @@ const ModeratorChallenges = () => {
     },
   });
 
+  const gameOptions = useMemo(() => {
+    return [...new Set(challenges.map((c: any) => c.games?.name).filter(Boolean))].sort() as string[];
+  }, [challenges]);
+
   const filtered = useMemo(() => {
     return challenges.filter((c: any) => {
       if (difficultyFilter !== "all" && c.difficulty !== difficultyFilter) return false;
       if (statusFilter === "active" && !c.is_active) return false;
       if (statusFilter === "inactive" && c.is_active) return false;
+      if (gameFilter !== "all" && (c.games?.name ?? "") !== gameFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         return c.name.toLowerCase().includes(q) || (c.games?.name ?? "").toLowerCase().includes(q);
       }
       return true;
     });
-  }, [challenges, search, difficultyFilter, statusFilter]);
+  }, [challenges, search, difficultyFilter, statusFilter, gameFilter]);
+
+  const reviewChallenges = useMemo(() => {
+    if (gameFilter === "all") return challenges;
+    return challenges.filter((c: any) => (c.games?.name ?? "") === gameFilter);
+  }, [challenges, gameFilter]);
+
 
   // ── Mutations ──
   const deleteMutation = useMutation({
