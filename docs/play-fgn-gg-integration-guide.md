@@ -159,6 +159,9 @@ Removed. `X-Ecosystem-Key` is the only auth header. Source identification moved 
 **Q6: Extra fields?**
 Extra context (`display_name`, `difficulty`, `game_name`, `awarded_points`, `max_points`) goes in the `metadata{}` object.
 
+**Q7: P-3 metadata additions (May 2026)?**
+Shipped. Payload now includes `metadata.external_attempt_id` (stable per-enrollment uuid), `metadata.external_user_id` (stable Play user uuid), and `metadata.tenant_id` / `tenant_slug` / `tenant_name`. Academy may key idempotency on `external_attempt_id`, key `play_identity` on `external_user_id`, and stamp tenant cohorts off `tenant_*`. Payload is byte-identical between the direct POST and the HMAC webhook envelope used by Phase E.
+
 ## 11. Pass/Fail Threshold
 
 A score of **70 or above** is treated as a pass (`completed` status). Below 70 is `failed`. XP and credentials are only awarded on pass.
