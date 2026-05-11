@@ -1,49 +1,42 @@
-# P-2: Dual-Header Rollout to FGN Academy
+## Assessment
 
-Academy Phase A is live and now reads `X-Ecosystem-Key`. We ship the outbound side from play.fgn.gg with a backwards-compatible dual-header window so neither side can break the other.
+Both symptoms in the screenshot are working-as-coded — but the UI hides the *why*, which is the real fix.
 
-## Scope
+### Issue 1 — No Approve button for FS25 – Bronze
 
-Single edge function change + docs + memory note. No DB migration, no frontend, no `ecosystem-data-api` change (already validates `X-Ecosystem-Key`).
+The enrollment badge in the screenshot reads **"Enrolled"**, not "Submitted". In `src/pages/moderator/ModeratorChallenges.tsx` the per-evidence Approve/Reject row (line 595) and the enrollment-level "Approve All & Complete" button (line 642) are both gated on:
 
-## Changes
+```
+enrollment.status === "submitted"
+```
 
-### 1. `supabase/functions/sync-to-academy/index.ts`
+The player (RacerX) uploaded evidence for two of three tasks but never tapped **Submit for Review** on `/challenges/:id` (which calls `submitForReviewMutation` in `useChallengeEnrollment.ts` and flips status to `submitted`). Until that happens, moderators cannot approve — by design. This is also why the prior ATS Bronze/Gold completions worked: those enrollments were submitted first.
 
-- Read both secrets at startup:
-  - `FGN_ACADEMY_API_KEY` (legacy)
-  - `ECOSYSTEM_API_KEY` (new, already stored)
-- Fail only if **both** are missing. If either is present, proceed.
-- On the outbound `fetch()` to the academy URL, set whichever headers we have:
-  - `X-App-Key: <FGN_ACADEMY_API_KEY>` when present (legacy)
-  - `X-Ecosystem-Key: <ECOSYSTEM_API_KEY>` when present (new)
-- Log a single line indicating which header(s) were sent (names only, never values), e.g. `academy sync headers: X-App-Key,X-Ecosystem-Key`.
-- Include the header-set summary in `ecosystem_sync_log.error_message` on failures so we can audit which combo Academy rejected (still names only).
-- No change to payload, URL resolution, response handling, next-step logic, or notifications.
+### Issue 2 — Empty Equipment Maintenance tile
 
-### 2. `docs/fgn-academy-integration.md`
+Not a thumbnail issue. The video for "Harvest and sell" renders correctly via the `<video src controls>` branch at line 583-584 — that path works for any browser-playable MP4/WebM. The empty grey tile on "Equipment Maintenance" is the **task placeholder** rendered when there is no `challenge_evidence` row for that task at all. The player simply hasn't uploaded evidence for that task yet.
 
-- Add a "Header Migration" section: during the 14-day cutover both `X-App-Key` and `X-Ecosystem-Key` are sent. After the cutover (P-3) only `X-Ecosystem-Key` remains.
-- Note the secret names and that `FGN_ACADEMY_API_KEY` will be retired in P-3.
+The current UI is misleading: it draws an empty media frame for tasks with zero evidence, which looks identical to a broken thumbnail.
 
-### 3. `mem://integrations/fgn-academy`
+## Recommended Fixes (UI only — no business-logic changes)
 
-- Append a short note: dual-header window active, `ECOSYSTEM_API_KEY` is the canonical key, `FGN_ACADEMY_API_KEY` retires in P-3 (+14 days from Academy cutover confirmation).
+1. **Surface enrollment state to the moderator**
+   - When `enrollment.status !== "submitted"` and there are pending evidence items, render a clear inline notice on the enrollment card: *"Awaiting player submission — player must tap 'Submit for Review' before moderators can approve."*
+   - Keep the current gating (don't allow approval of un-submitted work), but stop leaving the moderator guessing.
 
-## Out of scope (P-3, +14 days)
+2. **Distinguish "no evidence yet" from "broken media"**
+   - In the evidence list, group by task using `reviewTasks`. For each task with **zero** `challenge_evidence` rows, render a muted "No evidence uploaded yet" tile instead of the empty image-icon placeholder. The placeholder shown for Equipment Maintenance is actually coming from elsewhere — confirm by replacing the unconditional task tiles with an explicit "no evidence for this task" state.
+   - Optional polish: for `file_type === "video"`, add `preload="metadata"` and a `poster` fallback so the first frame shows even before play. (Real thumbnail extraction would require a backend job — out of scope for this fix; native video preview is sufficient.)
 
-- Drop `X-App-Key` and `FGN_ACADEMY_API_KEY` from `sync-to-academy`.
-- Delete the `FGN_ACADEMY_API_KEY` secret.
-- Stop reporting `academy_key_configured` in `ecosystem-data-api` health.
+3. **Optional admin override**
+   - Add an admin-only "Force submit" action on enrolled-but-not-submitted enrollments so staff can move test/stuck players forward without asking them to click Submit.
 
-## Verification
+## Immediate Unblock (no code change)
 
-1. Deploy `sync-to-academy`.
-2. Trigger a manual challenge completion sync from Admin → Challenges.
-3. Check edge function logs for the `academy sync headers:` line — expect both names.
-4. Check `ecosystem_sync_log` for a `success` row with `target_app=fgn_academy`.
-5. Ask Academy to confirm they observed `X-Ecosystem-Key` on the inbound request and validated it.
+Have RacerX open `/challenges/<FS25-Bronze-id>`, upload evidence for **Equipment Maintenance**, then click **Submit for Review**. The enrollment will flip to `submitted` and the Approve / Reject controls (per-evidence and "Approve All & Complete") will appear in `/moderator/challenges → Evidence Review`. Approving then fires the same `sync-to-academy` dispatch you've been validating for ATS Bronze/Gold.
 
-## Risk
+## Files that would change
 
-Low. Sending an extra header to an endpoint that ignores it is a no-op; sending the legacy header keeps current behavior intact. Failure mode reverts cleanly by removing `ECOSYSTEM_API_KEY` from this project.
+- `src/pages/moderator/ModeratorChallenges.tsx` — add submission-state notice, render per-task "no evidence" placeholder, optional video `preload`/poster, optional admin force-submit button.
+
+No DB migrations, no edge function changes, no impact on the Phase E/F webhook parity work.
