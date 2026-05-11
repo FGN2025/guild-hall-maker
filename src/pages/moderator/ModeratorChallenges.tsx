@@ -585,19 +585,32 @@ const ModeratorChallenges = () => {
                     <Badge className={`text-xs shrink-0 ${evStatusColor}`}>{e.status || "pending"}</Badge>
                   </div>
 
-                  <div className="rounded border border-border overflow-hidden aspect-video max-w-xs bg-muted">
-                    {e.file_type === "image" ? (
-                      <a href={e.file_url} target="_blank" rel="noopener noreferrer">
-                        <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
-                      </a>
-                    ) : e.file_type === "video" ? (
-                      <video src={e.file_url} controls preload="metadata" className="w-full h-full object-cover" />
-                    ) : (
-                      <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
-                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                      </a>
-                    )}
-                  </div>
+                  {(() => {
+                    const ytMatch = e.file_url?.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+                    const twitchClipMatch = e.file_url?.match(/clips\.twitch\.tv\/([a-zA-Z0-9_-]+)/);
+                    const twitchVideoMatch = e.file_url?.match(/twitch\.tv\/videos\/(\d+)/);
+                    return (
+                      <div className="rounded border border-border overflow-hidden aspect-video max-w-xs bg-muted">
+                        {e.file_type === "image" ? (
+                          <a href={e.file_url} target="_blank" rel="noopener noreferrer">
+                            <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
+                          </a>
+                        ) : e.file_type === "video" ? (
+                          <video src={e.file_url} controls preload="metadata" className="w-full h-full object-cover" />
+                        ) : e.file_type === "video_link" && ytMatch ? (
+                          <iframe src={`https://www.youtube.com/embed/${ytMatch[1]}`} title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full" />
+                        ) : e.file_type === "video_link" && twitchClipMatch ? (
+                          <iframe src={`https://clips.twitch.tv/embed?clip=${twitchClipMatch[1]}&parent=${window.location.hostname}`} title="Twitch clip" allowFullScreen className="w-full h-full" />
+                        ) : e.file_type === "video_link" && twitchVideoMatch ? (
+                          <iframe src={`https://player.twitch.tv/?video=${twitchVideoMatch[1]}&parent=${window.location.hostname}`} title="Twitch video" allowFullScreen className="w-full h-full" />
+                        ) : (
+                          <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
+                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {e.notes && <p className="text-xs text-muted-foreground">{e.notes}</p>}
                   {e.reviewer_notes && <p className="text-xs text-muted-foreground italic">Moderator: {e.reviewer_notes}</p>}
