@@ -56,6 +56,7 @@ const ModeratorChallenges = () => {
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [gameFilter, setGameFilter] = useState("all");
   const [detailChallenge, setDetailChallenge] = useState<any | null>(null);
   const [editChallenge, setEditChallenge] = useState<any | null>(null);
   const [reviewChallengeId, setReviewChallengeId] = useState<string | null>(null);
@@ -89,18 +90,29 @@ const ModeratorChallenges = () => {
     },
   });
 
+  const gameOptions = useMemo(() => {
+    return [...new Set(challenges.map((c: any) => c.games?.name).filter(Boolean))].sort() as string[];
+  }, [challenges]);
+
   const filtered = useMemo(() => {
     return challenges.filter((c: any) => {
       if (difficultyFilter !== "all" && c.difficulty !== difficultyFilter) return false;
       if (statusFilter === "active" && !c.is_active) return false;
       if (statusFilter === "inactive" && c.is_active) return false;
+      if (gameFilter !== "all" && (c.games?.name ?? "") !== gameFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         return c.name.toLowerCase().includes(q) || (c.games?.name ?? "").toLowerCase().includes(q);
       }
       return true;
     });
-  }, [challenges, search, difficultyFilter, statusFilter]);
+  }, [challenges, search, difficultyFilter, statusFilter, gameFilter]);
+
+  const reviewChallenges = useMemo(() => {
+    if (gameFilter === "all") return challenges;
+    return challenges.filter((c: any) => (c.games?.name ?? "") === gameFilter);
+  }, [challenges, gameFilter]);
+
 
   // ── Mutations ──
   const deleteMutation = useMutation({
@@ -358,6 +370,17 @@ const ModeratorChallenges = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={gameFilter} onValueChange={setGameFilter}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Game" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Games</SelectItem>
+                {gameOptions.map((g) => (
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex gap-1">
               <Button variant={viewMode === "list" ? "default" : "outline"} size="icon" onClick={() => setViewMode("list")}>
                 <List className="h-4 w-4" />
@@ -539,16 +562,33 @@ const ModeratorChallenges = () => {
 
         {/* ═══════ EVIDENCE REVIEW TAB ═══════ */}
         <TabsContent value="review" className="mt-4 space-y-4">
-          <div className="space-y-2">
-            <Label>Select Challenge to Review</Label>
-            <Select value={reviewChallengeId || ""} onValueChange={setReviewChallengeId}>
-              <SelectTrigger><SelectValue placeholder="Choose a challenge..." /></SelectTrigger>
-              <SelectContent>
-                {challenges.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Filter by Game</Label>
+              <Select
+                value={gameFilter}
+                onValueChange={(v) => { setGameFilter(v); setReviewChallengeId(null); }}
+              >
+                <SelectTrigger><SelectValue placeholder="All Games" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Games</SelectItem>
+                  {gameOptions.map((g) => (
+                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Select Challenge to Review</Label>
+              <Select value={reviewChallengeId || ""} onValueChange={setReviewChallengeId}>
+                <SelectTrigger><SelectValue placeholder="Choose a challenge..." /></SelectTrigger>
+                <SelectContent>
+                  {reviewChallenges.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}{c.games?.name ? ` — ${c.games.name}` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {reviewChallengeId && reviewEnrollments.length === 0 && (
