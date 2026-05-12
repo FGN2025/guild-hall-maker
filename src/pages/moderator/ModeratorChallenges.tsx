@@ -31,6 +31,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
+import EvidenceReviewInbox from "@/components/challenges/EvidenceReviewInbox";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-green-500/20 text-green-400 border-green-500/30",
