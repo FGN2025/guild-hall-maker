@@ -56,7 +56,7 @@ export default function EvidenceReviewInbox({ mode }: Props) {
           challenge_evidence(*),
           challenges:challenge_id(id, name, games(name))
         `)
-        .order("submitted_at", { ascending: false, nullsFirst: false })
+        .order("updated_at", { ascending: false })
         .order("enrolled_at", { ascending: false });
 
       if (statusFilter !== "all") {
