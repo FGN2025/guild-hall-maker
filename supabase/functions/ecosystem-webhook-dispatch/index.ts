@@ -49,7 +49,20 @@ Deno.serve(async (req) => {
     }
 
     const results: any[] = [];
-    const payloadStr = JSON.stringify({ event_type, payload, timestamp: new Date().toISOString() });
+    // PR P-3: surface delivery_id at envelope top-level so receivers can idempotency-key
+    // without parsing the inner payload. Falls back to crypto.randomUUID() for
+    // event types that don't carry one yet (passport-link etc.).
+    const deliveryId: string =
+      (payload as any)?.metadata?.delivery_id
+      || (payload as any)?.metadata?.external_attempt_id
+      || (payload as any)?.delivery_id
+      || crypto.randomUUID();
+    const payloadStr = JSON.stringify({
+      event_type,
+      payload,
+      delivery_id: deliveryId,
+      timestamp: new Date().toISOString(),
+    });
 
     // Phase E HMAC contract (academy receiver):
     //   header  : X-Play-Signature
