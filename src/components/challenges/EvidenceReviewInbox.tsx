@@ -124,7 +124,7 @@ export default function EvidenceReviewInbox({ mode }: Props) {
       const enrollment: any = enrollments.find((e: any) => e.id === enrollmentId);
       const { error } = await supabase
         .from("challenge_enrollments")
-        .update({ status, completed_at: status === "completed" ? new Date().toISOString() : null })
+        .update({ status })
         .eq("id", enrollmentId);
       if (error) throw error;
       return enrollment;
