@@ -85,6 +85,10 @@ Deno.serve(async (req) => {
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           "X-FGN-Event": event_type,
+          // PR P-3: dual-emit delivery id headers. Receiver already accepts
+          // x-play-delivery-id; will accept x-delivery-id once P-3 lands.
+          "X-Delivery-Id": deliveryId,
+          "X-Play-Delivery-Id": deliveryId,
         };
         if (isAcademy) {
           headers["X-Play-Signature"] = signature;
