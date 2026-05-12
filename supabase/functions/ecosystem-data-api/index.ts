@@ -199,6 +199,28 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "games": {
+        const { data, error } = await adminClient
+          .from("games")
+          .select("id, key, name, short_name, is_active")
+          .eq("is_active", true)
+          .order("name");
+        if (error) throw error;
+        result = data ?? [];
+        // Log + return with both `games` and `data` keys for Academy compatibility
+        const targetApp = req.headers.get("x-ecosystem-app") || "unknown";
+        await adminClient.from("ecosystem_sync_log").insert({
+          target_app: targetApp,
+          data_type: "games",
+          records_synced: result.length,
+          status: "success",
+        });
+        return new Response(JSON.stringify({ games: result, data: result }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       case "quests": {
         let q = adminClient
           .from("quests")
