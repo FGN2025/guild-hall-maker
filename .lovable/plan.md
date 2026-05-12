@@ -1,65 +1,83 @@
-## P1 — Skill Passport link-out (Play side), config-driven URL
+# Plan: Phase E Parity Watch → §8 Strict Cutover Prep
 
-### Context
-- Decision: **link-out only** from `/dashboard`, no in-app passport render.
-- Current button hits `https://fgn.academy/passport?email=<urlencoded>` and 404s.
-- URL/auth contract is now logged as **§9 P1 BLOCKER** in `docs/phase-f-status-and-open-asks.md` (Option A: canonical slug URL, Option B: HMAC magic-link — Option B preferred).
-- Academy still owes the explicit decision per §9. Nothing on Play hard-codes either choice yet.
+**Goal:** Safely confirm the live HMAC-signed webhook path is at parity, then stage the 2026-05-26 16:00 UTC strict-mode + `X-App-Key` retirement cutover.
 
-### Goal
-Land Play's Skill Passport link-out in a shape that can flip to Academy's final answer **via config only, no redeploy**, while the §9 decision is pending. Today's button still 404s, so step 2 also gives us a less-broken interim default.
+T0 of parity window: 2026-05-12 ~16:22 UTC. Target green: 2026-05-13 ~16:22 UTC (24h min) → 2026-05-14 ~16:22 UTC (48h preferred).
 
-### Step 1 — Make the URL fully config-driven
-Edit `src/lib/academyPassport.ts` to read additional knobs from the active `tenant_integrations` row (`provider_type = 'fgn_academy'`, `is_active = true`):
+---
 
-- `passport_base_url` (already supported) — host root, default `https://fgn.academy`.
-- `passport_path_template` (new) — e.g. `/passport/{slug}` or `/passport?email={email}`. Supports placeholders: `{email}`, `{external_user_id}`, `{slug}`. Default kept as `/passport?email={email}` until §9 lands.
-- `passport_link_mode` (new) — `"direct" | "magic_link"`. Default `"direct"`.
+## Phase 1 — 48h parity watch (now → T+48h)
 
-Direct mode: substitute placeholders against `{ email, external_user_id, slug }` resolved from the current user (email from auth, external_user_id from `profiles`/sync metadata, slug from a future Academy lookup). Missing placeholder → fall back to email.
+Per `docs/phase-e-shadow-to-live-runbook.md` §4d, with `PHASE_E_ROUTING_MODE=live` we expect:
+- Continuous `webhook:challenge_completion` rows in `ecosystem_sync_log`, all `status=success`.
+- Zero new direct `challenge_completion` rows after T0.
+- Zero HMAC failures on Academy receiver.
 
-Hook surface stays `useAcademyPassportUrl(...)` returning a string URL, so `Dashboard.tsx` doesn't change in direct mode.
+**Cadence:** check every 4–6h via `ecosystem_sync_log` query (runbook §3a, adapted for live):
 
-### Step 2 — Magic-link path (only wired up; dormant until Academy picks Option B)
-Add edge function `supabase/functions/academy-passport-link/index.ts`:
-- Loads active `fgn_academy` integration.
-- Resolves caller's `email` + `external_user_id` from session.
-- POSTs to Academy's magic-link endpoint (URL from `additional_config.passport_magic_link_endpoint`) with `X-Play-Signature` HMAC-SHA256 over the canonical body, reusing the **§6-finalized scheme** and `PLAY_WEBHOOK_SECRET`.
-- Returns `{ url }`.
+```sql
+select data_type, status, count(*), max(created_at)
+from ecosystem_sync_log
+where target_app='fgn_academy'
+  and created_at > '2026-05-12T16:22:00Z'
+group by 1,2 order by 1,2;
+```
 
-In `passport_link_mode === "magic_link"`, `Dashboard.tsx` invokes the function on click and opens `data.url` in a new tab; show a toast on failure. Do NOT pre-resolve on hover (avoid burning one-time tokens).
+**Pass criteria (24h min, 48h preferred):**
+| Metric | Threshold |
+|---|---|
+| `webhook:challenge_completion` success rate | ≥ 99% |
+| New direct `challenge_completion` rows post-T0 | 0 |
+| Academy-side signature failures | 0 (written confirmation) |
+| Rollbacks triggered | 0 |
 
-Function ships disabled-by-default (no config row points at it yet) so it's safe to land before Academy confirms.
+**Failure response:** instant flip `PHASE_E_ROUTING_MODE` → `shadow` (or `off` if catastrophic). No redeploy. Log trigger symptom in #ecosystem-ops, open follow-up.
 
-### Step 3 — Update §9 with the Play-side delivery shape
-Append to `docs/phase-f-status-and-open-asks.md` §9:
+---
 
-> **Play-side status (2026-05-11):** Link-out is now config-driven via `tenant_integrations.additional_config`:
-> - `passport_base_url`, `passport_path_template` (placeholders: `{email}`, `{external_user_id}`, `{slug}`), `passport_link_mode` (`direct` | `magic_link`).
-> - Option A (canonical URL): Academy confirms template → Play updates one config row, no redeploy.
-> - Option B (magic-link): edge function `academy-passport-link` is shipped and dormant. To activate, Academy provides the endpoint URL + confirms it accepts the §6 HMAC scheme keyed on `external_user_id`; Play sets `passport_link_mode='magic_link'` + `passport_magic_link_endpoint=<url>` in the same row.
-> - Today's default (`/passport?email={email}`) still 404s — pending §9 decision before we change the default.
+## Phase 2 — §8 cutover prep (T+24h → 2026-05-26)
 
-### Step 4 — Verify on `/dashboard`
-- Direct mode with default template: confirm button still opens (will still 404 until Academy answers §9 — expected).
-- Direct mode with hand-set `passport_path_template='/passport/{email}'` via a temporary admin update: confirm URL is built correctly and opens in a new tab.
-- Magic-link mode: covered by a follow-up smoke once Academy delivers the endpoint.
+§8 = retire legacy `X-App-Key` header path on Academy side; Play already sends only `X-Ecosystem-Key` (per `docs/fgn-academy-integration.md` §10). Cutover is Academy-driven; Play's job is verification + readiness.
 
-### Step 5 — Communications back to Academy devs
-Single message in §9 update:
+### 2a. Verify Play-side hygiene
+- Grep `supabase/functions/sync-to-academy` for any residual `X-App-Key` / `FGN_ACADEMY_API_KEY` references — should be zero.
+- Confirm `FGN_ACADEMY_API_KEY` secret is retired (or scheduled for deletion post-cutover).
+- Confirm `ECOSYSTEM_API_KEY` is the only outbound auth header on every push path (`sync-to-academy`, `ecosystem-webhook-dispatch`, `academy-passport-link`).
 
-> Play P1 link-out is config-flipped, not code-flipped. We're holding on §9 — please confirm Option A or B and the missing fields:
-> - Option A: final path template + lookup key (`email`, `external_user_id`, or `slug`) + slug-resolution endpoint if any.
-> - Option B: magic-link endpoint URL + confirmation it accepts §6 `X-Play-Signature` (HMAC-SHA256, `PLAY_WEBHOOK_SECRET`) keyed on PR P-3 `external_user_id`.
-> No Play redeploy needed once you answer — we flip a single `tenant_integrations` row.
+### 2b. Build the cutover checklist (deliver to Academy 24h before flip)
+Single doc `docs/phase-e-strict-cutover-2026-05-26.md` containing:
+1. Pre-flip verification queries (last 7d of `ecosystem_sync_log`, zero auth failures, zero `X-App-Key` references in dispatcher logs).
+2. T0 timestamp capture template.
+3. Strict-mode flip steps (Academy receiver flips unsigned-reject + `X-Ecosystem-Key`-only).
+4. Post-flip 2h watch — same parity query as Phase 1, looking for any 401/403 spike.
+5. Rollback path: Academy reverts to lenient; Play has no flip (already strict-only on send).
+6. Done criteria: 7 days clean, then archive.
 
-### Out of scope (deferred)
-- Rendering passport tiles/skills inside Play.
-- Caching Academy passport data locally.
-- Per-tenant overrides of the passport URL (current row is global; revisit if a partner needs a white-labeled Academy host).
+### 2c. Notify Academy (T-24h, i.e. 2026-05-25 16:00 UTC)
+- Post to #ecosystem-ops: "§8 cutover T-24h, parity window closed clean, Play side green."
+- Confirm Academy on-call for the flip window.
 
-### Files touched
-- `src/lib/academyPassport.ts` — config-driven URL + optional async magic-link path.
-- `src/pages/Dashboard.tsx` — minimal change to handle async click in magic-link mode (toast on failure).
-- `supabase/functions/academy-passport-link/index.ts` (new) — dormant until Academy picks Option B.
-- `docs/phase-f-status-and-open-asks.md` — §9 update with Play-side delivery shape + ask back to Academy.
+### 2d. Update existing docs after cutover
+- `docs/phase-e-routing-flag.md` — fill in actual T0/T1 dates in "Recommended rollout".
+- `docs/phase-f-status-and-open-asks.md` — mark Phase E shipped, mark §3 PR P-2 14-day window closed.
+- `docs/fgn-academy-integration.md` §10 — already reflects completion; add cutover date.
+
+---
+
+## Out of scope (explicitly deferred)
+
+- Phase F follow-ups (track-aware Play UI, tenant-scoped Academy telemetry) — wait until §8 lands clean.
+- New skill-taxonomy negotiation (§ "Asks for Academy" item 2) — non-blocking, pick up after cutover.
+
+---
+
+## Technical details
+
+**Files to read/touch (Phase 2a only — Phase 1 is monitoring):**
+- `supabase/functions/sync-to-academy/index.ts` — verify only `X-Ecosystem-Key` outbound.
+- `supabase/functions/ecosystem-webhook-dispatch/index.ts` — already verified clean.
+- `supabase/functions/academy-passport-link/index.ts` — verify header set.
+
+**No code changes expected in Phase 1.** Phase 2a may yield a small cleanup PR if any `X-App-Key` references linger; Phase 2b is a new doc only.
+
+**Reversibility:** Phase E flip is a single secret toggle (`PHASE_E_ROUTING_MODE`), no redeploy. §8 cutover is Academy-side; Play's posture is already strict-only.
