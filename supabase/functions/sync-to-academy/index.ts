@@ -229,6 +229,12 @@ Deno.serve(async (req) => {
     const outboundHeaders: Record<string, string> = {
       "Content-Type": "application/json",
       "X-Ecosystem-Key": ecosystemApiKey,
+      // PR P-3: surface delivery id at header level so receiver can idempotency-key
+      // without parsing the body. Receiver accepts X-Delivery-Id / X-Play-Delivery-Id.
+      ...(deliveryId ? { "X-Delivery-Id": deliveryId, "X-Play-Delivery-Id": deliveryId } : {}),
+      // Path tag for receiver-side log forensics (action prefix already encodes path,
+      // but this lets play_sync_attempts.request.headers.x_play_path differentiate cleanly).
+      "X-Play-Path": "direct",
     };
 
     let response: Response;
