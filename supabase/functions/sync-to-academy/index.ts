@@ -262,7 +262,25 @@ Deno.serve(async (req) => {
 
     const responseText = await response.text();
     const success = response.ok;
-    const isUserNotFound = !success && response.status === 404;
+
+    // Parse Academy 404s into specific failure modes so missing work-orders
+    // route to ops instead of being mis-surfaced to players as "not registered".
+    let academyErrorKind: "user_not_found" | "work_order_missing" | "other_404" | null = null;
+    let academyErrorMessage: string | null = null;
+    if (!success && response.status === 404) {
+      try {
+        const parsed = JSON.parse(responseText);
+        const errStr = (parsed?.error || "").toString();
+        academyErrorMessage = errStr || null;
+        if (/user not found/i.test(errStr)) academyErrorKind = "user_not_found";
+        else if (/no work order found/i.test(errStr)) academyErrorKind = "work_order_missing";
+        else academyErrorKind = "other_404";
+      } catch {
+        academyErrorKind = "other_404";
+      }
+    }
+    const isUserNotFound = academyErrorKind === "user_not_found";
+    const isWorkOrderMissing = academyErrorKind === "work_order_missing";
 
     // Parse academy response for next_step
     let academyNextStep: any = null;
