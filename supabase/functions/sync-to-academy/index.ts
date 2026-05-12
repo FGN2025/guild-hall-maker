@@ -92,6 +92,22 @@ Deno.serve(async (req) => {
       .eq("challenge_id", challenge_id)
       .single();
 
+    // Resolve canonical completion (awarded_points, completed_at) so retries
+    // and re-syncs reuse the original event's bytes — never re-stamp with now()
+    // or accept caller-supplied awarded_points: 0 as truth. (Academy Flag 1.)
+    const { data: latestCompletion } = await adminClient
+      .from("challenge_completions")
+      .select("awarded_points, completed_at")
+      .eq("user_id", user_id)
+      .eq("challenge_id", challenge_id)
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const canonicalAwardedPoints =
+      (latestCompletion as any)?.awarded_points ?? awarded_points ?? 0;
+    const canonicalCompletedAt =
+      (latestCompletion as any)?.completed_at ?? new Date().toISOString();
+
     // Resolve tenant context (P-3 metadata additions)
     let tenantId: string | null = null;
     let tenantSlug: string | null = null;
@@ -130,23 +146,28 @@ Deno.serve(async (req) => {
       };
     });
 
-    // Calculate score (0–100)
+    // Calculate score (0–100) using canonical awarded_points
     const maxPoints = (challenge as any)?.points_reward || 0;
-    const actualPoints = awarded_points || 0;
+    const actualPoints = canonicalAwardedPoints;
     const score = maxPoints > 0 ? Math.round((actualPoints / maxPoints) * 100) : (actualPoints > 0 ? 100 : 0);
+
+    // delivery_id = external_attempt_id (PR P-3). Stable per completion attempt;
+    // receiver uses it for idempotency keying so retries collapse to duplicate-200.
+    const deliveryId = (enrollment as any)?.external_attempt_id ?? null;
 
     // Build FLAT payload matching academy's expected contract
     const payload = {
       user_email: userEmail,
       challenge_id: challenge_id,
       score: score,
-      completed_at: new Date().toISOString(),
+      completed_at: canonicalCompletedAt,
       task_progress: taskProgress,
       skills_verified: buildSkillsTags(challenge),
       metadata: {
         source: "play.fgn.gg",
         external_user_id: user_id,
-        external_attempt_id: (enrollment as any)?.external_attempt_id ?? null,
+        external_attempt_id: deliveryId,
+        delivery_id: deliveryId,
         tenant_id: tenantId,
         tenant_slug: tenantSlug,
         tenant_name: tenantName,
@@ -160,10 +181,14 @@ Deno.serve(async (req) => {
       },
     };
 
-    // Determine academy URL from integration config, fallback to default
+    // Determine academy URL from integration config, fallback to Academy's
+    // sync-challenge-completion Edge Function. The legacy default
+    // (https://fgn.academy/api/ecosystem/challenge-completed) was a SPA route
+    // that silently 200'd index.html — Academy confirmed no handler exists there.
+    // (Academy Flag 2a, 2026-05-12.)
     const integration = integrations[0];
     const academyUrl = (integration.additional_config as any)?.api_url
-      || "https://fgn.academy/api/ecosystem/challenge-completed";
+      || "https://vfzjfkcwromssjnlrhoo.supabase.co/functions/v1/sync-challenge-completion";
 
     // ----- Phase E routing flag (reversible) -----
     // PHASE_E_ROUTING_MODE:

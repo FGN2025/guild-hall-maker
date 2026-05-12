@@ -800,11 +800,12 @@ const ModeratorChallenges = () => {
                         onClick={async () => {
                           setResyncing(enrollment.id);
                           try {
+                            // Retry: omit awarded_points so the function reads the
+                            // canonical value from challenge_completions (no 0-clobber).
                             const { data, error } = await supabase.functions.invoke("sync-to-academy", {
                               body: {
                                 user_id: enrollment.user_id,
                                 challenge_id: enrollment.challenge_id,
-                                awarded_points: 0,
                               },
                             });
                             if (error) throw error;
