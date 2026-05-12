@@ -52,6 +52,8 @@ const ModeratorChallenges = () => {
   const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const innerTab = searchParams.get("tab") === "review" ? "review" : "oversight";
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [search, setSearch] = useState("");
