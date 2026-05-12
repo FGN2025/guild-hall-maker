@@ -302,12 +302,16 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Build sync note
+    // Build sync note — preserve actual Academy error string for ops triage
     const syncNote = success
       ? "Synced successfully"
       : isUserNotFound
         ? "user_not_found"
-        : `HTTP ${response.status}: ${responseText.substring(0, 200)}`;
+        : isWorkOrderMissing
+          ? `work_order_missing: ${academyErrorMessage ?? ""}`.trim()
+          : academyErrorKind === "other_404"
+            ? `academy_404: ${academyErrorMessage ?? responseText.substring(0, 200)}`
+            : `HTTP ${response.status}: ${responseText.substring(0, 200)}`;
 
     // Update the completion record
     await adminClient
