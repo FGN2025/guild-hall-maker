@@ -146,23 +146,28 @@ Deno.serve(async (req) => {
       };
     });
 
-    // Calculate score (0–100)
+    // Calculate score (0–100) using canonical awarded_points
     const maxPoints = (challenge as any)?.points_reward || 0;
-    const actualPoints = awarded_points || 0;
+    const actualPoints = canonicalAwardedPoints;
     const score = maxPoints > 0 ? Math.round((actualPoints / maxPoints) * 100) : (actualPoints > 0 ? 100 : 0);
+
+    // delivery_id = external_attempt_id (PR P-3). Stable per completion attempt;
+    // receiver uses it for idempotency keying so retries collapse to duplicate-200.
+    const deliveryId = (enrollment as any)?.external_attempt_id ?? null;
 
     // Build FLAT payload matching academy's expected contract
     const payload = {
       user_email: userEmail,
       challenge_id: challenge_id,
       score: score,
-      completed_at: new Date().toISOString(),
+      completed_at: canonicalCompletedAt,
       task_progress: taskProgress,
       skills_verified: buildSkillsTags(challenge),
       metadata: {
         source: "play.fgn.gg",
         external_user_id: user_id,
-        external_attempt_id: (enrollment as any)?.external_attempt_id ?? null,
+        external_attempt_id: deliveryId,
+        delivery_id: deliveryId,
         tenant_id: tenantId,
         tenant_slug: tenantSlug,
         tenant_name: tenantName,
