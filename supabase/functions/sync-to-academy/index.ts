@@ -181,10 +181,14 @@ Deno.serve(async (req) => {
       },
     };
 
-    // Determine academy URL from integration config, fallback to default
+    // Determine academy URL from integration config, fallback to Academy's
+    // sync-challenge-completion Edge Function. The legacy default
+    // (https://fgn.academy/api/ecosystem/challenge-completed) was a SPA route
+    // that silently 200'd index.html — Academy confirmed no handler exists there.
+    // (Academy Flag 2a, 2026-05-12.)
     const integration = integrations[0];
     const academyUrl = (integration.additional_config as any)?.api_url
-      || "https://fgn.academy/api/ecosystem/challenge-completed";
+      || "https://vfzjfkcwromssjnlrhoo.supabase.co/functions/v1/sync-challenge-completion";
 
     // ----- Phase E routing flag (reversible) -----
     // PHASE_E_ROUTING_MODE:
