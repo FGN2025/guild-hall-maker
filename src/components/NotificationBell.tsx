@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
-import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { usePendingReviewCount } from "@/hooks/usePendingReviewCount";
+import { useAuth } from "@/contexts/AuthContext";
+import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -25,8 +27,13 @@ const typeIcon = (type: string) => {
 
 export function NotificationBell() {
   const navigate = useNavigate();
+  const { isAdmin, isModerator } = useAuth();
+  const isStaff = isAdmin || isModerator;
   const { data: notifications = [], unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { data: pendingReviews = 0 } = usePendingReviewCount();
   const [open, setOpen] = useState(false);
+
+  const totalBadge = unreadCount + (isStaff ? pendingReviews : 0);
 
   const handleClick = (n: Notification) => {
     if (!n.is_read) markAsRead.mutate(n.id);
@@ -36,14 +43,19 @@ export function NotificationBell() {
     }
   };
 
+  const goToReviewQueue = () => {
+    navigate(isAdmin ? "/admin/challenges?tab=review" : "/moderator/challenges?tab=review");
+    setOpen(false);
+  };
+
   return (
     <>
       <SidebarMenuButton tooltip="Notifications" onClick={() => setOpen(true)}>
         <Bell className="h-4 w-4 shrink-0" />
         <span>Notifications</span>
-        {unreadCount > 0 && (
+        {totalBadge > 0 && (
           <span className="ml-auto h-5 min-w-5 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {totalBadge > 9 ? "9+" : totalBadge}
           </span>
         )}
       </SidebarMenuButton>
@@ -66,10 +78,29 @@ export function NotificationBell() {
               )}
             </div>
           </SheetHeader>
+
+          {isStaff && pendingReviews > 0 && (
+            <button
+              onClick={goToReviewQueue}
+              className="w-full text-left px-4 py-3 flex items-center gap-3 border-b border-border bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              <ClipboardCheck className="h-4 w-4 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  {pendingReviews} evidence {pendingReviews === 1 ? "review" : "reviews"} pending
+                </p>
+                <p className="text-xs text-muted-foreground">Open the review queue</p>
+              </div>
+              <span className="h-5 min-w-5 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                {pendingReviews > 9 ? "9+" : pendingReviews}
+              </span>
+            </button>
+          )}
+
           <ScrollArea className="h-[calc(100vh-60px)]">
             {notifications.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
-                No notifications yet
+                {isStaff && pendingReviews > 0 ? "No personal notifications." : "No notifications yet"}
               </div>
             ) : (
               <div className="divide-y divide-border">

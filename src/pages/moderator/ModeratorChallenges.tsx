@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { EventPromoEditorDialog, buildChallengePromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
@@ -31,6 +31,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
+import EvidenceReviewInbox from "@/components/challenges/EvidenceReviewInbox";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -51,6 +52,8 @@ const ModeratorChallenges = () => {
   const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const innerTab = searchParams.get("tab") === "review" ? "review" : "oversight";
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [search, setSearch] = useState("");
@@ -353,7 +356,7 @@ const ModeratorChallenges = () => {
             />
           </div>
 
-      <Tabs defaultValue="oversight">
+      <Tabs value={innerTab} onValueChange={(v) => { const next = new URLSearchParams(searchParams); if (v === "review") next.set("tab", "review"); else next.delete("tab"); setSearchParams(next, { replace: true }); }}>
         <TabsList>
           <TabsTrigger value="oversight" className="gap-1.5"><ClipboardList className="h-4 w-4" /> Oversight</TabsTrigger>
           <TabsTrigger value="review" className="gap-1.5"><Eye className="h-4 w-4" /> Evidence Review</TabsTrigger>
@@ -578,266 +581,8 @@ const ModeratorChallenges = () => {
         </TabsContent>
 
         {/* ═══════ EVIDENCE REVIEW TAB ═══════ */}
-        <TabsContent value="review" className="mt-4 space-y-4">
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Filter by Game</Label>
-              <Select
-                value={gameFilter}
-                onValueChange={(v) => { setGameFilter(v); setReviewChallengeId(null); }}
-              >
-                <SelectTrigger><SelectValue placeholder="All Games" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Games</SelectItem>
-                  {gameOptions.map((g) => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Select Challenge to Review</Label>
-              <Select value={reviewChallengeId || ""} onValueChange={setReviewChallengeId}>
-                <SelectTrigger><SelectValue placeholder="Choose a challenge..." /></SelectTrigger>
-                <SelectContent>
-                  {reviewChallenges.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}{c.games?.name ? ` — ${c.games.name}` : ""}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {reviewChallengeId && reviewEnrollments.length === 0 && (
-            <Card><CardContent className="py-8 text-center text-muted-foreground">No enrollments yet.</CardContent></Card>
-          )}
-
-          {reviewEnrollments.map((enrollment: any) => {
-            const taskMap: Record<string, any> = {};
-            (reviewTasks as any[]).forEach((t: any) => { taskMap[t.id] = t; });
-
-            const evidenceByTask: Record<string, any[]> = {};
-            const generalEvidence: any[] = [];
-            (enrollment.challenge_evidence ?? []).forEach((ev: any) => {
-              if (ev.task_id) {
-                (evidenceByTask[ev.task_id] ||= []).push(ev);
-              } else {
-                generalEvidence.push(ev);
-              }
-            });
-
-            const isSubmitted = enrollment.status === "submitted";
-            const hasAnyEvidence = (enrollment.challenge_evidence ?? []).length > 0;
-
-            const renderEvidenceItem = (e: any) => {
-              const evStatusColor = e.status === "approved"
-                ? "bg-green-500/20 text-green-400 border-green-500/30"
-                : e.status === "rejected"
-                ? "bg-red-500/20 text-red-400 border-red-500/30"
-                : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-
-              return (
-                <div key={e.id} className="rounded-lg border border-border p-3 space-y-2 bg-card/50">
-                  <div className="flex items-center justify-end gap-2">
-                    <Badge className={`text-xs shrink-0 ${evStatusColor}`}>{e.status || "pending"}</Badge>
-                  </div>
-
-                  {(() => {
-                    const ytMatch = e.file_url?.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
-                    const twitchClipMatch = e.file_url?.match(/clips\.twitch\.tv\/([a-zA-Z0-9_-]+)/);
-                    const twitchVideoMatch = e.file_url?.match(/twitch\.tv\/videos\/(\d+)/);
-                    return (
-                      <div className="rounded border border-border overflow-hidden aspect-video max-w-xs bg-muted">
-                        {e.file_type === "image" ? (
-                          <a href={e.file_url} target="_blank" rel="noopener noreferrer">
-                            <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
-                          </a>
-                        ) : e.file_type === "video" ? (
-                          <video src={e.file_url} controls preload="metadata" className="w-full h-full object-cover" />
-                        ) : e.file_type === "video_link" && ytMatch ? (
-                          <iframe src={`https://www.youtube.com/embed/${ytMatch[1]}`} title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full" />
-                        ) : e.file_type === "video_link" && twitchClipMatch ? (
-                          <iframe src={`https://clips.twitch.tv/embed?clip=${twitchClipMatch[1]}&parent=${window.location.hostname}`} title="Twitch clip" allowFullScreen className="w-full h-full" />
-                        ) : e.file_type === "video_link" && twitchVideoMatch ? (
-                          <iframe src={`https://player.twitch.tv/?video=${twitchVideoMatch[1]}&parent=${window.location.hostname}`} title="Twitch video" allowFullScreen className="w-full h-full" />
-                        ) : (
-                          <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
-                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {e.notes && <p className="text-xs text-muted-foreground">{e.notes}</p>}
-                  {e.reviewer_notes && <p className="text-xs text-muted-foreground italic">Moderator: {e.reviewer_notes}</p>}
-
-                  {e.status !== "approved" && isSubmitted && (
-                    <div className="space-y-1.5 pt-1">
-                      <RejectionReasonSelect
-                        value={evidenceReason[e.id] ?? null}
-                        onChange={(code) => setEvidenceReason((p) => ({ ...p, [e.id]: code }))}
-                        disabled={updateEvidenceStatusMutation.isPending}
-                      />
-                      <div className="flex items-center gap-2">
-                        <Input
-                          placeholder="Feedback notes (optional)..."
-                          className="text-xs h-8 flex-1"
-                          value={evidenceNotes[e.id] || ""}
-                          onChange={(ev) => setEvidenceNotes((prev) => ({ ...prev, [e.id]: ev.target.value }))}
-                        />
-                        <Button
-                          size="sm" variant="outline" className="gap-1 h-8 text-xs"
-                          onClick={() => {
-                            updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "approved", reviewer_notes: evidenceNotes[e.id] });
-                            setEvidenceNotes((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
-                            setEvidenceReason((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
-                          }}
-                          disabled={updateEvidenceStatusMutation.isPending}
-                        >
-                          <CheckCircle2 className="h-3 w-3" /> Approve
-                        </Button>
-                        <Button
-                          size="sm" variant="destructive" className="gap-1 h-8 text-xs"
-                          onClick={() => {
-                            const composed = encodeReviewerNotes(evidenceReason[e.id] ?? null, evidenceNotes[e.id] || "");
-                            updateEvidenceStatusMutation.mutate({ evidenceId: e.id, status: "rejected", reviewer_notes: composed });
-                            setEvidenceNotes((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
-                            setEvidenceReason((prev) => { const n = { ...prev }; delete n[e.id]; return n; });
-                          }}
-                          disabled={updateEvidenceStatusMutation.isPending}
-                        >
-                          <XCircle className="h-3 w-3" /> Reject
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            };
-
-            return (
-              <Card key={enrollment.id}>
-                <CardContent className="p-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-foreground">{enrollment.display_name}</p>
-                      <p className="text-xs text-muted-foreground">Enrolled {new Date(enrollment.enrolled_at).toLocaleDateString()}</p>
-                    </div>
-                    <Badge variant="outline" className="capitalize">{enrollment.status}</Badge>
-                  </div>
-
-                  {!isSubmitted && enrollment.status !== "completed" && enrollment.status !== "rejected" && (
-                    <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 flex items-start gap-2 text-xs">
-                      <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
-                      <div className="flex-1 space-y-1">
-                        <p className="font-medium text-yellow-300">Awaiting player submission</p>
-                        <p className="text-muted-foreground">
-                          The player must tap <span className="font-medium">Submit for Review</span> on the challenge page before moderators can approve.
-                          {hasAnyEvidence ? " Evidence has been uploaded but not yet submitted." : " No evidence uploaded yet."}
-                        </p>
-                        {isAdmin && hasAnyEvidence && (
-                          <Button
-                            size="sm" variant="outline" className="gap-1 h-7 text-xs mt-2"
-                            onClick={() => forceSubmitMutation.mutate(enrollment.id)}
-                            disabled={forceSubmitMutation.isPending}
-                          >
-                            <Send className="h-3 w-3" /> Force submit (admin)
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {(reviewTasks as any[]).length > 0 && (
-                    <div className="space-y-4">
-                      {(reviewTasks as any[]).map((task: any) => {
-                        const items = evidenceByTask[task.id] ?? [];
-                        return (
-                          <div key={task.id} className="space-y-2">
-                            <p className="text-xs font-medium text-muted-foreground">Task: {task.title}</p>
-                            {items.length === 0 ? (
-                              <div className="rounded-lg border border-dashed border-border p-4 flex items-center gap-2 text-xs text-muted-foreground bg-muted/20">
-                                <FileQuestion className="h-4 w-4" />
-                                No evidence uploaded for this task yet.
-                              </div>
-                            ) : (
-                              <div className="space-y-3">{items.map(renderEvidenceItem)}</div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {generalEvidence.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">General evidence</p>
-                      <div className="space-y-3">{generalEvidence.map(renderEvidenceItem)}</div>
-                    </div>
-                  )}
-
-                  {isSubmitted && (
-                    <div className="flex gap-2 border-t border-border pt-3">
-                      <Button
-                        size="sm" className="gap-1"
-                        onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "completed" })}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Approve All & Complete
-                      </Button>
-                      <Button
-                        size="sm" variant="destructive" className="gap-1"
-                        onClick={() => updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "rejected" })}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        <XCircle className="h-3.5 w-3.5" /> Reject Enrollment
-                      </Button>
-                    </div>
-                  )}
-
-                  {enrollment.status === "completed" && isAdmin && (
-                    <div className="flex gap-2 border-t border-border pt-3">
-                      <Button
-                        size="sm" variant="outline" className="gap-1"
-                        disabled={resyncing === enrollment.id}
-                        onClick={async () => {
-                          setResyncing(enrollment.id);
-                          try {
-                            // Retry: omit awarded_points so the function reads the
-                            // canonical value from challenge_completions (no 0-clobber).
-                            const { data, error } = await supabase.functions.invoke("sync-to-academy", {
-                              body: {
-                                user_id: enrollment.user_id,
-                                challenge_id: enrollment.challenge_id,
-                              },
-                            });
-                            if (error) throw error;
-                            if (data?.success) {
-                              toast.success("Academy sync completed");
-                            } else {
-                              toast.error(data?.message || "Sync failed");
-                            }
-                          } catch (err: any) {
-                            toast.error("Sync error: " + (err.message || "Unknown"));
-                          } finally {
-                            setResyncing(null);
-                          }
-                        }}
-                      >
-                        {resyncing === enrollment.id ? (
-                          <div className="animate-spin h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full" />
-                        ) : (
-                          <RefreshCw className="h-3.5 w-3.5" />
-                        )}
-                        Retry Academy Sync
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+        <TabsContent value="review" className="mt-4">
+          <EvidenceReviewInbox mode="moderator" />
         </TabsContent>
       </Tabs>
 
