@@ -102,6 +102,17 @@ Deno.serve(async (req) => {
     const canonical = JSON.stringify(payload);
     const signature = await hmacHex(PLAY_WEBHOOK_SECRET, canonical);
 
+    // Diagnostic: emit sha256[:12] of the secret bytes Play actually signs with,
+    // plus secret_len, so Academy can byte-compare without either side leaking the value.
+    // Anchor #7 follow-up — disambiguate which project holds the stale PLAY_WEBHOOK_SECRET.
+    const secretBytes = new TextEncoder().encode(PLAY_WEBHOOK_SECRET);
+    const secretHashBuf = await crypto.subtle.digest("SHA-256", secretBytes);
+    const secretSha12 = Array.from(new Uint8Array(secretHashBuf))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+      .slice(0, 12);
+    console.log(`[passport-link] play_secret_sha256[:12]=${secretSha12} secret_len=${secretBytes.length} sig_prefix=${signature.slice(0, 8)} body_len=${canonical.length}`);
+
     const academyRes = await fetch(endpoint, {
       method: "POST",
       headers: {
