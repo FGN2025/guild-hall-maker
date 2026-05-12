@@ -92,6 +92,22 @@ Deno.serve(async (req) => {
       .eq("challenge_id", challenge_id)
       .single();
 
+    // Resolve canonical completion (awarded_points, completed_at) so retries
+    // and re-syncs reuse the original event's bytes — never re-stamp with now()
+    // or accept caller-supplied awarded_points: 0 as truth. (Academy Flag 1.)
+    const { data: latestCompletion } = await adminClient
+      .from("challenge_completions")
+      .select("awarded_points, completed_at")
+      .eq("user_id", user_id)
+      .eq("challenge_id", challenge_id)
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const canonicalAwardedPoints =
+      (latestCompletion as any)?.awarded_points ?? awarded_points ?? 0;
+    const canonicalCompletedAt =
+      (latestCompletion as any)?.completed_at ?? new Date().toISOString();
+
     // Resolve tenant context (P-3 metadata additions)
     let tenantId: string | null = null;
     let tenantSlug: string | null = null;
