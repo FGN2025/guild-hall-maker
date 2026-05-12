@@ -338,6 +338,10 @@ const AdminChallenges = () => {
             toast.success("Progress synced to FGN Academy");
           } else if (data?.user_not_found) {
             toast.info("Player not yet registered on FGN Academy — sync skipped");
+          } else if (data?.work_order_missing) {
+            toast.warning(`Academy work order missing for this challenge — ops action required`);
+          } else if (data?.message) {
+            toast.warning(`Academy sync: ${data.message}`);
           }
         }).catch((err: any) => console.warn("Academy sync failed (non-blocking):", err));
 

@@ -262,7 +262,25 @@ Deno.serve(async (req) => {
 
     const responseText = await response.text();
     const success = response.ok;
-    const isUserNotFound = !success && response.status === 404;
+
+    // Parse Academy 404s into specific failure modes so missing work-orders
+    // route to ops instead of being mis-surfaced to players as "not registered".
+    let academyErrorKind: "user_not_found" | "work_order_missing" | "other_404" | null = null;
+    let academyErrorMessage: string | null = null;
+    if (!success && response.status === 404) {
+      try {
+        const parsed = JSON.parse(responseText);
+        const errStr = (parsed?.error || "").toString();
+        academyErrorMessage = errStr || null;
+        if (/user not found/i.test(errStr)) academyErrorKind = "user_not_found";
+        else if (/no work order found/i.test(errStr)) academyErrorKind = "work_order_missing";
+        else academyErrorKind = "other_404";
+      } catch {
+        academyErrorKind = "other_404";
+      }
+    }
+    const isUserNotFound = academyErrorKind === "user_not_found";
+    const isWorkOrderMissing = academyErrorKind === "work_order_missing";
 
     // Parse academy response for next_step
     let academyNextStep: any = null;
@@ -284,12 +302,16 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Build sync note
+    // Build sync note — preserve actual Academy error string for ops triage
     const syncNote = success
       ? "Synced successfully"
       : isUserNotFound
         ? "user_not_found"
-        : `HTTP ${response.status}: ${responseText.substring(0, 200)}`;
+        : isWorkOrderMissing
+          ? `work_order_missing: ${academyErrorMessage ?? ""}`.trim()
+          : academyErrorKind === "other_404"
+            ? `academy_404: ${academyErrorMessage ?? responseText.substring(0, 200)}`
+            : `HTTP ${response.status}: ${responseText.substring(0, 200)}`;
 
     // Update the completion record
     await adminClient
@@ -326,11 +348,24 @@ Deno.serve(async (req) => {
       error_message: success ? null : `HTTP ${response.status}: ${responseText.substring(0, 480)}`,
     });
 
+    const responseMessage = success
+      ? "Synced to academy"
+      : isUserNotFound
+        ? "User not registered on FGN Academy"
+        : isWorkOrderMissing
+          ? `Academy work order missing for this challenge — ops action required (${academyErrorMessage ?? "no detail"})`
+          : academyErrorKind === "other_404"
+            ? `Academy 404: ${academyErrorMessage ?? "unknown"}`
+            : `Academy returned ${response.status}`;
+
     return new Response(JSON.stringify({
       success,
       user_not_found: isUserNotFound,
+      work_order_missing: isWorkOrderMissing,
+      academy_error_kind: academyErrorKind,
+      academy_error_message: academyErrorMessage,
       academy_next_step: academyNextStep,
-      message: success ? "Synced to academy" : isUserNotFound ? "User not registered on FGN Academy" : `Academy returned ${response.status}`,
+      message: responseMessage,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
