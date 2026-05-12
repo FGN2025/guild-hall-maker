@@ -485,7 +485,7 @@ const AdminChallenges = () => {
             />
           </div>
 
-      <Tabs defaultValue="oversight">
+      <Tabs value={innerTab} onValueChange={(v) => { const next = new URLSearchParams(searchParams); if (v === "review") next.set("tab", "review"); else next.delete("tab"); setSearchParams(next, { replace: true }); }}>
         <TabsList>
           <TabsTrigger value="oversight" className="gap-1.5"><ClipboardList className="h-4 w-4" /> Oversight</TabsTrigger>
           <TabsTrigger value="review" className="gap-1.5"><Eye className="h-4 w-4" /> Evidence Review</TabsTrigger>
