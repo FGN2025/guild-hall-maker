@@ -56,7 +56,7 @@ export default function EvidenceReviewInbox({ mode }: Props) {
           challenge_evidence(*),
           challenges:challenge_id(id, name, games(name))
         `)
-        .order("submitted_at", { ascending: false, nullsFirst: false })
+        .order("updated_at", { ascending: false })
         .order("enrolled_at", { ascending: false });
 
       if (statusFilter !== "all") {
@@ -124,7 +124,7 @@ export default function EvidenceReviewInbox({ mode }: Props) {
       const enrollment: any = enrollments.find((e: any) => e.id === enrollmentId);
       const { error } = await supabase
         .from("challenge_enrollments")
-        .update({ status, completed_at: status === "completed" ? new Date().toISOString() : null })
+        .update({ status })
         .eq("id", enrollmentId);
       if (error) throw error;
       return enrollment;
@@ -151,7 +151,7 @@ export default function EvidenceReviewInbox({ mode }: Props) {
     mutationFn: async (enrollmentId: string) => {
       const { error } = await supabase
         .from("challenge_enrollments")
-        .update({ status: "submitted", submitted_at: new Date().toISOString() })
+        .update({ status: "submitted" })
         .eq("id", enrollmentId);
       if (error) throw error;
     },
@@ -314,9 +314,11 @@ export default function EvidenceReviewInbox({ mode }: Props) {
                         )}
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {enrollment.submitted_at
-                          ? `Submitted ${format(new Date(enrollment.submitted_at), "MMM d, h:mm a")}`
-                          : `Enrolled ${format(new Date(enrollment.enrolled_at), "MMM d")}`}
+                        {enrollment.status === "submitted"
+                          ? `Submitted ${format(new Date(enrollment.updated_at || enrollment.enrolled_at), "MMM d, h:mm a")}`
+                          : enrollment.status === "completed" || enrollment.status === "rejected"
+                            ? `${enrollment.status === "completed" ? "Approved" : "Rejected"} ${format(new Date(enrollment.updated_at || enrollment.enrolled_at), "MMM d, h:mm a")}`
+                            : `Enrolled ${format(new Date(enrollment.enrolled_at), "MMM d")}`}
                         {totalEvidence > 0 && ` · ${approvedCount}/${totalEvidence} evidence approved`}
                       </p>
                     </div>
