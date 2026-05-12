@@ -348,11 +348,24 @@ Deno.serve(async (req) => {
       error_message: success ? null : `HTTP ${response.status}: ${responseText.substring(0, 480)}`,
     });
 
+    const responseMessage = success
+      ? "Synced to academy"
+      : isUserNotFound
+        ? "User not registered on FGN Academy"
+        : isWorkOrderMissing
+          ? `Academy work order missing for this challenge — ops action required (${academyErrorMessage ?? "no detail"})`
+          : academyErrorKind === "other_404"
+            ? `Academy 404: ${academyErrorMessage ?? "unknown"}`
+            : `Academy returned ${response.status}`;
+
     return new Response(JSON.stringify({
       success,
       user_not_found: isUserNotFound,
+      work_order_missing: isWorkOrderMissing,
+      academy_error_kind: academyErrorKind,
+      academy_error_message: academyErrorMessage,
       academy_next_step: academyNextStep,
-      message: success ? "Synced to academy" : isUserNotFound ? "User not registered on FGN Academy" : `Academy returned ${response.status}`,
+      message: responseMessage,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
