@@ -57,6 +57,7 @@ const ALL_DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"];
 const ALL_STATUSES = ["all", "active", "inactive"];
 
 import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
+import EvidenceReviewInbox from "@/components/challenges/EvidenceReviewInbox";
 // ── Sortable row for DnD ──
 const SortableChallengeRow = ({ challenge: c, dragEnabled, onDetail, onEdit, onDelete, onToggle, onToggleFeatured, onCopy, copying, deleting, navigate }: any) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id });
