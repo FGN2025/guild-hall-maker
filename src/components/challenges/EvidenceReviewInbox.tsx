@@ -151,7 +151,7 @@ export default function EvidenceReviewInbox({ mode }: Props) {
     mutationFn: async (enrollmentId: string) => {
       const { error } = await supabase
         .from("challenge_enrollments")
-        .update({ status: "submitted", submitted_at: new Date().toISOString() })
+        .update({ status: "submitted" })
         .eq("id", enrollmentId);
       if (error) throw error;
     },
