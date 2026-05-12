@@ -314,9 +314,11 @@ export default function EvidenceReviewInbox({ mode }: Props) {
                         )}
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {enrollment.submitted_at
-                          ? `Submitted ${format(new Date(enrollment.submitted_at), "MMM d, h:mm a")}`
-                          : `Enrolled ${format(new Date(enrollment.enrolled_at), "MMM d")}`}
+                        {enrollment.status === "submitted"
+                          ? `Submitted ${format(new Date(enrollment.updated_at || enrollment.enrolled_at), "MMM d, h:mm a")}`
+                          : enrollment.status === "completed" || enrollment.status === "rejected"
+                            ? `${enrollment.status === "completed" ? "Approved" : "Rejected"} ${format(new Date(enrollment.updated_at || enrollment.enrolled_at), "MMM d, h:mm a")}`
+                            : `Enrolled ${format(new Date(enrollment.enrolled_at), "MMM d")}`}
                         {totalEvidence > 0 && ` · ${approvedCount}/${totalEvidence} evidence approved`}
                       </p>
                     </div>
