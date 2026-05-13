@@ -39,10 +39,11 @@ group by 1,2 order by 1,2;
 
 §8 = retire legacy `X-App-Key` header path on Academy side; Play already sends only `X-Ecosystem-Key` (per `docs/fgn-academy-integration.md` §10). Cutover is Academy-driven; Play's job is verification + readiness.
 
-### 2a. Verify Play-side hygiene
-- Grep `supabase/functions/sync-to-academy` for any residual `X-App-Key` / `FGN_ACADEMY_API_KEY` references — should be zero.
-- Confirm `FGN_ACADEMY_API_KEY` secret is retired (or scheduled for deletion post-cutover).
-- Confirm `ECOSYSTEM_API_KEY` is the only outbound auth header on every push path (`sync-to-academy`, `ecosystem-webhook-dispatch`, `academy-passport-link`).
+### 2a. Verify Play-side hygiene ✅ (2026-05-13)
+- Grepped `supabase/functions/` — only residual `X-App-Key` mentions are descriptive comments in `sync-to-academy/index.ts:228` and `AdminGuide.tsx:448` ("legacy X-App-Key retired in P-3"). No live code path.
+- `ECOSYSTEM_API_KEY` confirmed as sole outbound auth header on all three push paths: `sync-to-academy` (line 231), `academy-passport-link` (line 121), `ecosystem-webhook-dispatch` (per-row, target-aware).
+- `FGN_ACADEMY_API_KEY` retirement scheduled for T0+7d (2026-06-02) per cutover doc §done-criteria.
+- HMAC contract filed as canonical: `docs/play-to-academy-hmac-contract-ping.md`. Held for delivery T-24h (2026-05-25 16:00 UTC).
 
 ### 2b. Build the cutover checklist (deliver to Academy 24h before flip)
 Single doc `docs/phase-e-strict-cutover-2026-05-26.md` containing:
