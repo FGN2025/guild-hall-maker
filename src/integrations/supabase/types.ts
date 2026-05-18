@@ -2310,6 +2310,10 @@ export type Database = {
       }
       quest_completions: {
         Row: {
+          academy_sync_attempts: number
+          academy_sync_note: string | null
+          academy_synced: boolean
+          academy_synced_at: string | null
           awarded_points: number
           completed_at: string
           id: string
@@ -2318,6 +2322,10 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          academy_sync_attempts?: number
+          academy_sync_note?: string | null
+          academy_synced?: boolean
+          academy_synced_at?: string | null
           awarded_points?: number
           completed_at?: string
           id?: string
@@ -2326,6 +2334,10 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          academy_sync_attempts?: number
+          academy_sync_note?: string | null
+          academy_synced?: boolean
+          academy_synced_at?: string | null
           awarded_points?: number
           completed_at?: string
           id?: string
@@ -4433,6 +4445,10 @@ export type Database = {
       }
       enqueue_academy_achievement_sync: {
         Args: { _achievement_id: string; _user_id: string }
+        Returns: number
+      }
+      enqueue_academy_quest_sync: {
+        Args: { _quest_id: string; _user_id: string }
         Returns: number
       }
       enqueue_academy_sync: {
