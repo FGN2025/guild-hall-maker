@@ -89,6 +89,40 @@ const EcosystemSyncHealth = () => {
         <Label className="font-heading text-sm">Sync Health (last 24h)</Label>
       </div>
 
+      {queueStats && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b border-border pb-4">
+          <div className="border border-border rounded p-3 bg-background">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Inbox className="h-3 w-3" /> Academy retry queue
+            </div>
+            <div className="text-2xl font-semibold mt-1">{queueStats.pending}</div>
+            <div className="text-[10px] text-muted-foreground">pending messages</div>
+          </div>
+          <div className="border border-border rounded p-3 bg-background">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Skull className="h-3 w-3" /> Dead-letter
+            </div>
+            <div className={`text-2xl font-semibold mt-1 ${queueStats.dlq > 0 ? "text-destructive" : ""}`}>
+              {queueStats.dlq}
+            </div>
+            <div className="text-[10px] text-muted-foreground">failed 3× — needs review</div>
+          </div>
+          <div className="border border-border rounded p-3 bg-background">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" /> Oldest pending
+            </div>
+            <div className="text-2xl font-semibold mt-1">
+              {queueStats.oldest_age_seconds == null
+                ? "—"
+                : queueStats.oldest_age_seconds < 60
+                  ? `${Math.round(queueStats.oldest_age_seconds)}s`
+                  : `${Math.round(queueStats.oldest_age_seconds / 60)}m`}
+            </div>
+            <div className="text-[10px] text-muted-foreground">waiting to drain</div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : rows.length === 0 ? (
