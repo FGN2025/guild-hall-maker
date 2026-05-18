@@ -214,6 +214,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             event_type: "challenge_completion",
             payload,
+            tenant_id: tenantId,
           }),
         });
         const txt = await dispatchRes.text();

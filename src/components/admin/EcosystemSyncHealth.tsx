@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Activity, AlertTriangle, CheckCircle2, Clock, Inbox, Skull } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { useTenants } from "@/hooks/useTenants";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 interface QueueStats {
   pending: number;
@@ -31,6 +35,8 @@ const EcosystemSyncHealth = () => {
   const [rows, setRows] = useState<HealthRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
+  const { tenants } = useTenants();
 
   useEffect(() => {
     fetchHealth();
@@ -40,7 +46,8 @@ const EcosystemSyncHealth = () => {
       fetchQueueStats();
     }, 30_000);
     return () => clearInterval(interval);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTenantId]);
 
   const fetchQueueStats = async () => {
     const { data, error } = await supabase.rpc("get_academy_queue_stats" as any);
@@ -48,6 +55,28 @@ const EcosystemSyncHealth = () => {
   };
 
   const fetchHealth = async () => {
+    if (selectedTenantId !== "all") {
+      const { data, error } = await supabase.rpc("get_tenant_sync_health" as any, {
+        _tenant_id: selectedTenantId,
+        _hours: 24,
+      });
+      if (error) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+      const mapped: HealthRow[] = ((data || []) as any[]).map((r) => ({
+        data_type: r.data_type,
+        last_success: r.last_success,
+        last_error: r.last_error,
+        failures_24h: Number(r.failures ?? 0),
+        total_24h: Number(r.total ?? 0),
+      }));
+      setRows(mapped.sort((a, b) => a.data_type.localeCompare(b.data_type)));
+      setLoading(false);
+      return;
+    }
+
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from("ecosystem_sync_log")
@@ -93,12 +122,28 @@ const EcosystemSyncHealth = () => {
 
   return (
     <div className="rounded-lg border border-border bg-card p-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <Activity className="h-5 w-5 text-primary" />
-        <Label className="font-heading text-sm">Sync Health (last 24h)</Label>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Activity className="h-5 w-5 text-primary" />
+          <Label className="font-heading text-sm">Sync Health (last 24h)</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Tenant filter:</Label>
+          <Select value={selectedTenantId} onValueChange={setSelectedTenantId}>
+            <SelectTrigger className="h-8 w-[200px] bg-background text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tenants</SelectItem>
+              {tenants.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {queueStats && (
+      {queueStats && selectedTenantId === "all" && (
         <div className="space-y-3 border-b border-border pb-4">
           <QueueRow
             label="Challenge completions"
@@ -126,6 +171,7 @@ const EcosystemSyncHealth = () => {
           />
         </div>
       )}
+
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>

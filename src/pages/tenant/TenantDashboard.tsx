@@ -3,6 +3,7 @@ import { useTenantLeads } from "@/hooks/useTenantLeads";
 import { useTenantAchievements } from "@/hooks/useTenantAchievements";
 import TenantAchievementsCard from "@/components/tenant/TenantAchievementsCard";
 import TenantOnboardingChecklist from "@/components/tenant/TenantOnboardingChecklist";
+import TenantSyncHealth from "@/components/tenant/TenantSyncHealth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, MapPin, Clock, UserCheck, ArrowRight, Contact } from "lucide-react";
@@ -103,6 +104,8 @@ const TenantDashboard = () => {
 
       {/* Player Achievements */}
       <TenantAchievementsCard players={achievementPlayers} isLoading={achievementsLoading} />
+
+      {tenantInfo?.tenantId && <TenantSyncHealth tenantId={tenantInfo.tenantId} />}
 
       <div>
         <h2 className="font-display text-lg font-bold text-foreground mb-4">Recent Leads</h2>

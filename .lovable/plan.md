@@ -1,18 +1,23 @@
-## P1 #3 — Task-Level Streaming to Academy (SHIPPED)
+## P1 #4 — Per-Tenant Sync Health Surface (SHIPPED)
 
-Per-task credit now streams to FGN Academy the moment a `challenge_evidence` row is approved (moderator approval, Steam auto-verify, or future per-task paths), via the same trigger → pgmq → worker → DLQ pipeline used for challenges/quests/achievements.
+Sync activity log now carries `tenant_id`, so CSPs (tenant admins) can see only their tenant's delivery health and platform admins can filter the global card by tenant.
 
 ### What shipped
 
-- **Schema**: `academy_task_synced` / `_at` / `_note` / `_attempts` columns on `challenge_evidence`.
-- **Queues**: `academy_task_sync` + `academy_task_sync_dlq`.
-- **DB**: `enqueue_academy_task_sync(evidence_id)` + `trg_enqueue_academy_task_sync` (fires only on transition-into-approved when `task_id IS NOT NULL` and not yet synced). `get_academy_queue_stats()` extended with `task_pending` / `task_dlq` / `task_oldest_age_seconds`.
-- **Edge functions**: `sync-challenge-task-to-academy` (dispatches `challenge.task_completed` via HMAC-signed `ecosystem-webhook-dispatch`, stable `delivery_id = challenge_task:<user>:<challenge>:<task>`), `process-academy-task-queue` (batch 25, VT 120s, max 3 attempts → DLQ).
-- **Cron**: `process-academy-task-queue-every-2min` (`*/2 * * * *`).
-- **Admin UI**: 4th queue row "Challenge tasks" in `EcosystemSyncHealth`.
+- **Schema**: `ecosystem_sync_log.tenant_id uuid` + index; RLS policy `Tenant admins read their sync logs` (via `is_tenant_admin`).
+- **RPC**: `get_tenant_sync_health(_tenant_id uuid default null, _hours int default 24)` SECURITY DEFINER — admin can pass null for all tenants; tenant admins are restricted to their own.
+- **Edge fns**: `ecosystem-webhook-dispatch` reads `tenant_id` from request body or `payload.metadata.tenant_id` and writes it into both log inserts. All four `sync-*-to-academy` workers now pass `tenant_id: tenantId` alongside `event_type` / `payload`.
+- **Admin UI**: `EcosystemSyncHealth.tsx` got a "Tenant filter" `<Select>` (All tenants / per-tenant). Queue stats card is hidden when a specific tenant is selected; data grid switches to the RPC.
+- **Tenant UI**: New `src/components/tenant/TenantSyncHealth.tsx`, mounted in `TenantDashboard.tsx`. Auto-hides when there's no activity in the last 24h.
 
 ### Rollback
-`select cron.unschedule('process-academy-task-queue-every-2min');` then `drop trigger trg_enqueue_academy_task_sync on public.challenge_evidence;`.
+
+```sql
+drop policy "Tenant admins read their sync logs" on public.ecosystem_sync_log;
+drop function public.get_tenant_sync_health(uuid, int);
+alter table public.ecosystem_sync_log drop column tenant_id;
+```
 
 ### Next
-P1 #4 per-tenant sync-health surface, or P1 #5 quest-chain bonus event.
+
+P1 #5 quest-chain bonus event (`quest_chain.completed`) reusing the existing pgmq pattern — emits the chain-bonus moment that's currently invisible to Academy.
