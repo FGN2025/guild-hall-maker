@@ -23,7 +23,13 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { event_type, payload } = await req.json();
+    const body = await req.json();
+    const { event_type, payload } = body;
+    const tenantId: string | null =
+      body?.tenant_id
+      || (payload as any)?.metadata?.tenant_id
+      || (payload as any)?.tenant_id
+      || null;
 
     if (!event_type || !payload) {
       return new Response(JSON.stringify({ error: "event_type and payload required" }), {
