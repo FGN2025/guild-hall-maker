@@ -328,6 +328,10 @@ Deno.serve(async (req) => {
       .order("completed_at", { ascending: false })
       .limit(1);
 
+    if (success) {
+      await adminClient.rpc("enqueue_passport_refresh", { _user_id: user_id });
+    }
+
     // Send in-app notification for academy next step
     if (academyNextStep) {
       const nextStepTitle = academyNextStep.title || "Skills Development";
