@@ -17,12 +17,12 @@ export function useTenantBilling() {
     enabled: !!tenantId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("tenant_subscriptions")
-        .select("*")
+        .from("tenant_subscriptions_safe" as any)
+        .select("id, tenant_id, product_id, price_id, status, current_period_end, created_at, updated_at")
         .eq("tenant_id", tenantId!)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as any;
     },
   });
 

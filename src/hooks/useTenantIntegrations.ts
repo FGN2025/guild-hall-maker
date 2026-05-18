@@ -25,11 +25,11 @@ export const useTenantIntegrations = (tenantId: string | undefined) => {
     queryFn: async () => {
       if (!tenantId) return [];
       const { data, error } = await supabase
-        .from("tenant_integrations")
+        .from("tenant_integrations_safe" as any)
         .select("id, tenant_id, provider_type, display_name, api_url, additional_config, is_active, last_sync_at, last_sync_status, last_sync_message, created_at")
         .eq("tenant_id", tenantId);
       if (error) throw error;
-      return data as TenantIntegration[];
+      return data as unknown as TenantIntegration[];
     },
     enabled: !!tenantId,
   });
