@@ -3,6 +3,7 @@ import { useTenantLeads } from "@/hooks/useTenantLeads";
 import { useTenantAchievements } from "@/hooks/useTenantAchievements";
 import TenantAchievementsCard from "@/components/tenant/TenantAchievementsCard";
 import TenantOnboardingChecklist from "@/components/tenant/TenantOnboardingChecklist";
+import TenantSyncHealth from "@/components/tenant/TenantSyncHealth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, MapPin, Clock, UserCheck, ArrowRight, Contact } from "lucide-react";
