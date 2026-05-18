@@ -1860,6 +1860,36 @@ export type Database = {
         }
         Relationships: []
       }
+      passport_refresh_pending: {
+        Row: {
+          attempts: number
+          created_at: string
+          last_sent_at: string | null
+          last_sent_note: string | null
+          requested_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          last_sent_at?: string | null
+          last_sent_note?: string | null
+          requested_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          last_sent_at?: string | null
+          last_sent_note?: string | null
+          requested_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       player_achievements: {
         Row: {
           academy_sync_attempts: number
@@ -4493,6 +4523,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      enqueue_passport_refresh: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
       get_academy_queue_stats: { Args: never; Returns: Json }
       get_tenant_sync_health: {

@@ -1,21 +1,20 @@
-## P1 #5 — Quest-Chain Bonus Event (SHIPPED)
+## P1 #6 — Skill Passport refresh hook (SHIPPED)
 
-`quest_chain.completed` now streams to Academy on every chain finish, giving pillar-level credit and unblocking next-step training recommendations.
+After any successful Academy sync (achievement / quest / quest-chain / challenge / challenge-task), the player is queued for a debounced `passport.refresh_requested` event so Academy can recompute the Skill Passport within minutes.
 
 ### What shipped
-- **Schema**: `quest_chain_completions` gained `academy_synced`, `academy_synced_at`, `academy_sync_note`, `academy_sync_attempts`.
-- **Trigger**: `trg_enqueue_academy_chain_sync` AFTER INSERT on `quest_chain_completions` → `pgmq.q_academy_chain_sync` (+ DLQ).
-- **Edge fns**: `sync-quest-chain-to-academy` (single completion, stable `delivery_id = quest_chain:<user>:<chain>`) and `process-academy-chain-queue` (batch 25, 3 retries → DLQ).
-- **Cron**: `process-academy-chain-queue-every-2min`.
-- **Stats**: `get_academy_queue_stats()` extended with `chain_pending`, `chain_dlq`, `chain_oldest_age_seconds`. Admin `EcosystemSyncHealth` shows a 5th "Quest chains" row.
-- **Tenant UI**: no change — auto-picks up `webhook:quest_chain.completed` rows via existing `tenant_id` plumbing.
+- **Schema**: `public.passport_refresh_pending (user_id pk, requested_at, last_sent_at, last_sent_note, attempts)` + helper `enqueue_passport_refresh(user_id)`.
+- **Workers updated**: `sync-to-academy`, `sync-achievement-to-academy`, `sync-quest-to-academy`, `sync-quest-chain-to-academy`, `sync-challenge-task-to-academy` all call `enqueue_passport_refresh(user_id)` on success.
+- **New worker**: `process-passport-refresh-queue` — selects rows where `last_sent_at IS NULL OR last_sent_at < now() - 5min`, dispatches `passport.refresh_requested` via `ecosystem-webhook-dispatch` with delivery id `passport_refresh:<user>:<5min-bucket>`, then stamps `last_sent_at`.
+- **Cron**: `process-passport-refresh-queue-every-2min`.
+- **Stats**: `get_academy_queue_stats()` now returns `passport_pending`, `passport_oldest_age_seconds`. Admin `EcosystemSyncHealth` shows a 6th "Passport refreshes" row.
 
 ### Rollback
 ```sql
-select cron.unschedule('process-academy-chain-queue-every-2min');
-drop trigger trg_enqueue_academy_chain_sync on public.quest_chain_completions;
-drop function public.enqueue_academy_chain_sync(uuid, uuid);
+select cron.unschedule('process-passport-refresh-queue-every-2min');
+drop function public.enqueue_passport_refresh(uuid);
+drop table public.passport_refresh_pending;
 ```
 
 ### Next
-P1 #6 (TBD) — pick from remaining backlog (likely passport refresh or per-tenant DLQ replay UI).
+P1 #7 — Per-tenant DLQ replay UI (Replay button on `TenantSyncHealth` for achievement / quest / task / chain DLQ rows).

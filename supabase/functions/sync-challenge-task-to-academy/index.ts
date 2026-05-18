@@ -186,6 +186,9 @@ Deno.serve(async (req) => {
       : `dispatch_failed: HTTP ${dispatchRes.status} ${dispatchTxt.substring(0, 200)}`;
 
     await markRow(adminClient, evidence_id, success, note);
+    if (success) {
+      await adminClient.rpc("enqueue_passport_refresh", { _user_id: userId });
+    }
 
     return new Response(JSON.stringify({ success, dispatched: dispatchedCount, note }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
