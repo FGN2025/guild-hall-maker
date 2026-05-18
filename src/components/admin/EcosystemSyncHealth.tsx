@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Activity, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Clock, Inbox, Skull } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+
+interface QueueStats {
+  pending: number;
+  dlq: number;
+  oldest_age_seconds: number | null;
+}
 
 interface HealthRow {
   data_type: string;
@@ -15,12 +21,22 @@ interface HealthRow {
 const EcosystemSyncHealth = () => {
   const [rows, setRows] = useState<HealthRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
 
   useEffect(() => {
     fetchHealth();
-    const interval = setInterval(fetchHealth, 30_000);
+    fetchQueueStats();
+    const interval = setInterval(() => {
+      fetchHealth();
+      fetchQueueStats();
+    }, 30_000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchQueueStats = async () => {
+    const { data, error } = await supabase.rpc("get_academy_queue_stats" as any);
+    if (!error && data) setQueueStats(data as unknown as QueueStats);
+  };
 
   const fetchHealth = async () => {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -72,6 +88,40 @@ const EcosystemSyncHealth = () => {
         <Activity className="h-5 w-5 text-primary" />
         <Label className="font-heading text-sm">Sync Health (last 24h)</Label>
       </div>
+
+      {queueStats && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b border-border pb-4">
+          <div className="border border-border rounded p-3 bg-background">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Inbox className="h-3 w-3" /> Academy retry queue
+            </div>
+            <div className="text-2xl font-semibold mt-1">{queueStats.pending}</div>
+            <div className="text-[10px] text-muted-foreground">pending messages</div>
+          </div>
+          <div className="border border-border rounded p-3 bg-background">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Skull className="h-3 w-3" /> Dead-letter
+            </div>
+            <div className={`text-2xl font-semibold mt-1 ${queueStats.dlq > 0 ? "text-destructive" : ""}`}>
+              {queueStats.dlq}
+            </div>
+            <div className="text-[10px] text-muted-foreground">failed 3× — needs review</div>
+          </div>
+          <div className="border border-border rounded p-3 bg-background">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" /> Oldest pending
+            </div>
+            <div className="text-2xl font-semibold mt-1">
+              {queueStats.oldest_age_seconds == null
+                ? "—"
+                : queueStats.oldest_age_seconds < 60
+                  ? `${Math.round(queueStats.oldest_age_seconds)}s`
+                  : `${Math.round(queueStats.oldest_age_seconds / 60)}m`}
+            </div>
+            <div className="text-[10px] text-muted-foreground">waiting to drain</div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
