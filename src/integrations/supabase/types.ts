@@ -1021,6 +1021,7 @@ export type Database = {
           records_synced: number | null
           status: string | null
           target_app: string
+          tenant_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -1031,6 +1032,7 @@ export type Database = {
           records_synced?: number | null
           status?: string | null
           target_app: string
+          tenant_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -1041,6 +1043,7 @@ export type Database = {
           records_synced?: number | null
           status?: string | null
           target_app?: string
+          tenant_id?: string | null
         }
         Relationships: []
       }
@@ -4476,6 +4479,17 @@ export type Database = {
         Returns: number
       }
       get_academy_queue_stats: { Args: never; Returns: Json }
+      get_tenant_sync_health: {
+        Args: { _hours?: number; _tenant_id?: string }
+        Returns: {
+          data_type: string
+          failures: number
+          last_error: string
+          last_success: string
+          tenant_id: string
+          total: number
+        }[]
+      }
       get_user_tenant: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
