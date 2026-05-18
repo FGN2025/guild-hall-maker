@@ -21,9 +21,6 @@ interface HealthRow {
 const EcosystemSyncHealth = () => {
   const [rows, setRows] = useState<HealthRow[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchHealth();
   const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
 
   useEffect(() => {
@@ -35,6 +32,11 @@ const EcosystemSyncHealth = () => {
     }, 30_000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchQueueStats = async () => {
+    const { data, error } = await supabase.rpc("get_academy_queue_stats" as any);
+    if (!error && data) setQueueStats(data as unknown as QueueStats);
+  };
 
   const fetchQueueStats = async () => {
     const { data, error } = await supabase.rpc("get_academy_queue_stats");
