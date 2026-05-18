@@ -122,12 +122,28 @@ const EcosystemSyncHealth = () => {
 
   return (
     <div className="rounded-lg border border-border bg-card p-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <Activity className="h-5 w-5 text-primary" />
-        <Label className="font-heading text-sm">Sync Health (last 24h)</Label>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Activity className="h-5 w-5 text-primary" />
+          <Label className="font-heading text-sm">Sync Health (last 24h)</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Tenant filter:</Label>
+          <Select value={selectedTenantId} onValueChange={setSelectedTenantId}>
+            <SelectTrigger className="h-8 w-[200px] bg-background text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tenants</SelectItem>
+              {tenants.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {queueStats && (
+      {queueStats && selectedTenantId === "all" && (
         <div className="space-y-3 border-b border-border pb-4">
           <QueueRow
             label="Challenge completions"
@@ -155,6 +171,7 @@ const EcosystemSyncHealth = () => {
           />
         </div>
       )}
+
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
