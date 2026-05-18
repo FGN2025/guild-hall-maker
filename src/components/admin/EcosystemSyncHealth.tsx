@@ -24,6 +24,8 @@ interface QueueStats {
   chain_pending?: number;
   chain_dlq?: number;
   chain_oldest_age_seconds?: number | null;
+  passport_pending?: number;
+  passport_oldest_age_seconds?: number | null;
 }
 
 interface HealthRow {
@@ -177,6 +179,12 @@ const EcosystemSyncHealth = () => {
             pending={queueStats.chain_pending ?? 0}
             dlq={queueStats.chain_dlq ?? 0}
             oldestSec={queueStats.chain_oldest_age_seconds ?? null}
+          />
+          <QueueRow
+            label="Passport refreshes"
+            pending={queueStats.passport_pending ?? 0}
+            dlq={0}
+            oldestSec={queueStats.passport_oldest_age_seconds ?? null}
           />
         </div>
       )}
