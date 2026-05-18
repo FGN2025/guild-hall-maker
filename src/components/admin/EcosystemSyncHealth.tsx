@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Activity, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Clock, Inbox, Skull } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+
+interface QueueStats {
+  pending: number;
+  dlq: number;
+  oldest_age_seconds: number | null;
+}
 
 interface HealthRow {
   data_type: string;
