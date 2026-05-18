@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface EmbeddedHtmlProps {
   html: string;
@@ -6,55 +6,48 @@ interface EmbeddedHtmlProps {
 }
 
 /**
- * Renders raw HTML and rehydrates any <script> tags so they actually execute.
+ * Renders tenant-authored HTML inside a sandboxed iframe.
  *
- * Browsers treat <script> tags injected via innerHTML / dangerouslySetInnerHTML
- * as inert. This component walks the injected DOM, clones each <script> into a
- * real DOM script element (preserving src/type/async/defer + inline content),
- * and replaces the inert one — which forces the browser to execute it.
- *
- * Trust boundary: embed HTML is authored by tenant staff (RLS-protected);
- * same trust as today's dangerouslySetInnerHTML usage.
+ * Security: tenant staff can edit embed HTML, so we MUST isolate it from the
+ * parent app. A sandboxed iframe with `allow-scripts` (but NOT `allow-same-origin`)
+ * runs scripts in a null origin — no access to the parent's cookies,
+ * localStorage, or Supabase session.
  */
 const EmbeddedHtml = ({ html, className }: EmbeddedHtmlProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState<number>(120);
+
+  const srcDoc = useMemo(
+    () => `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>html,body{margin:0;padding:0;background:transparent;color:inherit;font-family:inherit}img,video,iframe{max-width:100%}</style></head><body>${html}<script>(function(){function r(){try{var h=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight);parent.postMessage({__embedHeight:h},'*');}catch(e){}}r();new ResizeObserver(r).observe(document.body);window.addEventListener('load',r);})();</script></body></html>`,
+    [html]
+  );
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // Inject the markup (scripts will be inert at this point)
-    container.innerHTML = html;
-
-    // Rehydrate every <script> so the browser executes it
-    const scripts = Array.from(container.querySelectorAll("script"));
-    scripts.forEach((oldScript) => {
-      const newScript = document.createElement("script");
-
-      // Copy all attributes (src, type, async, defer, data-*, etc.)
-      for (const attr of Array.from(oldScript.attributes)) {
-        try {
-          newScript.setAttribute(attr.name, attr.value);
-        } catch {
-          // ignore invalid attribute names
-        }
+    const onMsg = (e: MessageEvent) => {
+      if (e.source !== iframeRef.current?.contentWindow) return;
+      const data = e.data as { __embedHeight?: number };
+      if (data && typeof data.__embedHeight === "number") {
+        setHeight(Math.max(40, Math.min(4000, Math.ceil(data.__embedHeight))));
       }
-
-      // Copy inline script content
-      if (oldScript.textContent) {
-        newScript.textContent = oldScript.textContent;
-      }
-
-      oldScript.parentNode?.replaceChild(newScript, oldScript);
-    });
-
-    return () => {
-      // Clear on unmount so widgets don't leak listeners / duplicate on remount
-      if (container) container.innerHTML = "";
     };
-  }, [html]);
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
 
-  return <div ref={containerRef} className={className} />;
+  if (!html) return null;
+
+  return (
+    <iframe
+      ref={iframeRef}
+      title="Embedded content"
+      className={className}
+      srcDoc={srcDoc}
+      // sandbox without allow-same-origin = scripts run in null origin, cannot
+      // touch parent cookies, localStorage, or Supabase session.
+      sandbox="allow-scripts allow-popups allow-forms"
+      style={{ width: "100%", height, border: 0, display: "block" }}
+    />
+  );
 };
 
 export default EmbeddedHtml;

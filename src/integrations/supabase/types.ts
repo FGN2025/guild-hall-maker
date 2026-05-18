@@ -3689,6 +3689,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tenant_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_integrations_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tenant_sync_logs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -4303,6 +4310,97 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "social_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_integrations_safe: {
+        Row: {
+          additional_config: Json | null
+          api_url: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          is_active: boolean | null
+          last_sync_at: string | null
+          last_sync_message: string | null
+          last_sync_status: string | null
+          provider_type: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          additional_config?: Json | null
+          api_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          last_sync_message?: string | null
+          last_sync_status?: string | null
+          provider_type?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          additional_config?: Json | null
+          api_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          last_sync_message?: string | null
+          last_sync_status?: string | null
+          provider_type?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_integrations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_subscriptions_safe: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          id: string | null
+          price_id: string | null
+          product_id: string | null
+          status: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string | null
+          price_id?: string | null
+          product_id?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string | null
+          price_id?: string | null
+          product_id?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_subscriptions_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

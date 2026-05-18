@@ -40,12 +40,12 @@ const useAcademyPassportConfig = () =>
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<PassportConfig> => {
       const { data } = await supabase
-        .from("tenant_integrations")
+        .from("tenant_integrations_safe" as any)
         .select("api_url, additional_config")
         .eq("provider_type", "fgn_academy")
         .eq("is_active", true)
         .limit(1)
-        .maybeSingle();
+        .maybeSingle() as { data: { api_url: string | null; additional_config: Record<string, unknown> | null } | null };
 
       const cfg = (data?.additional_config ?? {}) as Record<string, unknown>;
       const base =
