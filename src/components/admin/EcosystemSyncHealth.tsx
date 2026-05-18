@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Activity, AlertTriangle, CheckCircle2, Clock, Inbox, Skull } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { useTenants } from "@/hooks/useTenants";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 interface QueueStats {
   pending: number;
