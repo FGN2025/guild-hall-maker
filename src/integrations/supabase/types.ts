@@ -1847,6 +1847,10 @@ export type Database = {
       }
       player_achievements: {
         Row: {
+          academy_sync_attempts: number
+          academy_sync_note: string | null
+          academy_synced: boolean
+          academy_synced_at: string | null
           achievement_id: string
           awarded_at: string
           awarded_by: string | null
@@ -1856,6 +1860,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          academy_sync_attempts?: number
+          academy_sync_note?: string | null
+          academy_synced?: boolean
+          academy_synced_at?: string | null
           achievement_id: string
           awarded_at?: string
           awarded_by?: string | null
@@ -1865,6 +1873,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          academy_sync_attempts?: number
+          academy_sync_note?: string | null
+          academy_synced?: boolean
+          academy_synced_at?: string | null
           achievement_id?: string
           awarded_at?: string
           awarded_by?: string | null
@@ -4418,6 +4430,10 @@ export type Database = {
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
+      }
+      enqueue_academy_achievement_sync: {
+        Args: { _achievement_id: string; _user_id: string }
+        Returns: number
       }
       enqueue_academy_sync: {
         Args: { _challenge_id: string; _user_id: string }
