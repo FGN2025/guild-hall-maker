@@ -105,6 +105,8 @@ const TenantDashboard = () => {
       {/* Player Achievements */}
       <TenantAchievementsCard players={achievementPlayers} isLoading={achievementsLoading} />
 
+      {tenantInfo?.tenantId && <TenantSyncHealth tenantId={tenantInfo.tenantId} />}
+
       <div>
         <h2 className="font-display text-lg font-bold text-foreground mb-4">Recent Leads</h2>
         {leads.length === 0 ? (
