@@ -118,6 +118,7 @@ Deno.serve(async (req) => {
           records_synced: 1,
           status,
           error_message: res.ok ? null : `HTTP ${res.status}`,
+          tenant_id: tenantId,
         });
       } catch (fetchErr: any) {
         results.push({ target_app: webhook.target_app, status: "error", message: fetchErr.message });
@@ -127,6 +128,7 @@ Deno.serve(async (req) => {
           records_synced: 0,
           status: "error",
           error_message: fetchErr.message,
+          tenant_id: tenantId,
         });
       }
     }
