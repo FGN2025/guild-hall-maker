@@ -420,6 +420,10 @@ export type Database = {
       }
       challenge_evidence: {
         Row: {
+          academy_task_sync_attempts: number
+          academy_task_sync_note: string | null
+          academy_task_synced: boolean
+          academy_task_synced_at: string | null
           enrollment_id: string
           file_type: string
           file_url: string
@@ -433,6 +437,10 @@ export type Database = {
           task_id: string | null
         }
         Insert: {
+          academy_task_sync_attempts?: number
+          academy_task_sync_note?: string | null
+          academy_task_synced?: boolean
+          academy_task_synced_at?: string | null
           enrollment_id: string
           file_type?: string
           file_url: string
@@ -446,6 +454,10 @@ export type Database = {
           task_id?: string | null
         }
         Update: {
+          academy_task_sync_attempts?: number
+          academy_task_sync_note?: string | null
+          academy_task_synced?: boolean
+          academy_task_synced_at?: string | null
           enrollment_id?: string
           file_type?: string
           file_url?: string
@@ -4453,6 +4465,10 @@ export type Database = {
       }
       enqueue_academy_sync: {
         Args: { _challenge_id: string; _user_id: string }
+        Returns: number
+      }
+      enqueue_academy_task_sync: {
+        Args: { _evidence_id: string }
         Returns: number
       }
       enqueue_email: {
