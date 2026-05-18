@@ -35,6 +35,8 @@ const EcosystemSyncHealth = () => {
   const [rows, setRows] = useState<HealthRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
+  const { tenants } = useTenants();
 
   useEffect(() => {
     fetchHealth();
@@ -44,7 +46,8 @@ const EcosystemSyncHealth = () => {
       fetchQueueStats();
     }, 30_000);
     return () => clearInterval(interval);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTenantId]);
 
   const fetchQueueStats = async () => {
     const { data, error } = await supabase.rpc("get_academy_queue_stats" as any);
@@ -52,6 +55,28 @@ const EcosystemSyncHealth = () => {
   };
 
   const fetchHealth = async () => {
+    if (selectedTenantId !== "all") {
+      const { data, error } = await supabase.rpc("get_tenant_sync_health" as any, {
+        _tenant_id: selectedTenantId,
+        _hours: 24,
+      });
+      if (error) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+      const mapped: HealthRow[] = ((data || []) as any[]).map((r) => ({
+        data_type: r.data_type,
+        last_success: r.last_success,
+        last_error: r.last_error,
+        failures_24h: Number(r.failures ?? 0),
+        total_24h: Number(r.total ?? 0),
+      }));
+      setRows(mapped.sort((a, b) => a.data_type.localeCompare(b.data_type)));
+      setLoading(false);
+      return;
+    }
+
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from("ecosystem_sync_log")
