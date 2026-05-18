@@ -1,57 +1,88 @@
-## P1 #2 — Quest Completion Sync
+## P1 #3 — Task-Level Streaming to Academy
 
-Mirror the achievement-sync pattern for `quest_completions` so that finishing a quest (or a quest-chain) reliably reaches FGN Academy through the HMAC-signed `ecosystem-webhook-dispatch`, with the same retry/DLQ guarantees the challenge and achievement queues already have.
+Stream individual challenge-task completions to FGN Academy as they happen, instead of waiting for the full-enrollment rollup. Unblocks per-skill credit for partial work and gives Academy real-time progress signal.
+
+### Source of truth
+
+`challenge_evidence` already has a `status` column ('pending' / 'approved' / 'rejected') and a nullable `task_id`. A task is considered "completed" when an evidence row with a non-null `task_id` transitions to `status = 'approved'`. This covers all three paths today:
+
+- **Moderator approval** — sets `status = 'approved'` directly.
+- **Steam auto-verification** — `verify-steam-task-completion` inserts/updates the evidence row with `status = 'approved'`.
+- **Future per-task manual approvals** — same column write, no new code path.
+
+Idempotency is at the `(challenge_id, user_id, task_id)` grain — multiple evidence rows for the same task only count once.
 
 ### Scope
 
-1. **Schema** — add to `quest_completions`:
-   - `academy_synced boolean default false`
-   - `academy_synced_at timestamptz`
-   - `academy_sync_note text`
-   - `academy_sync_attempts integer default 0`
+1. **Schema** — on `challenge_evidence`:
+   - `academy_task_synced boolean default false`
+   - `academy_task_synced_at timestamptz`
+   - `academy_task_sync_note text`
+   - `academy_task_sync_attempts integer default 0`
+   - Partial unique guard `(enrollment_id, task_id) where task_id is not null and status = 'approved'` is **not** added — Steam path already does its own dedupe, and the worker dedupes via `academy_task_synced`.
 
-2. **Queues** (`pgmq`) — `academy_quest_sync` + `academy_quest_sync_dlq`.
+2. **Queue** (`pgmq`) — `academy_task_sync` + `academy_task_sync_dlq`.
 
 3. **DB plumbing**
-   - `enqueue_academy_quest_sync(_user_id, _quest_id)` SECURITY DEFINER.
-   - `trg_enqueue_academy_quest_sync` AFTER INSERT on `quest_completions` (skips when `academy_synced` already true — supports moderator backfills).
-   - Extend `get_academy_queue_stats()` to also return `quest_pending`, `quest_dlq`, `quest_oldest_age_seconds`.
+   - `enqueue_academy_task_sync(_evidence_id uuid)` SECURITY DEFINER.
+   - `trg_enqueue_academy_task_sync` AFTER INSERT OR UPDATE on `challenge_evidence`, fires only when:
+     - `NEW.task_id IS NOT NULL`
+     - `NEW.status = 'approved'`
+     - `OLD.status IS DISTINCT FROM 'approved'` on update (or row is fresh on insert)
+     - `NEW.academy_task_synced IS NOT TRUE`
+   - Extend `get_academy_queue_stats()` to also return `task_pending`, `task_dlq`, `task_oldest_age_seconds`.
 
-4. **Edge functions** (verify_jwt = false, service-role auth gate, stateless admin client):
-   - `sync-quest-to-academy` — resolves email, quest definition (incl. `chain_id`, xp/points reward), tenant, profile; dispatches `quest.completed` event. Stable `delivery_id = "quest:<user_id>:<quest_id>"`. Soft-success on "no active webhook target". Marks the row via `markRow` helper just like achievements.
-   - `process-academy-quest-queue` — batch 25, VT 120s, max 3 attempts → DLQ. Idempotency: skip if `quest_completions.academy_synced = true`. Bumps `academy_sync_attempts`.
+4. **Edge functions** (`verify_jwt = false`, service-role gate, stateless admin client — same pattern as quest/achievement workers):
+   - **`sync-challenge-task-to-academy`** — resolves evidence → enrollment → user email + challenge + task + tenant + profile. Dispatches `challenge.task_completed` via `ecosystem-webhook-dispatch`. Stable `delivery_id = "challenge_task:<user_id>:<challenge_id>:<task_id>"` so Academy can dedupe regardless of which evidence row triggered it. Soft-success when no active webhook target. Marks `academy_task_synced = true` via `markRow`.
+   - **`process-academy-task-queue`** — batch drain 25, VT 120s, max 3 attempts → DLQ. Skip if `academy_task_synced = true` (covers retries + dup approvals). Bumps `academy_task_sync_attempts`.
 
-5. **Cron** (via `supabase--insert`, not migration — contains anon key) — schedule `process-academy-quest-queue` every 2 minutes.
+5. **Cron** — schedule `process-academy-task-queue` every 2 minutes via `supabase--insert` (anon key bearing, kept out of migration).
 
-6. **Admin UI** — extend `src/components/admin/EcosystemSyncHealth.tsx` Retry Queue card with a third row "Quest completions" (pending / DLQ / oldest age), reusing the existing grid layout.
+6. **Admin UI** — `EcosystemSyncHealth.tsx` Retry Queue card: add fourth row "Challenge tasks" (pending / DLQ / oldest age), reusing the existing `<QueueRow>` layout.
 
-### Out of scope
-- Quest-chain bonus event (`quest_chain.completed`) — fold into a follow-up if Academy wants chain-level credit.
-- Task-level streaming (P1 #3).
-- Backfill function (volume is low; can be added if drift appears).
+### Event payload
 
-### Technical notes
+`event_type: "challenge.task_completed"`:
 
-**Event payload** (`event_type: "quest.completed"`):
 ```json
 {
   "user_email": "...",
   "external_user_id": "...",
-  "quest": { "id", "name", "description", "xp_reward", "points_reward", "chain_id" },
-  "completed_at": "...",
-  "awarded_points": 0,
-  "metadata": { "source": "play.fgn.gg", "delivery_id", "external_attempt_id",
-                "tenant_id", "tenant_slug", "tenant_name", "display_name" }
+  "challenge": { "id", "name" },
+  "task": { "id", "name", "description", "verification_type", "skill_tags" },
+  "completed_at": "<evidence.approved_at or now>",
+  "evidence_id": "...",
+  "metadata": {
+    "source": "play.fgn.gg",
+    "delivery_id": "challenge_task:<user_id>:<challenge_id>:<task_id>",
+    "external_attempt_id": "<evidence_id>",
+    "tenant_id", "tenant_slug", "tenant_name", "display_name",
+    "auto_verified": <bool from verification_type !== 'manual'>
+  }
 }
 ```
 
-**Files**
-- `supabase/migrations/<ts>_quest_academy_sync_queue.sql` — column add, queue create, function, trigger, stats extension.
-- `supabase/functions/sync-quest-to-academy/index.ts` — new.
-- `supabase/functions/process-academy-quest-queue/index.ts` — new.
-- `src/components/admin/EcosystemSyncHealth.tsx` — third queue row.
-- `src/integrations/supabase/types.ts` — regenerated post-migration.
+### Out of scope
 
-**Rollback:** `select cron.unschedule(<id>);` then `drop trigger trg_enqueue_academy_quest_sync on public.quest_completions;` — trigger removal stops enqueue; existing queue drains and dies harmlessly.
+- Roll-up `challenge.completed` event — already handled by P1 #1 challenge sync.
+- Reverse path (un-approval → revoke skill credit) — Academy is append-only on credits.
+- Backfill of historically approved evidence — volume is moderator-paced, drift can be addressed later if Academy asks.
 
-**Next after this:** P1 #3 task-level streaming, or P1 #4 per-tenant sync-health surface.
+### Files
+
+```text
+supabase/migrations/<ts>_challenge_task_academy_sync.sql   new
+supabase/functions/sync-challenge-task-to-academy/index.ts new
+supabase/functions/process-academy-task-queue/index.ts     new
+src/components/admin/EcosystemSyncHealth.tsx               edit (4th row)
+src/integrations/supabase/types.ts                         regenerated
+.lovable/plan.md                                            replaced with this plan
+```
+
+### Rollback
+
+`select cron.unschedule(<id>);` then `drop trigger trg_enqueue_academy_task_sync on public.challenge_evidence;`. Existing queue drains harmlessly; new approvals stop enqueuing.
+
+### Next after this
+
+P1 #4 per-tenant sync-health surface, or P1 #5 quest-chain bonus event.
