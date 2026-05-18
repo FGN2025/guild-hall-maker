@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${serviceRoleKey}`,
       },
-      body: JSON.stringify({ event_type: "quest.completed", payload }),
+      body: JSON.stringify({ event_type: "quest.completed", payload, tenant_id: tenantId }),
     });
 
     const dispatchTxt = await dispatchRes.text();
