@@ -11,6 +11,9 @@ interface QueueStats {
   achievement_pending?: number;
   achievement_dlq?: number;
   achievement_oldest_age_seconds?: number | null;
+  quest_pending?: number;
+  quest_dlq?: number;
+  quest_oldest_age_seconds?: number | null;
 }
 
 interface HealthRow {
