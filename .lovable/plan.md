@@ -1,23 +1,21 @@
-## P1 #4 — Per-Tenant Sync Health Surface (SHIPPED)
+## P1 #5 — Quest-Chain Bonus Event (SHIPPED)
 
-Sync activity log now carries `tenant_id`, so CSPs (tenant admins) can see only their tenant's delivery health and platform admins can filter the global card by tenant.
+`quest_chain.completed` now streams to Academy on every chain finish, giving pillar-level credit and unblocking next-step training recommendations.
 
 ### What shipped
-
-- **Schema**: `ecosystem_sync_log.tenant_id uuid` + index; RLS policy `Tenant admins read their sync logs` (via `is_tenant_admin`).
-- **RPC**: `get_tenant_sync_health(_tenant_id uuid default null, _hours int default 24)` SECURITY DEFINER — admin can pass null for all tenants; tenant admins are restricted to their own.
-- **Edge fns**: `ecosystem-webhook-dispatch` reads `tenant_id` from request body or `payload.metadata.tenant_id` and writes it into both log inserts. All four `sync-*-to-academy` workers now pass `tenant_id: tenantId` alongside `event_type` / `payload`.
-- **Admin UI**: `EcosystemSyncHealth.tsx` got a "Tenant filter" `<Select>` (All tenants / per-tenant). Queue stats card is hidden when a specific tenant is selected; data grid switches to the RPC.
-- **Tenant UI**: New `src/components/tenant/TenantSyncHealth.tsx`, mounted in `TenantDashboard.tsx`. Auto-hides when there's no activity in the last 24h.
+- **Schema**: `quest_chain_completions` gained `academy_synced`, `academy_synced_at`, `academy_sync_note`, `academy_sync_attempts`.
+- **Trigger**: `trg_enqueue_academy_chain_sync` AFTER INSERT on `quest_chain_completions` → `pgmq.q_academy_chain_sync` (+ DLQ).
+- **Edge fns**: `sync-quest-chain-to-academy` (single completion, stable `delivery_id = quest_chain:<user>:<chain>`) and `process-academy-chain-queue` (batch 25, 3 retries → DLQ).
+- **Cron**: `process-academy-chain-queue-every-2min`.
+- **Stats**: `get_academy_queue_stats()` extended with `chain_pending`, `chain_dlq`, `chain_oldest_age_seconds`. Admin `EcosystemSyncHealth` shows a 5th "Quest chains" row.
+- **Tenant UI**: no change — auto-picks up `webhook:quest_chain.completed` rows via existing `tenant_id` plumbing.
 
 ### Rollback
-
 ```sql
-drop policy "Tenant admins read their sync logs" on public.ecosystem_sync_log;
-drop function public.get_tenant_sync_health(uuid, int);
-alter table public.ecosystem_sync_log drop column tenant_id;
+select cron.unschedule('process-academy-chain-queue-every-2min');
+drop trigger trg_enqueue_academy_chain_sync on public.quest_chain_completions;
+drop function public.enqueue_academy_chain_sync(uuid, uuid);
 ```
 
 ### Next
-
-P1 #5 quest-chain bonus event (`quest_chain.completed`) reusing the existing pgmq pattern — emits the chain-bonus moment that's currently invisible to Academy.
+P1 #6 (TBD) — pick from remaining backlog (likely passport refresh or per-tenant DLQ replay UI).
