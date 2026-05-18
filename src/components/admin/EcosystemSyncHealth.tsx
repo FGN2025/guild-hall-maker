@@ -21,6 +21,9 @@ interface QueueStats {
   task_pending?: number;
   task_dlq?: number;
   task_oldest_age_seconds?: number | null;
+  chain_pending?: number;
+  chain_dlq?: number;
+  chain_oldest_age_seconds?: number | null;
 }
 
 interface HealthRow {
@@ -168,6 +171,12 @@ const EcosystemSyncHealth = () => {
             pending={queueStats.task_pending ?? 0}
             dlq={queueStats.task_dlq ?? 0}
             oldestSec={queueStats.task_oldest_age_seconds ?? null}
+          />
+          <QueueRow
+            label="Quest chains"
+            pending={queueStats.chain_pending ?? 0}
+            dlq={queueStats.chain_dlq ?? 0}
+            oldestSec={queueStats.chain_oldest_age_seconds ?? null}
           />
         </div>
       )}
