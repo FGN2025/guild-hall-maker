@@ -1,53 +1,57 @@
+## P1 #2 — Quest Completion Sync
 
-# P0: Academy Sync Retry Queue + Nightly Backfill
+Mirror the achievement-sync pattern for `quest_completions` so that finishing a quest (or a quest-chain) reliably reaches FGN Academy through the HMAC-signed `ecosystem-webhook-dispatch`, with the same retry/DLQ guarantees the challenge and achievement queues already have.
 
-Eliminate silent loss of Academy syncs by adding a durable retry queue plus a nightly backfill, with zero changes to the existing happy path.
+### Scope
 
-## Scope
+1. **Schema** — add to `quest_completions`:
+   - `academy_synced boolean default false`
+   - `academy_synced_at timestamptz`
+   - `academy_sync_note text`
+   - `academy_sync_attempts integer default 0`
 
-1. **`pgmq` queue** `academy_sync` + dead-letter `academy_sync_dlq`.
-2. **Enqueue trigger** on `challenge_completions` whenever a row lands or transitions to `academy_synced IS NOT TRUE`.
-3. **New edge function `process-academy-sync-queue`** — drains the queue, calls existing `sync-to-academy` per message, deletes on success, requeues with backoff on transient failure, moves to DLQ after 3 attempts.
-4. **New edge function `backfill-academy-sync`** — nightly scan of `challenge_completions` where `academy_synced = false` AND `academy_sync_note NOT LIKE 'user_not_found%'` AND `completed_at > now() - interval '7 days'`; enqueues them.
-5. **`pg_cron` schedules**:
-   - `process-academy-sync-queue` every 2 minutes.
-   - `backfill-academy-sync` daily at 03:15 UTC.
-6. **Admin visibility** — extend `EcosystemSyncHealth` with a small "Retry queue" card showing pending count, DLQ count, last drain timestamp (read via new `get_academy_queue_stats` SECURITY DEFINER function, admin-only).
-7. **Idempotency safeguard** — `process-academy-sync-queue` skips messages where the completion is already `academy_synced = true` (covers race with moderator-triggered manual sync).
+2. **Queues** (`pgmq`) — `academy_quest_sync` + `academy_quest_sync_dlq`.
 
-Out of scope (saved for later PRs): achievement/quest sync, task-level streaming, per-completion sync chip on `ChallengeDetail`, URL allowlist, Phase E live cutover.
+3. **DB plumbing**
+   - `enqueue_academy_quest_sync(_user_id, _quest_id)` SECURITY DEFINER.
+   - `trg_enqueue_academy_quest_sync` AFTER INSERT on `quest_completions` (skips when `academy_synced` already true — supports moderator backfills).
+   - Extend `get_academy_queue_stats()` to also return `quest_pending`, `quest_dlq`, `quest_oldest_age_seconds`.
 
-## Technical notes
+4. **Edge functions** (verify_jwt = false, service-role auth gate, stateless admin client):
+   - `sync-quest-to-academy` — resolves email, quest definition (incl. `chain_id`, xp/points reward), tenant, profile; dispatches `quest.completed` event. Stable `delivery_id = "quest:<user_id>:<quest_id>"`. Soft-success on "no active webhook target". Marks the row via `markRow` helper just like achievements.
+   - `process-academy-quest-queue` — batch 25, VT 120s, max 3 attempts → DLQ. Idempotency: skip if `quest_completions.academy_synced = true`. Bumps `academy_sync_attempts`.
 
-### Migration
-- `select pgmq.create('academy_sync');` and `pgmq.create('academy_sync_dlq');`
-- SECURITY DEFINER helpers: `enqueue_academy_sync(user_id uuid, challenge_id uuid)`, `get_academy_queue_stats()` (admin-only via `has_role`).
-- Trigger `trg_enqueue_academy_sync` AFTER INSERT OR UPDATE ON `public.challenge_completions` WHEN (NEW.academy_synced IS NOT TRUE) calls `enqueue_academy_sync`.
-- Add `academy_sync_attempts integer DEFAULT 0` column to `challenge_completions` for visibility (also gated in the worker's backoff logic).
+5. **Cron** (via `supabase--insert`, not migration — contains anon key) — schedule `process-academy-quest-queue` every 2 minutes.
 
-### Worker `process-academy-sync-queue`
-- `verify_jwt = false` + Bearer `SUPABASE_SERVICE_ROLE_KEY` check (matches the other queue workers per security memory).
-- Read batch of 25 with visibility-timeout 120s via `read_email_batch`-style helper (`read_academy_batch`).
-- For each: invoke `sync-to-academy` with service-role auth. On `success === true` or `user_not_found === true` → `delete_email`. On any other outcome → if `read_ct >= 3` move to DLQ, else leave for next visibility-timeout tick.
-- Stateless admin client (`autoRefreshToken: false, persistSession: false`).
+6. **Admin UI** — extend `src/components/admin/EcosystemSyncHealth.tsx` Retry Queue card with a third row "Quest completions" (pending / DLQ / oldest age), reusing the existing grid layout.
 
-### Backfill `backfill-academy-sync`
-- Same auth gate.
-- Pull up to 500 stale rows, call `enqueue_academy_sync(user_id, challenge_id)`; rely on queue-side dedupe (worker double-checks `academy_synced`).
-- Logs total enqueued to `ecosystem_sync_log` with `data_type = 'academy_backfill'`.
+### Out of scope
+- Quest-chain bonus event (`quest_chain.completed`) — fold into a follow-up if Academy wants chain-level credit.
+- Task-level streaming (P1 #3).
+- Backfill function (volume is low; can be added if drift appears).
 
-### Cron (uses `pg_cron` + `pg_net`, scheduled via `supabase--insert` per Lovable Cloud guidance)
+### Technical notes
+
+**Event payload** (`event_type: "quest.completed"`):
+```json
+{
+  "user_email": "...",
+  "external_user_id": "...",
+  "quest": { "id", "name", "description", "xp_reward", "points_reward", "chain_id" },
+  "completed_at": "...",
+  "awarded_points": 0,
+  "metadata": { "source": "play.fgn.gg", "delivery_id", "external_attempt_id",
+                "tenant_id", "tenant_slug", "tenant_name", "display_name" }
+}
 ```
-cron.schedule('process-academy-sync-queue', '*/2 * * * *', ...);
-cron.schedule('backfill-academy-sync',      '15 3 * * *',  ...);
-```
 
-### Files touched
-- `supabase/migrations/<ts>_academy_sync_queue.sql` — queues, helpers, trigger, column.
-- `supabase/functions/process-academy-sync-queue/index.ts` — new.
-- `supabase/functions/backfill-academy-sync/index.ts` — new.
-- `src/components/admin/EcosystemSyncHealth.tsx` — add Retry Queue card.
-- `src/hooks/useSyncLogs.ts` (or sibling) — small query for `get_academy_queue_stats`.
+**Files**
+- `supabase/migrations/<ts>_quest_academy_sync_queue.sql` — column add, queue create, function, trigger, stats extension.
+- `supabase/functions/sync-quest-to-academy/index.ts` — new.
+- `supabase/functions/process-academy-quest-queue/index.ts` — new.
+- `src/components/admin/EcosystemSyncHealth.tsx` — third queue row.
+- `src/integrations/supabase/types.ts` — regenerated post-migration.
 
-### Rollback
-- Disable cron jobs (one SQL line each) → worker stops, trigger keeps enqueueing but with no consumer; queue grows but causes no user-facing harm. Drop trigger to fully revert.
+**Rollback:** `select cron.unschedule(<id>);` then `drop trigger trg_enqueue_academy_quest_sync on public.quest_completions;` — trigger removal stops enqueue; existing queue drains and dies harmlessly.
+
+**Next after this:** P1 #3 task-level streaming, or P1 #4 per-tenant sync-health surface.
