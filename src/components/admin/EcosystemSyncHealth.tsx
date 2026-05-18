@@ -8,6 +8,9 @@ interface QueueStats {
   pending: number;
   dlq: number;
   oldest_age_seconds: number | null;
+  achievement_pending?: number;
+  achievement_dlq?: number;
+  achievement_oldest_age_seconds?: number | null;
 }
 
 interface HealthRow {
@@ -90,36 +93,19 @@ const EcosystemSyncHealth = () => {
       </div>
 
       {queueStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b border-border pb-4">
-          <div className="border border-border rounded p-3 bg-background">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Inbox className="h-3 w-3" /> Academy retry queue
-            </div>
-            <div className="text-2xl font-semibold mt-1">{queueStats.pending}</div>
-            <div className="text-[10px] text-muted-foreground">pending messages</div>
-          </div>
-          <div className="border border-border rounded p-3 bg-background">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Skull className="h-3 w-3" /> Dead-letter
-            </div>
-            <div className={`text-2xl font-semibold mt-1 ${queueStats.dlq > 0 ? "text-destructive" : ""}`}>
-              {queueStats.dlq}
-            </div>
-            <div className="text-[10px] text-muted-foreground">failed 3× — needs review</div>
-          </div>
-          <div className="border border-border rounded p-3 bg-background">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" /> Oldest pending
-            </div>
-            <div className="text-2xl font-semibold mt-1">
-              {queueStats.oldest_age_seconds == null
-                ? "—"
-                : queueStats.oldest_age_seconds < 60
-                  ? `${Math.round(queueStats.oldest_age_seconds)}s`
-                  : `${Math.round(queueStats.oldest_age_seconds / 60)}m`}
-            </div>
-            <div className="text-[10px] text-muted-foreground">waiting to drain</div>
-          </div>
+        <div className="space-y-3 border-b border-border pb-4">
+          <QueueRow
+            label="Challenge completions"
+            pending={queueStats.pending}
+            dlq={queueStats.dlq}
+            oldestSec={queueStats.oldest_age_seconds}
+          />
+          <QueueRow
+            label="Achievements"
+            pending={queueStats.achievement_pending ?? 0}
+            dlq={queueStats.achievement_dlq ?? 0}
+            oldestSec={queueStats.achievement_oldest_age_seconds ?? null}
+          />
         </div>
       )}
 
@@ -167,6 +153,48 @@ const EcosystemSyncHealth = () => {
           })}
         </div>
       )}
+    </div>
+  );
+};
+
+interface QueueRowProps {
+  label: string;
+  pending: number;
+  dlq: number;
+  oldestSec: number | null;
+}
+
+const QueueRow = ({ label, pending, dlq, oldestSec }: QueueRowProps) => {
+  const fmtAge = (s: number | null) =>
+    s == null ? "—" : s < 60 ? `${Math.round(s)}s` : `${Math.round(s / 60)}m`;
+  return (
+    <div>
+      <div className="text-xs font-semibold text-muted-foreground mb-1.5">{label}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="border border-border rounded p-3 bg-background">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Inbox className="h-3 w-3" /> Retry queue
+          </div>
+          <div className="text-2xl font-semibold mt-1">{pending}</div>
+          <div className="text-[10px] text-muted-foreground">pending messages</div>
+        </div>
+        <div className="border border-border rounded p-3 bg-background">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Skull className="h-3 w-3" /> Dead-letter
+          </div>
+          <div className={`text-2xl font-semibold mt-1 ${dlq > 0 ? "text-destructive" : ""}`}>
+            {dlq}
+          </div>
+          <div className="text-[10px] text-muted-foreground">failed 3× — needs review</div>
+        </div>
+        <div className="border border-border rounded p-3 bg-background">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" /> Oldest pending
+          </div>
+          <div className="text-2xl font-semibold mt-1">{fmtAge(oldestSec)}</div>
+          <div className="text-[10px] text-muted-foreground">waiting to drain</div>
+        </div>
+      </div>
     </div>
   );
 };
