@@ -144,6 +144,9 @@ Deno.serve(async (req) => {
       ? "synced"
       : `dispatch_failed: HTTP ${dispatchRes.status} ${dispatchTxt.substring(0, 200)}`;
     await mark(admin, user_id, chain_id, success, note);
+    if (success) {
+      await admin.rpc("enqueue_passport_refresh", { _user_id: user_id });
+    }
 
     return json({ success, dispatched, note });
   } catch (err: any) {
