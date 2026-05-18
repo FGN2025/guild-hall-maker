@@ -24,9 +24,22 @@ const EcosystemSyncHealth = () => {
 
   useEffect(() => {
     fetchHealth();
-    const interval = setInterval(fetchHealth, 30_000);
+  const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
+
+  useEffect(() => {
+    fetchHealth();
+    fetchQueueStats();
+    const interval = setInterval(() => {
+      fetchHealth();
+      fetchQueueStats();
+    }, 30_000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchQueueStats = async () => {
+    const { data, error } = await supabase.rpc("get_academy_queue_stats");
+    if (!error && data) setQueueStats(data as unknown as QueueStats);
+  };
 
   const fetchHealth = async () => {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
