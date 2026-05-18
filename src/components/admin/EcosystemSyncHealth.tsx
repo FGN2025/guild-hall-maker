@@ -38,11 +38,6 @@ const EcosystemSyncHealth = () => {
     if (!error && data) setQueueStats(data as unknown as QueueStats);
   };
 
-  const fetchQueueStats = async () => {
-    const { data, error } = await supabase.rpc("get_academy_queue_stats");
-    if (!error && data) setQueueStats(data as unknown as QueueStats);
-  };
-
   const fetchHealth = async () => {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
