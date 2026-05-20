@@ -4586,6 +4586,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      shares_tenant_with: {
+        Args: { _target: string; _viewer: string }
+        Returns: boolean
+      }
       should_notify: {
         Args: { _channel: string; _type: string; _user_id: string }
         Returns: boolean
