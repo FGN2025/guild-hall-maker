@@ -53,14 +53,15 @@ export const useCloudGamingSeats = (tenantId: string | undefined) => {
     queryKey: ["cloud-gaming-purchases", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("subscriber_cloud_purchases")
+      const { data, error } = await (supabase as any)
+        .from("subscriber_cloud_purchases_safe")
         .select("*")
         .eq("tenant_id", tenantId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as CloudGamingPurchase[];
     },
+
   });
 
   // Subscribers not already assigned a seat
