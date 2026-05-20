@@ -51,32 +51,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('loading');
   const fetchingRef = { current: false };
 
-  const hydrateRolesFromCache = (userId: string): boolean => {
-    try {
-      const cached = localStorage.getItem(`fgn_roles_${userId}`);
-      if (!cached) return false;
-      const { roles, isTenant, discordLinked: dl, ts } = JSON.parse(cached);
-      if (!Array.isArray(roles)) return false;
-      // Use cache for instant render; refresh in background regardless.
-      setIsAdmin(roles.includes("admin"));
-      setIsModerator(roles.includes("moderator"));
-      setIsMarketing(roles.includes("marketing"));
-      setIsTenantStaff(!!isTenant);
-      setDiscordLinked(!!dl);
-      setRoleLoading(false);
-      // If cache is older than 10 minutes, treat as stale but still useful for paint.
-      return Date.now() - (ts ?? 0) < 10 * 60 * 1000;
-    } catch {
-      return false;
-    }
-  };
-
   const fetchRoleAndDiscord = async (userId: string) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
-    // Hydrate from cache so first paint is not blocked on the network.
-    const hadFresh = hydrateRolesFromCache(userId);
-    if (!hadFresh) setRoleLoading(true);
+    // SECURITY: Never hydrate role flags from localStorage. Privileged UI must
+    // only render after the server confirms roles via user_roles RLS query.
+    setRoleLoading(true);
     const [roleResult, profileResult, tenantAdminResult] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("profiles").select("discord_id, discord_bypass_approved").eq("user_id", userId).maybeSingle(),
@@ -92,14 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setDiscordLinked(dl);
     setRoleLoading(false);
     fetchingRef.current = false;
-    try {
-      localStorage.setItem(
-        `fgn_roles_${userId}`,
-        JSON.stringify({ roles, isTenant, discordLinked: dl, ts: Date.now() })
-      );
-    } catch {
-      // ignore quota errors
-    }
+
 
     // Subscription status: hydrate from cache immediately, refresh in background.
     // Never blocks roleLoading or page render.
