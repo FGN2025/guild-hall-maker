@@ -4401,6 +4401,54 @@ export type Database = {
           },
         ]
       }
+      subscriber_cloud_purchases_safe: {
+        Row: {
+          canceled_at: string | null
+          created_at: string | null
+          id: string | null
+          status: string | null
+          subscriber_id: string | null
+          tenant_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          status?: string | null
+          subscriber_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          status?: string | null
+          subscriber_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriber_cloud_purchases_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_subscribers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriber_cloud_purchases_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_integrations_safe: {
         Row: {
           additional_config: Json | null
