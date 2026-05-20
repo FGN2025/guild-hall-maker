@@ -130,21 +130,10 @@ const Auth = () => {
 
     setLoading(true);
 
-    if (!isLogin) {
-      // Check if email is banned before attempting signup
-      try {
-        const { data: banData } = await supabase.functions.invoke("check-ban-status", {
-          body: { email: email.trim() },
-        });
-        if (banData?.banned) {
-          toast.error("This account has been permanently banned and cannot register.");
-          setLoading(false);
-          return;
-        }
-      } catch {
-        // If check fails, allow signup attempt to proceed
-      }
-    }
+    // Note: Ban enforcement happens post-authentication via banned_users
+    // RLS and AuthContext checks. We intentionally do not probe ban status
+    // pre-signup to avoid leaking ban state to unauthenticated callers.
+
 
     if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
