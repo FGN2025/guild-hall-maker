@@ -6,26 +6,55 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Require authenticated caller
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace("Bearer ", "").trim();
+    if (!token) return json({ error: "Unauthorized" }, 401);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false },
+    });
+    const { data: userData, error: userErr } = await anonClient.auth.getUser(token);
+    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+    const callerId = userData.user.id;
+
     const { tournament_id, user_id } = await req.json();
     if (!tournament_id || !user_id) {
-      return new Response(JSON.stringify({ error: "Missing tournament_id or user_id" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Missing tournament_id or user_id" }, 400);
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
+    });
 
-    // Get tournament's discord_role_id
+    // Authorize: caller must be the target user OR a moderator/admin
+    if (callerId !== user_id) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", callerId);
+      const allowed = (roles ?? []).some((r: { role: string }) =>
+        ["admin", "moderator"].includes(r.role),
+      );
+      if (!allowed) return json({ error: "Forbidden" }, 403);
+    }
+
     const { data: tournament, error: tErr } = await supabase
       .from("tournaments")
       .select("discord_role_id")
@@ -33,12 +62,9 @@ Deno.serve(async (req) => {
       .single();
 
     if (tErr || !tournament?.discord_role_id) {
-      return new Response(JSON.stringify({ skipped: true, reason: "No discord role configured" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ skipped: true, reason: "No discord role configured" });
     }
 
-    // Verify user is registered
     const { data: reg } = await supabase
       .from("tournament_registrations")
       .select("id")
@@ -46,14 +72,8 @@ Deno.serve(async (req) => {
       .eq("user_id", user_id)
       .maybeSingle();
 
-    if (!reg) {
-      return new Response(JSON.stringify({ error: "User not registered for this tournament" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!reg) return json({ error: "User not registered for this tournament" }, 400);
 
-    // Get user's discord_id from profile
     const { data: profile } = await supabase
       .from("profiles")
       .select("discord_id")
@@ -61,20 +81,14 @@ Deno.serve(async (req) => {
       .single();
 
     if (!profile?.discord_id) {
-      return new Response(JSON.stringify({ skipped: true, reason: "User has no linked Discord account" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ skipped: true, reason: "User has no linked Discord account" });
     }
 
-    // Assign Discord role
     const botToken = Deno.env.get("DISCORD_BOT_TOKEN");
     const guildId = Deno.env.get("DISCORD_GUILD_ID");
 
     if (!botToken || !guildId) {
-      return new Response(JSON.stringify({ error: "Discord bot not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Discord bot not configured" }, 500);
     }
 
     const discordRes = await fetch(
@@ -85,26 +99,18 @@ Deno.serve(async (req) => {
           Authorization: `Bot ${botToken}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!discordRes.ok) {
       const body = await discordRes.text();
       console.error("Discord role assignment failed:", discordRes.status, body);
-      return new Response(JSON.stringify({ error: "Discord API error", status: discordRes.status }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Discord API error", status: discordRes.status }, 502);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ success: true });
   } catch (err) {
     console.error("assign-tournament-role error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: (err as Error).message }, 500);
   }
 });
