@@ -14,7 +14,6 @@ const Index = () => {
       <Navbar />
       <HeroSection />
       <Suspense fallback={null}>
-        <TickerEmbed />
         <FeaturedVideo />
         <FeaturedEvents />
       </Suspense>
