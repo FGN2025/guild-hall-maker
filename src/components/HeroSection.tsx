@@ -94,7 +94,7 @@ const HeroSection = () => {
           </div>
 
           <p className="mt-6 font-bold text-foreground text-lg md:text-xl">
-            Thank You for Competing in our Skills Challenges During:
+            We are honored to be participating in the Skills Development Roundtable.
           </p>
           <a
             href="https://www.businessroundtable.org/"

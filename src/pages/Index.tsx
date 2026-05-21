@@ -4,7 +4,6 @@ import Navbar from "@/components/Navbar";
 import usePageTitle from "@/hooks/usePageTitle";
 
 // Below-the-fold sections — lazy load so they don't block FCP/LCP.
-const TickerEmbed = lazy(() => import("@/components/TickerEmbed"));
 const FeaturedVideo = lazy(() => import("@/components/FeaturedVideo"));
 const FeaturedEvents = lazy(() => import("@/components/FeaturedEvents"));
 
@@ -15,7 +14,6 @@ const Index = () => {
       <Navbar />
       <HeroSection />
       <Suspense fallback={null}>
-        <TickerEmbed />
         <FeaturedVideo />
         <FeaturedEvents />
       </Suspense>
