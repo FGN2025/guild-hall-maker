@@ -3,7 +3,7 @@ import { Trophy, Zap, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
-import apprenticeshipLogo from "@/assets/national-apprenticeship-week-2026.png";
+import businessRoundtableLogo from "@/assets/business-roundtable.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeferredMount } from "@/hooks/useDeferredMount";
 
