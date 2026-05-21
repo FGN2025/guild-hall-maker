@@ -3,7 +3,7 @@ import { Trophy, Zap, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
-import apprenticeshipLogo from "@/assets/national-apprenticeship-week-2026.png";
+import businessRoundtableLogo from "@/assets/business-roundtable.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeferredMount } from "@/hooks/useDeferredMount";
 
@@ -96,16 +96,21 @@ const HeroSection = () => {
           <p className="mt-6 font-bold text-foreground text-lg md:text-xl">
             Thank You for Competing in our Skills Challenges During:
           </p>
-          <Link to="/challenges" className="inline-block mt-2 hover:opacity-80 transition-opacity">
+          <a
+            href="https://www.businessroundtable.org/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-2 hover:opacity-80 transition-opacity bg-white rounded-md p-3"
+          >
             <img
-              src={apprenticeshipLogo}
-              alt="National Apprenticeship Week — April 26 – May 2, 2026"
+              src={businessRoundtableLogo}
+              alt="Business Roundtable — Celebrating America's 250th"
               width={480}
               height={128}
               loading="lazy"
               className="max-h-24 md:max-h-32 w-auto mx-auto object-contain"
             />
-          </Link>
+          </a>
           <Link to="/challenges" className="flex items-center justify-center gap-2 mt-2 animate-pulse text-primary font-semibold text-lg">
             <ArrowUp className="h-7 w-7" />
             Click Here!
