@@ -4303,6 +4303,48 @@ export type Database = {
           },
         ]
       }
+      media_library_public: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          embed_code: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string | null
+          mime_type: string | null
+          tags: string[] | null
+          url: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          embed_code?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string | null
+          mime_type?: string | null
+          tags?: string[] | null
+          url?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          embed_code?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string | null
+          mime_type?: string | null
+          tags?: string[] | null
+          url?: string | null
+        }
+        Relationships: []
+      }
       monthly_redemption_spend: {
         Row: {
           month: string | null
