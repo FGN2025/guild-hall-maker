@@ -49,8 +49,7 @@ Deno.serve(async (req) => {
       429,
     );
   }
-    return new Response(null, { headers: corsHeaders });
-  }
+
 
   try {
     const { tenant_id, first_name, last_name, zip_code, account_number } = await req.json();
