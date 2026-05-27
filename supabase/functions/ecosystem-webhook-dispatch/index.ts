@@ -21,6 +21,22 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Auth: only trusted internal callers may dispatch webhooks.
+    // Accept either a shared dispatch secret OR the service role key in Authorization header.
+    const authHeader = req.headers.get("Authorization") || "";
+    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const dispatchSecret = Deno.env.get("ECOSYSTEM_DISPATCH_SECRET") || "";
+    const isAuthorized =
+      (dispatchSecret && bearer === dispatchSecret) ||
+      (serviceRoleKey && bearer === serviceRoleKey);
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const body = await req.json();
