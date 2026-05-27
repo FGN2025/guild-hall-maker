@@ -14,7 +14,7 @@ const PageBackground = ({ pageSlug }: PageBackgroundProps) => {
     queryKey: ["media-banners-fallback"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("media_library")
+        .from("media_library_public" as any)
         .select("url")
         .eq("category", "banner")
         .eq("file_type", "image")
