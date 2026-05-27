@@ -53,6 +53,19 @@ serve(async (req) => {
       });
     }
 
+    // Role check: only admins and moderators may generate images
+    const adminCheckClient = createClient(supabaseUrl, supabaseServiceKey);
+    const [{ data: isAdmin }, { data: isMod }] = await Promise.all([
+      adminCheckClient.rpc("has_role", { _user_id: user.id, _role: "admin" }),
+      adminCheckClient.rpc("has_role", { _user_id: user.id, _role: "moderator" }),
+    ]);
+    if (!isAdmin && !isMod) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { prompt, category = "general", tags = [] } = await req.json();
     if (!prompt || typeof prompt !== "string") {
       return new Response(JSON.stringify({ error: "Prompt is required" }), {
