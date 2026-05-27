@@ -90,10 +90,7 @@ Deno.serve(async (req) => {
     }
 
     if (localMatch && localMatch.length > 0) {
-      return new Response(
-        JSON.stringify({ valid: true, message: "Subscriber verified!" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return respondUniform({ valid: true, message: "Subscriber verified!" });
     }
 
     // No local match — check if tenant has an active billing integration for real-time lookup
@@ -105,18 +102,13 @@ Deno.serve(async (req) => {
       .in("provider_type", ["nisc", "glds"]);
 
     if (integrations && integrations.length > 0) {
-      // For now, we return a message indicating external lookup is not yet wired
-      // In production this would call the NISC/GLDS API
       console.log("External integration available but real-time lookup not yet implemented for registration flow.");
     }
 
-    return new Response(
-      JSON.stringify({
-        valid: false,
-        message: "We couldn't find a matching subscriber record. Please check your information and try again.",
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return respondUniform({
+      valid: false,
+      message: "We couldn't find a matching subscriber record. Please check your information and try again.",
+    });
   } catch (err) {
     console.error("validate-subscriber error:", err);
     return new Response(
