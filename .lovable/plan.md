@@ -1,33 +1,24 @@
-## Continue Security Hardening
+# Make Discord linking optional
 
-Pick up the four pending items from the previous security pass.
+Remove the mandatory Discord-link gate. Users can still link Discord voluntarily from `/link-discord` (entry points in profile/navbar stay), and the OAuth flow, role assignment, and admin bypass review system remain functional.
 
-### 1. Use the safe purchases view in the client
-- Update `src/hooks/useCloudGamingSeats.ts` to select from `subscriber_cloud_purchases_safe` instead of `subscriber_cloud_purchases`.
-- Confirm no other component reads Stripe IDs from the original table; if it does, switch it to the safe view too.
+## Code changes
 
-### 2. Remove the pre-signup ban check from Auth
-- In `src/pages/Auth.tsx`, drop the unauthenticated call to `check-ban-status` (the edge function is now admin-only and will reject it).
-- Banned users are still blocked post-login by `AuthContext` / RLS, so the UX remains correct.
+1. **`src/components/ConditionalLayout.tsx`** — drop the `!discordLinked` check and its redirect to `/link-discord`. After email confirmation, render `AppLayout` directly.
 
-### 3. Harden AuthContext against localStorage role tampering
-- Stop trusting any cached `role` / `is_admin` flag from `localStorage` or `sessionStorage`.
-- Always derive roles from `user_roles` via Supabase on session load; treat client-side cache as a UI hint only, never as an authorization signal.
-- Audit `src/contexts/AuthContext.tsx` (and any `useAuth`/role hooks) for reads of `localStorage` that feed role checks; remove or replace with server-verified state.
+2. **`src/components/ProtectedRoute.tsx`** — remove the Discord gate block and the `DISCORD_EXEMPT_PATHS` constant. Only auth + email-confirmed checks remain.
 
-### 4. Update security finding statuses
-- Mark as fixed: `legacy_users` PII, `tenant_sync_logs` exposure + realtime, `tenant_integrations.api_key_encrypted`, `subscriber_cloud_purchases` Stripe IDs, `media_library.user_id`, `tournaments` open write policies, and the four hardened edge functions (`assign-tournament-role`, `backfill-legacy-zips`, `backfill-zip-geo`, `check-ban-status`), plus items 1–3 above once shipped.
-- Ignore (with reasons) any findings that are intentional (e.g. public read on landing-page content, anon access to `profiles_public` display fields).
-- Refresh `security--update_memory` so the next scan knows what's intentional.
+3. **`src/pages/Auth.tsx` and onboarding flows** — audit for any post-signup `navigate("/link-discord")` and remove. (Quick grep; expected to be minimal.)
 
-### Verification
-- Cloud gaming seat UI still renders without Stripe IDs.
-- `/auth` signup/login flow works for a fresh email and for a banned email (banned blocked after login, not before).
-- A non-admin user cannot elevate to admin by editing `localStorage`.
-- Re-run `security--run_security_scan` and confirm only intentional findings remain.
+4. **Navbar / Profile** — leave the "Link Discord" CTA visible so users can opt in.
 
-### Files expected to change
-- `src/hooks/useCloudGamingSeats.ts`
-- `src/pages/Auth.tsx`
-- `src/contexts/AuthContext.tsx` (+ any role helper it depends on)
-- Security findings + security memory (via tools, no code)
+## Memory updates
+
+- Edit `mem://auth/discord-verification-logic` to state linking is optional; bypass-request flow is no longer required for access (kept for legacy data).
+- Edit Core in `mem://index.md`: remove the "Staff are globally exempt from Discord linking" clause (no longer meaningful since nobody is gated).
+
+## Untouched
+
+- `/link-discord` page, `discord-oauth-callback` edge function, Discord role mappings, bot integration.
+- `discord_bypass_requests` table and admin review UI (safe to leave; can be retired later).
+- Domain/cutover work — separate plan.
