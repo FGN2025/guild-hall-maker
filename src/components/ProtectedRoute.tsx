@@ -1,11 +1,8 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
-const DISCORD_EXEMPT_PATHS = ["/link-discord", "/profile"];
-
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
-  const { user, loading, discordLinked, roleLoading, isAdmin, isModerator, isMarketing, isTenantStaff, emailConfirmed } = useAuth();
-  const location = useLocation();
+  const { user, loading, roleLoading, emailConfirmed } = useAuth();
 
   // Skip the full-screen spinner if a session is already cached on disk —
   // Supabase will rehydrate it synchronously, so we can render optimistically.
@@ -33,15 +30,7 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
     return <Navigate to="/confirm-email" replace />;
   }
 
-  // Discord gate — exempt certain paths and all admin/tenant routes
-  const isExempt = DISCORD_EXEMPT_PATHS.includes(location.pathname) ||
-    location.pathname.startsWith("/admin") ||
-    location.pathname.startsWith("/tenant");
-  const isStaff = isAdmin || isModerator || isMarketing || isTenantStaff;
-  if (!discordLinked && !isStaff && !isExempt) {
-    return <Navigate to="/link-discord" replace />;
-  }
-
+  // Discord linking is optional — no gate. Users opt in from profile.
   return children ? <>{children}</> : <Outlet />;
 };
 
