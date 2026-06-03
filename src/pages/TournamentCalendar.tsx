@@ -20,6 +20,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTournaments } from "@/hooks/useTournaments";
+import { useCalendarImageFor } from "@/hooks/useCalendarImages";
 import PageBackground from "@/components/PageBackground";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -28,6 +29,10 @@ const TournamentCalendar = () => {
   usePageTitle("Tournament Calendar");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { tournaments, isLoading } = useTournaments();
+  const { data: monthlyImage } = useCalendarImageFor(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() + 1
+  );
   const navigate = useNavigate();
 
   const monthStart = startOfMonth(currentMonth);
@@ -166,15 +171,17 @@ const TournamentCalendar = () => {
         </div>
       )}
 
-      <div className="mt-8 flex justify-center">
-        <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl p-4">
-          <img
-            src="/images/June_2026_calendar_square.png"
-            alt="FGN Tournaments - June 2026"
-            className="w-full max-w-2xl rounded-lg"
-          />
+      {monthlyImage && (
+        <div className="mt-8 flex justify-center">
+          <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl p-4">
+            <img
+              src={monthlyImage.image_url}
+              alt={`FGN Tournaments - ${format(currentMonth, "MMMM yyyy")}`}
+              className="w-full max-w-2xl rounded-lg"
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
