@@ -169,8 +169,8 @@ const TournamentCalendar = () => {
       <div className="mt-8 flex justify-center">
         <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl p-4">
           <img
-            src="/images/April_2026_calendar_square.png"
-            alt="FGN Tournaments - April 2026"
+            src="/images/June_2026_calendar_square.png"
+            alt="FGN Tournaments - June 2026"
             className="w-full max-w-2xl rounded-lg"
           />
         </div>
