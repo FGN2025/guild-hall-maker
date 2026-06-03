@@ -81,9 +81,6 @@ const TournamentCalendar = () => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <a href={nawInfographic} target="_blank" rel="noopener noreferrer" className="shrink-0">
-              <img src={nawCalendarLogo} alt="National Apprenticeship Week 2026" className="h-12 w-auto object-contain" />
-            </a>
           </div>
         </div>
       </div>
