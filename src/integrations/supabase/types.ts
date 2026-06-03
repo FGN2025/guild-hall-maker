@@ -226,6 +226,39 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_monthly_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          month: number
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          month: number
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          month?: number
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       calendar_publish_configs: {
         Row: {
           accent_color: string | null
