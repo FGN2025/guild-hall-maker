@@ -151,6 +151,18 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                   <SidebarMenuButton asChild tooltip="Calendar Images">
+                     <NavLink
+                       to="/admin/calendar-images"
+                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                     >
+                       <CalendarDays className="h-4 w-4 shrink-0" />
+                       <span>Calendar Images</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
