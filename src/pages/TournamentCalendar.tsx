@@ -106,15 +106,12 @@ const TournamentCalendar = () => {
               const key = format(day, "yyyy-MM-dd");
               const dayTournaments = tournamentsByDate.get(key) ?? [];
               const today = isToday(day);
-              const naw = isNawDay(day);
 
               return (
                 <div
                   key={key}
                   className={`min-h-[100px] border-b border-r border-border/20 p-1.5 transition-colors ${
-                    naw ? "bg-red-700/10 border-l-2 border-l-red-600" : ""
-                  } ${
-                    today ? "bg-primary/5" : !naw ? "hover:bg-muted/30" : ""
+                    today ? "bg-primary/5" : "hover:bg-muted/30"
                   } ${!isSameMonth(day, currentMonth) ? "opacity-40" : ""}`}
                 >
                   <span
@@ -127,14 +124,6 @@ const TournamentCalendar = () => {
                     {format(day, "d")}
                   </span>
 
-                  {naw && (
-                    <Link
-                      to="/challenges"
-                      className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold leading-tight bg-red-600 text-white hover:bg-red-700 transition-colors ml-1"
-                    >
-                      NAW
-                    </Link>
-                  )}
 
                   <div className="mt-1 space-y-0.5">
                     {dayTournaments.slice(0, 3).map((t) => (
