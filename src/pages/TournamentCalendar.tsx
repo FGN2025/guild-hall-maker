@@ -1,8 +1,6 @@
 import { useState } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useNavigate, Link } from "react-router-dom";
-import nawCalendarLogo from "@/assets/naw-calendar-logo-2026.png";
-import nawInfographic from "@/assets/naw-infographic-2026.jpg";
 import { isWithinInterval } from "date-fns";
 import {
   startOfMonth,
@@ -81,9 +79,6 @@ const TournamentCalendar = () => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <a href={nawInfographic} target="_blank" rel="noopener noreferrer" className="shrink-0">
-              <img src={nawCalendarLogo} alt="National Apprenticeship Week 2026" className="h-12 w-auto object-contain" />
-            </a>
           </div>
         </div>
       </div>
