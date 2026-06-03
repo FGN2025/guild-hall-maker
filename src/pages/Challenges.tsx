@@ -1,5 +1,3 @@
-import nawLogo from "@/assets/national-apprenticeship-week-2026.png";
-import nawInfographic from "@/assets/naw-infographic-2026.jpg";
 import { Link, useSearchParams } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery } from "@tanstack/react-query";
@@ -97,9 +95,6 @@ const Challenges = () => {
                 Complete challenges to earn points. Upload evidence to prove completion.
               </p>
             </div>
-            <a href={nawInfographic} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 hover:opacity-80 transition-opacity">
-              <img src={nawLogo} alt="National Apprenticeship Week — April 26 – May 2, 2026" className="h-12 md:h-16 object-contain" />
-            </a>
           </div>
         </div>
 
