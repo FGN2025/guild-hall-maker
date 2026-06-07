@@ -1,51 +1,29 @@
-# Calendar Image Admin Tool
+## Problem
 
-Add a small admin page that lets Platform Admins upload a calendar image for any month/year. The public `/calendar` page automatically displays the image for the currently-viewed month.
+The "Importing a module script failed" error flashes on mobile when navigating to pages like Challenges, Tournaments, Quests. This is a well-known issue: pages are code-split into lazy chunks, and when a new version is deployed, the old chunk filenames (cached in the user's open tab) no longer exist on the server. React's `lazy()` import throws, the ErrorBoundary catches it and shows "Something went wrong" until the user taps Return Home.
 
-## User flow
+The session replay confirms it: every navigation to a lazy route (`/tournaments`, `/challenges`, `/quests`) triggers "Importing a module script failed".
 
-1. Admin navigates to **Admin → Calendar Images** (new sidebar entry under the Admin section).
-2. Sees a list of all uploaded monthly images (thumbnail + month label + replace/delete buttons).
-3. Clicks **Upload** → picks month + year + image file → saves.
-4. On `/calendar`, the image below the grid now reflects whichever month the user is browsing. If no image exists for that month, the image block is hidden.
+## Fix
 
-## Backend
+Detect this specific class of error in `src/components/ErrorBoundary.tsx` and auto-reload the page once (using a `sessionStorage` flag to prevent infinite reload loops if something is genuinely broken).
 
-**Storage bucket** (public): `calendar-images`
-- Files stored at `YYYY-MM.png` (or original extension).
-- Public read so anonymous visitors on `/calendar` can see it.
+### Changes
 
-**Table**: `public.calendar_monthly_images`
-- `id` uuid PK
-- `year` int, `month` int (1-12), unique together
-- `image_url` text
-- `storage_path` text
-- `uploaded_by` uuid, `created_at`, `updated_at`
+**`src/components/ErrorBoundary.tsx`**
+- In `componentDidCatch`, detect chunk-load errors by matching the error message against the known patterns:
+  - `Importing a module script failed`
+  - `Failed to fetch dynamically imported module`
+  - `error loading dynamically imported module`
+  - `ChunkLoadError`
+- If matched AND `sessionStorage` flag `chunk-reload-attempted` is not set:
+  - Set the flag
+  - Call `window.location.reload()` — the browser fetches `index.html` again and gets the current chunk manifest, so the navigation succeeds transparently
+- If the flag is already set (we already tried once), fall through to the existing error UI so we don't loop
+- Clear the flag on successful render (in `componentDidMount` or via a top-level effect) so future stale-chunk errors can recover again
 
-**RLS / grants**:
-- `SELECT` to `anon` + `authenticated` (public calendar viewers).
-- `INSERT/UPDATE/DELETE` restricted to Platform Admins via `has_role(auth.uid(),'admin')`.
-- Storage policies on `calendar-images` bucket: public read; admin-only write/delete.
+No other files need changes. This is purely a presentation-layer fix.
 
-## Frontend
+## Why not change the bundler
 
-**New page**: `src/pages/admin/AdminCalendarImages.tsx`
-- Grid of existing images with month/year label, thumbnail, Replace, Delete.
-- Upload dialog: month + year selectors, file picker, preview, save.
-- Uses a new `useCalendarImages` hook (list, upsert, delete).
-
-**Route**: add `/admin/calendar-images` in `src/App.tsx` under the admin section, gated by admin role.
-
-**Sidebar**: add "Calendar Images" entry in the Admin section of `AppSidebar.tsx`.
-
-**Admin Dashboard**: add a stat card linking to the new page.
-
-**Public calendar update** (`src/pages/TournamentCalendar.tsx`):
-- Replace hardcoded `/images/June_2026_calendar_square.png` with a lookup against `calendar_monthly_images` keyed off `currentMonth`.
-- If no row exists for that month, hide the image block.
-- Keep the existing frosted-glass container styling.
-
-## Out of scope
-- Per-tenant calendar images (platform-wide only for now).
-- Scheduling/auto-rotation.
-- The legacy `/images/April_2026_calendar_square.png` and `June_2026_calendar_square.png` files stay in `/public` as fallbacks; can be removed after the first DB-backed upload.
+Vite already hashes chunk filenames; the root cause is that the user's tab is older than the latest deploy. Auto-reload on chunk error is the standard, low-risk fix used across the React ecosystem.
