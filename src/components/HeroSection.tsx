@@ -1,9 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Trophy, Zap, ArrowUp } from "lucide-react";
+import { Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
-import businessRoundtableLogo from "@/assets/business-roundtable.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeferredMount } from "@/hooks/useDeferredMount";
 
