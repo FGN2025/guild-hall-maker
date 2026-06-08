@@ -1,9 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Trophy, Zap, ArrowUp } from "lucide-react";
+import { Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import defaultLogo from "@/assets/fgn-hero-logo.png";
-import businessRoundtableLogo from "@/assets/business-roundtable.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeferredMount } from "@/hooks/useDeferredMount";
 
@@ -93,28 +92,6 @@ const HeroSection = () => {
             </Link>
           </div>
 
-          <p className="mt-6 font-bold text-foreground text-lg md:text-xl">
-            We are honored to be participating in the Skills Development Roundtable.
-          </p>
-          <a
-            href="https://www.businessroundtable.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block mt-2 hover:opacity-80 transition-opacity bg-white rounded-md p-3"
-          >
-            <img
-              src={businessRoundtableLogo}
-              alt="Business Roundtable — Celebrating America's 250th"
-              width={480}
-              height={128}
-              loading="lazy"
-              className="max-h-24 md:max-h-32 w-auto mx-auto object-contain"
-            />
-          </a>
-          <Link to="/challenges" className="flex items-center justify-center gap-2 mt-2 animate-pulse text-primary font-semibold text-lg">
-            <ArrowUp className="h-7 w-7" />
-            Click Here!
-          </Link>
         </div>
       </div>
     </section>
