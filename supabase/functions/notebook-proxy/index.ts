@@ -61,6 +61,22 @@ serve(async (req) => {
       return json({ error: "Unauthorized" }, 401);
     }
 
+    // Role check: admin or moderator only
+    const userId = claimsData.claims.sub as string;
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    const { data: roles } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (!roles?.some((r: { role: string }) => r.role === "admin" || r.role === "moderator")) {
+      return json({ error: "Forbidden" }, 403);
+    }
+
+
     const NOTEBOOK_URL = Deno.env.get("OPEN_NOTEBOOK_URL");
     const NOTEBOOK_PASS = Deno.env.get("OPEN_NOTEBOOK_PASSWORD");
 
