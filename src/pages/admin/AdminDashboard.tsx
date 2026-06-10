@@ -5,6 +5,7 @@ import { Users, Trophy, Image, BarChart3, Target, Compass, MessageSquare } from 
 import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import PrizeBudgetCard from "@/components/admin/PrizeBudgetCard";
+import PointsReconciliationCard from "@/components/admin/PointsReconciliationCard";
 
 const AdminDashboard = () => {
   usePageTitle("Admin Dashboard");
@@ -46,6 +47,7 @@ const AdminDashboard = () => {
     <div>
       <h1 className="font-display text-3xl font-bold text-foreground mb-8">Admin Dashboard</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <PointsReconciliationCard />
         <PrizeBudgetCard />
         {cards.map((c) => (
           <Link key={c.label} to={c.to}>
