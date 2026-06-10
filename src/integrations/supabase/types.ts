@@ -1642,6 +1642,57 @@ export type Database = {
         }
         Relationships: []
       }
+      match_point_awards: {
+        Row: {
+          awarded_at: string
+          awarded_by: string | null
+          id: string
+          kind: string
+          match_id: string
+          points: number
+          season_id: string | null
+          tournament_id: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          awarded_by?: string | null
+          id?: string
+          kind: string
+          match_id: string
+          points?: number
+          season_id?: string | null
+          tournament_id: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          awarded_by?: string | null
+          id?: string
+          kind?: string
+          match_id?: string
+          points?: number
+          season_id?: string | null
+          tournament_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_point_awards_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "match_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_point_awards_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_results: {
         Row: {
           completed_at: string | null
