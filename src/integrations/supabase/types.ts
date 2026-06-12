@@ -1299,6 +1299,7 @@ export type Database = {
           created_at: string
           description: string | null
           display_order: number
+          fgn_origin_game_id: string | null
           guide_content: string | null
           id: string
           is_active: boolean
@@ -1315,6 +1316,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           display_order?: number
+          fgn_origin_game_id?: string | null
           guide_content?: string | null
           id?: string
           is_active?: boolean
@@ -1331,6 +1333,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           display_order?: number
+          fgn_origin_game_id?: string | null
           guide_content?: string | null
           id?: string
           is_active?: boolean
