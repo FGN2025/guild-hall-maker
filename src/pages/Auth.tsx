@@ -24,7 +24,9 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const isInviteFlow = searchParams.get("invite") === "true";
   const inviteEmail = searchParams.get("email") || "";
+  const tenantSlugParam = searchParams.get("tenant")?.trim() || "";
   const { user, loading: authLoading, emailConfirmed } = useAuth();
+
 
   const [isLogin, setIsLogin] = useState(!isInviteFlow);
   const [email, setEmail] = useState(inviteEmail);
