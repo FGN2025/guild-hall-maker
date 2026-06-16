@@ -98,15 +98,12 @@ const ZipCheckStep = ({
         body: { code: fallbackCode.trim(), dry_run: true },
       });
       if (!tcError && tcData?.valid) {
-        if (tcData.code_type === "access") {
-          // Access code grants immediate entry
-          onProceed();
-        } else {
-          // Other types (campaign, tracking, verification, override) — allow proceed with attribution
-          onProceed();
-        }
+        // If the code is tied to a tenant, propagate the tenant_id so the user
+        // is linked to that tenant on signup even without a ZIP.
+        onProceed(tcData.tenant_id || undefined);
         return;
       }
+
 
       setFallbackError("Invalid or expired invite code.");
     } catch (err: any) {

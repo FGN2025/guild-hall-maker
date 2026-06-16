@@ -4181,7 +4181,7 @@ export type Database = {
           tenant_id: string
           updated_at: string
           user_id: string
-          zip_code: string
+          zip_code: string | null
         }
         Insert: {
           created_at?: string
@@ -4190,7 +4190,7 @@ export type Database = {
           tenant_id: string
           updated_at?: string
           user_id: string
-          zip_code: string
+          zip_code?: string | null
         }
         Update: {
           created_at?: string
@@ -4199,7 +4199,7 @@ export type Database = {
           tenant_id?: string
           updated_at?: string
           user_id?: string
-          zip_code?: string
+          zip_code?: string | null
         }
         Relationships: [
           {

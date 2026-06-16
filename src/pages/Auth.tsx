@@ -24,7 +24,9 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const isInviteFlow = searchParams.get("invite") === "true";
   const inviteEmail = searchParams.get("email") || "";
+  const tenantSlugParam = searchParams.get("tenant")?.trim() || "";
   const { user, loading: authLoading, emailConfirmed } = useAuth();
+
 
   const [isLogin, setIsLogin] = useState(!isInviteFlow);
   const [email, setEmail] = useState(inviteEmail);
@@ -50,9 +52,33 @@ const Auth = () => {
   const [bypassCode, setBypassCode] = useState("");
   const [signupStep, setSignupStep] = useState<SignupStep>(isInviteFlow ? "account" : "zip");
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
+  const [preselectedTenantName, setPreselectedTenantName] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { checkZip, loading: zipLoading, result: zipResult, reset: resetZip } = useRegistrationZipCheck();
   const displayNameStatus = useDisplayNameCheck(displayName, !isLogin && signupStep === "account" && !isInviteFlow);
+
+  // Preselect a tenant from ?tenant=<slug> and skip the ZIP step (signup only).
+  useEffect(() => {
+    if (isLogin || isInviteFlow || !tenantSlugParam) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("tenants")
+        .select("id, name, require_subscriber_validation, status")
+        .eq("slug", tenantSlugParam)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error || !data || data.status !== "active") {
+        toast.error("That provider link is no longer valid — please enter your ZIP.");
+        return;
+      }
+      setSelectedTenantId(data.id);
+      setPreselectedTenantName(data.name);
+      setSignupStep(data.require_subscriber_validation ? "subscriber-verify" : "account");
+    })();
+    return () => { cancelled = true; };
+  }, [tenantSlugParam, isLogin, isInviteFlow]);
+
 
   // Poll for email confirmation when on confirmation step
   useEffect(() => {
@@ -468,6 +494,12 @@ const Auth = () => {
           {/* Login form or signup account form */}
           {(isLogin || signupStep === "account") && (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && preselectedTenantName && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm font-body text-foreground">
+                  Signing up with <span className="font-heading font-bold text-primary">{preselectedTenantName}</span>
+                </div>
+              )}
+
               {!isLogin && !isInviteFlow && (
                 <div className="space-y-2">
                   <Label htmlFor="displayName" className="font-heading text-sm text-foreground">
