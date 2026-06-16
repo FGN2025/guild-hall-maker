@@ -187,6 +187,9 @@ const Auth = () => {
         navigate("/dashboard");
       }
     } else {
+      const providerTenantIds = !selectedTenantId && zipResult?.providers
+        ? zipResult.providers.map((p: any) => p.tenant_id)
+        : undefined;
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -195,6 +198,8 @@ const Auth = () => {
           data: {
             display_name: displayName.trim() || undefined,
             zip_code: zipCode,
+            selected_tenant_id: selectedTenantId || undefined,
+            provider_tenant_ids: providerTenantIds,
           },
         },
       });
@@ -237,29 +242,10 @@ const Auth = () => {
             // ignore — user can still manually resend from confirmation screen
           }
 
-          await supabase
-            .from("profiles")
-            .update({ zip_code: zipCode })
-            .eq("user_id", data.user.id);
-
-          // Create lead only for the selected provider (not all)
-          if (selectedTenantId) {
-            await supabase.from("user_service_interests").insert({
-              user_id: data.user.id,
-              tenant_id: selectedTenantId,
-              zip_code: zipCode,
-              status: "new",
-            });
-          } else if (zipResult?.providers && zipResult.providers.length > 0) {
-            // Bypass flow — link all providers
-            const interests = zipResult.providers.map((p) => ({
-              user_id: data.user!.id,
-              tenant_id: p.tenant_id,
-              zip_code: zipCode,
-              status: "new",
-            }));
-            await supabase.from("user_service_interests").insert(interests);
-          }
+          // NOTE: zip_code persistence and user_service_interests insert are handled
+          // server-side by the handle_new_user trigger using signUp metadata above.
+          // The client cannot reliably do these here because email confirmation
+          // is required and there is no active session post-signUp (RLS denies anon writes).
 
           // Auto-match legacy user by email
           try {
