@@ -264,14 +264,15 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         }
       }
 
-      // Award season points using tournament-configured participation points per match
+      // Per-match win/loss credit (no participation here — participation is a
+      // single per-tournament payout gated by attendance and awarded when the
+      // tournament is marked complete).
       if (winnerId) {
         const loserId = winnerId === match.player1_id ? match.player2_id : match.player1_id;
         const t = tournamentQuery.data;
-        const participationPts = t?.points_participation ?? 2;
-        // During regular matches, award participation points to both players
-        awardSeasonPoints(winnerId, loserId, participationPts, participationPts, t?.game);
+        awardSeasonPoints(winnerId, loserId, 0, 0, t?.game);
       }
+
 
       // If this was the FINAL match of a single-elimination bracket, auto-award placements
       if (winnerId && tournamentId) {
