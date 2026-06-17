@@ -61,6 +61,8 @@ const TournamentManage = () => {
     isUpdatingDetails,
     resetBracket,
     isResettingBracket,
+    setAttendance,
+    isSettingAttendance,
   } = useTournamentManagement(id);
 
   if (isLoading) {
