@@ -183,6 +183,10 @@ const TournamentManage = () => {
                 </div>
               ) : (
                 <div className="divide-y divide-border">
+                  <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground font-display flex items-center justify-between">
+                    <span>Player</span>
+                    <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> Attended</span>
+                  </div>
                   {players.map((p, idx) => (
                     <div key={p.user_id} className="flex items-center gap-3 px-4 py-3">
                       <span className="text-xs text-muted-foreground font-display w-6">{idx + 1}</span>
@@ -194,8 +198,20 @@ const TournamentManage = () => {
                           <p className="text-xs text-muted-foreground truncate">{p.display_name}</p>
                         )}
                       </div>
+                      <Checkbox
+                        checked={p.attended}
+                        disabled={isSettingAttendance}
+                        onCheckedChange={(v) =>
+                          setAttendance({ userId: p.user_id, attended: !!v })
+                        }
+                        aria-label="Mark attended"
+                      />
                     </div>
                   ))}
+                  <div className="px-4 py-2 text-[11px] text-muted-foreground/80 font-body bg-muted/20">
+                    Only players marked Attended receive participation points. Players auto-mark
+                    attended when they appear in a completed match.
+                  </div>
                 </div>
               )}
 
