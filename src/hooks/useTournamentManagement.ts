@@ -76,12 +76,13 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     queryFn: async () => {
       const { data: regs, error } = await supabase
         .from("tournament_registrations")
-        .select("user_id")
+        .select("user_id, attended")
         .eq("tournament_id", tournamentId!);
       if (error) throw error;
       if (!regs || regs.length === 0) return [] as RegisteredPlayer[];
 
       const userIds = regs.map((r) => r.user_id);
+      const attendedMap = new Map(regs.map((r: any) => [r.user_id, !!r.attended]));
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name, gamer_tag, discord_username")
@@ -91,6 +92,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         user_id: p.user_id,
         display_name: p.display_name ?? "Unknown",
         gamer_tag: p.gamer_tag,
+        attended: attendedMap.get(p.user_id) ?? false,
       })) as RegisteredPlayer[];
     },
   });
