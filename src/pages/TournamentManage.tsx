@@ -181,6 +181,20 @@ const TournamentManage = () => {
           </div>
         </div>
 
+        {missingPlacements && (
+          <div className="mb-6 rounded-xl border border-warning/40 bg-warning/10 p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-warning mt-0.5 shrink-0" />
+            <div className="flex-1 text-sm">
+              <p className="font-heading font-semibold text-warning">Placement points not awarded</p>
+              <p className="text-muted-foreground font-body mt-1">
+                This tournament is marked complete but no 1st / 2nd / 3rd placements have been
+                recorded. Open the admin or moderator tournaments page and use the Placement
+                Validator Panel to award placement points.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Players */}
           <div className="lg:col-span-1">
