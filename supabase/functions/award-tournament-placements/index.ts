@@ -39,13 +39,13 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { tournament_id, first_id, second_id, third_id, dry_run } = body ?? {};
+    const { tournament_id, first_id, second_id, third_id, dry_run, skip_participation, participation_only } = body ?? {};
     if (!tournament_id) return json({ error: "tournament_id required" }, 400);
 
     // Load tournament
     const { data: tournament, error: tErr } = await admin
       .from("tournaments")
-      .select("id, name, game, format, status, points_first, points_second, points_third, achievement_id")
+      .select("id, name, game, format, status, points_first, points_second, points_third, points_participation, achievement_id")
       .eq("id", tournament_id)
       .maybeSingle();
     if (tErr || !tournament) return json({ error: "Tournament not found" }, 404);
