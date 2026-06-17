@@ -1102,6 +1102,7 @@ export type Database = {
       discord_send_log: {
         Row: {
           created_at: string
+          data: Json | null
           error_message: string | null
           http_status: number | null
           id: string
@@ -1109,12 +1110,14 @@ export type Database = {
           purpose: string
           route_id: string | null
           status: string
+          template: string | null
           tenant_id: string | null
           transport: string | null
           webhook_id: string | null
         }
         Insert: {
           created_at?: string
+          data?: Json | null
           error_message?: string | null
           http_status?: number | null
           id?: string
@@ -1122,12 +1125,14 @@ export type Database = {
           purpose: string
           route_id?: string | null
           status: string
+          template?: string | null
           tenant_id?: string | null
           transport?: string | null
           webhook_id?: string | null
         }
         Update: {
           created_at?: string
+          data?: Json | null
           error_message?: string | null
           http_status?: number | null
           id?: string
@@ -1135,6 +1140,7 @@ export type Database = {
           purpose?: string
           route_id?: string | null
           status?: string
+          template?: string | null
           tenant_id?: string | null
           transport?: string | null
           webhook_id?: string | null
@@ -2943,8 +2949,10 @@ export type Database = {
       scheduled_posts: {
         Row: {
           caption: string | null
-          connection_id: string
+          connection_id: string | null
           created_at: string | null
+          discord_purpose: string | null
+          discord_tenant_id: string | null
           error_message: string | null
           id: string
           image_url: string
@@ -2958,8 +2966,10 @@ export type Database = {
         }
         Insert: {
           caption?: string | null
-          connection_id: string
+          connection_id?: string | null
           created_at?: string | null
+          discord_purpose?: string | null
+          discord_tenant_id?: string | null
           error_message?: string | null
           id?: string
           image_url: string
@@ -2973,8 +2983,10 @@ export type Database = {
         }
         Update: {
           caption?: string | null
-          connection_id?: string
+          connection_id?: string | null
           created_at?: string | null
+          discord_purpose?: string | null
+          discord_tenant_id?: string | null
           error_message?: string | null
           id?: string
           image_url?: string
@@ -2999,6 +3011,13 @@ export type Database = {
             columns: ["connection_id"]
             isOneToOne: false
             referencedRelation: "social_connections_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_posts_discord_tenant_id_fkey"
+            columns: ["discord_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
