@@ -68,13 +68,19 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
     },
   });
 
+  const [dragOver, setDragOver] = useState(false);
+  const acceptImageFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const valid = await validateAndToast(file, getPreset("cardCover"));
+    if (!valid) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const valid = await validateAndToast(file, getPreset("cardCover"));
-    if (!valid) { e.target.value = ""; return; }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    await acceptImageFile(file);
+    e.target.value = "";
   };
 
   const createMutation = useMutation({
@@ -259,22 +265,35 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
 
           <div className="space-y-2">
             <Label>Cover Image</Label>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-card text-sm font-heading text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                <Upload className="h-4 w-4" />
-                {imageFile ? imageFile.name : "Upload image"}
-                <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-              </label>
-              <Button
-                type="button" variant="outline" size="sm"
-                className="font-heading gap-2 border-primary/30 text-primary hover:bg-primary/10"
-                onClick={() => setMediaPickerOpen(true)}
-              >
-                <ImageIcon className="h-4 w-4" /> Media Library
-              </Button>
-              {imagePreview && (
-                <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover border border-border" />
-              )}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={async (e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) await acceptImageFile(file);
+              }}
+              className={`rounded-md border-2 border-dashed p-3 transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-border"}`}
+            >
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-card text-sm font-heading text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                  <Upload className="h-4 w-4" />
+                  {imageFile ? imageFile.name : "Upload image"}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                </label>
+                <Button
+                  type="button" variant="outline" size="sm"
+                  className="font-heading gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                  onClick={() => setMediaPickerOpen(true)}
+                >
+                  <ImageIcon className="h-4 w-4" /> Media Library
+                </Button>
+                {imagePreview && (
+                  <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover border border-border" />
+                )}
+                <span className="text-xs text-muted-foreground ml-auto">or drag & drop an image here</span>
+              </div>
             </div>
             <MediaPickerDialog
               open={mediaPickerOpen}
