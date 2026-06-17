@@ -274,24 +274,30 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       }
 
 
-      // If this was the FINAL match of a single-elimination bracket, auto-award placements
+      // When the final match completes (any format), trigger the award function.
+      // - Single-elimination auto-resolves 1st/2nd/3rd from the bracket.
+      // - Other formats skip placements (moderator enters them via the
+      //   Placement Validator Panel) but participation is paid out once per
+      //   attended player regardless.
       if (winnerId && tournamentId) {
         const allMatches = matchesQuery.data ?? [];
         const maxRound = Math.max(...allMatches.map((m) => m.round));
         const t = tournamentQuery.data;
         const isSingleElim = (t?.format ?? "").toLowerCase().includes("single");
-        if (match.round === maxRound && isSingleElim) {
+        if (match.round === maxRound) {
           try {
             const { error: pErr } = await supabase.functions.invoke("award-tournament-placements", {
-              body: { tournament_id: tournamentId },
+              body: { tournament_id: tournamentId, participation_only: !isSingleElim },
             });
-            if (pErr) console.error("Placement award failed:", pErr);
-            else toast.success("Placement points awarded (1st / 2nd / 3rd)");
+            if (pErr) console.error("Placement/participation award failed:", pErr);
+            else if (isSingleElim) toast.success("Placement & participation points awarded");
+            else toast.success("Participation points awarded — enter placements in the validator panel");
           } catch (err) {
             console.error("Placement award error:", err);
           }
         }
       }
+
 
       // Send score posted email
       if (tournamentId) {
