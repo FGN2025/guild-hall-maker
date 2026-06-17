@@ -445,6 +445,10 @@ const AdminEcosystem = () => {
       {/* Discord Channel Webhooks */}
       <DiscordWebhookManager />
 
+      {/* Discord Bot Channel Routes */}
+      <DiscordChannelRouteManager />
+
+
       {/* Discord Role Mappings */}
       <div className="glass-panel rounded-xl border border-border/50 p-6">
         <DiscordRoleManager />
