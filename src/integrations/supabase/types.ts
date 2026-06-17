@@ -978,6 +978,50 @@ export type Database = {
         }
         Relationships: []
       }
+      discord_channel_webhooks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          purpose: string
+          tenant_id: string | null
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          purpose: string
+          tenant_id?: string | null
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          purpose?: string
+          tenant_id?: string | null
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_channel_webhooks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discord_role_mappings: {
         Row: {
           condition_value: string | null
@@ -1010,6 +1054,50 @@ export type Database = {
           trigger_condition?: Database["public"]["Enums"]["discord_role_trigger"]
         }
         Relationships: []
+      }
+      discord_send_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          http_status: number | null
+          id: string
+          payload_preview: string | null
+          purpose: string
+          status: string
+          tenant_id: string | null
+          webhook_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          payload_preview?: string | null
+          purpose: string
+          status: string
+          tenant_id?: string | null
+          webhook_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          payload_preview?: string | null
+          purpose?: string
+          status?: string
+          tenant_id?: string | null
+          webhook_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_send_log_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "discord_channel_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ecosystem_auth_tokens: {
         Row: {
@@ -4685,6 +4773,15 @@ export type Database = {
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
+      }
+      dispatch_discord_message: {
+        Args: {
+          _data: Json
+          _purpose: string
+          _template: string
+          _tenant_id: string
+        }
+        Returns: undefined
       }
       enqueue_academy_achievement_sync: {
         Args: { _achievement_id: string; _user_id: string }
