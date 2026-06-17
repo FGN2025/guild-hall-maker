@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, since, user_id, limit: queryLimit } = body;
+    const { action, since, user_id, limit: queryLimit, include_inactive } = body;
     const rowLimit = Math.min(queryLimit || 100, 500);
 
     let result: any = null;
@@ -99,10 +99,10 @@ Deno.serve(async (req) => {
       case "challenges": {
         let q = adminClient
           .from("challenges")
-          .select("id, name, description, game_id, challenge_type, difficulty, points_reward, estimated_minutes, start_date, end_date, requires_evidence, cover_image_url, created_at, updated_at, games(name)")
-          .eq("is_active", true)
+          .select("id, name, description, game_id, challenge_type, difficulty, points_reward, estimated_minutes, start_date, end_date, requires_evidence, cover_image_url, is_active, is_featured, created_at, updated_at, games(name)")
           .order("created_at", { ascending: false })
           .limit(rowLimit);
+        if (!include_inactive) q = q.eq("is_active", true);
         if (since) q = q.gte("updated_at", since);
         const { data, error } = await q;
         if (error) throw error;
