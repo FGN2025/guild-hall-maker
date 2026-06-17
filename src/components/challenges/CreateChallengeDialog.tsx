@@ -68,13 +68,19 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
     },
   });
 
+  const [dragOver, setDragOver] = useState(false);
+  const acceptImageFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const valid = await validateAndToast(file, getPreset("cardCover"));
+    if (!valid) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const valid = await validateAndToast(file, getPreset("cardCover"));
-    if (!valid) { e.target.value = ""; return; }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    await acceptImageFile(file);
+    e.target.value = "";
   };
 
   const createMutation = useMutation({
