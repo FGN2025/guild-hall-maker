@@ -45,28 +45,58 @@ Deno.serve(async (req) => {
 
     for (const post of duePosts) {
       try {
-        // Call publish-to-social for each post
-        const publishRes = await fetch(`${supabaseUrl}/functions/v1/publish-to-social`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serviceKey}`,
-          },
-          body: JSON.stringify({
-            connection_id: post.connection_id,
-            image_url: post.image_url,
-            caption: post.caption,
-            scheduled_post_id: post.id,
-          }),
-        });
+        let publishRes: Response;
+
+        if (post.platform === "discord") {
+          // Discord pipeline: dispatch via discord-send-message.
+          publishRes = await fetch(`${supabaseUrl}/functions/v1/discord-send-message`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              purpose: post.discord_purpose || "scheduled_post",
+              tenant_id: post.discord_tenant_id || post.tenant_id,
+              content: post.caption,
+              embeds: post.image_url
+                ? [{ image: { url: post.image_url } }]
+                : undefined,
+            }),
+          });
+        } else {
+          publishRes = await fetch(`${supabaseUrl}/functions/v1/publish-to-social`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              connection_id: post.connection_id,
+              image_url: post.image_url,
+              caption: post.caption,
+              scheduled_post_id: post.id,
+            }),
+          });
+        }
 
         if (publishRes.ok) {
+          if (post.platform === "discord") {
+            await supabase
+              .from("scheduled_posts")
+              .update({ status: "published", published_at: new Date().toISOString() })
+              .eq("id", post.id);
+          }
           processed++;
         } else {
+          const errText = await publishRes.text().catch(() => "");
+          await supabase
+            .from("scheduled_posts")
+            .update({ status: "failed", error_message: `HTTP ${publishRes.status}: ${errText.slice(0, 500)}` })
+            .eq("id", post.id);
           failed++;
         }
       } catch (e) {
-        // Mark as failed
         await supabase
           .from("scheduled_posts")
           .update({
@@ -77,6 +107,7 @@ Deno.serve(async (req) => {
         failed++;
       }
     }
+
 
     return new Response(
       JSON.stringify({ processed, failed, total: duePosts.length }),

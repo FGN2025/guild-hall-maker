@@ -26,6 +26,9 @@ interface SendLog {
   http_status: number | null;
   error_message: string | null;
   created_at: string;
+  template: string | null;
+  data: any | null;
+  tenant_id: string | null;
 }
 
 const PURPOSES = [
@@ -118,6 +121,19 @@ const DiscordWebhookManager = () => {
     }
   };
 
+  const retry = async (log: SendLog) => {
+    const { data, error } = await supabase.functions.invoke("discord-send-message", {
+      body: {
+        purpose: log.purpose,
+        tenant_id: log.tenant_id,
+        template: log.template ?? undefined,
+        data: log.data ?? undefined,
+      },
+    });
+    if (error) toast({ title: "Retry failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Retried", description: `Dispatched: ${(data as any)?.dispatched ?? 0}` }); fetchAll(); }
+  };
+
   return (
     <div className="rounded-lg border border-border bg-card p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -191,6 +207,11 @@ const DiscordWebhookManager = () => {
                 {log.error_message && <span className="text-destructive truncate max-w-[280px]">{log.error_message}</span>}
                 <span className="flex-1" />
                 <span className="text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
+                {log.status === "failed" && log.template && (
+                  <Button size="icon" variant="ghost" onClick={() => retry(log)} title="Retry">
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
