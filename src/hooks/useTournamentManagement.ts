@@ -471,6 +471,26 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     };
   }, [tournamentId, queryClient]);
 
+  const setAttendanceMutation = useMutation({
+    mutationFn: async ({ userId, attended }: { userId: string; attended: boolean }) => {
+      if (!tournamentId) throw new Error("No tournament");
+      const { error } = await supabase
+        .from("tournament_registrations")
+        .update({
+          attended,
+          checked_in_at: attended ? new Date().toISOString() : null,
+          checked_in_by: attended ? user?.id ?? null : null,
+        })
+        .eq("tournament_id", tournamentId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["manage-players", tournamentId] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to update attendance"),
+  });
+
   return {
     tournament: tournamentQuery.data ?? null,
     players: playersQuery.data ?? [],
@@ -487,5 +507,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     isUpdatingDetails: updateDetailsMutation.isPending,
     resetBracket: resetBracketMutation.mutate,
     isResettingBracket: resetBracketMutation.isPending,
+    setAttendance: setAttendanceMutation.mutate,
+    isSettingAttendance: setAttendanceMutation.isPending,
   };
 };
