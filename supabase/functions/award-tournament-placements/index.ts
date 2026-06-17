@@ -39,13 +39,13 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { tournament_id, first_id, second_id, third_id, dry_run } = body ?? {};
+    const { tournament_id, first_id, second_id, third_id, dry_run, skip_participation, participation_only } = body ?? {};
     if (!tournament_id) return json({ error: "tournament_id required" }, 400);
 
     // Load tournament
     const { data: tournament, error: tErr } = await admin
       .from("tournaments")
-      .select("id, name, game, format, status, points_first, points_second, points_third, achievement_id")
+      .select("id, name, game, format, status, points_first, points_second, points_third, points_participation, achievement_id")
       .eq("id", tournament_id)
       .maybeSingle();
     if (tErr || !tournament) return json({ error: "Tournament not found" }, 404);
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       { place: 3, user_id: thirdId },
     ].filter((p) => !!p.user_id) as PlaceInput[];
 
-    if (placements.length === 0) {
+    if (placements.length === 0 && !participation_only) {
       return json({ success: false, message: "No placements resolved", awarded: [] });
     }
 
@@ -171,11 +171,76 @@ Deno.serve(async (req) => {
       awarded.push({ place: p.place, user_id: p.user_id, points: pts, id: ins?.id });
     }
 
-    if (tournament.status !== "completed") {
+
+    // ── Participation payout: once per attended player ──
+    const participation: any[] = [];
+    if (!skip_participation) {
+      const partPts = tournament.points_participation ?? 0;
+      const { data: attendees } = await admin
+        .from("tournament_registrations")
+        .select("user_id")
+        .eq("tournament_id", tournament_id)
+        .eq("attended", true);
+
+      for (const a of attendees ?? []) {
+        if (!a.user_id) continue;
+        // Idempotent insert via partial unique index (kind='participation')
+        const { error: insErr } = await admin
+          .from("match_point_awards")
+          .insert({
+            tournament_id,
+            match_id: null,
+            user_id: a.user_id,
+            kind: "participation",
+            points: partPts,
+            season_id: season.id,
+            awarded_by: callerId,
+          });
+
+        if (insErr) {
+          if ((insErr as any).code === "23505") {
+            participation.push({ user_id: a.user_id, points: partPts, status: "already_awarded" });
+            continue;
+          }
+          participation.push({ user_id: a.user_id, points: partPts, status: "error", error: insErr.message });
+          continue;
+        }
+
+        if (partPts > 0) {
+          const { data: existingScore } = await admin
+            .from("season_scores")
+            .select("id, points, points_available")
+            .eq("season_id", season.id)
+            .eq("user_id", a.user_id)
+            .maybeSingle();
+
+          if (existingScore) {
+            await admin
+              .from("season_scores")
+              .update({
+                points: (existingScore.points ?? 0) + partPts,
+                points_available: (existingScore.points_available ?? 0) + partPts,
+              })
+              .eq("id", existingScore.id);
+          } else {
+            await admin.from("season_scores").insert({
+              season_id: season.id,
+              user_id: a.user_id,
+              points: partPts,
+              points_available: partPts,
+            });
+          }
+        }
+
+        participation.push({ user_id: a.user_id, points: partPts, status: "awarded" });
+      }
+    }
+
+    if (tournament.status !== "completed" && !participation_only) {
       await admin.from("tournaments").update({ status: "completed" }).eq("id", tournament_id);
     }
 
-    return json({ success: true, awarded, skipped, season_id: season.id });
+    return json({ success: true, awarded, skipped, participation, season_id: season.id });
   } catch (err) {
     console.error("award-tournament-placements error:", err);
     return json({ error: (err as Error).message }, 500);

@@ -1651,7 +1651,7 @@ export type Database = {
           awarded_by: string | null
           id: string
           kind: string
-          match_id: string
+          match_id: string | null
           points: number
           season_id: string | null
           tournament_id: string
@@ -1662,7 +1662,7 @@ export type Database = {
           awarded_by?: string | null
           id?: string
           kind: string
-          match_id: string
+          match_id?: string | null
           points?: number
           season_id?: string | null
           tournament_id: string
@@ -1673,7 +1673,7 @@ export type Database = {
           awarded_by?: string | null
           id?: string
           kind?: string
-          match_id?: string
+          match_id?: string | null
           points?: number
           season_id?: string | null
           tournament_id?: string
@@ -3998,6 +3998,9 @@ export type Database = {
       }
       tournament_registrations: {
         Row: {
+          attended: boolean
+          checked_in_at: string | null
+          checked_in_by: string | null
           id: string
           registered_at: string
           status: string
@@ -4005,6 +4008,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attended?: boolean
+          checked_in_at?: string | null
+          checked_in_by?: string | null
           id?: string
           registered_at?: string
           status?: string
@@ -4012,6 +4018,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attended?: boolean
+          checked_in_at?: string | null
+          checked_in_by?: string | null
           id?: string
           registered_at?: string
           status?: string

@@ -35,6 +35,7 @@ export interface RegisteredPlayer {
   user_id: string;
   display_name: string;
   gamer_tag: string | null;
+  attended: boolean;
 }
 
 export interface ManageMatch {
@@ -75,12 +76,13 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     queryFn: async () => {
       const { data: regs, error } = await supabase
         .from("tournament_registrations")
-        .select("user_id")
+        .select("user_id, attended")
         .eq("tournament_id", tournamentId!);
       if (error) throw error;
       if (!regs || regs.length === 0) return [] as RegisteredPlayer[];
 
       const userIds = regs.map((r) => r.user_id);
+      const attendedMap = new Map(regs.map((r: any) => [r.user_id, !!r.attended]));
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name, gamer_tag, discord_username")
@@ -90,6 +92,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         user_id: p.user_id,
         display_name: p.display_name ?? "Unknown",
         gamer_tag: p.gamer_tag,
+        attended: attendedMap.get(p.user_id) ?? false,
       })) as RegisteredPlayer[];
     },
   });
@@ -264,33 +267,40 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         }
       }
 
-      // Award season points using tournament-configured participation points per match
+      // Per-match win/loss credit (no participation here — participation is a
+      // single per-tournament payout gated by attendance and awarded when the
+      // tournament is marked complete).
       if (winnerId) {
         const loserId = winnerId === match.player1_id ? match.player2_id : match.player1_id;
         const t = tournamentQuery.data;
-        const participationPts = t?.points_participation ?? 2;
-        // During regular matches, award participation points to both players
-        awardSeasonPoints(winnerId, loserId, participationPts, participationPts, t?.game);
+        awardSeasonPoints(winnerId, loserId, 0, 0, t?.game);
       }
 
-      // If this was the FINAL match of a single-elimination bracket, auto-award placements
+
+      // When the final match completes (any format), trigger the award function.
+      // - Single-elimination auto-resolves 1st/2nd/3rd from the bracket.
+      // - Other formats skip placements (moderator enters them via the
+      //   Placement Validator Panel) but participation is paid out once per
+      //   attended player regardless.
       if (winnerId && tournamentId) {
         const allMatches = matchesQuery.data ?? [];
         const maxRound = Math.max(...allMatches.map((m) => m.round));
         const t = tournamentQuery.data;
         const isSingleElim = (t?.format ?? "").toLowerCase().includes("single");
-        if (match.round === maxRound && isSingleElim) {
+        if (match.round === maxRound) {
           try {
             const { error: pErr } = await supabase.functions.invoke("award-tournament-placements", {
-              body: { tournament_id: tournamentId },
+              body: { tournament_id: tournamentId, participation_only: !isSingleElim },
             });
-            if (pErr) console.error("Placement award failed:", pErr);
-            else toast.success("Placement points awarded (1st / 2nd / 3rd)");
+            if (pErr) console.error("Placement/participation award failed:", pErr);
+            else if (isSingleElim) toast.success("Placement & participation points awarded");
+            else toast.success("Participation points awarded — enter placements in the validator panel");
           } catch (err) {
             console.error("Placement award error:", err);
           }
         }
       }
+
 
       // Send score posted email
       if (tournamentId) {
@@ -461,6 +471,26 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     };
   }, [tournamentId, queryClient]);
 
+  const setAttendanceMutation = useMutation({
+    mutationFn: async ({ userId, attended }: { userId: string; attended: boolean }) => {
+      if (!tournamentId) throw new Error("No tournament");
+      const { error } = await supabase
+        .from("tournament_registrations")
+        .update({
+          attended,
+          checked_in_at: attended ? new Date().toISOString() : null,
+          checked_in_by: attended ? user?.id ?? null : null,
+        })
+        .eq("tournament_id", tournamentId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["manage-players", tournamentId] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to update attendance"),
+  });
+
   return {
     tournament: tournamentQuery.data ?? null,
     players: playersQuery.data ?? [],
@@ -477,5 +507,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     isUpdatingDetails: updateDetailsMutation.isPending,
     resetBracket: resetBracketMutation.mutate,
     isResettingBracket: resetBracketMutation.isPending,
+    setAttendance: setAttendanceMutation.mutate,
+    isSettingAttendance: setAttendanceMutation.isPending,
   };
 };

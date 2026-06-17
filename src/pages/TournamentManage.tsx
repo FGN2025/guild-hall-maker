@@ -1,6 +1,8 @@
 import { useState } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 import { useTournamentManagement, ManageMatch } from "@/hooks/useTournamentManagement";
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,10 @@ import {
   Settings,
   ShieldAlert,
   RotateCcw,
+  UserCheck,
+  AlertTriangle,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import EditTournamentDialog from "@/components/tournaments/EditTournamentDialog";
 
@@ -61,6 +66,8 @@ const TournamentManage = () => {
     isUpdatingDetails,
     resetBracket,
     isResettingBracket,
+    setAttendance,
+    isSettingAttendance,
   } = useTournamentManagement(id);
 
   if (isLoading) {
@@ -99,6 +106,21 @@ const TournamentManage = () => {
     acc[m.round].push(m);
     return acc;
   }, {});
+
+  const { data: placementCount = 0 } = useQuery({
+    queryKey: ["tournament-placement-count", id],
+    enabled: !!id && tournament?.status === "completed",
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("tournament_placements")
+        .select("id", { count: "exact", head: true })
+        .eq("tournament_id", id!);
+      return count ?? 0;
+    },
+  });
+  const missingPlacements = tournament?.status === "completed" && placementCount === 0;
+
+
 
   return (
     <div className="min-h-screen bg-background grid-bg">
@@ -159,6 +181,20 @@ const TournamentManage = () => {
           </div>
         </div>
 
+        {missingPlacements && (
+          <div className="mb-6 rounded-xl border border-warning/40 bg-warning/10 p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-warning mt-0.5 shrink-0" />
+            <div className="flex-1 text-sm">
+              <p className="font-heading font-semibold text-warning">Placement points not awarded</p>
+              <p className="text-muted-foreground font-body mt-1">
+                This tournament is marked complete but no 1st / 2nd / 3rd placements have been
+                recorded. Open the admin or moderator tournaments page and use the Placement
+                Validator Panel to award placement points.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Players */}
           <div className="lg:col-span-1">
@@ -178,6 +214,10 @@ const TournamentManage = () => {
                 </div>
               ) : (
                 <div className="divide-y divide-border">
+                  <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground font-display flex items-center justify-between">
+                    <span>Player</span>
+                    <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> Attended</span>
+                  </div>
                   {players.map((p, idx) => (
                     <div key={p.user_id} className="flex items-center gap-3 px-4 py-3">
                       <span className="text-xs text-muted-foreground font-display w-6">{idx + 1}</span>
@@ -189,8 +229,20 @@ const TournamentManage = () => {
                           <p className="text-xs text-muted-foreground truncate">{p.display_name}</p>
                         )}
                       </div>
+                      <Checkbox
+                        checked={p.attended}
+                        disabled={isSettingAttendance}
+                        onCheckedChange={(v) =>
+                          setAttendance({ userId: p.user_id, attended: !!v })
+                        }
+                        aria-label="Mark attended"
+                      />
                     </div>
                   ))}
+                  <div className="px-4 py-2 text-[11px] text-muted-foreground/80 font-body bg-muted/20">
+                    Only players marked Attended receive participation points. Players auto-mark
+                    attended when they appear in a completed match.
+                  </div>
                 </div>
               )}
 
