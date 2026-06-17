@@ -1,0 +1,1 @@
+ALTER TABLE public.match_point_awards ALTER COLUMN match_id DROP NOT NULL;

@@ -1651,7 +1651,7 @@ export type Database = {
           awarded_by: string | null
           id: string
           kind: string
-          match_id: string
+          match_id: string | null
           points: number
           season_id: string | null
           tournament_id: string
@@ -1662,7 +1662,7 @@ export type Database = {
           awarded_by?: string | null
           id?: string
           kind: string
-          match_id: string
+          match_id?: string | null
           points?: number
           season_id?: string | null
           tournament_id: string
@@ -1673,7 +1673,7 @@ export type Database = {
           awarded_by?: string | null
           id?: string
           kind?: string
-          match_id?: string
+          match_id?: string | null
           points?: number
           season_id?: string | null
           tournament_id?: string
