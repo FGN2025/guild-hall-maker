@@ -29,7 +29,10 @@ import {
   Settings,
   ShieldAlert,
   RotateCcw,
+  UserCheck,
+  AlertTriangle,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import EditTournamentDialog from "@/components/tournaments/EditTournamentDialog";
 
