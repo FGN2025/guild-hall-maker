@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import DiscordRoleManager from "@/components/admin/DiscordRoleManager";
+import DiscordWebhookManager from "@/components/admin/DiscordWebhookManager";
 import EcosystemSyncHealth from "@/components/admin/EcosystemSyncHealth";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -439,6 +440,9 @@ const AdminEcosystem = () => {
           </div>
         )}
       </div>
+
+      {/* Discord Channel Webhooks */}
+      <DiscordWebhookManager />
 
       {/* Discord Role Mappings */}
       <div className="glass-panel rounded-xl border border-border/50 p-6">
