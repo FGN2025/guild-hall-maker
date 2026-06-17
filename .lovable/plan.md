@@ -1,68 +1,97 @@
-# Tournament Points: Diagnosis + Fix Plan
+# Discord Integration Assessment & Gap Report
 
-## What's actually happening (DB evidence)
+## 1. What's Built Today
 
-I checked the live `tournaments` table for completed events. Two distinct problems are visible:
+The platform's Discord integration is **identity- and role-centric only**. It uses the Discord REST API directly with a bot token — no webhooks, no channel messaging, no bidirectional sync.
 
-| Tournament | Format | 1st / 2nd / 3rd configured | Placement rows recorded |
-|---|---|---|---|
-| Mario Kart World – Mar 10 | single_elimination | 10 / 5 / 3 | **0** |
-| Fortnite Solo / No Build | battle_royale | 15 / 10 / 8 | **0** |
-| Marvel Rivals Game Night – Mar 12 | swiss | 10 / 5 / 3 | **0** |
-| Forza 6 | single_elimination | 0 / 0 / 0 | 2 (worth 0 pts) |
-| Minecraft – May 5 | single_elimination | 0 / 0 / 0 | 2 (worth 0 pts) |
+### Identity / Linking
+- `discord-oauth-callback` edge function — OAuth2 `identify` scope only. Writes `discord_id`, `discord_username`, `discord_avatar`, `discord_linked_at` to `profiles`.
+- `LinkDiscord.tsx` page + `useDiscordClientId` hook (client ID stored in `app_settings`).
+- `discord_bypass_requests` table + `AdminDiscordBypass` page for users who can't link (manual admin approval).
+- `discord_role_mappings` table — maps platform triggers (`on_link`, `on_achievement`, `on_rank`, `on_tournament_win`, `manual`) to Discord guild roles.
 
-So placement points fail for two reasons:
+### Server Role Management
+- `discord-server-roles` edge function — admin-only, lists guild roles via `GET /guilds/{id}/roles`.
+- `assign-tournament-role` edge function — assigns a configured `tournaments.discord_role_id` to a registered user via `PUT /guilds/{id}/members/{user}/roles/{role}`.
+- `DiscordRoleManager` admin UI for mapping rules.
 
-1. **Auto-award only runs for `single_elimination`.** In `useTournamentManagement.ts` (final-match handler) we only invoke `award-tournament-placements` when the format includes "single". Battle royale, swiss, round robin, etc. never trigger it — moderators have to remember to open the Placement Validator Panel, and several haven't.
-2. **Some tournaments were created with `points_first/second/third = 0`.** Forza and Minecraft were saved that way, so even the placements that *were* recorded credited 0 points to `season_scores`. The award function does its job; the config is empty.
+### Secrets in Use
+- `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `discord_client_id` (app_settings), Discord OAuth client secret (env).
 
-Participation points, on the other hand, are firing on **every completed match** for **both players** (`useTournamentManagement.ts` line ~272, plus the reconciler backfill on `match_point_awards`). That's why players see participation but no placement — participation is being over-paid per match, placement is being under-paid (or never paid) per tournament.
+### Scope of OAuth Token
+- `scope=identify` only. **No `guilds`, `guilds.members.read`, `messages.read`, `webhook.incoming`, `bot`, or `applications.commands`.**
 
-## What we'll change
+## 2. What's Missing — Gap Analysis for "Sharing Info to the FGN Discord Channel"
 
-### 1. Make placement-award the default for all formats
-- In `useTournamentManagement`, when the **tournament status flips to `completed`** (not when a match score is saved), invoke `award-tournament-placements` regardless of format. Existing auto-detect already only fills 1st/2nd/3rd from a single-elim bracket; other formats require the validator panel to be opened by a moderator, but at minimum the function call happens and surfaces a toast prompt if placements aren't resolved.
-- Add a visible banner on `TournamentManage` for any **completed** tournament that has 0 rows in `tournament_placements`, linking straight to the Placement Validator Panel. Moderators stop forgetting.
-- Add a one-time backfill script for the three tournaments above that have proper point values but no placement rows (Mario Kart, Fortnite, Marvel Rivals): admin clicks a "Backfill placements" action in the validator panel, picks winners, function does the rest. No silent data writes.
+There is currently **zero outbound channel communication**. Every Discord-facing feature mutates a member or reads roles; nothing posts content to a channel.
 
-### 2. Flag zero-point tournaments at creation/edit
-- In `CreateTournamentDialog` / `EditTournamentDialog`, warn if `points_first = 0` while the tournament is being saved as anything other than a casual/exhibition. This prevents future Forza/Minecraft situations.
+### Gap A — No channel-posting capability
+- No usage of `POST /channels/{id}/messages`.
+- No Discord webhook URL stored anywhere (no `DISCORD_WEBHOOK_*` secret, no `webhooks` table).
+- No embed builder, no attachment uploader, no rate-limit handler.
 
-### 3. Tie participation points to attendance, not registration
-- **Schema migration** on `tournament_registrations`:
-  - Add `attended boolean NOT NULL DEFAULT false`
-  - Add `checked_in_at timestamptz`
-  - Add `checked_in_by uuid` (moderator who marked them)
-- **Auto-attendance**: when a player appears as `player1_id` or `player2_id` in any `match_results` row for that tournament with `status='completed'`, mark them attended. Implement as a trigger on `match_results` so it stays in sync.
-- **Manual check-in**: add an "Attendance" column to the Registered Players list in `TournamentManage` with a toggle per row for formats where matches don't exist (battle royale standings imported manually, etc.).
-- **Stop per-match participation payout**: remove the `awardSeasonPoints(winnerId, loserId, participationPts, participationPts, ...)` call from the match-completion handler. Win/loss credits stay (those track record). Participation moves to a single payout.
-- **New single payout**: when the tournament transitions to `completed`, the `award-tournament-placements` function (extended) loops over `tournament_registrations` where `attended = true`, and writes exactly one `match_point_awards`-equivalent row per attended player with `kind = 'participation'` and `points = tournaments.points_participation`, then credits `season_scores`. Idempotent via a unique index `(tournament_id, user_id, kind='participation')`.
-- **Reconciler update**: `reconcile-tournament-points` switches from "credit participation per match" to "credit participation once per attended player per tournament". Same idempotency key.
+### Gap B — No event → Discord publishing pipeline
+Platform events that *should* trigger Discord posts but currently don't:
+- Tournament created / bracket published / round advanced / winner crowned
+- Tenant event published (`tenant_events`)
+- Featured event / challenge / quest launched
+- Prize redemption claimed
+- Leaderboard weekly/seasonal recap
+- New achievement earned (community-visible only)
+- Forum `community_posts` with `category = 'Announcement'`
+- Marketing scheduled posts (`scheduled_posts` only targets social, not Discord)
 
-### 4. Backfill existing data safely
-- One-off SQL (run as a migration): for every completed tournament, mark `attended = true` on any registration whose `user_id` appears in a completed match for that tournament. No new credits issued yet.
-- Then surface a "Reconcile points" button in the admin tournaments page that calls the existing `reconcile-tournament-points` function in `dry_run` mode first, shows the diff, and only commits on confirmation. Avoids silently double-paying anyone.
+### Gap C — No channel routing or per-tenant channel config
+- No table mapping `tenant_id` / event-type → Discord channel ID or webhook URL.
+- Single-guild assumption baked in (`DISCORD_GUILD_ID` is a single env var); multi-tenant tenants on their own Discord servers are not supported.
 
-## Technical notes (for devs)
+### Gap D — No interactive / inbound Discord features
+- No slash commands (`/leaderboard`, `/register`, `/challenge`).
+- No interactions endpoint (would need `applications.commands` scope + signature verification).
+- No gateway listener / bot worker (Deno edge functions are stateless — would require Cloudflare Worker, external service, or polling).
+- No DM delivery for notifications (would need `bot` scope and `users/@me/channels`).
 
-- Auto-award trigger point moves from `updateMatchScore` mutation to a new `useEffect`/server-side hook that watches `tournaments.status -> 'completed'`. Easiest: fire from the existing "Mark tournament complete" action in `TournamentManage` plus the final-match-of-single-elim path (kept as a convenience).
-- Attendance trigger:
-  ```sql
-  CREATE OR REPLACE FUNCTION public.mark_attended_from_match() RETURNS trigger ...
-    UPDATE tournament_registrations SET attended=true, checked_in_at=now()
-    WHERE tournament_id = NEW.tournament_id
-      AND user_id IN (NEW.player1_id, NEW.player2_id)
-      AND attended = false;
-  ```
-- Unique index for participation idempotency:
-  ```sql
-  CREATE UNIQUE INDEX match_point_awards_participation_uniq
-    ON match_point_awards (tournament_id, user_id)
-    WHERE kind = 'participation';
-  ```
-- All RLS already allows mods/admins to update `tournament_registrations`; no policy changes needed for attendance toggle.
+### Gap E — Gateway / connector coverage
+- Lovable's connector gateway does **not** list Discord as a supported gateway connector. Any integration must use direct REST calls with the existing bot token or webhook URLs.
+- No retry / dead-letter queue around Discord calls (`assign-tournament-role` is fire-and-forget).
 
-## Out of scope (call out, don't build)
-- Changing the points rubric defaults.
-- Migrating already-paid per-match participation off `season_scores`. Existing balances stay; only future tournaments use the new rule. We can offer a separate "rebalance season" action later if you want to retroactively normalize.
+### Gap F — Observability
+- No `discord_send_log` table equivalent to `email_send_log`.
+- Failures only surface in edge function logs; no admin dashboard for delivery status.
+
+### Gap G — Content formatting
+- No shared embed/template layer. Each new posting feature would re-implement formatting, color, thumbnail, footer.
+- Brand-mode (`arcade` vs `enterprise`) is not represented in any Discord template.
+
+## 3. Recommended Path Forward (phased, not yet building)
+
+**Phase 1 — Minimum viable channel posting (webhook-based)**
+- Add `discord_channel_webhooks` table: `id, tenant_id (nullable), purpose, webhook_url (secret), is_active`.
+- New `discord-send-message` edge function: accepts `{ purpose, payload }`, looks up webhook, POSTs embed, logs to `discord_send_log`.
+- Wire 2-3 highest-value triggers first: tournament published, tournament winner, tenant event published.
+
+**Phase 2 — Bot-based posting & routing**
+- Extend bot to use `POST /channels/{id}/messages` (already has `DISCORD_BOT_TOKEN`).
+- Per-tenant channel mapping (replace single `DISCORD_GUILD_ID` with `tenant_discord_config` table).
+- Shared embed builder in `supabase/functions/_shared/discordEmbeds.ts`.
+
+**Phase 3 — Inbound & richer integration**
+- Slash commands via interactions endpoint (requires public URL + signature verify).
+- Scheduled-posts pipeline extended to Discord (parallel to existing social publishing).
+- Admin UI: send-log viewer, retry button, channel test-message.
+
+**Phase 4 — Multi-guild / tenant self-service**
+- Per-tenant bot install flow (OAuth2 with `bot` + `applications.commands` scopes).
+- Tenant admins map their own channels.
+
+## 4. Technical Notes (for engineering)
+- Webhook approach needs **no new OAuth scope** and no bot install per server — the user pastes a webhook URL from their Discord channel settings. Fastest unblock.
+- Bot-token approach requires the FGN bot to be a member of the target guild with `Send Messages` + `Embed Links` permissions on the target channel.
+- Discord global rate limit: 50 req/s per bot token; per-route buckets apply. A queue (pgmq, same pattern as `email_send_log`) is recommended once volume grows.
+- Embeds: max 6000 chars total, 10 embeds per message, 25 fields per embed.
+- For multi-tenant, store webhook URLs encrypted (Vault or `tenant_integrations.api_key_encrypted` pattern already in use).
+
+## 5. Out of Scope for This Report
+- Actual implementation of any phase.
+- Pricing / Discord Developer Portal application changes.
+- Migration of existing `discord_role_mappings` (those keep working unchanged).
