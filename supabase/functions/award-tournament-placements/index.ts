@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       { place: 3, user_id: thirdId },
     ].filter((p) => !!p.user_id) as PlaceInput[];
 
-    if (placements.length === 0) {
+    if (placements.length === 0 && !participation_only) {
       return json({ success: false, message: "No placements resolved", awarded: [] });
     }
 
