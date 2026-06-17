@@ -26,6 +26,9 @@ interface SendLog {
   http_status: number | null;
   error_message: string | null;
   created_at: string;
+  template: string | null;
+  data: any | null;
+  tenant_id: string | null;
 }
 
 const PURPOSES = [
