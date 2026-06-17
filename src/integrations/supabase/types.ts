@@ -978,6 +978,50 @@ export type Database = {
         }
         Relationships: []
       }
+      discord_channel_routes: {
+        Row: {
+          channel_id: string
+          created_at: string
+          guild_id: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          purpose: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          guild_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          purpose: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          guild_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          purpose?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_channel_routes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discord_channel_webhooks: {
         Row: {
           created_at: string
@@ -1063,8 +1107,10 @@ export type Database = {
           id: string
           payload_preview: string | null
           purpose: string
+          route_id: string | null
           status: string
           tenant_id: string | null
+          transport: string | null
           webhook_id: string | null
         }
         Insert: {
@@ -1074,8 +1120,10 @@ export type Database = {
           id?: string
           payload_preview?: string | null
           purpose: string
+          route_id?: string | null
           status: string
           tenant_id?: string | null
+          transport?: string | null
           webhook_id?: string | null
         }
         Update: {
@@ -1085,8 +1133,10 @@ export type Database = {
           id?: string
           payload_preview?: string | null
           purpose?: string
+          route_id?: string | null
           status?: string
           tenant_id?: string | null
+          transport?: string | null
           webhook_id?: string | null
         }
         Relationships: [

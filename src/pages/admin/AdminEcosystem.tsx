@@ -11,6 +11,7 @@ import {
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import DiscordRoleManager from "@/components/admin/DiscordRoleManager";
 import DiscordWebhookManager from "@/components/admin/DiscordWebhookManager";
+import DiscordChannelRouteManager from "@/components/admin/DiscordChannelRouteManager";
 import EcosystemSyncHealth from "@/components/admin/EcosystemSyncHealth";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -443,6 +444,10 @@ const AdminEcosystem = () => {
 
       {/* Discord Channel Webhooks */}
       <DiscordWebhookManager />
+
+      {/* Discord Bot Channel Routes */}
+      <DiscordChannelRouteManager />
+
 
       {/* Discord Role Mappings */}
       <div className="glass-panel rounded-xl border border-border/50 p-6">
