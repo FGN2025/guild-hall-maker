@@ -72,9 +72,12 @@ Deno.serve(async (req) => {
       http_status: r.status,
       error_message: r.error,
       payload_preview: JSON.stringify(payload).slice(0, 1000),
+      template: body.template ?? null,
+      data: body.data ?? null,
     });
     results.push({ transport: "webhook", webhook_id: hook.id, ...r });
   }
+
 
   // --- Bot channel routes ---
   if (botToken) {
