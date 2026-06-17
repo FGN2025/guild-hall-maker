@@ -107,6 +107,7 @@ export const PLATFORM_LABELS: Record<string, string> = {
   instagram: "Instagram",
   twitter: "Twitter / X",
   linkedin: "LinkedIn",
+  discord: "Discord",
 };
 
 export const PLATFORM_COLORS: Record<string, string> = {
@@ -114,4 +115,5 @@ export const PLATFORM_COLORS: Record<string, string> = {
   instagram: "#E4405F",
   twitter: "#000000",
   linkedin: "#0A66C2",
+  discord: "#5865F2",
 };
