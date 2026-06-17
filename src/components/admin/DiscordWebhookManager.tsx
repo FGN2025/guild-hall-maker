@@ -207,6 +207,11 @@ const DiscordWebhookManager = () => {
                 {log.error_message && <span className="text-destructive truncate max-w-[280px]">{log.error_message}</span>}
                 <span className="flex-1" />
                 <span className="text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
+                {log.status === "failed" && log.template && (
+                  <Button size="icon" variant="ghost" onClick={() => retry(log)} title="Retry">
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
