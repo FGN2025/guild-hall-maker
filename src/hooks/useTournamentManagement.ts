@@ -35,6 +35,7 @@ export interface RegisteredPlayer {
   user_id: string;
   display_name: string;
   gamer_tag: string | null;
+  attended: boolean;
 }
 
 export interface ManageMatch {
