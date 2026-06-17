@@ -99,3 +99,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = true
   [functions.discord-send-message]
     verify_jwt = false
+  [functions.discord-interactions]
+    verify_jwt = false
