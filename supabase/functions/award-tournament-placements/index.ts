@@ -169,8 +169,8 @@ Deno.serve(async (req) => {
       }
 
       awarded.push({ place: p.place, user_id: p.user_id, points: pts, id: ins?.id });
-      }
     }
+
 
     // ── Participation payout: once per attended player ──
     const participation: any[] = [];
