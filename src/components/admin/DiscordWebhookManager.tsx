@@ -134,6 +134,22 @@ const DiscordWebhookManager = () => {
     else { toast({ title: "Retried", description: `Dispatched: ${(data as any)?.dispatched ?? 0}` }); fetchAll(); }
   };
 
+  const [registering, setRegistering] = useState(false);
+  const registerCommands = async () => {
+    setRegistering(true);
+    const { data, error } = await supabase.functions.invoke("discord-register-commands", { body: {} });
+    setRegistering(false);
+    if (error || (data as any)?.ok === false) {
+      toast({
+        title: "Failed to register slash commands",
+        description: error?.message || (data as any)?.body || "Unknown error",
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Slash commands registered", description: "Discord now knows /leaderboard, /tournaments, /challenges." });
+    }
+  };
+
   return (
     <div className="rounded-lg border border-border bg-card p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -141,7 +157,13 @@ const DiscordWebhookManager = () => {
           <MessageSquare className="h-5 w-5 text-primary" />
           <Label className="font-heading text-sm">Discord Channel Webhooks</Label>
         </div>
-        <Button size="sm" variant="ghost" onClick={fetchAll}><RefreshCw className="h-4 w-4" /></Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={registerCommands} disabled={registering}>
+            {registering ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Send className="h-3 w-3 mr-1" />}
+            Register slash commands
+          </Button>
+          <Button size="sm" variant="ghost" onClick={fetchAll}><RefreshCw className="h-4 w-4" /></Button>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">
         Paste a Discord channel webhook URL (Server Settings → Integrations → Webhooks) and pick what event publishes to it.
