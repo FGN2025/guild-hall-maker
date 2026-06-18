@@ -41,15 +41,8 @@ function profileLabel(p: any): { displayName: string; handle: string | null } {
   return { displayName, handle }
 }
 
-function groupBy<T>(rows: T[], keyFn: (r: T) => string): Map<string, T[]> {
-  const m = new Map<string, T[]>()
-  for (const r of rows) {
-    const k = keyFn(r)
-    const arr = m.get(k) ?? []
-    arr.push(r)
-    m.set(k, arr)
-  }
-  return m
+function uniq<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
 }
 
 Deno.serve(async (req) => {
@@ -69,66 +62,97 @@ Deno.serve(async (req) => {
   const todayKey = now.toISOString().slice(0, 10)
 
   try {
-    // Tournaments
-    const { data: tReg, error: tErr } = await supabase
-      .from('tournament_registrations')
-      .select('registered_at, user_id, tournament:tournaments(id,name,game), profile:profiles!tournament_registrations_user_id_fkey(display_name,gamer_tag)')
-      .gte('registered_at', sinceIso)
-      .order('registered_at', { ascending: true })
-    if (tErr) throw tErr
+    const [tRegRes, qRegRes, cRegRes] = await Promise.all([
+      supabase
+        .from('tournament_registrations')
+        .select('registered_at, user_id, tournament_id')
+        .gte('registered_at', sinceIso)
+        .order('registered_at', { ascending: true }),
+      supabase
+        .from('quest_enrollments')
+        .select('enrolled_at, user_id, quest_id')
+        .gte('enrolled_at', sinceIso)
+        .order('enrolled_at', { ascending: true }),
+      supabase
+        .from('challenge_enrollments')
+        .select('enrolled_at, user_id, challenge_id')
+        .gte('enrolled_at', sinceIso)
+        .order('enrolled_at', { ascending: true }),
+    ])
+    if (tRegRes.error) throw tRegRes.error
+    if (qRegRes.error) throw qRegRes.error
+    if (cRegRes.error) throw cRegRes.error
 
-    // Quests
-    const { data: qReg, error: qErr } = await supabase
-      .from('quest_enrollments')
-      .select('enrolled_at, user_id, quest:quests(id,name), profile:profiles!quest_enrollments_user_id_fkey(display_name,gamer_tag)')
-      .gte('enrolled_at', sinceIso)
-      .order('enrolled_at', { ascending: true })
-    if (qErr) throw qErr
+    const tReg = tRegRes.data ?? []
+    const qReg = qRegRes.data ?? []
+    const cReg = cRegRes.data ?? []
 
-    // Challenges
-    const { data: cReg, error: cErr } = await supabase
-      .from('challenge_enrollments')
-      .select('enrolled_at, user_id, challenge:challenges(id,name), profile:profiles!challenge_enrollments_user_id_fkey(display_name,gamer_tag)')
-      .gte('enrolled_at', sinceIso)
-      .order('enrolled_at', { ascending: true })
-    if (cErr) throw cErr
+    const userIds = uniq([...tReg, ...qReg, ...cReg].map((r: any) => r.user_id).filter(Boolean))
+    const tournamentIds = uniq(tReg.map((r: any) => r.tournament_id).filter(Boolean))
+    const questIds = uniq(qReg.map((r: any) => r.quest_id).filter(Boolean))
+    const challengeIds = uniq(cReg.map((r: any) => r.challenge_id).filter(Boolean))
 
-    const tournamentGroups: Group[] = [...groupBy(tReg ?? [], (r: any) => r.tournament?.id ?? 'unknown').entries()]
-      .map(([, rows]) => {
-        const first: any = rows[0]
-        const t = first.tournament
-        return {
-          name: t?.name ?? 'Unknown tournament',
-          subtitle: t?.game ?? null,
-          registrants: rows.map((r: any) => ({ ...profileLabel(r.profile), registeredAt: fmtPT(r.registered_at) })),
-        }
-      })
-      .sort((a, b) => a.name.localeCompare(b.name))
+    const [profilesRes, tournamentsRes, questsRes, challengesRes] = await Promise.all([
+      userIds.length
+        ? supabase.from('profiles').select('user_id, display_name, gamer_tag').in('user_id', userIds)
+        : Promise.resolve({ data: [], error: null } as any),
+      tournamentIds.length
+        ? supabase.from('tournaments').select('id, name, game').in('id', tournamentIds)
+        : Promise.resolve({ data: [], error: null } as any),
+      questIds.length
+        ? supabase.from('quests').select('id, name').in('id', questIds)
+        : Promise.resolve({ data: [], error: null } as any),
+      challengeIds.length
+        ? supabase.from('challenges').select('id, name').in('id', challengeIds)
+        : Promise.resolve({ data: [], error: null } as any),
+    ])
+    if (profilesRes.error) throw profilesRes.error
+    if (tournamentsRes.error) throw tournamentsRes.error
+    if (questsRes.error) throw questsRes.error
+    if (challengesRes.error) throw challengesRes.error
 
-    const questGroups: Group[] = [...groupBy(qReg ?? [], (r: any) => r.quest?.id ?? 'unknown').entries()]
-      .map(([, rows]) => {
-        const first: any = rows[0]
-        return {
-          name: first.quest?.name ?? 'Unknown quest',
-          registrants: rows.map((r: any) => ({ ...profileLabel(r.profile), registeredAt: fmtPT(r.enrolled_at) })),
-        }
-      })
-      .sort((a, b) => a.name.localeCompare(b.name))
+    const profileMap = new Map<string, any>((profilesRes.data ?? []).map((p: any) => [p.user_id, p]))
+    const tournamentMap = new Map<string, any>((tournamentsRes.data ?? []).map((t: any) => [t.id, t]))
+    const questMap = new Map<string, any>((questsRes.data ?? []).map((q: any) => [q.id, q]))
+    const challengeMap = new Map<string, any>((challengesRes.data ?? []).map((c: any) => [c.id, c]))
 
-    const challengeGroups: Group[] = [...groupBy(cReg ?? [], (r: any) => r.challenge?.id ?? 'unknown').entries()]
-      .map(([, rows]) => {
-        const first: any = rows[0]
-        return {
-          name: first.challenge?.name ?? 'Unknown challenge',
-          registrants: rows.map((r: any) => ({ ...profileLabel(r.profile), registeredAt: fmtPT(r.enrolled_at) })),
-        }
-      })
-      .sort((a, b) => a.name.localeCompare(b.name))
+    const buildGroups = <R,>(
+      rows: R[],
+      idKey: keyof R,
+      tsKey: keyof R,
+      lookup: Map<string, any>,
+      subtitleKey?: string,
+    ): Group[] => {
+      const byItem = new Map<string, R[]>()
+      for (const r of rows) {
+        const k = String((r as any)[idKey] ?? 'unknown')
+        const arr = byItem.get(k) ?? []
+        arr.push(r)
+        byItem.set(k, arr)
+      }
+      return [...byItem.entries()]
+        .map(([id, rows]) => {
+          const item = lookup.get(id)
+          return {
+            name: item?.name ?? 'Unknown',
+            subtitle: subtitleKey ? item?.[subtitleKey] ?? null : null,
+            registrants: rows.map((r: any) => ({
+              ...profileLabel(profileMap.get(r.user_id)),
+              registeredAt: fmtPT(r[tsKey as string]),
+            })),
+          }
+        })
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }
+
+    const tournamentGroups = buildGroups(tReg, 'tournament_id' as any, 'registered_at' as any, tournamentMap, 'game')
+    const questGroups = buildGroups(qReg, 'quest_id' as any, 'enrolled_at' as any, questMap)
+    const challengeGroups = buildGroups(cReg, 'challenge_id' as any, 'enrolled_at' as any, challengeMap)
 
     const totals = {
-      tournaments: (tReg ?? []).length,
-      quests: (qReg ?? []).length,
-      challenges: (cReg ?? []).length,
+      tournaments: tReg.length,
+      quests: qReg.length,
+      challenges: cReg.length,
     }
 
     const windowLabel = `${PT_DATE.format(since)} → ${PT_DATE.format(now)} PT`
