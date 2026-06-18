@@ -844,10 +844,6 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tip: Run a dry_run, sanity-check the count, then run live with the same batch_size. Repeat in batches if you have thousands of records.",
     ],
   },
-  {
-    id: "legal",
-    icon: Shield,
-    title: "Legal Pages",
 ];
 
 // Build JSX content from bullet data for the accordion
