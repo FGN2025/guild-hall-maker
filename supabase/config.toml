@@ -101,3 +101,13 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.discord-interactions]
     verify_jwt = false
+  [functions.send-transactional-email]
+    verify_jwt = true
+  [functions.preview-transactional-email]
+    verify_jwt = false
+  [functions.handle-email-unsubscribe]
+    verify_jwt = false
+  [functions.handle-email-suppression]
+    verify_jwt = false
+  [functions.send-discord-backlog-reminder]
+    verify_jwt = false
