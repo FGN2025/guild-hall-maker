@@ -1,97 +1,63 @@
-# Discord Integration Assessment & Gap Report
 
-## 1. What's Built Today
+# Wire FGN Play bot → new channel in Fiber Gaming Network
 
-The platform's Discord integration is **identity- and role-centric only**. It uses the Discord REST API directly with a bot token — no webhooks, no channel messaging, no bidirectional sync.
+No code changes — this is configuration in Discord + the existing Admin → Ecosystem → Discord panel.
 
-### Identity / Linking
-- `discord-oauth-callback` edge function — OAuth2 `identify` scope only. Writes `discord_id`, `discord_username`, `discord_avatar`, `discord_linked_at` to `profiles`.
-- `LinkDiscord.tsx` page + `useDiscordClientId` hook (client ID stored in `app_settings`).
-- `discord_bypass_requests` table + `AdminDiscordBypass` page for users who can't link (manual admin approval).
-- `discord_role_mappings` table — maps platform triggers (`on_link`, `on_achievement`, `on_rank`, `on_tournament_win`, `manual`) to Discord guild roles.
+## Step 1 — Create the channel in Discord
 
-### Server Role Management
-- `discord-server-roles` edge function — admin-only, lists guild roles via `GET /guilds/{id}/roles`.
-- `assign-tournament-role` edge function — assigns a configured `tournaments.discord_role_id` to a registered user via `PUT /guilds/{id}/members/{user}/roles/{role}`.
-- `DiscordRoleManager` admin UI for mapping rules.
+1. In the **Fiber Gaming Network** server, hover the category where it belongs (e.g. "INFORMATION" or create a new "BOT FEED" category) and click the **+** next to the category name.
+2. Channel type: **Text**.
+3. Name: `fgn-play-feed` (suggested — clear, scoped to bot posts).
+4. Leave as **Public** (anyone in the server can read). Click **Create Channel**.
 
-### Secrets in Use
-- `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `discord_client_id` (app_settings), Discord OAuth client secret (env).
+Tip: if you want only staff to read it, toggle **Private Channel** and add the staff roles before creating.
 
-### Scope of OAuth Token
-- `scope=identify` only. **No `guilds`, `guilds.members.read`, `messages.read`, `webhook.incoming`, `bot`, or `applications.commands`.**
+## Step 2 — Give the FGN Play bot access
 
-## 2. What's Missing — Gap Analysis for "Sharing Info to the FGN Discord Channel"
+1. Right-click **#fgn-play-feed** → **Edit Channel** → **Permissions**.
+2. Under **ROLES/MEMBERS** click the **➕** → search **FGN Play** → select it.
+3. Set these to green ✅: **View Channel**, **Send Messages**, **Embed Links**. Leave the rest neutral.
+4. Save.
 
-There is currently **zero outbound channel communication**. Every Discord-facing feature mutates a member or reads roles; nothing posts content to a channel.
+(If the channel is Private, also add @everyone → ❌ View Channel, plus any staff roles that need to see it.)
 
-### Gap A — No channel-posting capability
-- No usage of `POST /channels/{id}/messages`.
-- No Discord webhook URL stored anywhere (no `DISCORD_WEBHOOK_*` secret, no `webhooks` table).
-- No embed builder, no attachment uploader, no rate-limit handler.
+## Step 3 — Copy the channel ID
 
-### Gap B — No event → Discord publishing pipeline
-Platform events that *should* trigger Discord posts but currently don't:
-- Tournament created / bracket published / round advanced / winner crowned
-- Tenant event published (`tenant_events`)
-- Featured event / challenge / quest launched
-- Prize redemption claimed
-- Leaderboard weekly/seasonal recap
-- New achievement earned (community-visible only)
-- Forum `community_posts` with `category = 'Announcement'`
-- Marketing scheduled posts (`scheduled_posts` only targets social, not Discord)
+1. Discord → User Settings → **Advanced** → enable **Developer Mode** (if not already).
+2. Right-click **#fgn-play-feed** → **Copy Channel ID**.
 
-### Gap C — No channel routing or per-tenant channel config
-- No table mapping `tenant_id` / event-type → Discord channel ID or webhook URL.
-- Single-guild assumption baked in (`DISCORD_GUILD_ID` is a single env var); multi-tenant tenants on their own Discord servers are not supported.
+## Step 4 — Add the route in the admin panel
 
-### Gap D — No interactive / inbound Discord features
-- No slash commands (`/leaderboard`, `/register`, `/challenge`).
-- No interactions endpoint (would need `applications.commands` scope + signature verification).
-- No gateway listener / bot worker (Deno edge functions are stateless — would require Cloudflare Worker, external service, or polling).
-- No DM delivery for notifications (would need `bot` scope and `users/@me/channels`).
+In **Admin → Ecosystem → Discord → Bot Channel Routes**:
 
-### Gap E — Gateway / connector coverage
-- Lovable's connector gateway does **not** list Discord as a supported gateway connector. Any integration must use direct REST calls with the existing bot token or webhook URLs.
-- No retry / dead-letter queue around Discord calls (`assign-tournament-role` is fire-and-forget).
+1. **Purpose:** `tournament_published` (we'll add more after testing).
+2. **Channel ID:** paste the ID from Step 3.
+3. **Guild ID:** leave blank (optional).
+4. **Tenant ID:** **leave blank** — this scopes the route to **all global FGN events**.
+5. **Notes:** "FGN Play global feed" (optional).
+6. Click **Add**.
 
-### Gap F — Observability
-- No `discord_send_log` table equivalent to `email_send_log`.
-- Failures only surface in edge function logs; no admin dashboard for delivery status.
+## Step 5 — Test
 
-### Gap G — Content formatting
-- No shared embed/template layer. Each new posting feature would re-implement formatting, color, thumbnail, footer.
-- Brand-mode (`arcade` vs `enterprise`) is not represented in any Discord template.
+Click the **📨 Send** icon on the new route row. Expected:
+- Toast says "Test sent · Dispatched: 1".
+- An embed appears in **#fgn-play-feed**.
+- If you see a 403, recheck Step 2 (View Channel + Send Messages + Embed Links for FGN Play).
+- If you see "Dispatched: 0", the route didn't save with `is_active = true` or the bot token isn't loaded — toggle the row off/on and retry.
 
-## 3. Recommended Path Forward (phased, not yet building)
+## Step 6 — Add the other event types (after the test passes)
 
-**Phase 1 — Minimum viable channel posting (webhook-based)**
-- Add `discord_channel_webhooks` table: `id, tenant_id (nullable), purpose, webhook_url (secret), is_active`.
-- New `discord-send-message` edge function: accepts `{ purpose, payload }`, looks up webhook, POSTs embed, logs to `discord_send_log`.
-- Wire 2-3 highest-value triggers first: tournament published, tournament winner, tenant event published.
+Repeat Step 4 with the same channel ID, leaving Tenant ID blank, for each purpose you want in this feed:
 
-**Phase 2 — Bot-based posting & routing**
-- Extend bot to use `POST /channels/{id}/messages` (already has `DISCORD_BOT_TOKEN`).
-- Per-tenant channel mapping (replace single `DISCORD_GUILD_ID` with `tenant_discord_config` table).
-- Shared embed builder in `supabase/functions/_shared/discordEmbeds.ts`.
+- `tournament_completed`
+- `tenant_event_published`
+- `challenge_published`
+- `quest_published`
+- `prize_redeemed`
+- `achievement_earned`
 
-**Phase 3 — Inbound & richer integration**
-- Slash commands via interactions endpoint (requires public URL + signature verify).
-- Scheduled-posts pipeline extended to Discord (parallel to existing social publishing).
-- Admin UI: send-log viewer, retry button, channel test-message.
+Each is a separate route row sharing the same channel ID.
 
-**Phase 4 — Multi-guild / tenant self-service**
-- Per-tenant bot install flow (OAuth2 with `bot` + `applications.commands` scopes).
-- Tenant admins map their own channels.
+---
 
-## 4. Technical Notes (for engineering)
-- Webhook approach needs **no new OAuth scope** and no bot install per server — the user pastes a webhook URL from their Discord channel settings. Fastest unblock.
-- Bot-token approach requires the FGN bot to be a member of the target guild with `Send Messages` + `Embed Links` permissions on the target channel.
-- Discord global rate limit: 50 req/s per bot token; per-route buckets apply. A queue (pgmq, same pattern as `email_send_log`) is recommended once volume grows.
-- Embeds: max 6000 chars total, 10 embeds per message, 25 fields per embed.
-- For multi-tenant, store webhook URLs encrypted (Vault or `tenant_integrations.api_key_encrypted` pattern already in use).
-
-## 5. Out of Scope for This Report
-- Actual implementation of any phase.
-- Pricing / Discord Developer Portal application changes.
-- Migration of existing `discord_role_mappings` (those keep working unchanged).
+**Deliverable:** a single `#fgn-play-feed` channel in the Fiber Gaming Network server receiving live embeds from the FGN Play bot for every globally-published event. No code or DB changes required.
