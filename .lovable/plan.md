@@ -1,63 +1,61 @@
+## Weekly Registrations Digest Email
 
-# Wire FGN Play bot → new channel in Fiber Gaming Network
+A new app email sent to **darcy@fgn.gg** every **Friday at 4:00 PM Pacific** that lists everyone who signed up for a Tournament, Quest, or Challenge in the previous 7 days.
 
-No code changes — this is configuration in Discord + the existing Admin → Ecosystem → Discord panel.
+### What the email contains
 
-## Step 1 — Create the channel in Discord
+Three sections, each grouped by item (tournament/quest/challenge), then listing the players who registered in the last 7 days:
 
-1. In the **Fiber Gaming Network** server, hover the category where it belongs (e.g. "INFORMATION" or create a new "BOT FEED" category) and click the **+** next to the category name.
-2. Channel type: **Text**.
-3. Name: `fgn-play-feed` (suggested — clear, scoped to bot posts).
-4. Leave as **Public** (anyone in the server can read). Click **Create Channel**.
+```text
+TOURNAMENTS
+  • <Tournament name> — <game>
+      - <Display name> (@handle) — registered Mon Jun 15, 2:14 PM PT
+      - <Display name> (@handle) — registered Tue Jun 16, 9:02 AM PT
 
-Tip: if you want only staff to read it, toggle **Private Channel** and add the staff roles before creating.
+QUESTS
+  • <Quest name>
+      - <Display name> (@handle) — enrolled …
 
-## Step 2 — Give the FGN Play bot access
+CHALLENGES
+  • <Challenge name>
+      - <Display name> (@handle) — enrolled …
+```
 
-1. Right-click **#fgn-play-feed** → **Edit Channel** → **Permissions**.
-2. Under **ROLES/MEMBERS** click the **➕** → search **FGN Play** → select it.
-3. Set these to green ✅: **View Channel**, **Send Messages**, **Embed Links**. Leave the rest neutral.
-4. Save.
+Footer shows the totals (e.g. "12 new tournament registrations · 4 new quest enrollments · 7 new challenge enrollments") and a link to the admin pages. If a section has zero new entries that week, it shows "No new registrations this week" instead of being hidden, so the report is always complete.
 
-(If the channel is Private, also add @everyone → ❌ View Channel, plus any staff roles that need to see it.)
+The window is the **rolling 7 days** ending at send time, so the Friday email always covers Fri → Fri.
 
-## Step 3 — Copy the channel ID
+### Schedule
 
-1. Discord → User Settings → **Advanced** → enable **Developer Mode** (if not already).
-2. Right-click **#fgn-play-feed** → **Copy Channel ID**.
+- Cron fires **every Friday at 23:00 UTC**, which is 4:00 PM Pacific during Daylight Time (Mar–Nov) and 3:00 PM Pacific during Standard Time (Nov–Mar).
+- Pure UTC cron can't follow DST automatically. Two options — please confirm which you want:
+  1. **Lock to 23:00 UTC** (4 PM PT in summer, 3 PM PT in winter). Simplest.
+  2. **Stay at 4 PM Pacific year-round** — I'd add a small guard in the trigger function that checks the current Pacific hour and exits early on the wrong week, then run two cron rows (22:00 and 23:00 UTC) so exactly one fires per Friday. More moving parts, but DST-correct.
 
-## Step 4 — Add the route in the admin panel
+Default in the plan below is option 1 unless you say otherwise.
 
-In **Admin → Ecosystem → Discord → Bot Channel Routes**:
+### Backstop against duplicates
 
-1. **Purpose:** `tournament_published` (we'll add more after testing).
-2. **Channel ID:** paste the ID from Step 3.
-3. **Guild ID:** leave blank (optional).
-4. **Tenant ID:** **leave blank** — this scopes the route to **all global FGN events**.
-5. **Notes:** "FGN Play global feed" (optional).
-6. Click **Add**.
+Idempotency key `weekly-registrations-${YYYY-MM-DD}` (the Friday's date) so a retry on the same day won't double-send.
 
-## Step 5 — Test
+### Technical details
 
-Click the **📨 Send** icon on the new route row. Expected:
-- Toast says "Test sent · Dispatched: 1".
-- An embed appears in **#fgn-play-feed**.
-- If you see a 403, recheck Step 2 (View Channel + Send Messages + Embed Links for FGN Play).
-- If you see "Dispatched: 0", the route didn't save with `is_active = true` or the bot token isn't loaded — toggle the row off/on and retry.
+- **New template**: `supabase/functions/_shared/transactional-email-templates/weekly-registrations-digest.tsx`
+  - `to: 'darcy@fgn.gg'` baked in (same pattern as the Discord backlog reminder)
+  - Accepts `{ windowStart, windowEnd, tournaments[], quests[], challenges[] }` as `templateData`
+  - Subject: `FGN weekly registrations — <N> new sign-ups`
+- **Registry**: add `weekly-registrations-digest` to `_shared/transactional-email-templates/registry.ts`
+- **New trigger function**: `supabase/functions/send-weekly-registrations-digest/index.ts`
+  - Uses service-role client to query the last 7 days from `tournament_registrations`, `quest_enrollments`, `challenge_enrollments`, joined to `tournaments`/`quests`/`challenges` for names and `profiles` for display name/handle
+  - Builds the `templateData` payload and invokes `send-transactional-email` with the idempotency key
+  - `verify_jwt = false` in `supabase/config.toml`
+- **Cron**: add a `pg_cron` job via the insert tool (not migration, per project rules):
+  - Schedule `0 23 * * 5` calling `net.http_post` to the new function with the anon key
+  - Job name `weekly-registrations-digest`
+- No schema changes. No new tables. No UI changes.
 
-## Step 6 — Add the other event types (after the test passes)
+### Out of scope
 
-Repeat Step 4 with the same channel ID, leaving Tenant ID blank, for each purpose you want in this feed:
-
-- `tournament_completed`
-- `tenant_event_published`
-- `challenge_published`
-- `quest_published`
-- `prize_redeemed`
-- `achievement_earned`
-
-Each is a separate route row sharing the same channel ID.
-
----
-
-**Deliverable:** a single `#fgn-play-feed` channel in the Fiber Gaming Network server receiving live embeds from the FGN Play bot for every globally-published event. No code or DB changes required.
+- No in-app digest view (email only).
+- No per-tenant filtering — this is the global FGN view, matching the existing Discord backlog reminder pattern.
+- No "since you last opened it" tracking — strictly a rolling 7-day window.

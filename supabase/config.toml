@@ -111,3 +111,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.send-discord-backlog-reminder]
     verify_jwt = false
+  [functions.send-weekly-registrations-digest]
+    verify_jwt = false
