@@ -16,6 +16,17 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Scroll; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Zap,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "Reliable Academy Sync Queue — Quest task approvals and full quest completions now flow through a reliable async queue (academy_task_queue / academy_quest_queue) before pushing to your FGN Academy Skill Passport. Dropped or delayed syncs are retried automatically.",
+      "Chain Completion Streams to Academy — Finishing every quest in a chain now also streams the chain completion to FGN Academy in real time, not just the individual quest results.",
+      "Brief Passport Refresh Delay — After a moderator approves a task, your Skill Passport may take a few seconds to reflect the change. This is intentional: a debounce queue coalesces multiple approvals into a single refresh so we don't overwhelm the Academy with redundant updates.",
+      "Skill Tag Sync — Skill tags configured on a quest task (e.g., 'Diagnostics,' 'Customer Service') now propagate to your Skill Passport alongside score and task progress.",
+    ],
+  },
+  {
     id: "what-are-quests",
     icon: Scroll,
     title: "What Are Quests?",

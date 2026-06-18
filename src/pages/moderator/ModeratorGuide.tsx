@@ -29,6 +29,20 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Star,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "CDL Challenge Generator — A new multi-step AI wizard at /moderator/challenges/generate creates compliant CDL/ATS challenges to the 18-point benchmark. Pick a domain and CFR reference, generate, review/edit inline, and one-click publish. See the new CDL Challenge Generator section below.",
+      "Featured Events Manager — Pin tournaments, challenges, and quests to the homepage Featured carousel from /moderator/featured. See the Featured Events section below.",
+      "Steam Auto-Verified Tasks — Challenge tasks with verification_type set to steam_achievement or steam_playtime are verified automatically by querying the player's linked Steam account. These enrollments are self-resolving — no evidence review required from you. They will not appear in your Evidence Review queue.",
+      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, staff receive an automated email enumerating all new tournament, quest, and challenge sign-ups from the previous 7 days. There is no admin UI for this — it is delivery-only.",
+      "Daily Discord Backlog Reminder (Email) — At 8 AM Eastern each weekday, designated staff receive a digest of outstanding Discord integration work. Delivery-only; no configuration UI.",
+      "Per-Match Point Awards — Tournament points now record per match (win, loss, participation) in addition to placement. Participation remains idempotent per tournament. Affects how the wallet ledger reads in audits.",
+      "Attendance Auto-Tracking — A player's registration is auto-marked 'attended' the moment you record their first match result. Manual check-in is still available for events that need it.",
+    ],
+  },
+  {
     id: "overview",
     icon: Shield,
     title: "Moderator Role Overview",
@@ -263,6 +277,49 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Bidirectional Copying — Use the duplicate action on any tournament, challenge, or quest to spin up a near-identical copy with '(Copy)' appended to the title. Edit the copy in place — the original is untouched.",
       "Bracket Resets — On any in-progress tournament with no completed matches, the Reset Bracket action returns the event to Open status for re-seeding.",
       "Tip: Duplicate is the fastest way to run a recurring event with the same task list, prize structure, and rules.",
+    ],
+  },
+  {
+    id: "cdl-generator",
+    icon: BookOpen,
+    title: "CDL Challenge Generator",
+    bullets: [
+      "Where — /moderator/challenges/generate (admins have the same wizard at /admin/challenges/generate).",
+      "Purpose — Generate compliant CDL/ATS career-path challenges that hit the platform's 18-point benchmark for completeness, with the right CFR references, learning objectives, and task structure.",
+      "Step 1: Configure — Pick a CDL domain (e.g., Pre-Trip Inspection, Vehicle Control, Hours of Service), enter the relevant CFR reference, pick difficulty (Beginner / Intermediate / Advanced), and choose the game (typically American Truck Simulator).",
+      "Step 2: Generate — Click Generate. The generate-cdl-challenge edge function calls the AI model, structures the response, and runs the 18-point validator. You'll see a score and a list of any missing rubric items.",
+      "Step 3: Review & Edit — Edit the title, description, learning objectives, tasks, and evidence requirements inline before publishing. Re-run the validator after edits to confirm you're still at 18/18.",
+      "Step 4: Publish — One-click publish via the publish-cdl-challenge edge function. The challenge is created in challenges with skill_tags, cdl_domain, cfr_reference, and is inactive by default — toggle it active when you're ready for players.",
+      "Inactive by Default — Generated challenges land inactive so you can preview the player-facing view at /challenges/:id before exposing them. Flip the active toggle from the challenge management list.",
+      "FGN Academy Sync — Once published and a player completes it, the challenge syncs to FGN Academy with the appropriate career-path mapping if your tenant has Academy sync enabled.",
+      "Tip: Start with one challenge per CDL domain to build coverage, then layer Intermediate and Advanced difficulty variants on top.",
+    ],
+  },
+  {
+    id: "featured-events",
+    icon: Star,
+    title: "Featured Events Manager",
+    bullets: [
+      "Where — /moderator/featured.",
+      "Purpose — Curate which tournaments, challenges, and quests appear in the homepage Featured Events carousel.",
+      "Search Picker — Search for any tournament, challenge, or quest by name; click to pin it. Pinned items appear immediately on the player-facing homepage.",
+      "Mixed Types — The carousel can hold a mix of tournaments, challenges, and quests. Each card auto-renders with the appropriate type-specific styling.",
+      "Unpin — Click the unpin action on any item to remove it from the featured list. The underlying tournament/challenge/quest is not deleted.",
+      "Mobile-Friendly — The carousel uses iOS-Safari-safe minimum heights so it renders correctly on mobile.",
+      "Tip: Refresh the featured set weekly — stale featured items reduce homepage engagement.",
+    ],
+  },
+  {
+    id: "staff-emails",
+    icon: Bell,
+    title: "Automated Staff Emails",
+    bullets: [
+      "Two scheduled emails are sent to platform staff automatically. Neither has an admin UI — they are delivery-only.",
+      "Weekly Registrations Digest — Every Friday at 4 PM Pacific (23:00 UTC), a digest of all new tournament, quest, and challenge sign-ups from the previous 7 days is emailed to designated staff. Groups by event, includes Pacific-time timestamps, and shows totals per category.",
+      "Daily Discord Backlog Reminder — At 8 AM Eastern each weekday, a digest of outstanding Discord integration work is emailed to darcy@fgn.gg, sourced from the backlog file. Use it as your daily reminder to chip away at the Discord setup queue.",
+      "Idempotency — Both emails use a date-based idempotency key, so a same-day retry won't double-send.",
+      "If You Stop Receiving Them — Check your spam folder first, then your suppression status (one-click unsubscribe links may have been clicked). Ask an admin to verify the recipient list is correct.",
+      "Disabling — To stop a reminder permanently, ask the agent to disable the corresponding scheduled function and cron job. Don't disable Lovable Emails entirely — that breaks auth and app emails too.",
     ],
   },
 ];

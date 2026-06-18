@@ -43,6 +43,21 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Bell,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "This changelog tracks the most recent additions across the player experience. Each item links to the deeper section where it lives.",
+      "Steam Auto-Verify Tasks — Challenges tied to a Steam game can now auto-approve specific tasks by verifying your Steam achievements or playtime — no screenshot required. Link your Steam account in Profile Settings → Steam first. See: Challenges & Quests.",
+      "Challenge Skill Tags — Challenges now display skill tags (e.g., 'Reaction Time,' 'Teamwork,' 'Strategy') on cards and detail pages. These tags also flow to your FGN Academy Skill Passport. See: Challenges & Quests.",
+      "Monthly Prize Caps — Some prizes now enforce a per-player-per-month redemption ceiling in addition to total stock limits. The Prize Shop shows your remaining monthly allowance at checkout. See: Prize Shop.",
+      "Calendar Monthly Banners — The Tournament Calendar (/calendar) now displays a seasonal hero image for each month, set by platform admins.",
+      "Per-Match Tournament Awards — Tournaments now record win, loss, and participation point awards per match in addition to the final placement bonus. Participation still pays once per event; win/loss bonuses can accrue across rounds. See: Tournaments.",
+      "Attendance Auto-Tracking — Your tournament 'attended' status is now stamped automatically the moment your first match result is recorded — no manual check-in required for most events.",
+      "Weekly Friday Digest (Staff) — Platform staff receive an automated Friday afternoon digest of all new tournament, quest, and challenge registrations. If you're staff, you'll see this in your inbox at 4 PM Pacific.",
+    ],
+  },
+  {
     id: "getting-started",
     icon: UserPlus,
     title: "Getting Started",

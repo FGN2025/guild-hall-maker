@@ -16,6 +16,17 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Target; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Bell,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "Steam Auto-Verify Tasks — For challenges linked to a Steam game, individual tasks can be set up to auto-approve by checking your Steam achievements or total playtime. No screenshot needed. Link your Steam account in Profile Settings → Steam first. The Evidence Upload section below covers the manual flow; tasks with Steam verification will say so on the task card and resolve automatically.",
+      "Skill Tags — Challenges now display skill tags (e.g., 'Communication,' 'Reaction Time,' 'Strategy') on cards and detail pages. These tags also push to your FGN Academy Skill Passport when your tenant has Academy sync enabled.",
+      "Monthly Prize Caps — Some prizes in the Prize Shop now enforce a per-player-per-month redemption ceiling in addition to total stock. The shop shows your remaining monthly allowance at checkout, so plan accordingly.",
+      "Featured Challenges — Moderators and admins can pin tournaments, challenges, and quests to a Featured list that surfaces on the homepage carousel. Look for the featured badge on challenge cards.",
+    ],
+  },
+  {
     id: "what-are-challenges",
     icon: Target,
     title: "What Are Challenges?",

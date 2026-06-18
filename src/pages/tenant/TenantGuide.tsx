@@ -33,13 +33,25 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Bell,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "Tenant Branding Page — A new dedicated banner-page editor at /tenant/branding opens the full Web Page Editor for your tenant's primary banner page. The page is auto-created the first time you visit. See the new Tenant Branding section below.",
+      "Discord Auto-Announce on Event Publish — When you publish a tenant event, an announcement is automatically posted to the configured Discord channel (if your tenant has a webhook registered). No manual posting needed.",
+      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, tenant admins receive an automated email summary of all new tournament, quest, and challenge sign-ups from the previous 7 days across the platform. Delivery-only; no configuration UI.",
+      "Manager Role Clarified — The Manager role permissions bullet in the Roles section has been corrected. Managers see the Dashboard, Player Directory, Leads, Events, and Marketing campaigns only. ZIP Codes, Subscribers, Integrations, Tenant Codes, Web Pages, Team, and Settings remain Admin-only.",
+      "Skill Tag Sync — Skill tags on challenges and quests now propagate to player Skill Passports when your tenant has FGN Academy sync enabled.",
+    ],
+  },
+  {
     id: "roles",
     icon: Shield,
     title: "Roles & Permissions",
     bullets: [
       "The Tenant Portal supports three roles: Admin, Manager, and Marketing.",
       "Admin — Full access to all features including ZIP codes, subscribers, integrations, team management, codes, web pages, and settings.",
-      "Manager — Access to Dashboard, Player Directory, Leads, Events, Marketing campaigns, ZIP Codes, Subscribers, Integrations (NISC, GLDS, Smarty), and Settings. Cannot manage codes, web pages, or team members.",
+      "Manager — Access to Dashboard, Player Directory, Leads, Events, and Marketing campaigns. ZIP Codes, Subscribers, Integrations (NISC / GLDS / FGN Academy), Tenant Codes, Web Pages, Team Management, and Settings are Admin-only and not visible to Managers.",
       "Marketing — Access to Marketing campaigns, My Assets, Web Pages, and read-only visibility of Tenant Codes. Ideal for team members focused on promotional content.",
       "Role Assignment — Admins invite team members by display name or email and assign roles from the Team page.",
     ],
@@ -336,6 +348,33 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Career Path Challenges — Look for CDL (commercial driver) and Fiber Tech challenges in the platform catalog. These are aligned to TIRAP (Transportation Industry Registered Apprenticeship Program) and similar workforce frameworks.",
       "Why It Matters For Tenants — Broadband providers running Fiber Tech career challenges can document hands-on training automatically; the Skill Passport becomes a recruiting and retention asset.",
       "Visibility — Your tenant doesn't manage the academy curriculum directly, but enabling the integration means your players' work is recognized in that ecosystem.",
+    ],
+  },
+  {
+    id: "tenant-branding",
+    icon: Image,
+    title: "Tenant Branding Page (Admin Only)",
+    bullets: [
+      "Where — /tenant/branding in the tenant sidebar.",
+      "What It Is — A dedicated banner-page editor that auto-creates a tenant_banner web page for your tenant the first time you visit, then opens it in the full Web Page Editor.",
+      "Difference From Settings — Settings holds your logo, brand colors, and contact info. The Branding page is the editable home banner / landing area that your players see on tenant-scoped pages — it's a full multi-section page, not just color settings.",
+      "What You Can Build — Hero with background image, text blocks, image galleries, CTAs, embed widgets, banners, and videos — all from the same block-based editor used for general Web Pages.",
+      "Auto-Provisioning — On first visit, the page is created with is_tenant_banner = true. Subsequent visits load the existing page for editing. You don't need to manage page slugs.",
+      "Branding Inheritance — The Branding page automatically inherits your tenant logo and brand color CSS variables, so the design stays on-brand even as you edit content.",
+      "Permissions — Tenant Admins only. Managers and Marketing users cannot access this page.",
+      "Tip: This is the right place to introduce your provider's program, recruit players, and link out to your service signup. Keep it brief and visual — players land here when they click your tenant logo or follow a tenant invitation link.",
+    ],
+  },
+  {
+    id: "staff-emails",
+    icon: Bell,
+    title: "Automated Staff Emails",
+    bullets: [
+      "Two scheduled emails are sent to tenant admin staff automatically. Neither has an in-app UI — they are delivery-only.",
+      "Weekly Registrations Digest — Every Friday at 4 PM Pacific (23:00 UTC), tenant admins receive an email summary of new tournament, quest, and challenge sign-ups from the previous 7 days across the platform. Groups by event with Pacific-time timestamps.",
+      "Idempotency — The digest uses a date-based idempotency key, so a same-day retry won't double-send.",
+      "If You Stop Receiving Them — Check spam first; then check whether the one-click unsubscribe in the email footer was clicked. Ask a platform admin to verify your address is on the recipient list.",
+      "Discord Auto-Announce — When you publish a tenant event, a DB trigger fires the configured Discord webhook for your tenant's event channel (if registered). No email — this posts directly to Discord.",
     ],
   },
 ];
