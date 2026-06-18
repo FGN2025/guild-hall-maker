@@ -24,6 +24,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Community = lazy(() => import("./pages/Community"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
 const LinkDiscord = lazy(() => import("./pages/LinkDiscord"));
 const TournamentBracket = lazy(() => import("./pages/TournamentBracket"));
@@ -159,6 +160,7 @@ const App = () => (
               <Route path="/for-providers" element={<ForProviders />} />
               <Route path="/4-providers" element={<ForProviders />} />
               <Route path="/pages/:tenantSlug/:pageSlug" element={<WebPageView />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
 
               {/* Authenticated but Discord-exempt */}
               <Route element={<ProtectedRoute />}>
