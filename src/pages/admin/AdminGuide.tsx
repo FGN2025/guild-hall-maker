@@ -50,6 +50,26 @@ import { Button } from "@/components/ui/button";
 import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Sparkles,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "Discord Webhook Registry & Auto-Announce — A new discord_channel_webhooks table plus DB triggers automatically post to Discord when a tournament is published, a tournament is completed, or a tenant event is published. Configure webhook URLs per purpose in Admin → Ecosystem → Discord. See the Discord Webhook Infrastructure section below.",
+      "Calendar Monthly Images — A new admin page at /admin/calendar-images lets you upload a full-bleed hero image per month. Images render across the public /calendar page. Backed by the calendar_monthly_images table and a dedicated storage bucket. See the Calendar Images section below.",
+      "CDL Challenge Generator — Multi-step AI wizard at /admin/challenges/generate (and /moderator/challenges/generate) generates 18-point CDL/ATS compliant challenges, lets you review/edit inline, and one-click publishes via the publish-cdl-challenge edge function. See the CDL Challenge Generator section below.",
+      "Points Rubric — Configurable matrix of point awards by difficulty × challenge type, with audit log, realignment log, and an 'Align Existing Challenges' run button at /admin/points-rubric. Run after edits to keep historical challenges in sync. See the Points Rubric section below.",
+      "Steam Integration Dashboard — New page at /admin/steam shows all players with linked Steam accounts, games with a steam_app_id, Steam-auto-verified evidence, and tasks using steam_achievement or steam_playtime verification. See the Steam Integration section below.",
+      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, designated staff receive an automated email enumerating all new tournament, quest, and challenge sign-ups from the previous 7 days, with grouping by event and Pacific timestamps. Delivered by the send-weekly-registrations-digest edge function via pg_cron. No admin UI — delivery-only.",
+      "Daily Discord Backlog Reminder (Email) — At 8 AM Eastern each weekday, darcy@fgn.gg receives a digest of outstanding Discord integration work pulled from the .lovable/backlog/discord.md backlog file. Delivered by send-discord-backlog-reminder. Delivery-only.",
+      "Email Unsubscribe & Suppression — RFC 8058 one-click unsubscribe is now supported across all app emails via handle-email-unsubscribe. Bounces and complaints are tracked in suppressed_emails. The send pipeline checks suppression before each send.",
+      "Bulk Register Legacy Users — A new admin-only edge function bulk-register-legacy-users creates auth accounts for legacy records that have an email but no auth user. Supports dry_run and batch_size for safe rollout.",
+      "Provider Inquiries Dedicated Page — Inbound /for-providers contact form submissions now have their own admin review queue at /admin/inquiries with filtering by role and delete actions. See the Provider Inquiries section below.",
+      "Per-Match Point Awards — A new match_point_awards table records per-match win, loss, and participation awards. Participation remains idempotent per tournament via a unique index. Auditable, reversible, and feeds the points wallet ledger.",
+      "Attendance Auto-Tracking — Player registrations are auto-marked attended with a timestamp when their first match result is recorded.",
+      "Search Now Includes Bullet Text — The Admin Guide search has been upgraded to search both section titles and bullet text (it previously only searched titles). You can now find content like 'rubric,' 'steam,' or 'webhook' from the search box.",
+    ],
+  },
+  {
     id: "overview",
     icon: Shield,
     title: "Admin vs Manager Roles",
@@ -765,7 +785,9 @@ ${sectionBlocks}
   const filteredSections = useMemo(() => {
     if (!search.trim()) return sections;
     const q = search.toLowerCase();
-    return sections.filter((s) => s.title.toLowerCase().includes(q));
+    return sections.filter(
+      (s) => s.title.toLowerCase().includes(q) || s.bullets.some((b: string) => b.toLowerCase().includes(q))
+    );
   }, [search]);
 
   return (

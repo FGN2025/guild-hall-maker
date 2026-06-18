@@ -29,6 +29,20 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Star,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "CDL Challenge Generator — A new multi-step AI wizard at /moderator/challenges/generate creates compliant CDL/ATS challenges to the 18-point benchmark. Pick a domain and CFR reference, generate, review/edit inline, and one-click publish. See the new CDL Challenge Generator section below.",
+      "Featured Events Manager — Pin tournaments, challenges, and quests to the homepage Featured carousel from /moderator/featured. See the Featured Events section below.",
+      "Steam Auto-Verified Tasks — Challenge tasks with verification_type set to steam_achievement or steam_playtime are verified automatically by querying the player's linked Steam account. These enrollments are self-resolving — no evidence review required from you. They will not appear in your Evidence Review queue.",
+      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, staff receive an automated email enumerating all new tournament, quest, and challenge sign-ups from the previous 7 days. There is no admin UI for this — it is delivery-only.",
+      "Daily Discord Backlog Reminder (Email) — At 8 AM Eastern each weekday, designated staff receive a digest of outstanding Discord integration work. Delivery-only; no configuration UI.",
+      "Per-Match Point Awards — Tournament points now record per match (win, loss, participation) in addition to placement. Participation remains idempotent per tournament. Affects how the wallet ledger reads in audits.",
+      "Attendance Auto-Tracking — A player's registration is auto-marked 'attended' the moment you record their first match result. Manual check-in is still available for events that need it.",
+    ],
+  },
+  {
     id: "overview",
     icon: Shield,
     title: "Moderator Role Overview",

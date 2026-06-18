@@ -16,6 +16,16 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Trophy; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Clock,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "Per-Match Point Awards — Win, loss, and participation point awards are now recorded per match in the new match_point_awards ledger. Participation still pays once per tournament (a unique index prevents double-paying); win/loss bonuses stack per round.",
+      "Attendance Auto-Tracking — When your first match result is recorded, your registration is automatically marked attended with a timestamp. Moderators can still mark check-in manually for special events.",
+      "Calendar Monthly Banners — The /calendar page now shows a full-bleed seasonal banner per month, set by platform admins. Bracket info and event chips overlay the banner.",
+    ],
+  },
+  {
     id: "overview",
     icon: Trophy,
     title: "What Are Tournaments?",

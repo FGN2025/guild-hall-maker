@@ -33,13 +33,25 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new",
+    icon: Bell,
+    title: "What's New — June 18, 2026",
+    bullets: [
+      "Tenant Branding Page — A new dedicated banner-page editor at /tenant/branding opens the full Web Page Editor for your tenant's primary banner page. The page is auto-created the first time you visit. See the new Tenant Branding section below.",
+      "Discord Auto-Announce on Event Publish — When you publish a tenant event, an announcement is automatically posted to the configured Discord channel (if your tenant has a webhook registered). No manual posting needed.",
+      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, tenant admins receive an automated email summary of all new tournament, quest, and challenge sign-ups from the previous 7 days across the platform. Delivery-only; no configuration UI.",
+      "Manager Role Clarified — The Manager role permissions bullet in the Roles section has been corrected. Managers see the Dashboard, Player Directory, Leads, Events, and Marketing campaigns only. ZIP Codes, Subscribers, Integrations, Tenant Codes, Web Pages, Team, and Settings remain Admin-only.",
+      "Skill Tag Sync — Skill tags on challenges and quests now propagate to player Skill Passports when your tenant has FGN Academy sync enabled.",
+    ],
+  },
+  {
     id: "roles",
     icon: Shield,
     title: "Roles & Permissions",
     bullets: [
       "The Tenant Portal supports three roles: Admin, Manager, and Marketing.",
       "Admin — Full access to all features including ZIP codes, subscribers, integrations, team management, codes, web pages, and settings.",
-      "Manager — Access to Dashboard, Player Directory, Leads, Events, Marketing campaigns, ZIP Codes, Subscribers, Integrations (NISC, GLDS, Smarty), and Settings. Cannot manage codes, web pages, or team members.",
+      "Manager — Access to Dashboard, Player Directory, Leads, Events, and Marketing campaigns. ZIP Codes, Subscribers, Integrations (NISC / GLDS / FGN Academy), Tenant Codes, Web Pages, Team Management, and Settings are Admin-only and not visible to Managers.",
       "Marketing — Access to Marketing campaigns, My Assets, Web Pages, and read-only visibility of Tenant Codes. Ideal for team members focused on promotional content.",
       "Role Assignment — Admins invite team members by display name or email and assign roles from the Team page.",
     ],
