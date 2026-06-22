@@ -545,7 +545,7 @@ function TenantCard({
             <Users className="h-4 w-4" /> Admins
           </Button>
           <Badge variant="outline" className="gap-1 text-xs">
-            <MapPin className="h-3 w-3" /> {zipCount ?? 0} ZIPs
+            <MapPin className="h-3 w-3" /> {health?.zip_count ?? zipCount ?? 0} ZIPs
           </Badge>
           <Badge
             variant="outline"
