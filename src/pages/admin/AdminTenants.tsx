@@ -357,6 +357,9 @@ const AdminTenants = () => {
                 <TabsTrigger value="all">All ({tenants.length})</TabsTrigger>
                 <TabsTrigger value="active">Active ({activeCount})</TabsTrigger>
                 <TabsTrigger value="inactive">Inactive ({inactiveCount})</TabsTrigger>
+                <TabsTrigger value="gaps" className="data-[state=active]:bg-destructive/20">
+                  Coverage Gaps ({gapCount})
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             <Select value={sortOption} onValueChange={setSortOption}>
