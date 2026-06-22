@@ -118,11 +118,37 @@ function LogoPicker({
   );
 }
 
+/* ─── Tenant health summary (Wave 2.1) ─── */
+type TenantHealth = {
+  tenant_id: string;
+  has_admin: boolean;
+  admin_count: number;
+  zip_count: number;
+  lead_count: number;
+  subscriber_count: number;
+  last_sync_at: string | null;
+};
+
+function useTenantHealthMap() {
+  return useQuery({
+    queryKey: ["tenant-health-summary"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("get_tenant_health_summary");
+      if (error) throw error;
+      const map = new Map<string, TenantHealth>();
+      (data ?? []).forEach((r: TenantHealth) => map.set(r.tenant_id, r));
+      return map;
+    },
+    staleTime: 60_000,
+  });
+}
+
 /* ─── Main page ─── */
 const AdminTenants = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { tenants, isLoading, error, createTenant, updateTenant, deleteTenant } = useTenants();
+  const { data: healthMap } = useTenantHealthMap();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
   const [logoUploading, setLogoUploading] = useState(false);
@@ -133,11 +159,17 @@ const AdminTenants = () => {
 
   const activeCount = tenants.filter((t) => t.status === "active").length;
   const inactiveCount = tenants.filter((t) => t.status !== "active").length;
+  const hasGap = (id: string, status: string) => {
+    const h = healthMap?.get(id);
+    return status === "active" && (!h || !h.has_admin || h.zip_count === 0);
+  };
+  const gapCount = tenants.filter((t) => hasGap(t.id, t.status)).length;
 
   const filteredTenants = tenants
     .filter((t) => {
       if (statusFilter === "active" && t.status !== "active") return false;
       if (statusFilter === "inactive" && t.status === "active") return false;
+      if (statusFilter === "gaps" && !hasGap(t.id, t.status)) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (t.name?.toLowerCase().includes(q)) || (t.slug?.toLowerCase().includes(q));
