@@ -209,6 +209,32 @@ const AdminTenants = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={async () => {
+                const t = toast.loading("Re-scanning registrations…");
+                try {
+                  const { data, error } = await (supabase as any).rpc("admin_resync_tenant_registrations");
+                  if (error) throw error;
+                  const a = data?.pattern_a ?? 0;
+                  const b = data?.pattern_b ?? 0;
+                  const c = data?.pattern_c ?? 0;
+                  const total = a + b + c;
+                  toast.success(
+                    total === 0
+                      ? "No orphan registrations found."
+                      : `Linked ${total} registration(s) — ZIP: ${a}, legacy: ${b}, fallback: ${c}.`,
+                    { id: t }
+                  );
+                } catch (err: any) {
+                  toast.error(err.message || "Re-scan failed", { id: t });
+                }
+              }}
+            >
+              <Search className="h-4 w-4" />
+              Re-scan registrations
+            </Button>
             <BulkZipImportDialog tenants={tenants} onComplete={() => {}} refetchTenants={() => queryClient.invalidateQueries({ queryKey: ["tenants"] })} />
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
