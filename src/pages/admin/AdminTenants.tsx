@@ -404,6 +404,7 @@ const AdminTenants = () => {
               <TenantCard
                 key={t.id}
                 tenant={t}
+                health={healthMap?.get(t.id)}
                 onToggleStatus={(checked) =>
                   updateTenant.mutate({ id: t.id, status: checked ? "active" : "inactive" })
                 }
