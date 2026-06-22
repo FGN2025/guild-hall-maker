@@ -2462,37 +2462,52 @@ export type Database = {
           created_at: string
           email: string
           first_name: string
+          handled_at: string | null
+          handled_by: string | null
           id: string
           last_name: string
           message: string | null
+          notes: string | null
           phone: string | null
           preferred_date: string | null
           preferred_time: string | null
           role: string
+          status: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
           email: string
           first_name: string
+          handled_at?: string | null
+          handled_by?: string | null
           id?: string
           last_name: string
           message?: string | null
+          notes?: string | null
           phone?: string | null
           preferred_date?: string | null
           preferred_time?: string | null
           role?: string
+          status?: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string
           first_name?: string
+          handled_at?: string | null
+          handled_by?: string | null
           id?: string
           last_name?: string
           message?: string | null
+          notes?: string | null
           phone?: string | null
           preferred_date?: string | null
           preferred_time?: string | null
           role?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
