@@ -1,55 +1,73 @@
-# Fix: Ninestar tenant admin can't see registered player details
+# ZIP Validation: Local-First, Smarty-as-Fallback
 
-## Root cause
+## Goal
 
-I traced both issues against the live database for NineStar Connect (`e9c0f4b8-…`).
+Use customer-uploaded data (`tenant_zip_codes`, with `national_zip_codes` as backup) as the authoritative source for ZIP validation and city/state. Only call Smarty when we have nothing locally. This reduces API spend, removes a network dependency for known ZIPs, and makes validation deterministic for the customer's service area.
 
-### 1. Why rows show "—" for name / gamer tag / email
+## Today (for reference)
 
-The Players list in `useTenantPlayers` reads from `user_service_interests` (the "new leads" registry) and then tries to enrich each row from the `profiles_public` view.
+```text
+ZIP entered
+  -> format check
+  -> Smarty (always)            <-- city/state only, swallowed on error
+  -> lookup_providers_by_zip    <-- queries tenant_zip_codes (authoritative)
+  -> return providers + label
+```
 
-- `user_service_interests` RLS: tenant admins can read rows where they are a tenant member ✅
-- `profiles_public` is just a view over `profiles`. `profiles` RLS only allows: the owner, platform admins, and moderators. **Tenant admins are not granted access.**
-- Result: every join returns `null`, so `display_name` and `gamer_tag` render as "—".
-- Email is even worse — the hook hardcodes `email: null` and `address: null`. Email lives in `auth.users`, which the client cannot read at all.
+## New flow
 
-Ninestar currently has 4 real registrations in `user_service_interests` (Dr Eville, db, GamerBrah21, DistantOne) plus 1 legacy match. Their profile rows do exist — the tenant admin just can't see them.
+```text
+ZIP entered
+  -> format check
+  -> lookup_providers_by_zip (tenant_zip_codes)
+     |
+     +-- HIT  -> use tenant_zip_codes.city/state as label; skip Smarty
+     |
+     +-- MISS -> look up national_zip_codes for city/state
+                 |
+                 +-- HIT  -> return "no providers in <city, ST>" message
+                 +-- MISS -> call Smarty as last resort
+                             |
+                             +-- HIT  -> return "no providers in <city, ST>"
+                             +-- MISS -> "ZIP <code> not recognized"
+```
 
-### 2. ZIP 46055
+## Changes
 
-`validate-zip` works end-to-end right now — I called it directly and got `McCordsville, IN — 1 provider(s) found! → NineStar Connect`. The ZIP is correctly mapped in `tenant_zip_codes`. The "no providers" message the tenant saw was almost certainly a transient Smarty API failure: the function throws when Smarty returns non-200, and there is no fallback to our local `national_zip_codes` table (which is empty for 46055 anyway, so today the fallback wouldn't help even if it existed).
+### 1. RPC: enrich `lookup_providers_by_zip` to return city/state
 
-## Fix
+Update the existing `SECURITY DEFINER` function to also return the first tenant_zip_codes row's city/state (any tenant's row is fine — same ZIP = same city). Signature becomes:
 
-### A. New security-definer RPC for tenant lead enrichment
+```sql
+RETURNS TABLE(tenant_id uuid, tenant_name text, tenant_slug text, logo_url text, city text, state text)
+```
 
-Add `public.get_tenant_lead_players(_tenant_id uuid)` returning enriched lead rows. The function checks `is_tenant_member(_tenant_id, auth.uid())` (or `has_role(auth.uid(),'admin')`) before returning anything, and joins:
+No call-site breakage: existing callers just ignore the extra columns.
 
-- `user_service_interests` (id, zip_code, status, created_at)
-- `profiles` (display_name, gamer_tag, avatar_url)
-- `auth.users` (email)
+### 2. Edge function: reorder + add national fallback
 
-`SECURITY DEFINER`, `SET search_path = public`, granted to `authenticated`.
+In `supabase/functions/validate-zip/index.ts`:
+- Call `lookup_providers_by_zip` first.
+- If `providers.length > 0`, set `city`/`state` from the first row, set `smarty_ok=true` (semantically: "we know this location"), and **skip** the Smarty fetch.
+- If no providers, query `national_zip_codes` for city/state.
+- Only if both lookups miss, call Smarty.
+- Preserve existing response shape (`valid`, `city`, `state`, `smarty_ok`, `providers`, `no_providers_message`, `message`) so the client (`useRegistrationZipCheck`, `ZipCheckStep`) needs no changes.
 
-### B. Wire it into the UI
+### 3. (Optional, flagged for follow-up — not in this migration)
 
-Replace the manual join in `src/hooks/useTenantPlayers.ts` (`leadsQuery`) with a single `supabase.rpc('get_tenant_lead_players', { _tenant_id: tenantId })` call, and map the returned rows into `UnifiedPlayer` so `name`, `gamerTag`, and `email` populate correctly.
+`national_zip_codes` has only 1 row. To make the local-only path actually useful as a city/state fallback, we'd want to load a USPS/Census ZIP dataset into it. Out of scope for this change; calling it out so we can plan it separately. Until then, the fallback flow still works — it just hits Smarty more often for out-of-area ZIPs.
 
-No schema change to `user_service_interests` or `profiles`. No new RLS policy on `profiles` (we deliberately keep tenant admins out of the raw table — only the scoped RPC sees those rows).
+## Verification
 
-### C. Harden `validate-zip` against Smarty outages
-
-Update `supabase/functions/validate-zip/index.ts` so that when Smarty returns a non-OK status (or throws), we still call `lookup_providers_by_zip` and return `valid: true` with the providers and a generic "City lookup unavailable" note instead of bubbling up a 500. This way a transient Smarty hiccup never blocks a real Ninestar ZIP like 46055 from finding its provider.
-
-### D. Verify
-
-After deploy:
-1. Sign in as Brian Dowden, open Players — Dr Eville / db / GamerBrah21 / DistantOne should show real display names, gamer tags, and emails.
-2. Re-run `validate-zip` with `{"zipCode":"46055"}` → still returns NineStar Connect.
-3. Simulate a Smarty failure (bad creds) → still returns the provider list with a soft warning, not a 500.
+- ZIP `46055` (NineStar): returns NineStar provider, label "McCordsville, IN", **zero** Smarty calls (check edge function logs).
+- ZIP `00000`: invalid format -> 400.
+- ZIP `90210` (no tenant, not in national table yet): falls through to Smarty, returns "no providers in Beverly Hills, CA".
+- ZIP `99999` (unassigned, Smarty miss): returns "ZIP 99999 not recognized."
+- Sign-up wizard `ZipCheckStep` flow unchanged.
 
 ## Out of scope
 
-- No changes to legacy_users flow (already shows correctly).
-- No changes to `tenant_subscribers` (separate billing-sync registry, not the registration path).
-- No changes to existing RLS on `profiles`.
+- Bulk-loading `national_zip_codes` (separate task, needs dataset decision).
+- `useRegistrationZipCheck`/UI changes — response shape preserved.
+- Tenant-side ZIP upload UI (`TenantZipCodes.tsx`) — unchanged.
+- The orphan-registrations sweep we discussed earlier — still queued separately.
