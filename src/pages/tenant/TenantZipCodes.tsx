@@ -376,6 +376,20 @@ const TenantZipCodes = () => {
                         </Tooltip>
                       </TooltipProvider>
                     )}
+                    {overlapMap[z.zip_code] && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="border-amber-500/60 text-amber-300 text-[10px]">
+                              Shared
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Also claimed by: {overlapMap[z.zip_code].join(", ")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </td>
                   <td className="p-3 text-muted-foreground">{z.city || "—"}</td>
                   <td className="p-3">
