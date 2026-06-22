@@ -1,73 +1,41 @@
-# ZIP Validation: Local-First, Smarty-as-Fallback
+# Close Remaining Registration-Visibility Gaps
 
-## Goal
+## Why
 
-Use customer-uploaded data (`tenant_zip_codes`, with `national_zip_codes` as backup) as the authoritative source for ZIP validation and city/state. Only call Smarty when we have nothing locally. This reduces API spend, removes a network dependency for known ZIPs, and makes validation deterministic for the customer's service area.
+Recent fixes unblocked tenant admins from seeing emails and made ZIP validation local-first. Four items were left out of scope. Three of them don't affect registration visibility (see assessment table in chat). The remaining one — the orphan sweep — is small but real, and the underlying trigger (`handle_new_user`) can let new orphans appear whenever sign-up metadata lacks tenant hints. This plan closes both.
 
-## Today (for reference)
+## Scope
 
-```text
-ZIP entered
-  -> format check
-  -> Smarty (always)            <-- city/state only, swallowed on error
-  -> lookup_providers_by_zip    <-- queries tenant_zip_codes (authoritative)
-  -> return providers + label
-```
+### 1. One-shot backfill (data repair)
 
-## New flow
+Three idempotent `INSERT … ON CONFLICT DO NOTHING` statements, run as a migration so it's auditable:
 
-```text
-ZIP entered
-  -> format check
-  -> lookup_providers_by_zip (tenant_zip_codes)
-     |
-     +-- HIT  -> use tenant_zip_codes.city/state as label; skip Smarty
-     |
-     +-- MISS -> look up national_zip_codes for city/state
-                 |
-                 +-- HIT  -> return "no providers in <city, ST>" message
-                 +-- MISS -> call Smarty as last resort
-                             |
-                             +-- HIT  -> return "no providers in <city, ST>"
-                             +-- MISS -> "ZIP <code> not recognized"
-```
+- **Pattern B (2 known rows today):** every `legacy_users` with `matched_user_id` gets a `user_service_interests` row in its tenant, `status='legacy'`.
+- **Pattern A (0 today, future-proof):** every `profiles.zip_code` that maps to a tenant via `tenant_zip_codes` gets a `user_service_interests` row in that tenant, `status='new'`.
+- **Pattern C (0 today, future-proof):** when an FGN-fallback row exists and the user's ZIP now maps to a real tenant, insert a real-tenant row alongside it (do not delete the FGN row — safer to keep both).
 
-## Changes
+### 2. Harden `handle_new_user` trigger (prevent recurrence)
 
-### 1. RPC: enrich `lookup_providers_by_zip` to return city/state
+Extend the existing trigger so, after the current `selected_tenant_id` / `provider_tenant_ids` logic, it also:
+- Looks up the new user's ZIP in `tenant_zip_codes` and inserts `user_service_interests` rows for every matching tenant (`ON CONFLICT DO NOTHING`).
+- Keeps the FGN fallback only when nothing matched.
 
-Update the existing `SECURITY DEFINER` function to also return the first tenant_zip_codes row's city/state (any tenant's row is fine — same ZIP = same city). Signature becomes:
+This closes the door on Patterns A, C, and most B-style gaps for any future sign-up path (Discord OAuth, magic link, embed, etc.).
 
-```sql
-RETURNS TABLE(tenant_id uuid, tenant_name text, tenant_slug text, logo_url text, city text, state text)
-```
+### 3. Admin re-scan tool (operational safety net)
 
-No call-site breakage: existing callers just ignore the extra columns.
-
-### 2. Edge function: reorder + add national fallback
-
-In `supabase/functions/validate-zip/index.ts`:
-- Call `lookup_providers_by_zip` first.
-- If `providers.length > 0`, set `city`/`state` from the first row, set `smarty_ok=true` (semantically: "we know this location"), and **skip** the Smarty fetch.
-- If no providers, query `national_zip_codes` for city/state.
-- Only if both lookups miss, call Smarty.
-- Preserve existing response shape (`valid`, `city`, `state`, `smarty_ok`, `providers`, `no_providers_message`, `message`) so the client (`useRegistrationZipCheck`, `ZipCheckStep`) needs no changes.
-
-### 3. (Optional, flagged for follow-up — not in this migration)
-
-`national_zip_codes` has only 1 row. To make the local-only path actually useful as a city/state fallback, we'd want to load a USPS/Census ZIP dataset into it. Out of scope for this change; calling it out so we can plan it separately. Until then, the fallback flow still works — it just hits Smarty more often for out-of-area ZIPs.
+Add a `SECURITY DEFINER` RPC `public.admin_resync_tenant_registrations()` (admin-only via `has_role`). It runs the same three backfill queries on demand and returns `{ pattern_a, pattern_b, pattern_c }` counts. Wire a small "Re-scan registrations" button into `AdminTenants.tsx` that calls it and toasts the result. Lets ops fix new orphans without a migration.
 
 ## Verification
 
-- ZIP `46055` (NineStar): returns NineStar provider, label "McCordsville, IN", **zero** Smarty calls (check edge function logs).
-- ZIP `00000`: invalid format -> 400.
-- ZIP `90210` (no tenant, not in national table yet): falls through to Smarty, returns "no providers in Beverly Hills, CA".
-- ZIP `99999` (unassigned, Smarty miss): returns "ZIP 99999 not recognized."
-- Sign-up wizard `ZipCheckStep` flow unchanged.
+- Run migration → 2 Pattern-B rows land, 0 others (matches current scan).
+- Create a test user with a NineStar ZIP via plain sign-up (no provider selection) → `user_service_interests` row appears for NineStar; no FGN fallback row created.
+- Click the admin "Re-scan registrations" button → toast shows `{0, 0, 0}` immediately after the backfill.
+- Brian's NineStar Players list still shows the existing 5 users + any new sign-ups.
 
-## Out of scope
+## Explicitly NOT in this plan
 
-- Bulk-loading `national_zip_codes` (separate task, needs dataset decision).
-- `useRegistrationZipCheck`/UI changes — response shape preserved.
-- Tenant-side ZIP upload UI (`TenantZipCodes.tsx`) — unchanged.
-- The orphan-registrations sweep we discussed earlier — still queued separately.
+- Bulk-loading `national_zip_codes` (cosmetic; separate decision on dataset source).
+- Touching `useRegistrationZipCheck` / `ZipCheckStep` / `TenantZipCodes` UIs.
+- Deleting the redundant FGN fallback rows when a real tenant exists (safer to keep both; audit later).
+- Sweeping the 13 profiles with no `user_service_interests` (all are platform staff / test accounts; trigger would have to bypass `prevent_player_tenant_admin` for staff — out of scope).
