@@ -120,3 +120,21 @@ For key rotation, integration questions, or to request the push roadmap to be pr
 ## 10. Header Migration (Completed)
 
 The integration previously supported a legacy `X-App-Key` header (backed by `FGN_ACADEMY_API_KEY`). As of P-3, the cutover is complete: `sync-to-academy` sends only `X-Ecosystem-Key` (backed by `ECOSYSTEM_API_KEY`), and the `FGN_ACADEMY_API_KEY` secret has been retired.
+
+---
+
+## Audit 2.3 — Closed, no action (2026-06-22)
+
+The Wave 2 tenant audit flagged that `ECOSYSTEM_API_KEY` / `PLAY_WEBHOOK_SECRET` are read from env without hard-fail logging, and that per-tenant `academy_sync_enabled` gating is not enforced at the queue-processor layer. Verified in production: the play.fgn.gg ↔ fgn.academy challenge handoff is healthy, keys are present in every environment that runs the processors, and no tenant has requested opt-out. Closing this item with no code or schema changes.
+
+### Safeguards already in place
+- HMAC-SHA256 request signing via `PLAY_WEBHOOK_SECRET` (see `docs/play-to-academy-hmac-contract-ping.md`).
+- `X-Ecosystem-Key` header auth on every `ecosystem-data-api` call.
+- Dead-letter routing on the `academy_sync` queue after max retries.
+- Admin-visible audit trail in `ecosystem_sync_log`.
+
+### Re-open triggers
+Revisit hard-fail guards and a per-tenant `academy_sync_enabled` gate if any of the following occurs:
+- Sustained DLQ growth on `academy_sync`, `academy_task`, `academy_quest`, `academy_chain`, or `academy_achievement` queues.
+- Recurring 401/403 responses from `ecosystem-data-api` in `ecosystem_sync_log`.
+- A tenant explicitly requests opt-out of Academy sync.
