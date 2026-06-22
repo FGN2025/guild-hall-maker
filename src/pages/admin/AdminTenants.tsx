@@ -444,6 +444,7 @@ const AdminTenants = () => {
 /* ─── Tenant card with inline logo edit ─── */
 function TenantCard({
   tenant: t,
+  health,
   onToggleStatus,
   onLogoUpdated,
   onOpenAdmins,
@@ -452,6 +453,7 @@ function TenantCard({
   onManage,
 }: {
   tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean };
+  health?: TenantHealth;
   onToggleStatus: (checked: boolean) => void;
   onLogoUpdated: (url: string) => void;
   onOpenAdmins: () => void;
@@ -460,6 +462,9 @@ function TenantCard({
   onManage: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const noAdmin = t.status === "active" && health && !health.has_admin;
+  const noZips = t.status === "active" && health && health.zip_count === 0;
+  const noLeads = t.status === "active" && health && health.lead_count === 0;
   const { data: zipCount } = useQuery({
     queryKey: ["tenant-zip-count", t.id],
     queryFn: async () => {
