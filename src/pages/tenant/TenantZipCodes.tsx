@@ -58,6 +58,29 @@ const TenantZipCodes = () => {
     },
   });
 
+  const { data: overlaps = [] } = useQuery({
+    queryKey: ["tenant-zip-overlaps", tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_tenant_zip_overlaps", {
+        _tenant_id: tenantId,
+      });
+      if (error) throw error;
+      return (data || []) as Array<{
+        zip_code: string;
+        other_tenant_id: string;
+        other_tenant_name: string;
+        other_tenant_slug: string;
+      }>;
+    },
+  });
+
+  const overlapMap = overlaps.reduce<Record<string, string[]>>((acc, o) => {
+    (acc[o.zip_code] ||= []).push(o.other_tenant_name);
+    return acc;
+  }, {});
+  const overlapCount = Object.keys(overlapMap).length;
+
   const addZip = useMutation({
     mutationFn: async (input: { zip_code: string; city?: string; state?: string }) => {
       let city = input.city || null;
@@ -306,6 +329,15 @@ const TenantZipCodes = () => {
         Rows with only city and state (no ZIP) will be resolved automatically.
       </p>
 
+      {overlapCount > 0 && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-100 flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-400" />
+          <div>
+            <strong>{overlapCount}</strong> of your ZIP code{overlapCount === 1 ? "" : "s"} {overlapCount === 1 ? "is" : "are"} also claimed by another active provider. Players in those ZIPs will see multiple options at sign-up.
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <p className="text-muted-foreground">Loading...</p>
       ) : zips.length === 0 ? (
@@ -340,6 +372,20 @@ const TenantZipCodes = () => {
                           </TooltipTrigger>
                           <TooltipContent>
                             Estimated — multiple ZIPs serve this city. Verify or replace if needed.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    {overlapMap[z.zip_code] && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="border-amber-500/60 text-amber-300 text-[10px]">
+                              Shared
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Also claimed by: {overlapMap[z.zip_code].join(", ")}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>

@@ -4937,6 +4937,15 @@ export type Database = {
           total: number
         }[]
       }
+      get_tenant_zip_overlaps: {
+        Args: { _tenant_id: string }
+        Returns: {
+          other_tenant_id: string
+          other_tenant_name: string
+          other_tenant_slug: string
+          zip_code: string
+        }[]
+      }
       get_user_tenant: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
