@@ -4837,6 +4837,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_resync_tenant_registrations: { Args: never; Returns: Json }
       claim_pending_invitations: { Args: never; Returns: undefined }
       compute_quest_rank: { Args: { xp: number }; Returns: string }
       delete_email: {
