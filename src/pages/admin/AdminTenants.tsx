@@ -515,7 +515,25 @@ function TenantCard({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap justify-end">
+          {noAdmin && (
+            <Badge variant="destructive" className="gap-1 text-xs cursor-pointer" onClick={onOpenAdmins}>
+              No admin
+            </Badge>
+          )}
+          {noZips && (
+            <Badge variant="destructive" className="gap-1 text-xs cursor-pointer" onClick={() => {
+              localStorage.setItem("fgn_selected_tenant_id", t.id);
+              window.location.assign("/tenant/zip-codes");
+            }}>
+              No ZIPs
+            </Badge>
+          )}
+          {noLeads && (
+            <Badge variant="outline" className="gap-1 text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">
+              No leads
+            </Badge>
+          )}
           <Badge variant={t.status === "active" ? "default" : "secondary"}>
             {t.status}
           </Badge>
