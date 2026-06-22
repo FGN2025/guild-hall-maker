@@ -72,17 +72,20 @@ Deno.serve(async (req) => {
       noProvidersMessage = setting?.value || null;
     }
 
+    const locationLabel = smartyOk && city && state ? `${city}, ${state}` : `ZIP ${zipCode}`;
+
     return new Response(
       JSON.stringify({
         valid: true,
         city,
         state,
+        smarty_ok: smartyOk,
         providers: providers || [],
         no_providers_message: noProvidersMessage,
         message:
           providers && providers.length > 0
-            ? `Valid ZIP: ${city}, ${state} — ${providers.length} provider(s) found!`
-            : `Valid ZIP: ${city}, ${state} — no providers currently serve your area.`,
+            ? `${locationLabel} — ${providers.length} provider(s) found!`
+            : `${locationLabel} — no providers currently serve your area.`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
