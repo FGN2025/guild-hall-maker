@@ -337,8 +337,6 @@ const TenantZipCodes = () => {
           </div>
         </div>
       )}
-        Rows with only city and state (no ZIP) will be resolved automatically.
-      </p>
 
       {isLoading ? (
         <p className="text-muted-foreground">Loading...</p>
