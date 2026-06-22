@@ -4897,6 +4897,21 @@ export type Database = {
         Returns: undefined
       }
       get_academy_queue_stats: { Args: never; Returns: Json }
+      get_tenant_health_summary: {
+        Args: never
+        Returns: {
+          admin_count: number
+          has_admin: boolean
+          last_sync_at: string
+          lead_count: number
+          subscriber_count: number
+          tenant_id: string
+          tenant_name: string
+          tenant_slug: string
+          tenant_status: string
+          zip_count: number
+        }[]
+      }
       get_tenant_lead_players: {
         Args: { _tenant_id: string }
         Returns: {

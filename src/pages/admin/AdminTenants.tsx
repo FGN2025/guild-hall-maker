@@ -118,11 +118,37 @@ function LogoPicker({
   );
 }
 
+/* ─── Tenant health summary (Wave 2.1) ─── */
+type TenantHealth = {
+  tenant_id: string;
+  has_admin: boolean;
+  admin_count: number;
+  zip_count: number;
+  lead_count: number;
+  subscriber_count: number;
+  last_sync_at: string | null;
+};
+
+function useTenantHealthMap() {
+  return useQuery({
+    queryKey: ["tenant-health-summary"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("get_tenant_health_summary");
+      if (error) throw error;
+      const map = new Map<string, TenantHealth>();
+      (data ?? []).forEach((r: TenantHealth) => map.set(r.tenant_id, r));
+      return map;
+    },
+    staleTime: 60_000,
+  });
+}
+
 /* ─── Main page ─── */
 const AdminTenants = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { tenants, isLoading, error, createTenant, updateTenant, deleteTenant } = useTenants();
+  const { data: healthMap } = useTenantHealthMap();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
   const [logoUploading, setLogoUploading] = useState(false);
@@ -133,11 +159,17 @@ const AdminTenants = () => {
 
   const activeCount = tenants.filter((t) => t.status === "active").length;
   const inactiveCount = tenants.filter((t) => t.status !== "active").length;
+  const hasGap = (id: string, status: string) => {
+    const h = healthMap?.get(id);
+    return status === "active" && (!h || !h.has_admin || h.zip_count === 0);
+  };
+  const gapCount = tenants.filter((t) => hasGap(t.id, t.status)).length;
 
   const filteredTenants = tenants
     .filter((t) => {
       if (statusFilter === "active" && t.status !== "active") return false;
       if (statusFilter === "inactive" && t.status === "active") return false;
+      if (statusFilter === "gaps" && !hasGap(t.id, t.status)) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (t.name?.toLowerCase().includes(q)) || (t.slug?.toLowerCase().includes(q));
@@ -325,6 +357,9 @@ const AdminTenants = () => {
                 <TabsTrigger value="all">All ({tenants.length})</TabsTrigger>
                 <TabsTrigger value="active">Active ({activeCount})</TabsTrigger>
                 <TabsTrigger value="inactive">Inactive ({inactiveCount})</TabsTrigger>
+                <TabsTrigger value="gaps" className="data-[state=active]:bg-destructive/20">
+                  Coverage Gaps ({gapCount})
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             <Select value={sortOption} onValueChange={setSortOption}>
@@ -369,6 +404,7 @@ const AdminTenants = () => {
               <TenantCard
                 key={t.id}
                 tenant={t}
+                health={healthMap?.get(t.id)}
                 onToggleStatus={(checked) =>
                   updateTenant.mutate({ id: t.id, status: checked ? "active" : "inactive" })
                 }
@@ -408,6 +444,7 @@ const AdminTenants = () => {
 /* ─── Tenant card with inline logo edit ─── */
 function TenantCard({
   tenant: t,
+  health,
   onToggleStatus,
   onLogoUpdated,
   onOpenAdmins,
@@ -416,6 +453,7 @@ function TenantCard({
   onManage,
 }: {
   tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean };
+  health?: TenantHealth;
   onToggleStatus: (checked: boolean) => void;
   onLogoUpdated: (url: string) => void;
   onOpenAdmins: () => void;
@@ -424,6 +462,9 @@ function TenantCard({
   onManage: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const noAdmin = t.status === "active" && health && !health.has_admin;
+  const noZips = t.status === "active" && health && health.zip_count === 0;
+  const noLeads = t.status === "active" && health && health.lead_count === 0;
   const { data: zipCount } = useQuery({
     queryKey: ["tenant-zip-count", t.id],
     queryFn: async () => {
@@ -474,7 +515,25 @@ function TenantCard({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap justify-end">
+          {noAdmin && (
+            <Badge variant="destructive" className="gap-1 text-xs cursor-pointer" onClick={onOpenAdmins}>
+              No admin
+            </Badge>
+          )}
+          {noZips && (
+            <Badge variant="destructive" className="gap-1 text-xs cursor-pointer" onClick={() => {
+              localStorage.setItem("fgn_selected_tenant_id", t.id);
+              window.location.assign("/tenant/zip-codes");
+            }}>
+              No ZIPs
+            </Badge>
+          )}
+          {noLeads && (
+            <Badge variant="outline" className="gap-1 text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">
+              No leads
+            </Badge>
+          )}
           <Badge variant={t.status === "active" ? "default" : "secondary"}>
             {t.status}
           </Badge>
@@ -486,7 +545,7 @@ function TenantCard({
             <Users className="h-4 w-4" /> Admins
           </Button>
           <Badge variant="outline" className="gap-1 text-xs">
-            <MapPin className="h-3 w-3" /> {zipCount ?? 0} ZIPs
+            <MapPin className="h-3 w-3" /> {health?.zip_count ?? zipCount ?? 0} ZIPs
           </Badge>
           <Badge
             variant="outline"
