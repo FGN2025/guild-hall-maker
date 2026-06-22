@@ -1,41 +1,70 @@
-# Close Remaining Registration-Visibility Gaps
+# Tenant & Admin Feature Audit — QA Plan
 
-## Why
-
-Recent fixes unblocked tenant admins from seeing emails and made ZIP validation local-first. Four items were left out of scope. Three of them don't affect registration visibility (see assessment table in chat). The remaining one — the orphan sweep — is small but real, and the underlying trigger (`handle_new_user`) can let new orphans appear whenever sign-up metadata lacks tenant hints. This plan closes both.
+## Goal
+Produce a single QA report covering every tenant-facing surface, the platform-admin features that manage tenants, the backend that powers them, and the cross-cutting integrations. Each finding gets a severity, evidence, and a recommended fix. After delivery, I'll propose a separate fix plan for the highest-severity items.
 
 ## Scope
 
-### 1. One-shot backfill (data repair)
+**1. Tenant Admin pages** (`/tenant/*`)
+Dashboard, Players, Leads, Subscribers, ZipCodes, Codes, Team, Branding, Settings, Events, Marketing, MarketingAssets, MarketingDetail, WebPages, Guide.
 
-Three idempotent `INSERT … ON CONFLICT DO NOTHING` statements, run as a migration so it's auditable:
+**2. Platform Admin tenant-management**
+AdminTenants, AdminAccessRequests, AdminLegacyUsers, AdminInquiries, AdminBypassCodes, AdminDiscordBypass.
 
-- **Pattern B (2 known rows today):** every `legacy_users` with `matched_user_id` gets a `user_service_interests` row in its tenant, `status='legacy'`.
-- **Pattern A (0 today, future-proof):** every `profiles.zip_code` that maps to a tenant via `tenant_zip_codes` gets a `user_service_interests` row in that tenant, `status='new'`.
-- **Pattern C (0 today, future-proof):** when an FGN-fallback row exists and the user's ZIP now maps to a real tenant, insert a real-tenant row alongside it (do not delete the FGN row — safer to keep both).
+**3. Backend surface**
+RLS policies, RPCs (`get_tenant_lead_players`, `lookup_providers_by_zip`, `admin_resync_tenant_registrations`, `is_tenant_member`, `is_tenant_admin`, etc.), triggers (`handle_new_user`, `claim_tenant_invitations`, `claim_subscriber_records`, `prevent_player_tenant_admin`, Discord/Academy enqueues), edge functions touching tenant data, pgmq queues + DLQs.
 
-### 2. Harden `handle_new_user` trigger (prevent recurrence)
+**4. Cross-cutting integrations**
+NISC/GLDS billing sync, Stripe tenant subscriptions, Discord webhooks/routes, Academy sync (challenge/quest/chain/task/achievement + passport refresh), ecosystem auth tokens + sync log, email queue / suppression / unsubscribe.
 
-Extend the existing trigger so, after the current `selected_tenant_id` / `provider_tenant_ids` logic, it also:
-- Looks up the new user's ZIP in `tenant_zip_codes` and inserts `user_service_interests` rows for every matching tenant (`ON CONFLICT DO NOTHING`).
-- Keeps the FGN fallback only when nothing matched.
+## Method
 
-This closes the door on Patterns A, C, and most B-style gaps for any future sign-up path (Discord OAuth, magic link, embed, etc.).
+### Phase 1 — Static audit (read-only)
+For each page and hook:
+- Confirm route is wired, guarded by the right `*Route` component, and visible in the correct sidebar.
+- Trace data hooks → RPC/table → RLS. Flag dead imports, TODOs, commented-out UI, unhandled error states, missing toasts, missing loading/empty states, mutations that don't invalidate queries.
+- Cross-check `src/integrations/supabase/types.ts` against actually-used columns to spot drift.
+- Note duplicated/legacy code paths superseded by newer ones (e.g. old vs hardened `handle_new_user`).
 
-### 3. Admin re-scan tool (operational safety net)
+### Phase 2 — Live data probes (SQL, read-only)
+Run targeted SELECTs to surface real-world breakage:
+- Orphans: `tenant_admins` / `tenant_subscribers` / `user_service_interests` / `tenant_zip_codes` / `tenant_events` / `tenant_codes` / `legacy_users` pointing to missing users or inactive tenants.
+- Coverage: tenants with 0 ZIPs, 0 admins, 0 leads, or 0 subscribers; ZIPs claimed by multiple tenants.
+- Triggers: profiles without `user_service_interests`, legacy users with `matched_user_id` but no interest row, FGN-fallback rows where a real tenant now matches.
+- Queues: `pgmq.q_academy_*` pending vs DLQ depth, oldest message age; `passport_refresh_pending` backlog.
+- Integrations: `tenant_sync_logs` recent failures, `ecosystem_sync_log` failures, `discord_send_log` failures, `email_send_log` failures + `suppressed_emails` growth, `tenant_integrations` rows missing keys.
+- Stripe/billing: `tenant_subscriptions` in non-terminal states older than X days, tenants flagged active without a subscription row.
+- Access: `access_requests` / `discord_bypass_requests` / `provider_inquiries` stuck in `pending` > 7 days.
 
-Add a `SECURITY DEFINER` RPC `public.admin_resync_tenant_registrations()` (admin-only via `has_role`). It runs the same three backfill queries on demand and returns `{ pattern_a, pattern_b, pattern_c }` counts. Wire a small "Re-scan registrations" button into `AdminTenants.tsx` that calls it and toasts the result. Lets ops fix new orphans without a migration.
+### Phase 3 — Lint + security cross-check
+Run `supabase--linter` and review `security--get_scan_results` for anything touching the audited surface; fold into the report rather than fixing here.
 
-## Verification
+## Deliverable
 
-- Run migration → 2 Pattern-B rows land, 0 others (matches current scan).
-- Create a test user with a NineStar ZIP via plain sign-up (no provider selection) → `user_service_interests` row appears for NineStar; no FGN fallback row created.
-- Click the admin "Re-scan registrations" button → toast shows `{0, 0, 0}` immediately after the backfill.
-- Brian's NineStar Players list still shows the existing 5 users + any new sign-ups.
+`/mnt/documents/tenant-audit-2026-06-22.md` with sections:
+1. Executive summary — counts by severity (P0/P1/P2/P3) and area.
+2. Per-page findings — file:line refs, what's broken/incomplete, severity, recommended fix.
+3. Backend findings — RLS gaps, trigger gaps, RPC issues, queue health, schema drift.
+4. Integration findings — Stripe/NISC/GLDS/Discord/Academy/ecosystem/email.
+5. Live data probe results — table of counts with interpretation.
+6. Dead/orphan code — pages, hooks, components, columns no longer referenced.
+7. Recommended fix order.
 
-## Explicitly NOT in this plan
+Severity rubric:
+- **P0** broken in production / data loss / security
+- **P1** feature unusable or visibly wrong for a real user
+- **P2** rough edges, missing affordance, partial implementation
+- **P3** cleanup, dead code, copy nits
 
-- Bulk-loading `national_zip_codes` (cosmetic; separate decision on dataset source).
-- Touching `useRegistrationZipCheck` / `ZipCheckStep` / `TenantZipCodes` UIs.
-- Deleting the redundant FGN fallback rows when a real tenant exists (safer to keep both; audit later).
-- Sweeping the 13 profiles with no `user_service_interests` (all are platform staff / test accounts; trigger would have to bypass `prevent_player_tenant_admin` for staff — out of scope).
+## After the report
+I'll come back with a second `plan--create` covering the P0/P1 fixes (and any P2 clusters that share a migration) for your approval before any code changes.
+
+## Explicitly NOT in this pass
+- No code or schema changes.
+- No Playwright runs (you chose static + data probes).
+- No re-audit of areas outside tenant + admin-tenant scope (player-only UX, tournaments, quests internals, coach, etc.) except where they directly touch a tenant surface.
+
+## Risks / assumptions
+- Live probes are read-only SELECTs; no writes.
+- Report is a snapshot — counts will drift after any future migration.
+- If a probe surfaces something obviously destructive (e.g. orphan rows about to be served to users), I'll call it out as P0 but still wait for the follow-up plan before fixing.
