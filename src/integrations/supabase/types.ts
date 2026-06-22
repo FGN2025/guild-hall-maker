@@ -4929,7 +4929,9 @@ export type Database = {
       lookup_providers_by_zip: {
         Args: { _zip: string }
         Returns: {
+          city: string
           logo_url: string
+          state: string
           tenant_id: string
           tenant_name: string
           tenant_slug: string
