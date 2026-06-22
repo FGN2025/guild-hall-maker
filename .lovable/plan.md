@@ -1,61 +1,55 @@
-## Weekly Registrations Digest Email
+# Fix: Ninestar tenant admin can't see registered player details
 
-A new app email sent to **darcy@fgn.gg** every **Friday at 4:00 PM Pacific** that lists everyone who signed up for a Tournament, Quest, or Challenge in the previous 7 days.
+## Root cause
 
-### What the email contains
+I traced both issues against the live database for NineStar Connect (`e9c0f4b8-…`).
 
-Three sections, each grouped by item (tournament/quest/challenge), then listing the players who registered in the last 7 days:
+### 1. Why rows show "—" for name / gamer tag / email
 
-```text
-TOURNAMENTS
-  • <Tournament name> — <game>
-      - <Display name> (@handle) — registered Mon Jun 15, 2:14 PM PT
-      - <Display name> (@handle) — registered Tue Jun 16, 9:02 AM PT
+The Players list in `useTenantPlayers` reads from `user_service_interests` (the "new leads" registry) and then tries to enrich each row from the `profiles_public` view.
 
-QUESTS
-  • <Quest name>
-      - <Display name> (@handle) — enrolled …
+- `user_service_interests` RLS: tenant admins can read rows where they are a tenant member ✅
+- `profiles_public` is just a view over `profiles`. `profiles` RLS only allows: the owner, platform admins, and moderators. **Tenant admins are not granted access.**
+- Result: every join returns `null`, so `display_name` and `gamer_tag` render as "—".
+- Email is even worse — the hook hardcodes `email: null` and `address: null`. Email lives in `auth.users`, which the client cannot read at all.
 
-CHALLENGES
-  • <Challenge name>
-      - <Display name> (@handle) — enrolled …
-```
+Ninestar currently has 4 real registrations in `user_service_interests` (Dr Eville, db, GamerBrah21, DistantOne) plus 1 legacy match. Their profile rows do exist — the tenant admin just can't see them.
 
-Footer shows the totals (e.g. "12 new tournament registrations · 4 new quest enrollments · 7 new challenge enrollments") and a link to the admin pages. If a section has zero new entries that week, it shows "No new registrations this week" instead of being hidden, so the report is always complete.
+### 2. ZIP 46055
 
-The window is the **rolling 7 days** ending at send time, so the Friday email always covers Fri → Fri.
+`validate-zip` works end-to-end right now — I called it directly and got `McCordsville, IN — 1 provider(s) found! → NineStar Connect`. The ZIP is correctly mapped in `tenant_zip_codes`. The "no providers" message the tenant saw was almost certainly a transient Smarty API failure: the function throws when Smarty returns non-200, and there is no fallback to our local `national_zip_codes` table (which is empty for 46055 anyway, so today the fallback wouldn't help even if it existed).
 
-### Schedule
+## Fix
 
-- Cron fires **every Friday at 23:00 UTC**, which is 4:00 PM Pacific during Daylight Time (Mar–Nov) and 3:00 PM Pacific during Standard Time (Nov–Mar).
-- Pure UTC cron can't follow DST automatically. Two options — please confirm which you want:
-  1. **Lock to 23:00 UTC** (4 PM PT in summer, 3 PM PT in winter). Simplest.
-  2. **Stay at 4 PM Pacific year-round** — I'd add a small guard in the trigger function that checks the current Pacific hour and exits early on the wrong week, then run two cron rows (22:00 and 23:00 UTC) so exactly one fires per Friday. More moving parts, but DST-correct.
+### A. New security-definer RPC for tenant lead enrichment
 
-Default in the plan below is option 1 unless you say otherwise.
+Add `public.get_tenant_lead_players(_tenant_id uuid)` returning enriched lead rows. The function checks `is_tenant_member(_tenant_id, auth.uid())` (or `has_role(auth.uid(),'admin')`) before returning anything, and joins:
 
-### Backstop against duplicates
+- `user_service_interests` (id, zip_code, status, created_at)
+- `profiles` (display_name, gamer_tag, avatar_url)
+- `auth.users` (email)
 
-Idempotency key `weekly-registrations-${YYYY-MM-DD}` (the Friday's date) so a retry on the same day won't double-send.
+`SECURITY DEFINER`, `SET search_path = public`, granted to `authenticated`.
 
-### Technical details
+### B. Wire it into the UI
 
-- **New template**: `supabase/functions/_shared/transactional-email-templates/weekly-registrations-digest.tsx`
-  - `to: 'darcy@fgn.gg'` baked in (same pattern as the Discord backlog reminder)
-  - Accepts `{ windowStart, windowEnd, tournaments[], quests[], challenges[] }` as `templateData`
-  - Subject: `FGN weekly registrations — <N> new sign-ups`
-- **Registry**: add `weekly-registrations-digest` to `_shared/transactional-email-templates/registry.ts`
-- **New trigger function**: `supabase/functions/send-weekly-registrations-digest/index.ts`
-  - Uses service-role client to query the last 7 days from `tournament_registrations`, `quest_enrollments`, `challenge_enrollments`, joined to `tournaments`/`quests`/`challenges` for names and `profiles` for display name/handle
-  - Builds the `templateData` payload and invokes `send-transactional-email` with the idempotency key
-  - `verify_jwt = false` in `supabase/config.toml`
-- **Cron**: add a `pg_cron` job via the insert tool (not migration, per project rules):
-  - Schedule `0 23 * * 5` calling `net.http_post` to the new function with the anon key
-  - Job name `weekly-registrations-digest`
-- No schema changes. No new tables. No UI changes.
+Replace the manual join in `src/hooks/useTenantPlayers.ts` (`leadsQuery`) with a single `supabase.rpc('get_tenant_lead_players', { _tenant_id: tenantId })` call, and map the returned rows into `UnifiedPlayer` so `name`, `gamerTag`, and `email` populate correctly.
 
-### Out of scope
+No schema change to `user_service_interests` or `profiles`. No new RLS policy on `profiles` (we deliberately keep tenant admins out of the raw table — only the scoped RPC sees those rows).
 
-- No in-app digest view (email only).
-- No per-tenant filtering — this is the global FGN view, matching the existing Discord backlog reminder pattern.
-- No "since you last opened it" tracking — strictly a rolling 7-day window.
+### C. Harden `validate-zip` against Smarty outages
+
+Update `supabase/functions/validate-zip/index.ts` so that when Smarty returns a non-OK status (or throws), we still call `lookup_providers_by_zip` and return `valid: true` with the providers and a generic "City lookup unavailable" note instead of bubbling up a 500. This way a transient Smarty hiccup never blocks a real Ninestar ZIP like 46055 from finding its provider.
+
+### D. Verify
+
+After deploy:
+1. Sign in as Brian Dowden, open Players — Dr Eville / db / GamerBrah21 / DistantOne should show real display names, gamer tags, and emails.
+2. Re-run `validate-zip` with `{"zipCode":"46055"}` → still returns NineStar Connect.
+3. Simulate a Smarty failure (bad creds) → still returns the provider list with a soft warning, not a 500.
+
+## Out of scope
+
+- No changes to legacy_users flow (already shows correctly).
+- No changes to `tenant_subscribers` (separate billing-sync registry, not the registration path).
+- No changes to existing RLS on `profiles`.

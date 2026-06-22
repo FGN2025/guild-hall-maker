@@ -24,38 +24,28 @@ Deno.serve(async (req) => {
     const authId = Deno.env.get("SMARTY_AUTH_ID");
     const authToken = Deno.env.get("SMARTY_AUTH_TOKEN");
 
-    if (!authId || !authToken) {
-      throw new Error("Smarty credentials not configured.");
+    let city: string | null = null;
+    let state: string | null = null;
+    let smartyOk = false;
+
+    if (authId && authToken) {
+      try {
+        const smartyUrl = `https://us-zipcode.api.smarty.com/lookup?auth-id=${authId}&auth-token=${authToken}&zipcode=${zipCode}`;
+        const smartyRes = await fetch(smartyUrl);
+        if (smartyRes.ok) {
+          const smartyData = await smartyRes.json();
+          const cityStates = smartyData?.[0]?.city_states;
+          if (cityStates && cityStates.length > 0) {
+            city = cityStates[0].city;
+            state = cityStates[0].state_abbreviation;
+            smartyOk = true;
+          }
+        }
+      } catch (_e) {
+        // swallow — fall through to provider lookup
+      }
     }
 
-    // Call Smarty US ZIP Code API
-    const smartyUrl = `https://us-zipcode.api.smarty.com/lookup?auth-id=${authId}&auth-token=${authToken}&zipcode=${zipCode}`;
-    const smartyRes = await fetch(smartyUrl);
-
-    if (!smartyRes.ok) {
-      throw new Error(`Smarty API error: ${smartyRes.status}`);
-    }
-
-    const smartyData = await smartyRes.json();
-
-    const result = smartyData?.[0];
-    const cityStates = result?.city_states;
-
-    if (!cityStates || cityStates.length === 0) {
-      return new Response(
-        JSON.stringify({
-          valid: false,
-          city: null,
-          state: null,
-          providers: [],
-          message: "Invalid ZIP code. Please enter a valid US ZIP code.",
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const city = cityStates[0].city;
-    const state = cityStates[0].state_abbreviation;
 
     // Lookup providers via Supabase service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -82,17 +72,20 @@ Deno.serve(async (req) => {
       noProvidersMessage = setting?.value || null;
     }
 
+    const locationLabel = smartyOk && city && state ? `${city}, ${state}` : `ZIP ${zipCode}`;
+
     return new Response(
       JSON.stringify({
         valid: true,
         city,
         state,
+        smarty_ok: smartyOk,
         providers: providers || [],
         no_providers_message: noProvidersMessage,
         message:
           providers && providers.length > 0
-            ? `Valid ZIP: ${city}, ${state} — ${providers.length} provider(s) found!`
-            : `Valid ZIP: ${city}, ${state} — no providers currently serve your area.`,
+            ? `${locationLabel} — ${providers.length} provider(s) found!`
+            : `${locationLabel} — no providers currently serve your area.`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -24,36 +24,23 @@ export function useTenantPlayers(tenantId: string | null) {
     queryKey: ["tenant-players-new", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_service_interests")
-        .select("id, user_id, zip_code, status, created_at")
-        .eq("tenant_id", tenantId!);
-      if (error) throw error;
-      if (!data || data.length === 0) return [] as UnifiedPlayer[];
-
-      const userIds = data.map((d: any) => d.user_id);
-      const { data: profiles } = await (supabase.from as any)("profiles_public")
-        .select("user_id, display_name, gamer_tag")
-        .in("user_id", userIds);
-
-      const pMap = new Map(((profiles || []) as any[]).map((p: any) => [p.user_id, p]));
-
-      return data.map((row: any): UnifiedPlayer => {
-        const p = pMap.get(row.user_id);
-        return {
-          id: row.id,
-          source: "new",
-          name: p?.display_name || "—",
-          gamerTag: p?.gamer_tag || null,
-          email: null,
-          address: null,
-          zip: row.zip_code,
-          inviteCode: null,
-          status: row.status || "new",
-          matchedUserId: null,
-          createdAt: row.created_at,
-        };
+      const { data, error } = await (supabase as any).rpc("get_tenant_lead_players", {
+        _tenant_id: tenantId,
       });
+      if (error) throw error;
+      return ((data || []) as any[]).map((row): UnifiedPlayer => ({
+        id: row.id,
+        source: "new",
+        name: row.display_name || "—",
+        gamerTag: row.gamer_tag || null,
+        email: row.email || null,
+        address: null,
+        zip: row.zip_code,
+        inviteCode: null,
+        status: row.status || "new",
+        matchedUserId: null,
+        createdAt: row.created_at,
+      }));
     },
   });
 

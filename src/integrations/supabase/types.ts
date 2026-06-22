@@ -4881,6 +4881,20 @@ export type Database = {
         Returns: undefined
       }
       get_academy_queue_stats: { Args: never; Returns: Json }
+      get_tenant_lead_players: {
+        Args: { _tenant_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          email: string
+          gamer_tag: string
+          id: string
+          status: string
+          user_id: string
+          zip_code: string
+        }[]
+      }
       get_tenant_sync_health: {
         Args: { _hours?: number; _tenant_id?: string }
         Returns: {
