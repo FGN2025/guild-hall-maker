@@ -58,6 +58,29 @@ const TenantZipCodes = () => {
     },
   });
 
+  const { data: overlaps = [] } = useQuery({
+    queryKey: ["tenant-zip-overlaps", tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_tenant_zip_overlaps", {
+        _tenant_id: tenantId,
+      });
+      if (error) throw error;
+      return (data || []) as Array<{
+        zip_code: string;
+        other_tenant_id: string;
+        other_tenant_name: string;
+        other_tenant_slug: string;
+      }>;
+    },
+  });
+
+  const overlapMap = overlaps.reduce<Record<string, string[]>>((acc, o) => {
+    (acc[o.zip_code] ||= []).push(o.other_tenant_name);
+    return acc;
+  }, {});
+  const overlapCount = Object.keys(overlapMap).length;
+
   const addZip = useMutation({
     mutationFn: async (input: { zip_code: string; city?: string; state?: string }) => {
       let city = input.city || null;
