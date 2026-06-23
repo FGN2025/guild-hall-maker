@@ -409,6 +409,9 @@ const AdminEcosystem = () => {
         )}
       </div>
 
+      {/* Academy Integration Health */}
+      <AcademyIntegrationHealth />
+
       {/* Sync Health */}
       <EcosystemSyncHealth />
 
