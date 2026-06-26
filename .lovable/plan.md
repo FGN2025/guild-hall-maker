@@ -1,21 +1,16 @@
-## Problem
-The `provider_inquiries` table has policies for SELECT, INSERT (anon submit), and DELETE — but **no UPDATE policy**. When an admin changes status or saves notes, the mutation returns 0 rows affected (RLS blocks it silently) and the UI stays on the old value after refetch.
+## Root cause
+`src/pages/TournamentManage.tsx` calls `useQuery` for `placementCount` at line 110 — **after** two conditional early returns (loading at line 73, access-denied at line 83). React requires hooks to run in the same order every render. On the first render the early `return` happens before the `useQuery`, so the hook count differs once the page renders fully → React minified error #310 ("Something went wrong" page) whenever admins open Manage Tournament for a completed (or any) tournament.
+
+Note: the `EditTournamentDialog` itself isn't broken — the page crashes before/around it.
 
 ## Fix
-Add a single migration that grants admins UPDATE access:
+Move the `useQuery({ queryKey: ["tournament-placement-count", id], ... })` block **above** the `if (isLoading)` early return so it runs on every render. Its `enabled` flag already guards execution.
 
-```sql
-CREATE POLICY "Admins can update provider inquiries"
-ON public.provider_inquiries
-FOR UPDATE
-TO authenticated
-USING (has_role(auth.uid(), 'admin'))
-WITH CHECK (has_role(auth.uid(), 'admin'));
+```tsx
+const { data: placementCount = 0 } = useQuery({ ... });  // move here, right after useTournamentManagement
+
+if (isLoading) { ... }
+if (!tournament || !isOwner) { ... }
 ```
 
-## Optional small UX hardening (frontend)
-In `AdminInquiries.tsx`, also stamp `handled_by` / `handled_at` on the client when status changes away from `new`, so the "handled at" timestamp under the status badge populates correctly:
-
-- On status change: include `handled_at: new Date().toISOString()` and `handled_by: user.id` in the patch.
-
-No other changes — RLS unblock is the actual fix.
+No other changes — single-file, single-block move. Nothing about tournament edit logic or RLS is affected.
