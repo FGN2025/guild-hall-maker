@@ -70,6 +70,18 @@ const TournamentManage = () => {
     isSettingAttendance,
   } = useTournamentManagement(id);
 
+  const { data: placementCount = 0 } = useQuery({
+    queryKey: ["tournament-placement-count", id],
+    enabled: !!id && tournament?.status === "completed",
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("tournament_placements")
+        .select("id", { count: "exact", head: true })
+        .eq("tournament_id", id!);
+      return count ?? 0;
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background grid-bg">
@@ -107,18 +119,8 @@ const TournamentManage = () => {
     return acc;
   }, {});
 
-  const { data: placementCount = 0 } = useQuery({
-    queryKey: ["tournament-placement-count", id],
-    enabled: !!id && tournament?.status === "completed",
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("tournament_placements")
-        .select("id", { count: "exact", head: true })
-        .eq("tournament_id", id!);
-      return count ?? 0;
-    },
-  });
   const missingPlacements = tournament?.status === "completed" && placementCount === 0;
+
 
 
 
