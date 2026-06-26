@@ -1,11 +1,21 @@
-# Tenant Audit — Wave 2 Status (closed 2026-06-22)
+## Problem
+The `provider_inquiries` table has policies for SELECT, INSERT (anon submit), and DELETE — but **no UPDATE policy**. When an admin changes status or saves notes, the mutation returns 0 rows affected (RLS blocks it silently) and the UI stays on the old value after refetch.
 
-| Item | Description | Status |
-|---|---|---|
-| 2.1 | Tenant health summary RPC + coverage badges on AdminTenants | ✅ Done |
-| 2.2 | ZIP multi-tenant overlap warning on TenantZipCodes | ✅ Done |
-| 2.3 | Academy key enforcement / per-tenant gate | ⏭️ Closed — no action (handoff verified healthy in prod; see `docs/fgn-academy-integration.md` § Audit 2.3) |
-| 2.4 | RLS hardening on `provider_inquiries` (anon insert scoped to `status='new'`, internal triage fields blocked) | ✅ Done |
-| 2.5 | Lead email visibility on TenantLeads | ✅ Already satisfied (no email column rendered; export still uses masked RPC) |
+## Fix
+Add a single migration that grants admins UPDATE access:
 
-Wave 2 complete. Next: Wave 3 planning.
+```sql
+CREATE POLICY "Admins can update provider inquiries"
+ON public.provider_inquiries
+FOR UPDATE
+TO authenticated
+USING (has_role(auth.uid(), 'admin'))
+WITH CHECK (has_role(auth.uid(), 'admin'));
+```
+
+## Optional small UX hardening (frontend)
+In `AdminInquiries.tsx`, also stamp `handled_by` / `handled_at` on the client when status changes away from `new`, so the "handled at" timestamp under the status badge populates correctly:
+
+- On status change: include `handled_at: new Date().toISOString()` and `handled_by: user.id` in the patch.
+
+No other changes — RLS unblock is the actual fix.
