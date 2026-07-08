@@ -4868,6 +4868,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_academy_achievement_sync: {
         Args: { _achievement_id: string; _user_id: string }
         Returns: number
