@@ -588,7 +588,7 @@ function TenantCard({
 
 /* ─── Admin panel with search + invite tabs ─── */
 function TenantAdminPanel({ tenantId, tenantName }: { tenantId: string; tenantName: string }) {
-  const { admins, isLoading, invitations, addAdmin, removeAdmin, createInvitation, cancelInvitation } = useTenantAdmins(tenantId);
+  const { admins, isLoading, invitations, addAdmin, removeAdmin, createInvitation, cancelInvitation, resendInvitation } = useTenantAdmins(tenantId);
   const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
   const [addRole, setAddRole] = useState("admin");
