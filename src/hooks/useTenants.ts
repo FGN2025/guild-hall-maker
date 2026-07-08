@@ -251,7 +251,7 @@ export function useTenantAdmins(tenantId: string | null) {
 
       // Send invitation email
       try {
-        await supabase.functions.invoke("send-tenant-invite", {
+        const { data, error: fnErr } = await supabase.functions.invoke("send-tenant-invite", {
           body: {
             email: email.toLowerCase().trim(),
             tenantName: tenantName || "a provider",
@@ -259,9 +259,14 @@ export function useTenantAdmins(tenantId: string | null) {
             invitedBy: user.email,
           },
         });
-      } catch (emailErr) {
+        if (fnErr) throw fnErr;
+        if (data && data.success === false) throw new Error(data.message || "Email provider rejected the request");
+      } catch (emailErr: any) {
         console.error("Failed to send invite email:", emailErr);
-        // Don't fail the mutation if email fails — invitation is still created
+        // Invitation row is still created; surface a warning so admins can retry.
+        toast.warning("Invitation saved, but the email failed to send.", {
+          description: emailErr?.message || "Please retry or contact the invitee directly.",
+        });
       }
     },
     onSuccess: () => {
