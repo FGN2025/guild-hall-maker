@@ -754,13 +754,29 @@ function TenantAdminPanel({ tenantId, tenantName }: { tenantId: string; tenantNa
                   Invited {new Date(inv.created_at).toLocaleDateString()}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => cancelInvitation.mutate(inv.id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-8"
+                  disabled={resendInvitation.isPending && resendInvitation.variables?.email === inv.email}
+                  onClick={() => resendInvitation.mutate({ email: inv.email, role: inv.role, tenantName })}
+                >
+                  {resendInvitation.isPending && resendInvitation.variables?.email === inv.email ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5" />
+                  )}
+                  Resend
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => cancelInvitation.mutate(inv.id)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>
