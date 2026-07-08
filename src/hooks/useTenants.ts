@@ -294,5 +294,24 @@ export function useTenantAdmins(tenantId: string | null) {
     onError: (err: any) => toast.error(err.message),
   });
 
-  return { admins, isLoading, invitations, invitationsLoading, addAdmin, removeAdmin, updateRole, createInvitation, cancelInvitation };
+  const resendInvitation = useMutation({
+    mutationFn: async ({ email, role, tenantName }: { email: string; role: string; tenantName?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data, error } = await supabase.functions.invoke("send-tenant-invite", {
+        body: {
+          email: email.toLowerCase().trim(),
+          tenantName: tenantName || "a provider",
+          role,
+          invitedBy: user?.email,
+        },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.message || "Email provider rejected the request");
+      return data;
+    },
+    onSuccess: () => toast.success("Invitation email resent."),
+    onError: (err: any) => toast.error(err?.message || "Failed to resend invitation email."),
+  });
+
+  return { admins, isLoading, invitations, invitationsLoading, addAdmin, removeAdmin, updateRole, createInvitation, cancelInvitation, resendInvitation };
 }
