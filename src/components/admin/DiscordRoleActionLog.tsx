@@ -131,9 +131,9 @@ export default function DiscordRoleActionLog() {
     // Check open tournaments' discord_role_id positions
     const { data: tourns } = await supabase
       .from("tournaments")
-      .select("name, discord_role_id")
+      .select("name, discord_role_id, status")
       .not("discord_role_id", "is", null)
-      .in("status", ["scheduled", "active", "registration_open", "published"] as any)
+      .in("status", ["upcoming", "open", "in_progress"] as any)
       .limit(50);
 
     const problems: string[] = [];
