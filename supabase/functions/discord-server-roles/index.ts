@@ -86,35 +86,7 @@ Deno.serve(async (req) => {
         position: r.position,
       }));
 
-    // Also fetch the bot's own member record so admins can compare role positions
-    let botInfo: {
-      user_id: string | null;
-      highest_role_position: number | null;
-      role_ids: string[];
-    } | null = null;
-
-    try {
-      const meRes = await fetch(
-        `https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/@me`,
-        { headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` } },
-      );
-      if (meRes.ok) {
-        const me = await meRes.json();
-        const botRoleIds: string[] = me.roles ?? [];
-        const highest = discordRoles
-          .filter((r: any) => botRoleIds.includes(r.id))
-          .reduce((max: number, r: any) => Math.max(max, r.position ?? 0), 0);
-        botInfo = {
-          user_id: me.user?.id ?? null,
-          highest_role_position: highest,
-          role_ids: botRoleIds,
-        };
-      }
-    } catch (e) {
-      console.warn("Failed to fetch bot member info:", e);
-    }
-
-    return new Response(JSON.stringify({ roles: filteredRoles, bot: botInfo }), {
+    return new Response(JSON.stringify({ roles: filteredRoles }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

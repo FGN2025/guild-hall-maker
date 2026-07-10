@@ -12,7 +12,6 @@ import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import DiscordRoleManager from "@/components/admin/DiscordRoleManager";
 import DiscordWebhookManager from "@/components/admin/DiscordWebhookManager";
 import DiscordChannelRouteManager from "@/components/admin/DiscordChannelRouteManager";
-import DiscordRoleActionLog from "@/components/admin/DiscordRoleActionLog";
 import EcosystemSyncHealth from "@/components/admin/EcosystemSyncHealth";
 import AcademyIntegrationHealth from "@/components/admin/AcademyIntegrationHealth";
 import { Badge } from "@/components/ui/badge";
@@ -458,9 +457,6 @@ const AdminEcosystem = () => {
       <div className="glass-panel rounded-xl border border-border/50 p-6">
         <DiscordRoleManager />
       </div>
-
-      {/* Discord Role Assignment Log */}
-      <DiscordRoleActionLog />
     </div>
   );
 };

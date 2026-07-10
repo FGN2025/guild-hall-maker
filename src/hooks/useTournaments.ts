@@ -91,22 +91,8 @@ export const useTournaments = () => {
         .invoke("assign-tournament-role", {
           body: { tournament_id: tournamentId, user_id: user.id },
         })
-        .then(({ data, error: fnErr }) => {
-          if (fnErr) {
-            console.warn("Discord role assignment failed:", fnErr);
-            toast.warning(
-              "Registered — but your Discord role couldn't be assigned. An admin has been notified."
-            );
-            return;
-          }
-          const status = (data as { status?: string; ok?: boolean } | null)?.status;
-          if (status === "failed") {
-            toast.warning(
-              "Registered — Discord role assignment failed. An admin has been notified."
-            );
-          } else if (status === "retry_pending") {
-            toast.info("Registered — Discord role will be assigned shortly.");
-          }
+        .then(({ error: fnErr }) => {
+          if (fnErr) console.warn("Discord role assignment failed:", fnErr);
         });
     },
     onSuccess: () => {
