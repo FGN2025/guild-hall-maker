@@ -458,6 +458,9 @@ const AdminEcosystem = () => {
       <div className="glass-panel rounded-xl border border-border/50 p-6">
         <DiscordRoleManager />
       </div>
+
+      {/* Discord Role Assignment Log */}
+      <DiscordRoleActionLog />
     </div>
   );
 };
