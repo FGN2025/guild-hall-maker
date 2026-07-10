@@ -12,6 +12,7 @@ import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import DiscordRoleManager from "@/components/admin/DiscordRoleManager";
 import DiscordWebhookManager from "@/components/admin/DiscordWebhookManager";
 import DiscordChannelRouteManager from "@/components/admin/DiscordChannelRouteManager";
+import DiscordRoleActionLog from "@/components/admin/DiscordRoleActionLog";
 import EcosystemSyncHealth from "@/components/admin/EcosystemSyncHealth";
 import AcademyIntegrationHealth from "@/components/admin/AcademyIntegrationHealth";
 import { Badge } from "@/components/ui/badge";
