@@ -1066,6 +1066,57 @@ export type Database = {
           },
         ]
       }
+      discord_role_action_log: {
+        Row: {
+          attempt: number
+          created_at: string
+          discord_id: string | null
+          error_message: string | null
+          http_status: number | null
+          id: string
+          next_retry_at: string | null
+          reason: string | null
+          role_id: string | null
+          source: string
+          status: string
+          tournament_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attempt?: number
+          created_at?: string
+          discord_id?: string | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          next_retry_at?: string | null
+          reason?: string | null
+          role_id?: string | null
+          source?: string
+          status: string
+          tournament_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempt?: number
+          created_at?: string
+          discord_id?: string | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          next_retry_at?: string | null
+          reason?: string | null
+          role_id?: string | null
+          source?: string
+          status?: string
+          tournament_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       discord_role_mappings: {
         Row: {
           condition_value: string | null
@@ -4853,6 +4904,10 @@ export type Database = {
     }
     Functions: {
       admin_resync_tenant_registrations: { Args: never; Returns: Json }
+      admin_retry_discord_role_action: {
+        Args: { _log_id: string }
+        Returns: undefined
+      }
       claim_pending_invitations: { Args: never; Returns: undefined }
       compute_quest_rank: { Args: { xp: number }; Returns: string }
       delete_email: {
