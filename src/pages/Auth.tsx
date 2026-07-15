@@ -37,15 +37,23 @@ const Auth = () => {
   const [legacyUsername, setLegacyUsername] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Same-origin relative redirect after auth (used by OAuth consent flow).
+  const nextParam = searchParams.get("next");
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : null;
+  const postAuthTarget = safeNext ?? "/dashboard";
+
   // Redirect authenticated users away from /auth
   useEffect(() => {
     if (authLoading) return;
     if (user && emailConfirmed) {
-      navigate("/dashboard", { replace: true });
+      navigate(postAuthTarget, { replace: true });
     } else if (user && !emailConfirmed) {
       navigate("/confirm-email", { replace: true });
     }
-  }, [user, emailConfirmed, authLoading, navigate]);
+  }, [user, emailConfirmed, authLoading, navigate, postAuthTarget]);
 
   // ZIP check state (signup only)
   const [zipCode, setZipCode] = useState("");
@@ -210,7 +218,7 @@ const Auth = () => {
         // Claim any pending tenant invitations silently
         try { await supabase.rpc('claim_pending_invitations'); } catch {}
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        navigate(postAuthTarget);
       }
     } else {
       const providerTenantIds = !selectedTenantId && zipResult?.providers
@@ -220,7 +228,7 @@ const Auth = () => {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: safeNext ? `${window.location.origin}${safeNext}` : window.location.origin,
           data: {
             display_name: displayName.trim() || undefined,
             zip_code: zipCode,
@@ -469,7 +477,7 @@ const Auth = () => {
                     // Claim any pending tenant invitations
                     try { await supabase.rpc('claim_pending_invitations'); } catch {}
                     toast.success("Welcome!");
-                    navigate("/dashboard");
+                    navigate(postAuthTarget);
                   }
                 }}
               >
