@@ -1,16 +1,20 @@
-## Root cause
-`src/pages/TournamentManage.tsx` calls `useQuery` for `placementCount` at line 110 — **after** two conditional early returns (loading at line 73, access-denied at line 83). React requires hooks to run in the same order every render. On the first render the early `return` happens before the `useQuery`, so the hook count differs once the page renders fully → React minified error #310 ("Something went wrong" page) whenever admins open Manage Tournament for a completed (or any) tournament.
+## Problem
 
-Note: the `EditTournamentDialog` itself isn't broken — the page crashes before/around it.
+Claude hits `https://play.fgn.gg/.lovable/oauth/consent?authorization_id=...` and sees the app's 404. The consent route exists in `src/App.tsx` (line 158) and `src/pages/OAuthConsent.tsx` was added in the previous MCP turn — but that code has not been shipped to the live custom domain. The published build at `play.fgn.gg` is from before the MCP work, so React Router there has no `/.lovable/oauth/consent` route and falls through to NotFound.
 
 ## Fix
-Move the `useQuery({ queryKey: ["tournament-placement-count", id], ... })` block **above** the `if (isLoading)` early return so it runs on every render. Its `enabled` flag already guards execution.
 
-```tsx
-const { data: placementCount = 0 } = useQuery({ ... });  // move here, right after useTournamentManagement
+Republish the project. No code changes needed — the route, consent page, and OAuth wiring are already correct in the current source.
 
-if (isLoading) { ... }
-if (!tournament || !isOwner) { ... }
-```
+## Steps
 
-No other changes — single-file, single-block move. Nothing about tournament edit logic or RLS is affected.
+1. Run `preview_ui--publish` to ship the current build to `play.fgn.gg` (and the other custom domains + `guild-hall-maker.lovable.app`).
+2. After publish completes (~1 min), retry the Claude "Add MCP" flow. Claude will re-hit `play.fgn.gg/.lovable/oauth/consent?authorization_id=...`, the new build will render the consent screen, and approve/deny will redirect back to Claude with a code.
+
+## If it still 404s after republish
+
+Then the issue is not staleness. Likely follow-ups to check:
+- Supabase Auth **Site URL** — must point at `https://play.fgn.gg` (the origin Claude is being redirected to). If it points at the lovable.app preview, the consent redirect works but from a different origin than Claude expects.
+- The `/.lovable/...` path segment is served by Lovable's SPA fallback correctly (no extension, so it falls back to `index.html`) — confirmed by the fact that the app's own NotFound renders, meaning `index.html` did load.
+
+But start with the republish; that is almost certainly the whole fix.
