@@ -154,6 +154,7 @@ const App = () => (
               <Route path="/disabled-users" element={<DisabledUsersNotice />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/confirm-email" element={<ConfirmEmail />} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
               <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
               <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
               <Route path="/embed/calendar/:configId" element={<EmbedCalendar />} />
