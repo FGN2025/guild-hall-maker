@@ -55,6 +55,7 @@ const TenantEventDetail = lazy(() => import("./pages/TenantEventDetail"));
 const EmbedCalendar = lazy(() => import("./pages/EmbedCalendar"));
 const WebPageView = lazy(() => import("./pages/WebPageView"));
 const MediaLibrary = lazy(() => import("./pages/MediaLibrary"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -154,6 +155,7 @@ const App = () => (
               <Route path="/disabled-users" element={<DisabledUsersNotice />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/confirm-email" element={<ConfirmEmail />} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
               <Route path="/events/:tenantSlug" element={<TenantEventPage />} />
               <Route path="/events/:tenantSlug/:eventId" element={<TenantEventDetail />} />
               <Route path="/embed/calendar/:configId" element={<EmbedCalendar />} />
