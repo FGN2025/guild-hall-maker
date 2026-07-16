@@ -29,11 +29,13 @@ var get_me_default = defineTool({
       }
       const supabase = supabaseForUser(ctx);
       const userId = ctx.getUserId();
-      const { data, error } = await supabase.from("profiles").select("id, display_name, email, points, points_available, tenant_id, discord_username").eq("id", userId).maybeSingle();
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData?.user?.email ?? null;
+      const { data, error } = await supabase.from("profiles").select("id, display_name, points, points_available, tenant_id, discord_username").eq("id", userId).maybeSingle();
       if (error) {
         return { content: [{ type: "text", text: error.message }], isError: true };
       }
-      const profile = data ?? { id: userId, email: ctx.getUserEmail() };
+      const profile = { ...data ?? { id: userId }, email };
       return {
         content: [{ type: "text", text: JSON.stringify(profile, null, 2) }],
         structuredContent: { profile }
