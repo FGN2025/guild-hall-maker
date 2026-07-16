@@ -2,10 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 
-// Live `public.tournaments` uses `game` (text) — there is no `game_id` or
-// `tenant_id` column. Ladders and tenant_events are separate entities and are
-// intentionally excluded from this tool; only the primary tournaments entity
-// is returned.
+// Columns verified against live `public.games`: id, name, slug, category,
+// platform_tags (text[]), is_active, display_order. RLS returns only active
+// games to non-admins.
 
 function supabaseForUser(ctx: ToolContext) {
   return createClient(
@@ -19,18 +18,18 @@ function supabaseForUser(ctx: ToolContext) {
 }
 
 export default defineTool({
-  name: "list_tournaments",
-  title: "List tournaments",
+  name: "list_games",
+  title: "List games",
   description:
-    "List tournaments visible to the signed-in user, ordered by start date descending. Excludes archived tournaments.",
+    "List active games in the catalog with id, name, slug, category, and platform tags.",
   inputSchema: {
     limit: z
       .number()
       .int()
       .min(1)
-      .max(50)
+      .max(100)
       .optional()
-      .describe("Max rows to return (default 20)."),
+      .describe("Max rows to return (default 50)."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ limit }, ctx) => {
@@ -39,26 +38,18 @@ export default defineTool({
     }
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase
-      .from("tournaments")
-      .select("id, name, game, status, start_date, end_date")
-      .is("archived_at", null)
-      .order("start_date", { ascending: false })
-      .limit(limit ?? 20);
+      .from("games")
+      .select("id, name, slug, category, platform_tags, is_active, display_order")
+      .order("display_order", { ascending: true })
+      .order("name", { ascending: true })
+      .limit(limit ?? 50);
 
     if (error) {
       return { content: [{ type: "text", text: error.message }], isError: true };
     }
-    const tournaments = (data ?? []).map((t: any) => ({
-      id: t.id,
-      name: t.name,
-      game: t.game,
-      status: t.status,
-      starts_at: t.start_date,
-      ends_at: t.end_date,
-    }));
     return {
-      content: [{ type: "text", text: JSON.stringify(tournaments, null, 2) }],
-      structuredContent: { tournaments },
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: { games: data ?? [] },
     };
   },
 });

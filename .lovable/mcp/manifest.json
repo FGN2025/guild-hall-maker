@@ -35,7 +35,7 @@
       {
         "name": "list_tournaments",
         "title": "List tournaments",
-        "description": "List tournaments visible to the signed-in user, ordered by start date. Respects platform access rules.",
+        "description": "List tournaments visible to the signed-in user, ordered by start date descending. Excludes archived tournaments.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -49,6 +49,89 @@
               "minimum": 1,
               "maximum": 50,
               "description": "Max rows to return (default 20)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_challenges",
+        "title": "List challenges",
+        "description": "List challenges visible to the signed-in user. Optionally filter by game_id and is_active. Inactive challenges are only returned when the caller is a moderator or admin.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "game_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filter by game UUID."
+            },
+            "is_active": {
+              "type": "boolean",
+              "description": "Filter by active flag."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max rows to return (default 25)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_challenge",
+        "title": "Get challenge",
+        "description": "Fetch a single challenge by id along with its ordered tasks (including verification_type).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Challenge UUID."
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_games",
+        "title": "List games",
+        "description": "List active games in the catalog with id, name, slug, category, and platform tags.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max rows to return (default 50)."
             }
           },
           "additionalProperties": false,
