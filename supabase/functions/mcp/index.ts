@@ -9,14 +9,12 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { createClient } from "npm:@supabase/supabase-js@^2.95.3";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.2";
 function supabaseForUser(ctx) {
-  return createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
 }
 var get_me_default = defineTool({
   name: "get_me",
@@ -25,20 +23,28 @@ var get_me_default = defineTool({
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    try {
+      if (!ctx.isAuthenticated()) {
+        return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+      }
+      const supabase = supabaseForUser(ctx);
+      const userId = ctx.getUserId();
+      const { data, error } = await supabase.from("profiles").select("id, display_name, email, points, points_available, tenant_id, discord_username").eq("id", userId).maybeSingle();
+      if (error) {
+        return { content: [{ type: "text", text: error.message }], isError: true };
+      }
+      const profile = data ?? { id: userId, email: ctx.getUserEmail() };
+      return {
+        content: [{ type: "text", text: JSON.stringify(profile, null, 2) }],
+        structuredContent: { profile }
+      };
+    } catch (err) {
+      console.error("[fgn-mcp] get_me failed", err?.message, err?.stack);
+      return {
+        content: [{ type: "text", text: err?.message ?? "tool execution failed" }],
+        isError: true
+      };
     }
-    const supabase = supabaseForUser(ctx);
-    const userId = ctx.getUserId();
-    const { data, error } = await supabase.from("profiles").select("id, display_name, email, points, points_available, tenant_id, discord_username").eq("id", userId).maybeSingle();
-    if (error) {
-      return { content: [{ type: "text", text: error.message }], isError: true };
-    }
-    const profile = data ?? { id: userId, email: ctx.getUserEmail() };
-    return {
-      content: [{ type: "text", text: JSON.stringify(profile, null, 2) }],
-      structuredContent: { profile }
-    };
   }
 });
 
@@ -47,14 +53,12 @@ import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.95.3
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z } from "npm:zod@^3.25.76";
 function supabaseForUser2(ctx) {
-  return createClient2(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient2(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
 }
 var list_tournaments_default = defineTool2({
   name: "list_tournaments",
@@ -65,26 +69,34 @@ var list_tournaments_default = defineTool2({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ limit }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    try {
+      if (!ctx.isAuthenticated()) {
+        return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+      }
+      const supabase = supabaseForUser2(ctx);
+      const { data, error } = await supabase.from("tournaments").select("id, name, game, status, start_date, end_date").is("archived_at", null).order("start_date", { ascending: false }).limit(limit ?? 20);
+      if (error) {
+        return { content: [{ type: "text", text: error.message }], isError: true };
+      }
+      const tournaments = (data ?? []).map((t) => ({
+        id: t.id,
+        name: t.name,
+        game: t.game,
+        status: t.status,
+        starts_at: t.start_date,
+        ends_at: t.end_date
+      }));
+      return {
+        content: [{ type: "text", text: JSON.stringify(tournaments, null, 2) }],
+        structuredContent: { tournaments }
+      };
+    } catch (err) {
+      console.error("[fgn-mcp] list_tournaments failed", err?.message, err?.stack);
+      return {
+        content: [{ type: "text", text: err?.message ?? "tool execution failed" }],
+        isError: true
+      };
     }
-    const supabase = supabaseForUser2(ctx);
-    const { data, error } = await supabase.from("tournaments").select("id, name, game, status, start_date, end_date").is("archived_at", null).order("start_date", { ascending: false }).limit(limit ?? 20);
-    if (error) {
-      return { content: [{ type: "text", text: error.message }], isError: true };
-    }
-    const tournaments = (data ?? []).map((t) => ({
-      id: t.id,
-      name: t.name,
-      game: t.game,
-      status: t.status,
-      starts_at: t.start_date,
-      ends_at: t.end_date
-    }));
-    return {
-      content: [{ type: "text", text: JSON.stringify(tournaments, null, 2) }],
-      structuredContent: { tournaments }
-    };
   }
 });
 
@@ -93,14 +105,12 @@ import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.95.3
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z2 } from "npm:zod@^3.25.76";
 function supabaseForUser3(ctx) {
-  return createClient3(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient3(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
 }
 var list_challenges_default = defineTool3({
   name: "list_challenges",
@@ -113,21 +123,29 @@ var list_challenges_default = defineTool3({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ game_id, is_active, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    try {
+      if (!ctx.isAuthenticated()) {
+        return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+      }
+      const supabase = supabaseForUser3(ctx);
+      let q = supabase.from("challenges").select("id, name, game_id, is_active, points_reward, created_at").order("created_at", { ascending: false }).limit(limit ?? 25);
+      if (game_id !== void 0) q = q.eq("game_id", game_id);
+      if (is_active !== void 0) q = q.eq("is_active", is_active);
+      const { data, error } = await q;
+      if (error) {
+        return { content: [{ type: "text", text: error.message }], isError: true };
+      }
+      return {
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        structuredContent: { challenges: data ?? [] }
+      };
+    } catch (err) {
+      console.error("[fgn-mcp] list_challenges failed", err?.message, err?.stack);
+      return {
+        content: [{ type: "text", text: err?.message ?? "tool execution failed" }],
+        isError: true
+      };
     }
-    const supabase = supabaseForUser3(ctx);
-    let q = supabase.from("challenges").select("id, name, game_id, is_active, points_reward, created_at").order("created_at", { ascending: false }).limit(limit ?? 25);
-    if (game_id !== void 0) q = q.eq("game_id", game_id);
-    if (is_active !== void 0) q = q.eq("is_active", is_active);
-    const { data, error } = await q;
-    if (error) {
-      return { content: [{ type: "text", text: error.message }], isError: true };
-    }
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { challenges: data ?? [] }
-    };
   }
 });
 
@@ -136,14 +154,12 @@ import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.95.3
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z3 } from "npm:zod@^3.25.76";
 function supabaseForUser4(ctx) {
-  return createClient4(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient4(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
 }
 var get_challenge_default = defineTool4({
   name: "get_challenge",
@@ -154,30 +170,38 @@ var get_challenge_default = defineTool4({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ id }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    try {
+      if (!ctx.isAuthenticated()) {
+        return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+      }
+      const supabase = supabaseForUser4(ctx);
+      const [challengeRes, tasksRes] = await Promise.all([
+        supabase.from("challenges").select("*").eq("id", id).maybeSingle(),
+        supabase.from("challenge_tasks").select(
+          "id, challenge_id, title, description, display_order, verification_type, steam_achievement_api_name, steam_playtime_minutes"
+        ).eq("challenge_id", id).order("display_order", { ascending: true })
+      ]);
+      if (challengeRes.error) {
+        return { content: [{ type: "text", text: challengeRes.error.message }], isError: true };
+      }
+      if (!challengeRes.data) {
+        return { content: [{ type: "text", text: "Challenge not found" }], isError: true };
+      }
+      if (tasksRes.error) {
+        return { content: [{ type: "text", text: tasksRes.error.message }], isError: true };
+      }
+      const payload = { challenge: challengeRes.data, tasks: tasksRes.data ?? [] };
+      return {
+        content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+        structuredContent: payload
+      };
+    } catch (err) {
+      console.error("[fgn-mcp] get_challenge failed", err?.message, err?.stack);
+      return {
+        content: [{ type: "text", text: err?.message ?? "tool execution failed" }],
+        isError: true
+      };
     }
-    const supabase = supabaseForUser4(ctx);
-    const [challengeRes, tasksRes] = await Promise.all([
-      supabase.from("challenges").select("*").eq("id", id).maybeSingle(),
-      supabase.from("challenge_tasks").select(
-        "id, challenge_id, title, description, display_order, verification_type, steam_achievement_api_name, steam_playtime_minutes"
-      ).eq("challenge_id", id).order("display_order", { ascending: true })
-    ]);
-    if (challengeRes.error) {
-      return { content: [{ type: "text", text: challengeRes.error.message }], isError: true };
-    }
-    if (!challengeRes.data) {
-      return { content: [{ type: "text", text: "Challenge not found" }], isError: true };
-    }
-    if (tasksRes.error) {
-      return { content: [{ type: "text", text: tasksRes.error.message }], isError: true };
-    }
-    const payload = { challenge: challengeRes.data, tasks: tasksRes.data ?? [] };
-    return {
-      content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-      structuredContent: payload
-    };
   }
 });
 
@@ -186,14 +210,12 @@ import { createClient as createClient5 } from "npm:@supabase/supabase-js@^2.95.3
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z4 } from "npm:zod@^3.25.76";
 function supabaseForUser5(ctx) {
-  return createClient5(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false }
-    }
-  );
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient5(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
 }
 var list_games_default = defineTool5({
   name: "list_games",
@@ -204,18 +226,26 @@ var list_games_default = defineTool5({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ limit }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    try {
+      if (!ctx.isAuthenticated()) {
+        return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+      }
+      const supabase = supabaseForUser5(ctx);
+      const { data, error } = await supabase.from("games").select("id, name, slug, category, platform_tags, is_active, display_order").order("display_order", { ascending: true }).order("name", { ascending: true }).limit(limit ?? 50);
+      if (error) {
+        return { content: [{ type: "text", text: error.message }], isError: true };
+      }
+      return {
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        structuredContent: { games: data ?? [] }
+      };
+    } catch (err) {
+      console.error("[fgn-mcp] list_games failed", err?.message, err?.stack);
+      return {
+        content: [{ type: "text", text: err?.message ?? "tool execution failed" }],
+        isError: true
+      };
     }
-    const supabase = supabaseForUser5(ctx);
-    const { data, error } = await supabase.from("games").select("id, name, slug, category, platform_tags, is_active, display_order").order("display_order", { ascending: true }).order("name", { ascending: true }).limit(limit ?? 50);
-    if (error) {
-      return { content: [{ type: "text", text: error.message }], isError: true };
-    }
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { games: data ?? [] }
-    };
   }
 });
 

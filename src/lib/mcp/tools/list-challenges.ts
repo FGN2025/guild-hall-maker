@@ -9,14 +9,13 @@ import { z } from "zod";
 // role.
 
 function supabaseForUser(ctx: ToolContext) {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-    {
-      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-      auth: { persistSession: false, autoRefreshToken: false },
-    },
-  );
+  const url = process.env.SUPABASE_URL!;
+  const anonKey =
+    process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
+  return createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 export default defineTool({
@@ -37,25 +36,33 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ game_id, is_active, limit }, ctx) => {
-    if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
-    }
-    const supabase = supabaseForUser(ctx);
-    let q = supabase
-      .from("challenges")
-      .select("id, name, game_id, is_active, points_reward, created_at")
-      .order("created_at", { ascending: false })
-      .limit(limit ?? 25);
-    if (game_id !== undefined) q = q.eq("game_id", game_id);
-    if (is_active !== undefined) q = q.eq("is_active", is_active);
+    try {
+      if (!ctx.isAuthenticated()) {
+        return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+      }
+      const supabase = supabaseForUser(ctx);
+      let q = supabase
+        .from("challenges")
+        .select("id, name, game_id, is_active, points_reward, created_at")
+        .order("created_at", { ascending: false })
+        .limit(limit ?? 25);
+      if (game_id !== undefined) q = q.eq("game_id", game_id);
+      if (is_active !== undefined) q = q.eq("is_active", is_active);
 
-    const { data, error } = await q;
-    if (error) {
-      return { content: [{ type: "text", text: error.message }], isError: true };
+      const { data, error } = await q;
+      if (error) {
+        return { content: [{ type: "text", text: error.message }], isError: true };
+      }
+      return {
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        structuredContent: { challenges: data ?? [] },
+      };
+    } catch (err: any) {
+      console.error("[fgn-mcp] list_challenges failed", err?.message, err?.stack);
+      return {
+        content: [{ type: "text", text: err?.message ?? "tool execution failed" }],
+        isError: true,
+      };
     }
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { challenges: data ?? [] },
-    };
   },
 });
