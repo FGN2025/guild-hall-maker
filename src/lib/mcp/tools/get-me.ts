@@ -30,11 +30,14 @@ export default defineTool({
       const { data, error } = await supabase
         .from("profiles")
         .select("id, user_id, display_name, discord_username, gamer_tag, avatar_url")
-        .eq("id", userId)
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (error) {
         return { content: [{ type: "text", text: error.message }], isError: true };
+      }
+      if (!data) {
+        console.warn("[fgn-mcp] get_me: no profiles row for user_id", userId);
       }
       const { data: scoreRows } = await supabase
         .from("season_scores")
@@ -42,7 +45,15 @@ export default defineTool({
         .eq("user_id", userId);
       const points = (scoreRows ?? []).reduce((sum, r) => sum + (r.points ?? 0), 0);
       const points_available = (scoreRows ?? []).reduce((sum, r) => sum + (r.points_available ?? 0), 0);
-      const profile = { ...(data ?? { id: userId, email, points, points_available }), email, points, points_available };
+      const profileBase = data ?? {
+        id: userId,
+        user_id: userId,
+        display_name: null,
+        discord_username: null,
+        gamer_tag: null,
+        avatar_url: null,
+      };
+      const profile = { ...profileBase, email, points, points_available };
       return {
         content: [{ type: "text", text: JSON.stringify(profile, null, 2) }],
         structuredContent: { profile },
