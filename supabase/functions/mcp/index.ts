@@ -59,7 +59,7 @@ function supabaseForUser2(ctx) {
 var list_tournaments_default = defineTool2({
   name: "list_tournaments",
   title: "List tournaments",
-  description: "List tournaments visible to the signed-in user, ordered by start date. Respects platform access rules.",
+  description: "List tournaments visible to the signed-in user, ordered by start date descending. Excludes archived tournaments.",
   inputSchema: {
     limit: z.number().int().min(1).max(50).optional().describe("Max rows to return (default 20).")
   },
@@ -69,13 +69,21 @@ var list_tournaments_default = defineTool2({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser2(ctx);
-    const { data, error } = await supabase.from("tournaments").select("id, name, game_id, status, start_date, end_date, tenant_id").order("start_date", { ascending: false }).limit(limit ?? 20);
+    const { data, error } = await supabase.from("tournaments").select("id, name, game, status, start_date, end_date").is("archived_at", null).order("start_date", { ascending: false }).limit(limit ?? 20);
     if (error) {
       return { content: [{ type: "text", text: error.message }], isError: true };
     }
+    const tournaments = (data ?? []).map((t) => ({
+      id: t.id,
+      name: t.name,
+      game: t.game,
+      status: t.status,
+      starts_at: t.start_date,
+      ends_at: t.end_date
+    }));
     return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { tournaments: data ?? [] }
+      content: [{ type: "text", text: JSON.stringify(tournaments, null, 2) }],
+      structuredContent: { tournaments }
     };
   }
 });
