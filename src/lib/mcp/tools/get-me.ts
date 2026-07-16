@@ -29,14 +29,20 @@ export default defineTool({
       const email = userData?.user?.email ?? null;
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, points, points_available, tenant_id, discord_username")
+        .select("id, user_id, display_name, discord_username, gamer_tag, avatar_url")
         .eq("id", userId)
         .maybeSingle();
 
       if (error) {
         return { content: [{ type: "text", text: error.message }], isError: true };
       }
-      const profile = { ...(data ?? { id: userId }), email };
+      const { data: scoreRows } = await supabase
+        .from("season_scores")
+        .select("points, points_available")
+        .eq("user_id", userId);
+      const points = (scoreRows ?? []).reduce((sum, r) => sum + (r.points ?? 0), 0);
+      const points_available = (scoreRows ?? []).reduce((sum, r) => sum + (r.points_available ?? 0), 0);
+      const profile = { ...(data ?? { id: userId, email, points, points_available }), email, points, points_available };
       return {
         content: [{ type: "text", text: JSON.stringify(profile, null, 2) }],
         structuredContent: { profile },
