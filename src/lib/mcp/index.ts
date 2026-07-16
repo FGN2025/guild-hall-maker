@@ -1,6 +1,9 @@
 import { auth, defineMcp } from "@lovable.dev/mcp-js";
 import getMeTool from "./tools/get-me";
 import listTournamentsTool from "./tools/list-tournaments";
+import listChallengesTool from "./tools/list-challenges";
+import getChallengeTool from "./tools/get-challenge";
+import listGamesTool from "./tools/list-games";
 
 // Build the OAuth issuer from the Supabase project ref (Vite inlines this at
 // build time so it stays import-safe — no runtime env read at module load).
@@ -12,10 +15,10 @@ export default defineMcp({
   title: "FGN Gaming Network",
   version: "0.1.0",
   instructions:
-    "Tools for the FGN gaming platform. Use `get_me` to fetch the signed-in player's profile and points, and `list_tournaments` to see tournaments visible to that player.",
+    "Read-only tools for the FGN gaming platform. Use `get_me` for the signed-in player's profile, `list_tournaments` for tournaments, `list_challenges` / `get_challenge` for challenges and their tasks, and `list_games` for the games catalog.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [getMeTool, listTournamentsTool],
+  tools: [getMeTool, listTournamentsTool, listChallengesTool, getChallengeTool, listGamesTool],
 });
