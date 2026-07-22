@@ -45,6 +45,7 @@ import {
   Server,
   CreditCard,
   Cloud,
+  Route,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
@@ -179,6 +180,18 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Tenant Web Pages — Build multi-section landing pages from the Marketing → Web Pages tab, hosted at /pages/:tenantSlug/:pageSlug with automatic tenant branding.",
       "Platform Admin Switching — Platform admins can switch between tenants using the sidebar dropdown. A 'Viewing as Platform Admin' indicator confirms administrative access.",
       "Ecosystem Links — Quick access to Manage and Hub apps via magic link SSO.",
+    ],
+  },
+  {
+    id: "tenant-admin-redirects",
+    icon: Route,
+    title: "Tenant Admin Redirects & 'Link Not Found'",
+    bullets: [
+      "Two admin surfaces — /admin is for platform admins (FGN staff). /tenant is for provider tenant admins. A user can be one, both, or neither.",
+      "Soft redirect — A tenant admin who is not a platform admin is automatically redirected from /admin and /admin/dashboard to /tenant with a neutral toast ('Opening your tenant admin dashboard').",
+      "No more 'Access denied' — Previous behavior showed an 'Access denied' toast for tenant admins hitting platform admin routes. The guard now routes them to their tenant dashboard instead.",
+      "404 safety net — The NotFound page shows role-aware buttons. Tenant admins see 'Go to Tenant Admin', platform admins see 'Go to Admin Dashboard', and regular players see 'Return to Home'.",
+      "Troubleshooting — If a tenant admin reports 'link not found', verify they are signed in, their tenant_admins row is active, and they are visiting /tenant or allowing the redirect from /admin. Do not promote them to platform admin unless they need platform-wide access.",
     ],
   },
   {

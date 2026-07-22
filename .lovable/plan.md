@@ -60,5 +60,10 @@ Implement inline using `useAuth()` + `useTenantAdmin()` + `<Navigate>`, wrapped 
 - No changes to the invite email template or `send-tenant-invite`.
 - No changes to onboarding, Discord linking, or subscription checks.
 
+## Documentation updates
+- Tenant Guide (`src/pages/tenant/TenantGuide.tsx`) — Added 'Finding Your Admin Dashboard' section explaining the 'Tenant Admin' nav label, soft redirect from `/admin`, and troubleshooting steps.
+- Admin Guide (`src/pages/admin/AdminGuide.tsx`) — Added 'Tenant Admin Redirects & Link Not Found' section for platform staff troubleshooting tenant admin access issues.
+- README (`README.md`) — Added 'Role-Aware Redirects' table under Route Map documenting `/admin`, `/admin/dashboard`, and `/tenant/dashboard` resolution rules.
+
 ## Follow-up message to Kerry after deploy
 "You're set up correctly as the HCTC tenant admin. Your admin area is under **Tenant Admin** in the top nav (or at `/tenant`). I've relabeled the menu and added redirects so `/admin` and `/admin/dashboard` also take you there — no more 'page not found'."

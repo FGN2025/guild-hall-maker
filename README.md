@@ -249,6 +249,18 @@ is_tenant_marketing_member(tenant_id, user_id) -- Tenant admin or marketing
 
 14 pages covering: Dashboard, Players, Leads, ZIP Codes, Subscribers, Team, Settings, Marketing, Marketing Assets, Marketing Detail, Events, Codes, Web Pages, Tenant Guide.
 
+### Role-Aware Redirects
+
+Common admin URLs are resolved based on the signed-in user's roles:
+
+| Path | Platform Admin | Tenant Admin (not platform admin) | Everyone else |
+|------|----------------|-------------------------------------|---------------|
+| `/admin` | `/admin` | `/tenant` (soft redirect + toast) | `/dashboard` |
+| `/admin/dashboard` | `/admin` | `/tenant` | `/dashboard` |
+| `/tenant/dashboard` | `/tenant` | `/tenant` | `/tenant` |
+
+Tenant admins who type `/admin` or `/admin/dashboard` are no longer shown an 'Access denied' or 404 error; they are gently routed to their Tenant Dashboard at `/tenant`.
+
 ---
 
 ## Key Features

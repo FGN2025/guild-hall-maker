@@ -28,6 +28,7 @@ import {
   FileText,
   CreditCard,
   Cloud,
+  Route,
 } from "lucide-react";
 import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
@@ -65,6 +66,17 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Quick Stats — See Total Players, Subscribers, New Leads, and ZIP Codes Covered at a glance.",
       "Recent Activity — View the latest lead activity and event updates.",
       "Quick Links — Jump directly to any tenant function from the dashboard cards.",
+    ],
+  },
+  {
+    id: "finding-admin",
+    icon: Route,
+    title: "Finding Your Admin Dashboard",
+    bullets: [
+      "Look for Tenant Admin — The top navigation and sidebar show 'Tenant Admin' (building icon) for users who manage a provider tenant. Click it to open your dashboard at /tenant.",
+      "Soft redirect from /admin — If you type /admin or /admin/dashboard, the app recognizes tenant admins and quietly redirects you to /tenant instead of showing 'page not found' or 'access denied'.",
+      "Two admin areas — /admin is for FGN platform staff only. /tenant is for provider staff. Provider admins only see the Tenant Admin area.",
+      "If you still see 'link not found' — Make sure you are signed in with the email that was invited, confirm your invitation was claimed, and ask a platform admin to verify your tenant_admins record is active.",
     ],
   },
   {
