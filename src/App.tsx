@@ -279,6 +279,9 @@ const App = () => (
               <Route path="/tenant/branding" element={<TenantRoute><TenantBranding /></TenantRoute>} />
 
               <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/admin/dashboard" element={<DashboardAlias />} />
+              <Route path="/tenant/dashboard" element={<Navigate to="/tenant" replace />} />
+              <Route path="/dashboard/admin" element={<DashboardAlias />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
