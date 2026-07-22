@@ -68,9 +68,9 @@ export function useTenantAdmin() {
     },
   });
 
-  // Original tenant admin check (for non-platform-admins)
-  const { data: tenantAdminData, isLoading: isTenantAdminLoading } = useQuery({
-    queryKey: ["tenant-admin-check", user?.id],
+  // Original tenant admin check (for non-platform-admins) — returns ALL memberships
+  const { data: tenantMemberships, isLoading: isTenantAdminLoading } = useQuery({
+    queryKey: ["tenant-admin-memberships", user?.id],
     enabled: !!user?.id && !isAdmin,
     queryFn: async () => {
       const { data: adminRows, error } = await supabase
@@ -79,7 +79,7 @@ export function useTenantAdmin() {
         .eq("user_id", user!.id);
 
       if (error) throw error;
-      if (!adminRows || adminRows.length === 0) return null;
+      if (!adminRows || adminRows.length === 0) return [];
 
       const tenantIds = adminRows.map((r: any) => r.tenant_id);
       const { data: tenants, error: tErr } = await supabase
@@ -89,20 +89,21 @@ export function useTenantAdmin() {
         .eq("status", "active");
 
       if (tErr) throw tErr;
-      if (!tenants || tenants.length === 0) return null;
+      if (!tenants || tenants.length === 0) return [];
 
-      const t = tenants[0];
-      const matchingAdmin = adminRows.find((r: any) => r.tenant_id === t.id);
-      return {
-        tenantId: t.id,
-        tenantName: t.name,
-        tenantSlug: t.slug,
-        tenantRole: (['manager', 'marketing'].includes(matchingAdmin?.role) ? matchingAdmin.role : 'admin') as 'admin' | 'manager' | 'marketing',
-        logoUrl: t.logo_url || null,
-        primaryColor: (t as any).primary_color || null,
-        accentColor: (t as any).accent_color || null,
-        onboardingCompleted: !!(t as any).onboarding_completed,
-      } as TenantAdminInfo;
+      return tenants.map((t: any) => {
+        const matchingAdmin = adminRows.find((r: any) => r.tenant_id === t.id);
+        return {
+          tenantId: t.id,
+          tenantName: t.name,
+          tenantSlug: t.slug,
+          tenantRole: (['manager', 'marketing'].includes(matchingAdmin?.role) ? matchingAdmin.role : 'admin') as 'admin' | 'manager' | 'marketing',
+          logoUrl: t.logo_url || null,
+          primaryColor: t.primary_color || null,
+          accentColor: t.accent_color || null,
+          onboardingCompleted: !!t.onboarding_completed,
+        } as TenantAdminInfo;
+      });
     },
   });
 
