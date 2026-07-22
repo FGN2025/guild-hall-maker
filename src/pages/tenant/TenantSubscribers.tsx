@@ -232,7 +232,6 @@ const TenantSubscribers = () => {
                   name={integ.name}
                   providerType={integ.providerType}
                   description={integ.description}
-                  comingSoon={integ.comingSoon}
                   isConfigured={!!configured}
                   lastSyncAt={configured?.last_sync_at}
                   lastSyncStatus={configured?.last_sync_status}
