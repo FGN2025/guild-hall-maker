@@ -17,6 +17,24 @@ import AdminRoute from "./components/admin/AdminRoute";
 import MarketingRoute from "./components/admin/MarketingRoute";
 import ModeratorRoute from "./components/moderator/ModeratorRoute";
 import TenantRoute from "./components/tenant/TenantRoute";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+
+const DashboardAlias = () => {
+  const { user, loading, isAdmin, roleLoading } = useAuth();
+  const { isTenantAdmin, isLoading: tenantLoading } = useTenantAdmin();
+  if (loading || roleLoading || tenantLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/auth" replace />;
+  if (isAdmin) return <Navigate to="/admin" replace />;
+  if (isTenantAdmin) return <Navigate to="/tenant" replace />;
+  return <Navigate to="/dashboard" replace />;
+};
 
 // Lazy-loaded pages
 const Tournaments = lazy(() => import("./pages/Tournaments"));
@@ -261,6 +279,9 @@ const App = () => (
               <Route path="/tenant/branding" element={<TenantRoute><TenantBranding /></TenantRoute>} />
 
               <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/admin/dashboard" element={<DashboardAlias />} />
+              <Route path="/tenant/dashboard" element={<Navigate to="/tenant" replace />} />
+              <Route path="/dashboard/admin" element={<DashboardAlias />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

@@ -160,7 +160,7 @@ const Navbar = () => {
               }`}
             >
               <Building2 className="h-4 w-4" />
-              Tenant
+              Tenant Admin
             </Link>
           )}
         </div>
@@ -292,7 +292,7 @@ const Navbar = () => {
                 }`}
               >
                 <Building2 className="h-5 w-5" />
-                Tenant
+                Tenant Admin
               </Link>
             )}
             <div className="flex gap-2 pt-2 border-t border-border/50 mt-2">
