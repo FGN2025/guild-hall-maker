@@ -114,6 +114,16 @@ export function useTenantAdmin() {
     }
   }, [isAdmin, allTenants, selectedTenantId, setSelectedTenantId]);
 
+  // Auto-select first membership for tenant admins with multiple tenants
+  useEffect(() => {
+    if (!isAdmin && tenantMemberships && tenantMemberships.length > 0) {
+      const hasValidSelection = selectedTenantId && tenantMemberships.some((m) => m.tenantId === selectedTenantId);
+      if (!hasValidSelection) {
+        setSelectedTenantId(tenantMemberships[0].tenantId);
+      }
+    }
+  }, [isAdmin, tenantMemberships, selectedTenantId, setSelectedTenantId]);
+
   // Build tenantInfo for platform admins from selected tenant
   let tenantInfo: TenantAdminInfo | null = null;
   let isPlatformAdminMode = false;
@@ -133,18 +143,29 @@ export function useTenantAdmin() {
         onboardingCompleted: !!(selected as any).onboarding_completed,
       };
     }
-  } else if (tenantAdminData) {
-    tenantInfo = tenantAdminData;
+  } else if (tenantMemberships && tenantMemberships.length > 0) {
+    tenantInfo =
+      tenantMemberships.find((m) => m.tenantId === selectedTenantId) || tenantMemberships[0];
   }
 
   const isLoading = isAdmin ? false : isTenantAdminLoading;
+
+  // For tenant admins with multiple memberships, expose them via allTenants-shape list
+  const tenantAdminSwitcherList: TenantListItem[] = (tenantMemberships || []).map((m) => ({
+    id: m.tenantId,
+    name: m.tenantName,
+    slug: m.tenantSlug,
+    logo_url: m.logoUrl,
+    primary_color: m.primaryColor,
+    accent_color: m.accentColor,
+  }));
 
   return {
     isTenantAdmin: !!tenantInfo,
     tenantInfo,
     isLoading,
     isPlatformAdminMode,
-    allTenants: allTenants || [],
+    allTenants: isAdmin ? (allTenants || []) : tenantAdminSwitcherList,
     selectedTenantId,
     setSelectedTenantId,
   };
