@@ -55,7 +55,7 @@ const TenantSubscribers = () => {
   const [editSub, setEditSub] = useState<TenantSubscriber | null>(null);
   const [deleteSub, setDeleteSub] = useState<TenantSubscriber | null>(null);
 
-  if (tenantInfo?.tenantRole === "manager") {
+  if (tenantInfo && tenantInfo.tenantRole !== "admin") {
     return <Navigate to="/tenant" replace />;
   }
 
