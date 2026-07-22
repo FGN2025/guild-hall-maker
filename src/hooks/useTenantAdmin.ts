@@ -68,9 +68,9 @@ export function useTenantAdmin() {
     },
   });
 
-  // Original tenant admin check (for non-platform-admins)
-  const { data: tenantAdminData, isLoading: isTenantAdminLoading } = useQuery({
-    queryKey: ["tenant-admin-check", user?.id],
+  // Original tenant admin check (for non-platform-admins) — returns ALL memberships
+  const { data: tenantMemberships, isLoading: isTenantAdminLoading } = useQuery({
+    queryKey: ["tenant-admin-memberships", user?.id],
     enabled: !!user?.id && !isAdmin,
     queryFn: async () => {
       const { data: adminRows, error } = await supabase
@@ -79,7 +79,7 @@ export function useTenantAdmin() {
         .eq("user_id", user!.id);
 
       if (error) throw error;
-      if (!adminRows || adminRows.length === 0) return null;
+      if (!adminRows || adminRows.length === 0) return [];
 
       const tenantIds = adminRows.map((r: any) => r.tenant_id);
       const { data: tenants, error: tErr } = await supabase
@@ -89,20 +89,21 @@ export function useTenantAdmin() {
         .eq("status", "active");
 
       if (tErr) throw tErr;
-      if (!tenants || tenants.length === 0) return null;
+      if (!tenants || tenants.length === 0) return [];
 
-      const t = tenants[0];
-      const matchingAdmin = adminRows.find((r: any) => r.tenant_id === t.id);
-      return {
-        tenantId: t.id,
-        tenantName: t.name,
-        tenantSlug: t.slug,
-        tenantRole: (['manager', 'marketing'].includes(matchingAdmin?.role) ? matchingAdmin.role : 'admin') as 'admin' | 'manager' | 'marketing',
-        logoUrl: t.logo_url || null,
-        primaryColor: (t as any).primary_color || null,
-        accentColor: (t as any).accent_color || null,
-        onboardingCompleted: !!(t as any).onboarding_completed,
-      } as TenantAdminInfo;
+      return tenants.map((t: any) => {
+        const matchingAdmin = adminRows.find((r: any) => r.tenant_id === t.id);
+        return {
+          tenantId: t.id,
+          tenantName: t.name,
+          tenantSlug: t.slug,
+          tenantRole: (['manager', 'marketing'].includes(matchingAdmin?.role) ? matchingAdmin.role : 'admin') as 'admin' | 'manager' | 'marketing',
+          logoUrl: t.logo_url || null,
+          primaryColor: t.primary_color || null,
+          accentColor: t.accent_color || null,
+          onboardingCompleted: !!t.onboarding_completed,
+        } as TenantAdminInfo;
+      });
     },
   });
 
@@ -112,6 +113,16 @@ export function useTenantAdmin() {
       setSelectedTenantId(allTenants[0].id);
     }
   }, [isAdmin, allTenants, selectedTenantId, setSelectedTenantId]);
+
+  // Auto-select first membership for tenant admins with multiple tenants
+  useEffect(() => {
+    if (!isAdmin && tenantMemberships && tenantMemberships.length > 0) {
+      const hasValidSelection = selectedTenantId && tenantMemberships.some((m) => m.tenantId === selectedTenantId);
+      if (!hasValidSelection) {
+        setSelectedTenantId(tenantMemberships[0].tenantId);
+      }
+    }
+  }, [isAdmin, tenantMemberships, selectedTenantId, setSelectedTenantId]);
 
   // Build tenantInfo for platform admins from selected tenant
   let tenantInfo: TenantAdminInfo | null = null;
@@ -132,18 +143,29 @@ export function useTenantAdmin() {
         onboardingCompleted: !!(selected as any).onboarding_completed,
       };
     }
-  } else if (tenantAdminData) {
-    tenantInfo = tenantAdminData;
+  } else if (tenantMemberships && tenantMemberships.length > 0) {
+    tenantInfo =
+      tenantMemberships.find((m) => m.tenantId === selectedTenantId) || tenantMemberships[0];
   }
 
   const isLoading = isAdmin ? false : isTenantAdminLoading;
+
+  // For tenant admins with multiple memberships, expose them via allTenants-shape list
+  const tenantAdminSwitcherList: TenantListItem[] = (tenantMemberships || []).map((m) => ({
+    id: m.tenantId,
+    name: m.tenantName,
+    slug: m.tenantSlug,
+    logo_url: m.logoUrl,
+    primary_color: m.primaryColor,
+    accent_color: m.accentColor,
+  }));
 
   return {
     isTenantAdmin: !!tenantInfo,
     tenantInfo,
     isLoading,
     isPlatformAdminMode,
-    allTenants: allTenants || [],
+    allTenants: isAdmin ? (allTenants || []) : tenantAdminSwitcherList,
     selectedTenantId,
     setSelectedTenantId,
   };

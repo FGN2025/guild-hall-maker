@@ -92,7 +92,7 @@ const TenantMarketingDetail = () => {
               campaignId={campaign.id}
               campaignTitle={campaign.title}
               tenantId={tenantInfo.tenantId}
-              readOnly={tenantInfo.tenantRole === "marketing"}
+              readOnly={tenantInfo.tenantRole === "manager"}
             />
           </CardContent>
         </Card>

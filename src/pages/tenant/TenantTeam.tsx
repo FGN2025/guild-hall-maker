@@ -54,7 +54,7 @@ const TenantTeam = () => {
   });
 
   // Only admins can access this page
-  if (tenantRole === "manager") {
+  if (tenantRole && tenantRole !== "admin") {
     return <Navigate to="/tenant" replace />;
   }
 

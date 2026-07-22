@@ -7,11 +7,16 @@ import TenantSyncHealth from "@/components/tenant/TenantSyncHealth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, MapPin, Clock, UserCheck, ArrowRight, Contact } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 const TenantDashboard = () => {
   const { tenantInfo, isPlatformAdminMode } = useTenantAdmin();
   const { leads } = useTenantLeads(tenantInfo?.tenantId || null);
+
+  // Marketing-only users don't have access to dashboard metrics — send them to their workspace
+  if (tenantInfo?.tenantRole === "marketing") {
+    return <Navigate to="/tenant/marketing" replace />;
+  }
 
   const { data: zipCount = 0 } = useQuery({
     queryKey: ["tenant-zip-count", tenantInfo?.tenantId],

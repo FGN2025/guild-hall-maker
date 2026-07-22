@@ -127,7 +127,7 @@ const TenantZipCodes = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
-  if (tenantInfo?.tenantRole === "manager") {
+  if (tenantInfo && tenantInfo.tenantRole !== "admin") {
     return <Navigate to="/tenant" replace />;
   }
 
