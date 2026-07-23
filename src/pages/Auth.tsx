@@ -239,9 +239,11 @@ const Auth = () => {
             zip_code: zipCode,
             selected_tenant_id: selectedTenantId || undefined,
             provider_tenant_ids: providerTenantIds,
+            invite_code: signupInviteCode || bypassCode.trim() || undefined,
           },
         },
       });
+
       if (error) {
         toast.error(error.message);
       } else {
