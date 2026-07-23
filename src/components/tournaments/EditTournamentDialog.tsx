@@ -112,7 +112,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
     queryKey: ["tenant-codes-for-tournament", open],
     enabled: open,
     queryFn: async () => {
-      const { data } = await (await import("@/integrations/supabase/client")).supabase
+      const { data } = await supabase
         .from("tenant_codes")
         .select("id, code, description, is_active")
         .eq("is_active", true)
@@ -120,6 +120,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       return data ?? [];
     },
   });
+
 
 
 
