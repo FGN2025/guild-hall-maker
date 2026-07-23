@@ -20,6 +20,8 @@ import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 import { useDiscordRoles } from "@/hooks/useDiscordRoles";
 import AchievementPicker from "@/components/shared/AchievementPicker";
 import PointsInput from "@/components/shared/PointsInput";
+import { Switch } from "@/components/ui/switch";
+import { useQuery } from "@tanstack/react-query";
 
 interface TournamentData {
   id: string;
@@ -39,7 +41,10 @@ interface TournamentData {
   points_participation?: number;
   discord_role_id?: string | null;
   achievement_id?: string | null;
+  requires_invite_code?: boolean;
+  invite_code_id?: string | null;
 }
+
 
 interface Props {
   tournament: TournamentData;
