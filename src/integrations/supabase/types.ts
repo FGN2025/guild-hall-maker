@@ -1806,39 +1806,68 @@ export type Database = {
       }
       marketing_campaigns: {
         Row: {
+          agent_source: string | null
           category: string
           created_at: string
           created_by: string
           description: string | null
+          feedback_note: string | null
           id: string
+          idempotency_key: string | null
           is_published: boolean
+          proposed_by: string | null
           social_copy: string | null
+          status: string
+          target_platforms: string[]
+          tenant_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          agent_source?: string | null
           category?: string
           created_at?: string
           created_by: string
           description?: string | null
+          feedback_note?: string | null
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
+          proposed_by?: string | null
           social_copy?: string | null
+          status?: string
+          target_platforms?: string[]
+          tenant_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          agent_source?: string | null
           category?: string
           created_at?: string
           created_by?: string
           description?: string | null
+          feedback_note?: string | null
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
+          proposed_by?: string | null
           social_copy?: string | null
+          status?: string
+          target_platforms?: string[]
+          tenant_id?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       match_point_awards: {
         Row: {
@@ -3014,57 +3043,82 @@ export type Database = {
       }
       scheduled_posts: {
         Row: {
+          agent_source: string | null
+          campaign_id: string | null
           caption: string | null
           connection_id: string | null
           created_at: string | null
           discord_purpose: string | null
           discord_tenant_id: string | null
           error_message: string | null
+          feedback_note: string | null
           id: string
+          idempotency_key: string | null
           image_url: string
           platform: string
           post_url: string | null
+          proposed_by: string | null
           published_at: string | null
           scheduled_at: string
           status: string
           tenant_id: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
+          agent_source?: string | null
+          campaign_id?: string | null
           caption?: string | null
           connection_id?: string | null
           created_at?: string | null
           discord_purpose?: string | null
           discord_tenant_id?: string | null
           error_message?: string | null
+          feedback_note?: string | null
           id?: string
+          idempotency_key?: string | null
           image_url: string
           platform: string
           post_url?: string | null
+          proposed_by?: string | null
           published_at?: string | null
           scheduled_at: string
           status?: string
           tenant_id?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
+          agent_source?: string | null
+          campaign_id?: string | null
           caption?: string | null
           connection_id?: string | null
           created_at?: string | null
           discord_purpose?: string | null
           discord_tenant_id?: string | null
           error_message?: string | null
+          feedback_note?: string | null
           id?: string
+          idempotency_key?: string | null
           image_url?: string
           platform?: string
           post_url?: string | null
+          proposed_by?: string | null
           published_at?: string | null
           scheduled_at?: string
           status?: string
           tenant_id?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "scheduled_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scheduled_posts_connection_id_fkey"
             columns: ["connection_id"]
@@ -3854,6 +3908,7 @@ export type Database = {
       }
       tenant_marketing_assets: {
         Row: {
+          agent_source: string | null
           campaign_id: string | null
           created_at: string
           created_by: string
@@ -3863,12 +3918,15 @@ export type Database = {
           is_published: boolean
           label: string
           notes: string | null
+          proposed_by: string | null
           source_asset_id: string | null
+          source_url: string | null
           tenant_id: string
           updated_at: string
           url: string
         }
         Insert: {
+          agent_source?: string | null
           campaign_id?: string | null
           created_at?: string
           created_by: string
@@ -3878,12 +3936,15 @@ export type Database = {
           is_published?: boolean
           label?: string
           notes?: string | null
+          proposed_by?: string | null
           source_asset_id?: string | null
+          source_url?: string | null
           tenant_id: string
           updated_at?: string
           url: string
         }
         Update: {
+          agent_source?: string | null
           campaign_id?: string | null
           created_at?: string
           created_by?: string
@@ -3893,7 +3954,9 @@ export type Database = {
           is_published?: boolean
           label?: string
           notes?: string | null
+          proposed_by?: string | null
           source_asset_id?: string | null
+          source_url?: string | null
           tenant_id?: string
           updated_at?: string
           url?: string
@@ -4149,6 +4212,7 @@ export type Database = {
           require_subscriber_validation: boolean
           slug: string
           status: string
+          timezone: string
           updated_at: string
         }
         Insert: {
@@ -4163,6 +4227,7 @@ export type Database = {
           require_subscriber_validation?: boolean
           slug: string
           status?: string
+          timezone?: string
           updated_at?: string
         }
         Update: {
@@ -4177,6 +4242,7 @@ export type Database = {
           require_subscriber_validation?: boolean
           slug?: string
           status?: string
+          timezone?: string
           updated_at?: string
         }
         Relationships: []
@@ -5035,6 +5101,10 @@ export type Database = {
         Returns: boolean
       }
       is_tenant_admin_or_manager: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_tenant_marketer: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
