@@ -265,18 +265,600 @@ var list_games_default = defineTool5({
   }
 });
 
+// src/lib/mcp/tools/list-tenants.ts
+import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.22.2";
+
+// src/lib/mcp/tools/_shared.ts
+import { createClient as createClient6 } from "npm:@supabase/supabase-js@^2.95.3";
+function supabaseForUser6(ctx) {
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient6(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+function supabaseServiceRole() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient6(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+function requireAuth(ctx) {
+  if (!ctx.isAuthenticated()) {
+    return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+  }
+  return null;
+}
+function toolError(err, name) {
+  const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
+  console.error(`[fgn-mcp] ${name} failed`, msg);
+  return { content: [{ type: "text", text: msg || "tool execution failed" }], isError: true };
+}
+function okJson(payload, key) {
+  return {
+    content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+    structuredContent: { [key]: payload }
+  };
+}
+function parseIsoWithOffset(input) {
+  const trimmed = input.trim();
+  const hasOffset = /(Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
+  if (!hasOffset) {
+    throw new Error(
+      `scheduled_at must be an ISO 8601 timestamp with an explicit timezone offset (e.g. 2026-07-24T14:00:00Z or 2026-07-24T14:00:00-05:00). Received: ${input}`
+    );
+  }
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`Invalid ISO 8601 timestamp: ${input}`);
+  }
+  return d;
+}
+
+// src/lib/mcp/tools/list-tenants.ts
+var list_tenants_default = defineTool6({
+  name: "list_tenants",
+  title: "List my tenants",
+  description: "List tenants the signed-in user belongs to (via tenant_admins). Returns brand-kit summary (primary/accent colors, logo), tenant timezone, and the connected social platform labels available for scheduled posts on that tenant.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const uid = ctx.getUserId();
+      const { data: memberships, error: memErr } = await supabase.from("tenant_admins").select("tenant_id, role").eq("user_id", uid);
+      if (memErr) throw memErr;
+      const tenantIds = (memberships ?? []).map((m) => m.tenant_id);
+      if (tenantIds.length === 0) return okJson([], "tenants");
+      const { data: tenants, error: tErr } = await supabase.from("tenants").select("id, name, slug, logo_url, primary_color, accent_color, timezone, status").in("id", tenantIds);
+      if (tErr) throw tErr;
+      const { data: conns } = await supabase.from("social_connections").select("tenant_id, platform, account_name, is_active").in("tenant_id", tenantIds);
+      const roleByTenant = /* @__PURE__ */ new Map();
+      (memberships ?? []).forEach((m) => roleByTenant.set(m.tenant_id, m.role));
+      const platformsByTenant = /* @__PURE__ */ new Map();
+      (conns ?? []).forEach((c) => {
+        if (c.is_active === false) return;
+        const arr = platformsByTenant.get(c.tenant_id) ?? [];
+        arr.push({ platform: c.platform, account_name: c.account_name ?? null });
+        platformsByTenant.set(c.tenant_id, arr);
+      });
+      const result = (tenants ?? []).map((t) => ({
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        logo_url: t.logo_url,
+        primary_color: t.primary_color,
+        accent_color: t.accent_color,
+        timezone: t.timezone ?? "UTC",
+        status: t.status,
+        my_role: roleByTenant.get(t.id) ?? null,
+        connected_platforms: platformsByTenant.get(t.id) ?? []
+      }));
+      return okJson(result, "tenants");
+    } catch (err) {
+      return toolError(err, "list_tenants");
+    }
+  }
+});
+
+// src/lib/mcp/tools/get-brand-kit.ts
+import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z5 } from "npm:zod@^3.25.76";
+var get_brand_kit_default = defineTool7({
+  name: "get_brand_kit",
+  title: "Get tenant brand kit",
+  description: "Return the tenant's brand kit: colors, logo, connected social platforms, and stored timezone. Caller must be a member of the tenant.",
+  inputSchema: {
+    tenant_id: z5.string().uuid().describe("The tenant UUID (from list_tenants).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tenant_id }, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const { data: tenant, error } = await supabase.from("tenants").select("id, name, slug, logo_url, primary_color, accent_color, timezone, contact_email").eq("id", tenant_id).maybeSingle();
+      if (error) throw error;
+      if (!tenant) return { content: [{ type: "text", text: "Tenant not found or access denied" }], isError: true };
+      const { data: conns } = await supabase.from("social_connections").select("platform, account_name, is_active").eq("tenant_id", tenant_id);
+      const brand_kit = {
+        tenant_id: tenant.id,
+        tenant_name: tenant.name,
+        slug: tenant.slug,
+        logo_url: tenant.logo_url,
+        primary_color: tenant.primary_color,
+        accent_color: tenant.accent_color,
+        timezone: tenant.timezone ?? "UTC",
+        contact_email: tenant.contact_email,
+        connected_platforms: (conns ?? []).filter((c) => c.is_active !== false).map((c) => ({ platform: c.platform, account_name: c.account_name ?? null })),
+        voice_notes: null,
+        banned_words: [],
+        hashtags: []
+      };
+      return okJson(brand_kit, "brand_kit");
+    } catch (err) {
+      return toolError(err, "get_brand_kit");
+    }
+  }
+});
+
+// src/lib/mcp/tools/list-upcoming-events.ts
+import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z6 } from "npm:zod@^3.25.76";
+var list_upcoming_events_default = defineTool8({
+  name: "list_upcoming_events",
+  title: "List upcoming events for a tenant",
+  description: "List upcoming tournaments and tenant events within the next N days for a tenant the caller belongs to.",
+  inputSchema: {
+    tenant_id: z6.string().uuid(),
+    days: z6.number().int().min(1).max(180).optional().describe("Look-ahead window in days (default 30).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tenant_id, days }, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const windowDays = days ?? 30;
+      const now = /* @__PURE__ */ new Date();
+      const until = new Date(now.getTime() + windowDays * 864e5).toISOString();
+      const { data: events } = await supabase.from("tenant_events").select("id, name, description, start_date, end_date, image_url, is_public").eq("tenant_id", tenant_id).gte("start_date", now.toISOString()).lte("start_date", until).order("start_date");
+      const { data: tournaments } = await supabase.from("tournaments").select("id, name, game, start_date, end_date, image_url, status").gte("start_date", now.toISOString()).lte("start_date", until).is("archived_at", null).order("start_date");
+      return okJson(
+        {
+          tenant_events: events ?? [],
+          tournaments: tournaments ?? []
+        },
+        "upcoming"
+      );
+    } catch (err) {
+      return toolError(err, "list_upcoming_events");
+    }
+  }
+});
+
+// src/lib/mcp/tools/list-platform-templates.ts
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z7 } from "npm:zod@^3.25.76";
+var list_platform_templates_default = defineTool9({
+  name: "list_platform_templates",
+  title: "List platform marketing templates",
+  description: "List published platform-wide marketing templates the agent can clone into a tenant's private library.",
+  inputSchema: {
+    limit: z7.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit }, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const { data, error } = await supabase.from("marketing_assets").select("id, campaign_id, format, file_url, label, created_at").order("created_at", { ascending: false }).limit(limit ?? 30);
+      if (error) throw error;
+      return okJson(data ?? [], "templates");
+    } catch (err) {
+      return toolError(err, "list_platform_templates");
+    }
+  }
+});
+
+// src/lib/mcp/tools/list-tenant-assets.ts
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z8 } from "npm:zod@^3.25.76";
+var list_tenant_assets_default = defineTool10({
+  name: "list_tenant_assets",
+  title: "List tenant marketing assets",
+  description: "List assets in a tenant's private branded marketing library. Optionally filter to published-only or agent-authored.",
+  inputSchema: {
+    tenant_id: z8.string().uuid(),
+    published_only: z8.boolean().optional(),
+    agent_only: z8.boolean().optional(),
+    limit: z8.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tenant_id, published_only, agent_only, limit }, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      let q = supabase.from("tenant_marketing_assets").select("id, tenant_id, campaign_id, file_name, url, label, is_published, agent_source, source_url, proposed_by, notes, created_at, updated_at").eq("tenant_id", tenant_id).order("created_at", { ascending: false }).limit(limit ?? 50);
+      if (published_only) q = q.eq("is_published", true);
+      if (agent_only) q = q.not("agent_source", "is", null);
+      const { data, error } = await q;
+      if (error) throw error;
+      return okJson(data ?? [], "assets");
+    } catch (err) {
+      return toolError(err, "list_tenant_assets");
+    }
+  }
+});
+
+// src/lib/mcp/tools/list-pending-agent-drafts.ts
+import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z9 } from "npm:zod@^3.25.76";
+var list_pending_agent_drafts_default = defineTool11({
+  name: "list_pending_agent_drafts",
+  title: "List pending and rejected agent drafts",
+  description: "For a tenant, list agent-authored campaigns and scheduled posts that are currently 'pending_review', plus any 'rejected' rows updated in the last 30 days (with feedback notes). Use this each turn to prioritize revisions before proposing new work.",
+  inputSchema: {
+    tenant_id: z9.string().uuid()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tenant_id }, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 864e5).toISOString();
+      const { data: campaigns, error: cErr } = await supabase.from("marketing_campaigns").select("id, title, description, social_copy, status, feedback_note, target_platforms, agent_source, proposed_by, created_at, updated_at").eq("tenant_id", tenant_id).not("agent_source", "is", null).or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDaysAgo})`).order("updated_at", { ascending: false });
+      if (cErr) throw cErr;
+      const { data: posts, error: pErr } = await supabase.from("scheduled_posts").select("id, campaign_id, platform, caption, image_url, scheduled_at, status, feedback_note, agent_source, proposed_by, created_at, updated_at").eq("tenant_id", tenant_id).not("agent_source", "is", null).or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDaysAgo})`).order("updated_at", { ascending: false });
+      if (pErr) throw pErr;
+      return okJson(
+        {
+          campaigns: (campaigns ?? []).map((r) => ({ kind: "campaign", ...r })),
+          scheduled_posts: (posts ?? []).map((r) => ({ kind: "scheduled_post", ...r }))
+        },
+        "drafts"
+      );
+    } catch (err) {
+      return toolError(err, "list_pending_agent_drafts");
+    }
+  }
+});
+
+// src/lib/mcp/tools/create-campaign-draft.ts
+import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z10 } from "npm:zod@^3.25.76";
+var create_campaign_draft_default = defineTool12({
+  name: "create_campaign_draft",
+  title: "Create marketing campaign draft",
+  description: "Create a draft marketing campaign for a tenant. Status is always 'pending_review'; a tenant admin must approve before anything publishes. Supply idempotency_key to make retries safe.",
+  inputSchema: {
+    tenant_id: z10.string().uuid(),
+    title: z10.string().min(1),
+    description: z10.string().optional(),
+    social_copy: z10.string().optional(),
+    category: z10.string().optional().describe("Campaign category (default 'social_media')."),
+    target_platforms: z10.array(z10.string()).optional(),
+    idempotency_key: z10.string().optional()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const uid = ctx.getUserId();
+      if (input.idempotency_key) {
+        const { data: existing } = await supabase.from("marketing_campaigns").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
+        if (existing) return okJson({ ...existing, _idempotent: true }, "campaign");
+      }
+      const { data, error } = await supabase.from("marketing_campaigns").insert({
+        tenant_id: input.tenant_id,
+        title: input.title,
+        description: input.description ?? null,
+        social_copy: input.social_copy ?? null,
+        category: input.category ?? "social_media",
+        target_platforms: input.target_platforms ?? [],
+        status: "pending_review",
+        is_published: false,
+        agent_source: "claude-mcp",
+        proposed_by: uid,
+        created_by: uid,
+        idempotency_key: input.idempotency_key ?? null
+      }).select().single();
+      if (error) throw error;
+      return okJson(data, "campaign");
+    } catch (err) {
+      return toolError(err, "create_campaign_draft");
+    }
+  }
+});
+
+// src/lib/mcp/tools/update-campaign-draft.ts
+import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z11 } from "npm:zod@^3.25.76";
+var update_campaign_draft_default = defineTool13({
+  name: "update_campaign_draft",
+  title: "Update marketing campaign draft",
+  description: "Revise a draft/pending_review/rejected marketing campaign. Cannot change status directly. If the campaign was rejected, address the feedback_note in your changes and follow up with propose_scheduled_post if needed.",
+  inputSchema: {
+    id: z11.string().uuid(),
+    title: z11.string().min(1).optional(),
+    description: z11.string().nullish(),
+    social_copy: z11.string().nullish(),
+    target_platforms: z11.array(z11.string()).optional()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async ({ id, ...fields }, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const patch = {};
+      for (const [k, v] of Object.entries(fields)) if (v !== void 0) patch[k] = v;
+      if (Object.keys(patch).length === 0) {
+        return { content: [{ type: "text", text: "No fields provided to update." }], isError: true };
+      }
+      const { data, error } = await supabase.from("marketing_campaigns").update(patch).eq("id", id).select().maybeSingle();
+      if (error) throw error;
+      if (!data) return { content: [{ type: "text", text: "Campaign not found, not editable, or access denied." }], isError: true };
+      return okJson(data, "campaign");
+    } catch (err) {
+      return toolError(err, "update_campaign_draft");
+    }
+  }
+});
+
+// src/lib/mcp/tools/attach-tenant-asset-draft.ts
+import { defineTool as defineTool14 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z12 } from "npm:zod@^3.25.76";
+var MAX_BYTES = 20 * 1024 * 1024;
+var BUCKET = "tenant-marketing";
+function extFromContentType(ct) {
+  if (!ct) return "bin";
+  const m = ct.split(";")[0].trim().toLowerCase();
+  const map = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+    "video/mp4": "mp4"
+  };
+  return map[m] ?? "bin";
+}
+function extFromUrl(url) {
+  try {
+    const p = new URL(url).pathname;
+    const m = p.match(/\.([a-zA-Z0-9]{2,5})$/);
+    return m ? m[1].toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+var attach_tenant_asset_draft_default = defineTool14({
+  name: "attach_tenant_asset_draft",
+  title: "Attach agent-generated asset to tenant library",
+  description: "Download the supplied image URL server-side, upload it into the tenant's private storage bucket, and insert a draft row in tenant_marketing_assets (is_published=false). The original URL is preserved on source_url for lineage; the row's url points at the permanent Supabase Storage URL. Supply campaign_id to link to a campaign.",
+  inputSchema: {
+    tenant_id: z12.string().uuid(),
+    source_url: z12.string().url().describe("Externally reachable URL to the image (CDN links accepted; downloaded server-side)."),
+    file_name: z12.string().min(1).describe("Human-readable file name for the library."),
+    label: z12.string().optional().describe("Format label, e.g. 'Square 1080', 'Story 1080x1920'."),
+    campaign_id: z12.string().uuid().optional(),
+    source_asset_id: z12.string().uuid().optional().describe("Platform template id if this was cloned from marketing_assets."),
+    notes: z12.string().optional()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+  handler: async (input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const userSupabase = supabaseForUser6(ctx);
+      const uid = ctx.getUserId();
+      const resp = await fetch(input.source_url, { redirect: "follow" });
+      if (!resp.ok) {
+        return { content: [{ type: "text", text: `Failed to fetch source_url: HTTP ${resp.status}` }], isError: true };
+      }
+      const ct = resp.headers.get("content-type");
+      const cl = Number(resp.headers.get("content-length") ?? "0");
+      if (cl && cl > MAX_BYTES) {
+        return { content: [{ type: "text", text: `Source file too large (${cl} bytes; max ${MAX_BYTES}).` }], isError: true };
+      }
+      const buf = new Uint8Array(await resp.arrayBuffer());
+      if (buf.byteLength > MAX_BYTES) {
+        return { content: [{ type: "text", text: `Source file too large after download.` }], isError: true };
+      }
+      const ext = extFromUrl(input.source_url) ?? extFromContentType(ct);
+      const now = /* @__PURE__ */ new Date();
+      const yyyy = now.getUTCFullYear();
+      const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+      const uuid = crypto.randomUUID();
+      const path = `${input.tenant_id}/agent/${yyyy}/${mm}/${uuid}.${ext}`;
+      const uploadClient = userSupabase;
+      const { error: upErr } = await uploadClient.storage.from(BUCKET).upload(path, buf, {
+        contentType: ct ?? "application/octet-stream",
+        upsert: false
+      });
+      if (upErr) {
+        const svc = supabaseServiceRole();
+        const retry = await svc.storage.from(BUCKET).upload(path, buf, {
+          contentType: ct ?? "application/octet-stream",
+          upsert: false
+        });
+        if (retry.error) throw retry.error;
+      }
+      const { data: pub } = userSupabase.storage.from(BUCKET).getPublicUrl(path);
+      const storedUrl = pub.publicUrl;
+      const { data: row, error: insErr } = await userSupabase.from("tenant_marketing_assets").insert({
+        tenant_id: input.tenant_id,
+        file_name: input.file_name,
+        file_path: path,
+        url: storedUrl,
+        source_url: input.source_url,
+        label: input.label ?? "Default",
+        campaign_id: input.campaign_id ?? null,
+        source_asset_id: input.source_asset_id ?? null,
+        notes: input.notes ?? null,
+        is_published: false,
+        agent_source: "claude-mcp",
+        proposed_by: uid,
+        created_by: uid
+      }).select().single();
+      if (insErr) throw insErr;
+      return okJson(row, "asset");
+    } catch (err) {
+      return toolError(err, "attach_tenant_asset_draft");
+    }
+  }
+});
+
+// src/lib/mcp/tools/propose-scheduled-post.ts
+import { defineTool as defineTool15 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z13 } from "npm:zod@^3.25.76";
+var propose_scheduled_post_default = defineTool15({
+  name: "propose_scheduled_post",
+  title: "Propose a scheduled social post",
+  description: "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or \xB1HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms.",
+  inputSchema: {
+    tenant_id: z13.string().uuid(),
+    platform: z13.string().describe("One of the tenant's connected_platforms values."),
+    image_url: z13.string().url().describe("Permanent Supabase Storage URL from attach_tenant_asset_draft.url."),
+    caption: z13.string().optional(),
+    scheduled_at: z13.string().describe("ISO 8601 with explicit offset, e.g. 2026-07-24T14:00:00-05:00 or ...Z."),
+    campaign_id: z13.string().uuid().optional(),
+    connection_id: z13.string().uuid().optional(),
+    idempotency_key: z13.string().optional()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const uid = ctx.getUserId();
+      let when;
+      try {
+        when = parseIsoWithOffset(input.scheduled_at);
+      } catch (e) {
+        return { content: [{ type: "text", text: e.message }], isError: true };
+      }
+      if (input.idempotency_key) {
+        const { data: existing } = await supabase.from("scheduled_posts").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
+        if (existing) return okJson({ ...existing, _idempotent: true }, "scheduled_post");
+      }
+      const { data, error } = await supabase.from("scheduled_posts").insert({
+        tenant_id: input.tenant_id,
+        user_id: uid,
+        platform: input.platform,
+        image_url: input.image_url,
+        caption: input.caption ?? "",
+        scheduled_at: when.toISOString(),
+        status: "pending_review",
+        agent_source: "claude-mcp",
+        proposed_by: uid,
+        campaign_id: input.campaign_id ?? null,
+        connection_id: input.connection_id ?? null,
+        idempotency_key: input.idempotency_key ?? null
+      }).select().single();
+      if (error) throw error;
+      return okJson(data, "scheduled_post");
+    } catch (err) {
+      return toolError(err, "propose_scheduled_post");
+    }
+  }
+});
+
+// src/lib/mcp/tools/update-scheduled-post.ts
+import { defineTool as defineTool16 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z14 } from "npm:zod@^3.25.76";
+var update_scheduled_post_default = defineTool16({
+  name: "update_scheduled_post",
+  title: "Update / resubmit scheduled post",
+  description: "Revise a draft/pending_review/rejected scheduled post. If the row is currently 'rejected', the update flips its status back to 'pending_review' and preserves the existing feedback_note for audit. scheduled_at (if provided) MUST be ISO 8601 with explicit offset.",
+  inputSchema: {
+    id: z14.string().uuid(),
+    platform: z14.string().optional(),
+    image_url: z14.string().url().optional(),
+    caption: z14.string().optional(),
+    scheduled_at: z14.string().optional(),
+    campaign_id: z14.string().uuid().nullish(),
+    connection_id: z14.string().uuid().nullish()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async ({ id, ...fields }, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser6(ctx);
+      const { data: current, error: fetchErr } = await supabase.from("scheduled_posts").select("id, status").eq("id", id).maybeSingle();
+      if (fetchErr) throw fetchErr;
+      if (!current) return { content: [{ type: "text", text: "Scheduled post not found or access denied." }], isError: true };
+      const patch = {};
+      for (const [k, v] of Object.entries(fields)) {
+        if (v === void 0) continue;
+        if (k === "scheduled_at" && typeof v === "string") {
+          try {
+            patch.scheduled_at = parseIsoWithOffset(v).toISOString();
+          } catch (e) {
+            return { content: [{ type: "text", text: e.message }], isError: true };
+          }
+        } else {
+          patch[k] = v;
+        }
+      }
+      if (current.status === "rejected") {
+        patch.status = "pending_review";
+      }
+      if (Object.keys(patch).length === 0) {
+        return { content: [{ type: "text", text: "No fields provided to update." }], isError: true };
+      }
+      const { data, error } = await supabase.from("scheduled_posts").update(patch).eq("id", id).select().maybeSingle();
+      if (error) throw error;
+      if (!data) return { content: [{ type: "text", text: "Scheduled post not editable in its current state." }], isError: true };
+      return okJson(data, "scheduled_post");
+    } catch (err) {
+      return toolError(err, "update_scheduled_post");
+    }
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
 var mcp_default = defineMcp({
   name: "fgn-mcp",
   title: "FGN Gaming Network",
   version: "0.1.0",
-  instructions: "Read-only tools for the FGN gaming platform. Use `get_me` for the signed-in player's profile, `list_tournaments` for tournaments, `list_challenges` / `get_challenge` for challenges and their tasks, and `list_games` for the games catalog.",
+  instructions: "Tools for the FGN gaming platform. Read-only: `get_me`, `list_tournaments`, `list_challenges`/`get_challenge`, `list_games`, `list_tenants`, `get_brand_kit`, `list_upcoming_events`, `list_platform_templates`, `list_tenant_assets`, `list_pending_agent_drafts`. Marketing agent (drafts only \u2014 nothing publishes without tenant admin approval): `create_campaign_draft`, `update_campaign_draft`, `attach_tenant_asset_draft` (downloads external URLs server-side into tenant storage), `propose_scheduled_post`, `update_scheduled_post`. Each turn: call `list_pending_agent_drafts` first and revise rejected work (address feedback_note) before proposing new drafts. Use `idempotency_key` on create/propose calls so retries never duplicate.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [get_me_default, list_tournaments_default, list_challenges_default, get_challenge_default, list_games_default]
+  tools: [
+    get_me_default,
+    list_tournaments_default,
+    list_challenges_default,
+    get_challenge_default,
+    list_games_default,
+    list_tenants_default,
+    get_brand_kit_default,
+    list_upcoming_events_default,
+    list_platform_templates_default,
+    list_tenant_assets_default,
+    list_pending_agent_drafts_default,
+    create_campaign_draft_default,
+    update_campaign_draft_default,
+    attach_tenant_asset_draft_default,
+    propose_scheduled_post_default,
+    update_scheduled_post_default
+  ]
 });
 
 // lovable-mcp-supabase-entry.ts

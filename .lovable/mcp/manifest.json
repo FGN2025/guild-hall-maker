@@ -138,6 +138,427 @@
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "outputSchema": null
+      },
+      {
+        "name": "list_tenants",
+        "title": "List my tenants",
+        "description": "List tenants the signed-in user belongs to (via tenant_admins). Returns brand-kit summary (primary/accent colors, logo), tenant timezone, and the connected social platform labels available for scheduled posts on that tenant.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_brand_kit",
+        "title": "Get tenant brand kit",
+        "description": "Return the tenant's brand kit: colors, logo, connected social platforms, and stored timezone. Caller must be a member of the tenant.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The tenant UUID (from list_tenants)."
+            }
+          },
+          "required": [
+            "tenant_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_upcoming_events",
+        "title": "List upcoming events for a tenant",
+        "description": "List upcoming tournaments and tenant events within the next N days for a tenant the caller belongs to.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 180,
+              "description": "Look-ahead window in days (default 30)."
+            }
+          },
+          "required": [
+            "tenant_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_platform_templates",
+        "title": "List platform marketing templates",
+        "description": "List published platform-wide marketing templates the agent can clone into a tenant's private library.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_tenant_assets",
+        "title": "List tenant marketing assets",
+        "description": "List assets in a tenant's private branded marketing library. Optionally filter to published-only or agent-authored.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "published_only": {
+              "type": "boolean"
+            },
+            "agent_only": {
+              "type": "boolean"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "tenant_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_pending_agent_drafts",
+        "title": "List pending and rejected agent drafts",
+        "description": "For a tenant, list agent-authored campaigns and scheduled posts that are currently 'pending_review', plus any 'rejected' rows updated in the last 30 days (with feedback notes). Use this each turn to prioritize revisions before proposing new work.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "tenant_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_campaign_draft",
+        "title": "Create marketing campaign draft",
+        "description": "Create a draft marketing campaign for a tenant. Status is always 'pending_review'; a tenant admin must approve before anything publishes. Supply idempotency_key to make retries safe.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "social_copy": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string",
+              "description": "Campaign category (default 'social_media')."
+            },
+            "target_platforms": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "idempotency_key": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tenant_id",
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_campaign_draft",
+        "title": "Update marketing campaign draft",
+        "description": "Revise a draft/pending_review/rejected marketing campaign. Cannot change status directly. If the campaign was rejected, address the feedback_note in your changes and follow up with propose_scheduled_post if needed.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "social_copy": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "target_platforms": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "attach_tenant_asset_draft",
+        "title": "Attach agent-generated asset to tenant library",
+        "description": "Download the supplied image URL server-side, upload it into the tenant's private storage bucket, and insert a draft row in tenant_marketing_assets (is_published=false). The original URL is preserved on source_url for lineage; the row's url points at the permanent Supabase Storage URL. Supply campaign_id to link to a campaign.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Externally reachable URL to the image (CDN links accepted; downloaded server-side)."
+            },
+            "file_name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Human-readable file name for the library."
+            },
+            "label": {
+              "type": "string",
+              "description": "Format label, e.g. 'Square 1080', 'Story 1080x1920'."
+            },
+            "campaign_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_asset_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Platform template id if this was cloned from marketing_assets."
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tenant_id",
+            "source_url",
+            "file_name"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "propose_scheduled_post",
+        "title": "Propose a scheduled social post",
+        "description": "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or ±HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "platform": {
+              "type": "string",
+              "description": "One of the tenant's connected_platforms values."
+            },
+            "image_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Permanent Supabase Storage URL from attach_tenant_asset_draft.url."
+            },
+            "caption": {
+              "type": "string"
+            },
+            "scheduled_at": {
+              "type": "string",
+              "description": "ISO 8601 with explicit offset, e.g. 2026-07-24T14:00:00-05:00 or ...Z."
+            },
+            "campaign_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "connection_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "idempotency_key": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tenant_id",
+            "platform",
+            "image_url",
+            "scheduled_at"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_scheduled_post",
+        "title": "Update / resubmit scheduled post",
+        "description": "Revise a draft/pending_review/rejected scheduled post. If the row is currently 'rejected', the update flips its status back to 'pending_review' and preserves the existing feedback_note for audit. scheduled_at (if provided) MUST be ISO 8601 with explicit offset.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "platform": {
+              "type": "string"
+            },
+            "image_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "caption": {
+              "type": "string"
+            },
+            "scheduled_at": {
+              "type": "string"
+            },
+            "campaign_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "connection_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
       }
     ]
   }
