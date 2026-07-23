@@ -1817,6 +1817,8 @@ export type Database = {
           is_published: boolean
           proposed_by: string | null
           social_copy: string | null
+          source_event_id: string | null
+          source_tournament_id: string | null
           status: string
           target_platforms: string[]
           tenant_id: string | null
@@ -1835,6 +1837,8 @@ export type Database = {
           is_published?: boolean
           proposed_by?: string | null
           social_copy?: string | null
+          source_event_id?: string | null
+          source_tournament_id?: string | null
           status?: string
           target_platforms?: string[]
           tenant_id?: string | null
@@ -1853,6 +1857,8 @@ export type Database = {
           is_published?: boolean
           proposed_by?: string | null
           social_copy?: string | null
+          source_event_id?: string | null
+          source_tournament_id?: string | null
           status?: string
           target_platforms?: string[]
           tenant_id?: string | null
@@ -1860,6 +1866,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_source_event_id_fkey"
+            columns: ["source_event_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_campaigns_source_tournament_id_fkey"
+            columns: ["source_tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marketing_campaigns_tenant_id_fkey"
             columns: ["tenant_id"]
