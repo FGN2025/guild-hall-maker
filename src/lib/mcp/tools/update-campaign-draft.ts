@@ -13,11 +13,16 @@ export default defineTool({
     description: z.string().nullish(),
     social_copy: z.string().nullish(),
     target_platforms: z.array(z.string()).optional(),
+    source_event_id: z.string().uuid().nullish().describe("Pass a tenant_events.id to link, or null to clear."),
+    source_tournament_id: z.string().uuid().nullish().describe("Pass a tournaments.id to link, or null to clear."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async ({ id, ...fields }, ctx) => {
     const guard = requireAuth(ctx); if (guard) return guard;
     try {
+      if (fields.source_event_id && fields.source_tournament_id) {
+        return { content: [{ type: "text", text: "Pass at most one of source_event_id or source_tournament_id." }], isError: true };
+      }
       const supabase = supabaseForUser(ctx);
       const patch: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(fields)) if (v !== undefined) patch[k] = v;

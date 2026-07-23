@@ -17,7 +17,7 @@ export default defineTool({
       const supabase = supabaseForUser(ctx);
       const { data, error } = await supabase
         .from("marketing_assets")
-        .select("id, campaign_id, format, file_url, label, created_at")
+        .select("id, campaign_id, file_path, url, label, width, height, display_order, created_at")
         .order("created_at", { ascending: false })
         .limit(limit ?? 30);
       if (error) throw error;

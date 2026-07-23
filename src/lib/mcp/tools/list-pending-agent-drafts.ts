@@ -19,7 +19,7 @@ export default defineTool({
 
       const { data: campaigns, error: cErr } = await supabase
         .from("marketing_campaigns")
-        .select("id, title, description, social_copy, status, feedback_note, target_platforms, agent_source, proposed_by, created_at, updated_at")
+        .select("id, title, description, social_copy, status, feedback_note, target_platforms, source_event_id, source_tournament_id, agent_source, proposed_by, created_at, updated_at")
         .eq("tenant_id", tenant_id)
         .not("agent_source", "is", null)
         .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDaysAgo})`)
