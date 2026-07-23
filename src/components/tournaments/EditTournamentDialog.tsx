@@ -105,6 +105,23 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [achievementId, setAchievementId] = useState("");
   const [difficulty, setDifficulty] = useState("beginner");
   const [pointsOverrideReason, setPointsOverrideReason] = useState("");
+  const [requiresInviteCode, setRequiresInviteCode] = useState(false);
+  const [inviteCodeId, setInviteCodeId] = useState<string>("none");
+
+  const { data: availableCodes = [] } = useQuery({
+    queryKey: ["tenant-codes-for-tournament", open],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await (await import("@/integrations/supabase/client")).supabase
+        .from("tenant_codes")
+        .select("id, code, description, is_active")
+        .eq("is_active", true)
+        .order("code");
+      return data ?? [];
+    },
+  });
+
+
 
   useEffect(() => {
     if (open && tournament) {
