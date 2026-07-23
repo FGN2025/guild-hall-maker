@@ -143,6 +143,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setAchievementId(tournament.achievement_id ?? "");
       setDifficulty((tournament as any).difficulty ?? "beginner");
       setPointsOverrideReason((tournament as any).points_override_reason ?? "");
+      setRequiresInviteCode(!!tournament.requires_invite_code);
+      setInviteCodeId(tournament.invite_code_id ?? "none");
+
       const d = new Date(tournament.start_date);
       setStartDate(d);
       setStartTime(
