@@ -92,7 +92,7 @@ const ZipCheckStep = ({
       });
       if (error) throw error;
       if (data) {
-        onProceed();
+        onProceed({ inviteCode: fallbackCode.trim() });
         return;
       }
 
@@ -101,9 +101,7 @@ const ZipCheckStep = ({
         body: { code: fallbackCode.trim(), dry_run: true },
       });
       if (!tcError && tcData?.valid) {
-        // If the code is tied to a tenant, propagate the tenant_id so the user
-        // is linked to that tenant on signup even without a ZIP.
-        onProceed(tcData.tenant_id || undefined);
+        onProceed({ tenantId: tcData.tenant_id || undefined, inviteCode: fallbackCode.trim() });
         return;
       }
 
@@ -115,6 +113,7 @@ const ZipCheckStep = ({
       setFallbackLoading(false);
     }
   };
+
 
   const handleAccessRequest = async () => {
     const trimmedEmail = reqEmail.trim().toLowerCase();
