@@ -156,8 +156,12 @@ const ZipCheckStep = ({
   };
 
   const handleContinue = () => {
-    onProceed(selectedProvider || result?.tenantId || undefined);
+    onProceed({
+      tenantId: selectedProvider || result?.tenantId || undefined,
+      inviteCode: bypassCode.trim() || undefined,
+    });
   };
+
 
   return (
     <div className="space-y-4">
