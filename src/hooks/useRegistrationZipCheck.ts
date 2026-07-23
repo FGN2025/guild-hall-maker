@@ -54,6 +54,7 @@ export function useRegistrationZipCheck() {
               providers: [],
               bypassed: true,
               message: `Code accepted (${tcData.code_type}).`,
+              tenantId: tcData.tenant_id || null,
             };
             setResult(res);
             return res;
