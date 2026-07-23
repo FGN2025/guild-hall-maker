@@ -4996,6 +4996,7 @@ export type Database = {
           email: string
           gamer_tag: string
           id: string
+          invite_code: string
           status: string
           user_id: string
           zip_code: string
