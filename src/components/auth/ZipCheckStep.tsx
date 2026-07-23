@@ -416,11 +416,12 @@ const ZipCheckStep = ({
             <Button
               type="button"
               onClick={onCheck}
-              disabled={loading || zipCode.length < 5}
+              disabled={loading || (zipCode.length < 5 && !bypassCode.trim())}
               className="w-full font-heading tracking-wide bg-secondary text-secondary-foreground hover:bg-secondary/80 py-5"
             >
-              {loading ? "Checking..." : "Verify Location"}
+              {loading ? "Checking..." : bypassCode.trim() && zipCode.length < 5 ? "Verify Invite Code" : "Verify Location"}
             </Button>
+
           ) : (
             <Button
               type="button"
