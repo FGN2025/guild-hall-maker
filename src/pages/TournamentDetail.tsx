@@ -7,6 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTournaments } from "@/hooks/useTournaments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Calendar,
   Users,
@@ -15,6 +18,7 @@ import {
   GitBranch,
   Settings,
   ArrowLeft,
+  KeyRound,
 } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
@@ -28,6 +32,9 @@ const TournamentDetail = () => {
   const navigate = useNavigate();
   const { user, isAdmin, isModerator } = useAuth();
   const { register, unregister, isRegistering } = useTournaments();
+  const [inviteCode, setInviteCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
 
   const { data: tournament, isLoading } = useQuery({
     queryKey: ["tournament-detail", id],
