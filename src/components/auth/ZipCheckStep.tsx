@@ -27,6 +27,7 @@ interface ZipCheckResult {
   message: string;
   noProvidersMessage?: string | null;
   noProviders?: boolean;
+  tenantId?: string | null;
 }
 
 interface ZipCheckStepProps {
