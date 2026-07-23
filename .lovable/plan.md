@@ -1,89 +1,89 @@
 
-# Marketing Agent MCP Integration (Claude) — Revised
+# Agent Drafts: Asset review + event-linked campaigns
 
-Claude-built agents drive the marketing pipeline (copywriting, visual generation, scheduling, QA review) by calling tools this app exposes over its existing FGN MCP server. Every agent action lands as a **draft** in the tenant's own branded library — nothing publishes without a tenant admin approving in-app.
+Two feature additions plus two bundled fixes (bucket consistency, `list_platform_templates` column).
 
-## Approach
+## 1. Asset review in the Agent Drafts panel
 
-Extend `src/lib/mcp/` with a **marketing tool bundle**, gated by the existing Supabase OAuth 2.1 flow. Claude connects as a real user; RLS + tenant role checks apply automatically. Marketing writes are restricted to callers holding `tenant_admin`, `manager`, or `marketing` roles on the target tenant.
+Today asset rows render a small inline `<img>` and there's no way for a reviewer to open the full-size file. Scheduled-post and campaign cards have no way to see the picked/linked asset at all.
 
-**Every agent-produced asset writes to `tenant_marketing_assets` (the tenant's private branded library) — never to `media_library` (the platform-wide per-user library) and never to `marketing_assets` (admin-only platform templates).** The agent may *read* platform templates from `marketing_assets` to use as a starting point, but the resulting draft is cloned into `tenant_marketing_assets` with `source_asset_id` lineage preserved, exactly like the existing "Save from Library" flow.
+Change `src/components/tenant/AgentDraftsPanel.tsx`:
 
-## Two behaviors confirmed
+- Add an **"Open asset"** button on every draft card that has an associated asset:
+  - `kind === "asset"` → the row itself.
+  - `kind === "scheduled_post"` → the row's `image_url` plus any `tenant_marketing_assets` linked via the shared `campaign_id`.
+  - `kind === "campaign"` → any `tenant_marketing_assets` linked via `campaign_id`, each openable.
+- Add `src/components/tenant/AssetReviewDialog.tsx`:
+  - Renders full-size image with metadata (file name, label/format, natural dimensions, `source_url`, `campaign_id`, `is_published`, `agent_source`, `notes`).
+  - Actions: "Open in new tab", "Copy source URL".
+  - URL resolution follows the bucket decision in §3 — signed URLs if private, direct `url` if public. Read-only; approve/reject stay on the card.
+- One follow-up query in the panel keyed by the collected `campaign_id`s hydrates linked assets so the dialog opens without another round-trip.
 
-1. **Cron dispatcher uses exact `status = 'pending'` match** — `pending_review` rows are structurally invisible to the dispatcher, so drafts cannot accidentally publish.
-2. **Rejection feedback column exists on both tables** — `scheduled_posts.feedback_note` AND `marketing_campaigns.feedback_note` (text, nullable) are both added in this migration so campaigns and posts can each carry reviewer feedback.
+No approval/rejection logic changes.
 
-## MCP tools
+## 2. Agent can start a campaign from an existing event, or start new
 
-Read:
-- `list-tenants` — tenants the caller belongs to, brand-kit summary (primary/accent colors, logo URL), **stored tenant timezone** (if the column exists; otherwise UTC), and **connected social platform labels** (derived from `social_connections` for that tenant).
-- `get-brand-kit` — full branding: colors, logo variants, voice notes, banned words, hashtags.
-- `list-upcoming-events` — tournaments + `tenant_events` in the next N days for the tenant.
-- `list-platform-templates` — read-only listing of `marketing_assets` templates the agent can clone.
-- `list-tenant-assets` — read `tenant_marketing_assets` for the tenant.
-- `list-pending-agent-drafts` — returns both `pending_review` rows AND `rejected` rows (last 30 days). Each row: id, kind (`campaign` | `scheduled_post` | `asset`), status, `feedback_note`, `updated_at`, plus the row's primary fields, so the agent can prioritize revisions.
+`create_campaign_draft` has no event linkage today, so the agent always "starts new." Add explicit optional linkage.
 
-Write (create):
-- `create-campaign-draft` — inserts `marketing_campaigns` row, `status='draft'`, `agent_source='claude-mcp'`. Accepts optional `idempotency_key` (text); on `(tenant_id, idempotency_key)` collision returns the existing row instead of inserting.
-- `attach-tenant-asset-draft` — inserts `tenant_marketing_assets` row, `is_published=false`, `agent_source='claude-mcp'`, `campaign_id` set, optional `source_asset_id` for platform-template lineage. **Server-side ingestion**: when given a URL, the tool downloads the file server-side, uploads it into the `tenant-marketing` bucket under `{tenant_id}/agent/{yyyy}/{mm}/{uuid}.{ext}`, stores the permanent Supabase Storage URL on the row's existing image URL column, and preserves the caller-supplied URL in a new `source_url` column for lineage. Direct bytes uploads follow the same path.
-- `propose-scheduled-post` — inserts `scheduled_posts` row with `status='pending_review'`. `scheduled_at` is `timestamptz` stored in UTC; the tool accepts an ISO 8601 string with an explicit offset (e.g. `2026-07-24T14:00:00-05:00` or `…Z`) and rejects offset-less input with a 400-style error message. Accepts optional `idempotency_key` (same collision behavior scoped to `(tenant_id, idempotency_key)`).
+### Schema (folded into the same migration as §3 and §4)
 
-Write (revise — new):
-- `update-campaign-draft` — updates a `marketing_campaigns` row. RLS restricts updates to rows in `draft`, `pending_review`, or `rejected` status AND (`proposed_by = auth.uid()` OR caller is a tenant marketer). Editable fields: name, copy, notes, target platforms. Does not change `status` directly.
-- `update-scheduled-post` — same status + ownership restriction as above. Editable fields: `scheduled_at`, platforms, copy, asset reference, `campaign_id`. Additional behavior: if the row's current status is `rejected`, the update flips `status` back to `pending_review` and clears nothing else (feedback note preserved for audit).
+`marketing_campaigns`:
+- add `source_event_id uuid null` — FK `tenant_events(id) on delete set null`
+- add `source_tournament_id uuid null` — FK `tournaments(id) on delete set null`
+- CHECK: at most one of the two is set
+- indexes on both columns
 
-Self-check:
-- `list-pending-agent-drafts` (above) is how the agent reads its own rejections and pending items across turns.
+### MCP tool changes
+
+- `create_campaign_draft` — accept optional `source_event_id` / `source_tournament_id` (mutually exclusive → clear tool error if both). Persist on insert. Description spells out: "Pass `source_event_id` or `source_tournament_id` from `list_upcoming_events` to build off an existing event, or omit both to start new."
+- `update_campaign_draft` — accept the same two optional fields (null clears the link).
+- `list_pending_agent_drafts` — include both fields in the campaign select.
+- `list_upcoming_events` — unchanged.
+
+### UI
+
+Campaign cards render a "Linked to: <event name>" chip when either id is set (batched lookup). Same chip in the review dialog header.
+
+### System-prompt guidance
+
+Update `.lovable/plan.md` § "Claude connection guidance": "When proposing a campaign, first call `list_upcoming_events`; if a relevant event exists, pass its id. Only omit both when the campaign is intentionally standalone."
+
+## 3. Bucket visibility — settle now (Flag 1)
+
+**Confirm whether `tenant-marketing` is public or private and make the whole pipeline consistent.** Today `attach_tenant_asset_draft` stores public-shape URLs (`/object/public/tenant-marketing/...`) and they render, which means the bucket is currently **public**. The dialog design assumed private + signed URLs. Both can't stay true. If we later flip the bucket private, every `scheduled_posts.image_url` and `tenant_marketing_assets.url` already stored breaks — including at cron dispatch time.
+
+Decision baked into this same pass — **keep `tenant-marketing` public** because:
+- The dispatcher already publishes images to external social platforms, which need publicly fetchable URLs.
+- Stored URLs across `scheduled_posts.image_url` and `tenant_marketing_assets.url` are already public-shape; no backfill needed.
+- Reviewer preview needs no auth round-trip.
+
+Consistency work in this pass:
+- Confirm bucket via `supabase--storage_update_bucket("tenant-marketing", public=true)` (idempotent; no-op if already public). If workspace policy blocks public buckets and the call fails, flip the plan: bucket private, `attach_tenant_asset_draft` and the dispatcher switch to signed URLs (7-day TTL, refreshed at send), a follow-up migration rewrites existing rows to freshly signed URLs, and `AssetReviewDialog` mints signed URLs. Do not proceed with a mixed state.
+- `AssetReviewDialog` uses the stored `url` directly (public path) in the public-bucket outcome; adds a `createSignedUrl(file_path, 600)` fallback only if a load error fires.
+- No dispatcher change needed under the public outcome. Under the private fallback, the dispatcher call site (existing scheduled-post cron worker) refreshes a signed URL immediately before posting.
+
+## 4. Fix `list_platform_templates` — bundle now (Flag 2)
+
+`marketing_assets` has no `format` column (columns: `id, campaign_id, file_path, url, label, display_order, width, height, created_at`). The current `list_platform_templates` tool selects `format` and errors. Fix in this deploy:
+
+`src/lib/mcp/tools/list-platform-templates.ts` — change `.select("id, campaign_id, format, file_url, label, created_at")` to `.select("id, campaign_id, file_path, url, label, width, height, display_order, created_at")`. No schema change; this is a select typo.
 
 ## Files
 
-- `src/lib/mcp/index.ts` — register all new tools.
-- `src/lib/mcp/tools/{list-tenants,get-brand-kit,list-upcoming-events,list-platform-templates,list-tenant-assets,list-pending-agent-drafts,create-campaign-draft,attach-tenant-asset-draft,propose-scheduled-post,update-campaign-draft,update-scheduled-post}.ts` — new.
-- `src/pages/tenant/TenantMarketing.tsx` + new `AgentDraftsPanel` component — Agent Drafts tab (Approve / Reject-with-note / Edit).
-- `.lovable/mcp/manifest.json` — regenerated via `app_mcp_server--extract_mcp_manifest`.
-
-## Database changes (single migration)
-
-- `scheduled_posts`: add `pending_review` and `rejected` to status domain; add columns `proposed_by uuid` (FK `auth.users`, nullable), `agent_source text`, `feedback_note text`, `idempotency_key text`, `source_url text` (unused here but kept symmetric with assets — skipped if not needed). Unique index on `(tenant_id, idempotency_key)` where key IS NOT NULL. Confirm dispatcher WHERE clause remains `status = 'pending'` (exact match).
-- `marketing_campaigns`: add `agent_source text`, `feedback_note text`, `idempotency_key text`, `proposed_by uuid` (FK `auth.users`, nullable), ensure `status` supports `draft`, `pending_review`, `rejected`, `published`. Unique index on `(tenant_id, idempotency_key)` where key IS NOT NULL.
-- `tenant_marketing_assets`: add `agent_source text`, `proposed_by uuid`, `source_url text` (original caller-supplied URL for lineage; the primary image URL column continues to hold the permanent Storage URL).
-- Storage: ensure `tenant-marketing` bucket exists with tenant-scoped path convention `{tenant_id}/agent/...`; RLS on the bucket restricted to tenant marketers for write, tenant members for read.
-- New helper `public.is_tenant_marketer(uuid)` = admin OR manager OR marketing role — reused by all marketing tool RLS checks.
-- RLS INSERT policies on `marketing_campaigns`, `tenant_marketing_assets`, `scheduled_posts`: require `is_tenant_marketer(tenant_id)`; when `agent_source IS NOT NULL`, force `is_published=false` / `status IN ('draft','pending_review')`.
-- RLS UPDATE policies for the two new update tools: allow when row `status IN ('draft','pending_review','rejected')` AND (`proposed_by = auth.uid()` OR `is_tenant_marketer(tenant_id)`). Tenant admins retain full UPDATE rights via existing policies for approval transitions.
-- GRANTs: `SELECT, INSERT, UPDATE` to `authenticated` on affected columns; `service_role` retains ALL.
-
-## Approval UI (Tenant Marketing → new "Agent Drafts" tab)
-
-- Lists draft/pending_review campaigns, `pending_review` scheduled posts, and last-30-day `rejected` items with agent-source badge, proposed copy, asset preview, target platforms/time, and any `feedback_note`.
-- **Approve** flips campaign to `published` / scheduled post to `pending` (cron picks it up at `scheduled_at`) and toggles `tenant_marketing_assets.is_published=true`.
-- **Reject** sets `status='rejected'` and writes reviewer text to `feedback_note` for the agent to read next turn.
-- **Edit** opens existing `AssetEditorDialog` / schedule form pre-filled.
-- `tenant_admin` + `manager` can approve/reject; `marketing` role is read-only.
-
-## Claude connection guidance (in-app doc snippet)
-
-- MCP URL: `https://<project>.supabase.co/functions/v1/mcp` (already deployed).
-- Auth: Supabase OAuth 2.1 (already configured); tenant admin approves via `/.lovable/oauth/consent`.
-- System-prompt template instructs the agent to: (a) always write assets via `attach-tenant-asset-draft`, (b) end workflows with `propose-scheduled-post` (`pending_review`), (c) never attempt direct publish, (d) always supply `idempotency_key` on retries, (e) send `scheduled_at` as ISO 8601 with explicit offset, (f) restrict `platforms` to those returned by `list-tenants`, (g) on each turn call `list-pending-agent-drafts` and address rejected rows via `update-*` tools.
-
-## Out of scope (follow-ups)
-
-- Server-side image generation triggered by the agent (agent supplies URL/bytes this pass; ingestion is server-side).
-- Post-performance feedback loop back to the agent.
-- Per-tenant "auto-publish with guardrails" toggle — locked to draft-only.
-- Dedicated `tenant_brand_kits` table build-out — this pass exposes existing branding fields.
+- `supabase/migrations/<new>.sql` — `marketing_campaigns.source_event_id` + `source_tournament_id`, FKs, check, indexes.
+- Bucket confirmation via `supabase--storage_update_bucket` (not SQL).
+- `src/lib/mcp/tools/create-campaign-draft.ts`, `update-campaign-draft.ts`, `list-pending-agent-drafts.ts` — event-link fields.
+- `src/lib/mcp/tools/list-platform-templates.ts` — select fix.
+- `src/lib/mcp/index.ts` — no new tools; re-run `app_mcp_server--extract_mcp_manifest`, redeploy `mcp`.
+- `src/components/tenant/AgentDraftsPanel.tsx` — Open-asset buttons, event chip, batched lookups.
+- `src/components/tenant/AssetReviewDialog.tsx` — new modal.
+- `.lovable/plan.md` — guidance snippet update.
 
 ## Verification
 
-1. `app_mcp_server--extract_mcp_manifest` succeeds and lists all new tools.
-2. Deploy `mcp` edge function.
-3. From Claude Desktop: run each read tool, then create+attach+propose. Confirm rows appear only in the correct tenant tables, are visible in Agent Drafts, and are NOT dispatched by cron (verify dispatcher filter is exact `status='pending'`).
-4. Retry create/propose with the same `idempotency_key` → same row returned, no duplicate.
-5. Submit `scheduled_at` without an offset → rejected with a clear error; with `Z` or `±HH:MM` → accepted and stored as UTC.
-6. `attach-tenant-asset-draft` with an external URL → file exists in `tenant-marketing/{tenant}/agent/...`, row's image URL points at Storage, `source_url` holds the original.
-7. Reject a scheduled post with a note → appears in `list-pending-agent-drafts` with `feedback_note`; agent calls `update-scheduled-post` → status flips back to `pending_review`, note preserved.
-8. `list-tenants` returns tenant timezone (when present) and connected platform labels; propose using a non-connected platform still succeeds structurally but agent guidance filters it out.
-9. Approve a proposed post; underlying asset `is_published` flips true and cron picks it up.
-10. Cross-tenant and non-marketer write attempts denied by RLS.
+1. Manifest regenerates; `mcp` redeploys in one round trip.
+2. `list_platform_templates` returns rows (no `format` error).
+3. Bucket confirmed public (or fallback executed cleanly, no mixed state).
+4. Claude creates a campaign with `source_tournament_id` from `list_upcoming_events` → chip appears; unlinking via `update_campaign_draft` clears it; deleting the tournament nulls the FK without deleting the draft.
+5. Attach asset + propose post → Open-asset button on both the campaign and the post card; dialog renders full-size image and metadata.
+6. Reviewer approves; asset flips `is_published=true` and cron picks it up (URL still resolves).
