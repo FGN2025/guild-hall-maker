@@ -43,12 +43,30 @@ Deno.serve(async (req) => {
     let processed = 0;
     let failed = 0;
 
+    // Refresh signed URLs for private tenant-marketing bucket assets so tokens
+    // never go stale between attach and publish.
+    async function resolveImageUrl(raw: string | null | undefined): Promise<string | null> {
+      if (!raw) return null;
+      const marker = "/tenant-marketing/";
+      const idx = raw.indexOf(marker);
+      if (idx === -1) return raw;
+      let objectPath = raw.slice(idx + marker.length);
+      const q = objectPath.indexOf("?");
+      if (q !== -1) objectPath = objectPath.slice(0, q);
+      objectPath = decodeURIComponent(objectPath);
+      const { data, error } = await supabase.storage
+        .from("tenant-marketing")
+        .createSignedUrl(objectPath, 60 * 60);
+      if (error || !data?.signedUrl) return raw;
+      return data.signedUrl;
+    }
+
     for (const post of duePosts) {
       try {
+        const freshImage = await resolveImageUrl(post.image_url);
         let publishRes: Response;
 
         if (post.platform === "discord") {
-          // Discord pipeline: dispatch via discord-send-message.
           publishRes = await fetch(`${supabaseUrl}/functions/v1/discord-send-message`, {
             method: "POST",
             headers: {
@@ -59,9 +77,7 @@ Deno.serve(async (req) => {
               purpose: post.discord_purpose || "scheduled_post",
               tenant_id: post.discord_tenant_id || post.tenant_id,
               content: post.caption,
-              embeds: post.image_url
-                ? [{ image: { url: post.image_url } }]
-                : undefined,
+              embeds: freshImage ? [{ image: { url: freshImage } }] : undefined,
             }),
           });
         } else {
@@ -73,7 +89,7 @@ Deno.serve(async (req) => {
             },
             body: JSON.stringify({
               connection_id: post.connection_id,
-              image_url: post.image_url,
+              image_url: freshImage,
               caption: post.caption,
               scheduled_post_id: post.id,
             }),
