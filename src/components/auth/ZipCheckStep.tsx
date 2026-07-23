@@ -155,7 +155,7 @@ const ZipCheckStep = ({
   };
 
   const handleContinue = () => {
-    onProceed(selectedProvider || undefined);
+    onProceed(selectedProvider || result?.tenantId || undefined);
   };
 
   return (
