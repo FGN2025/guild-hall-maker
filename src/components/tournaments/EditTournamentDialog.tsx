@@ -69,7 +69,10 @@ interface Props {
     prize_pct_third?: number;
     discord_role_id?: string;
     achievement_id?: string;
+    requires_invite_code?: boolean;
+    invite_code_id?: string | null;
   }) => void;
+
   isUpdating: boolean;
 }
 
