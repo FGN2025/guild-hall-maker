@@ -383,6 +383,8 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       achievement_id?: string;
       discord_role_id?: string;
       image_url?: string;
+      requires_invite_code?: boolean;
+      invite_code_id?: string | null;
     }) => {
       if (!user || !tournamentId) throw new Error("Not authenticated");
       const { error } = await supabase
@@ -408,10 +410,13 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
           achievement_id: details.achievement_id ?? null,
           discord_role_id: details.discord_role_id ?? null,
           image_url: details.image_url ?? null,
+          requires_invite_code: details.requires_invite_code ?? false,
+          invite_code_id: details.invite_code_id ?? null,
         } as any)
         .eq("id", tournamentId);
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success("Tournament details updated!");
       queryClient.invalidateQueries({ queryKey: ["manage-tournament", tournamentId] });
