@@ -15,6 +15,7 @@ interface ZipCheckResult {
   message: string;
   noProvidersMessage?: string | null;
   noProviders?: boolean;
+  tenantId?: string | null;
 }
 
 export function useRegistrationZipCheck() {
