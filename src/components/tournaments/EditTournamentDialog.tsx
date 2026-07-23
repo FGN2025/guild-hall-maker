@@ -401,7 +401,36 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             </Select>
             <p className="text-xs text-muted-foreground">Automatically assign this Discord role when a player registers</p>
           </div>
+          <div className="space-y-2 rounded-md border border-border/60 p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-heading text-sm">Require invite code to register</Label>
+                <p className="text-xs text-muted-foreground">Players must enter a valid invite code during tournament sign-up.</p>
+              </div>
+              <Switch checked={requiresInviteCode} onCheckedChange={setRequiresInviteCode} />
+            </div>
+            {requiresInviteCode && (
+              <div className="space-y-2">
+                <Label className="font-heading text-xs text-muted-foreground">Pin to a specific code (optional)</Label>
+                <Select value={inviteCodeId} onValueChange={setInviteCodeId}>
+                  <SelectTrigger className="bg-card border-border font-body">
+                    <SelectValue placeholder="Any active code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Any active code</SelectItem>
+                    {availableCodes.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code}{c.description ? ` — ${c.description}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Leave as "Any active code" to accept any valid invite code.</p>
+              </div>
+            )}
+          </div>
           <div className="space-y-2">
+
             <Label className="font-heading text-sm">Rules</Label>
             {(() => {
               const selectedGame = games.find((g) => g.name === game);
