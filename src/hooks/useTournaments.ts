@@ -79,11 +79,13 @@ export const useTournaments = () => {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (tournamentId: string) => {
+    mutationFn: async (arg: string | { tournamentId: string; inviteCode?: string }) => {
       if (!user) throw new Error("Not authenticated");
+      const tournamentId = typeof arg === "string" ? arg : arg.tournamentId;
+      const inviteCode = typeof arg === "string" ? undefined : arg.inviteCode?.trim() || undefined;
       const { error } = await supabase
         .from("tournament_registrations")
-        .insert({ tournament_id: tournamentId, user_id: user.id });
+        .insert({ tournament_id: tournamentId, user_id: user.id, invite_code: inviteCode } as any);
       if (error) throw error;
 
       // Non-blocking: assign Discord role if configured
@@ -103,6 +105,7 @@ export const useTournaments = () => {
       toast.error(err.message.includes("duplicate") ? "Already registered" : "Registration failed");
     },
   });
+
 
   const unregisterMutation = useMutation({
     mutationFn: async (tournamentId: string) => {
