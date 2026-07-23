@@ -1,72 +1,66 @@
-## Context
+## Goal
 
-Invite codes serve two audiences:
-1. **Tournament participants** — code attributes the registration to a tenant campaign (and can gate access).
-2. **New players not yet linked to a tenant** — code routes their signup to that tenant, whether or not the ZIP is in coverage.
+Fix invite-code attribution so tenants see who registered with their code, and let tournament creators mark codes as **optional** or **mandatory** at the tournament level.
 
-Brian's test (`fred.wells.in@hotmail.com`, ZIP 90210 + `TOURNEY2026`) proved that today the ZIP path silently discards the code: `tenant_codes.times_used` stayed at 0, Fred landed on demo tenants, and Ninestar never saw him. Mr.Rosa69, kenzoya, and NoirAngel show `—` for Invite Code because no column persists it.
+## Behavior
 
-## Plan
+- **New signup on `/auth`**
+  - ZIP is the default path.
+  - New toggle "I have an invite code" reveals a code field. When toggled, code is required; ZIP becomes optional (still asked for demographic routing but not blocking).
+  - When both are provided, the invite code wins for tenant routing (fixes Fred's ZIP-90210 case going to demo tenants instead of NineStar).
+  - The entered code is persisted on the resulting `user_service_interests` row and `tenant_codes.times_used` is incremented once per successful signup.
 
-### 1. Schema
+- **Tournament registration**
+  - Tournament creator (tenant admin or super admin) can toggle **Require invite code** and pin a specific `tenant_codes` row.
+  - If required, `/tournaments/:id` shows a code field; server-side registration verifies the entered code matches the pinned code (or, if none pinned, any active code from the creating tenant) before inserting the registration.
+  - If not required, existing ZIP/tenant-member flow is unchanged; code field is optional and only used for attribution.
+  - Entered code is stored on `tournament_registrations.invite_code`.
 
-Single migration:
+- **Tenant Admin visibility**
+  - `Tenant → Players` shows the Invite Code column populated for signups.
+  - `Tenant → Tournaments` roster shows the Invite Code used per registrant.
 
-- `tournaments.requires_invite_code BOOLEAN NOT NULL DEFAULT false`
-- `tournaments.invite_code_id UUID REFERENCES tenant_codes(id)` (optional pin to a specific code; when null any active code for that tenant works)
-- `user_service_interests.invite_code TEXT` + index
-- `tournament_registrations.invite_code TEXT` + index
+## Schema (single migration)
 
-RLS unchanged; existing tenant-admin / platform-admin write policies already cover the new tournament columns.
+```text
+tournaments
+  + requires_invite_code boolean NOT NULL DEFAULT false
+  + invite_code_id       uuid    REFERENCES tenant_codes(id) ON DELETE SET NULL
 
-### 2. Tournament creation/edit — mandatory-code toggle
+user_service_interests
+  + invite_code text  -- captured at signup
 
-`TournamentManage.tsx` and the create dialog in `useTournaments`:
+tournament_registrations
+  + invite_code text  -- captured at registration
+```
 
-- New "Require invite code to register" switch, visible to platform admins and tenant admins.
-- When on, an optional `Select` lets them pin to a specific `tenant_codes` row (from that tenant's active codes) or leave as "any active tenant code".
-- Persist `requires_invite_code` + `invite_code_id`; surface both in the participants view.
+Also update `handle_new_user()` to:
+1. Read `invite_code` from `raw_user_meta_data`.
+2. If present, look up `tenant_codes` by code (active, not expired, under max_uses), route the user to that `tenant_id` (in addition to any other matches), stamp `invite_code` on the inserted `user_service_interests` row, and increment `times_used`.
+3. Keep existing ZIP + provider fallback logic intact.
 
-### 3. Signup — invite-code path
+RLS: new columns inherit existing table policies — no policy changes needed. Grants already cover these tables.
 
-`ZipCheckStep.tsx` gains an explicit "I have an invite code" toggle (auto-enabled when the URL carries `?code=`):
+## Code changes
 
-- **ZIP path (default):** ZIP required, code optional. If a code is entered it's validated alongside the ZIP; on success it's used for attribution and — when the code's tenant isn't in the ZIP's provider list — for tenant routing. Fixes Fred's case.
-- **Code path (toggle on / `?code=` in URL):** invite code **required**, ZIP optional. Continue button disabled until `validate-tenant-code` (dry run) returns valid. Routes the user to the code's tenant regardless of ZIP.
+- `src/hooks/useRegistrationZipCheck.ts` — return `tenantId` and echo back the raw `code` string on success (already partially in place).
+- `src/components/auth/ZipCheckStep.tsx` — add "I have an invite code" toggle; when on, code required, ZIP optional; pass `{ tenantId, inviteCode }` up.
+- `src/pages/Auth.tsx` — include `invite_code` in signup metadata; prefer invite-code tenant over ZIP providers when both provided.
+- `src/pages/tenant/TournamentManage.tsx` (and creation form) — add "Require invite code" switch + code picker (dropdown of tenant's active `tenant_codes`).
+- `src/pages/TournamentDetail.tsx` — when `requires_invite_code`, show and require the code field; validate via `validate-tenant-code` before registering; write `invite_code` into `tournament_registrations`.
+- `src/hooks/useTenantPlayers.ts` + Players table — surface `invite_code`.
+- Tournament roster views — surface `invite_code`.
 
-Rework `useRegistrationZipCheck`:
-- Extend `ZipCheckResult` with `inviteCode?: string | null` and `codeTenantId?: string | null`.
-- Add `checkCode(code)` for the code-only path; `checkZip(zip, code)` validates both when both are present.
+## Backfill (idempotent, in same migration)
 
-`Auth.tsx` propagates `selected_tenant_id`, `invite_code`, and a `code_required` flag into signup metadata.
-
-`handle_new_user` trigger:
-- Stamps `invite_code` onto the created `user_service_interests` row.
-- If `selected_tenant_id` is null but `invite_code` resolves to a valid `tenant_codes` row, uses that tenant.
-- On the code path (`code_required=true`), rejects signup unless `invite_code` resolves to an active, non-exhausted `tenant_codes` row.
-- Atomically bumps `tenant_codes.times_used`.
-
-### 4. Tournament registration — enforce mandatory code
-
-`useTournaments.register` accepts optional `inviteCode` and writes it to `tournament_registrations`.
-
-`TournamentDetail.tsx`:
-- Reads `?code=` from the URL and prefills.
-- If `tournament.requires_invite_code` is true, the Register button is replaced by an "Enter invite code" input + Register-when-valid flow. Validation via `validate-tenant-code`; if `invite_code_id` is set the code must match, otherwise any active code for the tournament's tenant is accepted.
-- Already-registered tenant members can still register with a code — captured for attribution, doesn't change tenant assignment.
-
-### 5. Admin surfaces
-
-- `get_tenant_lead_players` RPC returns `invite_code`; `TenantPlayers.tsx` populates the existing Invite Code column.
-- `TournamentManage.tsx` participants table adds an Invite Code column and shows a "Code required" badge when the toggle is on.
-
-### 6. Targeted backfill (with approval, after schema ships)
-
-a. **`fred.wells.in@hotmail.com`** — insert Ninestar `user_service_interests` row with `invite_code='TOURNEY2026'`; remove the incorrect Fiber Fast / Acme Broadband rows.
-b. **Mr.Rosa69, kenzoya, NoirAngel** — stamp `invite_code='TOURNEY2026'` on their existing Ninestar rows.
-c. Set `tenant_codes.TOURNEY2026.times_used = 4`.
+- Fred (`fred.wells.in@hotmail.com`) → add `user_service_interests` row for NineStar with `invite_code = 'TOURNEY2026'`.
+- Mr.Rosa69, kenzoya, NoirAngel → stamp `invite_code = 'TOURNEY2026'` on their existing NineStar `user_service_interests` rows.
+- Increment `tenant_codes.times_used` for `TOURNEY2026` by the count of rows backfilled.
+- All wrapped in `ON CONFLICT DO NOTHING` / `WHERE invite_code IS NULL` guards.
 
 ## Out of scope
-- Broader code-performance analytics beyond `times_used` and the new columns.
-- Backfill of `tournament_registrations.invite_code` (none of the four have in-app tournament rows yet).
-- Cleaning up demo tenants that seed common ZIPs (90210, etc.).
+
+- No changes to `validate-tenant-code` behavior beyond continued use of its `dry_run` mode.
+- No new admin UI for bulk code assignment.
+- No changes to bypass-code (platform-level) flow.
+- No changes to Discord role assignment.
