@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock } from "lucide-react";
+import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock, Bot } from "lucide-react";
+import AgentDraftsPanel from "@/components/tenant/AgentDraftsPanel";
 import SocialAccountsManager from "@/components/marketing/SocialAccountsManager";
 import ScheduledPostsCalendar from "@/components/marketing/ScheduledPostsCalendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -18,7 +19,7 @@ import TenantCodes from "./TenantCodes";
 import TenantWebPages from "./TenantWebPages";
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 
-const VALID_TABS = ["campaigns", "assets", "codes", "webpages", "social", "scheduled"] as const;
+const VALID_TABS = ["campaigns", "assets", "codes", "webpages", "social", "scheduled", "agent"] as const;
 
 const TenantMarketing = () => {
   const { campaigns, isLoading } = useMarketingCampaigns(true);
@@ -116,6 +117,9 @@ const TenantMarketing = () => {
           </TabsTrigger>
           <TabsTrigger value="scheduled" className="gap-2 font-heading">
             <CalendarClock className="h-4 w-4" /> Scheduled
+          </TabsTrigger>
+          <TabsTrigger value="agent" className="gap-2 font-heading">
+            <Bot className="h-4 w-4" /> Agent Drafts
           </TabsTrigger>
         </TabsList>
 
@@ -222,6 +226,10 @@ const TenantMarketing = () => {
         {/* Scheduled Posts Tab */}
         <TabsContent value="scheduled">
           <ScheduledPostsCalendar tenantId={tenantAdmin} />
+        </TabsContent>
+
+        <TabsContent value="agent">
+          <AgentDraftsPanel tenantId={tenantAdmin} />
         </TabsContent>
       </Tabs>
     </div>
