@@ -106,8 +106,13 @@ const Auth = () => {
     await checkZip(zipCode, bypassCode || undefined);
   };
 
-  const handleZipProceed = async (tenantId?: string) => {
+  const [signupInviteCode, setSignupInviteCode] = useState<string | null>(null);
+
+  const handleZipProceed = async (opts?: { tenantId?: string; inviteCode?: string }) => {
+    const tenantId = opts?.tenantId;
     setSelectedTenantId(tenantId || null);
+    setSignupInviteCode(opts?.inviteCode || null);
+
 
     // If a provider was selected, check if it requires subscriber validation
     if (tenantId) {
@@ -234,9 +239,11 @@ const Auth = () => {
             zip_code: zipCode,
             selected_tenant_id: selectedTenantId || undefined,
             provider_tenant_ids: providerTenantIds,
+            invite_code: signupInviteCode || bypassCode.trim() || undefined,
           },
         },
       });
+
       if (error) {
         toast.error(error.message);
       } else {

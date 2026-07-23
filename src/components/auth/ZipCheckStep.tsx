@@ -38,7 +38,7 @@ interface ZipCheckStepProps {
   result: ZipCheckResult | null;
   loading: boolean;
   onCheck: () => void;
-  onProceed: (selectedTenantId?: string) => void;
+  onProceed: (opts?: { tenantId?: string; inviteCode?: string }) => void;
 }
 
 const ZipCheckStep = ({
@@ -51,6 +51,8 @@ const ZipCheckStep = ({
   onCheck,
   onProceed,
 }: ZipCheckStepProps) => {
+  const [hasInviteCode, setHasInviteCode] = useState(false);
+
   const checked = result !== null;
   const canProceed = checked && (result.valid || result.bypassed);
   const showNoProviderFallback = checked && result.noProviders && !result.bypassed && !result.valid;
@@ -90,7 +92,7 @@ const ZipCheckStep = ({
       });
       if (error) throw error;
       if (data) {
-        onProceed();
+        onProceed({ inviteCode: fallbackCode.trim() });
         return;
       }
 
@@ -99,9 +101,7 @@ const ZipCheckStep = ({
         body: { code: fallbackCode.trim(), dry_run: true },
       });
       if (!tcError && tcData?.valid) {
-        // If the code is tied to a tenant, propagate the tenant_id so the user
-        // is linked to that tenant on signup even without a ZIP.
-        onProceed(tcData.tenant_id || undefined);
+        onProceed({ tenantId: tcData.tenant_id || undefined, inviteCode: fallbackCode.trim() });
         return;
       }
 
@@ -113,6 +113,7 @@ const ZipCheckStep = ({
       setFallbackLoading(false);
     }
   };
+
 
   const handleAccessRequest = async () => {
     const trimmedEmail = reqEmail.trim().toLowerCase();
@@ -155,8 +156,12 @@ const ZipCheckStep = ({
   };
 
   const handleContinue = () => {
-    onProceed(selectedProvider || result?.tenantId || undefined);
+    onProceed({
+      tenantId: selectedProvider || result?.tenantId || undefined,
+      inviteCode: bypassCode.trim() || undefined,
+    });
   };
+
 
   return (
     <div className="space-y-4">
@@ -411,11 +416,12 @@ const ZipCheckStep = ({
             <Button
               type="button"
               onClick={onCheck}
-              disabled={loading || zipCode.length < 5}
+              disabled={loading || (zipCode.length < 5 && !bypassCode.trim())}
               className="w-full font-heading tracking-wide bg-secondary text-secondary-foreground hover:bg-secondary/80 py-5"
             >
-              {loading ? "Checking..." : "Verify Location"}
+              {loading ? "Checking..." : bypassCode.trim() && zipCode.length < 5 ? "Verify Invite Code" : "Verify Location"}
             </Button>
+
           ) : (
             <Button
               type="button"

@@ -20,6 +20,8 @@ import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 import { useDiscordRoles } from "@/hooks/useDiscordRoles";
 import AchievementPicker from "@/components/shared/AchievementPicker";
 import PointsInput from "@/components/shared/PointsInput";
+import { Switch } from "@/components/ui/switch";
+import { useQuery } from "@tanstack/react-query";
 
 interface TournamentData {
   id: string;
@@ -39,7 +41,10 @@ interface TournamentData {
   points_participation?: number;
   discord_role_id?: string | null;
   achievement_id?: string | null;
+  requires_invite_code?: boolean;
+  invite_code_id?: string | null;
 }
+
 
 interface Props {
   tournament: TournamentData;
@@ -64,7 +69,10 @@ interface Props {
     prize_pct_third?: number;
     discord_role_id?: string;
     achievement_id?: string;
+    requires_invite_code?: boolean;
+    invite_code_id?: string | null;
   }) => void;
+
   isUpdating: boolean;
 }
 
@@ -97,6 +105,24 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [achievementId, setAchievementId] = useState("");
   const [difficulty, setDifficulty] = useState("beginner");
   const [pointsOverrideReason, setPointsOverrideReason] = useState("");
+  const [requiresInviteCode, setRequiresInviteCode] = useState(false);
+  const [inviteCodeId, setInviteCodeId] = useState<string>("none");
+
+  const { data: availableCodes = [] } = useQuery({
+    queryKey: ["tenant-codes-for-tournament", open],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tenant_codes")
+        .select("id, code, description, is_active")
+        .eq("is_active", true)
+        .order("code");
+      return data ?? [];
+    },
+  });
+
+
+
 
   useEffect(() => {
     if (open && tournament) {
@@ -117,6 +143,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setAchievementId(tournament.achievement_id ?? "");
       setDifficulty((tournament as any).difficulty ?? "beginner");
       setPointsOverrideReason((tournament as any).points_override_reason ?? "");
+      setRequiresInviteCode(!!tournament.requires_invite_code);
+      setInviteCodeId(tournament.invite_code_id ?? "none");
+
       const d = new Date(tournament.start_date);
       setStartDate(d);
       setStartTime(
@@ -192,6 +221,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       prize_pct_third: prizePctThird,
       discord_role_id: discordRoleId && discordRoleId !== "none" ? discordRoleId : undefined,
       achievement_id: achievementId && achievementId !== "none" ? achievementId : undefined,
+      requires_invite_code: requiresInviteCode,
+      invite_code_id: requiresInviteCode && inviteCodeId && inviteCodeId !== "none" ? inviteCodeId : null,
+
     });
     setOpen(false);
   };
@@ -369,7 +401,36 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             </Select>
             <p className="text-xs text-muted-foreground">Automatically assign this Discord role when a player registers</p>
           </div>
+          <div className="space-y-2 rounded-md border border-border/60 p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-heading text-sm">Require invite code to register</Label>
+                <p className="text-xs text-muted-foreground">Players must enter a valid invite code during tournament sign-up.</p>
+              </div>
+              <Switch checked={requiresInviteCode} onCheckedChange={setRequiresInviteCode} />
+            </div>
+            {requiresInviteCode && (
+              <div className="space-y-2">
+                <Label className="font-heading text-xs text-muted-foreground">Pin to a specific code (optional)</Label>
+                <Select value={inviteCodeId} onValueChange={setInviteCodeId}>
+                  <SelectTrigger className="bg-card border-border font-body">
+                    <SelectValue placeholder="Any active code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Any active code</SelectItem>
+                    {availableCodes.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code}{c.description ? ` — ${c.description}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Leave as "Any active code" to accept any valid invite code.</p>
+              </div>
+            )}
+          </div>
           <div className="space-y-2">
+
             <Label className="font-heading text-sm">Rules</Label>
             {(() => {
               const selectedGame = games.find((g) => g.name === game);

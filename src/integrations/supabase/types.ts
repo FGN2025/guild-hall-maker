@@ -4225,6 +4225,7 @@ export type Database = {
           checked_in_at: string | null
           checked_in_by: string | null
           id: string
+          invite_code: string | null
           registered_at: string
           status: string
           tournament_id: string
@@ -4235,6 +4236,7 @@ export type Database = {
           checked_in_at?: string | null
           checked_in_by?: string | null
           id?: string
+          invite_code?: string | null
           registered_at?: string
           status?: string
           tournament_id: string
@@ -4245,6 +4247,7 @@ export type Database = {
           checked_in_at?: string | null
           checked_in_by?: string | null
           id?: string
+          invite_code?: string | null
           registered_at?: string
           status?: string
           tournament_id?: string
@@ -4274,6 +4277,7 @@ export type Database = {
           game: string
           id: string
           image_url: string | null
+          invite_code_id: string | null
           is_featured: boolean
           max_participants: number
           name: string
@@ -4289,6 +4293,7 @@ export type Database = {
           prize_pct_third: number
           prize_pool: string | null
           prize_type: string
+          requires_invite_code: boolean
           rules: string | null
           season_id: string | null
           start_date: string
@@ -4308,6 +4313,7 @@ export type Database = {
           game: string
           id?: string
           image_url?: string | null
+          invite_code_id?: string | null
           is_featured?: boolean
           max_participants?: number
           name: string
@@ -4323,6 +4329,7 @@ export type Database = {
           prize_pct_third?: number
           prize_pool?: string | null
           prize_type?: string
+          requires_invite_code?: boolean
           rules?: string | null
           season_id?: string | null
           start_date: string
@@ -4342,6 +4349,7 @@ export type Database = {
           game?: string
           id?: string
           image_url?: string | null
+          invite_code_id?: string | null
           is_featured?: boolean
           max_participants?: number
           name?: string
@@ -4357,6 +4365,7 @@ export type Database = {
           prize_pct_third?: number
           prize_pool?: string | null
           prize_type?: string
+          requires_invite_code?: boolean
           rules?: string | null
           season_id?: string | null
           start_date?: string
@@ -4369,6 +4378,13 @@ export type Database = {
             columns: ["achievement_id"]
             isOneToOne: false
             referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournaments_invite_code_id_fkey"
+            columns: ["invite_code_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_codes"
             referencedColumns: ["id"]
           },
           {
@@ -4409,6 +4425,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          invite_code: string | null
           status: string
           tenant_id: string
           updated_at: string
@@ -4418,6 +4435,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          invite_code?: string | null
           status?: string
           tenant_id: string
           updated_at?: string
@@ -4427,6 +4445,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          invite_code?: string | null
           status?: string
           tenant_id?: string
           updated_at?: string
@@ -4977,6 +4996,7 @@ export type Database = {
           email: string
           gamer_tag: string
           id: string
+          invite_code: string
           status: string
           user_id: string
           zip_code: string

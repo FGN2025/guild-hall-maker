@@ -7,6 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTournaments } from "@/hooks/useTournaments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Calendar,
   Users,
@@ -15,6 +18,7 @@ import {
   GitBranch,
   Settings,
   ArrowLeft,
+  KeyRound,
 } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
@@ -28,6 +32,9 @@ const TournamentDetail = () => {
   const navigate = useNavigate();
   const { user, isAdmin, isModerator } = useAuth();
   const { register, unregister, isRegistering } = useTournaments();
+  const [inviteCode, setInviteCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
 
   const { data: tournament, isLoading } = useQuery({
     queryKey: ["tournament-detail", id],
@@ -231,13 +238,65 @@ const TournamentDetail = () => {
                     Cancel Registration
                   </Button>
                 ) : (
-                  <Button
-                    className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5"
-                    onClick={() => register(t.id)}
-                    disabled={!canRegister || isRegistering}
-                  >
-                    {isFull ? "Tournament Full" : "Register Now"}
-                  </Button>
+                  <div className="space-y-2">
+                    {(t as any).requires_invite_code && (
+                      <div className="space-y-2">
+                        <Label htmlFor="tournament-invite-code" className="font-heading text-sm text-foreground">
+                          Invite Code <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="tournament-invite-code"
+                            value={inviteCode}
+                            onChange={(e) => setInviteCode(e.target.value)}
+                            placeholder="Enter tournament invite code"
+                            maxLength={50}
+                            className="pl-10 bg-card border-border font-body"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <Button
+                      className="w-full font-heading tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 py-5"
+                      onClick={async () => {
+                        if ((t as any).requires_invite_code) {
+                          const entered = inviteCode.trim();
+                          if (!entered) {
+                            toast.error("An invite code is required to register for this tournament.");
+                            return;
+                          }
+                          setVerifying(true);
+                          try {
+                            const { data, error } = await supabase.functions.invoke("validate-tenant-code", {
+                              body: { code: entered, dry_run: true },
+                            });
+                            if (error || !data?.valid) {
+                              toast.error("Invalid or expired invite code.");
+                              return;
+                            }
+                            const pinned = (t as any).invite_code_id as string | null;
+                            if (pinned && data.code_id && data.code_id !== pinned) {
+                              toast.error("This code isn't valid for this tournament.");
+                              return;
+                            }
+                          } finally {
+                            setVerifying(false);
+                          }
+                          register({ tournamentId: t.id, inviteCode: entered });
+                        } else {
+                          register(
+                            inviteCode.trim()
+                              ? { tournamentId: t.id, inviteCode: inviteCode.trim() }
+                              : t.id
+                          );
+                        }
+                      }}
+                      disabled={!canRegister || isRegistering || verifying}
+                    >
+                      {isFull ? "Tournament Full" : verifying ? "Verifying..." : "Register Now"}
+                    </Button>
+                  </div>
                 )
               ) : (
                 <Button
@@ -247,6 +306,7 @@ const TournamentDetail = () => {
                   Sign In to Register
                 </Button>
               )}
+
             </div>
           </div>
         </div>
