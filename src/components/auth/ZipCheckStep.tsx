@@ -38,7 +38,7 @@ interface ZipCheckStepProps {
   result: ZipCheckResult | null;
   loading: boolean;
   onCheck: () => void;
-  onProceed: (selectedTenantId?: string) => void;
+  onProceed: (opts?: { tenantId?: string; inviteCode?: string }) => void;
 }
 
 const ZipCheckStep = ({
@@ -51,6 +51,8 @@ const ZipCheckStep = ({
   onCheck,
   onProceed,
 }: ZipCheckStepProps) => {
+  const [hasInviteCode, setHasInviteCode] = useState(false);
+
   const checked = result !== null;
   const canProceed = checked && (result.valid || result.bypassed);
   const showNoProviderFallback = checked && result.noProviders && !result.bypassed && !result.valid;
