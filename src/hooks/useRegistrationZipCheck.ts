@@ -15,6 +15,7 @@ interface ZipCheckResult {
   message: string;
   noProvidersMessage?: string | null;
   noProviders?: boolean;
+  tenantId?: string | null;
 }
 
 export function useRegistrationZipCheck() {
@@ -53,6 +54,7 @@ export function useRegistrationZipCheck() {
               providers: [],
               bypassed: true,
               message: `Code accepted (${tcData.code_type}).`,
+              tenantId: tcData.tenant_id || null,
             };
             setResult(res);
             return res;

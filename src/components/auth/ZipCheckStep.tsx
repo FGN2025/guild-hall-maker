@@ -27,6 +27,7 @@ interface ZipCheckResult {
   message: string;
   noProvidersMessage?: string | null;
   noProviders?: boolean;
+  tenantId?: string | null;
 }
 
 interface ZipCheckStepProps {
@@ -154,7 +155,7 @@ const ZipCheckStep = ({
   };
 
   const handleContinue = () => {
-    onProceed(selectedProvider || undefined);
+    onProceed(selectedProvider || result?.tenantId || undefined);
   };
 
   return (
