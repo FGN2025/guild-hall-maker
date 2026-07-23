@@ -299,7 +299,7 @@
       {
         "name": "create_campaign_draft",
         "title": "Create marketing campaign draft",
-        "description": "Create a draft marketing campaign for a tenant. Status is always 'pending_review'; a tenant admin must approve before anything publishes. Supply idempotency_key to make retries safe.",
+        "description": "Create a draft marketing campaign for a tenant. Status is always 'pending_review'; a tenant admin must approve before anything publishes. Pass source_event_id or source_tournament_id (mutually exclusive) from list_upcoming_events to build off an existing event, or omit both to start a new standalone campaign. Supply idempotency_key to make retries safe.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -331,6 +331,16 @@
               "items": {
                 "type": "string"
               }
+            },
+            "source_event_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "tenant_events.id when the campaign promotes a tenant event."
+            },
+            "source_tournament_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "tournaments.id when the campaign promotes a tournament."
             },
             "idempotency_key": {
               "type": "string"
@@ -382,6 +392,30 @@
               "items": {
                 "type": "string"
               }
+            },
+            "source_event_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Pass a tenant_events.id to link, or null to clear."
+            },
+            "source_tournament_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Pass a tournaments.id to link, or null to clear."
             }
           },
           "required": [

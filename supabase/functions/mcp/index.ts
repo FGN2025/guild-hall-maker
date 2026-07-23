@@ -457,7 +457,7 @@ var list_platform_templates_default = defineTool9({
     if (guard) return guard;
     try {
       const supabase = supabaseForUser6(ctx);
-      const { data, error } = await supabase.from("marketing_assets").select("id, campaign_id, format, file_url, label, created_at").order("created_at", { ascending: false }).limit(limit ?? 30);
+      const { data, error } = await supabase.from("marketing_assets").select("id, campaign_id, file_path, url, label, width, height, display_order, created_at").order("created_at", { ascending: false }).limit(limit ?? 30);
       if (error) throw error;
       return okJson(data ?? [], "templates");
     } catch (err) {
@@ -514,7 +514,7 @@ var list_pending_agent_drafts_default = defineTool11({
     try {
       const supabase = supabaseForUser6(ctx);
       const thirtyDaysAgo = new Date(Date.now() - 30 * 864e5).toISOString();
-      const { data: campaigns, error: cErr } = await supabase.from("marketing_campaigns").select("id, title, description, social_copy, status, feedback_note, target_platforms, agent_source, proposed_by, created_at, updated_at").eq("tenant_id", tenant_id).not("agent_source", "is", null).or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDaysAgo})`).order("updated_at", { ascending: false });
+      const { data: campaigns, error: cErr } = await supabase.from("marketing_campaigns").select("id, title, description, social_copy, status, feedback_note, target_platforms, source_event_id, source_tournament_id, agent_source, proposed_by, created_at, updated_at").eq("tenant_id", tenant_id).not("agent_source", "is", null).or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDaysAgo})`).order("updated_at", { ascending: false });
       if (cErr) throw cErr;
       const { data: posts, error: pErr } = await supabase.from("scheduled_posts").select("id, campaign_id, platform, caption, image_url, scheduled_at, status, feedback_note, agent_source, proposed_by, created_at, updated_at").eq("tenant_id", tenant_id).not("agent_source", "is", null).or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDaysAgo})`).order("updated_at", { ascending: false });
       if (pErr) throw pErr;
@@ -537,7 +537,7 @@ import { z as z10 } from "npm:zod@^3.25.76";
 var create_campaign_draft_default = defineTool12({
   name: "create_campaign_draft",
   title: "Create marketing campaign draft",
-  description: "Create a draft marketing campaign for a tenant. Status is always 'pending_review'; a tenant admin must approve before anything publishes. Supply idempotency_key to make retries safe.",
+  description: "Create a draft marketing campaign for a tenant. Status is always 'pending_review'; a tenant admin must approve before anything publishes. Pass source_event_id or source_tournament_id (mutually exclusive) from list_upcoming_events to build off an existing event, or omit both to start a new standalone campaign. Supply idempotency_key to make retries safe.",
   inputSchema: {
     tenant_id: z10.string().uuid(),
     title: z10.string().min(1),
@@ -545,6 +545,8 @@ var create_campaign_draft_default = defineTool12({
     social_copy: z10.string().optional(),
     category: z10.string().optional().describe("Campaign category (default 'social_media')."),
     target_platforms: z10.array(z10.string()).optional(),
+    source_event_id: z10.string().uuid().optional().describe("tenant_events.id when the campaign promotes a tenant event."),
+    source_tournament_id: z10.string().uuid().optional().describe("tournaments.id when the campaign promotes a tournament."),
     idempotency_key: z10.string().optional()
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
@@ -552,6 +554,9 @@ var create_campaign_draft_default = defineTool12({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
+      if (input.source_event_id && input.source_tournament_id) {
+        return { content: [{ type: "text", text: "Pass at most one of source_event_id or source_tournament_id." }], isError: true };
+      }
       const supabase = supabaseForUser6(ctx);
       const uid = ctx.getUserId();
       if (input.idempotency_key) {
@@ -570,6 +575,8 @@ var create_campaign_draft_default = defineTool12({
         agent_source: "claude-mcp",
         proposed_by: uid,
         created_by: uid,
+        source_event_id: input.source_event_id ?? null,
+        source_tournament_id: input.source_tournament_id ?? null,
         idempotency_key: input.idempotency_key ?? null
       }).select().single();
       if (error) throw error;
@@ -592,13 +599,18 @@ var update_campaign_draft_default = defineTool13({
     title: z11.string().min(1).optional(),
     description: z11.string().nullish(),
     social_copy: z11.string().nullish(),
-    target_platforms: z11.array(z11.string()).optional()
+    target_platforms: z11.array(z11.string()).optional(),
+    source_event_id: z11.string().uuid().nullish().describe("Pass a tenant_events.id to link, or null to clear."),
+    source_tournament_id: z11.string().uuid().nullish().describe("Pass a tournaments.id to link, or null to clear.")
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async ({ id, ...fields }, ctx) => {
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
+      if (fields.source_event_id && fields.source_tournament_id) {
+        return { content: [{ type: "text", text: "Pass at most one of source_event_id or source_tournament_id." }], isError: true };
+      }
       const supabase = supabaseForUser6(ctx);
       const patch = {};
       for (const [k, v] of Object.entries(fields)) if (v !== void 0) patch[k] = v;
@@ -695,8 +707,16 @@ var attach_tenant_asset_draft_default = defineTool14({
         });
         if (retry.error) throw retry.error;
       }
-      const { data: pub } = userSupabase.storage.from(BUCKET).getPublicUrl(path);
-      const storedUrl = pub.publicUrl;
+      const signTtlSeconds = 60 * 60 * 24 * 365;
+      const { data: signed, error: signErr } = await userSupabase.storage.from(BUCKET).createSignedUrl(path, signTtlSeconds);
+      if (signErr || !signed?.signedUrl) {
+        const svc = supabaseServiceRole();
+        const retry = await svc.storage.from(BUCKET).createSignedUrl(path, signTtlSeconds);
+        if (retry.error || !retry.data?.signedUrl) throw signErr ?? retry.error;
+        var storedUrl = retry.data.signedUrl;
+      } else {
+        var storedUrl = signed.signedUrl;
+      }
       const { data: row, error: insErr } = await userSupabase.from("tenant_marketing_assets").insert({
         tenant_id: input.tenant_id,
         file_name: input.file_name,

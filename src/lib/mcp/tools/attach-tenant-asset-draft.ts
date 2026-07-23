@@ -92,10 +92,22 @@ export default defineTool({
         if (retry.error) throw retry.error;
       }
 
-      const { data: pub } = userSupabase.storage.from(BUCKET).getPublicUrl(path);
-      // Bucket is private; getPublicUrl still returns a stable public URL shape
-      // that resolves only when object RLS grants read to the caller.
-      const storedUrl = pub.publicUrl;
+      // Bucket is private (workspace policy). Mint a long-TTL signed URL so
+      // the reviewer UI and downstream tools have an immediately usable URL.
+      // The scheduled-post dispatcher always re-signs from the object path
+      // before sending, so token expiry does not break publishing.
+      const signTtlSeconds = 60 * 60 * 24 * 365; // 1 year
+      const { data: signed, error: signErr } = await userSupabase.storage
+        .from(BUCKET)
+        .createSignedUrl(path, signTtlSeconds);
+      if (signErr || !signed?.signedUrl) {
+        const svc = supabaseServiceRole();
+        const retry = await svc.storage.from(BUCKET).createSignedUrl(path, signTtlSeconds);
+        if (retry.error || !retry.data?.signedUrl) throw signErr ?? retry.error;
+        var storedUrl = retry.data.signedUrl;
+      } else {
+        var storedUrl = signed.signedUrl;
+      }
 
       const { data: row, error: insErr } = await userSupabase
         .from("tenant_marketing_assets")
