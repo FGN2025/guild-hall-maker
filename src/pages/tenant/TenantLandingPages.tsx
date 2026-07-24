@@ -22,7 +22,7 @@ const slugify = (input: string) =>
  * Tenant Landing Pages — list + editor for standalone branded pages
  * (excludes the is_tenant_banner row, which lives in TenantBanner).
  */
-const TenantLandingPages = () => {
+const TenantLandingPages = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
   const { pages, isLoadingPages, createPage, createFromTemplate, deletePage } = useWebPages(tenantId);
