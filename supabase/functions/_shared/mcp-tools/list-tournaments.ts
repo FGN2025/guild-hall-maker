@@ -1,21 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
-import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
+import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-
-// Live `public.tournaments` uses `game` (text) — there is no `game_id` or
-// `tenant_id` column. Ladders and tenant_events are separate entities and are
-// intentionally excluded from this tool; only the primary tournaments entity
-// is returned.
-
-function supabaseForUser(ctx: ToolContext) {
-  const url = process.env.SUPABASE_URL!;
-  const anonKey =
-    process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
-  return createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+import { supabaseForUser } from "./_shared.ts";
 
 export default defineTool({
   name: "list_tournaments",

@@ -1,21 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
-import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
+import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-
-// challenge_tasks columns verified: id, challenge_id, title, description,
-// display_order, verification_type, steam_achievement_api_name,
-// steam_playtime_minutes. RLS: tasks visible only when the parent challenge is
-// active (moderators/admins bypass).
-
-function supabaseForUser(ctx: ToolContext) {
-  const url = process.env.SUPABASE_URL!;
-  const anonKey =
-    process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
-  return createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+import { supabaseForUser } from "./_shared.ts";
 
 export default defineTool({
   name: "get_challenge",
