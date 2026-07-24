@@ -864,6 +864,26 @@ var update_scheduled_post_default = defineTool16({
   }
 });
 
+// src/lib/mcp/tools/_registry.ts
+var tools = [
+  get_me_default,
+  list_tournaments_default,
+  list_challenges_default,
+  get_challenge_default,
+  list_games_default,
+  list_tenants_default,
+  get_brand_kit_default,
+  list_upcoming_events_default,
+  list_platform_templates_default,
+  list_tenant_assets_default,
+  list_pending_agent_drafts_default,
+  create_campaign_draft_default,
+  update_campaign_draft_default,
+  attach_tenant_asset_draft_default,
+  propose_scheduled_post_default,
+  update_scheduled_post_default
+];
+
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
 var mcp_default = defineMcp({
@@ -875,24 +895,7 @@ var mcp_default = defineMcp({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [
-    get_me_default,
-    list_tournaments_default,
-    list_challenges_default,
-    get_challenge_default,
-    list_games_default,
-    list_tenants_default,
-    get_brand_kit_default,
-    list_upcoming_events_default,
-    list_platform_templates_default,
-    list_tenant_assets_default,
-    list_pending_agent_drafts_default,
-    create_campaign_draft_default,
-    update_campaign_draft_default,
-    attach_tenant_asset_draft_default,
-    propose_scheduled_post_default,
-    update_scheduled_post_default
-  ]
+  tools
 });
 
 // lovable-mcp-supabase-entry.ts

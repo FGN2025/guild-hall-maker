@@ -1,20 +1,5 @@
 import { auth, defineMcp } from "@lovable.dev/mcp-js";
-import getMeTool from "./tools/get-me";
-import listTournamentsTool from "./tools/list-tournaments";
-import listChallengesTool from "./tools/list-challenges";
-import getChallengeTool from "./tools/get-challenge";
-import listGamesTool from "./tools/list-games";
-import listTenantsTool from "./tools/list-tenants";
-import getBrandKitTool from "./tools/get-brand-kit";
-import listUpcomingEventsTool from "./tools/list-upcoming-events";
-import listPlatformTemplatesTool from "./tools/list-platform-templates";
-import listTenantAssetsTool from "./tools/list-tenant-assets";
-import listPendingAgentDraftsTool from "./tools/list-pending-agent-drafts";
-import createCampaignDraftTool from "./tools/create-campaign-draft";
-import updateCampaignDraftTool from "./tools/update-campaign-draft";
-import attachTenantAssetDraftTool from "./tools/attach-tenant-asset-draft";
-import proposeScheduledPostTool from "./tools/propose-scheduled-post";
-import updateScheduledPostTool from "./tools/update-scheduled-post";
+import { tools } from "./tools/_registry";
 
 // Build the OAuth issuer from the Supabase project ref (Vite inlines this at
 // build time so it stays import-safe — no runtime env read at module load).
@@ -31,22 +16,5 @@ export default defineMcp({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [
-    getMeTool,
-    listTournamentsTool,
-    listChallengesTool,
-    getChallengeTool,
-    listGamesTool,
-    listTenantsTool,
-    getBrandKitTool,
-    listUpcomingEventsTool,
-    listPlatformTemplatesTool,
-    listTenantAssetsTool,
-    listPendingAgentDraftsTool,
-    createCampaignDraftTool,
-    updateCampaignDraftTool,
-    attachTenantAssetDraftTool,
-    proposeScheduledPostTool,
-    updateScheduledPostTool,
-  ],
+  tools,
 });
