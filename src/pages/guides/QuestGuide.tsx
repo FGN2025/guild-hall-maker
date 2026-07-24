@@ -16,6 +16,15 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Scroll; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-07-24",
+    icon: Zap,
+    title: "What's New — July 24, 2026",
+    bullets: [
+      "Game Format Tagging — Games in the FGN catalog now carry Tournament / Quest / Challenge flags. The Quests catalog and the create/edit picker only show games flagged as Quest-supporting.",
+      "Grandfathered Selections — Quests authored before the tags were applied keep their game selection; the editor marks legacy picks with '(no longer supported)' but lets you save without changing them.",
+    ],
+  },
+  {
     id: "whats-new",
     icon: Zap,
     title: "What's New — June 18, 2026",
