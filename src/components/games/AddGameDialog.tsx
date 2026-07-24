@@ -328,6 +328,26 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
             <Label>Platform Tags (comma separated)</Label>
             <Input value={platformTags} onChange={e => setPlatformTags(e.target.value)} placeholder="PC, PS5, Xbox" />
           </div>
+          <div className="space-y-2 rounded-md border border-border p-3">
+            <Label className="text-sm font-heading">Supported Formats</Label>
+            <p className="text-xs text-muted-foreground">
+              Controls which activity types this game can be used for across tournaments, quests, and challenges.
+            </p>
+            <div className="flex flex-col gap-2 pt-1">
+              <div className="flex items-center gap-2">
+                <Switch checked={supportsTournaments} onCheckedChange={setSupportsTournaments} />
+                <Label className="font-body text-sm">Tournaments</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={supportsQuests} onCheckedChange={setSupportsQuests} />
+                <Label className="font-body text-sm">Quests</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={supportsChallenges} onCheckedChange={setSupportsChallenges} />
+                <Label className="font-body text-sm">Challenges</Label>
+              </div>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <Switch checked={isActive} onCheckedChange={setIsActive} />
             <Label>Active</Label>
