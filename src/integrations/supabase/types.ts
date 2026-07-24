@@ -5164,17 +5164,6 @@ export type Database = {
           read_ct: number
         }[]
       }
-      rls_probe_marketing: {
-        Args: { _as_user: string; _op: string; _tenant: string }
-        Returns: string
-      }
-      rls_probe_read_marketing: {
-        Args: { _as_user: string; _tenant: string }
-        Returns: {
-          source: string
-          visible_rows: number
-        }[]
-      }
       shares_tenant_with: {
         Args: { _target: string; _viewer: string }
         Returns: boolean
