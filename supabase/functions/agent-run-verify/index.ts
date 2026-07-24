@@ -136,6 +136,7 @@ Deno.serve(async (req) => {
     for (const uid of cleanupUsers) {
       await svc.from("tenant_admins").delete().eq("user_id", uid);
       await svc.from("agent_runs").delete().eq("launched_by", uid);
+      await svc.from("user_roles").delete().eq("user_id", uid);
       await deleteEphemeralUser(uid);
     }
   }
