@@ -151,7 +151,7 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
               key={item.to}
               to={item.to}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide transition-all ${
-                (item as any).indent ? "ml-4 py-2" : ""
+                (item as any).deepIndent ? "ml-8 py-2" : (item as any).indent ? "ml-4 py-2" : ""
               } ${
                 active
                   ? "text-primary bg-primary/10 border border-primary/30"
