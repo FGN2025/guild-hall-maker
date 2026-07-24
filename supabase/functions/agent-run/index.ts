@@ -244,9 +244,9 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: claims, error: claimsErr } = await userClient.auth.getClaims(jwt);
-  if (claimsErr || !claims?.claims?.sub) return json({ error: "unauthorized" }, 401);
-  const userId = claims.claims.sub as string;
+  const { data: userData, error: claimsErr } = await userClient.auth.getUser(jwt);
+  if (claimsErr || !userData?.user?.id) return json({ error: "unauthorized" }, 401);
+  const userId = userData.user.id;
 
   let payload: any;
   try { payload = await req.json(); } catch { return json({ error: "invalid_json" }, 400); }
