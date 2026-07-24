@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
 
     const c3 = await postJson(AGENT_MCP_URL, runnerTok, { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "list_tenants", arguments: {} } });
     const tenants = c3.body?.result?.structuredContent?.tenants;
-    push("C3 list_tenants scoped to token tenant", Array.isArray(tenants) && tenants.length === 1 && tenants[0].id === primary.tenant_id, { tenants });
+    push("C3 list_tenants scoped to token tenant", Array.isArray(tenants) && tenants.length === 1 && tenants[0].id === primary.tenant_id, { tenants, raw: c3.body });
 
     // ---- D) RLS-equivalence ----
     // D1: write with mismatching tenant_id -> rejected at dispatch (isError=true).
