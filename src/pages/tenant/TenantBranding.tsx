@@ -17,7 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
  * plus entry cards for the two independent builders: Tenant Banner and
  * Tenant Landing Pages.
  */
-const TenantBranding = () => {
+const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
 
