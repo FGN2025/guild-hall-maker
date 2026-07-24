@@ -15,6 +15,9 @@ export interface Game {
   platform_tags: string[];
   is_active: boolean;
   display_order: number;
+  supports_tournaments: boolean;
+  supports_quests: boolean;
+  supports_challenges: boolean;
   created_at: string;
   updated_at: string;
 }
