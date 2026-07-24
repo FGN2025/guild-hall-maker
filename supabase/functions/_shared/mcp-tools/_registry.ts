@@ -26,6 +26,10 @@ import updateCampaignDraftTool from "./update-campaign-draft.ts";
 import attachTenantAssetDraftTool from "./attach-tenant-asset-draft.ts";
 import proposeScheduledPostTool from "./propose-scheduled-post.ts";
 import updateScheduledPostTool from "./update-scheduled-post.ts";
+import listBrandedPagesTool from "./list-branded-pages.ts";
+import listPageTemplatesTool from "./list-page-templates.ts";
+import proposeBrandedPageTool from "./propose-branded-page.ts";
+import proposePortalBannerUpdateTool from "./propose-portal-banner-update.ts";
 
 export const tools = [
   getMeTool,
@@ -44,6 +48,10 @@ export const tools = [
   attachTenantAssetDraftTool,
   proposeScheduledPostTool,
   updateScheduledPostTool,
+  listBrandedPagesTool,
+  listPageTemplatesTool,
+  proposeBrandedPageTool,
+  proposePortalBannerUpdateTool,
 ];
 
 // Names of write tools — used by agent-mcp for the tool-boundary tenant guard.
@@ -55,4 +63,6 @@ export const WRITE_TOOL_NAMES = new Set([
   "attach_tenant_asset_draft",
   "propose_scheduled_post",
   "update_scheduled_post",
+  "propose_branded_page",
+  "propose_portal_banner_update",
 ]);

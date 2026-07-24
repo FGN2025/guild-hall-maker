@@ -2,9 +2,11 @@ import { useTenantBranding } from "@/contexts/TenantBrandingContext";
 import SectionPreview from "@/components/webpages/SectionPreview";
 
 /**
- * Renders the active tenant's custom banner sections (built in the
- * Web Page editor) at the top of the player portal. Renders nothing
- * when the user has no tenant or the tenant has no published banner.
+ * Renders the active tenant's custom banner sections at the top of the
+ * player portal. Renders nothing when the user has no tenant, the banner
+ * isn't published, or the scheduling window is closed (windowing is
+ * enforced in useUserTenantBranding — an out-of-window banner arrives
+ * here with an empty sections array).
  */
 const TenantBannerSlot = () => {
   const { branding } = useTenantBranding();

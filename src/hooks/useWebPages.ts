@@ -10,6 +10,9 @@ export interface WebPage {
   slug: string;
   description: string | null;
   is_published: boolean;
+  is_tenant_banner?: boolean;
+  publish_at?: string | null;
+  unpublish_at?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -24,6 +27,45 @@ export interface WebPageSection {
   created_at: string;
   updated_at: string;
 }
+
+export interface WebPageTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  preview_image_url: string | null;
+  sections: Array<{ section_type: string; config: Record<string, any> }>;
+  is_universal: boolean;
+}
+
+/** Grouped by intent for the marketer-friendly Add Section picker. */
+export const SECTION_GROUPS = [
+  {
+    label: "Hero & Above-the-fold",
+    description: "Grab attention at the top of the page",
+    types: ["hero", "banner"],
+  },
+  {
+    label: "Content & Story",
+    description: "Tell the story of your service",
+    types: ["text_block", "image_gallery", "video"],
+  },
+  {
+    label: "Conversion",
+    description: "Drive sign-ups, contact, or clicks",
+    types: ["cta"],
+  },
+  {
+    label: "Live Data & Community",
+    description: "Pull in real activity from the platform",
+    types: ["featured_events"],
+  },
+  {
+    label: "Embeds",
+    description: "Drop in third-party widgets or custom HTML",
+    types: ["embed_widget"],
+  },
+] as const;
 
 export const SECTION_TYPES = [
   { value: "hero", label: "Hero Banner", description: "Large hero image with heading and CTA" },
@@ -95,6 +137,7 @@ export const useWebPages = (tenantId?: string | null) => {
     onSuccess: () => {
       toast.success("Page updated");
       qc.invalidateQueries({ queryKey: ["web-pages"] });
+      qc.invalidateQueries({ queryKey: ["user-tenant-branding"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -164,6 +207,54 @@ export const useWebPages = (tenantId?: string | null) => {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const createFromTemplate = useMutation({
+    mutationFn: async (input: {
+      template_id: string;
+      title: string;
+      slug: string;
+      description?: string;
+      tenant_id?: string | null;
+    }) => {
+      if (!user) throw new Error("Not authenticated");
+      const { data: tpl, error: tplErr } = await (supabase.from("web_page_templates") as any)
+        .select("sections")
+        .eq("id", input.template_id)
+        .single();
+      if (tplErr) throw tplErr;
+
+      const { data: page, error: pageErr } = await supabase
+        .from("web_pages")
+        .insert({
+          title: input.title,
+          slug: input.slug,
+          description: input.description ?? null,
+          tenant_id: input.tenant_id ?? null,
+          created_by: user.id,
+        } as any)
+        .select()
+        .single();
+      if (pageErr) throw pageErr;
+
+      const sections = (tpl?.sections ?? []) as Array<{ section_type: string; config: Record<string, any> }>;
+      if (sections.length) {
+        const rows = sections.map((s, i) => ({
+          page_id: (page as any).id,
+          section_type: s.section_type,
+          display_order: i,
+          config: s.config ?? {},
+        }));
+        const { error: secErr } = await supabase.from("web_page_sections").insert(rows as any);
+        if (secErr) throw secErr;
+      }
+      return page as unknown as WebPage;
+    },
+    onSuccess: () => {
+      toast.success("Page created from template");
+      qc.invalidateQueries({ queryKey: ["web-pages"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return {
     pages: pagesQuery.data ?? [],
     isLoadingPages: pagesQuery.isLoading,
@@ -175,5 +266,20 @@ export const useWebPages = (tenantId?: string | null) => {
     updateSection,
     deleteSection,
     reorderSections,
+    createFromTemplate,
   };
 };
+
+/** Curated + universal starting points, readable by anyone. */
+export const usePageTemplates = () =>
+  useQuery({
+    queryKey: ["web-page-templates"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("web_page_templates") as any)
+        .select("id, name, description, category, preview_image_url, sections, is_universal")
+        .order("category", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as WebPageTemplate[];
+    },
+    staleTime: 5 * 60_000,
+  });

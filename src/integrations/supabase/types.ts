@@ -4449,6 +4449,57 @@ export type Database = {
           },
         ]
       }
+      tenant_saved_blocks: {
+        Row: {
+          config: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+          preview_image_url: string | null
+          section_type: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label: string
+          preview_image_url?: string | null
+          section_type: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          preview_image_url?: string | null
+          section_type?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_saved_blocks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_saved_blocks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       tenant_subscribers: {
         Row: {
           account_number: string | null
@@ -5065,6 +5116,45 @@ export type Database = {
           },
         ]
       }
+      web_page_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_universal: boolean
+          name: string
+          preview_image_url: string | null
+          sections: Json
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_universal?: boolean
+          name: string
+          preview_image_url?: string | null
+          sections?: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_universal?: boolean
+          name?: string
+          preview_image_url?: string | null
+          sections?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       web_pages: {
         Row: {
           created_at: string
@@ -5073,9 +5163,11 @@ export type Database = {
           id: string
           is_published: boolean
           is_tenant_banner: boolean
+          publish_at: string | null
           slug: string
           tenant_id: string | null
           title: string
+          unpublish_at: string | null
           updated_at: string
         }
         Insert: {
@@ -5085,9 +5177,11 @@ export type Database = {
           id?: string
           is_published?: boolean
           is_tenant_banner?: boolean
+          publish_at?: string | null
           slug: string
           tenant_id?: string | null
           title: string
+          unpublish_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -5097,9 +5191,11 @@ export type Database = {
           id?: string
           is_published?: boolean
           is_tenant_banner?: boolean
+          publish_at?: string | null
           slug?: string
           tenant_id?: string | null
           title?: string
+          unpublish_at?: string | null
           updated_at?: string
         }
         Relationships: [

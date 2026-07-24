@@ -846,6 +846,204 @@ var update_scheduled_post_default = defineTool16({
   }
 });
 
+// supabase/functions/_shared/mcp-tools/list-branded-pages.ts
+import { defineTool as defineTool17 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z15 } from "npm:zod@^3.25.76";
+var list_branded_pages_default = defineTool17({
+  name: "list_branded_pages",
+  title: "List branded pages",
+  description: "List every web_page belonging to a tenant: the always-on Portal Banner (is_tenant_banner=true) and any landing pages. Each row includes publish state, scheduling window, and section count so the agent can decide what to propose.",
+  inputSchema: {
+    tenant_id: z15.string().uuid().describe("Tenant to list pages for. REQUIRED \u2014 do not omit.")
+  },
+  annotations: { readOnlyHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const sb = supabaseForUser(ctx);
+      const { data: pages, error } = await sb.from("web_pages").select("id, title, slug, description, is_published, is_tenant_banner, publish_at, unpublish_at, created_at, updated_at").eq("tenant_id", input.tenant_id).order("is_tenant_banner", { ascending: false }).order("updated_at", { ascending: false });
+      if (error) throw error;
+      const ids = (pages ?? []).map((p) => p.id);
+      let counts = /* @__PURE__ */ new Map();
+      if (ids.length) {
+        const { data: secs } = await sb.from("web_page_sections").select("page_id").in("page_id", ids);
+        for (const s of secs ?? []) {
+          counts.set(s.page_id, (counts.get(s.page_id) ?? 0) + 1);
+        }
+      }
+      const enriched = (pages ?? []).map((p) => ({ ...p, section_count: counts.get(p.id) ?? 0 }));
+      return okJson(enriched, "pages");
+    } catch (err) {
+      return toolError(err, "list_branded_pages");
+    }
+  }
+});
+
+// supabase/functions/_shared/mcp-tools/list-page-templates.ts
+import { defineTool as defineTool18 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z16 } from "npm:zod@^3.25.76";
+var list_page_templates_default = defineTool18({
+  name: "list_page_templates",
+  title: "List branded-page templates",
+  description: "Return curated + universal starting points for landing pages. Each template is a name, category, description, preview image URL, and a JSON array of sections you can pass to propose_branded_page.",
+  inputSchema: {
+    tenant_id: z16.string().uuid().optional().describe("Optional \u2014 only used to scope future tenant-private templates; universal templates are returned to all tenants."),
+    category: z16.string().optional()
+  },
+  annotations: { readOnlyHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const sb = supabaseForUser(ctx);
+      let q = sb.from("web_page_templates").select("id, name, description, category, preview_image_url, sections, is_universal");
+      if (input.category) q = q.eq("category", input.category);
+      const { data, error } = await q.order("category", { ascending: true });
+      if (error) throw error;
+      return okJson(data ?? [], "templates");
+    } catch (err) {
+      return toolError(err, "list_page_templates");
+    }
+  }
+});
+
+// supabase/functions/_shared/mcp-tools/propose-branded-page.ts
+import { defineTool as defineTool19 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z17 } from "npm:zod@^3.25.76";
+var SectionSchema = z17.object({
+  section_type: z17.enum([
+    "hero",
+    "text_block",
+    "image_gallery",
+    "cta",
+    "embed_widget",
+    "banner",
+    "video",
+    "featured_events"
+  ]),
+  config: z17.record(z17.any()).default({})
+});
+var propose_branded_page_default = defineTool19({
+  name: "propose_branded_page",
+  title: "Propose a branded landing page (draft)",
+  description: "Create a DRAFT web_pages row for a tenant with a supplied section array. Never publishes \u2014 is_published stays false, so a tenant admin has to hit Publish in the portal. Pass either template_id (to hydrate sections from a template) or sections (direct block array). Passing both replaces the template's sections with the supplied ones.",
+  inputSchema: {
+    tenant_id: z17.string().uuid().describe("Owner tenant. REQUIRED."),
+    title: z17.string().min(1).max(120),
+    slug: z17.string().min(1).max(80).regex(/^[a-z0-9-]+$/, "slug must be lowercase kebab-case"),
+    description: z17.string().max(500).optional(),
+    template_id: z17.string().uuid().optional(),
+    sections: z17.array(SectionSchema).max(30).optional(),
+    idempotency_key: z17.string().optional()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const sb = supabaseForUser(ctx);
+      const uid = ctx.getUserId();
+      if (input.idempotency_key) {
+        const { data: existing } = await sb.from("web_pages").select("*").eq("tenant_id", input.tenant_id).eq("slug", input.slug).maybeSingle();
+        if (existing) return okJson({ ...existing, _idempotent: true }, "page");
+      }
+      let sections = input.sections ?? [];
+      if (input.template_id && sections.length === 0) {
+        const { data: tpl, error: tplErr } = await sb.from("web_page_templates").select("sections").eq("id", input.template_id).single();
+        if (tplErr) throw tplErr;
+        sections = tpl?.sections ?? [];
+      }
+      const { data: page, error: pErr } = await sb.from("web_pages").insert({
+        tenant_id: input.tenant_id,
+        title: input.title,
+        slug: input.slug,
+        description: input.description ?? null,
+        is_published: false,
+        created_by: uid
+      }).select().single();
+      if (pErr) throw pErr;
+      if (sections.length) {
+        const rows = sections.map((s, i) => ({
+          page_id: page.id,
+          section_type: s.section_type,
+          display_order: i,
+          config: s.config ?? {}
+        }));
+        const { error: sErr } = await sb.from("web_page_sections").insert(rows);
+        if (sErr) throw sErr;
+      }
+      return okJson({
+        ...page,
+        section_count: sections.length,
+        preview_hint: "Draft only \u2014 tenant admin must approve and publish via /tenant/branding."
+      }, "page");
+    } catch (err) {
+      return toolError(err, "propose_branded_page");
+    }
+  }
+});
+
+// supabase/functions/_shared/mcp-tools/propose-portal-banner-update.ts
+import { defineTool as defineTool20 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z18 } from "npm:zod@^3.25.76";
+var SectionSchema2 = z18.object({
+  section_type: z18.enum([
+    "hero",
+    "text_block",
+    "image_gallery",
+    "cta",
+    "embed_widget",
+    "banner",
+    "video",
+    "featured_events"
+  ]),
+  config: z18.record(z18.any()).default({})
+});
+var propose_portal_banner_update_default = defineTool20({
+  name: "propose_portal_banner_update",
+  title: "Propose an update to the portal-wide banner (draft only)",
+  description: "Draft-edit the tenant's Portal Banner. Creates a DRAFT landing page containing the proposed banner sections; the live banner is never modified. A human must copy the approved sections into the banner via the tenant portal.",
+  inputSchema: {
+    tenant_id: z18.string().uuid(),
+    sections: z18.array(SectionSchema2).min(1).max(10),
+    proposal_reason: z18.string().min(1).max(500)
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const sb = supabaseForUser(ctx);
+      const uid = ctx.getUserId();
+      const slug = `portal-banner-proposal-${Date.now()}`;
+      const { data: page, error: pErr } = await sb.from("web_pages").insert({
+        tenant_id: input.tenant_id,
+        title: "Portal Banner Proposal",
+        slug,
+        description: input.proposal_reason,
+        is_published: false,
+        created_by: uid
+      }).select().single();
+      if (pErr) throw pErr;
+      const rows = input.sections.map((s, i) => ({
+        page_id: page.id,
+        section_type: s.section_type,
+        display_order: i,
+        config: s.config ?? {}
+      }));
+      const { error: sErr } = await sb.from("web_page_sections").insert(rows);
+      if (sErr) throw sErr;
+      return okJson({
+        ...page,
+        note: "This is a DRAFT proposal page, not the live banner. A tenant admin must review and copy the sections onto the Portal Banner from /tenant/branding."
+      }, "proposal");
+    } catch (err) {
+      return toolError(err, "propose_portal_banner_update");
+    }
+  }
+});
+
 // supabase/functions/_shared/mcp-tools/_registry.ts
 var tools = [
   get_me_default,
@@ -863,7 +1061,11 @@ var tools = [
   update_campaign_draft_default,
   attach_tenant_asset_draft_default,
   propose_scheduled_post_default,
-  update_scheduled_post_default
+  update_scheduled_post_default,
+  list_branded_pages_default,
+  list_page_templates_default,
+  propose_branded_page_default,
+  propose_portal_banner_update_default
 ];
 
 // src/lib/mcp/index.ts

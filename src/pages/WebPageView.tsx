@@ -34,6 +34,13 @@ const WebPageView = () => {
       if (pageErr) throw pageErr;
       if (!page) throw new Error("Page not found");
 
+      // Respect the publish/unpublish schedule window
+      const now = Date.now();
+      const p: any = page;
+      const notYet = p.publish_at && new Date(p.publish_at).getTime() > now;
+      const expired = p.unpublish_at && new Date(p.unpublish_at).getTime() <= now;
+      if (notYet || expired) throw new Error("Page not found");
+
       const { data: sections } = await supabase
         .from("web_page_sections")
         .select("*")
