@@ -92,6 +92,7 @@ const AdminSeasons = lazy(() => import("./pages/admin/AdminSeasons"));
 const AdminAchievements = lazy(() => import("./pages/admin/AdminAchievements"));
 const AdminGuide = lazy(() => import("./pages/admin/AdminGuide"));
 const AdminMarketing = lazy(() => import("./pages/admin/AdminMarketing"));
+const AdminAgentPrompts = lazy(() => import("./pages/admin/AdminAgentPrompts"));
 const AdminAccessRequests = lazy(() => import("./pages/admin/AdminAccessRequests"));
 const AdminLegacyUsers = lazy(() => import("./pages/admin/AdminLegacyUsers"));
 const AdminEcosystem = lazy(() => import("./pages/admin/AdminEcosystem"));
@@ -240,6 +241,7 @@ const App = () => (
               <Route path="/admin/achievements" element={<AdminRoute><AdminAchievements /></AdminRoute>} />
               <Route path="/admin/guide" element={<MarketingRoute><AdminGuide /></MarketingRoute>} />
               <Route path="/admin/marketing" element={<MarketingRoute><AdminMarketing /></MarketingRoute>} />
+              <Route path="/admin/agent-prompts" element={<AdminRoute><AdminAgentPrompts /></AdminRoute>} />
               <Route path="/admin/access-requests" element={<AdminRoute><AdminAccessRequests /></AdminRoute>} />
               <Route path="/admin/discord-bypass" element={<AdminRoute><AdminDiscordBypass /></AdminRoute>} />
               <Route path="/admin/legacy-users" element={<AdminRoute><AdminLegacyUsers /></AdminRoute>} />
