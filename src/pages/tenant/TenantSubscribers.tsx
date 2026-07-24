@@ -34,7 +34,6 @@ const TenantSubscribers = () => {
   const tenantId = tenantInfo?.tenantId;
   const isAdmin = tenantInfo?.tenantRole === "admin";
   const { subscribers, isLoading, bulkInsert, updateSubscriber, deleteSubscriber } = useTenantSubscribers(tenantId);
-  const { integrations, saveIntegration, updateIntegration, triggerSync, deleteIntegration } = useTenantIntegrations(tenantId);
   const { logs: syncLogs, isLoading: syncLogsLoading } = useSyncLogs(tenantId);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "subscribers";
@@ -44,9 +43,6 @@ const TenantSubscribers = () => {
   const [search, setSearch] = useState("");
   const [subPage, setSubPage] = useState(1);
   const subPageSize = 25;
-  const [configDialogOpen, setConfigDialogOpen] = useState(false);
-  const [selectedIntegration, setSelectedIntegration] = useState<TenantIntegration | null>(null);
-  const [selectedProviderType, setSelectedProviderType] = useState<string>("nisc");
 
   // Edit/Delete state
   const [editSub, setEditSub] = useState<TenantSubscriber | null>(null);
