@@ -414,6 +414,10 @@ const AdminTenants = () => {
                 onToggleSubscriberValidation={(checked) =>
                   updateTenant.mutate({ id: t.id, require_subscriber_validation: checked })
                 }
+                onPlanTierChange={(tier) =>
+                  updateTenant.mutate({ id: t.id, plan_tier: tier })
+                }
+
                 onManage={() => {
                   localStorage.setItem("fgn_selected_tenant_id", t.id);
                   navigate("/tenant");
