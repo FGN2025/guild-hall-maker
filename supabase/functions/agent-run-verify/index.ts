@@ -65,6 +65,14 @@ Deno.serve(async (req) => {
         createEphemeralUser(), createEphemeralUser(), createEphemeralUser(),
       ]);
       cleanupUsers.push(adminU.id, marketingU.id, adminOtherTenantU.id);
+      // Grant 'moderator' app_role to bypass the prevent_player_tenant_admin trigger
+      // (staff exemption). Moderator is not platform admin, so it does not skew our
+      // has_role('admin') check in agent-run.
+      await svc.from("user_roles").insert([
+        { user_id: adminU.id, role: "moderator" },
+        { user_id: marketingU.id, role: "moderator" },
+        { user_id: adminOtherTenantU.id, role: "moderator" },
+      ]);
       const insertRes = await svc.from("tenant_admins").insert([
         { tenant_id: acmeId, user_id: adminU.id, role: "admin" },
         { tenant_id: acmeId, user_id: marketingU.id, role: "marketing" },
