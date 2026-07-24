@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
-const TenantAccount = () => {
+const TenantAccount = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { tenantInfo, isPlatformAdminMode } = useTenantAdmin();
   const { isAdmin, roleLoading } = useAuth();
   const { isSubscribed } = useTenantBilling();
@@ -33,12 +33,15 @@ const TenantAccount = () => {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Account</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage your subscription and billing for {tenantInfo.tenantName}.
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Account</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your subscription and billing for {tenantInfo.tenantName}.
+          </p>
+        </div>
+      )}
+
 
       {canManageBilling && !isSubscribed && <TenantBillingCard />}
 
