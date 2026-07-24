@@ -2,17 +2,15 @@ import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenantBilling } from "@/hooks/useTenantBilling";
 import TenantBillingCard from "@/components/tenant/TenantBillingCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 const TenantAccount = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { tenantInfo, isPlatformAdminMode } = useTenantAdmin();
   const { isAdmin, roleLoading } = useAuth();
-  const { isSubscribed } = useTenantBilling();
   const [searchParams, setSearchParams] = useSearchParams();
+
 
   useEffect(() => {
     const checkout = searchParams.get("checkout");
