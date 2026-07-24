@@ -295,9 +295,16 @@ const TenantEvents = () => {
                       <SelectValue placeholder="Select a game" />
                     </SelectTrigger>
                     <SelectContent>
-                      {games.map((g) => (
-                        <SelectItem key={g.id} value={g.name}>{g.name}</SelectItem>
-                      ))}
+                      {games
+                        .filter((g) => (g as any).supports_tournaments || g.name === form.game)
+                        .map((g) => {
+                          const disqualified = !(g as any).supports_tournaments;
+                          return (
+                            <SelectItem key={g.id} value={g.name}>
+                              {g.name}{disqualified ? " (no longer supported)" : ""}
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
                 </div>
