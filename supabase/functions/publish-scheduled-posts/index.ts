@@ -25,6 +25,54 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const nowIso = new Date().toISOString();
 
+    // 0. Flush marketing draft digests whose window has elapsed.
+    let digestsSent = 0;
+    const { data: dueDigests } = await supabase
+      .from("marketing_notification_state")
+      .select("*")
+      .lte("next_flush_at", nowIso)
+      .limit(50);
+
+    for (const row of dueDigests ?? []) {
+      const items: any[] = Array.isArray(row.pending_ids) ? row.pending_ids : [];
+      if (items.length === 0) {
+        await supabase.from("marketing_notification_state").delete().eq("id", row.id);
+        continue;
+      }
+      // Group by recipient user_id
+      const byUser = new Map<string, any[]>();
+      for (const it of items) {
+        const uid = it.user_id;
+        if (!uid) continue;
+        if (!byUser.has(uid)) byUser.set(uid, []);
+        byUser.get(uid)!.push(it);
+      }
+      // Look up tenant name + emails
+      const { data: tenant } = await supabase.from("tenants").select("name").eq("id", row.tenant_id).maybeSingle();
+      for (const [uid, list] of byUser) {
+        const { data: userRow } = await supabase.auth.admin.getUserById(uid);
+        const email = userRow?.user?.email;
+        if (!email) continue;
+        await supabase.rpc("enqueue_email", {
+          queue_name: "transactional_emails",
+          payload: {
+            templateName: "marketing-draft-digest",
+            recipientEmail: email,
+            idempotencyKey: `mkt-digest-${row.id}-${uid}-${row.updated_at}`,
+            templateData: {
+              tenantName: tenant?.name || "your tenant",
+              agentSource: row.agent_source,
+              items: list,
+              link: "/tenant/marketing?tab=agent",
+            },
+          },
+        });
+        digestsSent++;
+      }
+      await supabase.from("marketing_notification_state").delete().eq("id", row.id);
+    }
+
+
     // 1. Overdue pending_review — approved late or never; notify humans.
     const { data: overduePending } = await supabase
       .from("scheduled_posts")
