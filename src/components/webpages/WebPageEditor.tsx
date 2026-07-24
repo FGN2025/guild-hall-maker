@@ -219,9 +219,11 @@ const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding, bannerMode, t
                 </Card>
               ))}
 
-              <Button variant="outline" className="w-full border-dashed" onClick={() => setAddOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Add Section
-              </Button>
+              {!bannerMode && (
+                <Button variant="outline" className="w-full border-dashed" onClick={() => setAddOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Add Section
+                </Button>
+              )}
             </div>
           )}
 
