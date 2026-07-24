@@ -16,6 +16,15 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Target; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-07-24",
+    icon: Bell,
+    title: "What's New — July 24, 2026",
+    bullets: [
+      "Game Format Tagging — Games are now tagged for the formats they support (Tournaments, Quests, Challenges). The Challenges catalog and the create/edit picker only surface games flagged as Challenge-supporting, so listings stay clean and enrollments always match a real game entry.",
+      "Grandfathered Selections — Challenges authored before this change keep their game even if the tag is later removed; you'll see a '(no longer supported)' hint next to legacy picks in the editor.",
+    ],
+  },
+  {
     id: "whats-new",
     icon: Bell,
     title: "What's New — June 18, 2026",
