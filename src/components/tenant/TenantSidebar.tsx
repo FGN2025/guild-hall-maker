@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe, Radio } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -50,7 +50,9 @@ const allSidebarItems = [
   { to: "/tenant/codes", label: "Codes", icon: KeyRound, roles: ['admin'] },
   
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin', 'manager'] },
-  { to: "/tenant/branding", label: "Branding & Banner", icon: Palette, roles: ['admin', 'manager', 'marketing'], indent: true },
+  { to: "/tenant/branding", label: "Branded Assets", icon: Palette, roles: ['admin', 'manager', 'marketing'], indent: true },
+  { to: "/tenant/branding/banner", label: "Tenant Banner", icon: Radio, roles: ['admin', 'manager', 'marketing'], indent: true, deepIndent: true },
+  { to: "/tenant/branding/pages", label: "Tenant Landing Pages", icon: FileText, roles: ['admin', 'manager', 'marketing'], indent: true, deepIndent: true },
   { to: "/tenant/account", label: "Account", icon: CreditCard, roles: ['admin', 'manager'] },
   { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];
@@ -138,7 +140,9 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
                   ? location.pathname === "/tenant/marketing" && !currentSearch.includes("tab=webpages")
                   : item.to === "/tenant/subscribers"
                     ? location.pathname === "/tenant/subscribers" && !currentSearch.includes("tab=integrations")
-                    : location.pathname.startsWith(item.to);
+                    : item.to === "/tenant/branding"
+                      ? location.pathname === "/tenant/branding"
+                      : location.pathname.startsWith(item.to);
 
           const activeStyle = active && brandColor
             ? { color: brandColor, backgroundColor: hexToRgba(brandColor, 0.1), borderColor: hexToRgba(brandColor, 0.3) }
@@ -149,7 +153,7 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
               key={item.to}
               to={item.to}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide transition-all ${
-                (item as any).indent ? "ml-4 py-2" : ""
+                (item as any).deepIndent ? "ml-8 py-2" : (item as any).indent ? "ml-4 py-2" : ""
               } ${
                 active
                   ? "text-primary bg-primary/10 border border-primary/30"
