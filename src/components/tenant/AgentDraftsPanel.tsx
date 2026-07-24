@@ -73,7 +73,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           .order("updated_at", { ascending: false }),
         supabase
           .from("scheduled_posts" as any)
-          .select("id, campaign_id, platform, caption, image_url, scheduled_at, status, feedback_note, agent_source, created_at, updated_at")
+          .select("id, campaign_id, platform, caption, image_url, scheduled_at, status, feedback_note, agent_source, created_at, updated_at, conflict_flagged_at, conflict_details, undeliverable_reason")
           .eq("tenant_id", tenantId!)
           .not("agent_source", "is", null)
           .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays})`)
