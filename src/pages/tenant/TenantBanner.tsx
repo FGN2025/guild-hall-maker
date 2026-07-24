@@ -16,8 +16,11 @@ const ALLOWED_BANNER_SECTIONS = new Set(["hero", "banner", "cta"]);
  * Tenant Banner builder — single-page editor for the one
  * `is_tenant_banner=true` web_pages row. Auto-creates it on first visit.
  * Only Hero/Banner and CTA sections are permitted here.
+ *
+ * `embedded` hides the standalone page header so this can be dropped inside
+ * a Marketing sub-tab.
  */
-const TenantBanner = () => {
+const TenantBanner = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
   const { pages, isLoadingPages, createPage, useSections, deleteSection } = useWebPages(tenantId);
