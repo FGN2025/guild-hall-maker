@@ -7,8 +7,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Settings as SettingsIcon } from "lucide-react";
 import TenantBranding from "./TenantBranding";
 import TenantAccount from "./TenantAccount";
+import TenantIntegrations from "./TenantIntegrations";
 
-const VALID_TABS = ["brand", "platform", "account"] as const;
+const VALID_TABS = ["brand", "platform", "integrations", "account"] as const;
 
 type TabId = (typeof VALID_TABS)[number];
 
