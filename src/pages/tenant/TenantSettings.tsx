@@ -6,8 +6,10 @@ import { useTenantCloudGaming } from "@/hooks/useTenantCloudGaming";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Settings as SettingsIcon } from "lucide-react";
 import TenantBranding from "./TenantBranding";
+import TenantAccount from "./TenantAccount";
 
-const VALID_TABS = ["brand", "platform"] as const;
+const VALID_TABS = ["brand", "platform", "account"] as const;
+
 type TabId = (typeof VALID_TABS)[number];
 
 const TenantSettings = () => {
