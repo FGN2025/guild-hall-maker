@@ -148,7 +148,7 @@ const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding, bannerMode, t
         <TabsContent value="editor" className="space-y-4">
           {/* Page Settings */}
           <Card>
-            <CardHeader><CardTitle className="text-base font-heading">Page Settings</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base font-heading">{settingsLabel ?? "Page Settings"}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
