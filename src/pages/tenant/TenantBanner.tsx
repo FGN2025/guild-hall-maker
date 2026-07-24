@@ -10,14 +10,17 @@ import { ArrowLeft, Loader2, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
+const ALLOWED_BANNER_SECTIONS = new Set(["hero", "banner", "cta"]);
+
 /**
  * Tenant Banner builder — single-page editor for the one
  * `is_tenant_banner=true` web_pages row. Auto-creates it on first visit.
+ * Only Hero/Banner and CTA sections are permitted here.
  */
 const TenantBanner = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
-  const { pages, isLoadingPages, createPage } = useWebPages(tenantId);
+  const { pages, isLoadingPages, createPage, useSections, deleteSection } = useWebPages(tenantId);
   const queryClient = useQueryClient();
 
   const [bannerId, setBannerId] = useState<string | null>(null);
