@@ -1,5 +1,5 @@
 import { auth, defineMcp } from "@lovable.dev/mcp-js";
-import { tools } from "./tools/_registry";
+import { tools } from "../../../supabase/functions/_shared/mcp-tools/_registry.ts";
 
 // Build the OAuth issuer from the Supabase project ref (Vite inlines this at
 // build time so it stays import-safe — no runtime env read at module load).

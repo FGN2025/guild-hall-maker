@@ -5,7 +5,7 @@
 // src/lib/mcp/index.ts
 import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
 
-// src/lib/mcp/tools/get-me.ts
+// supabase/functions/_shared/mcp-tools/get-me.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.95.3";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.2";
 function supabaseForUser(ctx) {
@@ -64,7 +64,7 @@ var get_me_default = defineTool({
   }
 });
 
-// src/lib/mcp/tools/list-tournaments.ts
+// supabase/functions/_shared/mcp-tools/list-tournaments.ts
 import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.95.3";
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z } from "npm:zod@^3.25.76";
@@ -116,7 +116,7 @@ var list_tournaments_default = defineTool2({
   }
 });
 
-// src/lib/mcp/tools/list-challenges.ts
+// supabase/functions/_shared/mcp-tools/list-challenges.ts
 import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.95.3";
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z2 } from "npm:zod@^3.25.76";
@@ -165,7 +165,7 @@ var list_challenges_default = defineTool3({
   }
 });
 
-// src/lib/mcp/tools/get-challenge.ts
+// supabase/functions/_shared/mcp-tools/get-challenge.ts
 import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.95.3";
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z3 } from "npm:zod@^3.25.76";
@@ -221,7 +221,7 @@ var get_challenge_default = defineTool4({
   }
 });
 
-// src/lib/mcp/tools/list-games.ts
+// supabase/functions/_shared/mcp-tools/list-games.ts
 import { createClient as createClient5 } from "npm:@supabase/supabase-js@^2.95.3";
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z4 } from "npm:zod@^3.25.76";
@@ -265,10 +265,10 @@ var list_games_default = defineTool5({
   }
 });
 
-// src/lib/mcp/tools/list-tenants.ts
+// supabase/functions/_shared/mcp-tools/list-tenants.ts
 import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.22.2";
 
-// src/lib/mcp/tools/_shared.ts
+// supabase/functions/_shared/mcp-tools/_shared.ts
 import { createClient as createClient6 } from "npm:@supabase/supabase-js@^2.95.3";
 function supabaseForUser6(ctx) {
   const url = process.env.SUPABASE_URL;
@@ -317,7 +317,7 @@ function parseIsoWithOffset(input) {
   return d;
 }
 
-// src/lib/mcp/tools/list-tenants.ts
+// supabase/functions/_shared/mcp-tools/list-tenants.ts
 var list_tenants_default = defineTool6({
   name: "list_tenants",
   title: "List my tenants",
@@ -365,7 +365,7 @@ var list_tenants_default = defineTool6({
   }
 });
 
-// src/lib/mcp/tools/get-brand-kit.ts
+// supabase/functions/_shared/mcp-tools/get-brand-kit.ts
 import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z5 } from "npm:zod@^3.25.76";
 var get_brand_kit_default = defineTool7({
@@ -406,7 +406,7 @@ var get_brand_kit_default = defineTool7({
   }
 });
 
-// src/lib/mcp/tools/list-upcoming-events.ts
+// supabase/functions/_shared/mcp-tools/list-upcoming-events.ts
 import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z6 } from "npm:zod@^3.25.76";
 var list_upcoming_events_default = defineTool8({
@@ -441,7 +441,7 @@ var list_upcoming_events_default = defineTool8({
   }
 });
 
-// src/lib/mcp/tools/list-platform-templates.ts
+// supabase/functions/_shared/mcp-tools/list-platform-templates.ts
 import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z7 } from "npm:zod@^3.25.76";
 var list_platform_templates_default = defineTool9({
@@ -466,7 +466,7 @@ var list_platform_templates_default = defineTool9({
   }
 });
 
-// src/lib/mcp/tools/list-tenant-assets.ts
+// supabase/functions/_shared/mcp-tools/list-tenant-assets.ts
 import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z8 } from "npm:zod@^3.25.76";
 var list_tenant_assets_default = defineTool10({
@@ -497,7 +497,7 @@ var list_tenant_assets_default = defineTool10({
   }
 });
 
-// src/lib/mcp/tools/list-pending-agent-drafts.ts
+// supabase/functions/_shared/mcp-tools/list-pending-agent-drafts.ts
 import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z9 } from "npm:zod@^3.25.76";
 var list_pending_agent_drafts_default = defineTool11({
@@ -531,7 +531,7 @@ var list_pending_agent_drafts_default = defineTool11({
   }
 });
 
-// src/lib/mcp/tools/create-campaign-draft.ts
+// supabase/functions/_shared/mcp-tools/create-campaign-draft.ts
 import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z10 } from "npm:zod@^3.25.76";
 var create_campaign_draft_default = defineTool12({
@@ -587,7 +587,7 @@ var create_campaign_draft_default = defineTool12({
   }
 });
 
-// src/lib/mcp/tools/update-campaign-draft.ts
+// supabase/functions/_shared/mcp-tools/update-campaign-draft.ts
 import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z11 } from "npm:zod@^3.25.76";
 var update_campaign_draft_default = defineTool13({
@@ -627,7 +627,7 @@ var update_campaign_draft_default = defineTool13({
   }
 });
 
-// src/lib/mcp/tools/attach-tenant-asset-draft.ts
+// supabase/functions/_shared/mcp-tools/attach-tenant-asset-draft.ts
 import { defineTool as defineTool14 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z12 } from "npm:zod@^3.25.76";
 var MAX_BYTES = 20 * 1024 * 1024;
@@ -740,7 +740,7 @@ var attach_tenant_asset_draft_default = defineTool14({
   }
 });
 
-// src/lib/mcp/tools/propose-scheduled-post.ts
+// supabase/functions/_shared/mcp-tools/propose-scheduled-post.ts
 import { defineTool as defineTool15 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z13 } from "npm:zod@^3.25.76";
 var propose_scheduled_post_default = defineTool15({
@@ -803,7 +803,7 @@ var propose_scheduled_post_default = defineTool15({
   }
 });
 
-// src/lib/mcp/tools/update-scheduled-post.ts
+// supabase/functions/_shared/mcp-tools/update-scheduled-post.ts
 import { defineTool as defineTool16 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z14 } from "npm:zod@^3.25.76";
 var update_scheduled_post_default = defineTool16({
@@ -864,7 +864,7 @@ var update_scheduled_post_default = defineTool16({
   }
 });
 
-// src/lib/mcp/tools/_registry.ts
+// supabase/functions/_shared/mcp-tools/_registry.ts
 var tools = [
   get_me_default,
   list_tournaments_default,
