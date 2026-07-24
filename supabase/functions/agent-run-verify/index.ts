@@ -165,6 +165,34 @@ Deno.serve(async (req) => {
         { final, notif, orph: orph.data });
     }
 
+    if (mode === "v8" && Deno.env.get("ANTHROPIC_API_KEY")) {
+      // V8: real smoke run against Acme. Ephemeral admin is KEPT alive so the
+      // resulting campaign row (proposed_by FK) survives for external inspection.
+      const adminU = await createEphemeralUser();
+      await svc.from("user_roles").insert({ user_id: adminU.id, role: "moderator" });
+      await svc.from("tenant_admins").insert({ tenant_id: acmeId, user_id: adminU.id, role: "admin" });
+      const instruction = 'Smoke test. call list_tenants and get_brand_kit, then create one campaign titled SMOKE TEST Hosted Run with idempotency key acme-broadband:smoke:2026-07-24 and stop. Do not propose posts.';
+      const kick = await callAgentRun(adminU.token, {
+        tenant_id: acmeId, mode: "single_campaign", turn_cap: 40, instruction,
+      });
+      const runId = kick.body?.run_id;
+      push("V8 kick", kick.status === 200 && !!runId, { kick, launched_by: adminU.id });
+      let final: any = null;
+      for (let i = 0; i < 180 && runId; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const { data } = await svc.from("agent_runs").select("*").eq("id", runId).maybeSingle();
+        if (data && data.status !== "running") { final = data; break; }
+      }
+      const campIds: string[] = (final?.created_row_ids?.campaigns ?? []);
+      const { data: camp } = campIds.length
+        ? await svc.from("marketing_campaigns").select("id, title, status, proposed_by, agent_source").eq("id", campIds[0]).maybeSingle()
+        : { data: null } as any;
+      push("V8 run completed with campaign in pending_review",
+        !!final && final.status === "completed" && !!camp && camp.status === "pending_review"
+          && camp.proposed_by === adminU.id && camp.agent_source === "claude-mcp",
+        { final, camp, launched_by: adminU.id });
+    }
+
   } catch (e) {
     push("harness error", false, String(e));
   } finally {
@@ -175,6 +203,7 @@ Deno.serve(async (req) => {
       await deleteEphemeralUser(uid);
     }
   }
+
 
   return new Response(JSON.stringify({ pass: results.every((r) => r.pass), results }, null, 2), {
     headers: { "Content-Type": "application/json", ...corsHeaders },
