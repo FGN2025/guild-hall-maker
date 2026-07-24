@@ -138,6 +138,33 @@ Deno.serve(async (req) => {
       }
       push("V6 turn_cap_exceeded marks failed", !!final && final.status === "failed" && final.error_message === "turn_cap_exceeded", final);
     }
+
+    if ((mode === "v7" || mode === "all") && Deno.env.get("ANTHROPIC_API_KEY")) {
+      const adminU = await createEphemeralUser();
+      cleanupUsers.push(adminU.id);
+      await svc.from("user_roles").insert({ user_id: adminU.id, role: "moderator" });
+      await svc.from("tenant_admins").insert({ tenant_id: acmeId, user_id: adminU.id, role: "admin" });
+      const kick = await callAgentRun(adminU.token, {
+        tenant_id: acmeId, mode: "single_campaign", turn_cap: 40,
+        _test_force_error: true,
+      });
+      const runId = kick.body?.run_id;
+      let final: any = null;
+      for (let i = 0; i < 30 && runId; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        const { data } = await svc.from("agent_runs").select("*").eq("id", runId).maybeSingle();
+        if (data && data.status !== "running") { final = data; break; }
+      }
+      const { data: notif } = await svc.from("notifications")
+        .select("id, category").eq("related_id", runId).eq("category", "agent_run_failed").maybeSingle();
+      const orph = await svc.from("orphaned_notifications")
+        .select("id, category").eq("related_id", runId).eq("category", "agent_run_failed").maybeSingle();
+      push("V7 forced error marks failed + fires agent_run_failed",
+        !!final && final.status === "failed" && final.error_message === "forced_anthropic_error_for_verification"
+          && (!!notif || !!orph.data),
+        { final, notif, orph: orph.data });
+    }
+
   } catch (e) {
     push("harness error", false, String(e));
   } finally {
