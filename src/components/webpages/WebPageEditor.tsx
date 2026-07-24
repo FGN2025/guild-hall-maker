@@ -103,6 +103,39 @@ const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
         </div>
       </div>
 
+      {/* Scheduling window */}
+      <Card>
+        <CardHeader><CardTitle className="text-base font-heading">Publish schedule</CardTitle></CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-heading">Go live at (optional)</Label>
+            <Input
+              type="datetime-local"
+              defaultValue={page.publish_at ? new Date(page.publish_at).toISOString().slice(0, 16) : ""}
+              onBlur={(e) => {
+                const v = e.target.value ? new Date(e.target.value).toISOString() : null;
+                if (v !== (page.publish_at ?? null)) updatePage.mutate({ id: page.id, publish_at: v });
+              }}
+              className="text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground">Hidden until this time even if Published is on.</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-heading">Take down at (optional)</Label>
+            <Input
+              type="datetime-local"
+              defaultValue={page.unpublish_at ? new Date(page.unpublish_at).toISOString().slice(0, 16) : ""}
+              onBlur={(e) => {
+                const v = e.target.value ? new Date(e.target.value).toISOString() : null;
+                if (v !== (page.unpublish_at ?? null)) updatePage.mutate({ id: page.id, unpublish_at: v });
+              }}
+              className="text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground">Automatically hidden after this time.</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="editor" className="space-y-4">
         <TabsList>
           <TabsTrigger value="editor" className="gap-1.5"><Settings className="h-4 w-4" /> Editor</TabsTrigger>
