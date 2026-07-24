@@ -44,6 +44,7 @@ const TenantSettings = () => {
         <TabsList>
           <TabsTrigger value="brand">Brand Guide</TabsTrigger>
           <TabsTrigger value="platform">Platform</TabsTrigger>
+          <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
         <TabsContent value="brand" className="mt-6">
@@ -56,7 +57,12 @@ const TenantSettings = () => {
             <CloudGamingSeatsCard tenantId={tenantInfo.tenantId} />
           )}
         </TabsContent>
+
+        <TabsContent value="account" className="mt-6">
+          <TenantAccount embedded />
+        </TabsContent>
       </Tabs>
+
     </div>
   );
 };
