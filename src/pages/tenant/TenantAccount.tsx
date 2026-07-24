@@ -43,24 +43,9 @@ const TenantAccount = ({ embedded = false }: { embedded?: boolean } = {}) => {
       )}
 
 
-      {canManageBilling && !isSubscribed && <TenantBillingCard />}
-
-      {isSubscribed && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-lg flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-primary" /> Subscription Active
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {tenantInfo.tenantName} is subscribed to Tenant Basic. All tenant features are unlocked.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!canManageBilling && !isSubscribed && (
+      {canManageBilling ? (
+        <TenantBillingCard />
+      ) : (
         <Card>
           <CardHeader>
             <CardTitle className="font-display text-lg">Billing</CardTitle>
@@ -72,6 +57,7 @@ const TenantAccount = ({ embedded = false }: { embedded?: boolean } = {}) => {
           </CardContent>
         </Card>
       )}
+
     </div>
   );
 };
