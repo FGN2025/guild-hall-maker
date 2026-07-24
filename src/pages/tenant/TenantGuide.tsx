@@ -34,6 +34,23 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-07-24",
+    icon: Bell,
+    title: "What's New — July 24, 2026",
+    bullets: [
+      "Settings is now the single home for configuration — Brand Guide (logo, colors, company info), Platform (Cloud Gaming), Account (billing), and Integrations (NISC / GLDS / FGN Academy) are tabs under /tenant/settings. The old Branded Assets, Account, and Integrations sidebar entries were removed. Old URLs redirect to /tenant/settings?tab=brand|platform|account|integrations.",
+      "Web Pages consolidated under Marketing — The Portal Banner and Landing Pages editors now live at Marketing → Web Pages with two sub-tabs: Banner (banner and CTA only) and Landing Pages (full block-based page builder). The standalone Tenant Banner and Tenant Landing Pages sidebar links were removed.",
+      "Configure Banner — The banner editor is scoped to Hero, Banner, and CTA sections only. Other section types (Video, Gallery, Text, Embed) are pruned automatically and are only offered inside Landing Pages.",
+      "Billing — Two Plans — Tenant Basic ($600/mo) and Tenant Pro ($850/mo) are now selectable, with upgrade/downgrade paths shown on the Billing card. A platform admin tags your tenant's current plan_tier; the billing card reflects it. Stripe wiring lands next.",
+      "Access Codes — The sidebar entry 'Codes' was renamed to 'Access Codes' (route unchanged at /tenant/codes).",
+      "Game Format Tagging Affects the Events Picker — Every game now carries Tournament / Quest / Challenge support flags. The game dropdown on Events only shows games flagged as Tournament-supporting. Legacy events whose game is no longer flagged keep their selection with a '(no longer supported)' hint so you can still edit the row.",
+      "Marketing Agent — The Agent Launch card on the tenant dashboard runs the marketing_agent server-side with tenant-scoped tool access, 2/day and 10/month guardrails, and a Recent Runs history. Agent-authored drafts arrive in Marketing with review badges.",
+      "Universal Marketing Assets — Platform-published assets flagged 'universal' arrive in your library with an Adopt button (Marketing → Universal Assets tab). Adopting clones the asset into your tenant library — idempotent, so re-adopting is a no-op.",
+      "Marketing Notifications & Preferences — In-app notifications now cover new drafts, revisions, dispatcher errors, overdue posts, and schedule conflicts. Route recipients: Tenant Admin and Manager get email + in-app; Marketing gets in-app only. Toggle email categories in Profile Settings → Notifications; in-app cannot be disabled.",
+      "Schedule Conflicts are Warnings — Scheduling a post within 60 minutes of another posts a warning notification and a badge, but does not block publication.",
+    ],
+  },
+  {
     id: "whats-new",
     icon: Bell,
     title: "What's New — June 18, 2026",
