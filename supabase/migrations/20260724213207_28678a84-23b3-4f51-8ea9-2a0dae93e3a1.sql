@@ -1,0 +1,1 @@
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS plan_tier text CHECK (plan_tier IN ('basic','pro'));
