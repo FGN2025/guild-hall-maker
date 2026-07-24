@@ -120,7 +120,6 @@ Deno.serve(async (req) => {
     }
 
     if ((mode === "v6" || mode === "all") && Deno.env.get("ANTHROPIC_API_KEY")) {
-      await svc.from("user_roles").insert({ user_id: (await (async()=>{const u=await createEphemeralUser();cleanupUsers.push(u.id);return u;})()).id, role: "moderator" }).select();
       const adminU = await createEphemeralUser();
       cleanupUsers.push(adminU.id);
       await svc.from("user_roles").insert({ user_id: adminU.id, role: "moderator" });
