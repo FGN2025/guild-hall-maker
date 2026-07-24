@@ -208,69 +208,10 @@ const TenantSubscribers = () => {
           {tenantId && <SubscriberUploader tenantId={tenantId} onImport={(rows) => bulkInsert.mutate(rows as any)} isImporting={bulkInsert.isPending} />}
         </TabsContent>
 
-        <TabsContent value="integrations">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {availableIntegrations.map((integ) => {
-              const configured = integrations.find((i) => i.provider_type === integ.providerType);
-              return (
-                <IntegrationConfigCard
-                  key={integ.providerType}
-                  name={integ.name}
-                  providerType={integ.providerType}
-                  description={integ.description}
-                  isConfigured={!!configured}
-                  lastSyncAt={configured?.last_sync_at}
-                  lastSyncStatus={configured?.last_sync_status}
-                  lastSyncMessage={configured?.last_sync_message}
-                  onConfigure={
-                    integ.providerType === "fgn_academy" && configured
-                      ? undefined
-                      : () => {
-                          if (integ.providerType === "nisc" || integ.providerType === "glds") {
-                            setSelectedIntegration(configured || null);
-                            setSelectedProviderType(integ.providerType);
-                            setConfigDialogOpen(true);
-                          } else if (integ.providerType === "fgn_academy" && !configured && tenantId) {
-                            saveIntegration.mutate({
-                              tenant_id: tenantId,
-                              provider_type: "fgn_academy",
-                              display_name: "FGN Academy",
-                              additional_config: {},
-                            });
-                          }
-                        }
-                  }
-                  onSync={configured && integ.providerType !== "fgn_academy" ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
-                  isSyncing={triggerSync.isPending}
-                  onDisconnect={configured ? () => deleteIntegration.mutate(configured.id) : undefined}
-                  isDisconnecting={deleteIntegration.isPending}
-                />
-              );
-            })}
-          </div>
-        </TabsContent>
-
         <TabsContent value="sync-history">
           <SyncHistoryPanel logs={syncLogs} isLoading={syncLogsLoading} />
         </TabsContent>
       </Tabs>
-
-      {tenantId && (
-        <BillingConfigDialog
-          open={configDialogOpen}
-          onOpenChange={setConfigDialogOpen}
-          tenantId={tenantId}
-          providerType={selectedProviderType}
-          existing={selectedIntegration}
-          onSave={(data) => { saveIntegration.mutate(data as any, { onSuccess: () => setConfigDialogOpen(false) }); }}
-          onUpdate={(id, fields) => { updateIntegration.mutate({ id, ...fields } as any, { onSuccess: () => setConfigDialogOpen(false) }); }}
-          onTestConnection={async (integrationId) => {
-            const result = await triggerSync.mutateAsync({ integrationId, dryRun: true, providerType: selectedProviderType });
-            return result;
-          }}
-          isSaving={saveIntegration.isPending || updateIntegration.isPending}
-        />
-      )}
 
       <EditSubscriberDialog
         open={!!editSub}
