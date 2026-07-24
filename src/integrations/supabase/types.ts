@@ -1682,6 +1682,9 @@ export type Database = {
           platform_tags: string[] | null
           slug: string
           steam_app_id: string | null
+          supports_challenges: boolean
+          supports_quests: boolean
+          supports_tournaments: boolean
           tournament_rules_url: string | null
           updated_at: string
         }
@@ -1699,6 +1702,9 @@ export type Database = {
           platform_tags?: string[] | null
           slug: string
           steam_app_id?: string | null
+          supports_challenges?: boolean
+          supports_quests?: boolean
+          supports_tournaments?: boolean
           tournament_rules_url?: string | null
           updated_at?: string
         }
@@ -1716,6 +1722,9 @@ export type Database = {
           platform_tags?: string[] | null
           slug?: string
           steam_app_id?: string | null
+          supports_challenges?: boolean
+          supports_quests?: boolean
+          supports_tournaments?: boolean
           tournament_rules_url?: string | null
           updated_at?: string
         }
