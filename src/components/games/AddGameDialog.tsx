@@ -104,10 +104,14 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       setIsActive(editGame.is_active);
       setTournamentRulesUrl(editGame.tournament_rules_url ?? "");
       setSteamAppId(editGame.steam_app_id ?? "");
+      setSupportsTournaments(!!(editGame as any).supports_tournaments);
+      setSupportsQuests(!!(editGame as any).supports_quests);
+      setSupportsChallenges(!!(editGame as any).supports_challenges);
     } else {
       setName(""); setSlug(""); setDescription(""); setCategory("General");
       setCoverImageUrl(""); setGuideContent(""); setPlatformTags(""); setIsActive(true);
       setTournamentRulesUrl(""); setSteamAppId("");
+      setSupportsTournaments(false); setSupportsQuests(false); setSupportsChallenges(false);
     }
   }, [editGame, open]);
 
