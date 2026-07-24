@@ -1889,6 +1889,47 @@ export type Database = {
           },
         ]
       }
+      marketing_notification_state: {
+        Row: {
+          agent_source: string
+          category: string
+          created_at: string
+          id: string
+          next_flush_at: string
+          pending_ids: Json
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent_source: string
+          category: string
+          created_at?: string
+          id?: string
+          next_flush_at?: string
+          pending_ids?: Json
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent_source?: string
+          category?: string
+          created_at?: string
+          id?: string
+          next_flush_at?: string
+          pending_ids?: Json
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_notification_state_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_point_awards: {
         Row: {
           awarded_at: string
@@ -2103,36 +2144,100 @@ export type Database = {
       }
       notifications: {
         Row: {
+          category: string | null
           created_at: string
           id: string
           is_read: boolean
           link: string | null
           message: string
+          read_at: string | null
+          related_id: string | null
+          related_kind: string | null
+          tenant_id: string | null
           title: string
           type: string
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
           link?: string | null
           message: string
+          read_at?: string | null
+          related_id?: string | null
+          related_kind?: string | null
+          tenant_id?: string | null
           title: string
           type?: string
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
           link?: string | null
           message?: string
+          read_at?: string | null
+          related_id?: string | null
+          related_kind?: string | null
+          tenant_id?: string | null
           title?: string
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orphaned_notifications: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          message: string
+          payload: Json | null
+          related_id: string | null
+          related_kind: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          message: string
+          payload?: Json | null
+          related_id?: string | null
+          related_kind?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          payload?: Json | null
+          related_id?: string | null
+          related_kind?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orphaned_notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       page_backgrounds: {
         Row: {
@@ -3066,6 +3171,8 @@ export type Database = {
           agent_source: string | null
           campaign_id: string | null
           caption: string | null
+          conflict_details: Json | null
+          conflict_flagged_at: string | null
           connection_id: string | null
           created_at: string | null
           discord_purpose: string | null
@@ -3075,6 +3182,7 @@ export type Database = {
           id: string
           idempotency_key: string | null
           image_url: string
+          overdue_notified_at: string | null
           platform: string
           post_url: string | null
           proposed_by: string | null
@@ -3082,6 +3190,8 @@ export type Database = {
           scheduled_at: string
           status: string
           tenant_id: string | null
+          undeliverable_notified_at: string | null
+          undeliverable_reason: string | null
           updated_at: string
           user_id: string
         }
@@ -3089,6 +3199,8 @@ export type Database = {
           agent_source?: string | null
           campaign_id?: string | null
           caption?: string | null
+          conflict_details?: Json | null
+          conflict_flagged_at?: string | null
           connection_id?: string | null
           created_at?: string | null
           discord_purpose?: string | null
@@ -3098,6 +3210,7 @@ export type Database = {
           id?: string
           idempotency_key?: string | null
           image_url: string
+          overdue_notified_at?: string | null
           platform: string
           post_url?: string | null
           proposed_by?: string | null
@@ -3105,6 +3218,8 @@ export type Database = {
           scheduled_at: string
           status?: string
           tenant_id?: string | null
+          undeliverable_notified_at?: string | null
+          undeliverable_reason?: string | null
           updated_at?: string
           user_id: string
         }
@@ -3112,6 +3227,8 @@ export type Database = {
           agent_source?: string | null
           campaign_id?: string | null
           caption?: string | null
+          conflict_details?: Json | null
+          conflict_flagged_at?: string | null
           connection_id?: string | null
           created_at?: string | null
           discord_purpose?: string | null
@@ -3121,6 +3238,7 @@ export type Database = {
           id?: string
           idempotency_key?: string | null
           image_url?: string
+          overdue_notified_at?: string | null
           platform?: string
           post_url?: string | null
           proposed_by?: string | null
@@ -3128,6 +3246,8 @@ export type Database = {
           scheduled_at?: string
           status?: string
           tenant_id?: string | null
+          undeliverable_notified_at?: string | null
+          undeliverable_reason?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -5013,6 +5133,16 @@ export type Database = {
         Args: { _log_id: string }
         Returns: undefined
       }
+      check_schedule_conflict: {
+        Args: {
+          _exclude_id: string
+          _platform: string
+          _scheduled_at: string
+          _tenant_id: string
+          _window_seconds?: number
+        }
+        Returns: Json
+      }
       claim_pending_invitations: { Args: never; Returns: undefined }
       compute_quest_rank: { Args: { xp: number }; Returns: string }
       delete_email: {
@@ -5053,11 +5183,33 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      enqueue_marketing_notification: {
+        Args: {
+          _agent_source: string
+          _category: string
+          _link: string
+          _message: string
+          _payload?: Json
+          _related_id: string
+          _related_kind: string
+          _tenant_id: string
+          _title: string
+        }
+        Returns: undefined
+      }
       enqueue_passport_refresh: {
         Args: { _user_id: string }
         Returns: undefined
       }
       get_academy_queue_stats: { Args: never; Returns: Json }
+      get_marketing_notification_recipients: {
+        Args: { _category: string; _tenant_id: string }
+        Returns: {
+          channels: string[]
+          email: string
+          user_id: string
+        }[]
+      }
       get_tenant_health_summary: {
         Args: never
         Returns: {

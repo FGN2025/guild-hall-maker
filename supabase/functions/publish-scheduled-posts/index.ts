@@ -15,7 +15,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Scheduler-only: require service role bearer.
     if ((req.headers.get("Authorization") || "") !== `Bearer ${serviceKey}`) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -24,27 +23,102 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+    const nowIso = new Date().toISOString();
 
-    // Find posts due for publishing
+    // 0. Flush marketing draft digests whose window has elapsed.
+    let digestsSent = 0;
+    const { data: dueDigests } = await supabase
+      .from("marketing_notification_state")
+      .select("*")
+      .lte("next_flush_at", nowIso)
+      .limit(50);
+
+    for (const row of dueDigests ?? []) {
+      const items: any[] = Array.isArray(row.pending_ids) ? row.pending_ids : [];
+      if (items.length === 0) {
+        await supabase.from("marketing_notification_state").delete().eq("id", row.id);
+        continue;
+      }
+      // Group by recipient user_id
+      const byUser = new Map<string, any[]>();
+      for (const it of items) {
+        const uid = it.user_id;
+        if (!uid) continue;
+        if (!byUser.has(uid)) byUser.set(uid, []);
+        byUser.get(uid)!.push(it);
+      }
+      // Look up tenant name + emails
+      const { data: tenant } = await supabase.from("tenants").select("name").eq("id", row.tenant_id).maybeSingle();
+      for (const [uid, list] of byUser) {
+        const { data: userRow } = await supabase.auth.admin.getUserById(uid);
+        const email = userRow?.user?.email;
+        if (!email) continue;
+        await supabase.rpc("enqueue_email", {
+          queue_name: "transactional_emails",
+          payload: {
+            templateName: "marketing-draft-digest",
+            recipientEmail: email,
+            idempotencyKey: `mkt-digest-${row.id}-${uid}-${row.updated_at}`,
+            templateData: {
+              tenantName: tenant?.name || "your tenant",
+              agentSource: row.agent_source,
+              items: list,
+              link: "/tenant/marketing?tab=agent",
+            },
+          },
+        });
+        digestsSent++;
+      }
+      await supabase.from("marketing_notification_state").delete().eq("id", row.id);
+    }
+
+
+    // 1. Overdue pending_review — approved late or never; notify humans.
+    const { data: overduePending } = await supabase
+      .from("scheduled_posts")
+      .select("id, tenant_id, platform, scheduled_at, agent_source, overdue_notified_at")
+      .eq("status", "pending_review")
+      .lte("scheduled_at", nowIso)
+      .is("overdue_notified_at", null)
+      .limit(100);
+
+    for (const p of overduePending ?? []) {
+      await supabase.rpc("enqueue_marketing_notification", {
+        _tenant_id: p.tenant_id,
+        _category: "overdue",
+        _related_kind: "scheduled_post",
+        _related_id: p.id,
+        _title: "Scheduled post is overdue",
+        _message: `A ${p.platform} post scheduled for ${p.scheduled_at} is still awaiting review.`,
+        _link: "/tenant/marketing?tab=agent",
+        _agent_source: p.agent_source,
+        _payload: { id: p.id },
+      });
+      await supabase
+        .from("scheduled_posts")
+        .update({ overdue_notified_at: nowIso })
+        .eq("id", p.id);
+    }
+
+    // 2. Undeliverable check: pending posts due but no active social_connection for their platform.
     const { data: duePosts, error } = await supabase
       .from("scheduled_posts")
       .select("*")
       .eq("status", "pending")
-      .lte("scheduled_at", new Date().toISOString())
+      .lte("scheduled_at", nowIso)
       .limit(50);
 
     if (error) throw error;
     if (!duePosts || duePosts.length === 0) {
-      return new Response(JSON.stringify({ processed: 0 }), {
+      return new Response(JSON.stringify({ processed: 0, overdue_notified: overduePending?.length ?? 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     let processed = 0;
     let failed = 0;
+    let undeliverable = 0;
 
-    // Refresh signed URLs for private tenant-marketing bucket assets so tokens
-    // never go stale between attach and publish.
     async function resolveImageUrl(raw: string | null | undefined): Promise<string | null> {
       if (!raw) return null;
       const marker = "/tenant-marketing/";
@@ -61,18 +135,63 @@ Deno.serve(async (req) => {
       return data.signedUrl;
     }
 
+    async function hasActiveConnection(tenantId: string, platform: string, connId: string | null): Promise<boolean> {
+      if (connId) {
+        const { data } = await supabase
+          .from("social_connections")
+          .select("id, is_active")
+          .eq("id", connId)
+          .maybeSingle();
+        return !!data?.is_active;
+      }
+      const { data } = await supabase
+        .from("social_connections")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .eq("platform", platform)
+        .eq("is_active", true)
+        .limit(1);
+      return !!(data && data.length);
+    }
+
     for (const post of duePosts) {
       try {
+        // Guard: undeliverable? Leave status='pending' but notify humans (once).
+        if (post.platform !== "discord") {
+          const ok = await hasActiveConnection(post.tenant_id, post.platform, post.connection_id);
+          if (!ok) {
+            undeliverable++;
+            if (!post.undeliverable_notified_at) {
+              await supabase.rpc("enqueue_marketing_notification", {
+                _tenant_id: post.tenant_id,
+                _category: "undeliverable",
+                _related_kind: "scheduled_post",
+                _related_id: post.id,
+                _title: "Scheduled post is undeliverable",
+                _message: `A ${post.platform} post is approved but has no active ${post.platform} connection. Connect ${post.platform} to publish.`,
+                _link: "/tenant/marketing?tab=connections",
+                _agent_source: post.agent_source,
+                _payload: { id: post.id, platform: post.platform },
+              });
+              await supabase
+                .from("scheduled_posts")
+                .update({
+                  undeliverable_reason: `No active ${post.platform} connection at dispatch time`,
+                  undeliverable_notified_at: nowIso,
+                })
+                .eq("id", post.id);
+            }
+            continue;
+          }
+        }
+
         const freshImage = await resolveImageUrl(post.image_url);
         let publishRes: Response;
 
         if (post.platform === "discord") {
           publishRes = await fetch(`${supabaseUrl}/functions/v1/discord-send-message`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${serviceKey}`,
-            },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
             body: JSON.stringify({
               purpose: post.discord_purpose || "scheduled_post",
               tenant_id: post.discord_tenant_id || post.tenant_id,
@@ -83,10 +202,7 @@ Deno.serve(async (req) => {
         } else {
           publishRes = await fetch(`${supabaseUrl}/functions/v1/publish-to-social`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${serviceKey}`,
-            },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
             body: JSON.stringify({
               connection_id: post.connection_id,
               image_url: freshImage,
@@ -124,9 +240,14 @@ Deno.serve(async (req) => {
       }
     }
 
-
     return new Response(
-      JSON.stringify({ processed, failed, total: duePosts.length }),
+      JSON.stringify({
+        processed,
+        failed,
+        undeliverable,
+        overdue_notified: overduePending?.length ?? 0,
+        total: duePosts.length,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

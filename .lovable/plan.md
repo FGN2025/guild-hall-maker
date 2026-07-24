@@ -1,89 +1,108 @@
 
-# Agent Drafts: Asset review + event-linked campaigns
+# Marketing pipeline notifications — revised for execution
 
-Two feature additions plus two bundled fixes (bucket consistency, `list_platform_templates` column).
+Approved with four flags folded in. Flag 4 is the prerequisite and runs first.
 
-## 1. Asset review in the Agent Drafts panel
+## Flag 4 (PREREQUISITE) — verify & fix the dispatcher cron
 
-Today asset rows render a small inline `<img>` and there's no way for a reviewer to open the full-size file. Scheduled-post and campaign cards have no way to see the picked/linked asset at all.
+Before building any notification trigger, prove `publish-scheduled-posts` is actually being invoked.
 
-Change `src/components/tenant/AgentDraftsPanel.tsx`:
+Steps in this order, all inside the same execution pass:
 
-- Add an **"Open asset"** button on every draft card that has an associated asset:
-  - `kind === "asset"` → the row itself.
-  - `kind === "scheduled_post"` → the row's `image_url` plus any `tenant_marketing_assets` linked via the shared `campaign_id`.
-  - `kind === "campaign"` → any `tenant_marketing_assets` linked via `campaign_id`, each openable.
-- Add `src/components/tenant/AssetReviewDialog.tsx`:
-  - Renders full-size image with metadata (file name, label/format, natural dimensions, `source_url`, `campaign_id`, `is_published`, `agent_source`, `notes`).
-  - Actions: "Open in new tab", "Copy source URL".
-  - URL resolution follows the bucket decision in §3 — signed URLs if private, direct `url` if public. Read-only; approve/reject stay on the card.
-- One follow-up query in the panel keyed by the collected `campaign_id`s hydrates linked assets so the dialog opens without another round-trip.
+1. Query `cron.job` for jobs whose command references `publish-scheduled-posts` or `publish_scheduled_posts`. Record `jobname`, `schedule`, `command`, `active`.
+2. Query `cron.job_run_details` for the last 20 runs of that job (or confirm zero runs).
+3. Pull `supabase--edge_function_logs` for `publish-scheduled-posts` — the current 3-line log shows only ad-hoc invocations, no cron ticks, which matches the CRON BAIT TEST symptom.
+4. If the job is missing or inactive, `supabase--insert` (NOT a migration — the SQL contains the service-role bearer per `<schedule-jobs-supabase-edge-functions>`) a new cron entry:
+   - Name: `publish-scheduled-posts`
+   - Schedule: `* * * * *` (every minute)
+   - Command: `net.http_post` to `https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/publish-scheduled-posts` with `Authorization: Bearer <service_role>` (fetched from vault secret `email_queue_service_role_key` if present, otherwise a new vault secret `dispatcher_service_role_key`), empty JSON body.
+5. Wait one tick, re-pull `cron.job_run_details` and edge function logs, paste one real tick into verification.
+6. Confirm CRON BAIT TEST would have flipped (but we delete it in cleanup below before it can fire).
 
-No approval/rejection logic changes.
+If the job already exists and is running but the CRON BAIT TEST row was never selected, the query filter is the culprit (`status='pending'` exact match — it *is* pending, so this shouldn't be it). Investigate whether the function was returning early on auth failure by re-checking the `Authorization` header the cron job sends vs. what the function expects (`Bearer ${serviceKey}`). Fix accordingly.
 
-## 2. Agent can start a campaign from an existing event, or start new
+## Cleanup (same pass, after Flag 4 verified)
 
-`create_campaign_draft` has no event linkage today, so the agent always "starts new." Add explicit optional linkage.
+Via `supabase--insert` (DELETEs allowed on that tool):
 
-### Schema (folded into the same migration as §3 and §4)
+- `scheduled_posts` where `tenant_id = <Acme>` and `caption ILIKE 'CRON BAIT TEST%'` OR the sibling row scheduled `2026-08-01`.
+- `marketing_campaigns` where `tenant_id = <Acme>` and `title ILIKE 'TEST Agent Verification%'` OR `title ILIKE 'TEST Event Linkage%'`.
+- `tenant_marketing_assets` linked to the two deleted test campaigns via `campaign_id`, plus any storage objects under those paths.
 
-`marketing_campaigns`:
-- add `source_event_id uuid null` — FK `tenant_events(id) on delete set null`
-- add `source_tournament_id uuid null` — FK `tournaments(id) on delete set null`
-- CHECK: at most one of the two is set
-- indexes on both columns
+Run a SELECT first to preview ids, then DELETE and confirm zero rows remain.
 
-### MCP tool changes
+## Flag 1 — campaign revisions notify
 
-- `create_campaign_draft` — accept optional `source_event_id` / `source_tournament_id` (mutually exclusive → clear tool error if both). Persist on insert. Description spells out: "Pass `source_event_id` or `source_tournament_id` from `list_upcoming_events` to build off an existing event, or omit both to start new."
-- `update_campaign_draft` — accept the same two optional fields (null clears the link).
-- `list_pending_agent_drafts` — include both fields in the campaign select.
-- `list_upcoming_events` — unchanged.
+Add a second trigger path on `marketing_campaigns` UPDATE:
 
-### UI
+```
+WHEN OLD.status = 'rejected'
+  AND NEW.status = 'rejected'
+  AND NEW.agent_source IS NOT NULL
+  AND (
+    NEW.title IS DISTINCT FROM OLD.title OR
+    NEW.description IS DISTINCT FROM OLD.description OR
+    NEW.social_copy IS DISTINCT FROM OLD.social_copy OR
+    NEW.target_platforms IS DISTINCT FROM OLD.target_platforms OR
+    NEW.source_event_id IS DISTINCT FROM OLD.source_event_id OR
+    NEW.source_tournament_id IS DISTINCT FROM OLD.source_tournament_id
+  )
+```
 
-Campaign cards render a "Linked to: <event name>" chip when either id is set (batched lookup). Same chip in the review dialog header.
+→ fires `draft_resubmitted`. Scheduled posts keep the original `OLD.status='rejected' → NEW.status='pending_review'` trigger.
 
-### System-prompt guidance
+## Flag 2 — MCP tools return conflict data
 
-Update `.lovable/plan.md` § "Claude connection guidance": "When proposing a campaign, first call `list_upcoming_events`; if a relevant event exists, pass its id. Only omit both when the campaign is intentionally standalone."
+`propose_scheduled_post` and `update_scheduled_post` extend their response payload:
 
-## 3. Bucket visibility — settle now (Flag 1)
+```json
+{
+  "scheduled_post": { ...row },
+  "conflict": {
+    "flagged_at": "2026-07-24T14:00:00Z",
+    "window_minutes": 60,
+    "conflicts": [
+      { "id": "uuid", "scheduled_at": "...", "platform": "...", "status": "..." }
+    ]
+  }
+}
+```
 
-**Confirm whether `tenant-marketing` is public or private and make the whole pipeline consistent.** Today `attach_tenant_asset_draft` stores public-shape URLs (`/object/public/tenant-marketing/...`) and they render, which means the bucket is currently **public**. The dialog design assumed private + signed URLs. Both can't stay true. If we later flip the bucket private, every `scheduled_posts.image_url` and `tenant_marketing_assets.url` already stored breaks — including at cron dispatch time.
+`conflict` is `null` when the helper returns no hits. Tool description updated to tell the agent to reschedule and retry when `conflict` is non-null. Notifications and UI badges still fire so humans see conflicts the agent didn't or couldn't resolve.
 
-Decision baked into this same pass — **keep `tenant-marketing` public** because:
-- The dispatcher already publishes images to external social platforms, which need publicly fetchable URLs.
-- Stored URLs across `scheduled_posts.image_url` and `tenant_marketing_assets.url` are already public-shape; no backfill needed.
-- Reviewer preview needs no auth round-trip.
+## Flag 3 — asset trigger keyed on is_published, not status
 
-Consistency work in this pass:
-- Confirm bucket via `supabase--storage_update_bucket("tenant-marketing", public=true)` (idempotent; no-op if already public). If workspace policy blocks public buckets and the call fails, flip the plan: bucket private, `attach_tenant_asset_draft` and the dispatcher switch to signed URLs (7-day TTL, refreshed at send), a follow-up migration rewrites existing rows to freshly signed URLs, and `AssetReviewDialog` mints signed URLs. Do not proceed with a mixed state.
-- `AssetReviewDialog` uses the stored `url` directly (public path) in the public-bucket outcome; adds a `createSignedUrl(file_path, 600)` fallback only if a load error fires.
-- No dispatcher change needed under the public outcome. Under the private fallback, the dispatcher call site (existing scheduled-post cron worker) refreshes a signed URL immediately before posting.
+`tenant_marketing_assets` has no `status` column. Correct trigger:
 
-## 4. Fix `list_platform_templates` — bundle now (Flag 2)
+```
+AFTER INSERT ON tenant_marketing_assets
+WHEN NEW.is_published = false AND NEW.agent_source IS NOT NULL
+```
 
-`marketing_assets` has no `format` column (columns: `id, campaign_id, file_path, url, label, display_order, width, height, created_at`). The current `list_platform_templates` tool selects `format` and errors. Fix in this deploy:
+→ fires `draft_new`. No `draft_resubmitted` path for assets (they are recreated, not revised).
 
-`src/lib/mcp/tools/list-platform-templates.ts` — change `.select("id, campaign_id, format, file_url, label, created_at")` to `.select("id, campaign_id, file_path, url, label, width, height, display_order, created_at")`. No schema change; this is a select typo.
+Note: `tenant_marketing_assets` currently has no `agent_source` column either. Migration adds it (`text null`, indexed). `attach_tenant_asset_draft` starts writing `agent_source = 'claude-mcp'`. Existing rows stay null and won't spam notifications.
 
-## Files
+## Everything else from the previous plan is unchanged
 
-- `supabase/migrations/<new>.sql` — `marketing_campaigns.source_event_id` + `source_tournament_id`, FKs, check, indexes.
-- Bucket confirmation via `supabase--storage_update_bucket` (not SQL).
-- `src/lib/mcp/tools/create-campaign-draft.ts`, `update-campaign-draft.ts`, `list-pending-agent-drafts.ts` — event-link fields.
-- `src/lib/mcp/tools/list-platform-templates.ts` — select fix.
-- `src/lib/mcp/index.ts` — no new tools; re-run `app_mcp_server--extract_mcp_manifest`, redeploy `mcp`.
-- `src/components/tenant/AgentDraftsPanel.tsx` — Open-asset buttons, event chip, batched lookups.
-- `src/components/tenant/AssetReviewDialog.tsx` — new modal.
-- `.lovable/plan.md` — guidance snippet update.
+Sections 1 (data model), 2 (recipient resolution + orphaned_notifications), remaining triggers in section 3, dispatcher refactor in section 4 (widen query to include `pending_review` for overdue detection, undeliverable precheck for null/missing connection), section 5 conflict window, section 6 UI badges + new preferences, section 7 two email templates, all stand as previously approved.
 
-## Verification
+## Files (updated)
 
-1. Manifest regenerates; `mcp` redeploys in one round trip.
-2. `list_platform_templates` returns rows (no `format` error).
-3. Bucket confirmed public (or fallback executed cleanly, no mixed state).
-4. Claude creates a campaign with `source_tournament_id` from `list_upcoming_events` → chip appears; unlinking via `update_campaign_draft` clears it; deleting the tournament nulls the FK without deleting the draft.
-5. Attach asset + propose post → Open-asset button on both the campaign and the post card; dialog renders full-size image and metadata.
-6. Reviewer approves; asset flips `is_published=true` and cron picks it up (URL still resolves).
+- Cron insert via `supabase--insert` (not a migration).
+- `supabase/migrations/<new>.sql` — notifications columns, `orphaned_notifications`, `marketing_notification_state`, `scheduled_posts.conflict_flagged_at/undeliverable_reason/overdue_notified_at/undeliverable_notified_at`, `tenant_marketing_assets.agent_source`, RLS/grants, `get_marketing_notification_recipients`, `enqueue_marketing_notification`, `check_schedule_conflict`, all triggers (including Flag 1 revision path and Flag 3 asset path).
+- Cleanup DELETEs via `supabase--insert`.
+- `supabase/functions/publish-scheduled-posts/index.ts` — widened query, prechecks, counts.
+- `supabase/functions/_shared/transactional-email-templates/marketing-alert.tsx`, `marketing-draft-digest.tsx`, `registry.ts`.
+- `src/lib/mcp/tools/propose-scheduled-post.ts`, `update-scheduled-post.ts`, `attach-tenant-asset-draft.ts` — Flag 2 response shape, agent_source on assets.
+- `src/components/tenant/AgentDraftsPanel.tsx`, `src/components/marketing/ScheduledPostsCalendar.tsx` — conflict + undeliverable badges.
+- `src/components/NotificationPreferences.tsx`, `src/hooks/useNotificationPreferences.ts` — three new categories.
+- New admin surface for `orphaned_notifications`.
+
+## Verification (extended)
+
+1–8. As previously written.
+9. Paste `cron.job` row (name, schedule, active) plus one `cron.job_run_details` row and one edge log line proving a real tick fired.
+10. Revise a rejected `marketing_campaigns` row via `update_campaign_draft`, confirm `notifications` row with category `draft_resubmitted` appears for tenant admin.
+11. Create two `propose_scheduled_post` calls 10 minutes apart on the same platform, confirm the second response includes `conflict.conflicts[0].id` equal to the first row.
+12. `SELECT count(*)` on `scheduled_posts` / `marketing_campaigns` / `tenant_marketing_assets` filtered on the deleted test titles/captions returns 0.

@@ -58,7 +58,17 @@ export default defineTool({
         .maybeSingle();
       if (error) throw error;
       if (!data) return { content: [{ type: "text", text: "Scheduled post not editable in its current state." }], isError: true };
-      return okJson(data, "scheduled_post");
+
+      // Flag 2: return conflict info to the agent.
+      const { data: conflict } = await supabase.rpc("check_schedule_conflict", {
+        _tenant_id: (data as any).tenant_id,
+        _platform: (data as any).platform,
+        _scheduled_at: (data as any).scheduled_at,
+        _exclude_id: (data as any).id,
+        _window_seconds: 3600,
+      });
+
+      return okJson({ ...data, conflict: conflict ?? null }, "scheduled_post");
     } catch (err) {
       return toolError(err, "update_scheduled_post");
     }
