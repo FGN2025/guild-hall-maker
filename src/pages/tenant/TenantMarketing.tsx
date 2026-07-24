@@ -30,8 +30,8 @@ const TenantMarketing = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
-  const { tenantInfo, currentTenant } = useTenantAdmin();
-  const tenantRole = currentTenant?.tenantRole ?? "admin";
+  const { tenantInfo } = useTenantAdmin();
+  const tenantRole = tenantInfo?.tenantRole ?? "admin";
 
   const tabParam = searchParams.get("tab");
   const activeTab = (VALID_TABS as readonly string[]).includes(tabParam || "")
