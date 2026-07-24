@@ -30,7 +30,7 @@ const TenantSettings = () => {
           <SettingsIcon className="h-6 w-6 text-primary" /> Settings
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage your brand guide and platform integrations.
+          Manage your brand guide, platform integrations, and account.
         </p>
       </div>
 
@@ -45,6 +45,7 @@ const TenantSettings = () => {
         <TabsList>
           <TabsTrigger value="brand">Brand Guide</TabsTrigger>
           <TabsTrigger value="platform">Platform</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
@@ -57,6 +58,10 @@ const TenantSettings = () => {
           {cloudGamingConfig?.is_enabled && (
             <CloudGamingSeatsCard tenantId={tenantInfo.tenantId} />
           )}
+        </TabsContent>
+
+        <TabsContent value="integrations" className="mt-6">
+          <TenantIntegrations embedded />
         </TabsContent>
 
         <TabsContent value="account" className="mt-6">
