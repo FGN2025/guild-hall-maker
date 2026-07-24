@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe, Radio } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe, Radio } from "lucide-react";
 import {
   Select,
   SelectContent,
