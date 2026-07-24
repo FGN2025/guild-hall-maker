@@ -285,8 +285,8 @@ const App = () => (
               <Route path="/tenant/codes" element={<TenantRoute><TenantCodes /></TenantRoute>} />
               <Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />
               <Route path="/tenant/branding" element={<TenantRoute><TenantBranding /></TenantRoute>} />
-              <Route path="/tenant/branding/banner" element={<TenantRoute><TenantBanner /></TenantRoute>} />
-              <Route path="/tenant/branding/pages" element={<TenantRoute><TenantLandingPages /></TenantRoute>} />
+              <Route path="/tenant/branding/banner" element={<Navigate to="/tenant/marketing?tab=webpages&sub=banner" replace />} />
+              <Route path="/tenant/branding/pages" element={<Navigate to="/tenant/marketing?tab=webpages&sub=pages" replace />} />
 
               <Route path="/coach" element={<Navigate to="/dashboard" replace />} />
               <Route path="/admin/dashboard" element={<DashboardAlias />} />
