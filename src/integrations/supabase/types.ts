@@ -142,6 +142,118 @@ export type Database = {
           },
         ]
       }
+      agent_run_limits: {
+        Row: {
+          created_at: string
+          daily_limit: number
+          monthly_limit: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_limit?: number
+          monthly_limit?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_limit?: number
+          monthly_limit?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_run_limits_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_runs: {
+        Row: {
+          agent_name: string
+          anchor: string | null
+          archetype: string | null
+          cost_usd: number
+          created_at: string
+          created_row_ids: Json
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          input_tokens: number
+          instruction: string | null
+          launched_by: string
+          mode: string | null
+          output_tokens: number
+          prompt_version: number | null
+          started_at: string
+          status: string
+          tenant_id: string
+          turn_cap: number
+          turns_used: number
+          updated_at: string
+        }
+        Insert: {
+          agent_name?: string
+          anchor?: string | null
+          archetype?: string | null
+          cost_usd?: number
+          created_at?: string
+          created_row_ids?: Json
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number
+          instruction?: string | null
+          launched_by: string
+          mode?: string | null
+          output_tokens?: number
+          prompt_version?: number | null
+          started_at?: string
+          status?: string
+          tenant_id: string
+          turn_cap?: number
+          turns_used?: number
+          updated_at?: string
+        }
+        Update: {
+          agent_name?: string
+          anchor?: string | null
+          archetype?: string | null
+          cost_usd?: number
+          created_at?: string
+          created_row_ids?: Json
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number
+          instruction?: string | null
+          launched_by?: string
+          mode?: string | null
+          output_tokens?: number
+          prompt_version?: number | null
+          started_at?: string
+          status?: string
+          tenant_id?: string
+          turn_cap?: number
+          turns_used?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           description: string | null
