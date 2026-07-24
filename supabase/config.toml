@@ -3,6 +3,8 @@ project_id = "yrhwzmkenjgiujhofucx"
 [functions]
   [functions.mcp]
     verify_jwt = false
+  [functions.agent-mcp]
+    verify_jwt = false
   [functions.assign-tournament-role]
     verify_jwt = false
   [functions.ai-coach]
