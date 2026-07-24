@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-import { useWebPages } from "@/hooks/useWebPages";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ColorPicker } from "@/components/ui/color-picker";
-import { Building2, Loader2, Palette, Upload, Radio, FileText, ChevronRight } from "lucide-react";
+import { Building2, Loader2, Palette, Upload, Megaphone } from "lucide-react";
 import { resizeImageFile, LOGO_PRESET } from "@/lib/imageResize";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
