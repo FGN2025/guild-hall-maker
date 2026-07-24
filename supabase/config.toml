@@ -7,6 +7,8 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.agent-run]
     verify_jwt = false
+  [functions.agent-run-verify]
+    verify_jwt = false
   [functions.assign-tournament-role]
     verify_jwt = false
   [functions.ai-coach]
