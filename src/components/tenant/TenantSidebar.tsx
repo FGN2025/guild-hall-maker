@@ -50,7 +50,9 @@ const allSidebarItems = [
   { to: "/tenant/codes", label: "Codes", icon: KeyRound, roles: ['admin'] },
   
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin', 'manager'] },
-  { to: "/tenant/branding", label: "Branding & Banner", icon: Palette, roles: ['admin', 'manager', 'marketing'], indent: true },
+  { to: "/tenant/branding", label: "Branded Assets", icon: Palette, roles: ['admin', 'manager', 'marketing'], indent: true },
+  { to: "/tenant/branding/banner", label: "Tenant Banner", icon: Radio, roles: ['admin', 'manager', 'marketing'], indent: true, deepIndent: true },
+  { to: "/tenant/branding/pages", label: "Tenant Landing Pages", icon: FileText, roles: ['admin', 'manager', 'marketing'], indent: true, deepIndent: true },
   { to: "/tenant/account", label: "Account", icon: CreditCard, roles: ['admin', 'manager'] },
   { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];
