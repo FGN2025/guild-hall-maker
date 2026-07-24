@@ -447,24 +447,28 @@ const AdminTenants = () => {
 
 /* ─── Tenant card with inline logo edit ─── */
 function TenantCard({
-  tenant: t,
+  tenant,
   health,
   onToggleStatus,
   onLogoUpdated,
   onOpenAdmins,
   onDelete,
   onToggleSubscriberValidation,
+  onPlanTierChange,
   onManage,
 }: {
-  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean };
+  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean; plan_tier?: "basic" | "pro" | null };
   health?: TenantHealth;
   onToggleStatus: (checked: boolean) => void;
   onLogoUpdated: (url: string) => void;
   onOpenAdmins: () => void;
   onDelete: () => void;
   onToggleSubscriberValidation: (checked: boolean) => void;
+  onPlanTierChange: (tier: "basic" | "pro" | null) => void;
   onManage: () => void;
 }) {
+  const t = tenant;
+
   const [uploading, setUploading] = useState(false);
   const noAdmin = t.status === "active" && health && !health.has_admin;
   const noZips = t.status === "active" && health && health.zip_count === 0;
