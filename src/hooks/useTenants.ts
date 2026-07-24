@@ -49,6 +49,8 @@ interface UpdateTenantInput {
   accent_color?: string | null;
   status?: string;
   require_subscriber_validation?: boolean;
+  plan_tier?: "basic" | "pro" | null;
+
 }
 
 export function useTenants() {
