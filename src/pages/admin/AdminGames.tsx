@@ -351,6 +351,7 @@ const AdminGames = () => {
                     {dragEnabled && <TableHead className="w-10" />}
                     <TableHead><SortableHeader label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                     <TableHead><SortableHeader label="Category" field="category" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
+                    <TableHead>Formats</TableHead>
                     <TableHead><SortableHeader label="Slug" field="slug" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                     <TableHead><SortableHeader label="Active" field="is_active" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                     <TableHead className="text-right">Actions</TableHead>
