@@ -123,40 +123,62 @@ const NotificationPreferences = () => {
           </div>
         </div>
 
-        {NOTIFICATION_TYPES.map((nt) => {
-          const pref = preferences?.[nt.key];
+        {(["general", "marketing"] as const).map((section) => {
+          const items = NOTIFICATION_TYPES.filter((nt) =>
+            section === "marketing" ? nt.group === "marketing" : nt.group !== "marketing"
+          );
+          if (items.length === 0) return null;
           return (
-            <div key={nt.key} className="rounded-lg border border-border/50 bg-card/50 p-4 space-y-3">
-              <div>
-                <p className="font-heading text-sm text-foreground">{nt.label}</p>
-                <p className="text-xs text-muted-foreground font-body">{nt.description}</p>
-              </div>
-              <div className="flex flex-wrap gap-6">
-                <div className="flex items-center gap-2">
-                  <MonitorSmartphone className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor={`${nt.key}-inapp`} className="text-sm font-body cursor-pointer">
-                    In-App
-                  </Label>
-                  <Switch
-                    id={`${nt.key}-inapp`}
-                    checked={pref?.in_app_enabled ?? true}
-                    onCheckedChange={(v) => handleToggle(nt.key, "in_app", v)}
-                    disabled={toggle.isPending}
-                  />
+            <div key={section} className="space-y-3">
+              {section === "marketing" && (
+                <div className="pt-2">
+                  <h3 className="font-heading text-sm uppercase tracking-wide text-muted-foreground">
+                    Marketing Pipeline
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-body">
+                    Email delivery for marketing agent activity. In-app notifications are always on and appear in the notification center.
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor={`${nt.key}-email`} className="text-sm font-body cursor-pointer">
-                    Email
-                  </Label>
-                  <Switch
-                    id={`${nt.key}-email`}
-                    checked={pref?.email_enabled ?? true}
-                    onCheckedChange={(v) => handleToggle(nt.key, "email", v)}
-                    disabled={toggle.isPending}
-                  />
-                </div>
-              </div>
+              )}
+              {items.map((nt) => {
+                const pref = preferences?.[nt.key];
+                return (
+                  <div key={nt.key} className="rounded-lg border border-border/50 bg-card/50 p-4 space-y-3">
+                    <div>
+                      <p className="font-heading text-sm text-foreground">{nt.label}</p>
+                      <p className="text-xs text-muted-foreground font-body">{nt.description}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-6">
+                      {!nt.emailOnly && (
+                        <div className="flex items-center gap-2">
+                          <MonitorSmartphone className="h-4 w-4 text-muted-foreground" />
+                          <Label htmlFor={`${nt.key}-inapp`} className="text-sm font-body cursor-pointer">
+                            In-App
+                          </Label>
+                          <Switch
+                            id={`${nt.key}-inapp`}
+                            checked={pref?.in_app_enabled ?? true}
+                            onCheckedChange={(v) => handleToggle(nt.key, "in_app", v)}
+                            disabled={toggle.isPending}
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor={`${nt.key}-email`} className="text-sm font-body cursor-pointer">
+                          Email
+                        </Label>
+                        <Switch
+                          id={`${nt.key}-email`}
+                          checked={pref?.email_enabled ?? true}
+                          onCheckedChange={(v) => handleToggle(nt.key, "email", v)}
+                          disabled={toggle.isPending}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })}
