@@ -65,11 +65,12 @@ Deno.serve(async (req) => {
         createEphemeralUser(), createEphemeralUser(), createEphemeralUser(),
       ]);
       cleanupUsers.push(adminU.id, marketingU.id, adminOtherTenantU.id);
-      await svc.from("tenant_admins").insert([
+      const insertRes = await svc.from("tenant_admins").insert([
         { tenant_id: acmeId, user_id: adminU.id, role: "admin" },
         { tenant_id: acmeId, user_id: marketingU.id, role: "marketing" },
         { tenant_id: acmeId, user_id: adminOtherTenantU.id, role: "admin" },
       ]);
+      push("seed tenant_admins", !insertRes.error, insertRes.error?.message ?? "ok");
 
       // V2: marketing role → 403
       const v2 = await callAgentRun(marketingU.token, { tenant_id: acmeId, mode: "single_campaign" });
