@@ -86,7 +86,7 @@ const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding, bannerMode, t
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="h-5 w-5" /></Button>
         <div className="flex-1">
-          <h1 className="font-display text-2xl font-bold text-foreground">{page.title}</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">{titleOverride ?? page.title}</h1>
           <p className="text-sm text-muted-foreground">/{page.slug}</p>
         </div>
         <div className="flex items-center gap-3">
