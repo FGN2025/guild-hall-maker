@@ -1,5 +1,5 @@
 /*
- * agent-run-verify — Checkpoint 2 test harness.
+ * agent-run-verify — Checkpoint 2 test harness (build v2).
  * Creates ephemeral password users with the roles needed to exercise each
  * gate, then invokes agent-run with their access tokens. Cleans up after.
  * Delete after Checkpoint 2 acceptance.
