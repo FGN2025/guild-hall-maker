@@ -87,6 +87,9 @@ const TenantBanner = () => {
           pageId={bannerId}
           tenantId={tenantId}
           onBack={() => { /* hub link in header */ }}
+          bannerMode
+          titleOverride="Configure Banner"
+          settingsLabel="Banner Settings"
           tenantBranding={{
             logoUrl: tenantInfo?.logoUrl,
             primaryColor: tenantInfo?.primaryColor,

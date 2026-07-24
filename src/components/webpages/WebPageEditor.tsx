@@ -24,9 +24,12 @@ interface Props {
   tenantId?: string | null;
   onBack: () => void;
   tenantBranding?: TenantBranding;
+  bannerMode?: boolean;
+  titleOverride?: string;
+  settingsLabel?: string;
 }
 
-const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
+const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding, bannerMode, titleOverride, settingsLabel }: Props) => {
   const { pages, useSections, updatePage, addSection, updateSection, deleteSection, reorderSections } = useWebPages(tenantId);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(pageId);
   const page = pages.find((p) => p.id === pageId);
@@ -83,7 +86,7 @@ const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="h-5 w-5" /></Button>
         <div className="flex-1">
-          <h1 className="font-display text-2xl font-bold text-foreground">{page.title}</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">{titleOverride ?? page.title}</h1>
           <p className="text-sm text-muted-foreground">/{page.slug}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -145,7 +148,7 @@ const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
         <TabsContent value="editor" className="space-y-4">
           {/* Page Settings */}
           <Card>
-            <CardHeader><CardTitle className="text-base font-heading">Page Settings</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base font-heading">{settingsLabel ?? "Page Settings"}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -216,9 +219,11 @@ const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
                 </Card>
               ))}
 
-              <Button variant="outline" className="w-full border-dashed" onClick={() => setAddOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Add Section
-              </Button>
+              {!bannerMode && (
+                <Button variant="outline" className="w-full border-dashed" onClick={() => setAddOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Add Section
+                </Button>
+              )}
             </div>
           )}
 
