@@ -46,7 +46,7 @@ const allSidebarItems = [
   { to: "/tenant/subscribers?tab=integrations", label: "Integrations", icon: Plug, roles: ['admin', 'manager'] },
   { to: "/tenant/marketing", label: "Marketing", icon: Megaphone, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
-  { to: "/tenant/codes", label: "Codes", icon: KeyRound, roles: ['admin'] },
+  { to: "/tenant/codes", label: "Access Codes", icon: KeyRound, roles: ['admin'] },
 
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin', 'manager'] },
   
