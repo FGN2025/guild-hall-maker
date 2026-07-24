@@ -24,6 +24,9 @@ interface Props {
   tenantId?: string | null;
   onBack: () => void;
   tenantBranding?: TenantBranding;
+  bannerMode?: boolean;
+  titleOverride?: string;
+  settingsLabel?: string;
 }
 
 const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
