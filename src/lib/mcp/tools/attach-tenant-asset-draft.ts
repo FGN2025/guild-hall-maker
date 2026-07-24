@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { supabaseForUser, supabaseServiceRole, requireAuth, okJson, toolError } from "./_shared";
+import { supabaseForUser, supabaseServiceRole, requireAuth, okJson, toolError } from "./_shared.ts";
 
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
 const BUCKET = "tenant-marketing";

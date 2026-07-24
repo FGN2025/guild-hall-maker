@@ -10,22 +10,22 @@
 // Do NOT hand-maintain a duplicate list in agent-mcp. If you add a tool file,
 // add it here.
 
-import getMeTool from "./get-me";
-import listTournamentsTool from "./list-tournaments";
-import listChallengesTool from "./list-challenges";
-import getChallengeTool from "./get-challenge";
-import listGamesTool from "./list-games";
-import listTenantsTool from "./list-tenants";
-import getBrandKitTool from "./get-brand-kit";
-import listUpcomingEventsTool from "./list-upcoming-events";
-import listPlatformTemplatesTool from "./list-platform-templates";
-import listTenantAssetsTool from "./list-tenant-assets";
-import listPendingAgentDraftsTool from "./list-pending-agent-drafts";
-import createCampaignDraftTool from "./create-campaign-draft";
-import updateCampaignDraftTool from "./update-campaign-draft";
-import attachTenantAssetDraftTool from "./attach-tenant-asset-draft";
-import proposeScheduledPostTool from "./propose-scheduled-post";
-import updateScheduledPostTool from "./update-scheduled-post";
+import getMeTool from "./get-me.ts";
+import listTournamentsTool from "./list-tournaments.ts";
+import listChallengesTool from "./list-challenges.ts";
+import getChallengeTool from "./get-challenge.ts";
+import listGamesTool from "./list-games.ts";
+import listTenantsTool from "./list-tenants.ts";
+import getBrandKitTool from "./get-brand-kit.ts";
+import listUpcomingEventsTool from "./list-upcoming-events.ts";
+import listPlatformTemplatesTool from "./list-platform-templates.ts";
+import listTenantAssetsTool from "./list-tenant-assets.ts";
+import listPendingAgentDraftsTool from "./list-pending-agent-drafts.ts";
+import createCampaignDraftTool from "./create-campaign-draft.ts";
+import updateCampaignDraftTool from "./update-campaign-draft.ts";
+import attachTenantAssetDraftTool from "./attach-tenant-asset-draft.ts";
+import proposeScheduledPostTool from "./propose-scheduled-post.ts";
+import updateScheduledPostTool from "./update-scheduled-post.ts";
 
 export const tools = [
   getMeTool,

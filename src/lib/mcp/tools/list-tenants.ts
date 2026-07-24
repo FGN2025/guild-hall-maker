@@ -1,5 +1,5 @@
 import { defineTool } from "@lovable.dev/mcp-js";
-import { supabaseForUser, requireAuth, okJson, toolError } from "./_shared";
+import { supabaseForUser, requireAuth, okJson, toolError } from "./_shared.ts";
 
 export default defineTool({
   name: "list_tenants",

@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { supabaseForUser, requireAuth, okJson, toolError, parseIsoWithOffset } from "./_shared";
+import { supabaseForUser, requireAuth, okJson, toolError, parseIsoWithOffset } from "./_shared.ts";
 
 export default defineTool({
   name: "update_scheduled_post",
