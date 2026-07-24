@@ -1,34 +1,35 @@
 /*
  * agent-run-verify — Checkpoint 2 test harness.
- * Runs V2 (marketing role rejected), V3 (cross-tenant rejected),
- * V4 (over-limit), V5 (kill switch), V6-preflight (missing prompt path is not
- * exercised — we cover turn_cap via a forced low cap in V6 live), and V7
- * (Anthropic error path). Requires SUPABASE_JWT_SECRET to mint test tokens.
+ * Creates ephemeral password users with the roles needed to exercise each
+ * gate, then invokes agent-run with their access tokens. Cleans up after.
  * Delete after Checkpoint 2 acceptance.
  */
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
-import { SignJWT } from "npm:jose@5.9.6";
 
 const corsHeaders = { "Access-Control-Allow-Origin": "*" };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const JWT_SECRET = Deno.env.get("SUPABASE_JWT_SECRET") ?? "";
+const ANON = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
 const svc = createClient(SUPABASE_URL, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
 
-async function mintUserToken(userId: string, email = "verify@test.local", ttl = 300): Promise<string> {
-  return await new SignJWT({
-    sub: userId,
-    aud: "authenticated",
-    role: "authenticated",
-    email,
-    session_id: crypto.randomUUID(),
-  })
-    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
-    .setIssuer(`${SUPABASE_URL}/auth/v1`)
-    .setIssuedAt()
-    .setExpirationTime(`${ttl}s`)
-    .sign(new TextEncoder().encode(JWT_SECRET));
+async function createEphemeralUser(): Promise<{ id: string; email: string; password: string; token: string }> {
+  const email = `verify-${crypto.randomUUID()}@fgn-test.local`;
+  const password = crypto.randomUUID() + "Aa1!";
+  const { data: created, error: cErr } = await svc.auth.admin.createUser({
+    email, password, email_confirm: true, user_metadata: { verify_harness: true },
+  });
+  if (cErr || !created.user) throw new Error(`createUser failed: ${cErr?.message}`);
+  const anon = createClient(SUPABASE_URL, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: signed, error: sErr } = await anon.auth.signInWithPassword({ email, password });
+  if (sErr || !signed.session) throw new Error(`signIn failed: ${sErr?.message}`);
+  return { id: created.user.id, email, password, token: signed.session.access_token };
 }
+
+async function deleteEphemeralUser(id: string) {
+  await svc.auth.admin.deleteUser(id).catch(() => {});
+}
+
+
 
 async function callAgentRun(token: string, body: any) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/agent-run`, {
