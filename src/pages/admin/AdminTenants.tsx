@@ -610,8 +610,9 @@ function TenantCard({
             {t.plan_tier === "pro" ? "Pro" : "Basic"}
           </Badge>
         )}
-
+      </div>
     </div>
+
   );
 }
 
