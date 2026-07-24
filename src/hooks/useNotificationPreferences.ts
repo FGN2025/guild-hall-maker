@@ -8,7 +8,17 @@ export interface NotificationPreference {
   email_enabled: boolean;
 }
 
-const NOTIFICATION_TYPES = [
+export interface NotificationTypeDef {
+  key: string;
+  label: string;
+  description: string;
+  /** When true, only the email switch is rendered; in-app is always on and cannot be disabled. */
+  emailOnly?: boolean;
+  /** Optional grouping tag for section headers in the UI. */
+  group?: "marketing";
+}
+
+const NOTIFICATION_TYPES: readonly NotificationTypeDef[] = [
   { key: "redemption_update", label: "Prize Redemption Updates", description: "When your prize redemption is approved, fulfilled, or denied" },
   { key: "new_challenge", label: "New Challenges", description: "When a new challenge is published on the platform" },
   { key: "new_quest", label: "New Quests", description: "When a new quest is published on the platform" },
@@ -21,6 +31,10 @@ const NOTIFICATION_TYPES = [
   { key: "tournament_promo", label: "Tournament Promotions", description: "Emails about upcoming tournaments you haven't registered for yet" },
   { key: "reengagement", label: "Re-engagement Reminders", description: "Updates on new content when you haven't visited in a while" },
   { key: "points_adjusted", label: "Points Adjustments", description: "When a moderator or admin awards or deducts points from your balance" },
+  // Marketing pipeline categories — email switch only; in-app always on.
+  { key: "marketing_drafts_digest", label: "Marketing Draft Digest", description: "Batched summary email when the marketing agent proposes or revises drafts (campaigns and scheduled posts).", emailOnly: true, group: "marketing" },
+  { key: "marketing_errors", label: "Marketing Pipeline Errors", description: "Immediate email when a scheduled post fails to publish, is undeliverable (no connected account), or was approved after its scheduled time.", emailOnly: true, group: "marketing" },
+  { key: "marketing_conflicts", label: "Marketing Schedule Conflicts", description: "Immediate email when two approved posts target the same platform within the conflict window.", emailOnly: true, group: "marketing" },
 ] as const;
 
 export { NOTIFICATION_TYPES };
