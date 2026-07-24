@@ -85,12 +85,6 @@ const TenantSubscribers = () => {
 
   const exportRows = filtered.map(s => ({ ...s, name: [s.first_name, s.last_name].filter(Boolean).join(" ") }));
 
-  const availableIntegrations = [
-    { name: "NISC", providerType: "nisc", description: "National Information Solutions Cooperative — sync subscribers from your NISC billing system." },
-    { name: "GLDS", providerType: "glds", description: "GLDS billing system integration for subscriber data synchronization." },
-    { name: "FGN Academy", providerType: "fgn_academy", description: "FGN Academy LMS — automatically sync challenge completions, points, and player progress to fgn.academy." },
-  ];
-
   return (
     <div className="space-y-6">
       <div>
@@ -117,7 +111,6 @@ const TenantSubscribers = () => {
         <TabsList>
           <TabsTrigger value="subscribers" className="gap-2"><Users className="h-4 w-4" /> Subscribers</TabsTrigger>
           <TabsTrigger value="upload" className="gap-2"><Upload className="h-4 w-4" /> Upload</TabsTrigger>
-          <TabsTrigger value="integrations" className="gap-2"><Plug className="h-4 w-4" /> Integrations</TabsTrigger>
           <TabsTrigger value="sync-history" className="gap-2"><History className="h-4 w-4" /> Sync History</TabsTrigger>
         </TabsList>
 
