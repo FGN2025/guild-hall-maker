@@ -60,6 +60,15 @@ const TenantBanner = () => {
     return () => { cancelled = true; };
   }, [tenantId, isLoadingPages, pages.length]);
 
+  // Prune any legacy sections that aren't banner-appropriate (only hero/banner/cta allowed).
+  const { data: bannerSections = [] } = useSections(bannerId ?? "");
+  useEffect(() => {
+    if (!bannerId) return;
+    bannerSections
+      .filter((s) => !ALLOWED_BANNER_SECTIONS.has(s.section_type))
+      .forEach((s) => deleteSection.mutate({ id: s.id, page_id: bannerId }));
+  }, [bannerId, bannerSections.map((s) => `${s.id}:${s.section_type}`).join(",")]);
+
   if (!tenantId || !tenantInfo) {
     return <Card><CardContent className="py-12 text-center text-muted-foreground">No tenant selected.</CardContent></Card>;
   }
