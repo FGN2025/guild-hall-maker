@@ -95,13 +95,17 @@ Deno.serve(async (req) => {
       // V4: over-limit → 429. Seed 2 succeeded runs today (default daily cap = 2).
       const now = new Date().toISOString();
       const seedIds: string[] = [];
+      const seedErrs: string[] = [];
       for (let i = 0; i < 2; i++) {
-        const { data } = await svc.from("agent_runs").insert({
+        const { data, error } = await svc.from("agent_runs").insert({
           tenant_id: acmeId, launched_by: adminU.id, status: "succeeded",
           mode: "single_campaign", turn_cap: 40, started_at: now, finished_at: now,
+          agent_name: "marketing_agent", prompt_version: 1,
         }).select("id").single();
         if (data) seedIds.push(data.id);
+        if (error) seedErrs.push(error.message);
       }
+      push("V4 seed runs", seedIds.length === 2, { seedIds, seedErrs });
       const v4 = await callAgentRun(adminU.token, { tenant_id: acmeId, mode: "single_campaign" });
       push("V4 over-limit returns 429", v4.status === 429 && /limit/i.test(v4.body?.error ?? ""), v4);
       await svc.from("agent_runs").delete().in("id", seedIds);
