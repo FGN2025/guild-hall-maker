@@ -147,8 +147,17 @@ const GameGridCard = ({ game, selected, onSelect, onEdit, onDelete, onToggleActi
     </div>
     <CardContent className="p-3 space-y-1.5">
       <p className="font-heading font-medium text-sm truncate">{game.name}</p>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-1">
         <Badge variant="secondary" className="text-xs font-heading">{game.category}</Badge>
+        <div className="flex gap-0.5">
+          {game.supports_tournaments && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Tournaments">T</Badge>}
+          {game.supports_quests && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Quests">Q</Badge>}
+          {game.supports_challenges && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Challenges">C</Badge>}
+        </div>
+      </div>
+      <div className="flex items-center justify-end">{/* spacer for switch below */}</div>
+      <div className="flex items-center justify-end -mt-2">
+
         <Switch
           checked={game.is_active}
           onCheckedChange={() => onToggleActive(game)}
