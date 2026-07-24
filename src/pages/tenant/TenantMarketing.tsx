@@ -227,7 +227,7 @@ const TenantMarketing = () => {
 
         {/* Web Pages Tab */}
         <TabsContent value="webpages">
-          <TenantWebPages embedded />
+          <WebPagesTab />
         </TabsContent>
 
         {/* Social Accounts Tab */}
