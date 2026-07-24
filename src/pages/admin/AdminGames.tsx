@@ -155,9 +155,7 @@ const GameGridCard = ({ game, selected, onSelect, onEdit, onDelete, onToggleActi
           {game.supports_challenges && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Challenges">C</Badge>}
         </div>
       </div>
-      <div className="flex items-center justify-end">{/* spacer for switch below */}</div>
-      <div className="flex items-center justify-end -mt-2">
-
+      <div className="flex items-center justify-end">
         <Switch
           checked={game.is_active}
           onCheckedChange={() => onToggleActive(game)}
