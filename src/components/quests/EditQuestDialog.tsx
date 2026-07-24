@@ -261,7 +261,11 @@ const EditQuestDialog = ({ quest, open, onOpenChange, invalidateQueryKey }: Edit
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No game</SelectItem>
-                  {games.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                  {games.filter((g: any) => g.supports_quests || g.id === gameId).map((g: any) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name}{!g.supports_quests ? " (no longer supported)" : ""}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

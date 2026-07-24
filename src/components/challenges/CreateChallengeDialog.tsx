@@ -212,7 +212,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
               <Select value={selectedGameId} onValueChange={setSelectedGameId}>
                 <SelectTrigger><SelectValue placeholder="Select game..." /></SelectTrigger>
                 <SelectContent>
-                  {games.map((g: any) => (
+                  {games.filter((g: any) => g.supports_challenges).map((g: any) => (
                     <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                   ))}
                 </SelectContent>

@@ -78,6 +78,13 @@ const SortableGameRow = ({
       )}
       <TableCell className="font-heading font-medium">{game.name}</TableCell>
       <TableCell><Badge variant="secondary" className="font-heading">{game.category}</Badge></TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          {game.supports_tournaments && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Tournaments">T</Badge>}
+          {game.supports_quests && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Quests">Q</Badge>}
+          {game.supports_challenges && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Challenges">C</Badge>}
+        </div>
+      </TableCell>
       <TableCell className="text-muted-foreground text-xs">{game.slug}</TableCell>
       <TableCell>
         <Switch
@@ -140,8 +147,15 @@ const GameGridCard = ({ game, selected, onSelect, onEdit, onDelete, onToggleActi
     </div>
     <CardContent className="p-3 space-y-1.5">
       <p className="font-heading font-medium text-sm truncate">{game.name}</p>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-1">
         <Badge variant="secondary" className="text-xs font-heading">{game.category}</Badge>
+        <div className="flex gap-0.5">
+          {game.supports_tournaments && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Tournaments">T</Badge>}
+          {game.supports_quests && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Quests">Q</Badge>}
+          {game.supports_challenges && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Challenges">C</Badge>}
+        </div>
+      </div>
+      <div className="flex items-center justify-end">
         <Switch
           checked={game.is_active}
           onCheckedChange={() => onToggleActive(game)}
@@ -344,6 +358,7 @@ const AdminGames = () => {
                     {dragEnabled && <TableHead className="w-10" />}
                     <TableHead><SortableHeader label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                     <TableHead><SortableHeader label="Category" field="category" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
+                    <TableHead>Formats</TableHead>
                     <TableHead><SortableHeader label="Slug" field="slug" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                     <TableHead><SortableHeader label="Active" field="is_active" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                     <TableHead className="text-right">Actions</TableHead>

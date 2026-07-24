@@ -39,6 +39,9 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
   const [guideContent, setGuideContent] = useState("");
   const [platformTags, setPlatformTags] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [supportsTournaments, setSupportsTournaments] = useState(false);
+  const [supportsQuests, setSupportsQuests] = useState(false);
+  const [supportsChallenges, setSupportsChallenges] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
@@ -101,10 +104,14 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       setIsActive(editGame.is_active);
       setTournamentRulesUrl(editGame.tournament_rules_url ?? "");
       setSteamAppId(editGame.steam_app_id ?? "");
+      setSupportsTournaments(!!(editGame as any).supports_tournaments);
+      setSupportsQuests(!!(editGame as any).supports_quests);
+      setSupportsChallenges(!!(editGame as any).supports_challenges);
     } else {
       setName(""); setSlug(""); setDescription(""); setCategory("General");
       setCoverImageUrl(""); setGuideContent(""); setPlatformTags(""); setIsActive(true);
       setTournamentRulesUrl(""); setSteamAppId("");
+      setSupportsTournaments(false); setSupportsQuests(false); setSupportsChallenges(false);
     }
   }, [editGame, open]);
 
@@ -131,6 +138,9 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
       guide_content: guideContent || null, platform_tags: tags, is_active: isActive,
       tournament_rules_url: tournamentRulesUrl || null,
       steam_app_id: steamAppId || null,
+      supports_tournaments: supportsTournaments,
+      supports_quests: supportsQuests,
+      supports_challenges: supportsChallenges,
     };
     if (editGame) payload.id = editGame.id;
     onSubmit(payload);
@@ -317,6 +327,26 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
           <div>
             <Label>Platform Tags (comma separated)</Label>
             <Input value={platformTags} onChange={e => setPlatformTags(e.target.value)} placeholder="PC, PS5, Xbox" />
+          </div>
+          <div className="space-y-2 rounded-md border border-border p-3">
+            <Label className="text-sm font-heading">Supported Formats</Label>
+            <p className="text-xs text-muted-foreground">
+              Controls which activity types this game can be used for across tournaments, quests, and challenges.
+            </p>
+            <div className="flex flex-col gap-2 pt-1">
+              <div className="flex items-center gap-2">
+                <Switch checked={supportsTournaments} onCheckedChange={setSupportsTournaments} />
+                <Label className="font-body text-sm">Tournaments</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={supportsQuests} onCheckedChange={setSupportsQuests} />
+                <Label className="font-body text-sm">Quests</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={supportsChallenges} onCheckedChange={setSupportsChallenges} />
+                <Label className="font-body text-sm">Challenges</Label>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={isActive} onCheckedChange={setIsActive} />
