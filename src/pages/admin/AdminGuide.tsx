@@ -51,6 +51,22 @@ import { Button } from "@/components/ui/button";
 import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-07-24",
+    icon: Sparkles,
+    title: "What's New — July 24, 2026",
+    bullets: [
+      "Game Format Tagging — Games now carry three boolean flags: supports_tournaments, supports_quests, supports_challenges. Set them from Admin → Games (Add/Edit Game dialog → Supported Formats switches). List and grid views show T / Q / C badges at a glance. Tournament, challenge, and quest creation pickers filter accordingly; legacy items are grandfathered with a '(no longer supported)' hint. Backfilled from existing usage on rollout.",
+      "Tenant Billing — Two Plans — Tenants can now be tagged plan_tier = 'basic' ($600/mo) or 'pro' ($850/mo). Set the plan from Admin → Tenants → the Billing plan selector on each tenant card. Tenants see upgrade/downgrade options in their portal; Stripe wiring lands later.",
+      "Tenant Settings Consolidation — In the tenant portal, Brand Guide (logo, colors, company info), Platform (cloud gaming), Account (billing), and Integrations (NISC / GLDS / FGN Academy) are now tabs under a single Settings page. Branded Assets, Account, and Integrations sidebar entries were removed. Old routes redirect to /tenant/settings?tab=…",
+      "Tenant Web Pages Consolidation — The tenant Web Pages surface now lives inside Marketing → Web Pages with two sub-tabs: Banner (Portal Banner editor, banner-only sections) and Landing Pages (full block-based page builder). The standalone Tenant Landing Pages and Tenant Banner sidebar entries were removed.",
+      "Access Codes Rename — The tenant sidebar entry 'Codes' was renamed to 'Access Codes'. Same route (/tenant/codes), same functionality.",
+      "Marketing Agent Pipeline (Phase 2 Complete) — Server-side agent runner at /tenant Agent Launch card uses Claude Sonnet 4.6 with the Anthropic MCP connector, HS256-signed runner tokens, 2/day and 10/month guardrails, and a 40-turn cap. Prompts are versioned in the agent_prompts table with an atomic activate flow at /admin/agent-prompts. Currently active: marketing_agent v3 (Branded Pages workflow).",
+      "Universal Marketing Assets — Platform staff can flag any marketing asset as is_universal. A DB trigger enqueues universal_asset_new notifications to all active tenants. Tenants adopt (clone into their library) via the adopt-universal-asset function; adoption is idempotent on (tenant_id, source_asset_id). Adoption matrix lives at /admin/universal-assets.",
+      "Marketing Pipeline Notifications — notifications table gained tenant_id, category, related_id. New helper functions get_marketing_notification_recipients, enqueue_marketing_notification, check_schedule_conflict. Triggers cover new drafts, campaign revisions, dispatcher errors, overdue posts, and schedule conflicts. Marketing category preferences (email on/off) live in NotificationPreferences; in-app cannot be disabled.",
+      "Dispatcher Hardening — publish-scheduled-posts no longer fails silently. Overdue and undeliverable posts route to human reviewers via notifications and an orphaned_notifications backstop.",
+    ],
+  },
+  {
     id: "whats-new",
     icon: Sparkles,
     title: "What's New — June 18, 2026",
