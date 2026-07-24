@@ -314,6 +314,10 @@ Deno.serve(async (req) => {
   // Fire and forget the loop so the HTTP call returns quickly with the run id.
   (async () => {
     try {
+      // Test hook: verification harness may force an Anthropic-side error path.
+      if ((payload as any)?._test_force_error) {
+        throw new Error("forced_anthropic_error_for_verification");
+      }
       const result = await runAgentLoop({
         runId: run.id,
         tenantId: tenant_id,
