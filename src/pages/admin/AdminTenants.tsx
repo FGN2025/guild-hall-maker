@@ -590,6 +590,27 @@ function TenantCard({
           </Tooltip>
         </TooltipProvider>
       </div>
+      <div className="flex items-center gap-2 pl-1 border-t border-border pt-2">
+        <Label className="text-xs text-muted-foreground">Billing plan</Label>
+        <Select
+          value={t.plan_tier ?? "none"}
+          onValueChange={(v) => onPlanTierChange(v === "none" ? null : (v as "basic" | "pro"))}
+        >
+          <SelectTrigger className="h-8 w-40 text-xs">
+            <SelectValue placeholder="Not set" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Not set</SelectItem>
+            <SelectItem value="basic">Tenant Basic ($600)</SelectItem>
+            <SelectItem value="pro">Tenant Pro ($850)</SelectItem>
+          </SelectContent>
+        </Select>
+        {t.plan_tier && (
+          <Badge variant="outline" className="text-xs capitalize">
+            {t.plan_tier === "pro" ? "Pro" : "Basic"}
+          </Badge>
+        )}
+
     </div>
   );
 }
