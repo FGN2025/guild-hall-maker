@@ -215,7 +215,7 @@
       {
         "name": "list_platform_templates",
         "title": "List platform marketing templates",
-        "description": "List published platform-wide marketing templates the agent can clone into a tenant's private library.",
+        "description": "List published platform-wide marketing templates and universal assets the agent can clone into a tenant's private library. When tenant_id is supplied, each row includes `adopted` and `adopted_asset_id` so slate runs can propose localized treatments only for unadopted universal assets. Universal-only mode via universal_only=true.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -224,6 +224,13 @@
         "inputSchema": {
           "type": "object",
           "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "universal_only": {
+              "type": "boolean"
+            },
             "limit": {
               "type": "integer",
               "minimum": 1,
