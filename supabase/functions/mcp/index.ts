@@ -272,9 +272,16 @@ import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { createClient as createClient6 } from "npm:@supabase/supabase-js@^2.95.3";
 function supabaseForUser6(ctx) {
   const url = process.env.SUPABASE_URL;
+  const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const token = ctx.getToken();
+  if (svc && token === svc) {
+    return createClient6(url, svc, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+  }
   const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
   return createClient6(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
