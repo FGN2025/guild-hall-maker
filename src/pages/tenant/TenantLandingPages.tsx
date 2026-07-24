@@ -106,17 +106,19 @@ const TenantLandingPages = ({ embedded = false }: { embedded?: boolean } = {}) =
 
   return (
     <div className="space-y-6">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="gap-1 -ml-2 mb-2">
-          <Link to="/tenant/branding"><ArrowLeft className="h-4 w-4" /> Branded Assets</Link>
-        </Button>
-        <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-          <FileText className="h-6 w-6 text-primary" /> Tenant Landing Pages
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Standalone branded pages published at <code className="text-xs">/pages/{tenantInfo.tenantSlug ?? "<tenant>"}/&lt;slug&gt;</code>.
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <Button asChild variant="ghost" size="sm" className="gap-1 -ml-2 mb-2">
+            <Link to="/tenant/marketing?tab=webpages"><ArrowLeft className="h-4 w-4" /> Marketing</Link>
+          </Button>
+          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+            <FileText className="h-6 w-6 text-primary" /> Tenant Landing Pages
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Standalone branded pages published at <code className="text-xs">/pages/{tenantInfo.tenantSlug ?? "<tenant>"}/&lt;slug&gt;</code>.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
         <div className="space-y-3">
