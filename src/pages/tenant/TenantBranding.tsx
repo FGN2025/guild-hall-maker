@@ -20,7 +20,6 @@ import { useQueryClient } from "@tanstack/react-query";
 const TenantBranding = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
-  const { pages, isLoadingPages } = useWebPages(tenantId);
 
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
