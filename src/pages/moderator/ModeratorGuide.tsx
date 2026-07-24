@@ -29,6 +29,15 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-07-24",
+    icon: Star,
+    title: "What's New — July 24, 2026",
+    bullets: [
+      "Game Format Tagging — Every game now carries Tournament / Quest / Challenge support flags (T / Q / C). The create/edit pickers for tournaments, challenges, and quests filter to games flagged for that format. Legacy items keep their game with a '(no longer supported)' hint so historical records stay editable.",
+      "Impact on Your Workflow — If a game you expect to use for a new challenge or quest is missing from the picker, ping a platform admin to flip the correct support flag on the game record.",
+    ],
+  },
+  {
     id: "whats-new",
     icon: Star,
     title: "What's New — June 18, 2026",
