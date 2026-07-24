@@ -414,6 +414,10 @@ const AdminTenants = () => {
                 onToggleSubscriberValidation={(checked) =>
                   updateTenant.mutate({ id: t.id, require_subscriber_validation: checked })
                 }
+                onPlanTierChange={(tier) =>
+                  updateTenant.mutate({ id: t.id, plan_tier: tier })
+                }
+
                 onManage={() => {
                   localStorage.setItem("fgn_selected_tenant_id", t.id);
                   navigate("/tenant");
@@ -443,24 +447,28 @@ const AdminTenants = () => {
 
 /* ─── Tenant card with inline logo edit ─── */
 function TenantCard({
-  tenant: t,
+  tenant,
   health,
   onToggleStatus,
   onLogoUpdated,
   onOpenAdmins,
   onDelete,
   onToggleSubscriberValidation,
+  onPlanTierChange,
   onManage,
 }: {
-  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean };
+  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean; plan_tier?: "basic" | "pro" | null };
   health?: TenantHealth;
   onToggleStatus: (checked: boolean) => void;
   onLogoUpdated: (url: string) => void;
   onOpenAdmins: () => void;
   onDelete: () => void;
   onToggleSubscriberValidation: (checked: boolean) => void;
+  onPlanTierChange: (tier: "basic" | "pro" | null) => void;
   onManage: () => void;
 }) {
+  const t = tenant;
+
   const [uploading, setUploading] = useState(false);
   const noAdmin = t.status === "active" && health && !health.has_admin;
   const noZips = t.status === "active" && health && health.zip_count === 0;
@@ -582,7 +590,29 @@ function TenantCard({
           </Tooltip>
         </TooltipProvider>
       </div>
+      <div className="flex items-center gap-2 pl-1 border-t border-border pt-2">
+        <Label className="text-xs text-muted-foreground">Billing plan</Label>
+        <Select
+          value={t.plan_tier ?? "none"}
+          onValueChange={(v) => onPlanTierChange(v === "none" ? null : (v as "basic" | "pro"))}
+        >
+          <SelectTrigger className="h-8 w-40 text-xs">
+            <SelectValue placeholder="Not set" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Not set</SelectItem>
+            <SelectItem value="basic">Tenant Basic ($600)</SelectItem>
+            <SelectItem value="pro">Tenant Pro ($850)</SelectItem>
+          </SelectContent>
+        </Select>
+        {t.plan_tier && (
+          <Badge variant="outline" className="text-xs capitalize">
+            {t.plan_tier === "pro" ? "Pro" : "Basic"}
+          </Badge>
+        )}
+      </div>
     </div>
+
   );
 }
 
