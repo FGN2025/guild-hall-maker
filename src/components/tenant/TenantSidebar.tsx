@@ -48,8 +48,9 @@ const allSidebarItems = [
   { to: "/tenant/marketing?tab=webpages", label: "Web Pages", icon: Globe, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
   { to: "/tenant/codes", label: "Codes", icon: KeyRound, roles: ['admin'] },
-  { to: "/tenant/branding", label: "Branding & Banner", icon: Palette, roles: ['admin', 'manager', 'marketing'] },
+  
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin', 'manager'] },
+  { to: "/tenant/branding", label: "Branding & Banner", icon: Palette, roles: ['admin', 'manager', 'marketing'], indent: true },
   { to: "/tenant/account", label: "Account", icon: CreditCard, roles: ['admin', 'manager'] },
   { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];
@@ -148,6 +149,8 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
               key={item.to}
               to={item.to}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-heading font-medium tracking-wide transition-all ${
+                (item as any).indent ? "ml-4 py-2" : ""
+              } ${
                 active
                   ? "text-primary bg-primary/10 border border-primary/30"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
