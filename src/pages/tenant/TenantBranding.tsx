@@ -17,7 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
  * plus entry cards for the two independent builders: Tenant Banner and
  * Tenant Landing Pages.
  */
-const TenantBranding = () => {
+const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
 
@@ -103,14 +103,16 @@ const TenantBranding = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-          <Palette className="h-6 w-6 text-primary" /> Branded Assets
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Your shared brand identity: logo, colors, and company info. These theme your banner and landing pages.
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+            <Palette className="h-6 w-6 text-primary" /> Brand Guide
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Your shared brand identity: logo, colors, and company info. These theme your banner and landing pages.
+          </p>
+        </div>
+      )}
 
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="p-4 flex items-start gap-3">
@@ -125,6 +127,7 @@ const TenantBranding = () => {
           </div>
         </CardContent>
       </Card>
+
 
 
 
