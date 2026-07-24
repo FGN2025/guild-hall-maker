@@ -3,12 +3,13 @@ import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useWebPages } from "@/hooks/useWebPages";
 import { supabase } from "@/integrations/supabase/client";
 import WebPageEditor from "@/components/webpages/WebPageEditor";
+import BrandedPagesList from "@/components/branding/BrandedPagesList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ColorPicker } from "@/components/ui/color-picker";
-import { Building2, Loader2, Palette, Upload } from "lucide-react";
+import { Building2, Loader2, Palette, Upload, LayoutTemplate } from "lucide-react";
 import { resizeImageFile, LOGO_PRESET } from "@/lib/imageResize";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,7 +18,8 @@ const TenantBranding = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
   const { pages, isLoadingPages, createPage } = useWebPages(tenantId);
-  const [bannerPageId, setBannerPageId] = useState<string | null>(null);
+
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(true);
 
   const queryClient = useQueryClient();
@@ -38,28 +40,25 @@ const TenantBranding = () => {
     }
   }, [tenantInfo]);
 
+  // Ensure the tenant has an is_tenant_banner page, then default the selected
+  // page to the banner on first load.
   useEffect(() => {
     if (!tenantId || isLoadingPages) return;
 
     let cancelled = false;
     (async () => {
-      const { data: existing } = await (supabase
-        .from("web_pages")
-        .select("id")
-        .eq("tenant_id", tenantId) as any)
-        .eq("is_tenant_banner", true)
-        .maybeSingle();
-
-      if (cancelled) return;
-      if (existing?.id) {
-        setBannerPageId(existing.id);
-        setResolving(false);
+      const existingBanner = pages.find((p) => (p as any).is_tenant_banner);
+      if (existingBanner) {
+        if (!cancelled) {
+          setSelectedPageId((cur) => cur ?? existingBanner.id);
+          setResolving(false);
+        }
         return;
       }
 
       try {
         const created = await createPage.mutateAsync({
-          title: "Subscriber Banner",
+          title: "Portal Banner",
           slug: `banner-${Date.now()}`,
           tenant_id: tenantId,
           description: "Custom banner shown to your subscribers across the player portal.",
@@ -71,7 +70,10 @@ const TenantBranding = () => {
           .eq("id", created.id);
         if (updErr) throw updErr;
 
-        if (!cancelled) setBannerPageId(created.id);
+        if (!cancelled) {
+          setSelectedPageId(created.id);
+          queryClient.invalidateQueries({ queryKey: ["web-pages"] });
+        }
       } catch (e) {
         toast.error("Could not initialize banner page");
       } finally {
@@ -80,7 +82,7 @@ const TenantBranding = () => {
     })();
 
     return () => { cancelled = true; };
-  }, [tenantId, isLoadingPages]);
+  }, [tenantId, isLoadingPages, pages.length]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -148,10 +150,10 @@ const TenantBranding = () => {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-          <Palette className="h-6 w-6 text-primary" /> Branding &amp; Banner
+          <Palette className="h-6 w-6 text-primary" /> Branding &amp; Pages
         </h1>
         <p className="text-sm text-muted-foreground">
-          Manage your logo, brand colors, company info, and the custom banner subscribers see across the player portal.
+          Manage your logo, brand colors, company info, and the branded pages your subscribers see across the player portal.
         </p>
       </div>
 
@@ -231,27 +233,47 @@ const TenantBranding = () => {
       </Card>
 
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-heading uppercase tracking-widest text-muted-foreground">
-            Subscriber Banner
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <LayoutTemplate className="h-5 w-5" /> Branded Pages
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Your Portal Banner appears above every player portal page. Landing pages get their own public URL at
+            {" "}<code className="text-xs">/pages/{tenantInfo.tenantSlug ?? "&lt;tenant&gt;"}/&lt;slug&gt;</code>.
+          </p>
         </CardHeader>
         <CardContent>
-          {resolving || !bannerPageId ? (
+          {resolving ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            <WebPageEditor
-              pageId={bannerPageId}
-              tenantId={tenantId}
-              onBack={() => { /* stay on page */ }}
-              tenantBranding={{
-                logoUrl: tenantInfo?.logoUrl,
-                primaryColor: tenantInfo?.primaryColor,
-                accentColor: tenantInfo?.accentColor,
-              }}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
+              <BrandedPagesList
+                tenantId={tenantId}
+                selectedPageId={selectedPageId}
+                onSelect={setSelectedPageId}
+              />
+              <div className="min-w-0">
+                {selectedPageId ? (
+                  <WebPageEditor
+                    key={selectedPageId}
+                    pageId={selectedPageId}
+                    tenantId={tenantId}
+                    onBack={() => { /* list stays visible */ }}
+                    tenantBranding={{
+                      logoUrl: tenantInfo?.logoUrl,
+                      primaryColor: tenantInfo?.primaryColor,
+                      accentColor: tenantInfo?.accentColor,
+                    }}
+                  />
+                ) : (
+                  <Card><CardContent className="py-16 text-center text-muted-foreground text-sm">
+                    Pick a page from the list to start editing.
+                  </CardContent></Card>
+                )}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

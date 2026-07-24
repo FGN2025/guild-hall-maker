@@ -600,6 +600,201 @@
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "outputSchema": null
+      },
+      {
+        "name": "list_branded_pages",
+        "title": "List branded pages",
+        "description": "List every web_page belonging to a tenant: the always-on Portal Banner (is_tenant_banner=true) and any landing pages. Each row includes publish state, scheduling window, and section count so the agent can decide what to propose.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Tenant to list pages for. REQUIRED — do not omit."
+            }
+          },
+          "required": [
+            "tenant_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_page_templates",
+        "title": "List branded-page templates",
+        "description": "Return curated + universal starting points for landing pages. Each template is a name, category, description, preview image URL, and a JSON array of sections you can pass to propose_branded_page.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Optional — only used to scope future tenant-private templates; universal templates are returned to all tenants."
+            },
+            "category": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "propose_branded_page",
+        "title": "Propose a branded landing page (draft)",
+        "description": "Create a DRAFT web_pages row for a tenant with a supplied section array. Never publishes — is_published stays false, so a tenant admin has to hit Publish in the portal. Pass either template_id (to hydrate sections from a template) or sections (direct block array). Passing both replaces the template's sections with the supplied ones.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Owner tenant. REQUIRED."
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9-]+$"
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "template_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "sections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "section_type": {
+                    "type": "string",
+                    "enum": [
+                      "hero",
+                      "text_block",
+                      "image_gallery",
+                      "cta",
+                      "embed_widget",
+                      "banner",
+                      "video",
+                      "featured_events"
+                    ]
+                  },
+                  "config": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "default": {}
+                  }
+                },
+                "required": [
+                  "section_type"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 30
+            },
+            "idempotency_key": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tenant_id",
+            "title",
+            "slug"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "propose_portal_banner_update",
+        "title": "Propose an update to the portal-wide banner (draft only)",
+        "description": "Draft-edit the tenant's Portal Banner. Creates a DRAFT landing page containing the proposed banner sections; the live banner is never modified. A human must copy the approved sections into the banner via the tenant portal.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "sections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "section_type": {
+                    "type": "string",
+                    "enum": [
+                      "hero",
+                      "text_block",
+                      "image_gallery",
+                      "cta",
+                      "embed_widget",
+                      "banner",
+                      "video",
+                      "featured_events"
+                    ]
+                  },
+                  "config": {
+                    "type": "object",
+                    "additionalProperties": {},
+                    "default": {}
+                  }
+                },
+                "required": [
+                  "section_type"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 10
+            },
+            "proposal_reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "tenant_id",
+            "sections",
+            "proposal_reason"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
       }
     ]
   }
