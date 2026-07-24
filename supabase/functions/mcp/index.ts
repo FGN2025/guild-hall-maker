@@ -789,7 +789,14 @@ var propose_scheduled_post_default = defineTool15({
         idempotency_key: input.idempotency_key ?? null
       }).select().single();
       if (error) throw error;
-      return okJson(data, "scheduled_post");
+      const { data: conflict } = await supabase.rpc("check_schedule_conflict", {
+        _tenant_id: input.tenant_id,
+        _platform: input.platform,
+        _scheduled_at: when.toISOString(),
+        _exclude_id: data.id,
+        _window_seconds: 3600
+      });
+      return okJson({ ...data, conflict: conflict ?? null }, "scheduled_post");
     } catch (err) {
       return toolError(err, "propose_scheduled_post");
     }
@@ -843,7 +850,14 @@ var update_scheduled_post_default = defineTool16({
       const { data, error } = await supabase.from("scheduled_posts").update(patch).eq("id", id).select().maybeSingle();
       if (error) throw error;
       if (!data) return { content: [{ type: "text", text: "Scheduled post not editable in its current state." }], isError: true };
-      return okJson(data, "scheduled_post");
+      const { data: conflict } = await supabase.rpc("check_schedule_conflict", {
+        _tenant_id: data.tenant_id,
+        _platform: data.platform,
+        _scheduled_at: data.scheduled_at,
+        _exclude_id: data.id,
+        _window_seconds: 3600
+      });
+      return okJson({ ...data, conflict: conflict ?? null }, "scheduled_post");
     } catch (err) {
       return toolError(err, "update_scheduled_post");
     }

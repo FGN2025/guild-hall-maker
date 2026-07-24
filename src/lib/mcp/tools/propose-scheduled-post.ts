@@ -57,7 +57,17 @@ export default defineTool({
         .select()
         .single();
       if (error) throw error;
-      return okJson(data, "scheduled_post");
+
+      // Flag 2: return conflict info to the agent so it can reschedule immediately.
+      const { data: conflict } = await supabase.rpc("check_schedule_conflict", {
+        _tenant_id: input.tenant_id,
+        _platform: input.platform,
+        _scheduled_at: when.toISOString(),
+        _exclude_id: data.id,
+        _window_seconds: 3600,
+      });
+
+      return okJson({ ...data, conflict: conflict ?? null }, "scheduled_post");
     } catch (err) {
       return toolError(err, "propose_scheduled_post");
     }
