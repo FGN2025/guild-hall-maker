@@ -1,22 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
-import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
+import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-
-// Columns verified against live `public.challenges`: name, game_id, is_active,
-// points_reward, created_at all exist. There is NO `frequency` or `track`
-// column. RLS: non-mods only see rows where is_active = true; moderators and
-// admins bypass via the manage policy, so is_active=false queries require that
-// role.
-
-function supabaseForUser(ctx: ToolContext) {
-  const url = process.env.SUPABASE_URL!;
-  const anonKey =
-    process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
-  return createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+import { supabaseForUser } from "./_shared.ts";
 
 export default defineTool({
   name: "list_challenges",

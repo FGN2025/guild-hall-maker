@@ -5,17 +5,66 @@
 // src/lib/mcp/index.ts
 import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
 
-// src/lib/mcp/tools/get-me.ts
-import { createClient } from "npm:@supabase/supabase-js@^2.95.3";
+// supabase/functions/_shared/mcp-tools/get-me.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.2";
+
+// supabase/functions/_shared/mcp-tools/_shared.ts
+import { createClient } from "npm:@supabase/supabase-js@^2.95.3";
 function supabaseForUser(ctx) {
   const url = process.env.SUPABASE_URL;
+  const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const token = ctx.getToken();
+  if (svc && token === svc) {
+    return createClient(url, svc, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+  }
   const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
   return createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
+function supabaseServiceRole() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+function requireAuth(ctx) {
+  if (!ctx.isAuthenticated()) {
+    return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+  }
+  return null;
+}
+function toolError(err, name) {
+  const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
+  console.error(`[fgn-mcp] ${name} failed`, msg);
+  return { content: [{ type: "text", text: msg || "tool execution failed" }], isError: true };
+}
+function okJson(payload, key) {
+  return {
+    content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+    structuredContent: { [key]: payload }
+  };
+}
+function parseIsoWithOffset(input) {
+  const trimmed = input.trim();
+  const hasOffset = /(Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
+  if (!hasOffset) {
+    throw new Error(
+      `scheduled_at must be an ISO 8601 timestamp with an explicit timezone offset (e.g. 2026-07-24T14:00:00Z or 2026-07-24T14:00:00-05:00). Received: ${input}`
+    );
+  }
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`Invalid ISO 8601 timestamp: ${input}`);
+  }
+  return d;
+}
+
+// supabase/functions/_shared/mcp-tools/get-me.ts
 var get_me_default = defineTool({
   name: "get_me",
   title: "Get my profile",
@@ -64,18 +113,9 @@ var get_me_default = defineTool({
   }
 });
 
-// src/lib/mcp/tools/list-tournaments.ts
-import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.95.3";
+// supabase/functions/_shared/mcp-tools/list-tournaments.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z } from "npm:zod@^3.25.76";
-function supabaseForUser2(ctx) {
-  const url = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
-  return createClient2(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
 var list_tournaments_default = defineTool2({
   name: "list_tournaments",
   title: "List tournaments",
@@ -89,7 +129,7 @@ var list_tournaments_default = defineTool2({
       if (!ctx.isAuthenticated()) {
         return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
       }
-      const supabase = supabaseForUser2(ctx);
+      const supabase = supabaseForUser(ctx);
       const { data, error } = await supabase.from("tournaments").select("id, name, game, status, start_date, end_date").is("archived_at", null).order("start_date", { ascending: false }).limit(limit ?? 20);
       if (error) {
         return { content: [{ type: "text", text: error.message }], isError: true };
@@ -116,18 +156,9 @@ var list_tournaments_default = defineTool2({
   }
 });
 
-// src/lib/mcp/tools/list-challenges.ts
-import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.95.3";
+// supabase/functions/_shared/mcp-tools/list-challenges.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z2 } from "npm:zod@^3.25.76";
-function supabaseForUser3(ctx) {
-  const url = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
-  return createClient3(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
 var list_challenges_default = defineTool3({
   name: "list_challenges",
   title: "List challenges",
@@ -143,7 +174,7 @@ var list_challenges_default = defineTool3({
       if (!ctx.isAuthenticated()) {
         return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
       }
-      const supabase = supabaseForUser3(ctx);
+      const supabase = supabaseForUser(ctx);
       let q = supabase.from("challenges").select("id, name, game_id, is_active, points_reward, created_at").order("created_at", { ascending: false }).limit(limit ?? 25);
       if (game_id !== void 0) q = q.eq("game_id", game_id);
       if (is_active !== void 0) q = q.eq("is_active", is_active);
@@ -165,18 +196,9 @@ var list_challenges_default = defineTool3({
   }
 });
 
-// src/lib/mcp/tools/get-challenge.ts
-import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.95.3";
+// supabase/functions/_shared/mcp-tools/get-challenge.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z3 } from "npm:zod@^3.25.76";
-function supabaseForUser4(ctx) {
-  const url = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
-  return createClient4(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
 var get_challenge_default = defineTool4({
   name: "get_challenge",
   title: "Get challenge",
@@ -190,7 +212,7 @@ var get_challenge_default = defineTool4({
       if (!ctx.isAuthenticated()) {
         return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
       }
-      const supabase = supabaseForUser4(ctx);
+      const supabase = supabaseForUser(ctx);
       const [challengeRes, tasksRes] = await Promise.all([
         supabase.from("challenges").select("*").eq("id", id).maybeSingle(),
         supabase.from("challenge_tasks").select(
@@ -221,18 +243,9 @@ var get_challenge_default = defineTool4({
   }
 });
 
-// src/lib/mcp/tools/list-games.ts
-import { createClient as createClient5 } from "npm:@supabase/supabase-js@^2.95.3";
+// supabase/functions/_shared/mcp-tools/list-games.ts
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z4 } from "npm:zod@^3.25.76";
-function supabaseForUser5(ctx) {
-  const url = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
-  return createClient5(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
 var list_games_default = defineTool5({
   name: "list_games",
   title: "List games",
@@ -246,7 +259,7 @@ var list_games_default = defineTool5({
       if (!ctx.isAuthenticated()) {
         return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
       }
-      const supabase = supabaseForUser5(ctx);
+      const supabase = supabaseForUser(ctx);
       const { data, error } = await supabase.from("games").select("id, name, slug, category, platform_tags, is_active, display_order").order("display_order", { ascending: true }).order("name", { ascending: true }).limit(limit ?? 50);
       if (error) {
         return { content: [{ type: "text", text: error.message }], isError: true };
@@ -265,59 +278,8 @@ var list_games_default = defineTool5({
   }
 });
 
-// src/lib/mcp/tools/list-tenants.ts
+// supabase/functions/_shared/mcp-tools/list-tenants.ts
 import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.22.2";
-
-// src/lib/mcp/tools/_shared.ts
-import { createClient as createClient6 } from "npm:@supabase/supabase-js@^2.95.3";
-function supabaseForUser6(ctx) {
-  const url = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
-  return createClient6(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
-function supabaseServiceRole() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
-  return createClient6(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
-function requireAuth(ctx) {
-  if (!ctx.isAuthenticated()) {
-    return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
-  }
-  return null;
-}
-function toolError(err, name) {
-  const msg = err && typeof err === "object" && "message" in err ? String(err.message) : String(err);
-  console.error(`[fgn-mcp] ${name} failed`, msg);
-  return { content: [{ type: "text", text: msg || "tool execution failed" }], isError: true };
-}
-function okJson(payload, key) {
-  return {
-    content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-    structuredContent: { [key]: payload }
-  };
-}
-function parseIsoWithOffset(input) {
-  const trimmed = input.trim();
-  const hasOffset = /(Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
-  if (!hasOffset) {
-    throw new Error(
-      `scheduled_at must be an ISO 8601 timestamp with an explicit timezone offset (e.g. 2026-07-24T14:00:00Z or 2026-07-24T14:00:00-05:00). Received: ${input}`
-    );
-  }
-  const d = new Date(trimmed);
-  if (Number.isNaN(d.getTime())) {
-    throw new Error(`Invalid ISO 8601 timestamp: ${input}`);
-  }
-  return d;
-}
-
-// src/lib/mcp/tools/list-tenants.ts
 var list_tenants_default = defineTool6({
   name: "list_tenants",
   title: "List my tenants",
@@ -328,7 +290,7 @@ var list_tenants_default = defineTool6({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
       const { data: memberships, error: memErr } = await supabase.from("tenant_admins").select("tenant_id, role").eq("user_id", uid);
       if (memErr) throw memErr;
@@ -365,7 +327,7 @@ var list_tenants_default = defineTool6({
   }
 });
 
-// src/lib/mcp/tools/get-brand-kit.ts
+// supabase/functions/_shared/mcp-tools/get-brand-kit.ts
 import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z5 } from "npm:zod@^3.25.76";
 var get_brand_kit_default = defineTool7({
@@ -380,7 +342,7 @@ var get_brand_kit_default = defineTool7({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const { data: tenant, error } = await supabase.from("tenants").select("id, name, slug, logo_url, primary_color, accent_color, timezone, contact_email").eq("id", tenant_id).maybeSingle();
       if (error) throw error;
       if (!tenant) return { content: [{ type: "text", text: "Tenant not found or access denied" }], isError: true };
@@ -406,7 +368,7 @@ var get_brand_kit_default = defineTool7({
   }
 });
 
-// src/lib/mcp/tools/list-upcoming-events.ts
+// supabase/functions/_shared/mcp-tools/list-upcoming-events.ts
 import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z6 } from "npm:zod@^3.25.76";
 var list_upcoming_events_default = defineTool8({
@@ -422,7 +384,7 @@ var list_upcoming_events_default = defineTool8({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const windowDays = days ?? 30;
       const now = /* @__PURE__ */ new Date();
       const until = new Date(now.getTime() + windowDays * 864e5).toISOString();
@@ -441,7 +403,7 @@ var list_upcoming_events_default = defineTool8({
   }
 });
 
-// src/lib/mcp/tools/list-platform-templates.ts
+// supabase/functions/_shared/mcp-tools/list-platform-templates.ts
 import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z7 } from "npm:zod@^3.25.76";
 var list_platform_templates_default = defineTool9({
@@ -456,7 +418,7 @@ var list_platform_templates_default = defineTool9({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const { data, error } = await supabase.from("marketing_assets").select("id, campaign_id, file_path, url, label, width, height, display_order, created_at").order("created_at", { ascending: false }).limit(limit ?? 30);
       if (error) throw error;
       return okJson(data ?? [], "templates");
@@ -466,7 +428,7 @@ var list_platform_templates_default = defineTool9({
   }
 });
 
-// src/lib/mcp/tools/list-tenant-assets.ts
+// supabase/functions/_shared/mcp-tools/list-tenant-assets.ts
 import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z8 } from "npm:zod@^3.25.76";
 var list_tenant_assets_default = defineTool10({
@@ -484,7 +446,7 @@ var list_tenant_assets_default = defineTool10({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       let q = supabase.from("tenant_marketing_assets").select("id, tenant_id, campaign_id, file_name, url, label, is_published, agent_source, source_url, proposed_by, notes, created_at, updated_at").eq("tenant_id", tenant_id).order("created_at", { ascending: false }).limit(limit ?? 50);
       if (published_only) q = q.eq("is_published", true);
       if (agent_only) q = q.not("agent_source", "is", null);
@@ -497,7 +459,7 @@ var list_tenant_assets_default = defineTool10({
   }
 });
 
-// src/lib/mcp/tools/list-pending-agent-drafts.ts
+// supabase/functions/_shared/mcp-tools/list-pending-agent-drafts.ts
 import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z9 } from "npm:zod@^3.25.76";
 var list_pending_agent_drafts_default = defineTool11({
@@ -512,7 +474,7 @@ var list_pending_agent_drafts_default = defineTool11({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const thirtyDaysAgo = new Date(Date.now() - 30 * 864e5).toISOString();
       const { data: campaigns, error: cErr } = await supabase.from("marketing_campaigns").select("id, title, description, social_copy, status, feedback_note, target_platforms, source_event_id, source_tournament_id, agent_source, proposed_by, created_at, updated_at").eq("tenant_id", tenant_id).not("agent_source", "is", null).or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDaysAgo})`).order("updated_at", { ascending: false });
       if (cErr) throw cErr;
@@ -531,7 +493,7 @@ var list_pending_agent_drafts_default = defineTool11({
   }
 });
 
-// src/lib/mcp/tools/create-campaign-draft.ts
+// supabase/functions/_shared/mcp-tools/create-campaign-draft.ts
 import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z10 } from "npm:zod@^3.25.76";
 var create_campaign_draft_default = defineTool12({
@@ -557,7 +519,7 @@ var create_campaign_draft_default = defineTool12({
       if (input.source_event_id && input.source_tournament_id) {
         return { content: [{ type: "text", text: "Pass at most one of source_event_id or source_tournament_id." }], isError: true };
       }
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
       if (input.idempotency_key) {
         const { data: existing } = await supabase.from("marketing_campaigns").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
@@ -587,7 +549,7 @@ var create_campaign_draft_default = defineTool12({
   }
 });
 
-// src/lib/mcp/tools/update-campaign-draft.ts
+// supabase/functions/_shared/mcp-tools/update-campaign-draft.ts
 import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z11 } from "npm:zod@^3.25.76";
 var update_campaign_draft_default = defineTool13({
@@ -611,7 +573,7 @@ var update_campaign_draft_default = defineTool13({
       if (fields.source_event_id && fields.source_tournament_id) {
         return { content: [{ type: "text", text: "Pass at most one of source_event_id or source_tournament_id." }], isError: true };
       }
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const patch = {};
       for (const [k, v] of Object.entries(fields)) if (v !== void 0) patch[k] = v;
       if (Object.keys(patch).length === 0) {
@@ -627,7 +589,7 @@ var update_campaign_draft_default = defineTool13({
   }
 });
 
-// src/lib/mcp/tools/attach-tenant-asset-draft.ts
+// supabase/functions/_shared/mcp-tools/attach-tenant-asset-draft.ts
 import { defineTool as defineTool14 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z12 } from "npm:zod@^3.25.76";
 var MAX_BYTES = 20 * 1024 * 1024;
@@ -673,7 +635,7 @@ var attach_tenant_asset_draft_default = defineTool14({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const userSupabase = supabaseForUser6(ctx);
+      const userSupabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
       const resp = await fetch(input.source_url, { redirect: "follow" });
       if (!resp.ok) {
@@ -740,7 +702,7 @@ var attach_tenant_asset_draft_default = defineTool14({
   }
 });
 
-// src/lib/mcp/tools/propose-scheduled-post.ts
+// supabase/functions/_shared/mcp-tools/propose-scheduled-post.ts
 import { defineTool as defineTool15 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z13 } from "npm:zod@^3.25.76";
 var propose_scheduled_post_default = defineTool15({
@@ -762,7 +724,7 @@ var propose_scheduled_post_default = defineTool15({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
       let when;
       try {
@@ -803,7 +765,7 @@ var propose_scheduled_post_default = defineTool15({
   }
 });
 
-// src/lib/mcp/tools/update-scheduled-post.ts
+// supabase/functions/_shared/mcp-tools/update-scheduled-post.ts
 import { defineTool as defineTool16 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z14 } from "npm:zod@^3.25.76";
 var update_scheduled_post_default = defineTool16({
@@ -824,7 +786,7 @@ var update_scheduled_post_default = defineTool16({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
-      const supabase = supabaseForUser6(ctx);
+      const supabase = supabaseForUser(ctx);
       const { data: current, error: fetchErr } = await supabase.from("scheduled_posts").select("id, status").eq("id", id).maybeSingle();
       if (fetchErr) throw fetchErr;
       if (!current) return { content: [{ type: "text", text: "Scheduled post not found or access denied." }], isError: true };
@@ -864,6 +826,26 @@ var update_scheduled_post_default = defineTool16({
   }
 });
 
+// supabase/functions/_shared/mcp-tools/_registry.ts
+var tools = [
+  get_me_default,
+  list_tournaments_default,
+  list_challenges_default,
+  get_challenge_default,
+  list_games_default,
+  list_tenants_default,
+  get_brand_kit_default,
+  list_upcoming_events_default,
+  list_platform_templates_default,
+  list_tenant_assets_default,
+  list_pending_agent_drafts_default,
+  create_campaign_draft_default,
+  update_campaign_draft_default,
+  attach_tenant_asset_draft_default,
+  propose_scheduled_post_default,
+  update_scheduled_post_default
+];
+
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
 var mcp_default = defineMcp({
@@ -875,24 +857,7 @@ var mcp_default = defineMcp({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [
-    get_me_default,
-    list_tournaments_default,
-    list_challenges_default,
-    get_challenge_default,
-    list_games_default,
-    list_tenants_default,
-    get_brand_kit_default,
-    list_upcoming_events_default,
-    list_platform_templates_default,
-    list_tenant_assets_default,
-    list_pending_agent_drafts_default,
-    create_campaign_draft_default,
-    update_campaign_draft_default,
-    attach_tenant_asset_draft_default,
-    propose_scheduled_post_default,
-    update_scheduled_post_default
-  ]
+  tools
 });
 
 // lovable-mcp-supabase-entry.ts

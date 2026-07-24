@@ -3,10 +3,22 @@ import type { ToolContext } from "@lovable.dev/mcp-js";
 
 export function supabaseForUser(ctx: ToolContext): SupabaseClient {
   const url = process.env.SUPABASE_URL!;
+  const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const token = ctx.getToken();
+  // agent-mcp runner path: the synthetic ctx returns the service-role key
+  // (which under the signing-keys system is a non-JWT `sb_secret_...` string
+  // that supabase-js refuses to accept as a Bearer). Detect that case and
+  // use the service key as apikey directly; authorization already enforced
+  // upstream in agent-mcp (see SECURITY MODEL).
+  if (svc && token === svc) {
+    return createClient(url, svc, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
   const anonKey =
     process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
   return createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

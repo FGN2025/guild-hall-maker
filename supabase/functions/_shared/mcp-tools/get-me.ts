@@ -1,15 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
-import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
+import { defineTool } from "@lovable.dev/mcp-js";
+import { supabaseForUser } from "./_shared.ts";
 
-function supabaseForUser(ctx: ToolContext) {
-  const url = process.env.SUPABASE_URL!;
-  const anonKey =
-    process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
-  return createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 export default defineTool({
   name: "get_me",
