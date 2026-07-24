@@ -28,6 +28,7 @@ const sidebarItems = [
   { to: "/admin/legacy-users", label: "Legacy Import", icon: Archive },
   { to: "/admin/settings", label: "Settings", icon: Settings },
   { to: "/admin/agent-prompts", label: "Agent Prompts", icon: Bot },
+  { to: "/admin/universal-assets", label: "Universal Assets", icon: Globe },
   { to: "/admin/guide", label: "Admin Guide", icon: BookOpen },
 ];
 

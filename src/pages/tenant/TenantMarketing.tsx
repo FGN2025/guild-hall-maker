@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock, Bot } from "lucide-react";
+import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock, Bot, Globe } from "lucide-react";
 import AgentDraftsPanel from "@/components/tenant/AgentDraftsPanel";
 import AgentLaunchCard from "@/components/marketing/AgentLaunchCard";
 import RecentAgentRuns from "@/components/marketing/RecentAgentRuns";
@@ -19,9 +19,10 @@ import { useQuery } from "@tanstack/react-query";
 import TenantMarketingAssets from "./TenantMarketingAssets";
 import TenantCodes from "./TenantCodes";
 import TenantWebPages from "./TenantWebPages";
+import UniversalAssetsTab from "@/components/tenant/UniversalAssetsTab";
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 
-const VALID_TABS = ["campaigns", "assets", "codes", "webpages", "social", "scheduled", "agent"] as const;
+const VALID_TABS = ["campaigns", "assets", "universal", "codes", "webpages", "social", "scheduled", "agent"] as const;
 
 const TenantMarketing = () => {
   const { campaigns, isLoading } = useMarketingCampaigns(true);
@@ -108,6 +109,9 @@ const TenantMarketing = () => {
           </TabsTrigger>
           <TabsTrigger value="assets" className="gap-2 font-heading">
             <ImageIcon className="h-4 w-4" /> My Assets
+          </TabsTrigger>
+          <TabsTrigger value="universal" className="gap-2 font-heading">
+            <Globe className="h-4 w-4" /> Universal Assets
           </TabsTrigger>
           <TabsTrigger value="codes" className="gap-2 font-heading">
             <KeyRound className="h-4 w-4" /> Codes
@@ -210,6 +214,11 @@ const TenantMarketing = () => {
         <TabsContent value="assets">
           <TenantMarketingAssets embedded />
         </TabsContent>
+
+        <TabsContent value="universal">
+          <UniversalAssetsTab tenantId={tenantAdmin ?? null} />
+        </TabsContent>
+
 
         {/* Codes Tab */}
         <TabsContent value="codes">

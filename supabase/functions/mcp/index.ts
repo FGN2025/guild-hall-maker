@@ -409,19 +409,39 @@ import { z as z7 } from "npm:zod@^3.25.76";
 var list_platform_templates_default = defineTool9({
   name: "list_platform_templates",
   title: "List platform marketing templates",
-  description: "List published platform-wide marketing templates the agent can clone into a tenant's private library.",
+  description: "List published platform-wide marketing templates and universal assets the agent can clone into a tenant's private library. When tenant_id is supplied, each row includes `adopted` and `adopted_asset_id` so slate runs can propose localized treatments only for unadopted universal assets. Universal-only mode via universal_only=true.",
   inputSchema: {
+    tenant_id: z7.string().uuid().optional(),
+    universal_only: z7.boolean().optional(),
     limit: z7.number().int().min(1).max(100).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ limit }, ctx) => {
+  handler: async ({ tenant_id, universal_only, limit }, ctx) => {
     const guard = requireAuth(ctx);
     if (guard) return guard;
     try {
       const supabase = supabaseForUser(ctx);
-      const { data, error } = await supabase.from("marketing_assets").select("id, campaign_id, file_path, url, label, width, height, display_order, created_at").order("created_at", { ascending: false }).limit(limit ?? 30);
+      let q = supabase.from("marketing_assets").select("id, campaign_id, file_path, url, label, width, height, display_order, created_at, is_universal, universal_published_at, universal_title, universal_campaign_context, usage_notes").order("created_at", { ascending: false }).limit(limit ?? 30);
+      if (universal_only) q = q.eq("is_universal", true);
+      const { data, error } = await q;
       if (error) throw error;
-      return okJson(data ?? [], "templates");
+      let adoptionByAsset = {};
+      if (tenant_id && data && data.length > 0) {
+        const ids = data.map((r) => r.id);
+        const { data: adoptions } = await supabase.from("tenant_marketing_assets").select("id, source_asset_id").eq("tenant_id", tenant_id).in("source_asset_id", ids);
+        for (const a of adoptions ?? []) {
+          adoptionByAsset[a.source_asset_id] = {
+            adopted: true,
+            adopted_asset_id: a.id
+          };
+        }
+      }
+      const enriched = (data ?? []).map((r) => ({
+        ...r,
+        adopted: tenant_id ? Boolean(adoptionByAsset[r.id]) : void 0,
+        adopted_asset_id: tenant_id ? adoptionByAsset[r.id]?.adopted_asset_id ?? null : void 0
+      }));
+      return okJson(enriched, "templates");
     } catch (err) {
       return toolError(err, "list_platform_templates");
     }
@@ -852,7 +872,7 @@ var mcp_default = defineMcp({
   name: "fgn-mcp",
   title: "FGN Gaming Network",
   version: "0.1.0",
-  instructions: "Tools for the FGN gaming platform. Read-only: `get_me`, `list_tournaments`, `list_challenges`/`get_challenge`, `list_games`, `list_tenants`, `get_brand_kit`, `list_upcoming_events`, `list_platform_templates`, `list_tenant_assets`, `list_pending_agent_drafts`. Marketing agent (drafts only \u2014 nothing publishes without tenant admin approval): `create_campaign_draft`, `update_campaign_draft`, `attach_tenant_asset_draft` (downloads external URLs server-side into tenant storage), `propose_scheduled_post`, `update_scheduled_post`. Each turn: call `list_pending_agent_drafts` first and revise rejected work (address feedback_note) before proposing new drafts. Use `idempotency_key` on create/propose calls so retries never duplicate.",
+  instructions: "Tools for the FGN gaming platform. Read-only: `get_me`, `list_tournaments`, `list_challenges`/`get_challenge`, `list_games`, `list_tenants`, `get_brand_kit`, `list_upcoming_events`, `list_platform_templates` (pass `tenant_id` to see per-tenant `adopted` / `adopted_asset_id`; use `universal_only=true` for platform-wide universal assets), `list_tenant_assets`, `list_pending_agent_drafts`. Marketing agent (drafts only \u2014 nothing publishes without tenant admin approval): `create_campaign_draft`, `update_campaign_draft`, `attach_tenant_asset_draft` (downloads external URLs server-side into tenant storage; use the `url` of an unadopted universal asset as `source_url` and pass its id as `source_asset_id` to localize it into the tenant library), `propose_scheduled_post`, `update_scheduled_post`. Slate runs: prefer proposing localized treatments of unadopted universal assets before generating new imagery. Each turn: call `list_pending_agent_drafts` first and revise rejected work (address feedback_note) before proposing new drafts. Use `idempotency_key` on create/propose calls so retries never duplicate.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
