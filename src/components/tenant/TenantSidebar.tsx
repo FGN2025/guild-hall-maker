@@ -140,7 +140,9 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
                   ? location.pathname === "/tenant/marketing" && !currentSearch.includes("tab=webpages")
                   : item.to === "/tenant/subscribers"
                     ? location.pathname === "/tenant/subscribers" && !currentSearch.includes("tab=integrations")
-                    : location.pathname.startsWith(item.to);
+                    : item.to === "/tenant/branding"
+                      ? location.pathname === "/tenant/branding"
+                      : location.pathname.startsWith(item.to);
 
           const activeStyle = active && brandColor
             ? { color: brandColor, backgroundColor: hexToRgba(brandColor, 0.1), borderColor: hexToRgba(brandColor, 0.3) }
