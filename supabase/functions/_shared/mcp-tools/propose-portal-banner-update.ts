@@ -15,7 +15,7 @@ const SectionSchema = z.object({
  * directly. This tool clones the current banner's sections into a fresh
  * DRAFT landing page tagged with a "portal-banner-proposal" slug prefix,
  * and returns the draft page id. A tenant admin reviews it in
- * /tenant/branding and can copy the sections onto the live banner.
+ * /tenant/marketing?tab=webpages and can copy the sections onto the live banner.
  */
 export default defineTool({
   name: "propose_portal_banner_update",
@@ -60,7 +60,7 @@ export default defineTool({
 
       return okJson({
         ...(page as any),
-        note: "This is a DRAFT proposal page, not the live banner. A tenant admin must review and copy the sections onto the Portal Banner from /tenant/branding.",
+        note: "This is a DRAFT proposal page, not the live banner. A tenant admin must review and copy the sections onto the Portal Banner from /tenant/marketing?tab=webpages.",
       }, "proposal");
     } catch (err) {
       return toolError(err, "propose_portal_banner_update");

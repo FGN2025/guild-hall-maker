@@ -976,7 +976,7 @@ var propose_branded_page_default = defineTool19({
       return okJson({
         ...page,
         section_count: sections.length,
-        preview_hint: "Draft only \u2014 tenant admin must approve and publish via /tenant/branding."
+        preview_hint: "Draft only \u2014 tenant admin must approve and publish via /tenant/marketing?tab=webpages."
       }, "page");
     } catch (err) {
       return toolError(err, "propose_branded_page");
@@ -1036,7 +1036,7 @@ var propose_portal_banner_update_default = defineTool20({
       if (sErr) throw sErr;
       return okJson({
         ...page,
-        note: "This is a DRAFT proposal page, not the live banner. A tenant admin must review and copy the sections onto the Portal Banner from /tenant/branding."
+        note: "This is a DRAFT proposal page, not the live banner. A tenant admin must review and copy the sections onto the Portal Banner from /tenant/marketing?tab=webpages."
       }, "proposal");
     } catch (err) {
       return toolError(err, "propose_portal_banner_update");
