@@ -1,5 +1,4 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Image, Users, Trophy, ArrowLeft, KeyRound, Building2, Settings, Gamepad2, BookOpen, Calendar, Award, Megaphone, UserCheck, Archive, Globe, Target, ShieldCheck, Server, Cloud, LogOut, MessageSquare, Coins, Gift, Bot } from "lucide-react";
 // duplicate replaced above
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +27,7 @@ const sidebarItems = [
   { to: "/admin/steam", label: "Steam Integration", icon: Gamepad2 },
   { to: "/admin/legacy-users", label: "Legacy Import", icon: Archive },
   { to: "/admin/settings", label: "Settings", icon: Settings },
+  { to: "/admin/agent-prompts", label: "Agent Prompts", icon: Bot },
   { to: "/admin/guide", label: "Admin Guide", icon: BookOpen },
 ];
 
