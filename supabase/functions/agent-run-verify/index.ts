@@ -111,7 +111,9 @@ Deno.serve(async (req) => {
       await svc.from("agent_runs").delete().in("id", seedIds);
 
       // V5: kill switch off → 429
-      await svc.from("app_settings").update({ value: "false" }).eq("key", "agent_launches_enabled");
+      const upd = await svc.from("app_settings").update({ value: "false" }).eq("key", "agent_launches_enabled").select();
+      const readBack = await svc.from("app_settings").select("value").eq("key", "agent_launches_enabled").maybeSingle();
+      push("V5 disable write", true, { updated: upd.data, error: upd.error?.message, readBack: readBack.data });
       const v5 = await callAgentRun(adminU.token, { tenant_id: acmeId, mode: "single_campaign" });
       push("V5 kill switch disables launches", v5.status === 429 && /disabled/i.test(v5.body?.error ?? ""), v5);
       await svc.from("app_settings").update({ value: "true" }).eq("key", "agent_launches_enabled");
