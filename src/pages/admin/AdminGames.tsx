@@ -78,6 +78,13 @@ const SortableGameRow = ({
       )}
       <TableCell className="font-heading font-medium">{game.name}</TableCell>
       <TableCell><Badge variant="secondary" className="font-heading">{game.category}</Badge></TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          {game.supports_tournaments && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Tournaments">T</Badge>}
+          {game.supports_quests && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Quests">Q</Badge>}
+          {game.supports_challenges && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Challenges">C</Badge>}
+        </div>
+      </TableCell>
       <TableCell className="text-muted-foreground text-xs">{game.slug}</TableCell>
       <TableCell>
         <Switch
