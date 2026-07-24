@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import TenantMarketingAssets from "./TenantMarketingAssets";
 import TenantCodes from "./TenantCodes";
-import TenantWebPages from "./TenantWebPages";
+import WebPagesTab from "@/components/tenant/marketing/WebPagesTab";
 import UniversalAssetsTab from "@/components/tenant/UniversalAssetsTab";
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 
@@ -227,7 +227,7 @@ const TenantMarketing = () => {
 
         {/* Web Pages Tab */}
         <TabsContent value="webpages">
-          <TenantWebPages embedded />
+          <WebPagesTab />
         </TabsContent>
 
         {/* Social Accounts Tab */}

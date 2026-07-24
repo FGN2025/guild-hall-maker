@@ -45,14 +45,11 @@ const allSidebarItems = [
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin', 'manager'] },
   { to: "/tenant/subscribers?tab=integrations", label: "Integrations", icon: Plug, roles: ['admin', 'manager'] },
   { to: "/tenant/marketing", label: "Marketing", icon: Megaphone, roles: ['admin', 'manager', 'marketing'] },
-  { to: "/tenant/marketing?tab=webpages", label: "Web Pages", icon: Globe, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
   { to: "/tenant/codes", label: "Codes", icon: KeyRound, roles: ['admin'] },
-  
+
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin', 'manager'] },
   { to: "/tenant/branding", label: "Branded Assets", icon: Palette, roles: ['admin', 'manager', 'marketing'], indent: true },
-  { to: "/tenant/branding/banner", label: "Tenant Banner", icon: Radio, roles: ['admin', 'manager', 'marketing'], indent: true, deepIndent: true },
-  { to: "/tenant/branding/pages", label: "Tenant Landing Pages", icon: FileText, roles: ['admin', 'manager', 'marketing'], indent: true, deepIndent: true },
   { to: "/tenant/account", label: "Account", icon: CreditCard, roles: ['admin', 'manager'] },
   { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];

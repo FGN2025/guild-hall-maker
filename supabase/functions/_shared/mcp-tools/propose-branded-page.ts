@@ -78,7 +78,7 @@ export default defineTool({
       return okJson({
         ...(page as any),
         section_count: sections.length,
-        preview_hint: "Draft only — tenant admin must approve and publish via /tenant/branding.",
+        preview_hint: "Draft only — tenant admin must approve and publish via /tenant/marketing?tab=webpages.",
       }, "page");
     } catch (err) {
       return toolError(err, "propose_branded_page");

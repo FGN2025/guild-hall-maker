@@ -16,8 +16,11 @@ const ALLOWED_BANNER_SECTIONS = new Set(["hero", "banner", "cta"]);
  * Tenant Banner builder — single-page editor for the one
  * `is_tenant_banner=true` web_pages row. Auto-creates it on first visit.
  * Only Hero/Banner and CTA sections are permitted here.
+ *
+ * `embedded` hides the standalone page header so this can be dropped inside
+ * a Marketing sub-tab.
  */
-const TenantBanner = () => {
+const TenantBanner = ({ embedded = false }: { embedded?: boolean } = {}) => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId ?? null;
   const { pages, isLoadingPages, createPage, useSections, deleteSection } = useWebPages(tenantId);
@@ -75,17 +78,19 @@ const TenantBanner = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="gap-1 -ml-2 mb-2">
-          <Link to="/tenant/branding"><ArrowLeft className="h-4 w-4" /> Branded Assets</Link>
-        </Button>
-        <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-          <Radio className="h-6 w-6 text-primary" /> Tenant Banner
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          A single strip that appears above every player portal page for your subscribers. Only one banner per tenant.
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <Button asChild variant="ghost" size="sm" className="gap-1 -ml-2 mb-2">
+            <Link to="/tenant/marketing?tab=webpages"><ArrowLeft className="h-4 w-4" /> Marketing</Link>
+          </Button>
+          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+            <Radio className="h-6 w-6 text-primary" /> Tenant Banner
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            A single strip that appears above every player portal page for your subscribers. Only one banner per tenant.
+          </p>
+        </div>
+      )}
 
       {resolving || !bannerId ? (
         <Card>

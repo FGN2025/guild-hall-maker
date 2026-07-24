@@ -1,49 +1,80 @@
 ## Goal
 
-Split the current combined "Branded Pages" surface into two clearly separate builders under a new top-level **Branded Assets** hub, while keeping the underlying data model (single `web_pages` table with `is_tenant_banner` flag) unchanged.
+Eliminate the three overlapping surfaces for banner + landing pages. One home for authoring (Marketing), one home for brand theme (Branded Assets).
 
-## New hierarchy
+## Current problems
 
+1. **"Web Pages" appears twice in the sidebar** — as a top-level item AND as a Marketing tab, both pointing to the same route.
+2. **Marketing → Web Pages tab is read-only** — dead-end that forces navigation to Branded Assets to actually edit.
+3. **Banner and Landing Pages sit under Branded Assets** even though they are marketing artifacts, not brand identity.
+
+## Target structure
+
+**Sidebar (tenant)**
 ```text
+Dashboard
+Players
+Leads
+Events
+ZIP Codes
+Subscribers
+Integrations
+Marketing            ← single home for all page authoring
+Team
+Codes
 Settings
-  └─ Branded Assets            (sidebar entry, replaces "Branding & Banner")
-        ├─ Tenant Banner       (route: /tenant/branding/banner)
-        └─ Tenant Landing Pages (route: /tenant/branding/pages)
+  └ Branded Assets   ← brand identity ONLY (logo, colors, company info)
+Account
+Guide
 ```
 
-Company Logo, Brand Colors, and Company Info move to a small **Brand Identity** card that appears at the top of the Branded Assets hub (shared context for both builders) — not duplicated inside each sub-builder.
+**Marketing tabs**
+```text
+Campaigns | My Assets | Universal Assets | Codes | Web Pages | Social Accounts | Scheduled | Agent Drafts
+```
 
-## Pages
+The **Web Pages** tab becomes the full authoring surface with two sub-tabs:
+```text
+[ Banner ]  [ Landing Pages ]
+```
 
-1. **`/tenant/branding` — Branded Assets hub**
-   - Brand Identity card (Logo, Colors, Company Info) — moved from current TenantBranding.
-   - Two large navigation cards: "Tenant Banner" and "Tenant Landing Pages" with short descriptions and current status (banner published Y/N; landing page count).
+- **Banner sub-tab** — single-row editor for the `is_tenant_banner=true` row. Same UI currently at `/tenant/branding/banner` (Hero + CTA only, auto-init on first visit, video sections auto-purged).
+- **Landing Pages sub-tab** — list-plus-editor layout currently at `/tenant/branding/pages`. Left rail lists pages with New/Delete; right pane shows full `WebPageEditor` inline with scheduling, section picker, publish toggle, export.
 
-2. **`/tenant/branding/banner` — Tenant Banner builder**
-   - Single-page editor for the one `is_tenant_banner=true` row.
-   - Auto-creates the banner row on first visit (existing logic).
-   - Reuses `WebPageEditor` but with banner-appropriate copy ("This banner appears above every player portal page") and no slug field visible (slug is internal).
-   - No list UI, no "New page" button.
+## Changes
 
-3. **`/tenant/branding/pages` — Tenant Landing Pages**
-   - List of non-banner `web_pages` for the tenant with New / Delete / Publish toggle.
-   - Clicking a page opens `WebPageEditor` for that page (either inline two-column like today, or a `/tenant/branding/pages/:id` sub-route — will use the existing two-column pattern for minimal churn).
-   - Public URL hint: `/pages/<tenant>/<slug>`.
+### Sidebar (`src/components/tenant/TenantSidebar.tsx`)
+- Remove the top-level **Web Pages** item.
+- Remove the **Branded Assets → Tenant Banner** and **Tenant Landing Pages** nested items.
+- Keep **Settings → Branded Assets** as the sole nested item (brand identity hub).
 
-## Component changes
+### Marketing page (`src/pages/tenant/TenantMarketing.tsx`)
+- Replace the read-only card list inside the **Web Pages** tab with a new `<WebPagesTab />` that renders two internal sub-tabs (shadcn `Tabs`): Banner | Landing Pages.
+- Sub-tab state persists in URL as `?tab=webpages&sub=banner|pages` so agents/deep links still work.
 
-- **`TenantSidebar.tsx`**: Rename the Settings sub-item from "Branding & Banner" to "Branded Assets"; route stays `/tenant/branding`.
-- **`src/pages/tenant/TenantBranding.tsx`**: Becomes the hub (Brand Identity + two entry cards). Strip the Branded Pages list/editor block.
-- **`src/pages/tenant/TenantBanner.tsx`** (new): Banner-only builder using existing auto-create logic + `WebPageEditor`.
-- **`src/pages/tenant/TenantLandingPages.tsx`** (new): Landing-pages list + editor, filtered to `is_tenant_banner != true`.
-- **`src/components/branding/BrandedPagesList.tsx`**: Simplified to landing-pages only (drop the "Portal Banner" row) OR replaced by a lighter list component inside `TenantLandingPages`.
-- **`src/App.tsx`**: Add two new routes under the tenant guard.
+### New component: `src/components/tenant/marketing/WebPagesTab.tsx`
+- Wraps the existing `TenantBanner` body (banner sub-tab) and `TenantLandingPages` body (landing sub-tab).
+- Extract the current page bodies into reusable components (`BannerBuilder`, `LandingPagesBuilder`) so both the tab and any legacy route render the same thing.
 
-## Not changing
+### Branded Assets hub (`src/pages/tenant/TenantBranding.tsx`)
+- Remove the two navigation cards ("Configure Banner", "Manage Landing Pages").
+- Keep only Company Logo, Brand Colors, Company Info.
+- Add a small info banner: "Looking for your banner or landing pages? They live under Marketing → Web Pages."
 
-- Database schema, RLS, `useWebPages`, `useUserTenantBranding`, scheduling fields, `WebPageEditor` internals, MCP tools, `TenantBannerSlot` render on the portal.
-- Marketing agent prompt — tool names (`propose_portal_banner_update`, `propose_branded_page`) still map cleanly to the two sub-sections.
+### Routes (`src/App.tsx`)
+- Keep `/tenant/branding/banner` and `/tenant/branding/pages` as **redirects** to `/tenant/marketing?tab=webpages&sub=banner|pages` so existing bookmarks, agent-generated links, and MCP tool link outputs don't 404.
 
-## Open question
+### MCP tools (`supabase/functions/_shared/mcp-tools/`)
+- Update any tool descriptions or link outputs (e.g. `list_branded_pages`, `propose_branded_page`, `propose_portal_banner_update`) that reference `/tenant/branding/...` to point at the new Marketing URLs. Behavior unchanged, just link text.
 
-Would you like the **Brand Identity** card (Logo / Colors / Company Info) to live on the Branded Assets hub page, or move to its own "Brand Identity" sub-item alongside Tenant Banner and Tenant Landing Pages (three sub-items instead of two)?
+### No DB changes
+The `web_pages` table, `is_tenant_banner` flag, RLS policies, and triggers stay exactly as they are. This is pure UI consolidation.
+
+## Verification
+
+1. Sidebar shows no duplicate "Web Pages" and no Branded Assets sub-items.
+2. Marketing → Web Pages → Banner opens the full banner editor inline; edits save; scheduling works.
+3. Marketing → Web Pages → Landing Pages lists pages, New/Delete work, selecting a page opens the full editor inline.
+4. Visiting `/tenant/branding/banner` and `/tenant/branding/pages` redirects to the new tab URLs.
+5. Branded Assets page shows only brand identity + the pointer message.
+6. MCP `list_branded_pages` still returns correct data; any embedded links point to `/tenant/marketing?tab=webpages&sub=...`.
