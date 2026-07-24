@@ -29,7 +29,7 @@ interface Props {
   settingsLabel?: string;
 }
 
-const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding }: Props) => {
+const WebPageEditor = ({ pageId, tenantId, onBack, tenantBranding, bannerMode, titleOverride, settingsLabel }: Props) => {
   const { pages, useSections, updatePage, addSection, updateSection, deleteSection, reorderSections } = useWebPages(tenantId);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(pageId);
   const page = pages.find((p) => p.id === pageId);
