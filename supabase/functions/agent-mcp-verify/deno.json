@@ -1,6 +1,0 @@
-{
-  "imports": {
-    "jose": "npm:jose@5",
-    "@supabase/supabase-js": "npm:@supabase/supabase-js@2"
-  }
-}
