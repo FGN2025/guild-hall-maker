@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Plug, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe, Radio } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe, Radio } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -43,7 +43,6 @@ const allSidebarItems = [
   { to: "/tenant/events", label: "Events", icon: Calendar, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin, roles: ['admin', 'manager'] },
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin', 'manager'] },
-  { to: "/tenant/subscribers?tab=integrations", label: "Integrations", icon: Plug, roles: ['admin', 'manager'] },
   { to: "/tenant/marketing", label: "Marketing", icon: Megaphone, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/team", label: "Team", icon: UserCog, roles: ['admin'] },
   { to: "/tenant/codes", label: "Access Codes", icon: KeyRound, roles: ['admin'] },
@@ -124,22 +123,19 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
       </div>
       <nav className="flex-1 p-4 flex flex-col gap-1 overflow-y-auto">
         {sidebarItems.map((item) => {
-          const isIntegrationsLink = item.to.includes("?tab=integrations");
           const isWebPagesLink = item.to === "/tenant/marketing?tab=webpages";
           const currentSearch = location.search;
           const active = item.to === "/tenant"
             ? location.pathname === "/tenant"
-            : isIntegrationsLink
-              ? location.pathname === "/tenant/subscribers" && currentSearch.includes("tab=integrations")
-              : isWebPagesLink
-                ? location.pathname === "/tenant/marketing" && currentSearch.includes("tab=webpages")
-                : item.to === "/tenant/marketing"
-                  ? location.pathname === "/tenant/marketing" && !currentSearch.includes("tab=webpages")
-                  : item.to === "/tenant/subscribers"
-                    ? location.pathname === "/tenant/subscribers" && !currentSearch.includes("tab=integrations")
-                    : item.to === "/tenant/branding"
-                      ? location.pathname === "/tenant/branding"
-                      : location.pathname.startsWith(item.to);
+            : isWebPagesLink
+              ? location.pathname === "/tenant/marketing" && currentSearch.includes("tab=webpages")
+              : item.to === "/tenant/marketing"
+                ? location.pathname === "/tenant/marketing" && !currentSearch.includes("tab=webpages")
+                : item.to === "/tenant/subscribers"
+                  ? location.pathname === "/tenant/subscribers"
+                  : item.to === "/tenant/branding"
+                    ? location.pathname === "/tenant/branding"
+                    : location.pathname.startsWith(item.to);
 
           const activeStyle = active && brandColor
             ? { color: brandColor, backgroundColor: hexToRgba(brandColor, 0.1), borderColor: hexToRgba(brandColor, 0.3) }

@@ -13,15 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Upload, Plug, History, Download, FileText, Pencil, Trash2 } from "lucide-react";
+import { Search, Users, Upload, History, Download, FileText, Pencil, Trash2 } from "lucide-react";
 import { exportTableCSV, exportTablePDF, type ExportColumn } from "@/lib/exportUserData";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantSubscribers, type TenantSubscriber } from "@/hooks/useTenantSubscribers";
-import { useTenantIntegrations, type TenantIntegration } from "@/hooks/useTenantIntegrations";
 import { useSyncLogs } from "@/hooks/useSyncLogs";
 import SubscriberUploader from "@/components/tenant/SubscriberUploader";
-import IntegrationConfigCard from "@/components/tenant/IntegrationConfigCard";
-import BillingConfigDialog from "@/components/tenant/BillingConfigDialog";
 import SyncHistoryPanel from "@/components/tenant/SyncHistoryPanel";
 import EditSubscriberDialog from "@/components/tenant/EditSubscriberDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -37,7 +34,6 @@ const TenantSubscribers = () => {
   const tenantId = tenantInfo?.tenantId;
   const isAdmin = tenantInfo?.tenantRole === "admin";
   const { subscribers, isLoading, bulkInsert, updateSubscriber, deleteSubscriber } = useTenantSubscribers(tenantId);
-  const { integrations, saveIntegration, updateIntegration, triggerSync, deleteIntegration } = useTenantIntegrations(tenantId);
   const { logs: syncLogs, isLoading: syncLogsLoading } = useSyncLogs(tenantId);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "subscribers";
@@ -47,9 +43,6 @@ const TenantSubscribers = () => {
   const [search, setSearch] = useState("");
   const [subPage, setSubPage] = useState(1);
   const subPageSize = 25;
-  const [configDialogOpen, setConfigDialogOpen] = useState(false);
-  const [selectedIntegration, setSelectedIntegration] = useState<TenantIntegration | null>(null);
-  const [selectedProviderType, setSelectedProviderType] = useState<string>("nisc");
 
   // Edit/Delete state
   const [editSub, setEditSub] = useState<TenantSubscriber | null>(null);
@@ -92,12 +85,6 @@ const TenantSubscribers = () => {
 
   const exportRows = filtered.map(s => ({ ...s, name: [s.first_name, s.last_name].filter(Boolean).join(" ") }));
 
-  const availableIntegrations = [
-    { name: "NISC", providerType: "nisc", description: "National Information Solutions Cooperative — sync subscribers from your NISC billing system." },
-    { name: "GLDS", providerType: "glds", description: "GLDS billing system integration for subscriber data synchronization." },
-    { name: "FGN Academy", providerType: "fgn_academy", description: "FGN Academy LMS — automatically sync challenge completions, points, and player progress to fgn.academy." },
-  ];
-
   return (
     <div className="space-y-6">
       <div>
@@ -124,7 +111,6 @@ const TenantSubscribers = () => {
         <TabsList>
           <TabsTrigger value="subscribers" className="gap-2"><Users className="h-4 w-4" /> Subscribers</TabsTrigger>
           <TabsTrigger value="upload" className="gap-2"><Upload className="h-4 w-4" /> Upload</TabsTrigger>
-          <TabsTrigger value="integrations" className="gap-2"><Plug className="h-4 w-4" /> Integrations</TabsTrigger>
           <TabsTrigger value="sync-history" className="gap-2"><History className="h-4 w-4" /> Sync History</TabsTrigger>
         </TabsList>
 
@@ -222,69 +208,10 @@ const TenantSubscribers = () => {
           {tenantId && <SubscriberUploader tenantId={tenantId} onImport={(rows) => bulkInsert.mutate(rows as any)} isImporting={bulkInsert.isPending} />}
         </TabsContent>
 
-        <TabsContent value="integrations">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {availableIntegrations.map((integ) => {
-              const configured = integrations.find((i) => i.provider_type === integ.providerType);
-              return (
-                <IntegrationConfigCard
-                  key={integ.providerType}
-                  name={integ.name}
-                  providerType={integ.providerType}
-                  description={integ.description}
-                  isConfigured={!!configured}
-                  lastSyncAt={configured?.last_sync_at}
-                  lastSyncStatus={configured?.last_sync_status}
-                  lastSyncMessage={configured?.last_sync_message}
-                  onConfigure={
-                    integ.providerType === "fgn_academy" && configured
-                      ? undefined
-                      : () => {
-                          if (integ.providerType === "nisc" || integ.providerType === "glds") {
-                            setSelectedIntegration(configured || null);
-                            setSelectedProviderType(integ.providerType);
-                            setConfigDialogOpen(true);
-                          } else if (integ.providerType === "fgn_academy" && !configured && tenantId) {
-                            saveIntegration.mutate({
-                              tenant_id: tenantId,
-                              provider_type: "fgn_academy",
-                              display_name: "FGN Academy",
-                              additional_config: {},
-                            });
-                          }
-                        }
-                  }
-                  onSync={configured && integ.providerType !== "fgn_academy" ? () => triggerSync.mutate({ integrationId: configured.id, providerType: integ.providerType }) : undefined}
-                  isSyncing={triggerSync.isPending}
-                  onDisconnect={configured ? () => deleteIntegration.mutate(configured.id) : undefined}
-                  isDisconnecting={deleteIntegration.isPending}
-                />
-              );
-            })}
-          </div>
-        </TabsContent>
-
         <TabsContent value="sync-history">
           <SyncHistoryPanel logs={syncLogs} isLoading={syncLogsLoading} />
         </TabsContent>
       </Tabs>
-
-      {tenantId && (
-        <BillingConfigDialog
-          open={configDialogOpen}
-          onOpenChange={setConfigDialogOpen}
-          tenantId={tenantId}
-          providerType={selectedProviderType}
-          existing={selectedIntegration}
-          onSave={(data) => { saveIntegration.mutate(data as any, { onSuccess: () => setConfigDialogOpen(false) }); }}
-          onUpdate={(id, fields) => { updateIntegration.mutate({ id, ...fields } as any, { onSuccess: () => setConfigDialogOpen(false) }); }}
-          onTestConnection={async (integrationId) => {
-            const result = await triggerSync.mutateAsync({ integrationId, dryRun: true, providerType: selectedProviderType });
-            return result;
-          }}
-          isSaving={saveIntegration.isPending || updateIntegration.isPending}
-        />
-      )}
 
       <EditSubscriberDialog
         open={!!editSub}
