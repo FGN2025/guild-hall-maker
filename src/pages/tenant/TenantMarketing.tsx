@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock, Bot } from "lucide-react";
 import AgentDraftsPanel from "@/components/tenant/AgentDraftsPanel";
+import AgentLaunchCard from "@/components/marketing/AgentLaunchCard";
+import RecentAgentRuns from "@/components/marketing/RecentAgentRuns";
 import SocialAccountsManager from "@/components/marketing/SocialAccountsManager";
 import ScheduledPostsCalendar from "@/components/marketing/ScheduledPostsCalendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -29,6 +31,7 @@ const TenantMarketing = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { tenantInfo } = useTenantAdmin();
+  const tenantRole = tenantInfo?.tenantRole ?? "admin";
 
   const tabParam = searchParams.get("tab");
   const activeTab = (VALID_TABS as readonly string[]).includes(tabParam || "")
@@ -228,7 +231,13 @@ const TenantMarketing = () => {
           <ScheduledPostsCalendar tenantId={tenantAdmin} />
         </TabsContent>
 
-        <TabsContent value="agent">
+        <TabsContent value="agent" className="space-y-4">
+          {tenantAdmin && (
+            <>
+              <AgentLaunchCard tenantId={tenantAdmin} role={tenantRole} />
+              <RecentAgentRuns tenantId={tenantAdmin} />
+            </>
+          )}
           <AgentDraftsPanel tenantId={tenantAdmin} />
         </TabsContent>
       </Tabs>
