@@ -101,9 +101,6 @@ const TenantBranding = () => {
     );
   }
 
-  const banner = pages.find((p) => (p as any).is_tenant_banner);
-  const landingCount = pages.filter((p) => !(p as any).is_tenant_banner).length;
-
   return (
     <div className="space-y-6">
       <div>
@@ -111,60 +108,25 @@ const TenantBranding = () => {
           <Palette className="h-6 w-6 text-primary" /> Branded Assets
         </h1>
         <p className="text-sm text-muted-foreground">
-          Your brand identity, subscriber banner, and standalone landing pages — all in one place.
+          Your shared brand identity: logo, colors, and company info. These theme your banner and landing pages.
         </p>
       </div>
 
-      {/* Sub-section entry cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Link to="/tenant/branding/banner" className="block group">
-          <Card className="h-full transition border-border group-hover:border-primary group-hover:shadow-md">
-            <CardContent className="p-5 flex items-start gap-4">
-              <div className="h-11 w-11 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Radio className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-display text-base font-bold">Tenant Banner</h3>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  A single strip that appears above every player portal page for your subscribers.
-                </p>
-                <div className="mt-2 text-[11px] uppercase tracking-widest font-heading text-muted-foreground">
-                  {isLoadingPages
-                    ? "Loading…"
-                    : banner
-                      ? banner.is_published ? "Status: Published" : "Status: Draft"
-                      : "Status: Not initialized"}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="p-4 flex items-start gap-3">
+          <Megaphone className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <span className="font-heading font-semibold">Looking for your banner or landing pages?</span>{" "}
+            <span className="text-muted-foreground">They live under </span>
+            <Link to="/tenant/marketing?tab=webpages" className="text-primary hover:underline font-medium">
+              Marketing → Web Pages
+            </Link>
+            <span className="text-muted-foreground">.</span>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Link to="/tenant/branding/pages" className="block group">
-          <Card className="h-full transition border-border group-hover:border-primary group-hover:shadow-md">
-            <CardContent className="p-5 flex items-start gap-4">
-              <div className="h-11 w-11 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-display text-base font-bold">Tenant Landing Pages</h3>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Standalone branded pages published at <code className="text-[10px]">/pages/{tenantInfo.tenantSlug ?? "&lt;tenant&gt;"}/&lt;slug&gt;</code>.
-                </p>
-                <div className="mt-2 text-[11px] uppercase tracking-widest font-heading text-muted-foreground">
-                  {isLoadingPages ? "Loading…" : `${landingCount} page${landingCount === 1 ? "" : "s"}`}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
+
 
       {/* Brand Identity — shared context for both builders */}
       <Card>
