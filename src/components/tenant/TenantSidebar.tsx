@@ -50,6 +50,7 @@ const allSidebarItems = [
   { to: "/tenant/codes", label: "Codes", icon: KeyRound, roles: ['admin'] },
   { to: "/tenant/branding", label: "Branding & Banner", icon: Palette, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/settings", label: "Settings", icon: Settings, roles: ['admin', 'manager'] },
+  { to: "/tenant/account", label: "Account", icon: CreditCard, roles: ['admin', 'manager'] },
   { to: "/tenant/guide", label: "Guide", icon: BookOpen, roles: ['admin', 'manager', 'marketing'] },
 ];
 

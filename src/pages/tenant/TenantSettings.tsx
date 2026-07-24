@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,18 +12,13 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import CloudGamingConfigCard from "@/components/tenant/CloudGamingConfigCard";
 import CloudGamingSeatsCard from "@/components/tenant/CloudGamingSeatsCard";
-import TenantBillingCard from "@/components/tenant/TenantBillingCard";
 import { useTenantCloudGaming } from "@/hooks/useTenantCloudGaming";
-import { useTenantBilling } from "@/hooks/useTenantBilling";
 
 const TenantSettings = () => {
-  const { tenantInfo, isPlatformAdminMode } = useTenantAdmin();
-  const { isAdmin, roleLoading } = useAuth();
+  const { tenantInfo } = useTenantAdmin();
   const { config: cloudGamingConfig } = useTenantCloudGaming(tenantInfo?.tenantId);
-  const { isSubscribed } = useTenantBilling();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const [contactEmail, setContactEmail] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#00e5ff");
@@ -43,21 +36,9 @@ const TenantSettings = () => {
     }
   }, [tenantInfo]);
 
-  // Handle checkout redirect params
-  useEffect(() => {
-    const checkout = searchParams.get("checkout");
-    if (checkout === "success") {
-      toast.success("Subscription activated! Your billing is now set up.");
-      searchParams.delete("checkout");
-      setSearchParams(searchParams, { replace: true });
-    } else if (checkout === "canceled") {
-      toast.info("Checkout canceled. No charges were made.");
-      searchParams.delete("checkout");
-      setSearchParams(searchParams, { replace: true });
-    }
-  }, [searchParams, setSearchParams]);
-
   if (!tenantInfo) return null;
+
+
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -122,7 +103,7 @@ const TenantSettings = () => {
         </p>
       </div>
 
-      {!roleLoading && isAdmin && isPlatformAdminMode && !isSubscribed && <TenantBillingCard />}
+
 
       <Card>
         <CardHeader>
