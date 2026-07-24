@@ -131,10 +131,10 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
           </div>
           <div>
             <Label>Archetype (optional)</Label>
-            <Select value={archetype} onValueChange={setArchetype}>
+            <Select value={archetype || "__none__"} onValueChange={(v) => setArchetype(v === "__none__" ? "" : v)}>
               <SelectTrigger><SelectValue placeholder="Auto-select" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Auto-select</SelectItem>
+                <SelectItem value="__none__">Auto-select</SelectItem>
                 {ARCHETYPES.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -143,10 +143,10 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
 
         <div>
           <Label>Anchor event (optional)</Label>
-          <Select value={anchor} onValueChange={setAnchor}>
+          <Select value={anchor || "__none__"} onValueChange={(v) => setAnchor(v === "__none__" ? "" : v)}>
             <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="__none__">None</SelectItem>
               {events.map((e) => <SelectItem key={e.key} value={e.key}>{e.label}</SelectItem>)}
             </SelectContent>
           </Select>
