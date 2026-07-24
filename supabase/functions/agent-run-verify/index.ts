@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       const seedErrs: string[] = [];
       for (let i = 0; i < 2; i++) {
         const { data, error } = await svc.from("agent_runs").insert({
-          tenant_id: acmeId, launched_by: adminU.id, status: "succeeded",
+          tenant_id: acmeId, launched_by: adminU.id, status: "completed",
           mode: "single_campaign", turn_cap: 40, started_at: now, finished_at: now,
           agent_name: "marketing_agent", prompt_version: 1,
         }).select("id").single();

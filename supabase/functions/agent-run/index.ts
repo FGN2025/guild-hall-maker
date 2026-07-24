@@ -211,7 +211,7 @@ async function runAgentLoop(opts: {
     const toolUses = content.filter((c: any) => c.type === "tool_use");
     if (toolUses.length === 0) {
       finalText = content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n\n");
-      return { status: "succeeded" as const, turns, inputTokens, outputTokens, finalText };
+      return { status: "completed" as const, turns, inputTokens, outputTokens, finalText };
     }
 
     const toolResults: any[] = [];
@@ -330,8 +330,8 @@ Deno.serve(async (req) => {
         created_row_ids: created,
         finished_at: new Date().toISOString(),
       };
-      if (result.status === "succeeded") {
-        patch.status = "succeeded";
+      if (result.status === "completed") {
+        patch.status = "completed";
         await updateRun(run.id, patch);
         await enqueueNotify(tenant_id, "agent_run_complete", { ...run, ...patch });
       } else {
