@@ -648,6 +648,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     addText,
     addShape,
     applyTemplate,
+    hydrateOverlays,
     updateOverlay,
     deleteOverlay,
     reorderOverlay,
