@@ -162,46 +162,9 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     setReviewOpen(true);
   }
 
-  const decide = useMutation({
-    mutationFn: async ({ row, approve }: { row: DraftRow; approve: boolean }) => {
-      const table =
-        row.kind === "campaign" ? "marketing_campaigns" :
-        row.kind === "scheduled_post" ? "scheduled_posts" : "tenant_marketing_assets";
-      const note = feedbackById[row.id]?.trim() || null;
+  const onDecide = (row: DraftRow, approve: boolean) =>
+    decide.mutate({ row, approve, note: feedbackById[row.id] });
 
-      let patch: Record<string, unknown>;
-      if (row.kind === "asset") {
-        patch = approve
-          ? { is_published: true, notes: note ?? row.description ?? null }
-          : { notes: note ? `[Rejected] ${note}` : "[Rejected]" };
-      } else if (row.kind === "scheduled_post") {
-        patch = approve
-          ? { status: "pending", feedback_note: note }
-          : { status: "rejected", feedback_note: note };
-      } else {
-        patch = approve
-          ? { status: "approved", is_published: true, feedback_note: note }
-          : { status: "rejected", feedback_note: note };
-      }
-
-      const { data, error } = await supabase
-        .from(table as any)
-        .update(patch)
-        .eq("id", row.id)
-        .select("id");
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        throw new Error(
-          `Update was blocked (0 rows changed). This usually means your session lost permission on this ${row.kind.replace("_", " ")} — try signing out and back in, then re-approving.`,
-        );
-      }
-    },
-    onSuccess: (_d, vars) => {
-      toast.success(vars.approve ? "Approved" : "Rejected with feedback");
-      qc.invalidateQueries({ queryKey: ["agent_drafts", tenantId] });
-    },
-    onError: (err: any) => toast.error(err?.message ?? "Update failed"),
-  });
 
   if (!tenantId) {
     return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Join a tenant to see agent drafts.</CardContent></Card>;
