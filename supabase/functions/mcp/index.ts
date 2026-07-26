@@ -648,7 +648,9 @@ var attach_tenant_asset_draft_default = defineTool14({
     label: z12.string().optional().describe("Format label, e.g. 'Square 1080', 'Story 1080x1920'."),
     campaign_id: z12.string().uuid().optional(),
     source_asset_id: z12.string().uuid().optional().describe("Platform template id if this was cloned from marketing_assets."),
-    notes: z12.string().optional()
+    notes: z12.string().optional(),
+    overlay_config: z12.record(z12.any()).optional().describe("Optional editor overlay config { canvas, overlays } so the draft reopens as editable layers."),
+    background_url: z12.string().url().optional().describe("Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url.")
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {

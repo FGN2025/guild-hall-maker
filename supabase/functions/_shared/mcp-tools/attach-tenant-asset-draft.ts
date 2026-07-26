@@ -41,6 +41,8 @@ export default defineTool({
     campaign_id: z.string().uuid().optional(),
     source_asset_id: z.string().uuid().optional().describe("Platform template id if this was cloned from marketing_assets."),
     notes: z.string().optional(),
+    overlay_config: z.record(z.any()).optional().describe("Optional editor overlay config { canvas, overlays } so the draft reopens as editable layers."),
+    background_url: z.string().url().optional().describe("Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {
