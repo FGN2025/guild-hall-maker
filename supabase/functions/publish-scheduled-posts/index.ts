@@ -14,16 +14,34 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "";
     const cronSecret = Deno.env.get("SCHEDULED_POSTS_CRON_SECRET") ?? "";
 
+    // Accept:
+    //  - Bearer <service role key> (server-to-server)
+    //  - Bearer <SCHEDULED_POSTS_CRON_SECRET> (dedicated cron)
+    //  - Bearer <JWT> where the payload role is 'anon' or 'service_role'
+    //    (standard pg_cron invocation from this project, which sends the
+    //    project's anon/publishable key — verify_jwt=false so we validate here).
     const authHeader = req.headers.get("Authorization") || "";
-    const accepted = new Set(
-      [serviceKey, anonKey, publishableKey, cronSecret].filter(Boolean).map((k) => `Bearer ${k}`),
-    );
-    if (!accepted.has(authHeader)) {
-      console.log(`[publish-scheduled-posts] unauthorized invocation (auth prefix=${authHeader.slice(0, 16)}...)`);
+    let authorized = false;
+    if (authHeader === `Bearer ${serviceKey}` || (cronSecret && authHeader === `Bearer ${cronSecret}`)) {
+      authorized = true;
+    } else if (authHeader.startsWith("Bearer eyJ")) {
+      try {
+        const token = authHeader.slice("Bearer ".length);
+        const parts = token.split(".");
+        if (parts.length >= 2) {
+          const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+          const pad = b64.length % 4 === 0 ? "" : "=".repeat(4 - (b64.length % 4));
+          const payload = JSON.parse(atob(b64 + pad));
+          if (payload.role === "service_role" || payload.role === "anon") {
+            authorized = true;
+          }
+        }
+      } catch (_) { /* fall through */ }
+    }
+    if (!authorized) {
+      console.log(`[publish-scheduled-posts] unauthorized invocation (auth prefix=${authHeader.slice(0, 20)}...)`);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
