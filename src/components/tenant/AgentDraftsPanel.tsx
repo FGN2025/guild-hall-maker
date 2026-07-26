@@ -53,10 +53,10 @@ interface LinkedAsset {
 }
 
 export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null | undefined }) {
-  const qc = useQueryClient();
   const [feedbackById, setFeedbackById] = useState<Record<string, string>>({});
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewAsset, setReviewAsset] = useState<AssetReviewItem | null>(null);
+  const decide = useDraftDecision(tenantId);
 
   const { data, isLoading } = useQuery({
     queryKey: ["agent_drafts", tenantId],
