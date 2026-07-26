@@ -46,9 +46,12 @@ export function useSocialConnections(tenantId?: string | null) {
       refresh_token?: string;
       token_expires_at?: string;
     }) => {
+      if (!tenantId) {
+        throw new Error("No tenant context — cannot create a social connection without a tenant.");
+      }
       const { error } = await supabase.from("social_connections" as any).insert({
         user_id: user!.id,
-        tenant_id: tenantId ?? null,
+        tenant_id: tenantId,
         platform: input.platform,
         account_name: input.account_name,
         access_token: input.access_token,

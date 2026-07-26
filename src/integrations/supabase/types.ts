@@ -3768,7 +3768,7 @@ export type Database = {
           page_id: string | null
           platform: string
           refresh_token: string | null
-          tenant_id: string | null
+          tenant_id: string
           token_expires_at: string | null
           updated_at: string | null
           user_id: string
@@ -3782,7 +3782,7 @@ export type Database = {
           page_id?: string | null
           platform: string
           refresh_token?: string | null
-          tenant_id?: string | null
+          tenant_id: string
           token_expires_at?: string | null
           updated_at?: string | null
           user_id: string
@@ -3796,7 +3796,7 @@ export type Database = {
           page_id?: string | null
           platform?: string
           refresh_token?: string | null
-          tenant_id?: string | null
+          tenant_id?: string
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string
