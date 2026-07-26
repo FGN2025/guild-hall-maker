@@ -19,7 +19,12 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   linkedin: <Linkedin className="h-4 w-4" />,
 };
 
-const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
+  pending_review: {
+    label: "Awaiting approval",
+    variant: "outline",
+    className: "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-300",
+  },
   pending: { label: "Scheduled", variant: "secondary" },
   published: { label: "Published", variant: "default" },
   failed: { label: "Failed", variant: "destructive" },
@@ -42,7 +47,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
     : [];
 
   const pendingDates = posts
-    .filter((p) => p.status === "pending")
+    .filter((p) => p.status === "pending" || p.status === "pending_review")
     .map((p) => parseISO(p.scheduled_at));
 
   const handleCancel = async (id: string) => {
@@ -116,7 +121,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{PLATFORM_LABELS[post.platform]}</span>
-                        <Badge variant={status.variant} className="text-[10px]">{status.label}</Badge>
+                        <Badge variant={status.variant} className={cn("text-[10px]", status.className)}>{status.label}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -154,7 +159,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{PLATFORM_LABELS[detailPost.platform]}</span>
-                  <Badge variant={STATUS_STYLES[detailPost.status]?.variant || "secondary"}>
+                  <Badge variant={STATUS_STYLES[detailPost.status]?.variant || "secondary"} className={STATUS_STYLES[detailPost.status]?.className}>
                     {STATUS_STYLES[detailPost.status]?.label || detailPost.status}
                   </Badge>
                 </div>
