@@ -8,102 +8,39 @@ import { Button } from "@/components/ui/button";
 import { Search, Calendar, Megaphone, Zap, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import AssetEditorDialog from "@/components/media/AssetEditorDialog";
-import type { TextOverlay } from "@/hooks/canvas/canvasTypes";
+import AssetEditorDialog, { type AssetSaveMeta, type SavedOverlayConfig } from "@/components/media/AssetEditorDialog";
 import type { TenantEvent } from "@/hooks/useTenantEvents";
-
-type PromoData = {
-  imageUrl: string;
-  texts: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>;
-};
-
-export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: string | null): PromoData {
-  const imageUrl = e.image_url || "";
-  const dateStr = e.start_date ? format(new Date(e.start_date), "MMMM d, yyyy") : "";
-  const texts: PromoData["texts"] = [
-    { text: e.name.toUpperCase(), xPct: 0.05, yPct: 0.65, x: 40, y: 390, fontSize: 42, color: "#ffffff", fontFamily: "sans-serif" },
-    { text: e.game || "Event", xPct: 0.05, yPct: 0.76, x: 40, y: 456, fontSize: 22, color: "#cccccc", fontFamily: "sans-serif" },
-  ];
-  if (dateStr) {
-    texts.push({ text: dateStr, xPct: 0.05, yPct: 0.83, x: 40, y: 498, fontSize: 20, color: "#aaaaaa", fontFamily: "sans-serif" });
-  }
-  if (e.prize_pool) {
-    texts.push({ text: `Prize: ${e.prize_pool}`, xPct: 0.05, yPct: 0.89, x: 40, y: 534, fontSize: 20, color: tenantPrimaryColor || "#ffd700", fontFamily: "sans-serif" });
-  }
-  return { imageUrl, texts };
-}
-
-/** Renders promo data onto an offscreen canvas and returns a PNG blob */
-export async function renderPromoToBlob(promo: PromoData, width = 1200, height = 628): Promise<Blob> {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d")!;
-
-  // Draw background image or solid dark fill
-  if (promo.imageUrl) {
-    try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const i = new Image();
-        i.crossOrigin = "anonymous";
-        i.onload = () => resolve(i);
-        i.onerror = reject;
-        i.src = promo.imageUrl;
-      });
-      // Cover-fit the image
-      const scale = Math.max(width / img.width, height / img.height);
-      const sw = img.width * scale;
-      const sh = img.height * scale;
-      ctx.drawImage(img, (width - sw) / 2, (height - sh) / 2, sw, sh);
-    } catch {
-      ctx.fillStyle = "#1a1a2e";
-      ctx.fillRect(0, 0, width, height);
-    }
-  } else {
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, 0, width, height);
-  }
-
-  // Dark gradient overlay for text readability
-  const grad = ctx.createLinearGradient(0, height * 0.4, 0, height);
-  grad.addColorStop(0, "rgba(0,0,0,0)");
-  grad.addColorStop(1, "rgba(0,0,0,0.85)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, width, height);
-
-  // Draw text overlays
-  for (const t of promo.texts) {
-    const x = t.xPct != null ? t.xPct * width : t.x;
-    const y = t.yPct != null ? t.yPct * height : t.y;
-    const fontSize = Math.round(t.fontSize * (width / 800));
-    ctx.font = `bold ${fontSize}px ${t.fontFamily}`;
-    ctx.fillStyle = t.color;
-    ctx.textBaseline = "top";
-    // Shadow for readability
-    ctx.shadowColor = "rgba(0,0,0,0.6)";
-    ctx.shadowBlur = 6;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-    ctx.fillText(t.text, x, y);
-    ctx.shadowColor = "transparent";
-  }
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Failed to create blob"))), "image/png");
-  });
-}
+import { composePromoLayout, promoSceneToEditorTexts, type PromoScene } from "@/lib/promo/composePromoLayout";
+import { renderPromoSceneToBlob } from "@/lib/promo/renderPromoBrowser";
 
 interface TenantPromoPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tenantId: string;
-  onSave: (blob: Blob) => Promise<void>;
+  onSave: (blob: Blob, meta?: AssetSaveMeta) => Promise<void>;
   tenantPrimaryColor?: string | null;
+}
+
+/** Legacy helpers preserved for existing imports elsewhere in the codebase.
+ *  Internally they delegate to the shared composer so human and agent output
+ *  stay pixel-identical (layout parity). */
+export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: string | null): PromoScene {
+  const scene = composePromoLayout({
+    event: { name: e.name, game: e.game, start_date: e.start_date, prize_pool: e.prize_pool },
+    tenantPrimaryColor,
+    format: "landscape", // legacy default matched the old 1200x628 render
+  });
+  scene.backgroundUrl = e.image_url || null;
+  return scene;
+}
+
+export async function renderPromoToBlob(scene: PromoScene): Promise<Blob> {
+  return renderPromoSceneToBlob(scene);
 }
 
 export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, tenantPrimaryColor }: TenantPromoPickerDialogProps) {
   const [search, setSearch] = useState("");
-  const [selectedPromo, setSelectedPromo] = useState<PromoData | null>(null);
+  const [selectedScene, setSelectedScene] = useState<PromoScene | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
 
   const { data: events = [] } = useQuery({
@@ -127,12 +64,30 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
     return e.name.toLowerCase().includes(q) || (e.game || "").toLowerCase().includes(q);
   });
 
+  const sceneToOverlayConfig = (scene: PromoScene): SavedOverlayConfig => ({
+    canvas: { format: scene.format, width: scene.width, height: scene.height },
+    overlays: promoSceneToEditorTexts(scene).map((t) => ({
+      id: crypto.randomUUID(),
+      type: "text",
+      text: t.text,
+      x: t.x,
+      y: t.y,
+      fontSize: t.fontSize,
+      color: t.color,
+      fontFamily: t.fontFamily,
+      fontWeight: t.fontWeight,
+    })),
+  });
+
   const handleQuickCreate = async (evt: TenantEvent) => {
     setQuickCreating(evt.id);
     try {
-      const promo = buildTenantEventPromo(evt, tenantPrimaryColor);
-      const blob = await renderPromoToBlob(promo);
-      await onSave(blob);
+      const scene = buildTenantEventPromo(evt, tenantPrimaryColor);
+      const blob = await renderPromoSceneToBlob(scene);
+      await onSave(blob, {
+        overlayConfig: sceneToOverlayConfig(scene),
+        backgroundUrl: scene.backgroundUrl,
+      });
       toast.success("Promo created and saved!");
       onOpenChange(false);
     } catch (err: any) {
@@ -142,14 +97,14 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
     }
   };
 
-  if (selectedPromo) {
+  if (selectedScene) {
     return (
       <AssetEditorDialog
         open
-        onOpenChange={(o) => { if (!o) { setSelectedPromo(null); onOpenChange(false); } }}
-        baseImageUrl={selectedPromo.imageUrl}
+        onOpenChange={(o) => { if (!o) { setSelectedScene(null); onOpenChange(false); } }}
+        baseImageUrl={selectedScene.backgroundUrl ?? undefined}
         onSave={onSave}
-        initialTexts={selectedPromo.texts}
+        initialOverlayConfig={sceneToOverlayConfig(selectedScene)}
       />
     );
   }
@@ -207,7 +162,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setSelectedPromo(buildTenantEventPromo(evt, tenantPrimaryColor))}
+                  onClick={() => setSelectedScene(buildTenantEventPromo(evt, tenantPrimaryColor))}
                   title="Open in editor"
                 >
                   <Pencil className="h-3.5 w-3.5" />
