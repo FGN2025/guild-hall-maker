@@ -7,6 +7,7 @@
 // Kept in _shared/ so both the compose-event-promo MCP tool and any future
 // server surface (e.g. a preview endpoint) share one code path.
 
+// @ts-expect-error Deno npm specifier resolved at runtime via import map
 import { Resvg, initWasm } from "npm:@resvg/resvg-wasm@2.6.2";
 import type { PromoScene } from "../../../../src/lib/promo/composePromoLayout.ts";
 
