@@ -167,12 +167,15 @@ const SocialAccountsManager = ({ tenantId }: Props) => {
             </div>
             {connectDialog === "facebook" && (
               <div>
-                <Label>Page ID <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Label>Page ID <span className="text-destructive text-xs">(required)</span></Label>
                 <Input
                   placeholder="e.g. 123456789"
                   value={form.page_id}
                   onChange={(e) => setForm({ ...form, page_id: e.target.value })}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Publishing to Facebook requires the numeric Page ID. Find it under your Page's About → Page transparency.
+                </p>
               </div>
             )}
           </div>
