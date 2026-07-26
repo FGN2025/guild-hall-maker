@@ -93,6 +93,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     addText,
     addShape,
     applyTemplate,
+    hydrateOverlays,
     updateOverlay,
     deleteOverlay,
     reorderOverlay,
@@ -125,6 +126,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const appliedInitialRef = useRef(false);
+  const hydratedRef = useRef(false);
 
   // Social publishing state
   const { connections } = useSocialConnections();
