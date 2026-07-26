@@ -474,6 +474,16 @@
             },
             "notes": {
               "type": "string"
+            },
+            "overlay_config": {
+              "type": "object",
+              "additionalProperties": {},
+              "description": "Optional editor overlay config { canvas, overlays } so the draft reopens as editable layers."
+            },
+            "background_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url."
             }
           },
           "required": [

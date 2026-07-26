@@ -592,11 +592,29 @@ const TenantEvents = () => {
         <AssetEditorDialog
           open={!!promoEvent}
           onOpenChange={(o) => { if (!o) setPromoEvent(null); }}
-          baseImageUrl={promoData.imageUrl}
-          initialTexts={promoData.texts}
-          onSave={async (blob) => {
+          baseImageUrl={promoData.backgroundUrl ?? undefined}
+          initialOverlayConfig={{
+            canvas: { format: promoData.format, width: promoData.width, height: promoData.height },
+            overlays: promoData.texts.map((t) => ({
+              id: crypto.randomUUID(),
+              type: "text",
+              text: t.text,
+              x: Math.round(t.xPct * promoData.width),
+              y: Math.round(t.yPct * promoData.height),
+              fontSize: t.fontSize,
+              color: t.color,
+              fontFamily: "sans-serif",
+              fontWeight: t.fontWeight ?? "normal",
+            })),
+          }}
+          onSave={async (blob, meta) => {
             const file = new File([blob], `event-promo-${Date.now()}.png`, { type: "image/png" });
-            await uploadAsset.mutateAsync({ file, label: `${promoEvent!.name} Promo` });
+            await uploadAsset.mutateAsync({
+              file,
+              label: `${promoEvent!.name} Promo`,
+              overlayConfig: meta?.overlayConfig ?? null,
+              backgroundUrl: meta?.backgroundUrl ?? null,
+            });
           }}
         />
       )}

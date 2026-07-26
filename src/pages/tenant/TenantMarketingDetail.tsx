@@ -162,13 +162,15 @@ const TenantMarketingDetail = () => {
           open={!!editorAssetUrl}
           onOpenChange={(open) => { if (!open) { setEditorAssetUrl(null); setEditorAssetMeta(null); } }}
           baseImageUrl={editorAssetUrl}
-          onSave={async (blob) => {
+          onSave={async (blob, meta) => {
             const file = new File([blob], `customized-${Date.now()}.png`, { type: "image/png" });
             await uploadAsset.mutateAsync({
               file,
               label: `${editorAssetMeta.label} (customized)`,
               sourceAssetId: editorAssetMeta.id,
               campaignId: campaign.id,
+              overlayConfig: meta?.overlayConfig ?? null,
+              backgroundUrl: meta?.backgroundUrl ?? null,
             });
           }}
         />

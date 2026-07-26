@@ -23,9 +23,14 @@ const TenantMarketingAssets = ({ embedded }: { embedded?: boolean }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [editorAsset, setEditorAsset] = useState<TenantMarketingAsset | null>(null);
 
-  const handlePromoSave = async (blob: Blob) => {
+  const handlePromoSave = async (blob: Blob, meta?: { overlayConfig?: Record<string, any>; backgroundUrl?: string | null }) => {
     const file = new File([blob], `event-promo-${Date.now()}.png`, { type: "image/png" });
-    await uploadAsset.mutateAsync({ file, label: "Event Promo" });
+    await uploadAsset.mutateAsync({
+      file,
+      label: "Event Promo",
+      overlayConfig: meta?.overlayConfig ?? null,
+      backgroundUrl: meta?.backgroundUrl ?? null,
+    });
   };
 
   const handleUpload = () => {
@@ -159,13 +164,16 @@ const TenantMarketingAssets = ({ embedded }: { embedded?: boolean }) => {
         <AssetEditorDialog
           open={!!editorAsset}
           onOpenChange={(open) => { if (!open) setEditorAsset(null); }}
-          baseImageUrl={editorAsset.url}
-          onSave={async (blob) => {
+          baseImageUrl={editorAsset.background_url ?? editorAsset.url}
+          initialOverlayConfig={editorAsset.overlay_config as any}
+          onSave={async (blob, meta) => {
             const file = new File([blob], `edited-${Date.now()}.png`, { type: "image/png" });
             await uploadAsset.mutateAsync({
               file,
               label: `${editorAsset.label} (edited)`,
               sourceAssetId: editorAsset.source_asset_id || undefined,
+              overlayConfig: meta?.overlayConfig ?? null,
+              backgroundUrl: meta?.backgroundUrl ?? editorAsset.background_url ?? null,
             });
           }}
         />

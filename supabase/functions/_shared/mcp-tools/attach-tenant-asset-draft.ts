@@ -41,6 +41,8 @@ export default defineTool({
     campaign_id: z.string().uuid().optional(),
     source_asset_id: z.string().uuid().optional().describe("Platform template id if this was cloned from marketing_assets."),
     notes: z.string().optional(),
+    overlay_config: z.record(z.any()).optional().describe("Optional editor overlay config { canvas, overlays } so the draft reopens as editable layers."),
+    background_url: z.string().url().optional().describe("Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {
@@ -121,6 +123,8 @@ export default defineTool({
           campaign_id: input.campaign_id ?? null,
           source_asset_id: input.source_asset_id ?? null,
           notes: input.notes ?? null,
+          overlay_config: input.overlay_config ?? null,
+          background_url: input.background_url ?? null,
           is_published: false,
           agent_source: "claude-mcp",
           proposed_by: uid,

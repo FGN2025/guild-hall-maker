@@ -4515,6 +4515,7 @@ export type Database = {
       tenant_marketing_assets: {
         Row: {
           agent_source: string | null
+          background_url: string | null
           campaign_id: string | null
           created_at: string
           created_by: string
@@ -4524,6 +4525,7 @@ export type Database = {
           is_published: boolean
           label: string
           notes: string | null
+          overlay_config: Json | null
           proposed_by: string | null
           source_asset_id: string | null
           source_url: string | null
@@ -4533,6 +4535,7 @@ export type Database = {
         }
         Insert: {
           agent_source?: string | null
+          background_url?: string | null
           campaign_id?: string | null
           created_at?: string
           created_by: string
@@ -4542,6 +4545,7 @@ export type Database = {
           is_published?: boolean
           label?: string
           notes?: string | null
+          overlay_config?: Json | null
           proposed_by?: string | null
           source_asset_id?: string | null
           source_url?: string | null
@@ -4551,6 +4555,7 @@ export type Database = {
         }
         Update: {
           agent_source?: string | null
+          background_url?: string | null
           campaign_id?: string | null
           created_at?: string
           created_by?: string
@@ -4560,6 +4565,7 @@ export type Database = {
           is_published?: boolean
           label?: string
           notes?: string | null
+          overlay_config?: Json | null
           proposed_by?: string | null
           source_asset_id?: string | null
           source_url?: string | null

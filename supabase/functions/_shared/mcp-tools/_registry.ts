@@ -30,6 +30,7 @@ import listBrandedPagesTool from "./list-branded-pages.ts";
 import listPageTemplatesTool from "./list-page-templates.ts";
 import proposeBrandedPageTool from "./propose-branded-page.ts";
 import proposePortalBannerUpdateTool from "./propose-portal-banner-update.ts";
+import composeEventPromoTool from "./compose-event-promo.ts";
 
 export const tools = [
   getMeTool,
@@ -52,6 +53,7 @@ export const tools = [
   listPageTemplatesTool,
   proposeBrandedPageTool,
   proposePortalBannerUpdateTool,
+  composeEventPromoTool,
 ];
 
 // Names of write tools — used by agent-mcp for the tool-boundary tenant guard.

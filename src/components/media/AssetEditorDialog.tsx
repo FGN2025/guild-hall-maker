@@ -58,15 +58,29 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
   story: <Smartphone className="h-4 w-4" />,
 };
 
+export type SavedOverlayConfig = {
+  canvas?: { format?: string; width?: number; height?: number };
+  overlays: Array<Record<string, any>>;
+};
+
+export type AssetSaveMeta = {
+  overlayConfig: SavedOverlayConfig;
+  backgroundUrl: string | null;
+};
+
 interface AssetEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   baseImageUrl?: string;
-  onSave: (blob: Blob) => Promise<void>;
+  onSave: (blob: Blob, meta?: AssetSaveMeta) => Promise<void>;
   initialTexts?: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>;
+  /** Persisted config produced by a previous save (composer or editor). When
+   *  provided, the canvas is hydrated with the same format and overlays so
+   *  the asset re-opens fully editable. */
+  initialOverlayConfig?: SavedOverlayConfig | null;
 }
 
-const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTexts }: AssetEditorDialogProps) => {
+const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTexts, initialOverlayConfig }: AssetEditorDialogProps) => {
   const {
     canvasRef,
     canvasSize,
@@ -79,6 +93,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     addText,
     addShape,
     applyTemplate,
+    hydrateOverlays,
     updateOverlay,
     deleteOverlay,
     reorderOverlay,
@@ -111,6 +126,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const appliedInitialRef = useRef(false);
+  const hydratedRef = useRef(false);
 
   // Social publishing state
   const { connections } = useSocialConnections();
@@ -128,15 +144,36 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     (c) => compatiblePlatforms.includes(c.platform)
   );
 
+  // Hydrate from persisted overlay_config (composer output, prior edits)
   useEffect(() => {
-    if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0) {
+    if (!open) return;
+    if (hydratedRef.current) return;
+    if (!initialOverlayConfig || !initialOverlayConfig.overlays?.length) return;
+    const fmtKey = initialOverlayConfig.canvas?.format;
+    if (fmtKey) {
+      const fmt = CANVAS_FORMATS.find((f) => f.key === fmtKey);
+      if (fmt) setFormat(fmt);
+    }
+    // Defer hydration one tick so setFormat has applied canvasSize
+    const t = setTimeout(() => {
+      hydrateOverlays(initialOverlayConfig.overlays);
+      hydratedRef.current = true;
+    }, 0);
+    return () => clearTimeout(t);
+  }, [open, initialOverlayConfig, hydrateOverlays, setFormat]);
+
+  useEffect(() => {
+    if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0 && !initialOverlayConfig) {
       appliedInitialRef.current = true;
       applyTemplate(initialTexts);
     }
-  }, [initialTexts, canvasSize.width, applyTemplate]);
+  }, [initialTexts, canvasSize.width, applyTemplate, initialOverlayConfig]);
 
   useEffect(() => {
-    if (!open) appliedInitialRef.current = false;
+    if (!open) {
+      appliedInitialRef.current = false;
+      hydratedRef.current = false;
+    }
   }, [open]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,12 +191,32 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     if (e.target) e.target.value = "";
   };
 
+  const serializeOverlays = (): SavedOverlayConfig => ({
+    canvas: {
+      format: activeFormat.key,
+      width: canvasSize.width,
+      height: canvasSize.height,
+    },
+    overlays: overlays.map((o) => {
+      if (o.type === "logo") {
+        // Drop the HTMLImageElement — persist just the src reference
+        const { img, ...rest } = o as any;
+        return rest;
+      }
+      return { ...o };
+    }),
+  });
+
   const handleSave = async () => {
     setSaving(true);
     try {
       const blob = await exportCanvas();
       if (!blob) { toast.error("Export failed"); return; }
-      await onSave(blob);
+      const meta: AssetSaveMeta = {
+        overlayConfig: serializeOverlays(),
+        backgroundUrl: currentBaseImageUrl ?? null,
+      };
+      await onSave(blob, meta);
       toast.success("Asset saved");
       onOpenChange(false);
     } catch {

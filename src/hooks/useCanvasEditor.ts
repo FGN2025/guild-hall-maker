@@ -500,6 +500,49 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     [pushState, canvasSize]
   );
 
+  /** Hydrate the canvas from a persisted overlay_config. Supports text and
+   *  shape overlays directly; logo overlays are re-materialised by loading
+   *  the src into an Image before insertion. Callers should ensure canvas
+   *  format/size has already been set to match the config so absolute x/y
+   *  render correctly. */
+  const hydrateOverlays = useCallback(
+    (serialized: Array<Record<string, any>>) => {
+      const rebuilt: Overlay[] = [];
+      const pending: Array<Promise<Overlay | null>> = [];
+
+      for (const raw of serialized) {
+        if (raw?.type === "text") {
+          rebuilt.push({ ...(raw as any), id: raw.id ?? crypto.randomUUID(), type: "text" });
+        } else if (raw?.type === "shape") {
+          rebuilt.push({ ...(raw as any), id: raw.id ?? crypto.randomUUID(), type: "shape" });
+        } else if (raw?.type === "logo" && raw.src) {
+          pending.push(
+            new Promise((resolve) => {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve({ ...(raw as any), id: raw.id ?? crypto.randomUUID(), type: "logo", img } as LogoOverlay);
+              img.onerror = () => resolve(null);
+              img.src = raw.src;
+            })
+          );
+        }
+      }
+
+      if (pending.length === 0) {
+        pushState(rebuilt);
+        return;
+      }
+      // Push text/shapes immediately, add logos when their images resolve
+      pushState(rebuilt);
+      Promise.all(pending).then((logos) => {
+        const good = logos.filter((l): l is Overlay => !!l);
+        if (good.length) pushState([...rebuilt, ...good]);
+      });
+    },
+    [pushState]
+  );
+
+
   // Reorder overlay (z-order)
   const reorderOverlay = useCallback(
     (id: string, direction: "up" | "down" | "front" | "back") => {
@@ -605,6 +648,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     addText,
     addShape,
     applyTemplate,
+    hydrateOverlays,
     updateOverlay,
     deleteOverlay,
     reorderOverlay,

@@ -648,7 +648,9 @@ var attach_tenant_asset_draft_default = defineTool14({
     label: z12.string().optional().describe("Format label, e.g. 'Square 1080', 'Story 1080x1920'."),
     campaign_id: z12.string().uuid().optional(),
     source_asset_id: z12.string().uuid().optional().describe("Platform template id if this was cloned from marketing_assets."),
-    notes: z12.string().optional()
+    notes: z12.string().optional(),
+    overlay_config: z12.record(z12.any()).optional().describe("Optional editor overlay config { canvas, overlays } so the draft reopens as editable layers."),
+    background_url: z12.string().url().optional().describe("Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url.")
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {
@@ -709,6 +711,8 @@ var attach_tenant_asset_draft_default = defineTool14({
         campaign_id: input.campaign_id ?? null,
         source_asset_id: input.source_asset_id ?? null,
         notes: input.notes ?? null,
+        overlay_config: input.overlay_config ?? null,
+        background_url: input.background_url ?? null,
         is_published: false,
         agent_source: "claude-mcp",
         proposed_by: uid,
@@ -1044,6 +1048,319 @@ var propose_portal_banner_update_default = defineTool20({
   }
 });
 
+// supabase/functions/_shared/mcp-tools/compose-event-promo.ts
+import { defineTool as defineTool21 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z19 } from "npm:zod@^3.25.76";
+
+// src/lib/promo/composePromoLayout.ts
+var PROMO_DIMENSIONS = {
+  portrait: { width: 1080, height: 1350 },
+  square: { width: 1080, height: 1080 },
+  landscape: { width: 1200, height: 628 },
+  story: { width: 1080, height: 1920 }
+};
+function formatDate(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
+function composePromoLayout(args) {
+  const format = args.format ?? "portrait";
+  const dim = PROMO_DIMENSIONS[format];
+  const accent = args.tenantPrimaryColor || "#22d3ee";
+  const dateStr = formatDate(args.event.start_date);
+  const texts = [];
+  if (args.beatLabel) {
+    texts.push({
+      text: args.beatLabel.toUpperCase(),
+      xPct: 0.06,
+      yPct: 0.56,
+      fontSize: 28,
+      color: accent,
+      fontWeight: "bold"
+    });
+  }
+  texts.push({
+    text: args.event.name.toUpperCase(),
+    xPct: 0.06,
+    yPct: 0.62,
+    fontSize: 64,
+    color: "#ffffff",
+    fontWeight: "bold"
+  });
+  if (args.event.game) {
+    texts.push({
+      text: args.event.game,
+      xPct: 0.06,
+      yPct: 0.76,
+      fontSize: 30,
+      color: "#e2e8f0"
+    });
+  }
+  if (dateStr) {
+    texts.push({
+      text: dateStr,
+      xPct: 0.06,
+      yPct: 0.83,
+      fontSize: 26,
+      color: "#cbd5e1"
+    });
+  }
+  if (args.event.prize_pool) {
+    texts.push({
+      text: `Prize: ${args.event.prize_pool}`,
+      xPct: 0.06,
+      yPct: 0.9,
+      fontSize: 26,
+      color: accent,
+      fontWeight: "bold"
+    });
+  }
+  return {
+    format,
+    width: dim.width,
+    height: dim.height,
+    backgroundUrl: null,
+    // caller fills from event.image_url — kept separate so
+    // the layout is decoupled from image loading
+    backgroundFallbackHex: "#0f172a",
+    gradient: {
+      startPct: 0.45,
+      fromRgba: "rgba(0,0,0,0)",
+      toRgba: "rgba(0,0,0,0.85)"
+    },
+    accentBar: {
+      xPct: 0.04,
+      yPct: 0.62,
+      wPct: 8e-3,
+      hPct: 0.32,
+      color: accent
+    },
+    texts
+  };
+}
+function promoSceneToEditorTexts(scene) {
+  return scene.texts.map((t) => ({
+    text: t.text,
+    xPct: t.xPct,
+    yPct: t.yPct,
+    x: Math.round(t.xPct * scene.width),
+    y: Math.round(t.yPct * scene.height),
+    fontSize: t.fontSize,
+    color: t.color,
+    fontFamily: "sans-serif",
+    fontWeight: t.fontWeight ?? "normal"
+  }));
+}
+
+// supabase/functions/_shared/promo/renderPromo.ts
+import { Resvg, initWasm } from "npm:@resvg/resvg-wasm@2.6.2";
+var wasmReady = null;
+async function ensureWasm() {
+  if (!wasmReady) {
+    wasmReady = (async () => {
+      const res = await fetch("https://unpkg.com/@resvg/resvg-wasm@2.6.2/index_bg.wasm");
+      if (!res.ok) throw new Error(`Failed to fetch resvg wasm: ${res.status}`);
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      await initWasm(bytes);
+    })();
+  }
+  return wasmReady;
+}
+function escapeXml(s) {
+  return s.replace(/[<>&'"]/g, (c) => c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === "&" ? "&amp;" : c === "'" ? "&apos;" : "&quot;");
+}
+async function fetchAsDataUrl(url) {
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    if (!res.ok) return null;
+    const ct = res.headers.get("content-type") ?? "image/jpeg";
+    const buf = new Uint8Array(await res.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+    const b64 = btoa(bin);
+    return `data:${ct};base64,${b64}`;
+  } catch {
+    return null;
+  }
+}
+function rgbaFromCss(rgba) {
+  return rgba;
+}
+async function renderPromoSceneToPng(scene) {
+  await ensureWasm();
+  let bgHref = null;
+  if (scene.backgroundUrl) {
+    bgHref = await fetchAsDataUrl(scene.backgroundUrl);
+  }
+  const w = scene.width;
+  const h = scene.height;
+  const gradStartY = scene.gradient.startPct * h;
+  const bgLayer = bgHref ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${w}" height="${h}" fill="${scene.backgroundFallbackHex}"/>`;
+  const gradient = `
+    <defs>
+      <linearGradient id="dark" x1="0" y1="${gradStartY}" x2="0" y2="${h}" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="${rgbaFromCss(scene.gradient.fromRgba)}"/>
+        <stop offset="1" stop-color="${rgbaFromCss(scene.gradient.toRgba)}"/>
+      </linearGradient>
+      <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+        <feOffset dx="2" dy="2" result="off"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.6"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>`;
+  const overlay = `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#dark)"/>`;
+  const ab = scene.accentBar;
+  const accent = `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
+  const textNodes = scene.texts.map((t) => {
+    const weight = t.fontWeight === "bold" ? "bold" : "normal";
+    const y = t.yPct * h + t.fontSize * 0.85;
+    return `<text x="${t.xPct * w}" y="${y}" font-family="Inter, sans-serif" font-size="${t.fontSize}" font-weight="${weight}" fill="${t.color}" filter="url(#drop)">${escapeXml(t.text)}</text>`;
+  }).join("");
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  ${gradient}
+  ${bgLayer}
+  ${overlay}
+  ${accent}
+  ${textNodes}
+</svg>`;
+  const resvg = new Resvg(svg, {
+    background: scene.backgroundFallbackHex,
+    fitTo: { mode: "width", value: w },
+    font: {
+      loadSystemFonts: false
+      // deterministic — rely on bundled DejaVu fallback
+    }
+  });
+  const png = resvg.render().asPng();
+  return png;
+}
+
+// supabase/functions/_shared/mcp-tools/compose-event-promo.ts
+var BUCKET2 = "tenant-marketing";
+var compose_event_promo_default = defineTool21({
+  name: "compose_event_promo",
+  title: "Compose a deterministic promo image from a published event",
+  description: "Lane 1 (calendar-lane) composer. Layouts an event (tournament OR tenant event) with the tenant's brand color and beat label into a PNG using pure server-side rendering (no external image generation cost), uploads it into the tenant-marketing bucket, and inserts a tenant_marketing_assets draft row identical in shape to attach_tenant_asset_draft \u2014 including overlay_config so the draft opens in the editor as separately-editable text layers. Provide exactly one of tournament_id or event_id.",
+  inputSchema: {
+    tenant_id: z19.string().uuid(),
+    tournament_id: z19.string().uuid().optional(),
+    event_id: z19.string().uuid().optional(),
+    format: z19.enum(["portrait", "square", "landscape", "story"]).default("portrait"),
+    beat_label: z19.string().optional().describe("e.g. 'Announce', 'Countdown', 'Day-Of', 'Recap'"),
+    campaign_id: z19.string().uuid().optional(),
+    file_name: z19.string().optional()
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      if (!!input.tournament_id === !!input.event_id) {
+        return { content: [{ type: "text", text: "Provide exactly one of tournament_id or event_id." }], isError: true };
+      }
+      const userSupabase = supabaseForUser(ctx);
+      const uid = ctx.getUserId();
+      let evt;
+      if (input.tournament_id) {
+        const { data, error } = await userSupabase.from("tournaments").select("id, name, game, start_date, prize_pool, image_url").eq("id", input.tournament_id).maybeSingle();
+        if (error) throw error;
+        if (!data) return { content: [{ type: "text", text: "Tournament not found or not visible." }], isError: true };
+        evt = data;
+      } else {
+        const { data, error } = await userSupabase.from("tenant_events").select("id, name, game, start_date, prize_pool, image_url, tenant_id").eq("id", input.event_id).maybeSingle();
+        if (error) throw error;
+        if (!data) return { content: [{ type: "text", text: "Event not found or not visible." }], isError: true };
+        if (data.tenant_id !== input.tenant_id) {
+          return { content: [{ type: "text", text: "Event does not belong to the supplied tenant_id." }], isError: true };
+        }
+        evt = data;
+      }
+      const { data: tenant } = await userSupabase.from("tenants").select("primary_color").eq("id", input.tenant_id).maybeSingle();
+      const scene = composePromoLayout({
+        event: {
+          name: evt.name,
+          game: evt.game ?? null,
+          start_date: evt.start_date ?? null,
+          prize_pool: evt.prize_pool ?? null
+        },
+        tenantPrimaryColor: tenant?.primary_color ?? null,
+        format: input.format,
+        beatLabel: input.beat_label ?? null
+      });
+      scene.backgroundUrl = evt.image_url ?? null;
+      const png = await renderPromoSceneToPng(scene);
+      const beat = (input.beat_label ?? "promo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "promo";
+      const now = /* @__PURE__ */ new Date();
+      const yyyy = now.getUTCFullYear();
+      const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+      const uuid = crypto.randomUUID();
+      const path = `${input.tenant_id}/agent/${yyyy}/${mm}/promo-${evt.id}-${beat}-${uuid}.png`;
+      const { error: upErr } = await userSupabase.storage.from(BUCKET2).upload(path, png, {
+        contentType: "image/png",
+        upsert: false
+      });
+      if (upErr) {
+        const svc = supabaseServiceRole();
+        const retry = await svc.storage.from(BUCKET2).upload(path, png, { contentType: "image/png", upsert: false });
+        if (retry.error) throw retry.error;
+      }
+      const signTtl = 60 * 60 * 24 * 365;
+      let storedUrl;
+      const { data: signed, error: signErr } = await userSupabase.storage.from(BUCKET2).createSignedUrl(path, signTtl);
+      if (signErr || !signed?.signedUrl) {
+        const svc = supabaseServiceRole();
+        const retry = await svc.storage.from(BUCKET2).createSignedUrl(path, signTtl);
+        if (retry.error || !retry.data?.signedUrl) throw signErr ?? retry.error;
+        storedUrl = retry.data.signedUrl;
+      } else {
+        storedUrl = signed.signedUrl;
+      }
+      const overlayConfig = {
+        canvas: { format: scene.format, width: scene.width, height: scene.height },
+        overlays: promoSceneToEditorTexts(scene).map((t) => ({
+          id: crypto.randomUUID(),
+          type: "text",
+          text: t.text,
+          x: t.x,
+          y: t.y,
+          fontSize: t.fontSize,
+          color: t.color,
+          fontFamily: t.fontFamily,
+          fontWeight: t.fontWeight
+        }))
+      };
+      const fileName = input.file_name ?? `${evt.name} \u2014 ${input.beat_label ?? "Promo"}.png`;
+      const label = `${input.format.charAt(0).toUpperCase()}${input.format.slice(1)} ${scene.width}x${scene.height}`;
+      const { data: row, error: insErr } = await userSupabase.from("tenant_marketing_assets").insert({
+        tenant_id: input.tenant_id,
+        file_name: fileName,
+        file_path: path,
+        url: storedUrl,
+        background_url: evt.image_url ?? null,
+        overlay_config: overlayConfig,
+        label,
+        campaign_id: input.campaign_id ?? null,
+        is_published: false,
+        agent_source: "claude-mcp",
+        proposed_by: uid,
+        created_by: uid,
+        notes: input.beat_label ? `Beat: ${input.beat_label}` : null
+      }).select().single();
+      if (insErr) throw insErr;
+      return okJson(row, "asset");
+    } catch (err) {
+      return toolError(err, "compose_event_promo");
+    }
+  }
+});
+
 // supabase/functions/_shared/mcp-tools/_registry.ts
 var tools = [
   get_me_default,
@@ -1065,7 +1382,8 @@ var tools = [
   list_branded_pages_default,
   list_page_templates_default,
   propose_branded_page_default,
-  propose_portal_banner_update_default
+  propose_portal_banner_update_default,
+  compose_event_promo_default
 ];
 
 // src/lib/mcp/index.ts
