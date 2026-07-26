@@ -18,6 +18,10 @@ export interface TenantMarketingAsset {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  overlay_config: Record<string, any> | null;
+  background_url: string | null;
+  agent_source?: string | null;
+  source_url?: string | null;
 }
 
 export function useTenantMarketingAssets() {
@@ -48,12 +52,18 @@ export function useTenantMarketingAssets() {
       notes,
       sourceAssetId,
       campaignId,
+      overlayConfig,
+      backgroundUrl,
     }: {
       file: File;
       label: string;
       notes?: string;
       sourceAssetId?: string;
       campaignId?: string;
+      /** Editor state to persist so the asset reopens fully editable. */
+      overlayConfig?: Record<string, any> | null;
+      /** Clean base image URL (unflattened background layer). */
+      backgroundUrl?: string | null;
     }) => {
       if (!tenantId || !user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop() ?? "bin";
@@ -73,6 +83,8 @@ export function useTenantMarketingAssets() {
         notes: notes || null,
         source_asset_id: sourceAssetId || null,
         campaign_id: campaignId || null,
+        overlay_config: overlayConfig ?? null,
+        background_url: backgroundUrl ?? null,
         created_by: user.id,
       } as any);
       if (error) throw error;
