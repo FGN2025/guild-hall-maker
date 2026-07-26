@@ -144,15 +144,36 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     (c) => compatiblePlatforms.includes(c.platform)
   );
 
+  // Hydrate from persisted overlay_config (composer output, prior edits)
   useEffect(() => {
-    if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0) {
+    if (!open) return;
+    if (hydratedRef.current) return;
+    if (!initialOverlayConfig || !initialOverlayConfig.overlays?.length) return;
+    const fmtKey = initialOverlayConfig.canvas?.format;
+    if (fmtKey) {
+      const fmt = CANVAS_FORMATS.find((f) => f.key === fmtKey);
+      if (fmt) setFormat(fmt);
+    }
+    // Defer hydration one tick so setFormat has applied canvasSize
+    const t = setTimeout(() => {
+      hydrateOverlays(initialOverlayConfig.overlays);
+      hydratedRef.current = true;
+    }, 0);
+    return () => clearTimeout(t);
+  }, [open, initialOverlayConfig, hydrateOverlays, setFormat]);
+
+  useEffect(() => {
+    if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0 && !initialOverlayConfig) {
       appliedInitialRef.current = true;
       applyTemplate(initialTexts);
     }
-  }, [initialTexts, canvasSize.width, applyTemplate]);
+  }, [initialTexts, canvasSize.width, applyTemplate, initialOverlayConfig]);
 
   useEffect(() => {
-    if (!open) appliedInitialRef.current = false;
+    if (!open) {
+      appliedInitialRef.current = false;
+      hydratedRef.current = false;
+    }
   }, [open]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,12 +191,32 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     if (e.target) e.target.value = "";
   };
 
+  const serializeOverlays = (): SavedOverlayConfig => ({
+    canvas: {
+      format: activeFormat.key,
+      width: canvasSize.width,
+      height: canvasSize.height,
+    },
+    overlays: overlays.map((o) => {
+      if (o.type === "logo") {
+        // Drop the HTMLImageElement — persist just the src reference
+        const { img, ...rest } = o as any;
+        return rest;
+      }
+      return { ...o };
+    }),
+  });
+
   const handleSave = async () => {
     setSaving(true);
     try {
       const blob = await exportCanvas();
       if (!blob) { toast.error("Export failed"); return; }
-      await onSave(blob);
+      const meta: AssetSaveMeta = {
+        overlayConfig: serializeOverlays(),
+        backgroundUrl: currentBaseImageUrl ?? null,
+      };
+      await onSave(blob, meta);
       toast.success("Asset saved");
       onOpenChange(false);
     } catch {
