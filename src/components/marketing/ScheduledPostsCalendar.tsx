@@ -19,7 +19,12 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   linkedin: <Linkedin className="h-4 w-4" />,
 };
 
-const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
+  pending_review: {
+    label: "Awaiting approval",
+    variant: "outline",
+    className: "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-300",
+  },
   pending: { label: "Scheduled", variant: "secondary" },
   published: { label: "Published", variant: "default" },
   failed: { label: "Failed", variant: "destructive" },
