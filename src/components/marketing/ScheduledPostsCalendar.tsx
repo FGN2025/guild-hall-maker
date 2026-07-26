@@ -159,7 +159,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{PLATFORM_LABELS[detailPost.platform]}</span>
-                  <Badge variant={STATUS_STYLES[detailPost.status]?.variant || "secondary"}>
+                  <Badge variant={STATUS_STYLES[detailPost.status]?.variant || "secondary"} className={STATUS_STYLES[detailPost.status]?.className}>
                     {STATUS_STYLES[detailPost.status]?.label || detailPost.status}
                   </Badge>
                 </div>
