@@ -16,6 +16,7 @@ export type ScheduledPost = {
   published_at: string | null;
   post_url: string | null;
   error_message: string | null;
+  feedback_note?: string | null;
   created_at: string;
 };
 

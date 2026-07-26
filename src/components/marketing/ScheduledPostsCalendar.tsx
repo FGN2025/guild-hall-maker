@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useScheduledPosts, ScheduledPost } from "@/hooks/useScheduledPosts";
+import { useDraftDecision } from "@/hooks/useDraftDecision";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { PLATFORM_LABELS, PLATFORM_COLORS } from "@/hooks/canvas/canvasTypes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Facebook, Instagram, Twitter, Linkedin, CalendarIcon, X, Clock, ExternalLink, AlertTriangle, Check } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
@@ -28,6 +30,11 @@ const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secon
   pending: { label: "Scheduled", variant: "secondary" },
   published: { label: "Published", variant: "default" },
   failed: { label: "Failed", variant: "destructive" },
+  rejected: {
+    label: "Rejected",
+    variant: "outline",
+    className: "border-destructive/60 bg-destructive/10 text-destructive",
+  },
   cancelled: { label: "Cancelled", variant: "outline" },
 };
 
@@ -37,10 +44,17 @@ interface Props {
 
 const ScheduledPostsCalendar = ({ tenantId }: Props) => {
   const { posts, isLoading, cancelPost, reschedulePost } = useScheduledPosts(tenantId);
+  const { tenantInfo } = useTenantAdmin();
+  const decide = useDraftDecision(tenantId);
+  const role = tenantInfo?.tenantRole;
+  const canDecide = role === "admin" || role === "manager";
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [detailPost, setDetailPost] = useState<ScheduledPost | null>(null);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [newDate, setNewDate] = useState<Date | undefined>();
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectNote, setRejectNote] = useState("");
 
   const postsForDate = selectedDate
     ? posts.filter((p) => isSameDay(parseISO(p.scheduled_at), selectedDate))
@@ -63,6 +77,40 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
     setRescheduleOpen(false);
     setDetailPost(null);
   };
+
+  const handleApprove = async () => {
+    if (!detailPost) return;
+    await decide.mutateAsync(
+      { row: { id: detailPost.id, kind: "scheduled_post" }, approve: true, note: null },
+      {
+        onSuccess: () => {
+          setDetailPost((p) => (p ? { ...p, status: "pending" } : p));
+        },
+      },
+    );
+  };
+
+  const handleReject = async () => {
+    if (!detailPost) return;
+    if (!rejectNote.trim()) {
+      toast.error("Add a feedback note so the agent can revise.");
+      return;
+    }
+    await decide.mutateAsync(
+      { row: { id: detailPost.id, kind: "scheduled_post" }, approve: false, note: rejectNote },
+      {
+        onSuccess: () => {
+          setDetailPost((p) => (p ? { ...p, status: "rejected", feedback_note: rejectNote } as ScheduledPost : p));
+          setRejectOpen(false);
+          setRejectNote("");
+        },
+      },
+    );
+  };
+
+  const detailStatusMeta = detailPost ? STATUS_STYLES[detailPost.status] : null;
+  const detailIsDecidable =
+    !!detailPost && (detailPost.status === "pending_review" || detailPost.status === "rejected");
 
   return (
     <div className="space-y-6">
@@ -159,8 +207,8 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{PLATFORM_LABELS[detailPost.platform]}</span>
-                  <Badge variant={STATUS_STYLES[detailPost.status]?.variant || "secondary"} className={STATUS_STYLES[detailPost.status]?.className}>
-                    {STATUS_STYLES[detailPost.status]?.label || detailPost.status}
+                  <Badge variant={detailStatusMeta?.variant || "secondary"} className={detailStatusMeta?.className}>
+                    {detailStatusMeta?.label || detailPost.status}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground flex items-center gap-1.5">
@@ -169,6 +217,11 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                 </p>
                 {detailPost.caption && (
                   <p className="text-sm bg-muted rounded-lg p-3">{detailPost.caption}</p>
+                )}
+                {detailPost.feedback_note && (
+                  <div className="rounded border border-destructive/40 bg-destructive/5 p-2 text-xs">
+                    <span className="font-semibold">Previous feedback:</span> {detailPost.feedback_note}
+                  </div>
                 )}
                 {detailPost.error_message && (
                   <p className="text-sm text-destructive flex items-start gap-1.5">
@@ -186,10 +239,29 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                     <ExternalLink className="h-3.5 w-3.5" /> View Post
                   </a>
                 )}
+                {detailIsDecidable && !canDecide && (
+                  <p className="text-xs text-muted-foreground italic">
+                    Read-only: only tenant admins and managers can approve or reject drafts.
+                  </p>
+                )}
               </div>
             </div>
           )}
           <DialogFooter className="gap-2">
+            {detailIsDecidable && canDecide && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => { setRejectNote(""); setRejectOpen(true); }}
+                  disabled={decide.isPending}
+                >
+                  <X className="h-4 w-4 mr-1" /> Reject
+                </Button>
+                <Button onClick={handleApprove} disabled={decide.isPending}>
+                  <Check className="h-4 w-4 mr-1" /> Approve
+                </Button>
+              </>
+            )}
             {detailPost?.status === "pending" && (
               <>
                 <Button variant="outline" onClick={() => { setNewDate(parseISO(detailPost.scheduled_at)); setRescheduleOpen(true); }}>
@@ -200,6 +272,30 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                 </Button>
               </>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-heading">Reject with feedback</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Explain what needs to change so the agent can revise this draft.
+          </p>
+          <Textarea
+            placeholder="Feedback for the agent (required)"
+            value={rejectNote}
+            onChange={(e) => setRejectNote(e.target.value)}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)} disabled={decide.isPending}>Cancel</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={decide.isPending || !rejectNote.trim()}>
+              <X className="h-4 w-4 mr-1" /> Reject
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

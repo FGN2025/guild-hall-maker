@@ -1,14 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 import { useMemo, useState } from "react";
 import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarClock, Eye, Link2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
+import { useDraftDecision } from "@/hooks/useDraftDecision";
 
 type Kind = "campaign" | "scheduled_post" | "asset";
 
@@ -53,10 +53,10 @@ interface LinkedAsset {
 }
 
 export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null | undefined }) {
-  const qc = useQueryClient();
   const [feedbackById, setFeedbackById] = useState<Record<string, string>>({});
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewAsset, setReviewAsset] = useState<AssetReviewItem | null>(null);
+  const decide = useDraftDecision(tenantId);
 
   const { data, isLoading } = useQuery({
     queryKey: ["agent_drafts", tenantId],
@@ -162,46 +162,9 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     setReviewOpen(true);
   }
 
-  const decide = useMutation({
-    mutationFn: async ({ row, approve }: { row: DraftRow; approve: boolean }) => {
-      const table =
-        row.kind === "campaign" ? "marketing_campaigns" :
-        row.kind === "scheduled_post" ? "scheduled_posts" : "tenant_marketing_assets";
-      const note = feedbackById[row.id]?.trim() || null;
+  const onDecide = (row: DraftRow, approve: boolean) =>
+    decide.mutate({ row, approve, note: feedbackById[row.id] });
 
-      let patch: Record<string, unknown>;
-      if (row.kind === "asset") {
-        patch = approve
-          ? { is_published: true, notes: note ?? row.description ?? null }
-          : { notes: note ? `[Rejected] ${note}` : "[Rejected]" };
-      } else if (row.kind === "scheduled_post") {
-        patch = approve
-          ? { status: "pending", feedback_note: note }
-          : { status: "rejected", feedback_note: note };
-      } else {
-        patch = approve
-          ? { status: "approved", is_published: true, feedback_note: note }
-          : { status: "rejected", feedback_note: note };
-      }
-
-      const { data, error } = await supabase
-        .from(table as any)
-        .update(patch)
-        .eq("id", row.id)
-        .select("id");
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        throw new Error(
-          `Update was blocked (0 rows changed). This usually means your session lost permission on this ${row.kind.replace("_", " ")} — try signing out and back in, then re-approving.`,
-        );
-      }
-    },
-    onSuccess: (_d, vars) => {
-      toast.success(vars.approve ? "Approved" : "Rejected with feedback");
-      qc.invalidateQueries({ queryKey: ["agent_drafts", tenantId] });
-    },
-    onError: (err: any) => toast.error(err?.message ?? "Update failed"),
-  });
 
   if (!tenantId) {
     return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Join a tenant to see agent drafts.</CardContent></Card>;
@@ -362,14 +325,14 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                     variant="outline"
                     size="sm"
                     disabled={decide.isPending}
-                    onClick={() => decide.mutate({ row, approve: false })}
+                    onClick={() => onDecide(row, false)}
                   >
                     <X className="h-4 w-4 mr-1" /> Reject
                   </Button>
                   <Button
                     size="sm"
                     disabled={decide.isPending}
-                    onClick={() => decide.mutate({ row, approve: true })}
+                    onClick={() => onDecide(row, true)}
                   >
                     <Check className="h-4 w-4 mr-1" /> Approve
                   </Button>
