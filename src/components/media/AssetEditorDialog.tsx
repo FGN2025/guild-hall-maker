@@ -58,15 +58,29 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
   story: <Smartphone className="h-4 w-4" />,
 };
 
+export type SavedOverlayConfig = {
+  canvas?: { format?: string; width?: number; height?: number };
+  overlays: Array<Record<string, any>>;
+};
+
+export type AssetSaveMeta = {
+  overlayConfig: SavedOverlayConfig;
+  backgroundUrl: string | null;
+};
+
 interface AssetEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   baseImageUrl?: string;
-  onSave: (blob: Blob) => Promise<void>;
+  onSave: (blob: Blob, meta?: AssetSaveMeta) => Promise<void>;
   initialTexts?: Array<Omit<TextOverlay, "id" | "type"> & { xPct?: number; yPct?: number }>;
+  /** Persisted config produced by a previous save (composer or editor). When
+   *  provided, the canvas is hydrated with the same format and overlays so
+   *  the asset re-opens fully editable. */
+  initialOverlayConfig?: SavedOverlayConfig | null;
 }
 
-const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTexts }: AssetEditorDialogProps) => {
+const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTexts, initialOverlayConfig }: AssetEditorDialogProps) => {
   const {
     canvasRef,
     canvasSize,
