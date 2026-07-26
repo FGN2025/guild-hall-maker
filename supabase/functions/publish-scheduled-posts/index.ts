@@ -161,14 +161,19 @@ Deno.serve(async (req) => {
       return data.signedUrl;
     }
 
-    async function hasActiveConnection(tenantId: string, platform: string, connId: string | null): Promise<boolean> {
+    async function resolveActiveConnection(
+      tenantId: string,
+      platform: string,
+      connId: string | null,
+    ): Promise<{ id: string } | null> {
       if (connId) {
         const { data } = await supabase
           .from("social_connections")
           .select("id, is_active")
           .eq("id", connId)
           .maybeSingle();
-        return !!data?.is_active;
+        if (data?.is_active) return { id: data.id };
+        return null;
       }
       const { data } = await supabase
         .from("social_connections")
@@ -177,7 +182,8 @@ Deno.serve(async (req) => {
         .eq("platform", platform)
         .eq("is_active", true)
         .limit(1);
-      return !!(data && data.length);
+      if (data && data.length) return { id: data[0].id };
+      return null;
     }
 
     for (const post of duePosts) {
