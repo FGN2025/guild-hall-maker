@@ -184,8 +184,17 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           : { status: "rejected", feedback_note: note };
       }
 
-      const { error } = await supabase.from(table as any).update(patch).eq("id", row.id);
+      const { data, error } = await supabase
+        .from(table as any)
+        .update(patch)
+        .eq("id", row.id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error(
+          `Update was blocked (0 rows changed). This usually means your session lost permission on this ${row.kind.replace("_", " ")} — try signing out and back in, then re-approving.`,
+        );
+      }
     },
     onSuccess: (_d, vars) => {
       toast.success(vars.approve ? "Approved" : "Rejected with feedback");
