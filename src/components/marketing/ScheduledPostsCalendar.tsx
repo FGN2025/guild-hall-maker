@@ -121,7 +121,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{PLATFORM_LABELS[post.platform]}</span>
-                        <Badge variant={status.variant} className="text-[10px]">{status.label}</Badge>
+                        <Badge variant={status.variant} className={cn("text-[10px]", status.className)}>{status.label}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
