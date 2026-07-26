@@ -38,14 +38,22 @@ const SocialAccountsManager = ({ tenantId }: Props) => {
       toast.error("Account name and token are required");
       return;
     }
-    await addConnection.mutateAsync({
-      platform: connectDialog!,
-      account_name: form.account_name,
-      access_token: form.access_token,
-      page_id: form.page_id || undefined,
-    });
-    setConnectDialog(null);
-    setForm({ account_name: "", access_token: "", page_id: "" });
+    if (connectDialog === "facebook" && !form.page_id.trim()) {
+      toast.error("Page ID is required for Facebook — the publisher cannot post without it");
+      return;
+    }
+    try {
+      await addConnection.mutateAsync({
+        platform: connectDialog!,
+        account_name: form.account_name,
+        access_token: form.access_token,
+        page_id: form.page_id || undefined,
+      });
+      setConnectDialog(null);
+      setForm({ account_name: "", access_token: "", page_id: "" });
+    } catch {
+      // error toast surfaced by hook onError; keep dialog open so user can retry
+    }
   };
 
   const platforms = ["facebook", "instagram", "twitter", "linkedin"];
