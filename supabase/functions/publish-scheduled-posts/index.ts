@@ -280,10 +280,15 @@ Deno.serve(async (req) => {
           try {
             const parsed = JSON.parse(errText);
             const gErr = parsed?.error ?? parsed?.graph_error ?? null;
-            if (gErr && (gErr.code === 190 || gErr.type === "OAuthException")) {
+            if (gErr && typeof gErr === "object" && (gErr.code === 190 || gErr.type === "OAuthException")) {
+              tokenExpired = true;
+            } else if (typeof gErr === "string" && /session has expired|oauthexception|access token|error validating access token/i.test(gErr)) {
               tokenExpired = true;
             }
           } catch (_) { /* not JSON */ }
+          if (!tokenExpired && /session has expired|oauthexception|error validating access token/i.test(errText)) {
+            tokenExpired = true;
+          }
 
           if (tokenExpired && resolvedConn) {
             await supabase
