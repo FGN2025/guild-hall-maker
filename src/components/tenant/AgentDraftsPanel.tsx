@@ -1,14 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 import { useMemo, useState } from "react";
 import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarClock, Eye, Link2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
+import { useDraftDecision } from "@/hooks/useDraftDecision";
 
 type Kind = "campaign" | "scheduled_post" | "asset";
 
