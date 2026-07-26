@@ -38,6 +38,24 @@ export default defineTool({
         if (existing) return okJson({ ...existing, _idempotent: true }, "scheduled_post");
       }
 
+      // Bind connection_id at insert time when exactly one active connection exists
+      // for the platform. Leaves null when zero or ambiguous — the dispatcher's
+      // undeliverable precheck handles the zero case and it will also fall back
+      // to the same lookup at dispatch time.
+      let resolvedConnectionId: string | null = input.connection_id ?? null;
+      if (!resolvedConnectionId && input.platform !== "discord") {
+        const { data: activeConns } = await supabase
+          .from("social_connections")
+          .select("id")
+          .eq("tenant_id", input.tenant_id)
+          .eq("platform", input.platform)
+          .eq("is_active", true)
+          .limit(2);
+        if (activeConns && activeConns.length === 1) {
+          resolvedConnectionId = activeConns[0].id;
+        }
+      }
+
       const { data, error } = await supabase
         .from("scheduled_posts")
         .insert({
@@ -51,7 +69,7 @@ export default defineTool({
           agent_source: "claude-mcp",
           proposed_by: uid,
           campaign_id: input.campaign_id ?? null,
-          connection_id: input.connection_id ?? null,
+          connection_id: resolvedConnectionId,
           idempotency_key: input.idempotency_key ?? null,
         })
         .select()

@@ -1,7 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, supabaseServiceRole, requireAuth, okJson, toolError } from "./_shared.ts";
-import { composePromoLayout, promoSceneToEditorTexts, PROMO_DIMENSIONS } from "../../../../src/lib/promo/composePromoLayout.ts";
+import { composePromoLayout, promoSceneToEditorTexts, PROMO_DIMENSIONS } from "../promo/composePromoLayout.ts";
 import { renderPromoSceneToPng } from "../promo/renderPromo.ts";
 
 const BUCKET = "tenant-marketing";

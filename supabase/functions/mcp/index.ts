@@ -760,6 +760,13 @@ var propose_scheduled_post_default = defineTool15({
         const { data: existing } = await supabase.from("scheduled_posts").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
         if (existing) return okJson({ ...existing, _idempotent: true }, "scheduled_post");
       }
+      let resolvedConnectionId = input.connection_id ?? null;
+      if (!resolvedConnectionId && input.platform !== "discord") {
+        const { data: activeConns } = await supabase.from("social_connections").select("id").eq("tenant_id", input.tenant_id).eq("platform", input.platform).eq("is_active", true).limit(2);
+        if (activeConns && activeConns.length === 1) {
+          resolvedConnectionId = activeConns[0].id;
+        }
+      }
       const { data, error } = await supabase.from("scheduled_posts").insert({
         tenant_id: input.tenant_id,
         user_id: uid,
@@ -771,7 +778,7 @@ var propose_scheduled_post_default = defineTool15({
         agent_source: "claude-mcp",
         proposed_by: uid,
         campaign_id: input.campaign_id ?? null,
-        connection_id: input.connection_id ?? null,
+        connection_id: resolvedConnectionId,
         idempotency_key: input.idempotency_key ?? null
       }).select().single();
       if (error) throw error;
@@ -1052,7 +1059,7 @@ var propose_portal_banner_update_default = defineTool20({
 import { defineTool as defineTool21 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z19 } from "npm:zod@^3.25.76";
 
-// src/lib/promo/composePromoLayout.ts
+// supabase/functions/_shared/promo/composePromoLayout.ts
 var PROMO_DIMENSIONS = {
   portrait: { width: 1080, height: 1350 },
   square: { width: 1080, height: 1080 },
