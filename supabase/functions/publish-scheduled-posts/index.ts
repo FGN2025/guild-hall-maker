@@ -15,13 +15,15 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "";
     const cronSecret = Deno.env.get("SCHEDULED_POSTS_CRON_SECRET") ?? "";
 
     const authHeader = req.headers.get("Authorization") || "";
     const accepted = new Set(
-      [serviceKey, anonKey, cronSecret].filter(Boolean).map((k) => `Bearer ${k}`),
+      [serviceKey, anonKey, publishableKey, cronSecret].filter(Boolean).map((k) => `Bearer ${k}`),
     );
     if (!accepted.has(authHeader)) {
+      console.log(`[publish-scheduled-posts] unauthorized invocation (auth prefix=${authHeader.slice(0, 16)}...)`);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
