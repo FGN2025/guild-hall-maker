@@ -47,7 +47,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
     : [];
 
   const pendingDates = posts
-    .filter((p) => p.status === "pending")
+    .filter((p) => p.status === "pending" || p.status === "pending_review")
     .map((p) => parseISO(p.scheduled_at));
 
   const handleCancel = async (id: string) => {
