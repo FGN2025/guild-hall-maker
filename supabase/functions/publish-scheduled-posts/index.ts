@@ -188,10 +188,18 @@ Deno.serve(async (req) => {
 
     for (const post of duePosts) {
       try {
-        // Guard: undeliverable? Leave status='pending' but notify humans (once).
+        // Resolve active connection for non-discord posts. If the row has a
+        // connection_id, validate it; otherwise fall back to the single active
+        // (tenant_id, platform) connection. Backfill the row so the linkage
+        // persists for audit and any retries.
+        let resolvedConn: { id: string } | null = null;
         if (post.platform !== "discord") {
-          const ok = await hasActiveConnection(post.tenant_id, post.platform, post.connection_id);
-          if (!ok) {
+          resolvedConn = await resolveActiveConnection(
+            post.tenant_id,
+            post.platform,
+            post.connection_id,
+          );
+          if (!resolvedConn) {
             undeliverable++;
             if (!post.undeliverable_notified_at) {
               await supabase.rpc("enqueue_marketing_notification", {
@@ -215,6 +223,15 @@ Deno.serve(async (req) => {
             }
             continue;
           }
+          // Backfill: if the row had a null/stale connection_id, persist the
+          // resolved id so future retries and the audit trail agree.
+          if (post.connection_id !== resolvedConn.id) {
+            await supabase
+              .from("scheduled_posts")
+              .update({ connection_id: resolvedConn.id })
+              .eq("id", post.id);
+            post.connection_id = resolvedConn.id;
+          }
         }
 
         const freshImage = await resolveImageUrl(post.image_url);
@@ -236,7 +253,7 @@ Deno.serve(async (req) => {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
             body: JSON.stringify({
-              connection_id: post.connection_id,
+              connection_id: resolvedConn!.id,
               image_url: freshImage,
               caption: post.caption,
               scheduled_post_id: post.id,
@@ -254,10 +271,50 @@ Deno.serve(async (req) => {
           processed++;
         } else {
           const errText = await publishRes.text().catch(() => "");
-          await supabase
-            .from("scheduled_posts")
-            .update({ status: "failed", error_message: `HTTP ${publishRes.status}: ${errText.slice(0, 500)}` })
-            .eq("id", post.id);
+          const errMessage = `HTTP ${publishRes.status}: ${errText.slice(0, 500)}`;
+
+          // Detect Facebook/Instagram Graph OAuthException code 190 (expired
+          // or invalid token). Deactivate the stored credential and mark the
+          // post as an actionable token_expired failure.
+          let tokenExpired = false;
+          try {
+            const parsed = JSON.parse(errText);
+            const gErr = parsed?.error ?? parsed?.graph_error ?? null;
+            if (gErr && (gErr.code === 190 || gErr.type === "OAuthException")) {
+              tokenExpired = true;
+            }
+          } catch (_) { /* not JSON */ }
+
+          if (tokenExpired && resolvedConn) {
+            await supabase
+              .from("social_connections")
+              .update({ is_active: false })
+              .eq("id", resolvedConn.id);
+            await supabase
+              .from("scheduled_posts")
+              .update({
+                status: "failed",
+                error_message: errMessage,
+                undeliverable_reason: "token_expired",
+              })
+              .eq("id", post.id);
+            await supabase.rpc("enqueue_marketing_notification", {
+              _tenant_id: post.tenant_id,
+              _category: "dispatch_error",
+              _related_kind: "scheduled_post",
+              _related_id: post.id,
+              _title: `${post.platform} token expired`,
+              _message: `The stored ${post.platform} credential has expired or been revoked. Reconnect ${post.platform} in Marketing → Connections and republish.`,
+              _link: "/tenant/marketing?tab=connections",
+              _agent_source: post.agent_source,
+              _payload: { id: post.id, platform: post.platform, reason: "token_expired" },
+            });
+          } else {
+            await supabase
+              .from("scheduled_posts")
+              .update({ status: "failed", error_message: errMessage })
+              .eq("id", post.id);
+          }
           failed++;
         }
       } catch (e) {
