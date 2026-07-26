@@ -53,6 +53,7 @@ export const tools = [
   listPageTemplatesTool,
   proposeBrandedPageTool,
   proposePortalBannerUpdateTool,
+  composeEventPromoTool,
 ];
 
 // Names of write tools — used by agent-mcp for the tool-boundary tenant guard.
