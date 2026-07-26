@@ -325,14 +325,14 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                     variant="outline"
                     size="sm"
                     disabled={decide.isPending}
-                    onClick={() => decide.mutate({ row, approve: false })}
+                    onClick={() => onDecide(row, false)}
                   >
                     <X className="h-4 w-4 mr-1" /> Reject
                   </Button>
                   <Button
                     size="sm"
                     disabled={decide.isPending}
-                    onClick={() => decide.mutate({ row, approve: true })}
+                    onClick={() => onDecide(row, true)}
                   >
                     <Check className="h-4 w-4 mr-1" /> Approve
                   </Button>
