@@ -59,7 +59,7 @@ export function useSocialConnections(tenantId?: string | null) {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey }); toast.success("Account connected"); },
-    onError: () => toast.error("Failed to connect account"),
+    onError: (err: any) => toast.error(`Failed to connect account: ${err?.message ?? "unknown error"}`),
   });
 
   const removeConnection = useMutation({
@@ -71,7 +71,7 @@ export function useSocialConnections(tenantId?: string | null) {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey }); toast.success("Account disconnected"); },
-    onError: () => toast.error("Failed to disconnect"),
+    onError: (err: any) => toast.error(`Failed to disconnect: ${err?.message ?? "unknown error"}`),
   });
 
   return { connections, isLoading, addConnection, removeConnection };
