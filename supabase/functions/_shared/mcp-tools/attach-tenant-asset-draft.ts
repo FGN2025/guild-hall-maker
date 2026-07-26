@@ -123,6 +123,8 @@ export default defineTool({
           campaign_id: input.campaign_id ?? null,
           source_asset_id: input.source_asset_id ?? null,
           notes: input.notes ?? null,
+          overlay_config: input.overlay_config ?? null,
+          background_url: input.background_url ?? null,
           is_published: false,
           agent_source: "claude-mcp",
           proposed_by: uid,
