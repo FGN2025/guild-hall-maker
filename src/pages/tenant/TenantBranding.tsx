@@ -39,6 +39,27 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
     }
   }, [tenantInfo]);
 
+  // Load current contact_email once tenant is known (not exposed on tenantInfo)
+  useEffect(() => {
+    if (!tenantInfo?.tenantId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("tenants")
+        .select("contact_email")
+        .eq("id", tenantInfo.tenantId)
+        .maybeSingle();
+      if (!cancelled && data?.contact_email) setContactEmail(data.contact_email);
+    })();
+    return () => { cancelled = true; };
+  }, [tenantInfo?.tenantId]);
+
+  const invalidateBranding = () => {
+    queryClient.invalidateQueries({ queryKey: ["tenant-admin-check"] });
+    queryClient.invalidateQueries({ queryKey: ["tenants"] });
+    queryClient.invalidateQueries({ queryKey: ["user-tenant-branding"] });
+  };
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !tenantInfo) return;
@@ -52,12 +73,18 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
       const { error: uploadErr } = await supabase.storage.from("app-media").upload(path, resized, { upsert: true });
       if (uploadErr) throw uploadErr;
       const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
-      const logoUrl = urlData.publicUrl;
-      const { error: updateErr } = await supabase.from("tenants").update({ logo_url: logoUrl }).eq("id", tenantInfo.tenantId);
+      const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      const { data: updated, error: updateErr } = await supabase
+        .from("tenants")
+        .update({ logo_url: logoUrl })
+        .eq("id", tenantInfo.tenantId)
+        .select("id");
       if (updateErr) throw updateErr;
+      if (!updated || updated.length === 0) {
+        throw new Error("Save failed — you may not have permission to update this tenant.");
+      }
       setPreviewUrl(logoUrl);
-      queryClient.invalidateQueries({ queryKey: ["tenant-admin-check"] });
-      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      invalidateBranding();
       toast.success("Logo updated!");
     } catch (err: any) { toast.error(err.message); }
     finally { setUploading(false); }
@@ -67,9 +94,16 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
     if (!contactEmail.trim() || !tenantInfo) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("tenants").update({ contact_email: contactEmail.trim() }).eq("id", tenantInfo.tenantId);
+      const { data: updated, error } = await supabase
+        .from("tenants")
+        .update({ contact_email: contactEmail.trim() })
+        .eq("id", tenantInfo.tenantId)
+        .select("id");
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      if (!updated || updated.length === 0) {
+        throw new Error("Save failed — you may not have permission to update this tenant.");
+      }
+      invalidateBranding();
       toast.success("Contact email updated!");
     } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
@@ -79,17 +113,21 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
     if (!tenantInfo) return;
     setSavingColors(true);
     try {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("tenants")
         .update({ primary_color: primaryColor, accent_color: accentColor } as any)
-        .eq("id", tenantInfo.tenantId);
+        .eq("id", tenantInfo.tenantId)
+        .select("id");
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["tenant-admin-check"] });
-      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      if (!updated || updated.length === 0) {
+        throw new Error("Save failed — you may not have permission to update this tenant.");
+      }
+      invalidateBranding();
       toast.success("Brand colors updated!");
     } catch (err: any) { toast.error(err.message); }
     finally { setSavingColors(false); }
   };
+
 
   if (!tenantId || !tenantInfo) {
     return (
