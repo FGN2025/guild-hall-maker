@@ -93,6 +93,9 @@ Deno.serve(async (req) => {
 
         case "facebook": {
           const pageId = conn.page_id || "me";
+          const fbToken = conn.page_id
+            ? await resolvePageToken(conn.page_id, conn.access_token)
+            : conn.access_token;
           const fbRes = await fetch(
             `https://graph.facebook.com/v19.0/${pageId}/photos`,
             {
@@ -101,7 +104,7 @@ Deno.serve(async (req) => {
               body: JSON.stringify({
                 url: image_url,
                 message: caption || "",
-                access_token: conn.access_token,
+                access_token: fbToken,
               }),
             }
           );
