@@ -116,8 +116,15 @@ const TenantZipCodes = () => {
 
   const deleteZip = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tenant_zip_codes").delete().eq("id", id);
+      const { data, error } = await supabase
+        .from("tenant_zip_codes")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Removal was blocked — you may not have permission to remove this ZIP code.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
