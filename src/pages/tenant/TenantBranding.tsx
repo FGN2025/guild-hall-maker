@@ -84,7 +84,14 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
       const ext = resized.name.split(".").pop();
       const path = `tenant-logos/${tenantInfo.tenantId}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from("app-media").upload(path, resized, { upsert: true });
-      if (uploadErr) throw uploadErr;
+      if (uploadErr) {
+        throw new Error(
+          /row-level security|Unauthorized|403/i.test(uploadErr.message)
+            ? `Logo upload blocked by storage permissions (${uploadErr.message}). You must be an admin or manager of this tenant.`
+            : uploadErr.message
+        );
+      }
+
       const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
       const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       const { data: updated, error: updateErr } = await supabase
