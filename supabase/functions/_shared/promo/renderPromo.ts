@@ -79,7 +79,14 @@ function rgbaFromCss(rgba: string): string {
   return rgba;
 }
 
-export async function renderPromoSceneToPng(scene: PromoScene): Promise<Uint8Array> {
+/** Render a scene. `includeText: false` produces the text-free "background
+ *  plate" (image + gradient + accent bar) that the editor uses as its base so
+ *  overlay_config text layers are not drawn on top of already-baked glyphs. */
+export async function renderPromoSceneToPng(
+  scene: PromoScene,
+  opts: { includeText?: boolean } = {},
+): Promise<Uint8Array> {
+  const includeText = opts.includeText !== false;
   await ensureWasm();
 
   // Preload background as data URL for self-contained SVG

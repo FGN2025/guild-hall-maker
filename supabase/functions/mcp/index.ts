@@ -1228,7 +1228,8 @@ async function fetchAsDataUrl(url) {
 function rgbaFromCss(rgba) {
   return rgba;
 }
-async function renderPromoSceneToPng(scene) {
+async function renderPromoSceneToPng(scene, opts = {}) {
+  const includeText = opts.includeText !== false;
   await ensureWasm();
   let bgHref = null;
   if (scene.backgroundUrl) {
