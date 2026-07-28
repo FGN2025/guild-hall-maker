@@ -1373,8 +1373,12 @@ var compose_event_promo_default = defineTool21({
           id: crypto.randomUUID(),
           type: "text",
           text: t.text,
+          // Absolute coords are at output resolution; xPct/yPct let the editor
+          // hydrate correctly at its (smaller) working canvas size.
           x: t.x,
           y: t.y,
+          xPct: t.xPct,
+          yPct: t.yPct,
           fontSize: t.fontSize,
           color: t.color,
           fontFamily: t.fontFamily,

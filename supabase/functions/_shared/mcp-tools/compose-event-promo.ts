@@ -124,14 +124,19 @@ export default defineTool({
           id: crypto.randomUUID(),
           type: "text",
           text: t.text,
+          // Absolute coords are at output resolution; xPct/yPct let the editor
+          // hydrate correctly at its (smaller) working canvas size.
           x: t.x,
           y: t.y,
+          xPct: t.xPct,
+          yPct: t.yPct,
           fontSize: t.fontSize,
           color: t.color,
           fontFamily: t.fontFamily,
           fontWeight: t.fontWeight,
         })),
       };
+
 
       const fileName = input.file_name ?? `${evt.name} — ${(input.beat_label ?? "Promo")}.png`;
       const label = `${input.format.charAt(0).toUpperCase()}${input.format.slice(1)} ${scene.width}x${scene.height}`;
