@@ -32,7 +32,7 @@ const statusColor: Record<string, string> = {
 const TenantSubscribers = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId;
-  const isAdmin = tenantInfo?.tenantRole === "admin";
+  const isAdmin = tenantInfo?.tenantRole === "admin" || tenantInfo?.tenantRole === "manager";
   const { subscribers, isLoading, bulkInsert, updateSubscriber, deleteSubscriber } = useTenantSubscribers(tenantId);
   const { logs: syncLogs, isLoading: syncLogsLoading } = useSyncLogs(tenantId);
   const [searchParams, setSearchParams] = useSearchParams();
