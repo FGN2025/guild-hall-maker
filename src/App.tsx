@@ -271,19 +271,20 @@ const App = () => (
               <Route path="/admin/redemptions" element={<AdminRoute><AdminRedemptions /></AdminRoute>} />
 
               {/* Tenant routes */}
-              <Route path="/tenant" element={<TenantRoute><TenantDashboard /></TenantRoute>} />
-              <Route path="/tenant/players" element={<TenantRoute><TenantPlayers /></TenantRoute>} />
-              <Route path="/tenant/leads" element={<TenantRoute><TenantLeads /></TenantRoute>} />
-              <Route path="/tenant/zip-codes" element={<TenantRoute><TenantZipCodes /></TenantRoute>} />
-              <Route path="/tenant/subscribers" element={<TenantRoute><TenantSubscribers /></TenantRoute>} />
-              <Route path="/tenant/team" element={<TenantRoute><TenantTeam /></TenantRoute>} />
-              <Route path="/tenant/settings" element={<TenantRoute><TenantSettings /></TenantRoute>} />
+              <Route path="/tenant" element={<TenantRoute requiredRoles={["admin", "manager"]}><TenantDashboard /></TenantRoute>} />
+              <Route path="/tenant/players" element={<TenantRoute requiredRoles={["admin", "manager"]}><TenantPlayers /></TenantRoute>} />
+              <Route path="/tenant/leads" element={<TenantRoute requiredRoles={["admin", "manager"]}><TenantLeads /></TenantRoute>} />
+              <Route path="/tenant/zip-codes" element={<TenantRoute requiredRoles={["admin", "manager"]}><TenantZipCodes /></TenantRoute>} />
+              <Route path="/tenant/subscribers" element={<TenantRoute requiredRoles={["admin", "manager"]}><TenantSubscribers /></TenantRoute>} />
+              <Route path="/tenant/team" element={<TenantRoute requiredRoles={["admin"]}><TenantTeam /></TenantRoute>} />
+              <Route path="/tenant/settings" element={<TenantRoute requiredRoles={["admin", "manager"]}><TenantSettings /></TenantRoute>} />
               <Route path="/tenant/account" element={<Navigate to="/tenant/settings?tab=account" replace />} />
               <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
               <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
               <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
-              <Route path="/tenant/codes" element={<TenantRoute><TenantCodes /></TenantRoute>} />
+              <Route path="/tenant/codes" element={<TenantRoute requiredRoles={["admin"]}><TenantCodes /></TenantRoute>} />
               <Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />
+
               <Route path="/tenant/branding" element={<Navigate to="/tenant/settings?tab=brand" replace />} />
               <Route path="/tenant/branding/banner" element={<Navigate to="/tenant/marketing?tab=webpages&sub=banner" replace />} />
               <Route path="/tenant/branding/pages" element={<Navigate to="/tenant/marketing?tab=webpages&sub=pages" replace />} />
