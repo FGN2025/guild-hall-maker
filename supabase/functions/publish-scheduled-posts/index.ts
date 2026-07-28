@@ -175,14 +175,23 @@ Deno.serve(async (req) => {
         if (data?.is_active) return { id: data.id };
         return null;
       }
+      // Deterministic when multiple actives exist: prefer the most recently
+      // created active connection and warn so stale rows get cleaned up.
       const { data } = await supabase
         .from("social_connections")
-        .select("id")
+        .select("id, created_at")
         .eq("tenant_id", tenantId)
         .eq("platform", platform)
         .eq("is_active", true)
-        .limit(1);
-      if (data && data.length) return { id: data[0].id };
+        .order("created_at", { ascending: false });
+      if (data && data.length) {
+        if (data.length > 1) {
+          console.warn(
+            `Multiple active ${platform} connections for tenant ${tenantId} (${data.length}); using newest ${data[0].id}`,
+          );
+        }
+        return { id: data[0].id };
+      }
       return null;
     }
 
