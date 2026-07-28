@@ -281,7 +281,7 @@
       {
         "name": "list_pending_agent_drafts",
         "title": "List pending and rejected agent drafts",
-        "description": "For a tenant, list agent-authored campaigns and scheduled posts that are currently 'pending_review', plus any 'rejected' rows updated in the last 30 days (with feedback notes). Use this each turn to prioritize revisions before proposing new work.",
+        "description": "For a tenant, list agent-authored campaigns, scheduled posts and marketing assets that are currently 'pending_review', plus any 'rejected' rows updated in the last 30 days (with feedback notes). Assets are unpublished agent-authored rows that carry rejection feedback. Use this each turn to prioritize revisions before proposing new work.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -800,6 +800,60 @@
             "tenant_id",
             "sections",
             "proposal_reason"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "compose_event_promo",
+        "title": "Compose a deterministic promo image from a published event",
+        "description": "Lane 1 (calendar-lane) composer. Layouts an event (tournament OR tenant event) with the tenant's brand color and beat label into a PNG using pure server-side rendering (no external image generation cost), uploads it into the tenant-marketing bucket, and inserts a tenant_marketing_assets draft row identical in shape to attach_tenant_asset_draft — including overlay_config so the draft opens in the editor as separately-editable text layers. Provide exactly one of tournament_id or event_id.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "tournament_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "format": {
+              "type": "string",
+              "enum": [
+                "portrait",
+                "square",
+                "landscape",
+                "story"
+              ],
+              "default": "portrait"
+            },
+            "beat_label": {
+              "type": "string",
+              "description": "e.g. 'Announce', 'Countdown', 'Day-Of', 'Recap'"
+            },
+            "campaign_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "file_name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tenant_id"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"

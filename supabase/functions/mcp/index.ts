@@ -1180,15 +1180,17 @@ function promoSceneToEditorTexts(scene) {
 }
 
 // supabase/functions/_shared/promo/renderPromo.ts
-import { Resvg, initWasm } from "npm:@resvg/resvg-wasm@2.6.2";
+var ResvgCtor = null;
 var wasmReady = null;
 async function ensureWasm() {
   if (!wasmReady) {
     wasmReady = (async () => {
+      const mod = await import("npm:@resvg/resvg-wasm@2.6.2");
+      ResvgCtor = mod.Resvg;
       const res = await fetch("https://unpkg.com/@resvg/resvg-wasm@2.6.2/index_bg.wasm");
       if (!res.ok) throw new Error(`Failed to fetch resvg wasm: ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
-      await initWasm(bytes);
+      await mod.initWasm(bytes);
     })();
   }
   return wasmReady;
