@@ -143,7 +143,7 @@ export default defineTool({
           file_name: fileName,
           file_path: path,
           url: storedUrl,
-          background_url: evt.image_url ?? null,
+          background_url: plateUrl,
           overlay_config: overlayConfig,
           label,
           campaign_id: input.campaign_id ?? null,
