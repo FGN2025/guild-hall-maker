@@ -1,8 +1,9 @@
 // Server-side rasterizer for a PromoScene. Pure-WASM (resvg) so it runs in
-// Supabase Edge Runtime with no native deps. Font parity was RELAXED to
-// layout parity — resvg falls back on its bundled DejaVu for `sans-serif`;
-// positions, sizes, colors, gradient, accent bar all match the browser
-// renderer exactly.
+// Supabase Edge Runtime with no native deps. Font parity is RELAXED to layout
+// parity (Flag A): resvg-wasm ships NO fonts at all, so we load DejaVu Sans
+// (regular + bold) at runtime and render every text node with it. Glyph shapes
+// therefore differ from the browser canvas (system sans-serif), but positions,
+// sizes, colors, gradient and accent bar match exactly.
 //
 // Kept in _shared/ so both the compose-event-promo MCP tool and any future
 // server surface (e.g. a preview endpoint) share one code path.
@@ -12,7 +13,14 @@
 // `npm:` specifiers; Deno resolves them at runtime on first render).
 import type { PromoScene } from "../../../../src/lib/promo/composePromoLayout.ts";
 
+const FONT_URLS = [
+  "https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans.ttf",
+  "https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans-Bold.ttf",
+];
+export const SERVER_FONT_FAMILY = "DejaVu Sans";
+
 let ResvgCtor: any = null;
+let fontBuffers: Uint8Array[] = [];
 let wasmReady: Promise<void> | null = null;
 async function ensureWasm() {
   if (!wasmReady) {
@@ -24,10 +32,21 @@ async function ensureWasm() {
       if (!res.ok) throw new Error(`Failed to fetch resvg wasm: ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
       await mod.initWasm(bytes);
+
+      // resvg-wasm bundles no fonts — without these buffers every <text> node
+      // silently renders as nothing.
+      fontBuffers = await Promise.all(
+        FONT_URLS.map(async (u) => {
+          const r = await fetch(u);
+          if (!r.ok) throw new Error(`Failed to fetch font ${u}: ${r.status}`);
+          return new Uint8Array(await r.arrayBuffer());
+        }),
+      );
     })();
   }
   return wasmReady;
 }
+
 
 
 function escapeXml(s: string): string {
@@ -60,7 +79,14 @@ function rgbaFromCss(rgba: string): string {
   return rgba;
 }
 
-export async function renderPromoSceneToPng(scene: PromoScene): Promise<Uint8Array> {
+/** Render a scene. `includeText: false` produces the text-free "background
+ *  plate" (image + gradient + accent bar) that the editor uses as its base so
+ *  overlay_config text layers are not drawn on top of already-baked glyphs. */
+export async function renderPromoSceneToPng(
+  scene: PromoScene,
+  opts: { includeText?: boolean } = {},
+): Promise<Uint8Array> {
+  const includeText = opts.includeText !== false;
   await ensureWasm();
 
   // Preload background as data URL for self-contained SVG
@@ -96,11 +122,11 @@ export async function renderPromoSceneToPng(scene: PromoScene): Promise<Uint8Arr
   const ab = scene.accentBar;
   const accent = `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
 
-  const textNodes = scene.texts.map((t) => {
+  const textNodes = (includeText ? scene.texts : []).map((t) => {
     const weight = t.fontWeight === "bold" ? "bold" : "normal";
     // SVG y is baseline; approximate top-baseline by adding fontSize*0.85
     const y = t.yPct * h + t.fontSize * 0.85;
-    return `<text x="${t.xPct * w}" y="${y}" font-family="Inter, sans-serif" font-size="${t.fontSize}" font-weight="${weight}" fill="${t.color}" filter="url(#drop)">${escapeXml(t.text)}</text>`;
+    return `<text x="${t.xPct * w}" y="${y}" font-family="${SERVER_FONT_FAMILY}" font-size="${t.fontSize}" font-weight="${weight}" fill="${t.color}" filter="url(#drop)">${escapeXml(t.text)}</text>`;
   }).join("");
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
@@ -116,9 +142,12 @@ export async function renderPromoSceneToPng(scene: PromoScene): Promise<Uint8Arr
     background: scene.backgroundFallbackHex,
     fitTo: { mode: "width", value: w },
     font: {
-      loadSystemFonts: false, // deterministic — rely on bundled DejaVu fallback
+      loadSystemFonts: false, // deterministic — only the buffers below
+      fontBuffers,
+      defaultFontFamily: SERVER_FONT_FAMILY,
     },
   });
+
   const png = resvg.render().asPng();
   return png;
 }

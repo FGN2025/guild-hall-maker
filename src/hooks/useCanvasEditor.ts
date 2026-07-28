@@ -502,25 +502,47 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
 
   /** Hydrate the canvas from a persisted overlay_config. Supports text and
    *  shape overlays directly; logo overlays are re-materialised by loading
-   *  the src into an Image before insertion. Callers should ensure canvas
-   *  format/size has already been set to match the config so absolute x/y
-   *  render correctly. */
+   *  the src into an Image before insertion.
+   *
+   *  Coordinates are normalised to the CURRENT canvas size: overlays that
+   *  carry xPct/yPct win, otherwise absolute x/y (and sizes) are rescaled by
+   *  the ratio between the config's source canvas and this canvas. Server-
+   *  composed assets are authored at full output resolution (e.g. 1080x1350)
+   *  while the editor works at its display size, so hydrating raw x/y would
+   *  push lower layers off-canvas. */
   const hydrateOverlays = useCallback(
-    (serialized: Array<Record<string, any>>) => {
+    (serialized: Array<Record<string, any>>, sourceCanvas?: { width?: number; height?: number } | null) => {
+      const sw = sourceCanvas?.width && sourceCanvas.width > 0 ? sourceCanvas.width : canvasSize.width;
+      const sh = sourceCanvas?.height && sourceCanvas.height > 0 ? sourceCanvas.height : canvasSize.height;
+      const kx = canvasSize.width / sw;
+      const ky = canvasSize.height / sh;
+      const k = Math.min(kx, ky);
+
+      const norm = (raw: Record<string, any>) => {
+        const out: Record<string, any> = { ...raw };
+        out.x = raw.xPct != null ? Math.round(raw.xPct * canvasSize.width) : Math.round((raw.x ?? 0) * kx);
+        out.y = raw.yPct != null ? Math.round(raw.yPct * canvasSize.height) : Math.round((raw.y ?? 0) * ky);
+        if (typeof raw.fontSize === "number") out.fontSize = Math.max(1, Math.round(raw.fontSize * k));
+        if (typeof raw.width === "number") out.width = Math.round(raw.width * kx);
+        if (typeof raw.height === "number") out.height = Math.round(raw.height * ky);
+        return out;
+      };
+
       const rebuilt: Overlay[] = [];
       const pending: Array<Promise<Overlay | null>> = [];
 
       for (const raw of serialized) {
         if (raw?.type === "text") {
-          rebuilt.push({ ...(raw as any), id: raw.id ?? crypto.randomUUID(), type: "text" });
+          rebuilt.push({ ...(norm(raw) as any), id: raw.id ?? crypto.randomUUID(), type: "text" });
         } else if (raw?.type === "shape") {
-          rebuilt.push({ ...(raw as any), id: raw.id ?? crypto.randomUUID(), type: "shape" });
+          rebuilt.push({ ...(norm(raw) as any), id: raw.id ?? crypto.randomUUID(), type: "shape" });
         } else if (raw?.type === "logo" && raw.src) {
+          const n = norm(raw);
           pending.push(
             new Promise((resolve) => {
               const img = new Image();
               img.crossOrigin = "anonymous";
-              img.onload = () => resolve({ ...(raw as any), id: raw.id ?? crypto.randomUUID(), type: "logo", img } as LogoOverlay);
+              img.onload = () => resolve({ ...(n as any), id: raw.id ?? crypto.randomUUID(), type: "logo", img } as LogoOverlay);
               img.onerror = () => resolve(null);
               img.src = raw.src;
             })
@@ -539,8 +561,9 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
         if (good.length) pushState([...rebuilt, ...good]);
       });
     },
-    [pushState]
+    [pushState, canvasSize]
   );
+
 
 
   // Reorder overlay (z-order)

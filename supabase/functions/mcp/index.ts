@@ -1180,7 +1180,13 @@ function promoSceneToEditorTexts(scene) {
 }
 
 // supabase/functions/_shared/promo/renderPromo.ts
+var FONT_URLS = [
+  "https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans.ttf",
+  "https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans-Bold.ttf"
+];
+var SERVER_FONT_FAMILY = "DejaVu Sans";
 var ResvgCtor = null;
+var fontBuffers = [];
 var wasmReady = null;
 async function ensureWasm() {
   if (!wasmReady) {
@@ -1191,6 +1197,13 @@ async function ensureWasm() {
       if (!res.ok) throw new Error(`Failed to fetch resvg wasm: ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
       await mod.initWasm(bytes);
+      fontBuffers = await Promise.all(
+        FONT_URLS.map(async (u) => {
+          const r = await fetch(u);
+          if (!r.ok) throw new Error(`Failed to fetch font ${u}: ${r.status}`);
+          return new Uint8Array(await r.arrayBuffer());
+        })
+      );
     })();
   }
   return wasmReady;
@@ -1215,7 +1228,8 @@ async function fetchAsDataUrl(url) {
 function rgbaFromCss(rgba) {
   return rgba;
 }
-async function renderPromoSceneToPng(scene) {
+async function renderPromoSceneToPng(scene, opts = {}) {
+  const includeText = opts.includeText !== false;
   await ensureWasm();
   let bgHref = null;
   if (scene.backgroundUrl) {
@@ -1241,10 +1255,10 @@ async function renderPromoSceneToPng(scene) {
   const overlay = `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#dark)"/>`;
   const ab = scene.accentBar;
   const accent = `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
-  const textNodes = scene.texts.map((t) => {
+  const textNodes = (includeText ? scene.texts : []).map((t) => {
     const weight = t.fontWeight === "bold" ? "bold" : "normal";
     const y = t.yPct * h + t.fontSize * 0.85;
-    return `<text x="${t.xPct * w}" y="${y}" font-family="Inter, sans-serif" font-size="${t.fontSize}" font-weight="${weight}" fill="${t.color}" filter="url(#drop)">${escapeXml(t.text)}</text>`;
+    return `<text x="${t.xPct * w}" y="${y}" font-family="${SERVER_FONT_FAMILY}" font-size="${t.fontSize}" font-weight="${weight}" fill="${t.color}" filter="url(#drop)">${escapeXml(t.text)}</text>`;
   }).join("");
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
@@ -1258,8 +1272,10 @@ async function renderPromoSceneToPng(scene) {
     background: scene.backgroundFallbackHex,
     fitTo: { mode: "width", value: w },
     font: {
-      loadSystemFonts: false
-      // deterministic — rely on bundled DejaVu fallback
+      loadSystemFonts: false,
+      // deterministic — only the buffers below
+      fontBuffers,
+      defaultFontFamily: SERVER_FONT_FAMILY
     }
   });
   const png = resvg.render().asPng();
@@ -1320,40 +1336,49 @@ var compose_event_promo_default = defineTool21({
       });
       scene.backgroundUrl = evt.image_url ?? null;
       const png = await renderPromoSceneToPng(scene);
+      const platePng = await renderPromoSceneToPng(scene, { includeText: false });
       const beat = (input.beat_label ?? "promo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "promo";
       const now = /* @__PURE__ */ new Date();
       const yyyy = now.getUTCFullYear();
       const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
       const uuid = crypto.randomUUID();
       const path = `${input.tenant_id}/agent/${yyyy}/${mm}/promo-${evt.id}-${beat}-${uuid}.png`;
-      const { error: upErr } = await userSupabase.storage.from(BUCKET2).upload(path, png, {
-        contentType: "image/png",
-        upsert: false
-      });
-      if (upErr) {
-        const svc = supabaseServiceRole();
-        const retry = await svc.storage.from(BUCKET2).upload(path, png, { contentType: "image/png", upsert: false });
-        if (retry.error) throw retry.error;
+      const platePath = `${input.tenant_id}/agent/${yyyy}/${mm}/promo-${evt.id}-${beat}-${uuid}-plate.png`;
+      const svcFallback = supabaseServiceRole;
+      async function upload(p, bytes) {
+        const { error } = await userSupabase.storage.from(BUCKET2).upload(p, bytes, {
+          contentType: "image/png",
+          upsert: false
+        });
+        if (error) {
+          const retry = await svcFallback().storage.from(BUCKET2).upload(p, bytes, { contentType: "image/png", upsert: false });
+          if (retry.error) throw retry.error;
+        }
       }
+      await upload(path, png);
+      await upload(platePath, platePng);
       const signTtl = 60 * 60 * 24 * 365;
-      let storedUrl;
-      const { data: signed, error: signErr } = await userSupabase.storage.from(BUCKET2).createSignedUrl(path, signTtl);
-      if (signErr || !signed?.signedUrl) {
-        const svc = supabaseServiceRole();
-        const retry = await svc.storage.from(BUCKET2).createSignedUrl(path, signTtl);
-        if (retry.error || !retry.data?.signedUrl) throw signErr ?? retry.error;
-        storedUrl = retry.data.signedUrl;
-      } else {
-        storedUrl = signed.signedUrl;
+      async function sign(p) {
+        const { data, error } = await userSupabase.storage.from(BUCKET2).createSignedUrl(p, signTtl);
+        if (!error && data?.signedUrl) return data.signedUrl;
+        const retry = await svcFallback().storage.from(BUCKET2).createSignedUrl(p, signTtl);
+        if (retry.error || !retry.data?.signedUrl) throw error ?? retry.error;
+        return retry.data.signedUrl;
       }
+      const storedUrl = await sign(path);
+      const plateUrl = await sign(platePath);
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
         overlays: promoSceneToEditorTexts(scene).map((t) => ({
           id: crypto.randomUUID(),
           type: "text",
           text: t.text,
+          // Absolute coords are at output resolution; xPct/yPct let the editor
+          // hydrate correctly at its (smaller) working canvas size.
           x: t.x,
           y: t.y,
+          xPct: t.xPct,
+          yPct: t.yPct,
           fontSize: t.fontSize,
           color: t.color,
           fontFamily: t.fontFamily,
@@ -1367,7 +1392,7 @@ var compose_event_promo_default = defineTool21({
         file_name: fileName,
         file_path: path,
         url: storedUrl,
-        background_url: evt.image_url ?? null,
+        background_url: plateUrl,
         overlay_config: overlayConfig,
         label,
         campaign_id: input.campaign_id ?? null,
