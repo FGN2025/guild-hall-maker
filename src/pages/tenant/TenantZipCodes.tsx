@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { Navigate } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,10 +125,6 @@ const TenantZipCodes = () => {
     },
     onError: (err: any) => toast.error(err.message),
   });
-
-  if (tenantInfo && tenantInfo.tenantRole !== "admin") {
-    return <Navigate to="/tenant" replace />;
-  }
 
   const handleAdd = () => {
     if (!form.zip_code.trim() || form.zip_code.length !== 5) {
