@@ -23,7 +23,6 @@ const TenantTeam = () => {
   const queryClient = useQueryClient();
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId || "";
-  const tenantRole = tenantInfo?.tenantRole;
 
   const { admins, isLoading, addAdmin, removeAdmin, updateRole } = useTenantAdmins(tenantId);
   const [search, setSearch] = useState("");
