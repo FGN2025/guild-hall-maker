@@ -1180,7 +1180,13 @@ function promoSceneToEditorTexts(scene) {
 }
 
 // supabase/functions/_shared/promo/renderPromo.ts
+var FONT_URLS = [
+  "https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans.ttf",
+  "https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans-Bold.ttf"
+];
+var SERVER_FONT_FAMILY = "DejaVu Sans";
 var ResvgCtor = null;
+var fontBuffers = [];
 var wasmReady = null;
 async function ensureWasm() {
   if (!wasmReady) {
@@ -1191,6 +1197,13 @@ async function ensureWasm() {
       if (!res.ok) throw new Error(`Failed to fetch resvg wasm: ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
       await mod.initWasm(bytes);
+      fontBuffers = await Promise.all(
+        FONT_URLS.map(async (u) => {
+          const r = await fetch(u);
+          if (!r.ok) throw new Error(`Failed to fetch font ${u}: ${r.status}`);
+          return new Uint8Array(await r.arrayBuffer());
+        })
+      );
     })();
   }
   return wasmReady;
@@ -1244,7 +1257,7 @@ async function renderPromoSceneToPng(scene) {
   const textNodes = scene.texts.map((t) => {
     const weight = t.fontWeight === "bold" ? "bold" : "normal";
     const y = t.yPct * h + t.fontSize * 0.85;
-    return `<text x="${t.xPct * w}" y="${y}" font-family="Inter, sans-serif" font-size="${t.fontSize}" font-weight="${weight}" fill="${t.color}" filter="url(#drop)">${escapeXml(t.text)}</text>`;
+    return `<text x="${t.xPct * w}" y="${y}" font-family="${SERVER_FONT_FAMILY}" font-size="${t.fontSize}" font-weight="${weight}" fill="${t.color}" filter="url(#drop)">${escapeXml(t.text)}</text>`;
   }).join("");
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
@@ -1258,8 +1271,10 @@ async function renderPromoSceneToPng(scene) {
     background: scene.backgroundFallbackHex,
     fitTo: { mode: "width", value: w },
     font: {
-      loadSystemFonts: false
-      // deterministic — rely on bundled DejaVu fallback
+      loadSystemFonts: false,
+      // deterministic — only the buffers below
+      fontBuffers,
+      defaultFontFamily: SERVER_FONT_FAMILY
     }
   });
   const png = resvg.render().asPng();
