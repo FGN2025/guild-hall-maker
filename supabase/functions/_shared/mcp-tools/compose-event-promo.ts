@@ -77,6 +77,10 @@ export default defineTool({
       scene.backgroundUrl = evt.image_url ?? null;
 
       const png = await renderPromoSceneToPng(scene);
+      // Text-free plate: the editor uses this as its base image so the
+      // overlay_config text layers hydrate as the ONLY copy of the text
+      // (composing over the flattened render would double every string).
+      const platePng = await renderPromoSceneToPng(scene, { includeText: false });
 
       // Storage upload — tenant-marketing bucket (composer output ingests via
       // the same path attach_tenant_asset_draft uses).
@@ -86,28 +90,33 @@ export default defineTool({
       const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
       const uuid = crypto.randomUUID();
       const path = `${input.tenant_id}/agent/${yyyy}/${mm}/promo-${evt.id}-${beat}-${uuid}.png`;
+      const platePath = `${input.tenant_id}/agent/${yyyy}/${mm}/promo-${evt.id}-${beat}-${uuid}-plate.png`;
 
-      const { error: upErr } = await userSupabase.storage.from(BUCKET).upload(path, png, {
-        contentType: "image/png",
-        upsert: false,
-      });
-      if (upErr) {
-        const svc = supabaseServiceRole();
-        const retry = await svc.storage.from(BUCKET).upload(path, png, { contentType: "image/png", upsert: false });
-        if (retry.error) throw retry.error;
+      const svcFallback = supabaseServiceRole;
+      async function upload(p: string, bytes: Uint8Array) {
+        const { error } = await userSupabase.storage.from(BUCKET).upload(p, bytes, {
+          contentType: "image/png",
+          upsert: false,
+        });
+        if (error) {
+          const retry = await svcFallback().storage.from(BUCKET).upload(p, bytes, { contentType: "image/png", upsert: false });
+          if (retry.error) throw retry.error;
+        }
       }
+      await upload(path, png);
+      await upload(platePath, platePng);
 
       const signTtl = 60 * 60 * 24 * 365;
-      let storedUrl: string;
-      const { data: signed, error: signErr } = await userSupabase.storage.from(BUCKET).createSignedUrl(path, signTtl);
-      if (signErr || !signed?.signedUrl) {
-        const svc = supabaseServiceRole();
-        const retry = await svc.storage.from(BUCKET).createSignedUrl(path, signTtl);
-        if (retry.error || !retry.data?.signedUrl) throw signErr ?? retry.error;
-        storedUrl = retry.data.signedUrl;
-      } else {
-        storedUrl = signed.signedUrl;
+      async function sign(p: string): Promise<string> {
+        const { data, error } = await userSupabase.storage.from(BUCKET).createSignedUrl(p, signTtl);
+        if (!error && data?.signedUrl) return data.signedUrl;
+        const retry = await svcFallback().storage.from(BUCKET).createSignedUrl(p, signTtl);
+        if (retry.error || !retry.data?.signedUrl) throw error ?? retry.error;
+        return retry.data.signedUrl;
       }
+      const storedUrl = await sign(path);
+      const plateUrl = await sign(platePath);
+
 
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },

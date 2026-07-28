@@ -1336,32 +1336,37 @@ var compose_event_promo_default = defineTool21({
       });
       scene.backgroundUrl = evt.image_url ?? null;
       const png = await renderPromoSceneToPng(scene);
+      const platePng = await renderPromoSceneToPng(scene, { includeText: false });
       const beat = (input.beat_label ?? "promo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "promo";
       const now = /* @__PURE__ */ new Date();
       const yyyy = now.getUTCFullYear();
       const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
       const uuid = crypto.randomUUID();
       const path = `${input.tenant_id}/agent/${yyyy}/${mm}/promo-${evt.id}-${beat}-${uuid}.png`;
-      const { error: upErr } = await userSupabase.storage.from(BUCKET2).upload(path, png, {
-        contentType: "image/png",
-        upsert: false
-      });
-      if (upErr) {
-        const svc = supabaseServiceRole();
-        const retry = await svc.storage.from(BUCKET2).upload(path, png, { contentType: "image/png", upsert: false });
-        if (retry.error) throw retry.error;
+      const platePath = `${input.tenant_id}/agent/${yyyy}/${mm}/promo-${evt.id}-${beat}-${uuid}-plate.png`;
+      const svcFallback = supabaseServiceRole;
+      async function upload(p, bytes) {
+        const { error } = await userSupabase.storage.from(BUCKET2).upload(p, bytes, {
+          contentType: "image/png",
+          upsert: false
+        });
+        if (error) {
+          const retry = await svcFallback().storage.from(BUCKET2).upload(p, bytes, { contentType: "image/png", upsert: false });
+          if (retry.error) throw retry.error;
+        }
       }
+      await upload(path, png);
+      await upload(platePath, platePng);
       const signTtl = 60 * 60 * 24 * 365;
-      let storedUrl;
-      const { data: signed, error: signErr } = await userSupabase.storage.from(BUCKET2).createSignedUrl(path, signTtl);
-      if (signErr || !signed?.signedUrl) {
-        const svc = supabaseServiceRole();
-        const retry = await svc.storage.from(BUCKET2).createSignedUrl(path, signTtl);
-        if (retry.error || !retry.data?.signedUrl) throw signErr ?? retry.error;
-        storedUrl = retry.data.signedUrl;
-      } else {
-        storedUrl = signed.signedUrl;
+      async function sign(p) {
+        const { data, error } = await userSupabase.storage.from(BUCKET2).createSignedUrl(p, signTtl);
+        if (!error && data?.signedUrl) return data.signedUrl;
+        const retry = await svcFallback().storage.from(BUCKET2).createSignedUrl(p, signTtl);
+        if (retry.error || !retry.data?.signedUrl) throw error ?? retry.error;
+        return retry.data.signedUrl;
       }
+      const storedUrl = await sign(path);
+      const plateUrl = await sign(platePath);
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
         overlays: promoSceneToEditorTexts(scene).map((t) => ({
