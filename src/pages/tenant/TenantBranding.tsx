@@ -55,10 +55,23 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
   }, [tenantInfo?.tenantId]);
 
   const invalidateBranding = () => {
-    queryClient.invalidateQueries({ queryKey: ["tenant-admin-check"] });
+    // These are the real query keys registered by useTenantAdmin — invalidating
+    // the wrong key is what made saves look like they reverted on navigation.
+    queryClient.invalidateQueries({ queryKey: ["tenant-admin-memberships"] });
+    queryClient.invalidateQueries({ queryKey: ["all-tenants-list"] });
     queryClient.invalidateQueries({ queryKey: ["tenants"] });
     queryClient.invalidateQueries({ queryKey: ["user-tenant-branding"] });
   };
+
+  const refetchContactEmail = async (tenantId: string) => {
+    const { data } = await supabase
+      .from("tenants")
+      .select("contact_email")
+      .eq("id", tenantId)
+      .maybeSingle();
+    if (data) setContactEmail(data.contact_email || "");
+  };
+
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
