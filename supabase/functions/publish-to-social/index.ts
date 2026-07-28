@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
           // Instagram Graph API - container-based publishing
           const pageId = conn.page_id;
           if (!pageId) throw new Error("Instagram requires a linked Page ID");
+          const igToken = await resolvePageToken(pageId, conn.access_token);
 
           // Step 1: Create media container
           const containerRes = await fetch(
@@ -131,7 +132,7 @@ Deno.serve(async (req) => {
               body: JSON.stringify({
                 image_url,
                 caption: caption || "",
-                access_token: conn.access_token,
+                access_token: igToken,
               }),
             }
           );
@@ -146,7 +147,7 @@ Deno.serve(async (req) => {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 creation_id: containerData.id,
-                access_token: conn.access_token,
+                access_token: igToken,
               }),
             }
           );
