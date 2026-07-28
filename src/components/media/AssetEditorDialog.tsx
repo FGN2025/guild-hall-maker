@@ -156,7 +156,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     }
     // Defer hydration one tick so setFormat has applied canvasSize
     const t = setTimeout(() => {
-      hydrateOverlays(initialOverlayConfig.overlays);
+      hydrateOverlays(initialOverlayConfig.overlays, initialOverlayConfig.canvas);
       hydratedRef.current = true;
     }, 0);
     return () => clearTimeout(t);
