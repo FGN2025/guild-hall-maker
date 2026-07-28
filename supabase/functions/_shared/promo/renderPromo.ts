@@ -7,22 +7,28 @@
 // Kept in _shared/ so both the compose-event-promo MCP tool and any future
 // server surface (e.g. a preview endpoint) share one code path.
 
-// @ts-expect-error Deno npm specifier resolved at runtime via import map
-import { Resvg, initWasm } from "npm:@resvg/resvg-wasm@2.6.2";
+// resvg is loaded lazily via a dynamic npm: specifier so that this module is
+// import-safe for the build-time MCP manifest extractor (Node cannot resolve
+// `npm:` specifiers; Deno resolves them at runtime on first render).
 import type { PromoScene } from "../../../../src/lib/promo/composePromoLayout.ts";
 
+let ResvgCtor: any = null;
 let wasmReady: Promise<void> | null = null;
 async function ensureWasm() {
   if (!wasmReady) {
     wasmReady = (async () => {
+      // @ts-expect-error Deno npm specifier resolved at runtime
+      const mod = await import("npm:@resvg/resvg-wasm@2.6.2");
+      ResvgCtor = mod.Resvg;
       const res = await fetch("https://unpkg.com/@resvg/resvg-wasm@2.6.2/index_bg.wasm");
       if (!res.ok) throw new Error(`Failed to fetch resvg wasm: ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
-      await initWasm(bytes);
+      await mod.initWasm(bytes);
     })();
   }
   return wasmReady;
 }
+
 
 function escapeXml(s: string): string {
   return s.replace(/[<>&'"]/g, (c) => (
@@ -106,7 +112,7 @@ export async function renderPromoSceneToPng(scene: PromoScene): Promise<Uint8Arr
   ${textNodes}
 </svg>`;
 
-  const resvg = new Resvg(svg, {
+  const resvg = new ResvgCtor(svg, {
     background: scene.backgroundFallbackHex,
     fitTo: { mode: "width", value: w },
     font: {

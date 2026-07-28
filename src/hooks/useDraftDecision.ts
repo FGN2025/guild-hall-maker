@@ -40,8 +40,13 @@ export function useDraftDecision(tenantId: string | null | undefined) {
       let patch: Record<string, unknown>;
       if (row.kind === "asset") {
         patch = approve
-          ? { is_published: true, notes: trimmed ?? row.description ?? null }
-          : { notes: trimmed ? `[Rejected] ${trimmed}` : "[Rejected]" };
+          ? { is_published: true, feedback_note: null, notes: trimmed ?? row.description ?? null }
+          : {
+              // feedback_note is the durable, agent-readable field; the notes
+              // marker is kept so existing UI/filters keep working.
+              feedback_note: trimmed,
+              notes: trimmed ? `[Rejected] ${trimmed}` : "[Rejected]",
+            };
       } else if (row.kind === "scheduled_post") {
         patch = approve
           ? { status: "pending", feedback_note: trimmed }

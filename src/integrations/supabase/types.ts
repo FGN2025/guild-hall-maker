@@ -4519,6 +4519,7 @@ export type Database = {
           campaign_id: string | null
           created_at: string
           created_by: string
+          feedback_note: string | null
           file_name: string
           file_path: string
           id: string
@@ -4539,6 +4540,7 @@ export type Database = {
           campaign_id?: string | null
           created_at?: string
           created_by: string
+          feedback_note?: string | null
           file_name: string
           file_path: string
           id?: string
@@ -4559,6 +4561,7 @@ export type Database = {
           campaign_id?: string | null
           created_at?: string
           created_by?: string
+          feedback_note?: string | null
           file_name?: string
           file_path?: string
           id?: string
