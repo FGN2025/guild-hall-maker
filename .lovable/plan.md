@@ -1,44 +1,56 @@
-## What I verified in HCTC's live data
+## Tenant Admin Role — Production Hardening
 
-- `tenants` row for HCTC now holds `primary_color #097abf`, `accent_color #6bc7c2`, `contact_email marketing@hctc.coop`, last updated today 12:58 UTC. **His colour/email saves ARE reaching the database.**
-- The tenant-admin UPDATE policy on `tenants` exists and Kerry's membership role is `admin`, so writes pass RLS.
-- The `app-media` upload policy requires the first folder of the file path to equal the uploader's user id (or platform admin/moderator). The Brand Guide uploads to `tenant-logos/<tenant-id>.png`, so a tenant admin's upload is rejected — exactly the "new row violates row-level security policy" message he screenshotted.
+Audit of the tenant admin surface found the role model is sound in concept (`admin` / `manager` / `marketing`) but enforcement is inconsistent: the UI hides things the database still allows. Below is what to fix, in risk order.
 
-So there are two distinct remaining defects.
+### 0. Billing authorization — deferred to backlog
 
-## Defect 1 — brand values look reverted (display-only, cache key mismatch)
+`create-checkout` takes `tenant_id` from the request body with no membership or role check, and `stripe-webhook` trusts that metadata to write subscription and plan state. Any signed-in user can attach a checkout to a tenant they don't belong to. Per your call this moves to the backlog rather than this build — I'll record it in `.lovable/backlog/` as a known open authorization gap with the intended fix (platform-admin-only server-side guard on `create-checkout` and `customer-portal`) so it isn't lost.
 
-`TenantBranding.tsx` invalidates the query key `["tenant-admin-check"]` after a save, but `useTenantAdmin` actually registers its queries under `["tenant-admin-memberships", userId]` and `["all-tenants-list"]`. Nothing invalidates those, so the sidebar-level hook keeps serving the pre-save cached tenant row. Navigating away and back re-renders from that stale cache and the form re-seeds the old colours — the data on the server is correct, the screen is not. A hard reload would show the new values.
+### 1. Align database rules with intended role permissions
 
-Fix:
-- Invalidate `["tenant-admin-memberships"]` and `["all-tenants-list"]` (alongside the existing `["user-tenant-branding"]`) after colour, email, and logo saves.
-- Drop the dead `["tenant-admin-check"]` key.
-- Re-read `contact_email` after a successful email save so the field reflects the stored value rather than local state alone.
+Decision applied: **admin + manager** for both subscribers and integrations; marketing blocked.
 
-## Defect 2 — logo upload blocked by storage policy
+| Table | Today | After |
+|---|---|---|
+| `tenant_subscribers` | any tenant member (marketing included) | admin + manager |
+| `tenant_integrations` | any tenant member | admin + manager |
+| `tenant_zip_codes` | admin + manager | unchanged (already correct) |
 
-The upload path `tenant-logos/<tenant-id>.<ext>` can never satisfy the `app-media` insert policy for a non-platform-admin. Two options; I recommend A.
+A migration replaces the `is_tenant_member`-based policies with `is_tenant_admin_or_manager`. Marketing users currently able to read subscriber PII and integration credentials via direct API calls lose that access.
 
-**A. Add a scoped storage policy (recommended).** New INSERT/UPDATE policies on `storage.objects` for bucket `app-media` allowing writes under `tenant-logos/<tenant-id>.*` when `is_tenant_admin_or_manager(<tenant-id>, auth.uid())`. Keeps the tidy, stable path and the existing public URL, so HCTC's current logo URL keeps working. Requires parsing the tenant id out of the filename in the policy expression.
+### 2. Route-level role gating
 
-**B. Move to a per-tenant folder** `tenant-logos/<tenant-id>/logo.<ext>` and match the folder segment in the policy. Cleaner expression, but changes the URL shape for every tenant.
+`TenantRoute` currently only asks "are you a member of any tenant" — no role check. Every `/tenant/*` page loads for every role via direct URL; some redirect themselves afterwards, `/tenant/codes` doesn't redirect at all.
 
-Either way, also surface the raw storage error text in the red toast so a future policy block reads as an actionable message instead of the bare Postgres string.
+Fix: add a `requiredRoles` capability to `TenantRoute` and declare it per route in `App.tsx`, so the gate runs before the page mounts and fetches data:
+- `admin` only: `/tenant/team`, `/tenant/codes`
+- `admin` + `manager`: `/tenant/zip-codes`, `/tenant/subscribers`, `/tenant/settings` (all tabs, including integrations and account)
+- everything else: any tenant role
 
-## Verification
+Per-page `<Navigate>` guards get removed once the route gate covers them, so there's one place to reason about.
 
-1. Sign in as an HCTC tenant admin in the preview, change the primary colour, save, navigate to another tenant page and back — new colour still shown without a reload.
-2. Same for contact email.
-3. Upload a new logo as that tenant admin — upload succeeds, preview and sidebar logo both update.
-4. Confirm a platform admin can still update any tenant's branding, and that a `marketing`-role tenant member still cannot.
+### 3. Sidebar / route consistency
 
-## Technical notes
+Two mismatches to correct so managers stop seeing links that bounce them:
+- `zip-codes` and `subscribers` are shown to managers in the sidebar but self-redirect anyone who isn't `admin` → managers keep access (matches the new rules above).
+- `codes` is admin-only in the sidebar but ungated in the route → now genuinely admin-only.
 
-- Files touched: `src/pages/tenant/TenantBranding.tsx` (invalidation keys, error surfacing), one migration for the storage policy.
-- No change to `useTenantAdmin`'s query keys themselves — safer to fix the invalidation side than rename keys used across the sidebar and layout.
-- The `tenants` UPDATE policy added previously is correct and stays as-is.
+### 4. Silent-failure hardening
 
-## Out of scope
+Tenant mutation hooks (`useTenantSubscribers`, `useTenants` role/remove, zip delete) don't `.select()` back affected rows. Under RLS, a blocked update returns success with zero rows changed and the UI toasts "saved" — the exact class of bug already hit on scheduled-post approve. Since step 1 tightens RLS, this becomes live risk: a marketing user's stale tab would report success on a write that silently did nothing. Fix by selecting the affected id back and throwing when nothing was returned.
 
-- Column-level restrictions on what tenant admins may edit on `tenants`.
-- Auditing other pages that write to `tenants` (none identified writing brand fields).
+### 5. Plan tier — noted, not enforced
+
+`plan_tier` (Basic/Pro) is display-only; nothing restricts Pro features to Pro tenants. Per your decision this stays informational for this push, recorded as an accepted gap.
+
+### Verification before I call it done
+
+- Sign in as each of the three tenant roles (test memberships on a scratch tenant) and confirm: marketing is bounced from settings/subscribers/codes; manager reaches subscribers/zip-codes/settings but not team/codes; admin reaches everything.
+- Direct API attempt as a marketing user against `tenant_subscribers` and `tenant_integrations` returns a permission error, not silent success.
+- Cross-check no existing tenant loses access it should keep — spot-check HCTC and Acme.
+
+### Technical notes
+
+- One migration: replaces the SELECT/ALL policies on `tenant_subscribers` and `tenant_integrations`; no schema change, no data change.
+- `TenantRoute.tsx` gains a `requiredRoles?: Array<'admin'|'manager'|'marketing'>` prop; platform admins in tenant-switching mode always pass (they're forced to `tenantRole: 'admin'` already).
+- No edge function changes in this build — billing guard is backlogged.
