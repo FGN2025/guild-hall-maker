@@ -124,7 +124,9 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
         throw new Error("Save failed — you may not have permission to update this tenant.");
       }
       invalidateBranding();
+      await refetchContactEmail(tenantInfo.tenantId);
       toast.success("Contact email updated!");
+
     } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
   };
