@@ -55,10 +55,23 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
   }, [tenantInfo?.tenantId]);
 
   const invalidateBranding = () => {
-    queryClient.invalidateQueries({ queryKey: ["tenant-admin-check"] });
+    // These are the real query keys registered by useTenantAdmin — invalidating
+    // the wrong key is what made saves look like they reverted on navigation.
+    queryClient.invalidateQueries({ queryKey: ["tenant-admin-memberships"] });
+    queryClient.invalidateQueries({ queryKey: ["all-tenants-list"] });
     queryClient.invalidateQueries({ queryKey: ["tenants"] });
     queryClient.invalidateQueries({ queryKey: ["user-tenant-branding"] });
   };
+
+  const refetchContactEmail = async (tenantId: string) => {
+    const { data } = await supabase
+      .from("tenants")
+      .select("contact_email")
+      .eq("id", tenantId)
+      .maybeSingle();
+    if (data) setContactEmail(data.contact_email || "");
+  };
+
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,7 +84,14 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
       const ext = resized.name.split(".").pop();
       const path = `tenant-logos/${tenantInfo.tenantId}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from("app-media").upload(path, resized, { upsert: true });
-      if (uploadErr) throw uploadErr;
+      if (uploadErr) {
+        throw new Error(
+          /row-level security|Unauthorized|403/i.test(uploadErr.message)
+            ? `Logo upload blocked by storage permissions (${uploadErr.message}). You must be an admin or manager of this tenant.`
+            : uploadErr.message
+        );
+      }
+
       const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
       const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       const { data: updated, error: updateErr } = await supabase
@@ -104,7 +124,9 @@ const TenantBranding = ({ embedded = false }: { embedded?: boolean } = {}) => {
         throw new Error("Save failed — you may not have permission to update this tenant.");
       }
       invalidateBranding();
+      await refetchContactEmail(tenantInfo.tenantId);
       toast.success("Contact email updated!");
+
     } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
   };
