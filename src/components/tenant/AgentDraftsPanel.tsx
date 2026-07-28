@@ -80,7 +80,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           .order("updated_at", { ascending: false }),
         supabase
           .from("tenant_marketing_assets" as any)
-          .select("id, campaign_id, file_name, file_path, url, source_url, label, is_published, agent_source, notes, created_at, updated_at")
+          .select("id, campaign_id, file_name, file_path, url, source_url, label, is_published, agent_source, notes, feedback_note, created_at, updated_at")
           .eq("tenant_id", tenantId!)
           .not("agent_source", "is", null)
           .eq("is_published", false)
