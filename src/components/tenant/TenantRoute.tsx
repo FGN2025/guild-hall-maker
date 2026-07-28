@@ -3,7 +3,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import TenantLayout from "./TenantLayout";
 
-const TenantRoute = ({ children }: { children: React.ReactNode }) => {
+export type TenantRoleName = "admin" | "manager" | "marketing";
+
+const TenantRoute = ({
+  children,
+  requiredRoles,
+}: {
+  children: React.ReactNode;
+  requiredRoles?: TenantRoleName[];
+}) => {
   const { user, loading, isAdmin, emailConfirmed } = useAuth();
   const { isTenantAdmin, isLoading, tenantInfo, isPlatformAdminMode, allTenants, selectedTenantId, setSelectedTenantId } = useTenantAdmin();
 
@@ -27,6 +35,15 @@ const TenantRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
+
+  // Role gate: platform admins in tenant-switching mode always pass
+  if (requiredRoles && !isAdmin && tenantInfo && !requiredRoles.includes(tenantInfo.tenantRole)) {
+    // Marketing users have no access to the tenant dashboard, send them to Marketing
+    const fallback = tenantInfo.tenantRole === "marketing" ? "/tenant/marketing" : "/tenant";
+    return <Navigate to={fallback} replace />;
+  }
+
+
 
   return (
     <TenantLayout

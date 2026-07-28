@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { Navigate } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -117,8 +116,15 @@ const TenantZipCodes = () => {
 
   const deleteZip = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tenant_zip_codes").delete().eq("id", id);
+      const { data, error } = await supabase
+        .from("tenant_zip_codes")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Removal was blocked — you may not have permission to remove this ZIP code.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-zips", tenantId] });
@@ -126,10 +132,6 @@ const TenantZipCodes = () => {
     },
     onError: (err: any) => toast.error(err.message),
   });
-
-  if (tenantInfo && tenantInfo.tenantRole !== "admin") {
-    return <Navigate to="/tenant" replace />;
-  }
 
   const handleAdd = () => {
     if (!form.zip_code.trim() || form.zip_code.length !== 5) {

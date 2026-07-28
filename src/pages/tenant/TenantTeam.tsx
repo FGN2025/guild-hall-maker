@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useTenantAdmins } from "@/hooks/useTenants";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +23,6 @@ const TenantTeam = () => {
   const queryClient = useQueryClient();
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId || "";
-  const tenantRole = tenantInfo?.tenantRole;
 
   const { admins, isLoading, addAdmin, removeAdmin, updateRole } = useTenantAdmins(tenantId);
   const [search, setSearch] = useState("");
@@ -52,11 +50,6 @@ const TenantTeam = () => {
     },
     enabled: !!tenantId,
   });
-
-  // Only admins can access this page
-  if (tenantRole && tenantRole !== "admin") {
-    return <Navigate to="/tenant" replace />;
-  }
 
   const handleAdd = async () => {
     if (!search.trim()) {

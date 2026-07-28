@@ -73,8 +73,15 @@ export const useTenantSubscribers = (tenantId: string | undefined) => {
 
   const updateSubscriber = useMutation({
     mutationFn: async ({ id, fields }: { id: string; fields: Partial<TenantSubscriber> }) => {
-      const { error } = await supabase.from("tenant_subscribers").update(fields as any).eq("id", id);
+      const { data, error } = await supabase
+        .from("tenant_subscribers")
+        .update(fields as any)
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Update was blocked — you may not have permission to edit this subscriber.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-subscribers", tenantId] });
@@ -87,12 +94,22 @@ export const useTenantSubscribers = (tenantId: string | undefined) => {
 
   const deleteSubscriber = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tenant_subscribers").delete().eq("id", id);
+      const { data, error } = await supabase
+        .from("tenant_subscribers")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Delete was blocked — you may not have permission to remove this subscriber.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-subscribers", tenantId] });
       toast({ title: "Subscriber removed" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error removing subscriber", description: err.message, variant: "destructive" });
     },
   });
 

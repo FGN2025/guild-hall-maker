@@ -219,8 +219,15 @@ export function useTenantAdmins(tenantId: string | null) {
 
   const removeAdmin = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tenant_admins").delete().eq("id", id);
+      const { data, error } = await supabase
+        .from("tenant_admins")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Removal was blocked — you may not have permission to remove this member.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-admins", tenantId] });
@@ -231,8 +238,15 @@ export function useTenantAdmins(tenantId: string | null) {
 
   const updateRole = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: string }) => {
-      const { error } = await supabase.from("tenant_admins").update({ role }).eq("id", id);
+      const { data, error } = await supabase
+        .from("tenant_admins")
+        .update({ role })
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Role change was blocked — you may not have permission to edit this member.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-admins", tenantId] });

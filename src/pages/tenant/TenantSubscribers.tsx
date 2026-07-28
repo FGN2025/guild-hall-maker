@@ -7,7 +7,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ const statusColor: Record<string, string> = {
 const TenantSubscribers = () => {
   const { tenantInfo } = useTenantAdmin();
   const tenantId = tenantInfo?.tenantId;
-  const isAdmin = tenantInfo?.tenantRole === "admin";
+  const isAdmin = tenantInfo?.tenantRole === "admin" || tenantInfo?.tenantRole === "manager";
   const { subscribers, isLoading, bulkInsert, updateSubscriber, deleteSubscriber } = useTenantSubscribers(tenantId);
   const { logs: syncLogs, isLoading: syncLogsLoading } = useSyncLogs(tenantId);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,9 +48,8 @@ const TenantSubscribers = () => {
   const [editSub, setEditSub] = useState<TenantSubscriber | null>(null);
   const [deleteSub, setDeleteSub] = useState<TenantSubscriber | null>(null);
 
-  if (tenantInfo && tenantInfo.tenantRole !== "admin") {
-    return <Navigate to="/tenant" replace />;
-  }
+
+
 
   const filtered = subscribers.filter((s) => {
     const q = search.toLowerCase();
