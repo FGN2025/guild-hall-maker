@@ -122,7 +122,7 @@ export async function renderPromoSceneToPng(
   const ab = scene.accentBar;
   const accent = `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
 
-  const textNodes = scene.texts.map((t) => {
+  const textNodes = (includeText ? scene.texts : []).map((t) => {
     const weight = t.fontWeight === "bold" ? "bold" : "normal";
     // SVG y is baseline; approximate top-baseline by adding fontSize*0.85
     const y = t.yPct * h + t.fontSize * 0.85;

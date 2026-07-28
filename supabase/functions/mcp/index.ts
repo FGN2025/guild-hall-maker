@@ -1255,7 +1255,7 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   const overlay = `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#dark)"/>`;
   const ab = scene.accentBar;
   const accent = `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
-  const textNodes = scene.texts.map((t) => {
+  const textNodes = (includeText ? scene.texts : []).map((t) => {
     const weight = t.fontWeight === "bold" ? "bold" : "normal";
     const y = t.yPct * h + t.fontSize * 0.85;
     return `<text x="${t.xPct * w}" y="${y}" font-family="${SERVER_FONT_FAMILY}" font-size="${t.fontSize}" font-weight="${weight}" fill="${t.color}" filter="url(#drop)">${escapeXml(t.text)}</text>`;
