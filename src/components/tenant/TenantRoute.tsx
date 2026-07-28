@@ -38,8 +38,11 @@ const TenantRoute = ({
 
   // Role gate: platform admins in tenant-switching mode always pass
   if (requiredRoles && !isAdmin && tenantInfo && !requiredRoles.includes(tenantInfo.tenantRole)) {
-    return <Navigate to="/tenant" replace />;
+    // Marketing users have no access to the tenant dashboard, send them to Marketing
+    const fallback = tenantInfo.tenantRole === "marketing" ? "/tenant/marketing" : "/tenant";
+    return <Navigate to={fallback} replace />;
   }
+
 
 
   return (
