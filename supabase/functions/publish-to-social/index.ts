@@ -47,6 +47,25 @@ Deno.serve(async (req) => {
     let postUrl: string | null = null;
     let errorMessage: string | null = null;
 
+    // Meta publishing endpoints require a PAGE access token. Stored credentials
+    // are often user/system-user tokens, which Graph rejects with the
+    // "(#200) publish_actions ... deprecated" error. Exchange for the page
+    // token when possible, and fall back to the stored token.
+    async function resolvePageToken(pageId: string, token: string): Promise<string> {
+      try {
+        const res = await fetch(
+          `https://graph.facebook.com/v19.0/${pageId}?fields=access_token&access_token=${encodeURIComponent(token)}`,
+        );
+        const json = await res.json();
+        if (json?.access_token) return json.access_token;
+        console.warn(`Page token exchange returned no token for ${pageId}:`, JSON.stringify(json));
+      } catch (e) {
+        console.warn("Page token exchange failed:", e instanceof Error ? e.message : String(e));
+      }
+      return token;
+    }
+
+
     try {
       switch (conn.platform) {
         case "twitter": {
