@@ -112,7 +112,7 @@ export async function renderPromoSceneToPng(scene: PromoScene): Promise<Uint8Arr
   ${textNodes}
 </svg>`;
 
-  const resvg = new Resvg(svg, {
+  const resvg = new ResvgCtor(svg, {
     background: scene.backgroundFallbackHex,
     fitTo: { mode: "width", value: w },
     font: {

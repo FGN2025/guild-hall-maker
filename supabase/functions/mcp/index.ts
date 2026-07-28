@@ -1254,7 +1254,7 @@ async function renderPromoSceneToPng(scene) {
   ${accent}
   ${textNodes}
 </svg>`;
-  const resvg = new Resvg(svg, {
+  const resvg = new ResvgCtor(svg, {
     background: scene.backgroundFallbackHex,
     fitTo: { mode: "width", value: w },
     font: {
