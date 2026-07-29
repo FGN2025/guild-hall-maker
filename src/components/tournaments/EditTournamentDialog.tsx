@@ -99,14 +99,17 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [pointsParticipation, setPointsParticipation] = useState("2");
+  const [pointsParticipationLong, setPointsParticipationLong] = useState("5");
+  const [pointsParticipationShort, setPointsParticipationShort] = useState("2");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
   const [achievementId, setAchievementId] = useState("");
   const [difficulty, setDifficulty] = useState("beginner");
-  const [pointsOverrideReason, setPointsOverrideReason] = useState("");
   const [requiresInviteCode, setRequiresInviteCode] = useState(false);
   const [inviteCodeId, setInviteCodeId] = useState<string>("none");
+
+  const isGameNight = format === "game_night";
 
   const { data: availableCodes = [] } = useQuery({
     queryKey: ["tenant-codes-for-tournament", open],
