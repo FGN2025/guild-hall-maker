@@ -347,7 +347,6 @@ async function driveRun(params: {
       finished_at: new Date().toISOString(),
       transcript: result.messages,
       heartbeat_at: new Date().toISOString(),
-      final_message: result.finalText || null,
     };
     if (result.status === "completed") {
       patch.status = "completed";
