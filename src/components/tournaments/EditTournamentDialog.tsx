@@ -375,16 +375,32 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
               </SelectContent>
             </Select>
           </div>
-          <PointsInput
-            kind="tournament"
-            difficulty={difficulty}
-            placement="participation"
-            value={parseInt(pointsParticipation) || 0}
-            onChange={(v) => setPointsParticipation(String(v))}
-            overrideReason={pointsOverrideReason}
-            onOverrideReasonChange={setPointsOverrideReason}
-            label="Participation Points (per match)"
-          />
+          {isGameNight ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="font-heading text-sm">Long Participation Points</Label>
+                <Input type="number" min={0} max={10000} value={pointsParticipationLong}
+                  onChange={(e) => setPointsParticipationLong(e.target.value)}
+                  className="bg-card border-border font-body" />
+                <p className="text-xs text-muted-foreground">Awarded to players who stay for the full game night.</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-heading text-sm">Short Participation Points</Label>
+                <Input type="number" min={0} max={10000} value={pointsParticipationShort}
+                  onChange={(e) => setPointsParticipationShort(e.target.value)}
+                  className="bg-card border-border font-body" />
+                <p className="text-xs text-muted-foreground">Awarded to players who join for a shorter session.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label className="font-heading text-sm">Participation Points (per match)</Label>
+              <Input type="number" min={0} max={10000} value={pointsParticipation}
+                onChange={(e) => setPointsParticipation(e.target.value)}
+                className="bg-card border-border font-body max-w-[200px]" />
+            </div>
+          )}
+
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Discord Role (on registration)</Label>
