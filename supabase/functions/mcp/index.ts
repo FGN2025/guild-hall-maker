@@ -1333,9 +1333,24 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   const w = scene.width;
   const h = scene.height;
   const gradStartY = scene.gradient.startPct * h;
-  const bgLayer = bgHref ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${w}" height="${h}" fill="${scene.backgroundFallbackHex}"/>`;
+  const p = scene.plate;
+  const gridStep = p.gridSpacingPct * w;
+  const bgLayer = bgHref ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#plate)"/>
+       <rect x="0" y="0" width="${w}" height="${h}" fill="url(#grid)"/>
+       <circle cx="${w * 0.82}" cy="${h * 0.16}" r="${p.glowRadiusPct * w}" fill="url(#glow)"/>`;
   const gradient = `
     <defs>
+      <linearGradient id="plate" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="${p.fromHex}"/>
+        <stop offset="1" stop-color="${p.toHex}"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="${p.glowColor}" stop-opacity="0.33"/>
+        <stop offset="1" stop-color="${p.glowColor}" stop-opacity="0"/>
+      </radialGradient>
+      <pattern id="grid" width="${gridStep}" height="${gridStep}" patternUnits="userSpaceOnUse">
+        <path d="M ${gridStep} 0 L 0 0 0 ${gridStep}" fill="none" stroke="${p.gridColor}" stroke-width="${Math.max(1, w / 1080)}"/>
+      </pattern>
       <linearGradient id="dark" x1="0" y1="${gradStartY}" x2="0" y2="${h}" gradientUnits="userSpaceOnUse">
         <stop offset="0" stop-color="${rgbaFromCss(scene.gradient.fromRgba)}"/>
         <stop offset="1" stop-color="${rgbaFromCss(scene.gradient.toRgba)}"/>
