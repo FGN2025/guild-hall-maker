@@ -486,48 +486,20 @@ Deno.serve(async (req) => {
     "Follow the workflow strictly. Every write must be pending_review.",
   ].filter(Boolean).join("\n");
 
-  // Fire and forget the loop so the HTTP call returns quickly with the run id.
-  (async () => {
-    try {
-      const result = await runAgentLoop({
-        runId: run.id,
-        tenantId: tenant_id,
-        userId,
-        systemPrompt: prompt.content,
-        userMessage,
-        turnCap: effectiveTurnCap,
-      });
-      const created = await collectCreatedRowIds(tenant_id, userId, run.started_at);
-      const patch: any = {
-        turns_used: result.turns,
-        input_tokens: result.inputTokens,
-        output_tokens: result.outputTokens,
-        created_row_ids: created,
-        finished_at: new Date().toISOString(),
-      };
-      if (result.status === "completed") {
-        patch.status = "completed";
-        await updateRun(run.id, patch);
-        await enqueueNotify(tenant_id, "agent_run_complete", { ...run, ...patch });
-      } else {
-        patch.status = "failed";
-        patch.error_message = result.error;
-        await updateRun(run.id, patch);
-        await enqueueNotify(tenant_id, "agent_run_failed", { ...run, ...patch });
-      }
-    } catch (e) {
-      const msg = (e as Error).message ?? "unknown error";
-      console.error("[agent-run] loop crashed", msg);
-      const created = await collectCreatedRowIds(tenant_id, userId, run.started_at).catch(() => ({}));
-      await updateRun(run.id, {
-        status: "failed",
-        error_message: msg,
-        finished_at: new Date().toISOString(),
-        created_row_ids: created,
-      });
-      await enqueueNotify(tenant_id, "agent_run_failed", { ...run, error_message: msg });
-    }
-  })();
+  // Background the loop so the HTTP call returns quickly with the run id.
+  // waitUntil keeps the worker alive past the response; driveRun hands off to a
+  // fresh invocation when a slice runs out of wall-clock budget.
+  const work = driveRun({
+    run,
+    tenantId: tenant_id,
+    userId,
+    systemPrompt: prompt.content,
+    userMessage,
+    turnCap: effectiveTurnCap,
+  });
+  // @ts-ignore EdgeRuntime is provided by the Supabase runtime
+  if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(work);
 
   return json({ run_id: run.id, status: "running" });
+
 });
