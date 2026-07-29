@@ -33,6 +33,15 @@ const awardSeasonPoints = async (winnerId: string, loserId: string | null, point
 
 export type ParticipationTier = "long" | "short";
 
+export type PlayerAward =
+  | "first"
+  | "second"
+  | "third"
+  | "participation"
+  | "participation_long"
+  | "participation_short";
+
+
 export interface RegisteredPlayer {
   user_id: string;
   display_name: string;
