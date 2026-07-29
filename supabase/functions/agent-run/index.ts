@@ -192,6 +192,12 @@ async function callAnthropic(body: any) {
   return JSON.parse(txt);
 }
 
+/** Wall-clock budget for a single invocation. When exceeded mid-run we persist
+ *  the transcript and hand off to a fresh invocation of this same function, so
+ *  long calendar-seed runs are not silently killed by the hosting time limit. */
+const SLICE_BUDGET_MS = 200_000;
+const MAX_CONTINUATIONS = 15;
+
 async function runAgentLoop(opts: {
   runId: string;
   tenantId: string;
@@ -199,18 +205,28 @@ async function runAgentLoop(opts: {
   systemPrompt: string;
   userMessage: string;
   turnCap: number;
+  initialMessages?: any[];
+  turnsSoFar?: number;
+  inputTokensSoFar?: number;
+  outputTokensSoFar?: number;
 }) {
   const { runId, tenantId, userId, systemPrompt, userMessage, turnCap } = opts;
   const runnerToken = await mintRunnerToken(userId, tenantId, runId, 1800);
   const tools = await fetchMcpTools(runnerToken);
 
-  const messages: any[] = [{ role: "user", content: userMessage }];
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let turns = 0;
+  const messages: any[] = opts.initialMessages?.length
+    ? opts.initialMessages
+    : [{ role: "user", content: userMessage }];
+  let inputTokens = opts.inputTokensSoFar ?? 0;
+  let outputTokens = opts.outputTokensSoFar ?? 0;
+  let turns = opts.turnsSoFar ?? 0;
   let finalText = "";
+  const sliceStart = Date.now();
 
   while (turns < turnCap) {
+    if (Date.now() - sliceStart > SLICE_BUDGET_MS) {
+      return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages };
+    }
     turns += 1;
     const resp = await callAnthropic({
       model: ANTHROPIC_MODEL,
@@ -221,7 +237,12 @@ async function runAgentLoop(opts: {
     });
     inputTokens += resp.usage?.input_tokens ?? 0;
     outputTokens += resp.usage?.output_tokens ?? 0;
-    await updateRun(runId, { turns_used: turns, input_tokens: inputTokens, output_tokens: outputTokens });
+    await updateRun(runId, {
+      turns_used: turns,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      heartbeat_at: new Date().toISOString(),
+    });
 
     const content = resp.content ?? [];
     messages.push({ role: "assistant", content });
@@ -229,7 +250,7 @@ async function runAgentLoop(opts: {
     const toolUses = content.filter((c: any) => c.type === "tool_use");
     if (toolUses.length === 0) {
       finalText = content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n\n");
-      return { status: "completed" as const, turns, inputTokens, outputTokens, finalText };
+      return { status: "completed" as const, turns, inputTokens, outputTokens, finalText, messages };
     }
 
     const toolResults: any[] = [];
@@ -243,11 +264,114 @@ async function runAgentLoop(opts: {
       }
     }
     messages.push({ role: "user", content: toolResults });
+    await updateRun(runId, { heartbeat_at: new Date().toISOString() });
 
     if (resp.stop_reason === "end_turn" && toolUses.length === 0) break;
   }
-  return { status: "failed" as const, turns, inputTokens, outputTokens, finalText, error: "turn_cap_exceeded" };
+  return { status: "failed" as const, turns, inputTokens, outputTokens, finalText, messages, error: "turn_cap_exceeded" };
 }
+
+/** Re-invoke this function to continue a run in a fresh invocation. */
+async function handOff(runId: string) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/agent-run`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      "x-runner-continuation": SIGNING_KEY,
+    },
+    body: JSON.stringify({ resume_run_id: runId }),
+  });
+  if (!res.ok) throw new Error(`continuation handoff failed: ${res.status} ${await res.text()}`);
+  await res.text().catch(() => "");
+}
+
+/** Drive one slice of a run and either finish it or hand off to the next slice. */
+async function driveRun(params: {
+  run: any;
+  tenantId: string;
+  userId: string;
+  systemPrompt: string;
+  userMessage: string;
+  turnCap: number;
+  initialMessages?: any[];
+}) {
+  const { run, tenantId, userId, systemPrompt, userMessage, turnCap } = params;
+  try {
+    const result = await runAgentLoop({
+      runId: run.id,
+      tenantId,
+      userId,
+      systemPrompt,
+      userMessage,
+      turnCap,
+      initialMessages: params.initialMessages,
+      turnsSoFar: run.turns_used ?? 0,
+      inputTokensSoFar: run.input_tokens ?? 0,
+      outputTokensSoFar: run.output_tokens ?? 0,
+    });
+
+    if (result.status === "continue") {
+      const nextCount = (run.continuation_count ?? 0) + 1;
+      if (nextCount > MAX_CONTINUATIONS) {
+        await updateRun(run.id, {
+          status: "failed",
+          error_message: "continuation_limit_exceeded",
+          finished_at: new Date().toISOString(),
+          turns_used: result.turns,
+          input_tokens: result.inputTokens,
+          output_tokens: result.outputTokens,
+          created_row_ids: await collectCreatedRowIds(tenantId, userId, run.started_at),
+        });
+        await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: "continuation_limit_exceeded" });
+        return;
+      }
+      await updateRun(run.id, {
+        transcript: result.messages,
+        continuation_count: nextCount,
+        turns_used: result.turns,
+        input_tokens: result.inputTokens,
+        output_tokens: result.outputTokens,
+        heartbeat_at: new Date().toISOString(),
+      });
+      await handOff(run.id);
+      return;
+    }
+
+    const created = await collectCreatedRowIds(tenantId, userId, run.started_at);
+    const patch: any = {
+      turns_used: result.turns,
+      input_tokens: result.inputTokens,
+      output_tokens: result.outputTokens,
+      created_row_ids: created,
+      finished_at: new Date().toISOString(),
+      transcript: result.messages,
+      heartbeat_at: new Date().toISOString(),
+    };
+    if (result.status === "completed") {
+      patch.status = "completed";
+      await updateRun(run.id, patch);
+      await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
+    } else {
+      patch.status = "failed";
+      patch.error_message = (result as any).error ?? "unknown";
+      await updateRun(run.id, patch);
+      await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
+    }
+  } catch (e) {
+    const msg = (e as Error).message ?? "unknown error";
+    console.error("[agent-run] loop crashed", msg);
+    const created = await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => ({}));
+    await updateRun(run.id, {
+      status: "failed",
+      error_message: msg,
+      finished_at: new Date().toISOString(),
+      created_row_ids: created,
+    });
+    await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: msg });
+  }
+}
+
 
 // ---- HTTP entry -----------------------------------------------------------
 
@@ -258,6 +382,39 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
   const jwt = authHeader.slice(7);
+
+  // ---- Continuation branch: an earlier slice of a run handing itself off.
+  // Authenticated by the shared runner signing key, never by a user session.
+  const contKey = req.headers.get("x-runner-continuation");
+  if (contKey) {
+    if (contKey !== SIGNING_KEY) return json({ error: "unauthorized" }, 401);
+    let body: any;
+    try { body = await req.json(); } catch { return json({ error: "invalid_json" }, 400); }
+    const resumeId = body?.resume_run_id;
+    if (!resumeId) return json({ error: "resume_run_id required" }, 400);
+
+    const { data: prev } = await service().from("agent_runs").select("*").eq("id", resumeId).maybeSingle();
+    if (!prev) return json({ error: "run not found" }, 404);
+    if (prev.status !== "running") return json({ error: `run is ${prev.status}` }, 409);
+
+    const resumePrompt = await loadActivePrompt(prev.mode ?? "single_campaign");
+    if (!resumePrompt) return json({ error: "no active prompt" }, 500);
+
+    const resumeWork = driveRun({
+      run: prev,
+      tenantId: prev.tenant_id,
+      userId: prev.launched_by,
+      systemPrompt: resumePrompt.content,
+      userMessage: "",
+      turnCap: prev.turn_cap,
+      initialMessages: (prev.transcript as any[]) ?? undefined,
+    });
+    // @ts-ignore EdgeRuntime is provided by the Supabase runtime
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(resumeWork);
+    return json({ run_id: resumeId, status: "running", continuation: (prev.continuation_count ?? 0) });
+  }
+
+
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false, autoRefreshToken: false },
@@ -362,48 +519,20 @@ Deno.serve(async (req) => {
     "Follow the workflow strictly. Every write must be pending_review.",
   ].filter(Boolean).join("\n");
 
-  // Fire and forget the loop so the HTTP call returns quickly with the run id.
-  (async () => {
-    try {
-      const result = await runAgentLoop({
-        runId: run.id,
-        tenantId: tenant_id,
-        userId,
-        systemPrompt: prompt.content,
-        userMessage,
-        turnCap: effectiveTurnCap,
-      });
-      const created = await collectCreatedRowIds(tenant_id, userId, run.started_at);
-      const patch: any = {
-        turns_used: result.turns,
-        input_tokens: result.inputTokens,
-        output_tokens: result.outputTokens,
-        created_row_ids: created,
-        finished_at: new Date().toISOString(),
-      };
-      if (result.status === "completed") {
-        patch.status = "completed";
-        await updateRun(run.id, patch);
-        await enqueueNotify(tenant_id, "agent_run_complete", { ...run, ...patch });
-      } else {
-        patch.status = "failed";
-        patch.error_message = result.error;
-        await updateRun(run.id, patch);
-        await enqueueNotify(tenant_id, "agent_run_failed", { ...run, ...patch });
-      }
-    } catch (e) {
-      const msg = (e as Error).message ?? "unknown error";
-      console.error("[agent-run] loop crashed", msg);
-      const created = await collectCreatedRowIds(tenant_id, userId, run.started_at).catch(() => ({}));
-      await updateRun(run.id, {
-        status: "failed",
-        error_message: msg,
-        finished_at: new Date().toISOString(),
-        created_row_ids: created,
-      });
-      await enqueueNotify(tenant_id, "agent_run_failed", { ...run, error_message: msg });
-    }
-  })();
+  // Background the loop so the HTTP call returns quickly with the run id.
+  // waitUntil keeps the worker alive past the response; driveRun hands off to a
+  // fresh invocation when a slice runs out of wall-clock budget.
+  const work = driveRun({
+    run,
+    tenantId: tenant_id,
+    userId,
+    systemPrompt: prompt.content,
+    userMessage,
+    turnCap: effectiveTurnCap,
+  });
+  // @ts-ignore EdgeRuntime is provided by the Supabase runtime
+  if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(work);
 
   return json({ run_id: run.id, status: "running" });
+
 });
