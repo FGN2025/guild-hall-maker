@@ -5090,6 +5090,7 @@ export type Database = {
           checked_in_by: string | null
           id: string
           invite_code: string | null
+          participation_tier: string | null
           registered_at: string
           status: string
           tournament_id: string
@@ -5101,6 +5102,7 @@ export type Database = {
           checked_in_by?: string | null
           id?: string
           invite_code?: string | null
+          participation_tier?: string | null
           registered_at?: string
           status?: string
           tournament_id: string
@@ -5112,6 +5114,7 @@ export type Database = {
           checked_in_by?: string | null
           id?: string
           invite_code?: string | null
+          participation_tier?: string | null
           registered_at?: string
           status?: string
           tournament_id?: string
