@@ -268,8 +268,10 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
                 <SelectValue placeholder="Select a game" />
               </SelectTrigger>
               <SelectContent>
-                {games.map((g) => (
-                  <SelectItem key={g.id} value={g.name}>{g.name}</SelectItem>
+                {games.filter((g: any) => g.supports_tournaments || g.name === game).map((g) => (
+                  <SelectItem key={g.id} value={g.name}>
+                    {g.name}{!(g as any).supports_tournaments ? " (no longer supported)" : ""}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
