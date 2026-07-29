@@ -139,13 +139,14 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPrizeId(tournament.prize_id ?? "");
       setRules(tournament.rules ?? "");
       setPointsParticipation(String(tournament.points_participation ?? 2));
+      setPointsParticipationLong(String((tournament as any).points_participation_long ?? 5));
+      setPointsParticipationShort(String((tournament as any).points_participation_short ?? 2));
       setPrizePctFirst((tournament as any).prize_pct_first ?? 50);
       setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
       setDiscordRoleId(tournament.discord_role_id ?? "");
       setAchievementId(tournament.achievement_id ?? "");
       setDifficulty((tournament as any).difficulty ?? "beginner");
-      setPointsOverrideReason((tournament as any).points_override_reason ?? "");
       setRequiresInviteCode(!!tournament.requires_invite_code);
       setInviteCodeId(tournament.invite_code_id ?? "none");
 
