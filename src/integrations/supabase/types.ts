@@ -6194,6 +6194,10 @@ export type Database = {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      is_tournament_participant: {
+        Args: { _tournament_id: string; _user_id: string }
+        Returns: boolean
+      }
       lookup_providers_by_zip: {
         Args: { _zip: string }
         Returns: {
