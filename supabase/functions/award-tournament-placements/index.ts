@@ -47,13 +47,37 @@ Deno.serve(async (req) => {
     const { data: tournament, error: tErr } = await admin
       .from("tournaments")
       .select(
-        "id, name, game, format, status, points_first, points_second, points_third, points_participation, points_participation_long, points_participation_short, achievement_id",
+        "id, name, game, format, status, prize_type, prize_pool, prize_pct_first, prize_pct_second, prize_pct_third, points_first, points_second, points_third, points_participation, points_participation_long, points_participation_short, achievement_id",
       )
       .eq("id", tournament_id)
       .maybeSingle();
     if (tErr || !tournament) return json({ error: "Tournament not found" }, 404);
 
     const isGameNight = (tournament.format ?? "").toLowerCase() === "game_night";
+    const parsePrizePoints = () => {
+      const value = Number.parseFloat(String(tournament.prize_pool ?? "").replace(/[^0-9.]/g, ""));
+      return Number.isFinite(value) && value > 0 ? value : 0;
+    };
+    const placementPointsFor = (place: 1 | 2 | 3) => {
+      const saved =
+        place === 1
+          ? tournament.points_first
+          : place === 2
+          ? tournament.points_second
+          : tournament.points_third;
+      if (typeof saved === "number" && saved > 0) return saved;
+
+      const pool = parsePrizePoints();
+      if ((tournament.prize_type ?? "none") !== "value" || pool <= 0) return saved ?? 0;
+
+      const pct =
+        place === 1
+          ? tournament.prize_pct_first ?? 50
+          : place === 2
+          ? tournament.prize_pct_second ?? 30
+          : tournament.prize_pct_third ?? 20;
+      return Math.round(pool * (pct / 100));
+    };
     const participationPointsFor = (tier: string | null | undefined) => {
       if (!isGameNight) return tournament.points_participation ?? 0;
       if (tier === "long") return tournament.points_participation_long ?? 0;
@@ -173,12 +197,7 @@ Deno.serve(async (req) => {
 
       if (award === "first" || award === "second" || award === "third") {
         const place = award === "first" ? 1 : award === "second" ? 2 : 3;
-        const pts =
-          place === 1
-            ? tournament.points_first ?? 0
-            : place === 2
-            ? tournament.points_second ?? 0
-            : tournament.points_third ?? 0;
+        const pts = placementPointsFor(place);
 
         const { error: insErr } = await admin.from("tournament_placements").insert({
           tournament_id,
@@ -288,9 +307,9 @@ Deno.serve(async (req) => {
     if (!season) return json({ success: false, message: "No active season" });
 
     const pointsByPlace: Record<number, number> = {
-      1: tournament.points_first ?? 10,
-      2: tournament.points_second ?? 5,
-      3: tournament.points_third ?? 3,
+      1: placementPointsFor(1),
+      2: placementPointsFor(2),
+      3: placementPointsFor(3),
     };
 
     if (dry_run) {
