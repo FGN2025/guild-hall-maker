@@ -180,12 +180,35 @@ Deno.serve(async (req) => {
     // ── B. Backfill match participation/win/loss credits ──
     const { data: completedMatches } = await admin
       .from("match_results")
-      .select("id, tournament_id, player1_id, player2_id, winner_id, status, completed_at, tournaments!inner(id, name, game, points_participation)")
+      .select("id, tournament_id, player1_id, player2_id, winner_id, status, completed_at, tournaments!inner(id, name, game, format, points_participation, points_participation_long, points_participation_short)")
       .eq("status", "completed");
+
+    const tierCache = new Map<string, Map<string, string | null>>();
+    const getTierMap = async (tournamentId: string) => {
+      if (!tierCache.has(tournamentId)) {
+        const { data: regs } = await admin
+          .from("tournament_registrations")
+          .select("user_id, participation_tier")
+          .eq("tournament_id", tournamentId);
+        tierCache.set(
+          tournamentId,
+          new Map((regs ?? []).map((r: any) => [r.user_id, r.participation_tier ?? null])),
+        );
+      }
+      return tierCache.get(tournamentId)!;
+    };
 
     for (const m of completedMatches ?? []) {
       const t = (m as any).tournaments;
-      const partPts = t?.points_participation ?? 0;
+      const isGameNight = (t?.format ?? "").toLowerCase() === "game_night";
+      const tierMap = isGameNight && m.tournament_id ? await getTierMap(m.tournament_id) : null;
+      const pointsFor = (userId: string) => {
+        if (!isGameNight) return t?.points_participation ?? 0;
+        const tier = tierMap?.get(userId) ?? null;
+        if (tier === "long") return t?.points_participation_long ?? 0;
+        if (tier === "short") return t?.points_participation_short ?? 0;
+        return t?.points_participation ?? 0;
+      };
       const players: { user_id: string; kind: "win" | "loss" | "participation" }[] = [];
       if (m.player1_id) players.push({ user_id: m.player1_id, kind: m.winner_id === m.player1_id ? "win" : (m.winner_id ? "loss" : "participation") });
       if (m.player2_id) players.push({ user_id: m.player2_id, kind: m.winner_id === m.player2_id ? "win" : (m.winner_id ? "loss" : "participation") });
@@ -193,6 +216,7 @@ Deno.serve(async (req) => {
       if (players.length === 0) continue;
 
       const season = await resolveActiveSeason(admin, t?.game);
+
 
       for (const p of players) {
         const { data: existing } = await admin
