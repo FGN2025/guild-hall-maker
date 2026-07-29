@@ -583,6 +583,34 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: (err: Error) => toast.error(err.message || "Failed to set participation tier"),
   });
 
+  const awardPlayerMutation = useMutation({
+    mutationFn: async ({ userId, award }: { userId: string; award: PlayerAward }) => {
+      if (!tournamentId) throw new Error("No tournament");
+      const { data, error } = await supabase.functions.invoke("award-tournament-placements", {
+        body: { tournament_id: tournamentId, single_award: { user_id: userId, award } },
+      });
+      if (error) {
+        // Surface the function's JSON error body instead of a generic message
+        const ctx: any = (error as any).context;
+        let msg = error.message;
+        try {
+          const body = await ctx?.json?.();
+          if (body?.error) msg = body.error;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data as { points: number };
+    },
+    onSuccess: (data) => {
+      toast.success(`Awarded ${data?.points ?? 0} points`);
+      queryClient.invalidateQueries({ queryKey: ["manage-players", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["tournament-placement-count", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to award points"),
+  });
+
 
   return {
     tournament: tournamentQuery.data ?? null,
