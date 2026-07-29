@@ -74,6 +74,9 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [pointsParticipation, setPointsParticipation] = useState("2");
   const [pointsParticipationLong, setPointsParticipationLong] = useState("5");
   const [pointsParticipationShort, setPointsParticipationShort] = useState("2");
+  const [pointsFirst, setPointsFirst] = useState("10");
+  const [pointsSecond, setPointsSecond] = useState("5");
+  const [pointsThird, setPointsThird] = useState("3");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
@@ -151,9 +154,9 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
         start_date: combinedDate.toISOString(),
         rules: rules.trim() || undefined,
         image_url,
-        points_first: 0,
-        points_second: 0,
-        points_third: 0,
+        points_first: isGameNight ? 0 : parseInt(pointsFirst) || 0,
+        points_second: isGameNight ? 0 : parseInt(pointsSecond) || 0,
+        points_third: isGameNight ? 0 : parseInt(pointsThird) || 0,
         points_participation: isGameNight ? 0 : parseInt(pointsParticipation) || 2,
         points_participation_long: isGameNight ? parseInt(pointsParticipationLong) || 0 : 0,
         points_participation_short: isGameNight ? parseInt(pointsParticipationShort) || 0 : 0,
@@ -169,6 +172,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
     setMaxParticipants("16"); setPrizePool(""); setPrizeType("none"); setPrizeId(""); setStartDates([]); setStartTime("12:00"); setRules("");
     setImageFile(null); setImagePreview(null);
     setPointsParticipation("2"); setPointsParticipationLong("5"); setPointsParticipationShort("2");
+    setPointsFirst("10"); setPointsSecond("5"); setPointsThird("3");
     setPrizePctFirst(50); setPrizePctSecond(30); setPrizePctThird(20); setDiscordRoleId(""); setAchievementId("");
   };
 
@@ -355,13 +359,36 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
-              <Label className="font-heading text-sm">Participation Points (per match)</Label>
-              <Input type="number" min={0} max={10000} value={pointsParticipation}
-                onChange={(e) => setPointsParticipation(e.target.value)}
-                className="bg-card border-border font-body max-w-[200px]" />
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-heading text-sm">1st Place Points</Label>
+                  <Input type="number" min={0} max={10000} value={pointsFirst}
+                    onChange={(e) => setPointsFirst(e.target.value)}
+                    className="bg-card border-border font-body" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-heading text-sm">2nd Place Points</Label>
+                  <Input type="number" min={0} max={10000} value={pointsSecond}
+                    onChange={(e) => setPointsSecond(e.target.value)}
+                    className="bg-card border-border font-body" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-heading text-sm">3rd Place Points</Label>
+                  <Input type="number" min={0} max={10000} value={pointsThird}
+                    onChange={(e) => setPointsThird(e.target.value)}
+                    className="bg-card border-border font-body" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-heading text-sm">Participation Points (per match)</Label>
+                <Input type="number" min={0} max={10000} value={pointsParticipation}
+                  onChange={(e) => setPointsParticipation(e.target.value)}
+                  className="bg-card border-border font-body max-w-[200px]" />
+              </div>
             </div>
           )}
+
 
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="space-y-2">
