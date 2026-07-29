@@ -1,0 +1,2 @@
+ALTER TABLE public.point_adjustments ADD COLUMN IF NOT EXISTS import_batch_id uuid;
+CREATE INDEX IF NOT EXISTS idx_point_adjustments_import_batch ON public.point_adjustments (import_batch_id) WHERE import_batch_id IS NOT NULL;
