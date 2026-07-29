@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { tournament_id, first_id, second_id, third_id, dry_run, skip_participation, participation_only, single_award } = body ?? {};
+    const { tournament_id, first_id, second_id, third_id, dry_run, skip_participation, participation_only, single_award, revoke_award } = body ?? {};
     if (!tournament_id) return json({ error: "tournament_id required" }, 400);
 
 
@@ -60,6 +60,85 @@ Deno.serve(async (req) => {
       if (tier === "short") return tournament.points_participation_short ?? 0;
       return tournament.points_participation ?? 0;
     };
+
+    // ── Undo a single player's award (Manage page) ──
+    if (revoke_award) {
+      const { user_id } = revoke_award as { user_id?: string };
+      if (!user_id) return json({ error: "revoke_award requires user_id" }, 400);
+
+      const debitScore = async (seasonId: string, uid: string, pts: number) => {
+        if (pts <= 0) return;
+        const { data: existing } = await admin
+          .from("season_scores")
+          .select("id, points, points_available")
+          .eq("season_id", seasonId)
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (!existing) return;
+        await admin
+          .from("season_scores")
+          .update({
+            points: Math.max(0, (existing.points ?? 0) - pts),
+            points_available: Math.max(0, (existing.points_available ?? 0) - pts),
+          })
+          .eq("id", existing.id);
+      };
+
+      let removed = 0;
+      let places: number[] = [];
+
+      // Participation awards (season_id stored on the row)
+      const { data: mpa } = await admin
+        .from("match_point_awards")
+        .select("id, points, season_id")
+        .eq("tournament_id", tournament_id)
+        .eq("user_id", user_id);
+      for (const row of mpa ?? []) {
+        await admin.from("match_point_awards").delete().eq("id", row.id);
+        if (row.season_id) await debitScore(row.season_id, user_id, row.points ?? 0);
+        removed += row.points ?? 0;
+      }
+
+      // Placement awards
+      const { data: pls } = await admin
+        .from("tournament_placements")
+        .select("id, place, points_awarded")
+        .eq("tournament_id", tournament_id)
+        .eq("user_id", user_id);
+      if ((pls ?? []).length > 0) {
+        const season = await resolveActiveSeason(admin, tournament.game);
+        for (const row of pls ?? []) {
+          await admin.from("tournament_placements").delete().eq("id", row.id);
+          if (season) await debitScore(season.id, user_id, row.points_awarded ?? 0);
+          removed += row.points_awarded ?? 0;
+          places.push(row.place);
+        }
+      }
+
+      if ((mpa ?? []).length === 0 && (pls ?? []).length === 0) {
+        return json({ error: "No awards found for this player in this tournament." }, 404);
+      }
+
+      // Remove auto-awarded achievement if 1st place was revoked
+      if (places.includes(1) && tournament.achievement_id) {
+        await admin
+          .from("player_achievements")
+          .delete()
+          .eq("user_id", user_id)
+          .eq("achievement_id", tournament.achievement_id)
+          .like("notes", "Auto-awarded: 1st place%");
+      }
+
+      if (isGameNight) {
+        await admin
+          .from("tournament_registrations")
+          .update({ participation_tier: null })
+          .eq("tournament_id", tournament_id)
+          .eq("user_id", user_id);
+      }
+
+      return json({ success: true, revoked: true, user_id, points_removed: removed });
+    }
 
     // ── Single player award (per-row dropdown on the Manage page) ──
     if (single_award) {

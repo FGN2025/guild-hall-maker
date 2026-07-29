@@ -80,6 +80,8 @@ const TournamentManage = () => {
     isSettingParticipationTier,
     awardPlayer,
     isAwardingPlayer,
+    revokeAward,
+    isRevokingAward,
   } = useTournamentManagement(id);
 
 
@@ -342,12 +344,23 @@ const TournamentManage = () => {
                       </div>
 
                       {p.awarded ? (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] border-success/30 text-success bg-success/10 capitalize"
-                        >
-                          {awardLabels[p.awarded]} awarded · {p.awarded_points ?? 0} pts
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-success/30 text-success bg-success/10 capitalize"
+                          >
+                            {awardLabels[p.awarded]} awarded · {p.awarded_points ?? 0} pts
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isRevokingAward}
+                            className="h-7 px-2 text-[11px] text-destructive hover:text-destructive hover:bg-destructive/10 font-heading"
+                            onClick={() => revokeAward({ userId: p.user_id })}
+                          >
+                            Undo
+                          </Button>
+                        </div>
                       ) : (
                         <Select
                           disabled={isAwardingPlayer}
