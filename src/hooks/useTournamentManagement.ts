@@ -119,14 +119,15 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         .eq("tournament_id", tournamentId!)
         .eq("kind", "participation");
 
-      const awardMap = new Map<string, { awarded: RegisteredPlayer["awarded"]; points: number }>();
+      const partMap = new Map<string, number>();
       for (const a of partAwards ?? []) {
-        if (a.user_id) awardMap.set(a.user_id, { awarded: "participation", points: a.points ?? 0 });
+        if (a.user_id) partMap.set(a.user_id, a.points ?? 0);
       }
+      const placeMap = new Map<string, { place: 1 | 2 | 3; points: number }>();
       for (const pl of placements ?? []) {
         if (!pl.user_id) continue;
-        awardMap.set(pl.user_id, {
-          awarded: pl.place === 1 ? "first" : pl.place === 2 ? "second" : "third",
+        placeMap.set(pl.user_id, {
+          place: pl.place as 1 | 2 | 3,
           points: pl.points_awarded ?? 0,
         });
       }
@@ -135,17 +136,17 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       // drop the player from the list.
       return regs.map((r: any) => {
         const p: any = profileMap.get(r.user_id);
-        const aw = awardMap.get(r.user_id);
         return {
           user_id: r.user_id,
           display_name: p?.display_name ?? "Unknown player",
           gamer_tag: p?.gamer_tag ?? null,
           attended: attendedMap.get(r.user_id) ?? false,
           participation_tier: tierMap.get(r.user_id) ?? null,
-          awarded: aw?.awarded ?? null,
-          awarded_points: aw?.points ?? null,
+          participation_points: partMap.has(r.user_id) ? partMap.get(r.user_id)! : null,
+          placement: placeMap.get(r.user_id) ?? null,
         };
       }) as RegisteredPlayer[];
+
 
 
     },
