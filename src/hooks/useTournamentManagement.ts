@@ -39,7 +39,10 @@ export interface RegisteredPlayer {
   gamer_tag: string | null;
   attended: boolean;
   participation_tier: ParticipationTier | null;
+  awarded: "first" | "second" | "third" | "participation" | null;
+  awarded_points: number | null;
 }
+
 
 
 export interface ManageMatch {
