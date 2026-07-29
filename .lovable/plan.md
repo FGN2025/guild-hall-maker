@@ -1,41 +1,34 @@
-## What's wrong
+# Pre-publish audit
 
-Every read of `tournament_registrations` from the app is failing with a database error, so the UI falls back to a count of zero. Confirmed from the live network log — each of these returns HTTP 500:
+Typecheck passes. Test suite: 3 failures (all in `src/test/data-shielding.test.tsx`). Below is what I verified by reading code/running checks, and what I propose to fix.
 
-```text
-GET /tournament_registrations?select=tournament_id&in.(...)
-{"code":"42P17","message":"infinite recursion detected in policy for relation \"tournament_registrations\""}
-```
+## Confirmed issues
 
-The data is fine. A direct database count shows real registrations, e.g. Overwatch Game Night 3, Valorant Game Night 2, Roblox Tournament 2, Mario Kart World 2, plus several with 1. All of these render as 0/16.
+**1. TournamentCard can crash on missing status (test suite failing)**
+`TournamentCard` calls `t.effective_status.replace(...)` and `t.format.replace(...)` with no guard. The three failing tests crash with `Cannot read properties of undefined (reading 'replace')`. The live list hook always sets `effective_status`, so this is currently only a fragility + red test suite, not a confirmed production crash.
+Fix: null-safe fallbacks in the card, and update the test fixtures to include the field.
 
-**Root cause (verified against the live policy list):** the SELECT policy `Co-participants can view registrations` queries the very table it protects:
+**2. Tournament game picker ignores the new `supports_tournaments` flag**
+Quests (`CreateQuestDialog`, `EditQuestDialog`), challenges (`Create/EditChallengeDialog`) and tenant events all filter games by their support flag. `CreateTournamentDialog` and `EditTournamentDialog` still render `games.map(...)` unfiltered — so tournament creation offers games explicitly tagged as not supporting tournaments.
+Fix: filter to `supports_tournaments`, grandfathering the currently-selected game with the "(no longer supported)" hint, matching the challenge/quest pattern.
 
-```sql
-EXISTS (SELECT 1 FROM tournament_registrations tr2
-        WHERE tr2.tournament_id = tournament_registrations.tournament_id
-          AND tr2.user_id = auth.uid())
-```
+**3. Difficulty selector on tournaments is a dead control**
+Both tournament dialogs render a Difficulty dropdown, but it is never included in the create/update payload, and `difficulty` exists only on `challenges` and `quests` in the schema — there is no `tournaments.difficulty` column. Users set it and it silently vanishes.
+Fix: remove the control from both tournament dialogs (safer than adding an unused column). Say the word if you'd rather have a real column instead.
 
-Postgres re-applies the policy while evaluating the subquery, which recurses and aborts the whole query — including for admins, because one broken policy in the OR chain kills the statement.
+**4. Undo can revoke more than it awarded**
+In `award-tournament-placements`, the revoke branch deletes **every** `match_point_awards` row for that user in the tournament — including per-match points awarded by bracket results — not just the participation award created from the Manage dropdown, and debits the full sum from the season score.
+Fix: scope the revoke delete to `kind = 'participation'` rows (the ones the dropdown creates), leaving match-derived awards intact.
 
-This also explains the other symptoms in the same session: the Manage page failing to load registered players, and the tier/attendance panel coming up empty.
+**5. Placement revoke leaves `attended = true`**
+Awarding a placement sets `tournament_registrations.attended = true`; the undo path clears `participation_tier` (Game Night only) but never resets `attended`, so a fully-undone player still counts as attended.
+Fix: reset `attended = false` on revoke when no awards remain for that player.
 
-## The fix
+## Checked and clean
+- Placement point derivation (prize-pool percentage fallback) is now identical in the edge function and the Manage page: saved value wins, else `round(pool * pct/100)` when `prize_type === 'value'`; both parse the pool the same way.
+- Duplicate awards are guarded (23505 → 409) for both placements and participation.
+- Season/points writes go to `season_scores` (points + points_available), which is what the leaderboard and wallet read — consistent both on credit and debit, with a floor of 0.
+- Console log snapshot shows only harmless preview-harness warnings.
 
-**1. Migration — break the recursion**
-
-- Add a `SECURITY DEFINER` helper, `public.is_tournament_participant(_tournament_id uuid, _user_id uuid) returns boolean`, `STABLE`, `SET search_path = public`, which does the same existence check. Because it is `SECURITY DEFINER` it bypasses RLS on the inner read, so there is no recursion.
-- Drop `Co-participants can view registrations` and recreate it as `USING (public.is_tournament_participant(tournament_id, auth.uid()))`, scoped `TO authenticated`.
-- Leave the other four policies (own row, admin/moderator, creator, insert/delete) untouched.
-- Grant `EXECUTE` on the helper to `authenticated` only.
-
-**2. Verify**
-
-- Re-run the exact failing query as an authenticated non-admin and confirm 200 with rows instead of 42P17.
-- Confirm counts on `/tournaments` match the direct database counts above.
-- Confirm a non-participant, non-admin still cannot read another tournament's registration rows — the policy boundary must stay intact.
-
-## Note on signed-out visitors
-
-There is no `anon` SELECT policy on this table, so logged-out visitors will still see 0/16 even after the recursion fix. Existing project rules restrict registration counts to platform admins, so I am **not** changing that here. If you want public "3/16 registered" on the tournament cards for guests, that is a separate small change: a `SECURITY DEFINER` counting function that returns only the number, never the participant identities.
+## Technical notes
+Files to change: `src/components/tournaments/TournamentCard.tsx`, `src/components/tournaments/CreateTournamentDialog.tsx`, `src/components/tournaments/EditTournamentDialog.tsx`, `src/test/data-shielding.test.tsx`, `supabase/functions/award-tournament-placements/index.ts` (redeploy required). No schema migration needed. After the changes I'll re-run typecheck and the test suite.
