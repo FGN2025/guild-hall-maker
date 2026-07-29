@@ -567,5 +567,8 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     isResettingBracket: resetBracketMutation.isPending,
     setAttendance: setAttendanceMutation.mutate,
     isSettingAttendance: setAttendanceMutation.isPending,
+    setParticipationTier: setParticipationTierMutation.mutate,
+    isSettingParticipationTier: setParticipationTierMutation.isPending,
+
   };
 };
