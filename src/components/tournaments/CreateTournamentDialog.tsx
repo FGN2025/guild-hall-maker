@@ -19,7 +19,7 @@ import MediaPickerDialog from "@/components/media/MediaPickerDialog";
 import PrizePoolSelector from "@/components/tournaments/PrizePoolSelector";
 import { useDiscordRoles } from "@/hooks/useDiscordRoles";
 import AchievementPicker from "@/components/shared/AchievementPicker";
-import PointsInput from "@/components/shared/PointsInput";
+
 
 interface Props {
   onCreate: (data: {
