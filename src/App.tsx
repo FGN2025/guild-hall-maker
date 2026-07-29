@@ -255,6 +255,7 @@ const App = () => (
               <Route path="/admin/cloud-gaming" element={<AdminRoute><AdminCloudGaming /></AdminRoute>} />
               <Route path="/admin/inquiries" element={<AdminRoute><AdminInquiries /></AdminRoute>} />
               <Route path="/admin/points-rubric" element={<AdminRoute><AdminPointsRubric /></AdminRoute>} />
+              <Route path="/admin/points-import" element={<AdminRoute><AdminPointsImport /></AdminRoute>} />
               <Route path="/admin/calendar-images" element={<AdminRoute><AdminCalendarImages /></AdminRoute>} />
 
               {/* Moderator routes */}
