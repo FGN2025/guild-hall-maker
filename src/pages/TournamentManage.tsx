@@ -374,69 +374,78 @@ const TournamentManage = () => {
                             {p.participation_tier}
                           </Badge>
                         )}
-                        <Checkbox
-                          checked={p.attended}
-                          disabled={isSettingAttendance}
-                          onCheckedChange={(v) =>
-                            setAttendance({ userId: p.user_id, attended: !!v })
-                          }
-                          aria-label="Mark attended"
-                        />
+                        <div className="flex items-center gap-2">
+                          {p.participation_points !== null && (
+                            <span className="text-[10px] font-display text-success">
+                              +{p.participation_points} pts
+                            </span>
+                          )}
+                          <Checkbox
+                            checked={p.participation_points !== null}
+                            disabled={isAwardingPlayer || isRevokingAward}
+                            onCheckedChange={(v) => {
+                              if (v) {
+                                if (isGameNight && !p.participation_tier) {
+                                  toast.error("Mark this player Long or Short first");
+                                  return;
+                                }
+                                awardPlayer({
+                                  userId: p.user_id,
+                                  award: (isGameNight
+                                    ? `participation_${p.participation_tier}`
+                                    : "participation") as PlayerAward,
+                                });
+                              } else {
+                                revokeAward({ userId: p.user_id, scope: "participation" });
+                              }
+                            }}
+                            aria-label="Award participation points"
+                          />
+                        </div>
                       </div>
 
-                      {p.awarded ? (
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] border-success/30 text-success bg-success/10 capitalize"
+                      {!isGameNight && (
+                        p.placement ? (
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] border-success/30 text-success bg-success/10 capitalize"
+                            >
+                              {awardLabels[
+                                p.placement.place === 1 ? "first" : p.placement.place === 2 ? "second" : "third"
+                              ]}{" "}
+                              awarded · {p.placement.points} pts
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isRevokingAward}
+                              className="h-7 px-2 text-[11px] text-destructive hover:text-destructive hover:bg-destructive/10 font-heading"
+                              onClick={() => revokeAward({ userId: p.user_id, scope: "placement" })}
+                            >
+                              Undo
+                            </Button>
+                          </div>
+                        ) : (
+                          <Select
+                            disabled={isAwardingPlayer}
+                            value=""
+                            onValueChange={(val) =>
+                              awardPlayer({ userId: p.user_id, award: val as PlayerAward })
+                            }
                           >
-                            {awardLabels[p.awarded]} awarded · {p.awarded_points ?? 0} pts
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={isRevokingAward}
-                            className="h-7 px-2 text-[11px] text-destructive hover:text-destructive hover:bg-destructive/10 font-heading"
-                            onClick={() => revokeAward({ userId: p.user_id })}
-                          >
-                            Undo
-                          </Button>
-                        </div>
-                      ) : (
-                        <Select
-                          disabled={isAwardingPlayer}
-                          value=""
-                          onValueChange={(val) =>
-                            awardPlayer({ userId: p.user_id, award: val as PlayerAward })
-                          }
-                        >
-                          <SelectTrigger className="h-8 text-xs bg-background/60 border-border font-heading">
-                            <SelectValue placeholder="Award points…" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {!isGameNight && (
-                              <>
-                                <SelectItem value="first">1st place ({pointsFirst} pts)</SelectItem>
-                                <SelectItem value="second">2nd place ({pointsSecond} pts)</SelectItem>
-                                <SelectItem value="third">3rd place ({pointsThird} pts)</SelectItem>
-                                <SelectItem value="participation">
-                                  Participation ({tournament.points_participation ?? 0} pts)
-                                </SelectItem>
-                              </>
-                            )}
-                            {isGameNight && (
-                              <>
-                                <SelectItem value="participation_long">
-                                  Long participation ({tournament.points_participation_long ?? 0} pts)
-                                </SelectItem>
-                                <SelectItem value="participation_short">
-                                  Short participation ({tournament.points_participation_short ?? 0} pts)
-                                </SelectItem>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
+                            <SelectTrigger className="h-8 text-xs bg-background/60 border-border font-heading">
+                              <SelectValue placeholder="Award placement points…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="first">1st place ({pointsFirst} pts)</SelectItem>
+                              <SelectItem value="second">2nd place ({pointsSecond} pts)</SelectItem>
+                              <SelectItem value="third">3rd place ({pointsThird} pts)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )
                       )}
+
                     </div>
                   ))}
 
