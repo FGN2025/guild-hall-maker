@@ -219,6 +219,7 @@ Deno.serve(async (req) => {
 
 
       for (const p of players) {
+        const partPts = pointsFor(p.user_id);
         const { data: existing } = await admin
           .from("match_point_awards")
           .select("id")
@@ -227,6 +228,7 @@ Deno.serve(async (req) => {
           .eq("kind", p.kind)
           .maybeSingle();
         if (existing) continue;
+
 
         report.match_credits.push({
           match_id: m.id, tournament_id: m.tournament_id, tournament_name: t?.name,
