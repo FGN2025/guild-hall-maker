@@ -210,15 +210,16 @@ Deno.serve(async (req) => {
     // ── Participation payout: once per attended player ──
     const participation: any[] = [];
     if (!skip_participation) {
-      const partPts = tournament.points_participation ?? 0;
       const { data: attendees } = await admin
         .from("tournament_registrations")
-        .select("user_id")
+        .select("user_id, participation_tier")
         .eq("tournament_id", tournament_id)
         .eq("attended", true);
 
       for (const a of attendees ?? []) {
         if (!a.user_id) continue;
+        const tier = isGameNight ? ((a as any).participation_tier ?? null) : null;
+        const partPts = participationPointsFor((a as any).participation_tier);
         // Idempotent insert via partial unique index (kind='participation')
         const { error: insErr } = await admin
           .from("match_point_awards")
@@ -234,10 +235,10 @@ Deno.serve(async (req) => {
 
         if (insErr) {
           if ((insErr as any).code === "23505") {
-            participation.push({ user_id: a.user_id, points: partPts, status: "already_awarded" });
+            participation.push({ user_id: a.user_id, tier, points: partPts, status: "already_awarded" });
             continue;
           }
-          participation.push({ user_id: a.user_id, points: partPts, status: "error", error: insErr.message });
+          participation.push({ user_id: a.user_id, tier, points: partPts, status: "error", error: insErr.message });
           continue;
         }
 
@@ -267,7 +268,8 @@ Deno.serve(async (req) => {
           }
         }
 
-        participation.push({ user_id: a.user_id, points: partPts, status: "awarded" });
+        participation.push({ user_id: a.user_id, tier, points: partPts, status: "awarded" });
+
       }
     }
 
