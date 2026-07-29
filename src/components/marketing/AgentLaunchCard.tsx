@@ -23,18 +23,50 @@ const ARCHETYPES = [
   { value: "operator_thought_leadership", label: "Operator Thought Leadership" },
 ];
 
+/** Next 6 months, oldest first, as YYYY-MM. */
+function monthOptions() {
+  const out: { value: string; label: string }[] = [];
+  const now = new Date();
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + i, 1));
+    const value = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    out.push({ value, label: d.toLocaleString(undefined, { month: "long", year: "numeric", timeZone: "UTC" }) });
+  }
+  return out;
+}
+
 export default function AgentLaunchCard({ tenantId, role }: Props) {
   const canLaunch = role === "admin" || role === "manager";
   const gate = useAgentLaunchGate();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState<"single_campaign" | "weekly_slate">("single_campaign");
+  const MONTHS = monthOptions();
+  const [mode, setMode] = useState<"single_campaign" | "weekly_slate" | "monthly_calendar_seed">("single_campaign");
   const [archetype, setArchetype] = useState<string>("");
   const [anchor, setAnchor] = useState<string>("");
   const [instruction, setInstruction] = useState("");
   const [launching, setLaunching] = useState(false);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [targetMonth, setTargetMonth] = useState<string>(MONTHS[0].value);
+  const [density, setDensity] = useState<string>("");
+
+  const isSeedMode = mode === "monthly_calendar_seed";
+
+  // Tenant default seed density — used as the placeholder when the launcher
+  // does not override it for this run.
+  const { data: tenantDensity } = useQuery({
+    queryKey: ["tenant_seed_density", tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tenants" as any)
+        .select("marketing_seed_density")
+        .eq("id", tenantId)
+        .maybeSingle();
+      return ((data as any)?.marketing_seed_density ?? "standard") as string;
+    },
+  });
 
   const { data: events = [] } = useQuery({
     queryKey: ["upcoming_events_for_agent", tenantId],
@@ -54,7 +86,7 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
 
   const { data: runs = [], refetch } = useAgentRuns(tenantId, { pollActive: !!activeRunId });
   const activeRun = runs.find((r) => r.id === activeRunId) ?? null;
-  if (activeRun && (activeRun.status === "succeeded" || activeRun.status === "failed") && activeRunId === activeRun.id) {
+  if (activeRun && activeRun.status !== "running" && activeRunId === activeRun.id) {
     // stop polling on next render
     setTimeout(() => setActiveRunId(null), 0);
   }
@@ -76,10 +108,12 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
         body: JSON.stringify({
           tenant_id: tenantId,
           mode,
-          archetype: archetype || undefined,
-          anchor_event_id,
-          anchor_tournament_id,
+          archetype: isSeedMode ? undefined : archetype || undefined,
+          anchor_event_id: isSeedMode ? undefined : anchor_event_id,
+          anchor_tournament_id: isSeedMode ? undefined : anchor_tournament_id,
           instruction: instruction || undefined,
+          target_month: isSeedMode ? targetMonth : undefined,
+          seed_density: isSeedMode ? density || undefined : undefined,
         }),
       });
       const body = await res.json();
@@ -126,31 +160,62 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
               <SelectContent>
                 <SelectItem value="single_campaign">Single campaign</SelectItem>
                 <SelectItem value="weekly_slate">Weekly slate</SelectItem>
+                <SelectItem value="monthly_calendar_seed">Monthly calendar seed</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Archetype (optional)</Label>
-            <Select value={archetype || "__none__"} onValueChange={(v) => setArchetype(v === "__none__" ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder="Auto-select" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Auto-select</SelectItem>
-                {ARCHETYPES.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {isSeedMode ? (
+            <div>
+              <Label>Target month</Label>
+              <Select value={targetMonth} onValueChange={setTargetMonth}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div>
+              <Label>Archetype (optional)</Label>
+              <Select value={archetype || "__none__"} onValueChange={(v) => setArchetype(v === "__none__" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Auto-select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Auto-select</SelectItem>
+                  {ARCHETYPES.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
-        <div>
-          <Label>Anchor event (optional)</Label>
-          <Select value={anchor || "__none__"} onValueChange={(v) => setAnchor(v === "__none__" ? "" : v)}>
-            <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">None</SelectItem>
-              {events.map((e) => <SelectItem key={e.key} value={e.key}>{e.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+        {isSeedMode ? (
+          <div>
+            <Label>Seed density</Label>
+            <Select value={density || "__default__"} onValueChange={(v) => setDensity(v === "__default__" ? "" : v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__default__">Tenant default ({tenantDensity ?? "standard"})</SelectItem>
+                <SelectItem value="light">Light — one day-of post per event</SelectItem>
+                <SelectItem value="standard">Standard — announce plus day-of</SelectItem>
+                <SelectItem value="full">Full — announce, countdown, day-of, recap</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Composition only. The seed lane never generates imagery and never publishes.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <Label>Anchor event (optional)</Label>
+            <Select value={anchor || "__none__"} onValueChange={(v) => setAnchor(v === "__none__" ? "" : v)}>
+              <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                {events.map((e) => <SelectItem key={e.key} value={e.key}>{e.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div>
           <Label>Launcher instruction (optional, 500 char max)</Label>

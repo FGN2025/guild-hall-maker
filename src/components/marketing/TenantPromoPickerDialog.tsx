@@ -12,6 +12,9 @@ import AssetEditorDialog, { type AssetSaveMeta, type SavedOverlayConfig } from "
 import type { TenantEvent } from "@/hooks/useTenantEvents";
 import { composePromoLayout, promoSceneToEditorTexts, type PromoScene } from "@/lib/promo/composePromoLayout";
 import { renderPromoSceneToBlob } from "@/lib/promo/renderPromoBrowser";
+import { useMarketingCampaigns } from "@/hooks/useMarketingCampaigns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface TenantPromoPickerDialogProps {
   open: boolean;
@@ -41,7 +44,33 @@ export async function renderPromoToBlob(scene: PromoScene): Promise<Blob> {
 export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, tenantPrimaryColor }: TenantPromoPickerDialogProps) {
   const [search, setSearch] = useState("");
   const [selectedScene, setSelectedScene] = useState<PromoScene | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<TenantEvent | null>(null);
+  const [linkCampaign, setLinkCampaign] = useState(true);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
+  const { createCampaign } = useMarketingCampaigns();
+
+  /** Creates (or reuses, via idempotency key) the campaign this promo belongs
+   *  to so composed human promos carry the same event linkage the agent lane
+   *  produces. Returns null when linking is off or creation fails. */
+  const ensureCampaign = async (evt: TenantEvent): Promise<string | null> => {
+    if (!linkCampaign) return null;
+    try {
+      return await createCampaign.mutateAsync({
+        title: `${evt.name} — Promo`,
+        description: `Promo campaign created from the event "${evt.name}".`,
+        category: "social_media",
+        tenant_id: tenantId,
+        status: "draft",
+        source_event_id: evt.id,
+        idempotency_key: `promo:${tenantId}:${evt.id}`,
+      });
+    } catch {
+      // Duplicate idempotency key or RLS block — fall back to an unlinked asset
+      // rather than losing the composed promo.
+      return null;
+    }
+  };
+
 
   const { data: events = [] } = useQuery({
     queryKey: ["tenant-events-promo", tenantId],
@@ -84,11 +113,13 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
     try {
       const scene = buildTenantEventPromo(evt, tenantPrimaryColor);
       const blob = await renderPromoSceneToBlob(scene);
+      const campaignId = await ensureCampaign(evt);
       await onSave(blob, {
         overlayConfig: sceneToOverlayConfig(scene),
         backgroundUrl: scene.backgroundUrl,
+        campaignId,
       });
-      toast.success("Promo created and saved!");
+      toast.success(campaignId ? "Promo saved and linked to a campaign" : "Promo created and saved!");
       onOpenChange(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to generate promo");
@@ -101,13 +132,17 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
     return (
       <AssetEditorDialog
         open
-        onOpenChange={(o) => { if (!o) { setSelectedScene(null); onOpenChange(false); } }}
+        onOpenChange={(o) => { if (!o) { setSelectedScene(null); setSelectedEvent(null); onOpenChange(false); } }}
         baseImageUrl={selectedScene.backgroundUrl ?? undefined}
-        onSave={onSave}
+        onSave={async (blob, meta) => {
+          const campaignId = selectedEvent ? await ensureCampaign(selectedEvent) : null;
+          await onSave(blob, meta ? { ...meta, campaignId } : undefined);
+        }}
         initialOverlayConfig={sceneToOverlayConfig(selectedScene)}
       />
     );
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -118,10 +153,25 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
           </DialogTitle>
         </DialogHeader>
 
-        <div className="relative mb-4">
+        <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search events…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+
+        <div className="flex items-start gap-2 mb-4 rounded-md border border-border p-3">
+          <Checkbox
+            id="promo-link-campaign"
+            checked={linkCampaign}
+            onCheckedChange={(v) => setLinkCampaign(v === true)}
+          />
+          <div className="grid gap-0.5">
+            <Label htmlFor="promo-link-campaign" className="text-sm">Create a campaign and link this promo</Label>
+            <p className="text-xs text-muted-foreground">
+              Gives the promo the same event linkage the marketing agent produces, so it shows up alongside agent work.
+            </p>
+          </div>
+        </div>
+
 
         <div className="space-y-2 max-h-[50vh] overflow-y-auto">
           {filtered.length === 0 ? (
@@ -162,7 +212,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setSelectedScene(buildTenantEventPromo(evt, tenantPrimaryColor))}
+                  onClick={() => { setSelectedEvent(evt); setSelectedScene(buildTenantEventPromo(evt, tenantPrimaryColor)); }}
                   title="Open in editor"
                 >
                   <Pencil className="h-3.5 w-3.5" />

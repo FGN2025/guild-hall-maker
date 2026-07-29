@@ -23,13 +23,17 @@ const TenantMarketingAssets = ({ embedded }: { embedded?: boolean }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [editorAsset, setEditorAsset] = useState<TenantMarketingAsset | null>(null);
 
-  const handlePromoSave = async (blob: Blob, meta?: { overlayConfig?: Record<string, any>; backgroundUrl?: string | null }) => {
+  const handlePromoSave = async (
+    blob: Blob,
+    meta?: { overlayConfig?: Record<string, any>; backgroundUrl?: string | null; campaignId?: string | null },
+  ) => {
     const file = new File([blob], `event-promo-${Date.now()}.png`, { type: "image/png" });
     await uploadAsset.mutateAsync({
       file,
       label: "Event Promo",
       overlayConfig: meta?.overlayConfig ?? null,
       backgroundUrl: meta?.backgroundUrl ?? null,
+      campaignId: meta?.campaignId ?? undefined,
     });
   };
 

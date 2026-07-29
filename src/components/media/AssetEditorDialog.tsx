@@ -66,6 +66,8 @@ export type SavedOverlayConfig = {
 export type AssetSaveMeta = {
   overlayConfig: SavedOverlayConfig;
   backgroundUrl: string | null;
+  /** Optional campaign to link the saved asset to (promo → campaign linkage). */
+  campaignId?: string | null;
 };
 
 interface AssetEditorDialogProps {

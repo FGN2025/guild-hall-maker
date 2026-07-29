@@ -97,14 +97,32 @@ async function enqueueNotify(tenantId: string, category: string, runRow: any) {
   }
 }
 
-async function loadActivePrompt(): Promise<{ content: string; version: number } | null> {
+/** The calendar-seed lane runs on its own prompt; every other mode keeps the
+ *  general marketing_agent prompt. */
+function promptNameForMode(mode: string) {
+  return mode === "monthly_calendar_seed" ? "marketing_agent_calendar_seed" : "marketing_agent";
+}
+
+async function loadActivePrompt(mode: string): Promise<{ name: string; content: string; version: number } | null> {
+  const name = promptNameForMode(mode);
   const { data } = await service()
     .from("agent_prompts")
     .select("content, version")
-    .eq("name", "marketing_agent")
+    .eq("name", name)
     .eq("active", true)
     .maybeSingle();
-  return data ?? null;
+  return data ? { name, ...data } : null;
+}
+
+/** Per-mode turn budget from agent_mode_config (agent_run_limits is untouched —
+ *  it still governs daily/monthly run counts only). */
+async function turnCapForMode(mode: string): Promise<number> {
+  const { data } = await service()
+    .from("agent_mode_config")
+    .select("turn_cap")
+    .eq("mode", mode)
+    .maybeSingle();
+  return data?.turn_cap ?? 40;
 }
 
 async function checkLimits(tenantId: string): Promise<{ ok: boolean; reason?: string }> {
@@ -258,10 +276,27 @@ Deno.serve(async (req) => {
     anchor_tournament_id,
     instruction,
     turn_cap,
+    target_month,
+    seed_density,
   } = payload ?? {};
   if (!tenant_id) return json({ error: "tenant_id required" }, 400);
-  if (!["single_campaign", "weekly_slate"].includes(mode)) return json({ error: "invalid mode" }, 400);
+  if (!["single_campaign", "weekly_slate", "monthly_calendar_seed"].includes(mode)) {
+    return json({ error: "invalid mode" }, 400);
+  }
   if (instruction && String(instruction).length > 500) return json({ error: "instruction max 500 chars" }, 400);
+
+  let seedMonth: string | null = null;
+  if (mode === "monthly_calendar_seed") {
+    if (!target_month || !/^\d{4}-\d{2}$/.test(String(target_month))) {
+      return json({ error: "target_month (YYYY-MM) required for monthly_calendar_seed" }, 400);
+    }
+    const mNum = Number(String(target_month).slice(5, 7));
+    if (mNum < 1 || mNum > 12) return json({ error: "target_month month out of range" }, 400);
+    seedMonth = String(target_month);
+  }
+  if (seed_density && !["light", "standard", "full"].includes(seed_density)) {
+    return json({ error: "seed_density must be light, standard or full" }, 400);
+  }
 
   const svc = service();
 
@@ -281,15 +316,27 @@ Deno.serve(async (req) => {
 
   if (!ANTHROPIC_API_KEY) return json({ error: "ANTHROPIC_API_KEY not configured" }, 500);
 
-  const prompt = await loadActivePrompt();
-  if (!prompt) return json({ error: "no active marketing_agent prompt" }, 500);
+  const prompt = await loadActivePrompt(mode);
+  if (!prompt) return json({ error: `no active ${promptNameForMode(mode)} prompt` }, 500);
 
-  const effectiveTurnCap = Math.max(1, Math.min(80, Number(turn_cap) || 40));
+  // Resolve the effective density: explicit launch value, else the tenant default.
+  let effectiveDensity: string | null = null;
+  if (mode === "monthly_calendar_seed") {
+    if (seed_density) {
+      effectiveDensity = seed_density;
+    } else {
+      const { data: t } = await svc.from("tenants").select("marketing_seed_density").eq("id", tenant_id).maybeSingle();
+      effectiveDensity = t?.marketing_seed_density ?? "standard";
+    }
+  }
+
+  const modeCap = await turnCapForMode(mode);
+  const effectiveTurnCap = Math.max(1, Math.min(modeCap, Number(turn_cap) || modeCap));
 
   const { data: run, error: runErr } = await svc.from("agent_runs").insert({
     tenant_id,
     launched_by: userId,
-    agent_name: "marketing_agent",
+    agent_name: prompt.name,
     prompt_version: prompt.version,
     mode,
     archetype: archetype ?? null,
@@ -297,12 +344,16 @@ Deno.serve(async (req) => {
     instruction: instruction ?? null,
     status: "running",
     turn_cap: effectiveTurnCap,
+    target_month: seedMonth,
+    seed_density: effectiveDensity,
   }).select().single();
   if (runErr || !run) return json({ error: runErr?.message ?? "run insert failed" }, 500);
 
   const userMessage = [
     `Tenant id: ${tenant_id}`,
     `Mode: ${mode}`,
+    seedMonth ? `Target month: ${seedMonth}` : null,
+    effectiveDensity ? `Seed density: ${effectiveDensity}` : null,
     archetype ? `Archetype: ${archetype}` : null,
     anchor_event_id ? `Anchor tenant_event_id: ${anchor_event_id}` : null,
     anchor_tournament_id ? `Anchor tournament_id: ${anchor_tournament_id}` : null,
