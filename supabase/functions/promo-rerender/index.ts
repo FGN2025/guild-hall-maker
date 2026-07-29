@@ -67,7 +67,9 @@ Deno.serve(async (req) => {
       });
       scene.backgroundUrl = evt.image_url ?? null;
       const png = await renderPromoSceneToPng(scene);
-      return json({ scene, png_base64: btoa(String.fromCharCode(...png)) });
+      let bin = "";
+      for (let i = 0; i < png.length; i += 8192) bin += String.fromCharCode(...png.subarray(i, i + 8192));
+      return json({ scene, png_base64: btoa(bin) });
     }
 
     // --- rerender mode
