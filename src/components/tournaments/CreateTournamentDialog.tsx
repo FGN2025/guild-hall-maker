@@ -81,7 +81,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
   const [achievementId, setAchievementId] = useState("");
-  const [difficulty, setDifficulty] = useState("beginner");
+  
 
   const isGameNight = format === "game_night";
 
