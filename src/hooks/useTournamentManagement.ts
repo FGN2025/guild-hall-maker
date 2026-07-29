@@ -94,6 +94,7 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         .from("tournament_registrations")
         .select("user_id, attended, participation_tier")
         .eq("tournament_id", tournamentId!);
+      console.log("[dbg] regs", regs, error);
       if (error) throw error;
       if (!regs || regs.length === 0) return [] as RegisteredPlayer[];
 
