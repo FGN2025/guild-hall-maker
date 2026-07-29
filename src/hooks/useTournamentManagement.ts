@@ -93,18 +93,50 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       const tierMap = new Map(
         regs.map((r: any) => [r.user_id, (r.participation_tier ?? null) as ParticipationTier | null])
       );
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, gamer_tag, discord_username")
+      const { data: profiles } = await (supabase.from as any)("profiles_public")
+        .select("user_id, display_name, gamer_tag")
         .in("user_id", userIds);
 
-      return (profiles ?? []).map((p) => ({
-        user_id: p.user_id,
-        display_name: p.display_name ?? "Unknown",
-        gamer_tag: p.gamer_tag,
-        attended: attendedMap.get(p.user_id) ?? false,
-        participation_tier: tierMap.get(p.user_id) ?? null,
-      })) as RegisteredPlayer[];
+      const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+
+      const { data: placements } = await supabase
+        .from("tournament_placements")
+        .select("user_id, place, points_awarded")
+        .eq("tournament_id", tournamentId!);
+      const { data: partAwards } = await supabase
+        .from("match_point_awards")
+        .select("user_id, points, kind")
+        .eq("tournament_id", tournamentId!)
+        .eq("kind", "participation");
+
+      const awardMap = new Map<string, { awarded: RegisteredPlayer["awarded"]; points: number }>();
+      for (const a of partAwards ?? []) {
+        if (a.user_id) awardMap.set(a.user_id, { awarded: "participation", points: a.points ?? 0 });
+      }
+      for (const pl of placements ?? []) {
+        if (!pl.user_id) continue;
+        awardMap.set(pl.user_id, {
+          awarded: pl.place === 1 ? "first" : pl.place === 2 ? "second" : "third",
+          points: pl.points_awarded ?? 0,
+        });
+      }
+
+      // Registrations are the source of truth — a missing profile row must not
+      // drop the player from the list.
+      return regs.map((r: any) => {
+        const p: any = profileMap.get(r.user_id);
+        const aw = awardMap.get(r.user_id);
+        return {
+          user_id: r.user_id,
+          display_name: p?.display_name ?? "Unknown player",
+          gamer_tag: p?.gamer_tag ?? null,
+          attended: attendedMap.get(r.user_id) ?? false,
+          participation_tier: tierMap.get(r.user_id) ?? null,
+          awarded: aw?.awarded ?? null,
+          awarded_points: aw?.points ?? null,
+        };
+      }) as RegisteredPlayer[];
+
 
     },
   });
