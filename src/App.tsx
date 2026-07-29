@@ -104,6 +104,7 @@ const GameServers = lazy(() => import("./pages/GameServers"));
 const AdminCloudGaming = lazy(() => import("./pages/admin/AdminCloudGaming"));
 const AdminInquiries = lazy(() => import("./pages/admin/AdminInquiries"));
 const AdminPointsRubric = lazy(() => import("./pages/admin/AdminPointsRubric"));
+const AdminPointsImport = lazy(() => import("./pages/admin/AdminPointsImport"));
 const AdminCalendarImages = lazy(() => import("./pages/admin/AdminCalendarImages"));
 const WhitePaper = lazy(() => import("./pages/WhitePaper"));
 const ForProviders = lazy(() => import("./pages/ForProviders"));
