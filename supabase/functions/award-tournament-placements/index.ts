@@ -111,12 +111,14 @@ Deno.serve(async (req) => {
       let removed = 0;
       let places: number[] = [];
 
-      // Participation awards (season_id stored on the row)
+      // Participation awards created from the Manage dropdown (season_id stored on the row).
+      // Scoped to kind='participation' so bracket/match-derived awards are never removed.
       const { data: mpa } = await admin
         .from("match_point_awards")
         .select("id, points, season_id")
         .eq("tournament_id", tournament_id)
-        .eq("user_id", user_id);
+        .eq("user_id", user_id)
+        .eq("kind", "participation");
       for (const row of mpa ?? []) {
         await admin.from("match_point_awards").delete().eq("id", row.id);
         if (row.season_id) await debitScore(row.season_id, user_id, row.points ?? 0);
