@@ -1,38 +1,41 @@
-## Current state (verified)
+## What's wrong
 
-- `points_participation_long` / `points_participation_short` exist on `tournaments` (migration 20260729150845) and are written by the create/edit dialogs.
-- Nothing reads them. The only participation payout is in the `award-tournament-placements` edge function, which reads `points_participation` and pays every registration with `attended = true`, inserting a `match_point_awards` row with `kind = 'participation'` and crediting `season_scores`.
-- So for a Game Night, the long/short values are stored but never reach any player's balance.
+Every read of `tournament_registrations` from the app is failing with a database error, so the UI falls back to a count of zero. Confirmed from the live network log — each of these returns HTTP 500:
 
-## What to build
+```text
+GET /tournament_registrations?select=tournament_id&in.(...)
+{"code":"42P17","message":"infinite recursion detected in policy for relation \"tournament_registrations\""}
+```
 
-### 1. Record the tier per attendee
-Add `participation_tier` (text, nullable, values `long` / `short`) to `tournament_registrations`. Null means "use the standard `points_participation`" so non-Game-Night events are unaffected.
+The data is fine. A direct database count shows real registrations, e.g. Overwatch Game Night 3, Valorant Game Night 2, Roblox Tournament 2, Mario Kart World 2, plus several with 1. All of these render as 0/16.
 
-### 2. Bulk assign in the manage page
-In `src/pages/TournamentManage.tsx`, when the tournament format is `game_night`:
-- Add a checkbox column to select multiple registrations.
-- Add two buttons: **Mark Long** and **Mark Short**, which set `participation_tier` on all selected rows.
-- Show the current tier as a badge next to each player.
-- Keep the existing Attended checkbox as the gate for payout; a tier without attendance pays nothing.
+**Root cause (verified against the live policy list):** the SELECT policy `Co-participants can view registrations` queries the very table it protects:
 
-### 3. Pay the right amount
-Update `supabase/functions/award-tournament-placements/index.ts`:
-- Select the two new columns and each attendee's `participation_tier`.
-- For `game_night` format: pay `points_participation_long` or `points_participation_short` based on the tier; if tier is null, fall back to `points_participation`.
-- All other formats keep today's behavior exactly.
-- Keep the existing idempotency (unique `match_point_awards` on `kind = 'participation'`) so re-running never double-pays.
+```sql
+EXISTS (SELECT 1 FROM tournament_registrations tr2
+        WHERE tr2.tournament_id = tournament_registrations.tournament_id
+          AND tr2.user_id = auth.uid())
+```
 
-### 4. Make the payout visible before committing
-The manage page already runs a dry-run path; extend the dry-run response to include the participation breakdown (count and total points per tier) so the admin sees what will be awarded before confirming.
+Postgres re-applies the policy while evaluating the subquery, which recurses and aborts the whole query — including for admins, because one broken policy in the OR chain kills the statement.
 
-## Scope notes
+This also explains the other symptoms in the same session: the Manage page failing to load registered players, and the tier/attendance panel coming up empty.
 
-- Applies going forward only — no backfill of completed Game Nights. If a past one needs points, it can be assigned tiers and re-run manually, and idempotency means only the missing awards land.
-- No change to `reconcile-tournament-points` semantics beyond the same tier-aware lookup, so the reconciler and the live awarder agree.
+## The fix
 
-## Technical details
+**1. Migration — break the recursion**
 
-- Migration: `ALTER TABLE public.tournament_registrations ADD COLUMN IF NOT EXISTS participation_tier text` plus a validation trigger restricting values to `long` / `short` / null (trigger rather than CHECK, per project convention). Existing RLS and grants on the table already cover the column.
-- Bulk update from the client uses `.update(...).in("id", ids).select("id")` so RLS-filtered no-ops surface as an error rather than a silent success — the same pattern used for the scheduled-post approve fix.
-- Types regenerate after the migration; the edge function and manage page changes land afterward.
+- Add a `SECURITY DEFINER` helper, `public.is_tournament_participant(_tournament_id uuid, _user_id uuid) returns boolean`, `STABLE`, `SET search_path = public`, which does the same existence check. Because it is `SECURITY DEFINER` it bypasses RLS on the inner read, so there is no recursion.
+- Drop `Co-participants can view registrations` and recreate it as `USING (public.is_tournament_participant(tournament_id, auth.uid()))`, scoped `TO authenticated`.
+- Leave the other four policies (own row, admin/moderator, creator, insert/delete) untouched.
+- Grant `EXECUTE` on the helper to `authenticated` only.
+
+**2. Verify**
+
+- Re-run the exact failing query as an authenticated non-admin and confirm 200 with rows instead of 42P17.
+- Confirm counts on `/tournaments` match the direct database counts above.
+- Confirm a non-participant, non-admin still cannot read another tournament's registration rows — the policy boundary must stay intact.
+
+## Note on signed-out visitors
+
+There is no `anon` SELECT policy on this table, so logged-out visitors will still see 0/16 even after the recursion fix. Existing project rules restrict registration counts to platform admins, so I am **not** changing that here. If you want public "3/16 registered" on the tournament cards for guests, that is a separate small change: a `SECURITY DEFINER` counting function that returns only the number, never the participant identities.
