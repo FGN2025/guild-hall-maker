@@ -31,12 +31,16 @@ const awardSeasonPoints = async (winnerId: string, loserId: string | null, point
   }
 };
 
+export type ParticipationTier = "long" | "short";
+
 export interface RegisteredPlayer {
   user_id: string;
   display_name: string;
   gamer_tag: string | null;
   attended: boolean;
+  participation_tier: ParticipationTier | null;
 }
+
 
 export interface ManageMatch {
   id: string;
