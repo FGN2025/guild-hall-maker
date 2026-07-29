@@ -623,11 +623,12 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
   });
 
   const revokeAwardMutation = useMutation({
-    mutationFn: async ({ userId }: { userId: string }) => {
+    mutationFn: async ({ userId, scope }: { userId: string; scope?: "participation" | "placement" | "all" }) => {
       if (!tournamentId) throw new Error("No tournament");
       const { data, error } = await supabase.functions.invoke("award-tournament-placements", {
-        body: { tournament_id: tournamentId, revoke_award: { user_id: userId } },
+        body: { tournament_id: tournamentId, revoke_award: { user_id: userId, scope: scope ?? "all" } },
       });
+
       if (error) {
         const ctx: any = (error as any).context;
         let msg = error.message;
