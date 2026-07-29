@@ -343,16 +343,8 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             onPrizePoolChange={setPrizePool}
             prizeId={prizeId}
             onPrizeIdChange={setPrizeId}
-            pointsFirst={0}
-            pointsSecond={0}
-            pointsThird={0}
-            prizePctFirst={prizePctFirst}
-            prizePctSecond={prizePctSecond}
-            prizePctThird={prizePctThird}
-            onPrizePctFirstChange={setPrizePctFirst}
-            onPrizePctSecondChange={setPrizePctSecond}
-            onPrizePctThirdChange={setPrizePctThird}
           />
+
           <div className="space-y-2">
             <Label className="font-heading text-sm">Hero Image</Label>
             <div className="flex items-center gap-3">
