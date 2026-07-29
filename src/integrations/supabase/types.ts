@@ -2757,6 +2757,7 @@ export type Database = {
           adjustment_type: string
           created_at: string
           id: string
+          import_batch_id: string | null
           points_change: number
           reason: string
           season_id: string | null
@@ -2767,6 +2768,7 @@ export type Database = {
           adjustment_type?: string
           created_at?: string
           id?: string
+          import_batch_id?: string | null
           points_change: number
           reason: string
           season_id?: string | null
@@ -2777,6 +2779,7 @@ export type Database = {
           adjustment_type?: string
           created_at?: string
           id?: string
+          import_batch_id?: string | null
           points_change?: number
           reason?: string
           season_id?: string | null
