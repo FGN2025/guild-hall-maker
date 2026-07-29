@@ -620,6 +620,35 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: (err: Error) => toast.error(err.message || "Failed to award points"),
   });
 
+  const revokeAwardMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      if (!tournamentId) throw new Error("No tournament");
+      const { data, error } = await supabase.functions.invoke("award-tournament-placements", {
+        body: { tournament_id: tournamentId, revoke_award: { user_id: userId } },
+      });
+      if (error) {
+        const ctx: any = (error as any).context;
+        let msg = error.message;
+        try {
+          const body = await ctx?.json?.();
+          if (body?.error) msg = body.error;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data as { points_removed: number };
+    },
+    onSuccess: (data) => {
+      toast.success(`Removed ${data?.points_removed ?? 0} points`);
+      queryClient.invalidateQueries({ queryKey: ["manage-players", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["tournament-placement-count", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to undo award"),
+  });
+
+
+
 
   return {
     tournament: tournamentQuery.data ?? null,
