@@ -87,8 +87,10 @@ Deno.serve(async (req) => {
 
     // ── Undo a single player's award (Manage page) ──
     if (revoke_award) {
-      const { user_id } = revoke_award as { user_id?: string };
+      const { user_id, scope } = revoke_award as { user_id?: string; scope?: string };
+      const revokeScope = scope === "participation" || scope === "placement" ? scope : "all";
       if (!user_id) return json({ error: "revoke_award requires user_id" }, 400);
+
 
       const debitScore = async (seasonId: string, uid: string, pts: number) => {
         if (pts <= 0) return;
@@ -111,14 +113,16 @@ Deno.serve(async (req) => {
       let removed = 0;
       let places: number[] = [];
 
-      // Participation awards created from the Manage dropdown (season_id stored on the row).
+      // Participation awards created from the Manage page (season_id stored on the row).
       // Scoped to kind='participation' so bracket/match-derived awards are never removed.
-      const { data: mpa } = await admin
-        .from("match_point_awards")
-        .select("id, points, season_id")
-        .eq("tournament_id", tournament_id)
-        .eq("user_id", user_id)
-        .eq("kind", "participation");
+      const { data: mpa } = revokeScope === "placement"
+        ? { data: [] as any[] }
+        : await admin
+            .from("match_point_awards")
+            .select("id, points, season_id")
+            .eq("tournament_id", tournament_id)
+            .eq("user_id", user_id)
+            .eq("kind", "participation");
       for (const row of mpa ?? []) {
         await admin.from("match_point_awards").delete().eq("id", row.id);
         if (row.season_id) await debitScore(row.season_id, user_id, row.points ?? 0);
@@ -126,11 +130,13 @@ Deno.serve(async (req) => {
       }
 
       // Placement awards
-      const { data: pls } = await admin
-        .from("tournament_placements")
-        .select("id, place, points_awarded")
-        .eq("tournament_id", tournament_id)
-        .eq("user_id", user_id);
+      const { data: pls } = revokeScope === "participation"
+        ? { data: [] as any[] }
+        : await admin
+            .from("tournament_placements")
+            .select("id, place, points_awarded")
+            .eq("tournament_id", tournament_id)
+            .eq("user_id", user_id);
       if ((pls ?? []).length > 0) {
         const season = await resolveActiveSeason(admin, tournament.game);
         for (const row of pls ?? []) {
@@ -155,12 +161,26 @@ Deno.serve(async (req) => {
           .like("notes", "Auto-awarded: 1st place%");
       }
 
-      // No awards remain for this player → clear attendance/tier flags set at award time
-      await admin
-        .from("tournament_registrations")
-        .update({ attended: false, ...(isGameNight ? { participation_tier: null } : {}) })
+      // Only clear attendance/tier once no awards remain for this player
+      const { count: remainingPart } = await admin
+        .from("match_point_awards")
+        .select("id", { count: "exact", head: true })
+        .eq("tournament_id", tournament_id)
+        .eq("user_id", user_id)
+        .eq("kind", "participation");
+      const { count: remainingPlace } = await admin
+        .from("tournament_placements")
+        .select("id", { count: "exact", head: true })
         .eq("tournament_id", tournament_id)
         .eq("user_id", user_id);
+      if ((remainingPart ?? 0) === 0 && (remainingPlace ?? 0) === 0) {
+        await admin
+          .from("tournament_registrations")
+          .update({ attended: false, ...(isGameNight ? { participation_tier: null } : {}) })
+          .eq("tournament_id", tournament_id)
+          .eq("user_id", user_id);
+      }
+
 
       return json({ success: true, revoked: true, user_id, points_removed: removed });
     }
