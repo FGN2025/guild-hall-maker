@@ -382,6 +382,39 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
   const jwt = authHeader.slice(7);
+
+  // ---- Continuation branch: an earlier slice of a run handing itself off.
+  // Authenticated by the shared runner signing key, never by a user session.
+  const contKey = req.headers.get("x-runner-continuation");
+  if (contKey) {
+    if (contKey !== SIGNING_KEY) return json({ error: "unauthorized" }, 401);
+    let body: any;
+    try { body = await req.json(); } catch { return json({ error: "invalid_json" }, 400); }
+    const resumeId = body?.resume_run_id;
+    if (!resumeId) return json({ error: "resume_run_id required" }, 400);
+
+    const { data: prev } = await service().from("agent_runs").select("*").eq("id", resumeId).maybeSingle();
+    if (!prev) return json({ error: "run not found" }, 404);
+    if (prev.status !== "running") return json({ error: `run is ${prev.status}` }, 409);
+
+    const resumePrompt = await loadActivePrompt(prev.mode ?? "single_campaign");
+    if (!resumePrompt) return json({ error: "no active prompt" }, 500);
+
+    const resumeWork = driveRun({
+      run: prev,
+      tenantId: prev.tenant_id,
+      userId: prev.launched_by,
+      systemPrompt: resumePrompt.content,
+      userMessage: "",
+      turnCap: prev.turn_cap,
+      initialMessages: (prev.transcript as any[]) ?? undefined,
+    });
+    // @ts-ignore EdgeRuntime is provided by the Supabase runtime
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(resumeWork);
+    return json({ run_id: resumeId, status: "running", continuation: (prev.continuation_count ?? 0) });
+  }
+
+
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false, autoRefreshToken: false },
