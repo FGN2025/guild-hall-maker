@@ -200,7 +200,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
                 <SelectValue placeholder="Select a game" />
               </SelectTrigger>
               <SelectContent>
-                {games.map((g) => (
+                {games.filter((g: any) => g.supports_tournaments).map((g) => (
                   <SelectItem key={g.id} value={g.name}>{g.name}</SelectItem>
                 ))}
               </SelectContent>
