@@ -218,6 +218,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
                   <SelectItem value="round_robin">Round Robin</SelectItem>
                   <SelectItem value="swiss">Swiss</SelectItem>
                   <SelectItem value="battle_royale">Battle Royale</SelectItem>
+                  <SelectItem value="game_night">Game Night</SelectItem>
                 </SelectContent>
               </Select>
             </div>
