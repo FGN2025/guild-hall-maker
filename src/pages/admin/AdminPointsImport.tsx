@@ -425,7 +425,7 @@ const AdminPointsImport = () => {
         onOpenChange={setConfirmOpen}
         title="Import points?"
         description={`This credits ${summary?.total_points ?? 0} points across ${summary?.matched ?? 0} players in ${summary?.season.name ?? ""}. Points become immediately spendable in the Prize Shop. You can undo the batch afterwards.`}
-        confirmText="Import"
+        confirmLabel="Import"
         onConfirm={() => callFn("apply", !!summary?.already_imported)}
       />
     </div>
