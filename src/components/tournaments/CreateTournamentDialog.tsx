@@ -38,6 +38,8 @@ interface Props {
     points_second?: number;
     points_third?: number;
     points_participation?: number;
+    points_participation_long?: number;
+    points_participation_short?: number;
     prize_pct_first?: number;
     prize_pct_second?: number;
     prize_pct_third?: number;
