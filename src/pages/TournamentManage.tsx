@@ -13,6 +13,44 @@ const awardLabels: Record<string, string> = {
   participation: "Participation",
 };
 
+const parsePrizePoints = (value: string | null | undefined) => {
+  const parsed = Number.parseFloat(String(value ?? "").replace(/[^0-9.]/g, ""));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+const getPlacementPoints = (
+  tournament: {
+    prize_type?: string | null;
+    prize_pool?: string | null;
+    prize_pct_first?: number | null;
+    prize_pct_second?: number | null;
+    prize_pct_third?: number | null;
+    points_first?: number | null;
+    points_second?: number | null;
+    points_third?: number | null;
+  },
+  place: 1 | 2 | 3
+) => {
+  const saved =
+    place === 1
+      ? tournament.points_first
+      : place === 2
+      ? tournament.points_second
+      : tournament.points_third;
+  if (typeof saved === "number" && saved > 0) return saved;
+
+  const pool = parsePrizePoints(tournament.prize_pool);
+  if ((tournament.prize_type ?? "none") !== "value" || pool <= 0) return saved ?? 0;
+
+  const pct =
+    place === 1
+      ? tournament.prize_pct_first ?? 50
+      : place === 2
+      ? tournament.prize_pct_second ?? 30
+      : tournament.prize_pct_third ?? 20;
+  return Math.round(pool * (pct / 100));
+};
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -140,6 +178,9 @@ const TournamentManage = () => {
   const missingPlacements = tournament?.status === "completed" && placementCount === 0;
 
   const isGameNight = (tournament.format ?? "").toLowerCase() === "game_night";
+  const pointsFirst = getPlacementPoints(tournament, 1);
+  const pointsSecond = getPlacementPoints(tournament, 2);
+  const pointsThird = getPlacementPoints(tournament, 3);
   const allSelected = players.length > 0 && selected.length === players.length;
   const applyTier = (tier: "long" | "short" | null) => {
     setParticipationTier(
@@ -375,9 +416,9 @@ const TournamentManage = () => {
                           <SelectContent>
                             {!isGameNight && (
                               <>
-                                <SelectItem value="first">1st place ({tournament.points_first ?? 0} pts)</SelectItem>
-                                <SelectItem value="second">2nd place ({tournament.points_second ?? 0} pts)</SelectItem>
-                                <SelectItem value="third">3rd place ({tournament.points_third ?? 0} pts)</SelectItem>
+                                <SelectItem value="first">1st place ({pointsFirst} pts)</SelectItem>
+                                <SelectItem value="second">2nd place ({pointsSecond} pts)</SelectItem>
+                                <SelectItem value="third">3rd place ({pointsThird} pts)</SelectItem>
                                 <SelectItem value="participation">
                                   Participation ({tournament.points_participation ?? 0} pts)
                                 </SelectItem>
