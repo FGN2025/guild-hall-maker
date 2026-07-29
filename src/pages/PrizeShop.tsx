@@ -8,16 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, ShoppingBag, Clock, CheckCircle2, XCircle, Package } from "lucide-react";
+import { Gift, ShoppingBag, Clock, CheckCircle2, XCircle, Package, Wifi } from "lucide-react";
 import { toast } from "sonner";
 import PageBackground from "@/components/PageBackground";
 import PointsWalletCard from "@/components/shared/PointsWalletCard";
+import { useIsIspLinked } from "@/hooks/useIsIspLinked";
+import { Link } from "react-router-dom";
 
 const PrizeShop = () => {
   usePageTitle("Prize Shop");
   const { user } = useAuth();
+  const { isIspLinked, isLoading: ispLoading } = useIsIspLinked();
   const queryClient = useQueryClient();
   const [confirmPrize, setConfirmPrize] = useState<any>(null);
+
 
   // Aggregate available points across ALL active game seasons
   const { data: seasonScore } = useQuery({
