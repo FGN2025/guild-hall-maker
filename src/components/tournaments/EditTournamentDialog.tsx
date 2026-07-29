@@ -39,6 +39,8 @@ interface TournamentData {
   points_second?: number;
   points_third?: number;
   points_participation?: number;
+  points_participation_long?: number;
+  points_participation_short?: number;
   discord_role_id?: string | null;
   achievement_id?: string | null;
   requires_invite_code?: boolean;
