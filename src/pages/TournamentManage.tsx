@@ -126,6 +126,16 @@ const TournamentManage = () => {
 
   const missingPlacements = tournament?.status === "completed" && placementCount === 0;
 
+  const isGameNight = (tournament.format ?? "").toLowerCase() === "game_night";
+  const allSelected = players.length > 0 && selected.length === players.length;
+  const applyTier = (tier: "long" | "short" | null) => {
+    setParticipationTier(
+      { userIds: selected, tier },
+      { onSuccess: () => setSelected([]) }
+    );
+  };
+
+
 
 
 
