@@ -72,12 +72,16 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [pointsParticipation, setPointsParticipation] = useState("2");
+  const [pointsParticipationLong, setPointsParticipationLong] = useState("5");
+  const [pointsParticipationShort, setPointsParticipationShort] = useState("2");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
   const [achievementId, setAchievementId] = useState("");
   const [difficulty, setDifficulty] = useState("beginner");
-  const [pointsOverrideReason, setPointsOverrideReason] = useState("");
+
+  const isGameNight = format === "game_night";
+
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
