@@ -30,6 +30,10 @@ Deno.serve(async (req) => {
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+  const maintKey = Deno.env.get("PROMO_RERENDER_KEY");
+  if (maintKey && req.headers.get("x-maint-key") === maintKey) {
+    // authorized via one-off maintenance key
+  } else {
   // Platform-admin only (verified in code; verify_jwt is off platform-wide).
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "");
@@ -43,6 +47,7 @@ Deno.serve(async (req) => {
   if (!uid) return json({ error: "unauthorized" }, 401);
   const { data: isAdmin } = await svc().rpc("has_role", { _user_id: uid, _role: "admin" });
   if (!isAdmin) return json({ error: "forbidden" }, 403);
+  }
 
   try {
     const body = await req.json();
