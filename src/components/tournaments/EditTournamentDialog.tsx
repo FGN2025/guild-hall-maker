@@ -102,12 +102,12 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
-  const [pointsParticipation, setPointsParticipation] = useState("2");
+  const [pointsParticipation, setPointsParticipation] = useState("3");
   const [pointsParticipationLong, setPointsParticipationLong] = useState("5");
   const [pointsParticipationShort, setPointsParticipationShort] = useState("2");
-  const [pointsFirst, setPointsFirst] = useState("10");
-  const [pointsSecond, setPointsSecond] = useState("5");
-  const [pointsThird, setPointsThird] = useState("3");
+  const [pointsFirst, setPointsFirst] = useState("15");
+  const [pointsSecond, setPointsSecond] = useState("9");
+  const [pointsThird, setPointsThird] = useState("6");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
@@ -141,16 +141,16 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setDescription(tournament.description ?? "");
       setFormat(tournament.format);
       setMaxParticipants(String(tournament.max_participants));
-      setPrizePool(tournament.prize_pool ?? "");
-      setPrizeType(tournament.prize_type ?? "none");
+      setPrizePool(tournament.prize_type === "physical" ? tournament.prize_pool ?? "" : "");
+      setPrizeType(tournament.prize_type === "physical" ? "physical" : "none");
       setPrizeId(tournament.prize_id ?? "");
       setRules(tournament.rules ?? "");
-      setPointsParticipation(String(tournament.points_participation ?? 2));
+      setPointsParticipation(String(tournament.points_participation ?? 3));
       setPointsParticipationLong(String((tournament as any).points_participation_long ?? 5));
       setPointsParticipationShort(String((tournament as any).points_participation_short ?? 2));
-      setPointsFirst(String((tournament as any).points_first ?? 10));
-      setPointsSecond(String((tournament as any).points_second ?? 5));
-      setPointsThird(String((tournament as any).points_third ?? 3));
+      setPointsFirst(String((tournament as any).points_first ?? 15));
+      setPointsSecond(String((tournament as any).points_second ?? 9));
+      setPointsThird(String((tournament as any).points_third ?? 6));
       setPrizePctFirst((tournament as any).prize_pct_first ?? 50);
       setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
@@ -229,7 +229,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       points_first: isGameNight ? 0 : parseInt(pointsFirst) || 0,
       points_second: isGameNight ? 0 : parseInt(pointsSecond) || 0,
       points_third: isGameNight ? 0 : parseInt(pointsThird) || 0,
-      points_participation: isGameNight ? 0 : parseInt(pointsParticipation) || 2,
+      points_participation: isGameNight ? 0 : parseInt(pointsParticipation) || 3,
       points_participation_long: isGameNight ? parseInt(pointsParticipationLong) || 0 : 0,
       points_participation_short: isGameNight ? parseInt(pointsParticipationShort) || 0 : 0,
       prize_pct_first: prizePctFirst,
@@ -343,16 +343,8 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
             onPrizePoolChange={setPrizePool}
             prizeId={prizeId}
             onPrizeIdChange={setPrizeId}
-            pointsFirst={0}
-            pointsSecond={0}
-            pointsThird={0}
-            prizePctFirst={prizePctFirst}
-            prizePctSecond={prizePctSecond}
-            prizePctThird={prizePctThird}
-            onPrizePctFirstChange={setPrizePctFirst}
-            onPrizePctSecondChange={setPrizePctSecond}
-            onPrizePctThirdChange={setPrizePctThird}
           />
+
           <div className="space-y-2">
             <Label className="font-heading text-sm">Hero Image</Label>
             <div className="flex items-center gap-3">

@@ -405,15 +405,6 @@ const TenantEvents = () => {
                   onPrizePoolChange={(v) => setForm({ ...form, prize_pool: v })}
                   prizeId={form.prize_id}
                   onPrizeIdChange={(v) => setForm({ ...form, prize_id: v })}
-                  pointsFirst={0}
-                  pointsSecond={0}
-                  pointsThird={0}
-                  prizePctFirst={form.prize_pct_first}
-                  prizePctSecond={form.prize_pct_second}
-                  prizePctThird={form.prize_pct_third}
-                  onPrizePctFirstChange={(v) => setForm({ ...form, prize_pct_first: v })}
-                  onPrizePctSecondChange={(v) => setForm({ ...form, prize_pct_second: v })}
-                  onPrizePctThirdChange={(v) => setForm({ ...form, prize_pct_third: v })}
                 />
 
                 {/* Hero Image */}
