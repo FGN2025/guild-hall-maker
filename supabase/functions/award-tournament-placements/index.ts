@@ -39,8 +39,9 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { tournament_id, first_id, second_id, third_id, dry_run, skip_participation, participation_only } = body ?? {};
+    const { tournament_id, first_id, second_id, third_id, dry_run, skip_participation, participation_only, single_award } = body ?? {};
     if (!tournament_id) return json({ error: "tournament_id required" }, 400);
+
 
     // Load tournament
     const { data: tournament, error: tErr } = await admin
