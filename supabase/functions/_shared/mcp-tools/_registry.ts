@@ -31,6 +31,8 @@ import listPageTemplatesTool from "./list-page-templates.ts";
 import proposeBrandedPageTool from "./propose-branded-page.ts";
 import proposePortalBannerUpdateTool from "./propose-portal-banner-update.ts";
 import composeEventPromoTool from "./compose-event-promo.ts";
+import getCalendarImageTool from "./get-calendar-image.ts";
+
 
 export const tools = [
   getMeTool,
@@ -54,6 +56,7 @@ export const tools = [
   proposeBrandedPageTool,
   proposePortalBannerUpdateTool,
   composeEventPromoTool,
+  getCalendarImageTool,
 ];
 
 // Names of write tools — used by agent-mcp for the tool-boundary tenant guard.

@@ -9,6 +9,7 @@ import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarCloc
 import { formatDistanceToNow } from "date-fns";
 import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
+import { toast } from "sonner";
 
 type Kind = "campaign" | "scheduled_post" | "asset";
 
@@ -97,6 +98,61 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
 
   const rows = data ?? [];
 
+  // ---- Week grouping ------------------------------------------------------
+  // Scheduled posts group by the week they go out; campaigns and assets group
+  // by the week they were last touched.
+  const referenceDate = (r: DraftRow) =>
+    new Date(r.kind === "scheduled_post" && r.scheduled_at ? r.scheduled_at : r.updated_at);
+
+  const startOfWeek = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    x.setDate(x.getDate() - x.getDay()); // Sunday start
+    return x;
+  };
+
+  const groups = useMemo(() => {
+    const map = new Map<string, { key: string; start: Date; rows: DraftRow[] }>();
+    for (const r of rows) {
+      const start = startOfWeek(referenceDate(r));
+      const key = start.toISOString().slice(0, 10);
+      const g = map.get(key) ?? { key, start, rows: [] };
+      g.rows.push(r);
+      map.set(key, g);
+    }
+    return Array.from(map.values()).sort((a, b) => a.start.getTime() - b.start.getTime());
+  }, [rows]);
+
+  const weekLabel = (start: Date) => {
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return `Week of ${fmt(start)} – ${fmt(end)}`;
+  };
+
+  const [bulkBusyKey, setBulkBusyKey] = useState<string | null>(null);
+
+  const bulkApprove = async (key: string, targets: DraftRow[]) => {
+    setBulkBusyKey(key);
+    let ok = 0;
+    const failures: string[] = [];
+    for (const row of targets) {
+      try {
+        await decide.mutateAsync({ row, approve: true, note: feedbackById[row.id] });
+        ok += 1;
+      } catch (e: any) {
+        failures.push(e?.message ?? "unknown error");
+      }
+    }
+    setBulkBusyKey(null);
+    if (failures.length) {
+      toast.error(`Approved ${ok} of ${targets.length}. ${failures.length} failed: ${failures[0]}`);
+    } else {
+      toast.success(`Approved ${ok} draft${ok === 1 ? "" : "s"}`);
+    }
+  };
+
+
   const campaignIds = useMemo(() => {
     const ids = new Set<string>();
     for (const r of rows) {
@@ -177,11 +233,22 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Bot className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-heading">Agent drafts</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
         {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
+        {pending.length > 0 && (
+          <Button
+            size="sm"
+            className="ml-auto"
+            disabled={!!bulkBusyKey}
+            onClick={() => bulkApprove("__all__", pending)}
+          >
+            {bulkBusyKey === "__all__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+            Approve all {pending.length} pending
+          </Button>
+        )}
       </div>
       <p className="text-sm text-muted-foreground">
         Nothing here publishes automatically. Approve to move a draft into the live workflow; reject with a note so the agent can revise it.
@@ -191,8 +258,30 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">No agent drafts yet.</CardContent></Card>
       )}
 
-      <div className="grid gap-4">
-        {rows.map((row) => {
+      {groups.map((group) => {
+        const groupPending = group.rows.filter((r) => r.status === "pending_review");
+        return (
+        <section key={group.key} className="space-y-3">
+          <div className="flex items-center gap-2 border-b border-border pb-2">
+            <h3 className="text-sm font-heading uppercase tracking-wide text-muted-foreground">
+              {weekLabel(group.start)}
+            </h3>
+            <Badge variant="outline" className="text-xs">{group.rows.length}</Badge>
+            {groupPending.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-auto"
+                disabled={!!bulkBusyKey}
+                onClick={() => bulkApprove(group.key, groupPending)}
+              >
+                {bulkBusyKey === group.key ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+                Approve week ({groupPending.length})
+              </Button>
+            )}
+          </div>
+          <div className="grid gap-4">
+          {group.rows.map((row) => {
           const linked =
             row.kind === "campaign" ? assetsByCampaign.get(row.id) ?? [] :
             row.kind === "scheduled_post" && row.campaign_id ? assetsByCampaign.get(row.campaign_id) ?? [] :
@@ -341,7 +430,11 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
             </Card>
           );
         })}
-      </div>
+          </div>
+        </section>
+        );
+      })}
+
 
       <AssetReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} asset={reviewAsset} />
     </div>

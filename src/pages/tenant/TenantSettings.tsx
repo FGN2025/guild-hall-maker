@@ -8,6 +8,7 @@ import { Settings as SettingsIcon } from "lucide-react";
 import TenantBranding from "./TenantBranding";
 import TenantAccount from "./TenantAccount";
 import TenantIntegrations from "./TenantIntegrations";
+import SeedDensityCard from "@/components/tenant/SeedDensityCard";
 
 const VALID_TABS = ["brand", "platform", "integrations", "account"] as const;
 
@@ -58,7 +59,9 @@ const TenantSettings = () => {
           {cloudGamingConfig?.is_enabled && (
             <CloudGamingSeatsCard tenantId={tenantInfo.tenantId} />
           )}
+          <SeedDensityCard tenantId={tenantInfo.tenantId} />
         </TabsContent>
+
 
         <TabsContent value="integrations" className="mt-6">
           <TenantIntegrations embedded />

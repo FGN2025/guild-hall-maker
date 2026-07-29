@@ -12,6 +12,32 @@ export interface MarketingCampaign {
   created_by: string;
   created_at: string;
   updated_at: string;
+  tenant_id: string | null;
+  status: string;
+  agent_source: string | null;
+  proposed_by: string | null;
+  feedback_note: string | null;
+  idempotency_key: string | null;
+  target_platforms: string[];
+  source_event_id: string | null;
+  source_tournament_id: string | null;
+}
+
+/** Converged create shape — identical to what the agent lane writes through
+ *  `create_campaign_draft`, so human-created and agent-created campaigns are
+ *  the same row shape (tenant scoping, review status, event linkage). */
+export interface CreateCampaignInput {
+  title: string;
+  description?: string | null;
+  social_copy?: string | null;
+  category?: string;
+  /** null / omitted = platform-level campaign (admin marketing library). */
+  tenant_id?: string | null;
+  status?: "draft" | "pending_review" | "approved" | "rejected" | "published";
+  target_platforms?: string[];
+  source_event_id?: string | null;
+  source_tournament_id?: string | null;
+  idempotency_key?: string | null;
 }
 
 export interface MarketingAsset {
@@ -46,12 +72,35 @@ export function useMarketingCampaigns(publishedOnly = false) {
   });
 
   const createCampaign = useMutation({
-    mutationFn: async (values: { title: string; description?: string; social_copy?: string; category: string }) => {
+    mutationFn: async (values: CreateCampaignInput) => {
       const { data: userData } = await supabase.auth.getUser();
-      const { error } = await supabase
+      const uid = userData.user?.id;
+      if (!uid) throw new Error("Not authenticated");
+
+      const row = {
+        title: values.title,
+        description: values.description ?? null,
+        social_copy: values.social_copy ?? null,
+        category: values.category ?? "social_media",
+        tenant_id: values.tenant_id ?? null,
+        status: values.status ?? "draft",
+        target_platforms: values.target_platforms ?? [],
+        source_event_id: values.source_event_id ?? null,
+        source_tournament_id: values.source_tournament_id ?? null,
+        idempotency_key: values.idempotency_key ?? null,
+        created_by: uid,
+      };
+
+      // `.select()` so an RLS-filtered write surfaces as an error instead of a
+      // silent 204 (same guard as the draft-decision path).
+      const { data, error } = await supabase
         .from("marketing_campaigns" as any)
-        .insert({ ...values, created_by: userData.user?.id } as any);
+        .insert(row as any)
+        .select("id")
+        .single();
       if (error) throw error;
+      if (!data) throw new Error("Campaign insert was blocked (0 rows returned).");
+      return (data as any).id as string;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY }); toast.success("Campaign created"); },
     onError: (e: any) => toast.error(e.message),

@@ -1410,6 +1410,32 @@ var compose_event_promo_default = defineTool21({
   }
 });
 
+// supabase/functions/_shared/mcp-tools/get-calendar-image.ts
+import { defineTool as defineTool22 } from "npm:@lovable.dev/mcp-js@0.22.2";
+import { z as z20 } from "npm:zod@^3.25.76";
+var get_calendar_image_default = defineTool22({
+  name: "get_calendar_image",
+  title: "Get the platform monthly calendar poster for a month",
+  description: "Returns the platform-wide monthly calendar poster for the given year and month, or null when no poster has been uploaded. Used by the calendar-seed lane to create the month kickoff campaign. Graceful: a missing poster is NOT an error, it returns { image: null }.",
+  inputSchema: {
+    year: z20.number().int().min(2020).max(2100),
+    month: z20.number().int().min(1).max(12)
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ year, month }, ctx) => {
+    const guard = requireAuth(ctx);
+    if (guard) return guard;
+    try {
+      const supabase = supabaseForUser(ctx);
+      const { data, error } = await supabase.from("calendar_monthly_images").select("id, year, month, image_url, storage_path, created_at").eq("year", year).eq("month", month).maybeSingle();
+      if (error) throw error;
+      return okJson(data ?? null, "image");
+    } catch (err) {
+      return toolError(err, "get_calendar_image");
+    }
+  }
+});
+
 // supabase/functions/_shared/mcp-tools/_registry.ts
 var tools = [
   get_me_default,
@@ -1432,7 +1458,8 @@ var tools = [
   list_page_templates_default,
   propose_branded_page_default,
   propose_portal_banner_update_default,
-  compose_event_promo_default
+  compose_event_promo_default,
+  get_calendar_image_default
 ];
 
 // src/lib/mcp/index.ts
@@ -1441,7 +1468,7 @@ var mcp_default = defineMcp({
   name: "fgn-mcp",
   title: "FGN Gaming Network",
   version: "0.1.0",
-  instructions: "Tools for the FGN gaming platform. Read-only: `get_me`, `list_tournaments`, `list_challenges`/`get_challenge`, `list_games`, `list_tenants`, `get_brand_kit`, `list_upcoming_events`, `list_platform_templates` (pass `tenant_id` to see per-tenant `adopted` / `adopted_asset_id`; use `universal_only=true` for platform-wide universal assets), `list_tenant_assets`, `list_pending_agent_drafts`. Marketing agent (drafts only \u2014 nothing publishes without tenant admin approval): `create_campaign_draft`, `update_campaign_draft`, `attach_tenant_asset_draft` (downloads external URLs server-side into tenant storage; use the `url` of an unadopted universal asset as `source_url` and pass its id as `source_asset_id` to localize it into the tenant library), `propose_scheduled_post`, `update_scheduled_post`. Slate runs: prefer proposing localized treatments of unadopted universal assets before generating new imagery. Each turn: call `list_pending_agent_drafts` first and revise rejected work (address feedback_note) before proposing new drafts. Use `idempotency_key` on create/propose calls so retries never duplicate.",
+  instructions: "Tools for the FGN gaming platform. Read-only: `get_me`, `list_tournaments`, `list_challenges`/`get_challenge`, `list_games`, `list_tenants`, `get_brand_kit`, `list_upcoming_events`, `get_calendar_image` (platform monthly calendar poster for a year/month, returns null when none exists), `list_platform_templates` (pass `tenant_id` to see per-tenant `adopted` / `adopted_asset_id`; use `universal_only=true` for platform-wide universal assets), `list_tenant_assets`, `list_pending_agent_drafts`. Marketing agent (drafts only \u2014 nothing publishes without tenant admin approval): `create_campaign_draft`, `update_campaign_draft`, `attach_tenant_asset_draft` (downloads external URLs server-side into tenant storage; use the `url` of an unadopted universal asset as `source_url` and pass its id as `source_asset_id` to localize it into the tenant library), `compose_event_promo` (deterministic server-side promo composition from a published tournament or tenant event \u2014 the calendar-seed lane's only image source), `propose_scheduled_post`, `update_scheduled_post`. Slate runs: prefer proposing localized treatments of unadopted universal assets before generating new imagery. Each turn: call `list_pending_agent_drafts` first and revise rejected work (address feedback_note) before proposing new drafts. Use `idempotency_key` on create/propose calls so retries never duplicate.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"

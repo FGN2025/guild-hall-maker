@@ -142,6 +142,30 @@ export type Database = {
           },
         ]
       }
+      agent_mode_config: {
+        Row: {
+          created_at: string
+          label: string
+          mode: string
+          turn_cap: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          label: string
+          mode: string
+          turn_cap?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          label?: string
+          mode?: string
+          turn_cap?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agent_prompts: {
         Row: {
           active: boolean
@@ -238,8 +262,10 @@ export type Database = {
           mode: string | null
           output_tokens: number
           prompt_version: number | null
+          seed_density: string | null
           started_at: string
           status: string
+          target_month: string | null
           tenant_id: string
           turn_cap: number
           turns_used: number
@@ -261,8 +287,10 @@ export type Database = {
           mode?: string | null
           output_tokens?: number
           prompt_version?: number | null
+          seed_density?: string | null
           started_at?: string
           status?: string
+          target_month?: string | null
           tenant_id: string
           turn_cap?: number
           turns_used?: number
@@ -284,8 +312,10 @@ export type Database = {
           mode?: string | null
           output_tokens?: number
           prompt_version?: number | null
+          seed_density?: string | null
           started_at?: string
           status?: string
+          target_month?: string | null
           tenant_id?: string
           turn_cap?: number
           turns_used?: number
@@ -4956,6 +4986,7 @@ export type Database = {
           created_at: string
           id: string
           logo_url: string | null
+          marketing_seed_density: string
           name: string
           onboarding_completed: boolean
           plan_tier: string | null
@@ -4972,6 +5003,7 @@ export type Database = {
           created_at?: string
           id?: string
           logo_url?: string | null
+          marketing_seed_density?: string
           name: string
           onboarding_completed?: boolean
           plan_tier?: string | null
@@ -4988,6 +5020,7 @@ export type Database = {
           created_at?: string
           id?: string
           logo_url?: string | null
+          marketing_seed_density?: string
           name?: string
           onboarding_completed?: boolean
           plan_tier?: string | null
