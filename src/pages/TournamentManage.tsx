@@ -4,7 +4,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-import { useTournamentManagement, ManageMatch } from "@/hooks/useTournamentManagement";
+import { useTournamentManagement, ManageMatch, PlayerAward } from "@/hooks/useTournamentManagement";
+
+const awardLabels: Record<string, string> = {
+  first: "1st place",
+  second: "2nd place",
+  third: "3rd place",
+  participation: "Participation",
+};
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
