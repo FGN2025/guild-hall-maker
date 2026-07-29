@@ -337,7 +337,7 @@ const TournamentManage = () => {
                   )}
                   <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground font-display flex items-center justify-between">
                     <span>Player</span>
-                    <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> Attended</span>
+                    <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> Participation</span>
                   </div>
                   {players.map((p, idx) => (
                     <div key={p.user_id} className="px-4 py-3 space-y-2">
