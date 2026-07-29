@@ -250,11 +250,13 @@ export type Database = {
           agent_name: string
           anchor: string | null
           archetype: string | null
+          continuation_count: number
           cost_usd: number
           created_at: string
           created_row_ids: Json
           error_message: string | null
           finished_at: string | null
+          heartbeat_at: string | null
           id: string
           input_tokens: number
           instruction: string | null
@@ -267,6 +269,7 @@ export type Database = {
           status: string
           target_month: string | null
           tenant_id: string
+          transcript: Json | null
           turn_cap: number
           turns_used: number
           updated_at: string
@@ -275,11 +278,13 @@ export type Database = {
           agent_name?: string
           anchor?: string | null
           archetype?: string | null
+          continuation_count?: number
           cost_usd?: number
           created_at?: string
           created_row_ids?: Json
           error_message?: string | null
           finished_at?: string | null
+          heartbeat_at?: string | null
           id?: string
           input_tokens?: number
           instruction?: string | null
@@ -292,6 +297,7 @@ export type Database = {
           status?: string
           target_month?: string | null
           tenant_id: string
+          transcript?: Json | null
           turn_cap?: number
           turns_used?: number
           updated_at?: string
@@ -300,11 +306,13 @@ export type Database = {
           agent_name?: string
           anchor?: string | null
           archetype?: string | null
+          continuation_count?: number
           cost_usd?: number
           created_at?: string
           created_row_ids?: Json
           error_message?: string | null
           finished_at?: string | null
+          heartbeat_at?: string | null
           id?: string
           input_tokens?: number
           instruction?: string | null
@@ -317,6 +325,7 @@ export type Database = {
           status?: string
           target_month?: string | null
           tenant_id?: string
+          transcript?: Json | null
           turn_cap?: number
           turns_used?: number
           updated_at?: string
