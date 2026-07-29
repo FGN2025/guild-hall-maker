@@ -81,7 +81,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
   const [achievementId, setAchievementId] = useState("");
-  const [difficulty, setDifficulty] = useState("beginner");
+  
 
   const isGameNight = format === "game_night";
 
@@ -200,7 +200,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
                 <SelectValue placeholder="Select a game" />
               </SelectTrigger>
               <SelectContent>
-                {games.map((g) => (
+                {games.filter((g: any) => g.supports_tournaments).map((g) => (
                   <SelectItem key={g.id} value={g.name}>{g.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -329,17 +329,6 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
                 setImagePreview(url);
               }}
             />
-          </div>
-          <div className="space-y-2">
-            <Label className="font-heading text-sm">Difficulty</Label>
-            <Select value={difficulty} onValueChange={setDifficulty}>
-              <SelectTrigger className="bg-card border-border font-body max-w-[200px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           {isGameNight ? (
             <div className="grid grid-cols-2 gap-4">

@@ -112,7 +112,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
   const [achievementId, setAchievementId] = useState("");
-  const [difficulty, setDifficulty] = useState("beginner");
+  
   const [requiresInviteCode, setRequiresInviteCode] = useState(false);
   const [inviteCodeId, setInviteCodeId] = useState<string>("none");
 
@@ -156,7 +156,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
       setDiscordRoleId(tournament.discord_role_id ?? "");
       setAchievementId(tournament.achievement_id ?? "");
-      setDifficulty((tournament as any).difficulty ?? "beginner");
+      
       setRequiresInviteCode(!!tournament.requires_invite_code);
       setInviteCodeId(tournament.invite_code_id ?? "none");
 
@@ -268,8 +268,10 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
                 <SelectValue placeholder="Select a game" />
               </SelectTrigger>
               <SelectContent>
-                {games.map((g) => (
-                  <SelectItem key={g.id} value={g.name}>{g.name}</SelectItem>
+                {games.filter((g: any) => g.supports_tournaments || g.name === game).map((g) => (
+                  <SelectItem key={g.id} value={g.name}>
+                    {g.name}{!(g as any).supports_tournaments ? " (no longer supported)" : ""}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -380,17 +382,6 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
                 setImagePreview(url);
               }}
             />
-          </div>
-          <div className="space-y-2">
-            <Label className="font-heading text-sm">Difficulty</Label>
-            <Select value={difficulty} onValueChange={setDifficulty}>
-              <SelectTrigger className="bg-card border-border font-body max-w-[200px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           {isGameNight ? (
             <div className="grid grid-cols-2 gap-4">

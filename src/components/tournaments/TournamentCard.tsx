@@ -59,9 +59,9 @@ const TournamentCard = ({
       <div className="p-6 flex flex-col flex-1">
       <div className="flex items-center justify-between mb-4">
         <Badge variant="outline" className={statusColors[t.effective_status] ?? ""}>
-          {t.effective_status.replace("_", " ")}
+          {(t.effective_status ?? t.status ?? "upcoming").replace("_", " ")}
         </Badge>
-        <span className="text-xs font-body text-muted-foreground capitalize">{t.format.replace("_", " ")}</span>
+        <span className="text-xs font-body text-muted-foreground capitalize">{(t.format ?? "").replace("_", " ")}</span>
       </div>
       <h3 className="font-heading text-xl font-semibold text-foreground mb-1 line-clamp-1">{t.name}</h3>
       <p className="text-sm text-muted-foreground mb-2">{t.game}</p>
