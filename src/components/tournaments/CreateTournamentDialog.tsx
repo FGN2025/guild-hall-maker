@@ -71,12 +71,12 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
-  const [pointsParticipation, setPointsParticipation] = useState("2");
+  const [pointsParticipation, setPointsParticipation] = useState("3");
   const [pointsParticipationLong, setPointsParticipationLong] = useState("5");
   const [pointsParticipationShort, setPointsParticipationShort] = useState("2");
-  const [pointsFirst, setPointsFirst] = useState("10");
-  const [pointsSecond, setPointsSecond] = useState("5");
-  const [pointsThird, setPointsThird] = useState("3");
+  const [pointsFirst, setPointsFirst] = useState("15");
+  const [pointsSecond, setPointsSecond] = useState("9");
+  const [pointsThird, setPointsThird] = useState("6");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
@@ -157,7 +157,7 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
         points_first: isGameNight ? 0 : parseInt(pointsFirst) || 0,
         points_second: isGameNight ? 0 : parseInt(pointsSecond) || 0,
         points_third: isGameNight ? 0 : parseInt(pointsThird) || 0,
-        points_participation: isGameNight ? 0 : parseInt(pointsParticipation) || 2,
+        points_participation: isGameNight ? 0 : parseInt(pointsParticipation) || 3,
         points_participation_long: isGameNight ? parseInt(pointsParticipationLong) || 0 : 0,
         points_participation_short: isGameNight ? parseInt(pointsParticipationShort) || 0 : 0,
         prize_pct_first: prizePctFirst,
@@ -171,8 +171,8 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
     setName(""); setGame(""); setDescription(""); setFormat("single_elimination");
     setMaxParticipants("16"); setPrizePool(""); setPrizeType("none"); setPrizeId(""); setStartDates([]); setStartTime("12:00"); setRules("");
     setImageFile(null); setImagePreview(null);
-    setPointsParticipation("2"); setPointsParticipationLong("5"); setPointsParticipationShort("2");
-    setPointsFirst("10"); setPointsSecond("5"); setPointsThird("3");
+    setPointsParticipation("3"); setPointsParticipationLong("5"); setPointsParticipationShort("2");
+    setPointsFirst("15"); setPointsSecond("9"); setPointsThird("6");
     setPrizePctFirst(50); setPrizePctSecond(30); setPrizePctThird(20); setDiscordRoleId(""); setAchievementId("");
   };
 
