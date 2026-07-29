@@ -32,11 +32,11 @@ export default defineTool({
       const uid = ctx.getUserId();
 
       // Fetch event
-      let evt: { id: string; name: string; game?: string | null; start_date?: string | null; prize_pool?: string | null; image_url?: string | null };
+      let evt: { id: string; name: string; game?: string | null; start_date?: string | null; prize_pool?: string | null; prize_type?: string | null; image_url?: string | null };
       if (input.tournament_id) {
         const { data, error } = await userSupabase
           .from("tournaments")
-          .select("id, name, game, start_date, prize_pool, image_url")
+          .select("id, name, game, start_date, prize_pool, prize_type, image_url")
           .eq("id", input.tournament_id)
           .maybeSingle();
         if (error) throw error;
@@ -45,7 +45,7 @@ export default defineTool({
       } else {
         const { data, error } = await userSupabase
           .from("tenant_events")
-          .select("id, name, game, start_date, prize_pool, image_url, tenant_id")
+          .select("id, name, game, start_date, prize_pool, prize_type, image_url, tenant_id")
           .eq("id", input.event_id!)
           .maybeSingle();
         if (error) throw error;
@@ -59,7 +59,7 @@ export default defineTool({
       // Fetch tenant brand color
       const { data: tenant } = await userSupabase
         .from("tenants")
-        .select("primary_color")
+        .select("primary_color, accent_color")
         .eq("id", input.tenant_id)
         .maybeSingle();
 
@@ -69,8 +69,10 @@ export default defineTool({
           game: evt.game ?? null,
           start_date: evt.start_date ?? null,
           prize_pool: evt.prize_pool ?? null,
+          prize_type: evt.prize_type ?? null,
         },
         tenantPrimaryColor: (tenant as any)?.primary_color ?? null,
+        tenantAccentColor: (tenant as any)?.accent_color ?? null,
         format: input.format,
         beatLabel: input.beat_label ?? null,
       });

@@ -1419,12 +1419,12 @@ var compose_event_promo_default = defineTool21({
       const uid = ctx.getUserId();
       let evt;
       if (input.tournament_id) {
-        const { data, error } = await userSupabase.from("tournaments").select("id, name, game, start_date, prize_pool, image_url").eq("id", input.tournament_id).maybeSingle();
+        const { data, error } = await userSupabase.from("tournaments").select("id, name, game, start_date, prize_pool, prize_type, image_url").eq("id", input.tournament_id).maybeSingle();
         if (error) throw error;
         if (!data) return { content: [{ type: "text", text: "Tournament not found or not visible." }], isError: true };
         evt = data;
       } else {
-        const { data, error } = await userSupabase.from("tenant_events").select("id, name, game, start_date, prize_pool, image_url, tenant_id").eq("id", input.event_id).maybeSingle();
+        const { data, error } = await userSupabase.from("tenant_events").select("id, name, game, start_date, prize_pool, prize_type, image_url, tenant_id").eq("id", input.event_id).maybeSingle();
         if (error) throw error;
         if (!data) return { content: [{ type: "text", text: "Event not found or not visible." }], isError: true };
         if (data.tenant_id !== input.tenant_id) {
@@ -1432,15 +1432,17 @@ var compose_event_promo_default = defineTool21({
         }
         evt = data;
       }
-      const { data: tenant } = await userSupabase.from("tenants").select("primary_color").eq("id", input.tenant_id).maybeSingle();
+      const { data: tenant } = await userSupabase.from("tenants").select("primary_color, accent_color").eq("id", input.tenant_id).maybeSingle();
       const scene = composePromoLayout({
         event: {
           name: evt.name,
           game: evt.game ?? null,
           start_date: evt.start_date ?? null,
-          prize_pool: evt.prize_pool ?? null
+          prize_pool: evt.prize_pool ?? null,
+          prize_type: evt.prize_type ?? null
         },
         tenantPrimaryColor: tenant?.primary_color ?? null,
+        tenantAccentColor: tenant?.accent_color ?? null,
         format: input.format,
         beatLabel: input.beat_label ?? null
       });
