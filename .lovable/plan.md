@@ -1,56 +1,36 @@
-## Tenant Admin Role — Production Hardening
+## Goal
 
-Audit of the tenant admin surface found the role model is sound in concept (`admin` / `manager` / `marketing`) but enforcement is inconsistent: the UI hides things the database still allows. Below is what to fix, in risk order.
+Give you a working sign-in that has full platform admin access, so nothing on the site is locked behind signup.
 
-### 0. Billing authorization — deferred to backlog
+## Important finding
 
-`create-checkout` takes `tenant_id` from the request body with no membership or role check, and `stripe-webhook` trusts that metadata to write subscription and plan state. Any signed-in user can attach a checkout to a tenant they don't belong to. Per your call this moves to the backlog rather than this build — I'll record it in `.lovable/backlog/` as a known open authorization gap with the intended fix (platform-admin-only server-side guard on `create-checkout` and `customer-portal`) so it isn't lost.
+`nicholasbalog19@gmail.com` **already exists** in the system:
 
-### 1. Align database rules with intended role permissions
+- Email confirmed: yes
+- Role: `admin` (platform admin — highest level)
+- Last sign-in: 2026-03-04
 
-Decision applied: **admin + manager** for both subscribers and integrations; marketing blocked.
+So no new account is needed. Creating a second one under the same email isn't possible anyway. The right move is to set a fresh password on this existing account.
 
-| Table | Today | After |
-|---|---|---|
-| `tenant_subscribers` | any tenant member (marketing included) | admin + manager |
-| `tenant_integrations` | any tenant member | admin + manager |
-| `tenant_zip_codes` | admin + manager | unchanged (already correct) |
+## What I'll do
 
-A migration replaces the `is_tenant_member`-based policies with `is_tenant_admin_or_manager`. Marketing users currently able to read subscriber PII and integration credentials via direct API calls lose that access.
+1. Set a new password on `nicholasbalog19@gmail.com` via the admin auth API (server-side, no email round-trip needed).
+2. Ensure the account stays email-confirmed so it bypasses the `/confirm-email` gate.
+3. Verify the `admin` row in `user_roles` is intact.
+4. Report the credentials back to you in chat.
 
-### 2. Route-level role gating
+Password: I'll generate a strong temporary one and give it to you, unless you'd rather pick your own — tell me a password and I'll use that instead.
 
-`TenantRoute` currently only asks "are you a member of any tenant" — no role check. Every `/tenant/*` page loads for every role via direct URL; some redirect themselves afterwards, `/tenant/codes` doesn't redirect at all.
+## What this unlocks
 
-Fix: add a `requiredRoles` capability to `TenantRoute` and declare it per route in `App.tsx`, so the gate runs before the page mounts and fetches data:
-- `admin` only: `/tenant/team`, `/tenant/codes`
-- `admin` + `manager`: `/tenant/zip-codes`, `/tenant/subscribers`, `/tenant/settings` (all tabs, including integrations and account)
-- everything else: any tenant role
+With the `admin` role you get:
 
-Per-page `<Navigate>` guards get removed once the route gate covers them, so there's one place to reason about.
+- `/admin/*` — full platform admin (users, tenants, games, tournaments, challenges, quests, media, settings, agent prompts, universal assets)
+- `/moderator/*` — moderator panel (admins pass that gate too)
+- `/tenant/*` — tenant portal in platform-admin tenant-switching mode, so you can view any tenant
+- All normal player-facing pages
 
-### 3. Sidebar / route consistency
+## Notes
 
-Two mismatches to correct so managers stop seeing links that bounce them:
-- `zip-codes` and `subscribers` are shown to managers in the sidebar but self-redirect anyone who isn't `admin` → managers keep access (matches the new rules above).
-- `codes` is admin-only in the sidebar but ungated in the route → now genuinely admin-only.
-
-### 4. Silent-failure hardening
-
-Tenant mutation hooks (`useTenantSubscribers`, `useTenants` role/remove, zip delete) don't `.select()` back affected rows. Under RLS, a blocked update returns success with zero rows changed and the UI toasts "saved" — the exact class of bug already hit on scheduled-post approve. Since step 1 tightens RLS, this becomes live risk: a marketing user's stale tab would report success on a write that silently did nothing. Fix by selecting the affected id back and throwing when nothing was returned.
-
-### 5. Plan tier — noted, not enforced
-
-`plan_tier` (Basic/Pro) is display-only; nothing restricts Pro features to Pro tenants. Per your decision this stays informational for this push, recorded as an accepted gap.
-
-### Verification before I call it done
-
-- Sign in as each of the three tenant roles (test memberships on a scratch tenant) and confirm: marketing is bounced from settings/subscribers/codes; manager reaches subscribers/zip-codes/settings but not team/codes; admin reaches everything.
-- Direct API attempt as a marketing user against `tenant_subscribers` and `tenant_integrations` returns a permission error, not silent success.
-- Cross-check no existing tenant loses access it should keep — spot-check HCTC and Acme.
-
-### Technical notes
-
-- One migration: replaces the SELECT/ALL policies on `tenant_subscribers` and `tenant_integrations`; no schema change, no data change.
-- `TenantRoute.tsx` gains a `requiredRoles?: Array<'admin'|'manager'|'marketing'>` prop; platform admins in tenant-switching mode always pass (they're forced to `tenantRole: 'admin'` already).
-- No edge function changes in this build — billing guard is backlogged.
+- Discord linking is optional and ZIP gates are skipped for staff, so there's no onboarding wall after login.
+- Change the password from Profile Settings after you're in.
