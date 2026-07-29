@@ -68,7 +68,12 @@ const TournamentManage = () => {
     isResettingBracket,
     setAttendance,
     isSettingAttendance,
+    setParticipationTier,
+    isSettingParticipationTier,
   } = useTournamentManagement(id);
+
+  const [selected, setSelected] = useState<string[]>([]);
+
 
   const { data: placementCount = 0 } = useQuery({
     queryKey: ["tournament-placement-count", id],
