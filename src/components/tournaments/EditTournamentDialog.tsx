@@ -156,7 +156,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
       setDiscordRoleId(tournament.discord_role_id ?? "");
       setAchievementId(tournament.achievement_id ?? "");
-      setDifficulty((tournament as any).difficulty ?? "beginner");
+      
       setRequiresInviteCode(!!tournament.requires_invite_code);
       setInviteCodeId(tournament.invite_code_id ?? "none");
 
