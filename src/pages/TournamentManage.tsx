@@ -70,7 +70,10 @@ const TournamentManage = () => {
     isSettingAttendance,
     setParticipationTier,
     isSettingParticipationTier,
+    awardPlayer,
+    isAwardingPlayer,
   } = useTournamentManagement(id);
+
 
   const [selected, setSelected] = useState<string[]>([]);
 
