@@ -96,6 +96,22 @@ Deno.serve(async (req) => {
     };
 
     if (dry_run) {
+      const { data: dryAttendees } = await admin
+        .from("tournament_registrations")
+        .select("user_id, participation_tier")
+        .eq("tournament_id", tournament_id)
+        .eq("attended", true);
+
+      const breakdown: Record<string, { players: number; points_each: number; total: number }> = {};
+      for (const a of dryAttendees ?? []) {
+        if (!a.user_id) continue;
+        const key = isGameNight ? ((a as any).participation_tier ?? "standard") : "standard";
+        const pts = participationPointsFor((a as any).participation_tier);
+        if (!breakdown[key]) breakdown[key] = { players: 0, points_each: pts, total: 0 };
+        breakdown[key].players += 1;
+        breakdown[key].total += pts;
+      }
+
       return json({
         success: true,
         dry_run: true,
@@ -105,8 +121,16 @@ Deno.serve(async (req) => {
           user_id: p.user_id,
           points: pointsByPlace[p.place],
         })),
+        participation_preview: {
+          format: tournament.format,
+          game_night: isGameNight,
+          attended_count: (dryAttendees ?? []).length,
+          by_tier: breakdown,
+          total_points: Object.values(breakdown).reduce((s, b) => s + b.total, 0),
+        },
       });
     }
+
 
     const awarded: any[] = [];
     const skipped: any[] = [];
