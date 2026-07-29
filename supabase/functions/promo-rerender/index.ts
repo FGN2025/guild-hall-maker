@@ -30,7 +30,19 @@ Deno.serve(async (req) => {
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-  if (req.headers.get("x-admin-key") !== SERVICE_KEY) return json({ error: "unauthorized" }, 401);
+  // Platform-admin only (verified in code; verify_jwt is off platform-wide).
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  if (!token) return json({ error: "unauthorized" }, 401);
+  const authClient = createClient(URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+  const { data: userRes } = await authClient.auth.getUser();
+  const uid = userRes?.user?.id;
+  if (!uid) return json({ error: "unauthorized" }, 401);
+  const { data: isAdmin } = await svc().rpc("has_role", { _user_id: uid, _role: "admin" });
+  if (!isAdmin) return json({ error: "forbidden" }, 403);
 
   try {
     const body = await req.json();
