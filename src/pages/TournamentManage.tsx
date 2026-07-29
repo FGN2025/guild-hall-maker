@@ -68,7 +68,12 @@ const TournamentManage = () => {
     isResettingBracket,
     setAttendance,
     isSettingAttendance,
+    setParticipationTier,
+    isSettingParticipationTier,
   } = useTournamentManagement(id);
+
+  const [selected, setSelected] = useState<string[]>([]);
+
 
   const { data: placementCount = 0 } = useQuery({
     queryKey: ["tournament-placement-count", id],
@@ -120,6 +125,16 @@ const TournamentManage = () => {
   }, {});
 
   const missingPlacements = tournament?.status === "completed" && placementCount === 0;
+
+  const isGameNight = (tournament.format ?? "").toLowerCase() === "game_night";
+  const allSelected = players.length > 0 && selected.length === players.length;
+  const applyTier = (tier: "long" | "short" | null) => {
+    setParticipationTier(
+      { userIds: selected, tier },
+      { onSuccess: () => setSelected([]) }
+    );
+  };
+
 
 
 
@@ -216,13 +231,73 @@ const TournamentManage = () => {
                 </div>
               ) : (
                 <div className="divide-y divide-border">
+                  {isGameNight && (
+                    <div className="px-4 py-3 bg-muted/30 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 text-xs font-heading text-muted-foreground">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={(v) =>
+                              setSelected(v ? players.map((p) => p.user_id) : [])
+                            }
+                            aria-label="Select all players"
+                          />
+                          Select all
+                        </label>
+                        <span className="text-xs text-muted-foreground font-display">
+                          {selected.length} selected
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="font-heading border-primary/30 text-primary hover:bg-primary/10"
+                          disabled={selected.length === 0 || isSettingParticipationTier}
+                          onClick={() => applyTier("long")}
+                        >
+                          Mark Long ({tournament.points_participation_long ?? 0} pts)
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="font-heading border-accent/30 text-accent hover:bg-accent/10"
+                          disabled={selected.length === 0 || isSettingParticipationTier}
+                          onClick={() => applyTier("short")}
+                        >
+                          Mark Short ({tournament.points_participation_short ?? 0} pts)
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="font-heading text-muted-foreground"
+                          disabled={selected.length === 0 || isSettingParticipationTier}
+                          onClick={() => applyTier(null)}
+                        >
+                          Clear tier
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground font-display flex items-center justify-between">
                     <span>Player</span>
                     <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> Attended</span>
                   </div>
                   {players.map((p, idx) => (
                     <div key={p.user_id} className="flex items-center gap-3 px-4 py-3">
-                      <span className="text-xs text-muted-foreground font-display w-6">{idx + 1}</span>
+                      {isGameNight ? (
+                        <Checkbox
+                          checked={selected.includes(p.user_id)}
+                          onCheckedChange={(v) =>
+                            setSelected((prev) =>
+                              v ? [...prev, p.user_id] : prev.filter((x) => x !== p.user_id)
+                            )
+                          }
+                          aria-label={`Select ${p.display_name}`}
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground font-display w-6">{idx + 1}</span>
+                      )}
                       <div className="min-w-0 flex-1">
                         <p className="font-heading text-sm text-foreground truncate">
                           {p.gamer_tag || p.display_name}
@@ -231,6 +306,19 @@ const TournamentManage = () => {
                           <p className="text-xs text-muted-foreground truncate">{p.display_name}</p>
                         )}
                       </div>
+                      {isGameNight && p.participation_tier && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "capitalize text-[10px]",
+                            p.participation_tier === "long"
+                              ? "border-primary/30 text-primary bg-primary/10"
+                              : "border-accent/30 text-accent bg-accent/10"
+                          )}
+                        >
+                          {p.participation_tier}
+                        </Badge>
+                      )}
                       <Checkbox
                         checked={p.attended}
                         disabled={isSettingAttendance}
@@ -244,9 +332,12 @@ const TournamentManage = () => {
                   <div className="px-4 py-2 text-[11px] text-muted-foreground/80 font-body bg-muted/20">
                     Only players marked Attended receive participation points. Players auto-mark
                     attended when they appear in a completed match.
+                    {isGameNight &&
+                      " For Game Nights, select players and use Mark Long / Mark Short to set their participation tier — untiered attendees fall back to the standard participation value."}
                   </div>
                 </div>
               )}
+
 
               {!hasMatches && players.length >= 2 && (
                 <div className="p-4 border-t border-border">

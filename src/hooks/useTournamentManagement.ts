@@ -31,12 +31,16 @@ const awardSeasonPoints = async (winnerId: string, loserId: string | null, point
   }
 };
 
+export type ParticipationTier = "long" | "short";
+
 export interface RegisteredPlayer {
   user_id: string;
   display_name: string;
   gamer_tag: string | null;
   attended: boolean;
+  participation_tier: ParticipationTier | null;
 }
+
 
 export interface ManageMatch {
   id: string;
@@ -76,13 +80,16 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     queryFn: async () => {
       const { data: regs, error } = await supabase
         .from("tournament_registrations")
-        .select("user_id, attended")
+        .select("user_id, attended, participation_tier")
         .eq("tournament_id", tournamentId!);
       if (error) throw error;
       if (!regs || regs.length === 0) return [] as RegisteredPlayer[];
 
       const userIds = regs.map((r) => r.user_id);
       const attendedMap = new Map(regs.map((r: any) => [r.user_id, !!r.attended]));
+      const tierMap = new Map(
+        regs.map((r: any) => [r.user_id, (r.participation_tier ?? null) as ParticipationTier | null])
+      );
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name, gamer_tag, discord_username")
@@ -93,7 +100,9 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
         display_name: p.display_name ?? "Unknown",
         gamer_tag: p.gamer_tag,
         attended: attendedMap.get(p.user_id) ?? false,
+        participation_tier: tierMap.get(p.user_id) ?? null,
       })) as RegisteredPlayer[];
+
     },
   });
 
@@ -496,6 +505,50 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: (err: Error) => toast.error(err.message || "Failed to update attendance"),
   });
 
+  const setParticipationTierMutation = useMutation({
+    mutationFn: async ({
+      userIds,
+      tier,
+      markAttended = true,
+    }: {
+      userIds: string[];
+      tier: ParticipationTier | null;
+      markAttended?: boolean;
+    }) => {
+      if (!tournamentId) throw new Error("No tournament");
+      if (userIds.length === 0) throw new Error("No players selected");
+
+      const patch: Record<string, unknown> = { participation_tier: tier };
+      if (tier && markAttended) {
+        patch.attended = true;
+        patch.checked_in_at = new Date().toISOString();
+        patch.checked_in_by = user?.id ?? null;
+      }
+
+      const { data, error } = await supabase
+        .from("tournament_registrations")
+        .update(patch)
+        .eq("tournament_id", tournamentId)
+        .in("user_id", userIds)
+        .select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("No registrations were updated — you may not have permission.");
+      }
+      return data.length;
+    },
+    onSuccess: (count, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["manage-players", tournamentId] });
+      toast.success(
+        vars.tier
+          ? `Marked ${count} player${count === 1 ? "" : "s"} as ${vars.tier} participation`
+          : `Cleared participation tier for ${count} player${count === 1 ? "" : "s"}`
+      );
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to set participation tier"),
+  });
+
+
   return {
     tournament: tournamentQuery.data ?? null,
     players: playersQuery.data ?? [],
@@ -514,5 +567,8 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     isResettingBracket: resetBracketMutation.isPending,
     setAttendance: setAttendanceMutation.mutate,
     isSettingAttendance: setAttendanceMutation.isPending,
+    setParticipationTier: setParticipationTierMutation.mutate,
+    isSettingParticipationTier: setParticipationTierMutation.isPending,
+
   };
 };

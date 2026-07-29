@@ -45,10 +45,21 @@ Deno.serve(async (req) => {
     // Load tournament
     const { data: tournament, error: tErr } = await admin
       .from("tournaments")
-      .select("id, name, game, format, status, points_first, points_second, points_third, points_participation, achievement_id")
+      .select(
+        "id, name, game, format, status, points_first, points_second, points_third, points_participation, points_participation_long, points_participation_short, achievement_id",
+      )
       .eq("id", tournament_id)
       .maybeSingle();
     if (tErr || !tournament) return json({ error: "Tournament not found" }, 404);
+
+    const isGameNight = (tournament.format ?? "").toLowerCase() === "game_night";
+    const participationPointsFor = (tier: string | null | undefined) => {
+      if (!isGameNight) return tournament.points_participation ?? 0;
+      if (tier === "long") return tournament.points_participation_long ?? 0;
+      if (tier === "short") return tournament.points_participation_short ?? 0;
+      return tournament.points_participation ?? 0;
+    };
+
 
     // Resolve placements: explicit args win; otherwise auto-detect for single_elimination
     let firstId = first_id ?? null;
@@ -85,6 +96,22 @@ Deno.serve(async (req) => {
     };
 
     if (dry_run) {
+      const { data: dryAttendees } = await admin
+        .from("tournament_registrations")
+        .select("user_id, participation_tier")
+        .eq("tournament_id", tournament_id)
+        .eq("attended", true);
+
+      const breakdown: Record<string, { players: number; points_each: number; total: number }> = {};
+      for (const a of dryAttendees ?? []) {
+        if (!a.user_id) continue;
+        const key = isGameNight ? ((a as any).participation_tier ?? "standard") : "standard";
+        const pts = participationPointsFor((a as any).participation_tier);
+        if (!breakdown[key]) breakdown[key] = { players: 0, points_each: pts, total: 0 };
+        breakdown[key].players += 1;
+        breakdown[key].total += pts;
+      }
+
       return json({
         success: true,
         dry_run: true,
@@ -94,8 +121,16 @@ Deno.serve(async (req) => {
           user_id: p.user_id,
           points: pointsByPlace[p.place],
         })),
+        participation_preview: {
+          format: tournament.format,
+          game_night: isGameNight,
+          attended_count: (dryAttendees ?? []).length,
+          by_tier: breakdown,
+          total_points: Object.values(breakdown).reduce((s, b) => s + b.total, 0),
+        },
       });
     }
+
 
     const awarded: any[] = [];
     const skipped: any[] = [];
@@ -175,15 +210,16 @@ Deno.serve(async (req) => {
     // ── Participation payout: once per attended player ──
     const participation: any[] = [];
     if (!skip_participation) {
-      const partPts = tournament.points_participation ?? 0;
       const { data: attendees } = await admin
         .from("tournament_registrations")
-        .select("user_id")
+        .select("user_id, participation_tier")
         .eq("tournament_id", tournament_id)
         .eq("attended", true);
 
       for (const a of attendees ?? []) {
         if (!a.user_id) continue;
+        const tier = isGameNight ? ((a as any).participation_tier ?? null) : null;
+        const partPts = participationPointsFor((a as any).participation_tier);
         // Idempotent insert via partial unique index (kind='participation')
         const { error: insErr } = await admin
           .from("match_point_awards")
@@ -199,10 +235,10 @@ Deno.serve(async (req) => {
 
         if (insErr) {
           if ((insErr as any).code === "23505") {
-            participation.push({ user_id: a.user_id, points: partPts, status: "already_awarded" });
+            participation.push({ user_id: a.user_id, tier, points: partPts, status: "already_awarded" });
             continue;
           }
-          participation.push({ user_id: a.user_id, points: partPts, status: "error", error: insErr.message });
+          participation.push({ user_id: a.user_id, tier, points: partPts, status: "error", error: insErr.message });
           continue;
         }
 
@@ -232,7 +268,8 @@ Deno.serve(async (req) => {
           }
         }
 
-        participation.push({ user_id: a.user_id, points: partPts, status: "awarded" });
+        participation.push({ user_id: a.user_id, tier, points: partPts, status: "awarded" });
+
       }
     }
 
