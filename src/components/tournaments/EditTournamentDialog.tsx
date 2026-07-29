@@ -148,6 +148,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPointsParticipation(String(tournament.points_participation ?? 2));
       setPointsParticipationLong(String((tournament as any).points_participation_long ?? 5));
       setPointsParticipationShort(String((tournament as any).points_participation_short ?? 2));
+      setPointsFirst(String((tournament as any).points_first ?? 10));
+      setPointsSecond(String((tournament as any).points_second ?? 5));
+      setPointsThird(String((tournament as any).points_third ?? 3));
       setPrizePctFirst((tournament as any).prize_pct_first ?? 50);
       setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
