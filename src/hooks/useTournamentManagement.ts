@@ -505,6 +505,50 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: (err: Error) => toast.error(err.message || "Failed to update attendance"),
   });
 
+  const setParticipationTierMutation = useMutation({
+    mutationFn: async ({
+      userIds,
+      tier,
+      markAttended = true,
+    }: {
+      userIds: string[];
+      tier: ParticipationTier | null;
+      markAttended?: boolean;
+    }) => {
+      if (!tournamentId) throw new Error("No tournament");
+      if (userIds.length === 0) throw new Error("No players selected");
+
+      const patch: Record<string, unknown> = { participation_tier: tier };
+      if (tier && markAttended) {
+        patch.attended = true;
+        patch.checked_in_at = new Date().toISOString();
+        patch.checked_in_by = user?.id ?? null;
+      }
+
+      const { data, error } = await supabase
+        .from("tournament_registrations")
+        .update(patch)
+        .eq("tournament_id", tournamentId)
+        .in("user_id", userIds)
+        .select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("No registrations were updated — you may not have permission.");
+      }
+      return data.length;
+    },
+    onSuccess: (count, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["manage-players", tournamentId] });
+      toast.success(
+        vars.tier
+          ? `Marked ${count} player${count === 1 ? "" : "s"} as ${vars.tier} participation`
+          : `Cleared participation tier for ${count} player${count === 1 ? "" : "s"}`
+      );
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to set participation tier"),
+  });
+
+
   return {
     tournament: tournamentQuery.data ?? null,
     players: playersQuery.data ?? [],
