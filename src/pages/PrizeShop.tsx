@@ -8,16 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, ShoppingBag, Clock, CheckCircle2, XCircle, Package } from "lucide-react";
+import { Gift, ShoppingBag, Clock, CheckCircle2, XCircle, Package, Wifi } from "lucide-react";
 import { toast } from "sonner";
 import PageBackground from "@/components/PageBackground";
 import PointsWalletCard from "@/components/shared/PointsWalletCard";
+import { useIsIspLinked } from "@/hooks/useIsIspLinked";
+import { Link } from "react-router-dom";
 
 const PrizeShop = () => {
   usePageTitle("Prize Shop");
   const { user } = useAuth();
+  const { isIspLinked, isLoading: ispLoading } = useIsIspLinked();
   const queryClient = useQueryClient();
   const [confirmPrize, setConfirmPrize] = useState<any>(null);
+
 
   // Aggregate available points across ALL active game seasons
   const { data: seasonScore } = useQuery({
@@ -92,8 +96,19 @@ const PrizeShop = () => {
         prize_id: prize.id,
         points_spent: prize.points_cost,
       });
-      if (error) throw error;
+      if (error) {
+        if (
+          error.code === "42501" ||
+          /row-level security/i.test(error.message)
+        ) {
+          throw new Error(
+            "Redemptions are limited to players with a participating internet provider."
+          );
+        }
+        throw error;
+      }
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-redemptions"] });
       queryClient.invalidateQueries({ queryKey: ["shop-prizes"] });
@@ -155,6 +170,26 @@ const PrizeShop = () => {
           </TabsList>
 
           <TabsContent value="shop" className="mt-6">
+            {!ispLoading && !isIspLinked && (
+              <Card className="mb-6 border-primary/40 bg-card/80 backdrop-blur-sm">
+                <CardContent className="p-4 flex items-start gap-3">
+                  <Wifi className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div className="text-sm font-body">
+                    <p className="font-medium text-foreground">
+                      Browsing only — redemptions are for players with a participating internet provider.
+                    </p>
+                    <p className="text-muted-foreground mt-1">
+                      You can keep earning points from tournaments, challenges, and quests.{" "}
+                      <Link to="/for-providers" className="text-primary hover:underline">
+                        Check whether your provider is part of the network
+                      </Link>{" "}
+                      to unlock prize redemptions.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {isLoading ? (
               <div className="flex justify-center py-16">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
