@@ -29,7 +29,8 @@ interface TenantPromoPickerDialogProps {
  *  stay pixel-identical (layout parity). */
 export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: string | null): PromoScene {
   const scene = composePromoLayout({
-    event: { name: e.name, game: e.game, start_date: e.start_date, prize_pool: e.prize_pool },
+    event: { name: e.name, game: e.game, start_date: e.start_date, prize_pool: e.prize_pool, prize_type: (e as any).prize_type },
+
     tenantPrimaryColor,
     format: "landscape", // legacy default matched the old 1200x628 render
   });

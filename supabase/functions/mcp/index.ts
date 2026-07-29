@@ -1090,76 +1090,171 @@ function formatDate(iso) {
     return "";
   }
 }
+function formatPrizeLabel(pool, prizeType) {
+  const raw = (pool ?? "").trim();
+  if (!raw) return null;
+  const type = (prizeType ?? "value").toLowerCase();
+  if (type === "none") return null;
+  if (type === "physical") return raw;
+  if (/^\d[\d,]*(\.\d+)?$/.test(raw)) return `${raw} pts`;
+  if (/[a-zA-Z$€£¥]/.test(raw)) return raw;
+  return null;
+}
+var WIDE_CHARS = /* @__PURE__ */ new Set(["M", "W", "@", "%", "m", "w"]);
+var NARROW_CHARS = /* @__PURE__ */ new Set(["I", "i", "l", "j", "t", "f", "r", ".", ",", ";", ":", "'", "!", "|", "(", ")", "[", "]", " ", "-"]);
+function charAdvance(c) {
+  if (WIDE_CHARS.has(c)) return 0.92;
+  if (NARROW_CHARS.has(c)) return 0.32;
+  if (c >= "A" && c <= "Z") return 0.68;
+  if (c >= "0" && c <= "9") return 0.6;
+  return 0.55;
+}
+function estimateTextWidth(text, fontSize, bold = false) {
+  let units = 0;
+  for (const c of text) units += charAdvance(c);
+  return units * fontSize * (bold ? 1.04 : 1);
+}
+function wrapText(text, fontSize, maxWidth, maxLines, bold) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (estimateTextWidth(candidate, fontSize, bold) <= maxWidth) {
+      current = candidate;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+      if (estimateTextWidth(word, fontSize, bold) > maxWidth) return null;
+      if (lines.length > maxLines) return null;
+    }
+  }
+  if (current) lines.push(current);
+  if (lines.length === 0 || lines.length > maxLines) return null;
+  return lines;
+}
+function fitTitle(text, baseFontSize, maxWidth, maxLines = 3) {
+  const min = Math.round(baseFontSize * 0.55);
+  for (let fs2 = baseFontSize; fs2 >= min; fs2 -= 2) {
+    const lines2 = wrapText(text, fs2, maxWidth, maxLines, true);
+    if (lines2) return { lines: lines2, fontSize: fs2 };
+  }
+  const fs = min;
+  const lines = [];
+  let rest = text;
+  while (rest.length && lines.length < maxLines) {
+    let take = rest.length;
+    while (take > 1 && estimateTextWidth(rest.slice(0, take), fs, true) > maxWidth) take--;
+    lines.push(rest.slice(0, take).trim());
+    rest = rest.slice(take).trim();
+  }
+  if (rest.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].slice(0, -1)}\u2026`;
+  return { lines, fontSize: fs };
+}
+function clampHex(h, fallback) {
+  return h && /^#[0-9a-fA-F]{6}$/.test(h) ? h : fallback;
+}
+function mixHex(hex, target, amount) {
+  const p = (s) => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16));
+  const [r1, g1, b1] = p(hex);
+  const [r2, g2, b2] = p(target);
+  const m = (a, b) => Math.round(a + (b - a) * amount).toString(16).padStart(2, "0");
+  return `#${m(r1, r2)}${m(g1, g2)}${m(b1, b2)}`;
+}
 function composePromoLayout(args) {
   const format = args.format ?? "portrait";
   const dim = PROMO_DIMENSIONS[format];
-  const accent = args.tenantPrimaryColor || "#22d3ee";
+  const W = dim.width;
+  const H = dim.height;
+  const accent = clampHex(args.tenantPrimaryColor, "#22d3ee");
+  const accent2 = clampHex(args.tenantAccentColor, mixHex(accent, "#22d3ee", 0.5));
   const dateStr = formatDate(args.event.start_date);
+  const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
+  const scale = W / 1080;
+  const marginPct = 0.06;
+  const safeWidth = W * (1 - marginPct * 2);
+  const beatFs = Math.round(28 * scale);
+  const gameFs = Math.round(30 * scale);
+  const dateFs = Math.round(26 * scale);
+  const prizeFs = Math.round(26 * scale);
+  const { lines: titleLines, fontSize: titleFs } = fitTitle(
+    args.event.name.toUpperCase(),
+    Math.round(64 * scale),
+    safeWidth,
+    3
+  );
+  const prizeY = 0.9 * H;
+  const dateY = 0.83 * H;
+  const gameY = 0.76 * H;
+  const tailTop = args.event.game ? gameY : dateStr ? dateY : prizeLabel ? prizeY : 0.94 * H;
+  const lineH = titleFs * 1.12;
+  const titleTop = tailTop - 0.022 * H - titleLines.length * lineH;
+  const beatY = titleTop - beatFs * 1.7;
   const texts = [];
   if (args.beatLabel) {
     texts.push({
       text: args.beatLabel.toUpperCase(),
-      xPct: 0.06,
-      yPct: 0.56,
-      fontSize: 28,
+      xPct: marginPct,
+      yPct: beatY / H,
+      fontSize: beatFs,
       color: accent,
       fontWeight: "bold"
     });
   }
-  texts.push({
-    text: args.event.name.toUpperCase(),
-    xPct: 0.06,
-    yPct: 0.62,
-    fontSize: 64,
-    color: "#ffffff",
-    fontWeight: "bold"
+  titleLines.forEach((line, i) => {
+    texts.push({
+      text: line,
+      xPct: marginPct,
+      yPct: (titleTop + i * lineH) / H,
+      fontSize: titleFs,
+      color: "#ffffff",
+      fontWeight: "bold"
+    });
   });
   if (args.event.game) {
-    texts.push({
-      text: args.event.game,
-      xPct: 0.06,
-      yPct: 0.76,
-      fontSize: 30,
-      color: "#e2e8f0"
-    });
+    texts.push({ text: args.event.game, xPct: marginPct, yPct: gameY / H, fontSize: gameFs, color: "#e2e8f0" });
   }
   if (dateStr) {
-    texts.push({
-      text: dateStr,
-      xPct: 0.06,
-      yPct: 0.83,
-      fontSize: 26,
-      color: "#cbd5e1"
-    });
+    texts.push({ text: dateStr, xPct: marginPct, yPct: dateY / H, fontSize: dateFs, color: "#cbd5e1" });
   }
-  if (args.event.prize_pool) {
+  if (prizeLabel) {
     texts.push({
-      text: `Prize: ${args.event.prize_pool}`,
-      xPct: 0.06,
-      yPct: 0.9,
-      fontSize: 26,
+      text: `Prize: ${prizeLabel}`,
+      xPct: marginPct,
+      yPct: prizeY / H,
+      fontSize: prizeFs,
       color: accent,
       fontWeight: "bold"
     });
   }
+  const barTopY = args.beatLabel ? beatY : titleTop;
+  const barBottomY = (prizeLabel ? prizeY + prizeFs : dateStr ? dateY + dateFs : tailTop) + 6e-3 * H;
   return {
     format,
-    width: dim.width,
-    height: dim.height,
+    width: W,
+    height: H,
     backgroundUrl: null,
     // caller fills from event.image_url — kept separate so
     // the layout is decoupled from image loading
     backgroundFallbackHex: "#0f172a",
+    plate: {
+      fromHex: mixHex(accent, "#0b1120", 0.62),
+      toHex: mixHex(accent2, "#0b1120", 0.86),
+      gridColor: "rgba(255,255,255,0.06)",
+      gridSpacingPct: 0.055,
+      glowColor: accent,
+      glowRadiusPct: 0.55
+    },
     gradient: {
-      startPct: 0.45,
+      startPct: Math.max(0.28, barTopY / H - 0.12),
       fromRgba: "rgba(0,0,0,0)",
       toRgba: "rgba(0,0,0,0.85)"
     },
     accentBar: {
       xPct: 0.04,
-      yPct: 0.62,
+      yPct: barTopY / H,
       wPct: 8e-3,
-      hPct: 0.32,
+      hPct: (barBottomY - barTopY) / H,
       color: accent
     },
     texts
@@ -1238,9 +1333,24 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   const w = scene.width;
   const h = scene.height;
   const gradStartY = scene.gradient.startPct * h;
-  const bgLayer = bgHref ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${w}" height="${h}" fill="${scene.backgroundFallbackHex}"/>`;
+  const p = scene.plate;
+  const gridStep = p.gridSpacingPct * w;
+  const bgLayer = bgHref ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#plate)"/>
+       <rect x="0" y="0" width="${w}" height="${h}" fill="url(#grid)"/>
+       <circle cx="${w * 0.82}" cy="${h * 0.16}" r="${p.glowRadiusPct * w}" fill="url(#glow)"/>`;
   const gradient = `
     <defs>
+      <linearGradient id="plate" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="${p.fromHex}"/>
+        <stop offset="1" stop-color="${p.toHex}"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="${p.glowColor}" stop-opacity="0.33"/>
+        <stop offset="1" stop-color="${p.glowColor}" stop-opacity="0"/>
+      </radialGradient>
+      <pattern id="grid" width="${gridStep}" height="${gridStep}" patternUnits="userSpaceOnUse">
+        <path d="M ${gridStep} 0 L 0 0 0 ${gridStep}" fill="none" stroke="${p.gridColor}" stroke-width="${Math.max(1, w / 1080)}"/>
+      </pattern>
       <linearGradient id="dark" x1="0" y1="${gradStartY}" x2="0" y2="${h}" gradientUnits="userSpaceOnUse">
         <stop offset="0" stop-color="${rgbaFromCss(scene.gradient.fromRgba)}"/>
         <stop offset="1" stop-color="${rgbaFromCss(scene.gradient.toRgba)}"/>
@@ -1309,12 +1419,12 @@ var compose_event_promo_default = defineTool21({
       const uid = ctx.getUserId();
       let evt;
       if (input.tournament_id) {
-        const { data, error } = await userSupabase.from("tournaments").select("id, name, game, start_date, prize_pool, image_url").eq("id", input.tournament_id).maybeSingle();
+        const { data, error } = await userSupabase.from("tournaments").select("id, name, game, start_date, prize_pool, prize_type, image_url").eq("id", input.tournament_id).maybeSingle();
         if (error) throw error;
         if (!data) return { content: [{ type: "text", text: "Tournament not found or not visible." }], isError: true };
         evt = data;
       } else {
-        const { data, error } = await userSupabase.from("tenant_events").select("id, name, game, start_date, prize_pool, image_url, tenant_id").eq("id", input.event_id).maybeSingle();
+        const { data, error } = await userSupabase.from("tenant_events").select("id, name, game, start_date, prize_pool, prize_type, image_url, tenant_id").eq("id", input.event_id).maybeSingle();
         if (error) throw error;
         if (!data) return { content: [{ type: "text", text: "Event not found or not visible." }], isError: true };
         if (data.tenant_id !== input.tenant_id) {
@@ -1322,15 +1432,17 @@ var compose_event_promo_default = defineTool21({
         }
         evt = data;
       }
-      const { data: tenant } = await userSupabase.from("tenants").select("primary_color").eq("id", input.tenant_id).maybeSingle();
+      const { data: tenant } = await userSupabase.from("tenants").select("primary_color, accent_color").eq("id", input.tenant_id).maybeSingle();
       const scene = composePromoLayout({
         event: {
           name: evt.name,
           game: evt.game ?? null,
           start_date: evt.start_date ?? null,
-          prize_pool: evt.prize_pool ?? null
+          prize_pool: evt.prize_pool ?? null,
+          prize_type: evt.prize_type ?? null
         },
         tenantPrimaryColor: tenant?.primary_color ?? null,
+        tenantAccentColor: tenant?.accent_color ?? null,
         format: input.format,
         beatLabel: input.beat_label ?? null
       });
