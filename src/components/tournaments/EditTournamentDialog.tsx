@@ -105,6 +105,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [pointsParticipation, setPointsParticipation] = useState("2");
   const [pointsParticipationLong, setPointsParticipationLong] = useState("5");
   const [pointsParticipationShort, setPointsParticipationShort] = useState("2");
+  const [pointsFirst, setPointsFirst] = useState("10");
+  const [pointsSecond, setPointsSecond] = useState("5");
+  const [pointsThird, setPointsThird] = useState("3");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
