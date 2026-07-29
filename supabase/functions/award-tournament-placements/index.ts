@@ -155,13 +155,12 @@ Deno.serve(async (req) => {
           .like("notes", "Auto-awarded: 1st place%");
       }
 
-      if (isGameNight) {
-        await admin
-          .from("tournament_registrations")
-          .update({ participation_tier: null })
-          .eq("tournament_id", tournament_id)
-          .eq("user_id", user_id);
-      }
+      // No awards remain for this player → clear attendance/tier flags set at award time
+      await admin
+        .from("tournament_registrations")
+        .update({ attended: false, ...(isGameNight ? { participation_tier: null } : {}) })
+        .eq("tournament_id", tournament_id)
+        .eq("user_id", user_id);
 
       return json({ success: true, revoked: true, user_id, points_removed: removed });
     }
