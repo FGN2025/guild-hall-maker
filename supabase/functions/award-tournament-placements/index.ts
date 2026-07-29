@@ -87,8 +87,10 @@ Deno.serve(async (req) => {
 
     // ── Undo a single player's award (Manage page) ──
     if (revoke_award) {
-      const { user_id } = revoke_award as { user_id?: string };
+      const { user_id, scope } = revoke_award as { user_id?: string; scope?: string };
+      const revokeScope = scope === "participation" || scope === "placement" ? scope : "all";
       if (!user_id) return json({ error: "revoke_award requires user_id" }, 400);
+
 
       const debitScore = async (seasonId: string, uid: string, pts: number) => {
         if (pts <= 0) return;
