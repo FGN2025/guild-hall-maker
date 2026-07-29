@@ -33,13 +33,25 @@ const awardSeasonPoints = async (winnerId: string, loserId: string | null, point
 
 export type ParticipationTier = "long" | "short";
 
+export type PlayerAward =
+  | "first"
+  | "second"
+  | "third"
+  | "participation"
+  | "participation_long"
+  | "participation_short";
+
+
 export interface RegisteredPlayer {
   user_id: string;
   display_name: string;
   gamer_tag: string | null;
   attended: boolean;
   participation_tier: ParticipationTier | null;
+  awarded: "first" | "second" | "third" | "participation" | null;
+  awarded_points: number | null;
 }
+
 
 
 export interface ManageMatch {
@@ -90,18 +102,50 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
       const tierMap = new Map(
         regs.map((r: any) => [r.user_id, (r.participation_tier ?? null) as ParticipationTier | null])
       );
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, gamer_tag, discord_username")
+      const { data: profiles } = await (supabase.from as any)("profiles_public")
+        .select("user_id, display_name, gamer_tag")
         .in("user_id", userIds);
 
-      return (profiles ?? []).map((p) => ({
-        user_id: p.user_id,
-        display_name: p.display_name ?? "Unknown",
-        gamer_tag: p.gamer_tag,
-        attended: attendedMap.get(p.user_id) ?? false,
-        participation_tier: tierMap.get(p.user_id) ?? null,
-      })) as RegisteredPlayer[];
+      const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+
+      const { data: placements } = await supabase
+        .from("tournament_placements")
+        .select("user_id, place, points_awarded")
+        .eq("tournament_id", tournamentId!);
+      const { data: partAwards } = await supabase
+        .from("match_point_awards")
+        .select("user_id, points, kind")
+        .eq("tournament_id", tournamentId!)
+        .eq("kind", "participation");
+
+      const awardMap = new Map<string, { awarded: RegisteredPlayer["awarded"]; points: number }>();
+      for (const a of partAwards ?? []) {
+        if (a.user_id) awardMap.set(a.user_id, { awarded: "participation", points: a.points ?? 0 });
+      }
+      for (const pl of placements ?? []) {
+        if (!pl.user_id) continue;
+        awardMap.set(pl.user_id, {
+          awarded: pl.place === 1 ? "first" : pl.place === 2 ? "second" : "third",
+          points: pl.points_awarded ?? 0,
+        });
+      }
+
+      // Registrations are the source of truth — a missing profile row must not
+      // drop the player from the list.
+      return regs.map((r: any) => {
+        const p: any = profileMap.get(r.user_id);
+        const aw = awardMap.get(r.user_id);
+        return {
+          user_id: r.user_id,
+          display_name: p?.display_name ?? "Unknown player",
+          gamer_tag: p?.gamer_tag ?? null,
+          attended: attendedMap.get(r.user_id) ?? false,
+          participation_tier: tierMap.get(r.user_id) ?? null,
+          awarded: aw?.awarded ?? null,
+          awarded_points: aw?.points ?? null,
+        };
+      }) as RegisteredPlayer[];
+
 
     },
   });
@@ -548,6 +592,34 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: (err: Error) => toast.error(err.message || "Failed to set participation tier"),
   });
 
+  const awardPlayerMutation = useMutation({
+    mutationFn: async ({ userId, award }: { userId: string; award: PlayerAward }) => {
+      if (!tournamentId) throw new Error("No tournament");
+      const { data, error } = await supabase.functions.invoke("award-tournament-placements", {
+        body: { tournament_id: tournamentId, single_award: { user_id: userId, award } },
+      });
+      if (error) {
+        // Surface the function's JSON error body instead of a generic message
+        const ctx: any = (error as any).context;
+        let msg = error.message;
+        try {
+          const body = await ctx?.json?.();
+          if (body?.error) msg = body.error;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data as { points: number };
+    },
+    onSuccess: (data) => {
+      toast.success(`Awarded ${data?.points ?? 0} points`);
+      queryClient.invalidateQueries({ queryKey: ["manage-players", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["tournament-placement-count", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to award points"),
+  });
+
 
   return {
     tournament: tournamentQuery.data ?? null,
@@ -569,6 +641,8 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     isSettingAttendance: setAttendanceMutation.isPending,
     setParticipationTier: setParticipationTierMutation.mutate,
     isSettingParticipationTier: setParticipationTierMutation.isPending,
-
+    awardPlayer: awardPlayerMutation.mutate,
+    isAwardingPlayer: awardPlayerMutation.isPending,
   };
+
 };

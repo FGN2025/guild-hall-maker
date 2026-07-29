@@ -4,7 +4,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-import { useTournamentManagement, ManageMatch } from "@/hooks/useTournamentManagement";
+import { useTournamentManagement, ManageMatch, PlayerAward } from "@/hooks/useTournamentManagement";
+
+const awardLabels: Record<string, string> = {
+  first: "1st place",
+  second: "2nd place",
+  third: "3rd place",
+  participation: "Participation",
+};
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +78,10 @@ const TournamentManage = () => {
     isSettingAttendance,
     setParticipationTier,
     isSettingParticipationTier,
+    awardPlayer,
+    isAwardingPlayer,
   } = useTournamentManagement(id);
+
 
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -284,51 +295,97 @@ const TournamentManage = () => {
                     <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> Attended</span>
                   </div>
                   {players.map((p, idx) => (
-                    <div key={p.user_id} className="flex items-center gap-3 px-4 py-3">
-                      {isGameNight ? (
-                        <Checkbox
-                          checked={selected.includes(p.user_id)}
-                          onCheckedChange={(v) =>
-                            setSelected((prev) =>
-                              v ? [...prev, p.user_id] : prev.filter((x) => x !== p.user_id)
-                            )
-                          }
-                          aria-label={`Select ${p.display_name}`}
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground font-display w-6">{idx + 1}</span>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-heading text-sm text-foreground truncate">
-                          {p.gamer_tag || p.display_name}
-                        </p>
-                        {p.gamer_tag && (
-                          <p className="text-xs text-muted-foreground truncate">{p.display_name}</p>
+                    <div key={p.user_id} className="px-4 py-3 space-y-2">
+                      <div className="flex items-center gap-3">
+                        {isGameNight ? (
+                          <Checkbox
+                            checked={selected.includes(p.user_id)}
+                            onCheckedChange={(v) =>
+                              setSelected((prev) =>
+                                v ? [...prev, p.user_id] : prev.filter((x) => x !== p.user_id)
+                              )
+                            }
+                            aria-label={`Select ${p.display_name}`}
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground font-display w-6">{idx + 1}</span>
                         )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-heading text-sm text-foreground truncate">
+                            {p.gamer_tag || p.display_name}
+                          </p>
+                          {p.gamer_tag && (
+                            <p className="text-xs text-muted-foreground truncate">{p.display_name}</p>
+                          )}
+                        </div>
+                        {isGameNight && p.participation_tier && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "capitalize text-[10px]",
+                              p.participation_tier === "long"
+                                ? "border-primary/30 text-primary bg-primary/10"
+                                : "border-accent/30 text-accent bg-accent/10"
+                            )}
+                          >
+                            {p.participation_tier}
+                          </Badge>
+                        )}
+                        <Checkbox
+                          checked={p.attended}
+                          disabled={isSettingAttendance}
+                          onCheckedChange={(v) =>
+                            setAttendance({ userId: p.user_id, attended: !!v })
+                          }
+                          aria-label="Mark attended"
+                        />
                       </div>
-                      {isGameNight && p.participation_tier && (
+
+                      {p.awarded ? (
                         <Badge
                           variant="outline"
-                          className={cn(
-                            "capitalize text-[10px]",
-                            p.participation_tier === "long"
-                              ? "border-primary/30 text-primary bg-primary/10"
-                              : "border-accent/30 text-accent bg-accent/10"
-                          )}
+                          className="text-[10px] border-success/30 text-success bg-success/10 capitalize"
                         >
-                          {p.participation_tier}
+                          {awardLabels[p.awarded]} awarded · {p.awarded_points ?? 0} pts
                         </Badge>
+                      ) : (
+                        <Select
+                          disabled={isAwardingPlayer}
+                          value=""
+                          onValueChange={(val) =>
+                            awardPlayer({ userId: p.user_id, award: val as PlayerAward })
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs bg-background/60 border-border font-heading">
+                            <SelectValue placeholder="Award points…" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {!isGameNight && (
+                              <>
+                                <SelectItem value="first">1st place ({tournament.points_first ?? 0} pts)</SelectItem>
+                                <SelectItem value="second">2nd place ({tournament.points_second ?? 0} pts)</SelectItem>
+                                <SelectItem value="third">3rd place ({tournament.points_third ?? 0} pts)</SelectItem>
+                                <SelectItem value="participation">
+                                  Participation ({tournament.points_participation ?? 0} pts)
+                                </SelectItem>
+                              </>
+                            )}
+                            {isGameNight && (
+                              <>
+                                <SelectItem value="participation_long">
+                                  Long participation ({tournament.points_participation_long ?? 0} pts)
+                                </SelectItem>
+                                <SelectItem value="participation_short">
+                                  Short participation ({tournament.points_participation_short ?? 0} pts)
+                                </SelectItem>
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
                       )}
-                      <Checkbox
-                        checked={p.attended}
-                        disabled={isSettingAttendance}
-                        onCheckedChange={(v) =>
-                          setAttendance({ userId: p.user_id, attended: !!v })
-                        }
-                        aria-label="Mark attended"
-                      />
                     </div>
                   ))}
+
                   <div className="px-4 py-2 text-[11px] text-muted-foreground/80 font-body bg-muted/20">
                     Only players marked Attended receive participation points. Players auto-mark
                     attended when they appear in a completed match.

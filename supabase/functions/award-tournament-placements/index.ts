@@ -39,8 +39,9 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { tournament_id, first_id, second_id, third_id, dry_run, skip_participation, participation_only } = body ?? {};
+    const { tournament_id, first_id, second_id, third_id, dry_run, skip_participation, participation_only, single_award } = body ?? {};
     if (!tournament_id) return json({ error: "tournament_id required" }, 400);
+
 
     // Load tournament
     const { data: tournament, error: tErr } = await admin
@@ -59,6 +60,124 @@ Deno.serve(async (req) => {
       if (tier === "short") return tournament.points_participation_short ?? 0;
       return tournament.points_participation ?? 0;
     };
+
+    // ── Single player award (per-row dropdown on the Manage page) ──
+    if (single_award) {
+      const { user_id, award } = single_award as { user_id?: string; award?: string };
+      if (!user_id || !award) return json({ error: "single_award requires user_id and award" }, 400);
+
+      const season = await resolveActiveSeason(admin, tournament.game);
+      if (!season) return json({ error: "No active season" }, 400);
+
+      const creditScore = async (uid: string, pts: number) => {
+        if (pts <= 0) return;
+        const { data: existing } = await admin
+          .from("season_scores")
+          .select("id, points, points_available")
+          .eq("season_id", season.id)
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (existing) {
+          await admin
+            .from("season_scores")
+            .update({
+              points: (existing.points ?? 0) + pts,
+              points_available: (existing.points_available ?? 0) + pts,
+            })
+            .eq("id", existing.id);
+        } else {
+          await admin
+            .from("season_scores")
+            .insert({ season_id: season.id, user_id: uid, points: pts, points_available: pts });
+        }
+      };
+
+      if (award === "first" || award === "second" || award === "third") {
+        const place = award === "first" ? 1 : award === "second" ? 2 : 3;
+        const pts =
+          place === 1
+            ? tournament.points_first ?? 0
+            : place === 2
+            ? tournament.points_second ?? 0
+            : tournament.points_third ?? 0;
+
+        const { error: insErr } = await admin.from("tournament_placements").insert({
+          tournament_id,
+          place,
+          user_id,
+          points_awarded: pts,
+          awarded_by: callerId,
+        });
+        if (insErr) {
+          if ((insErr as any).code === "23505") {
+            return json({ error: "That placement has already been awarded for this tournament." }, 409);
+          }
+          return json({ error: insErr.message }, 400);
+        }
+
+        await creditScore(user_id, pts);
+        await admin
+          .from("tournament_registrations")
+          .update({ attended: true })
+          .eq("tournament_id", tournament_id)
+          .eq("user_id", user_id);
+
+        if (place === 1 && tournament.achievement_id) {
+          const { data: alreadyEarned } = await admin
+            .from("player_achievements")
+            .select("id")
+            .eq("user_id", user_id)
+            .eq("achievement_id", tournament.achievement_id)
+            .maybeSingle();
+          if (!alreadyEarned) {
+            await admin.from("player_achievements").insert({
+              user_id,
+              achievement_id: tournament.achievement_id,
+              notes: `Auto-awarded: 1st place in "${tournament.name}"`,
+            });
+          }
+        }
+
+        return json({ success: true, award, user_id, points: pts, season_id: season.id });
+      }
+
+      if (award === "participation" || award === "participation_long" || award === "participation_short") {
+        const tier =
+          award === "participation_long" ? "long" : award === "participation_short" ? "short" : null;
+        if (isGameNight && !tier) {
+          return json({ error: "Game Night requires long or short participation" }, 400);
+        }
+        const pts = participationPointsFor(tier);
+
+        await admin
+          .from("tournament_registrations")
+          .update({ attended: true, ...(isGameNight ? { participation_tier: tier } : {}) })
+          .eq("tournament_id", tournament_id)
+          .eq("user_id", user_id);
+
+        const { error: insErr } = await admin.from("match_point_awards").insert({
+          tournament_id,
+          match_id: null,
+          user_id,
+          kind: "participation",
+          points: pts,
+          season_id: season.id,
+          awarded_by: callerId,
+        });
+        if (insErr) {
+          if ((insErr as any).code === "23505") {
+            return json({ error: "Participation points were already awarded to this player." }, 409);
+          }
+          return json({ error: insErr.message }, 400);
+        }
+
+        await creditScore(user_id, pts);
+        return json({ success: true, award, user_id, points: pts, season_id: season.id });
+      }
+
+      return json({ error: `Unknown award: ${award}` }, 400);
+    }
+
 
 
     // Resolve placements: explicit args win; otherwise auto-detect for single_elimination
