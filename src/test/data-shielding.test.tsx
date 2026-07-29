@@ -44,6 +44,7 @@ const baseTournament = {
   description: "A test tournament",
   format: "single_elimination",
   status: "open",
+  effective_status: "open",
   start_date: new Date().toISOString(),
   max_participants: 64,
   registrations_count: 32,
