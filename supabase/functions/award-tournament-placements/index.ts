@@ -45,10 +45,21 @@ Deno.serve(async (req) => {
     // Load tournament
     const { data: tournament, error: tErr } = await admin
       .from("tournaments")
-      .select("id, name, game, format, status, points_first, points_second, points_third, points_participation, achievement_id")
+      .select(
+        "id, name, game, format, status, points_first, points_second, points_third, points_participation, points_participation_long, points_participation_short, achievement_id",
+      )
       .eq("id", tournament_id)
       .maybeSingle();
     if (tErr || !tournament) return json({ error: "Tournament not found" }, 404);
+
+    const isGameNight = (tournament.format ?? "").toLowerCase() === "game_night";
+    const participationPointsFor = (tier: string | null | undefined) => {
+      if (!isGameNight) return tournament.points_participation ?? 0;
+      if (tier === "long") return tournament.points_participation_long ?? 0;
+      if (tier === "short") return tournament.points_participation_short ?? 0;
+      return tournament.points_participation ?? 0;
+    };
+
 
     // Resolve placements: explicit args win; otherwise auto-detect for single_elimination
     let firstId = first_id ?? null;
