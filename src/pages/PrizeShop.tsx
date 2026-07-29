@@ -96,8 +96,19 @@ const PrizeShop = () => {
         prize_id: prize.id,
         points_spent: prize.points_cost,
       });
-      if (error) throw error;
+      if (error) {
+        if (
+          error.code === "42501" ||
+          /row-level security/i.test(error.message)
+        ) {
+          throw new Error(
+            "Redemptions are limited to players with a participating internet provider."
+          );
+        }
+        throw error;
+      }
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-redemptions"] });
       queryClient.invalidateQueries({ queryKey: ["shop-prizes"] });
