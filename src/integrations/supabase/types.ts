@@ -5149,6 +5149,8 @@ export type Database = {
           points_overridden_by: string | null
           points_override_reason: string | null
           points_participation: number
+          points_participation_long: number
+          points_participation_short: number
           points_second: number
           points_third: number
           prize_id: string | null
@@ -5185,6 +5187,8 @@ export type Database = {
           points_overridden_by?: string | null
           points_override_reason?: string | null
           points_participation?: number
+          points_participation_long?: number
+          points_participation_short?: number
           points_second?: number
           points_third?: number
           prize_id?: string | null
@@ -5221,6 +5225,8 @@ export type Database = {
           points_overridden_by?: string | null
           points_override_reason?: string | null
           points_participation?: number
+          points_participation_long?: number
+          points_participation_short?: number
           points_second?: number
           points_third?: number
           prize_id?: string | null

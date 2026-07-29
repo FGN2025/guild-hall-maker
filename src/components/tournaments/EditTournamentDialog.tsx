@@ -39,6 +39,8 @@ interface TournamentData {
   points_second?: number;
   points_third?: number;
   points_participation?: number;
+  points_participation_long?: number;
+  points_participation_short?: number;
   discord_role_id?: string | null;
   achievement_id?: string | null;
   requires_invite_code?: boolean;
@@ -64,6 +66,8 @@ interface Props {
     points_second?: number;
     points_third?: number;
     points_participation?: number;
+    points_participation_long?: number;
+    points_participation_short?: number;
     prize_pct_first?: number;
     prize_pct_second?: number;
     prize_pct_third?: number;
@@ -99,14 +103,17 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [pointsParticipation, setPointsParticipation] = useState("2");
+  const [pointsParticipationLong, setPointsParticipationLong] = useState("5");
+  const [pointsParticipationShort, setPointsParticipationShort] = useState("2");
   const [prizePctFirst, setPrizePctFirst] = useState(50);
   const [prizePctSecond, setPrizePctSecond] = useState(30);
   const [prizePctThird, setPrizePctThird] = useState(20);
   const [achievementId, setAchievementId] = useState("");
   const [difficulty, setDifficulty] = useState("beginner");
-  const [pointsOverrideReason, setPointsOverrideReason] = useState("");
   const [requiresInviteCode, setRequiresInviteCode] = useState(false);
   const [inviteCodeId, setInviteCodeId] = useState<string>("none");
+
+  const isGameNight = format === "game_night";
 
   const { data: availableCodes = [] } = useQuery({
     queryKey: ["tenant-codes-for-tournament", open],
@@ -136,13 +143,14 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       setPrizeId(tournament.prize_id ?? "");
       setRules(tournament.rules ?? "");
       setPointsParticipation(String(tournament.points_participation ?? 2));
+      setPointsParticipationLong(String((tournament as any).points_participation_long ?? 5));
+      setPointsParticipationShort(String((tournament as any).points_participation_short ?? 2));
       setPrizePctFirst((tournament as any).prize_pct_first ?? 50);
       setPrizePctSecond((tournament as any).prize_pct_second ?? 30);
       setPrizePctThird((tournament as any).prize_pct_third ?? 20);
       setDiscordRoleId(tournament.discord_role_id ?? "");
       setAchievementId(tournament.achievement_id ?? "");
       setDifficulty((tournament as any).difficulty ?? "beginner");
-      setPointsOverrideReason((tournament as any).points_override_reason ?? "");
       setRequiresInviteCode(!!tournament.requires_invite_code);
       setInviteCodeId(tournament.invite_code_id ?? "none");
 
@@ -215,7 +223,9 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
       points_first: 0,
       points_second: 0,
       points_third: 0,
-      points_participation: parseInt(pointsParticipation) || 2,
+      points_participation: isGameNight ? 0 : parseInt(pointsParticipation) || 2,
+      points_participation_long: isGameNight ? parseInt(pointsParticipationLong) || 0 : 0,
+      points_participation_short: isGameNight ? parseInt(pointsParticipationShort) || 0 : 0,
       prize_pct_first: prizePctFirst,
       prize_pct_second: prizePctSecond,
       prize_pct_third: prizePctThird,
@@ -276,6 +286,7 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
                   <SelectItem value="round_robin">Round Robin</SelectItem>
                   <SelectItem value="swiss">Swiss</SelectItem>
                   <SelectItem value="battle_royale">Battle Royale</SelectItem>
+                  <SelectItem value="game_night">Game Night</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -375,16 +386,32 @@ const EditTournamentDialog = ({ tournament, onUpdate, isUpdating }: Props) => {
               </SelectContent>
             </Select>
           </div>
-          <PointsInput
-            kind="tournament"
-            difficulty={difficulty}
-            placement="participation"
-            value={parseInt(pointsParticipation) || 0}
-            onChange={(v) => setPointsParticipation(String(v))}
-            overrideReason={pointsOverrideReason}
-            onOverrideReasonChange={setPointsOverrideReason}
-            label="Participation Points (per match)"
-          />
+          {isGameNight ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="font-heading text-sm">Long Participation Points</Label>
+                <Input type="number" min={0} max={10000} value={pointsParticipationLong}
+                  onChange={(e) => setPointsParticipationLong(e.target.value)}
+                  className="bg-card border-border font-body" />
+                <p className="text-xs text-muted-foreground">Awarded to players who stay for the full game night.</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-heading text-sm">Short Participation Points</Label>
+                <Input type="number" min={0} max={10000} value={pointsParticipationShort}
+                  onChange={(e) => setPointsParticipationShort(e.target.value)}
+                  className="bg-card border-border font-body" />
+                <p className="text-xs text-muted-foreground">Awarded to players who join for a shorter session.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label className="font-heading text-sm">Participation Points (per match)</Label>
+              <Input type="number" min={0} max={10000} value={pointsParticipation}
+                onChange={(e) => setPointsParticipation(e.target.value)}
+                className="bg-card border-border font-body max-w-[200px]" />
+            </div>
+          )}
+
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="space-y-2">
             <Label className="font-heading text-sm">Discord Role (on registration)</Label>
