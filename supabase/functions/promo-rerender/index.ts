@@ -79,7 +79,8 @@ Deno.serve(async (req) => {
       .eq("tenant_id", body.tenant_id)
       .not("agent_source", "is", null)
       .gte("created_at", body.since ?? "2026-07-01")
-      .limit(body.limit ?? 100);
+      .order("created_at")
+      .range(body.offset ?? 0, (body.offset ?? 0) + (body.limit ?? 4) - 1);
     if (error) throw error;
 
     const { data: tenant } = await db.from("tenants").select("primary_color, accent_color").eq("id", body.tenant_id).maybeSingle();
