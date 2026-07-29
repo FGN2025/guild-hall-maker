@@ -359,13 +359,36 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
-              <Label className="font-heading text-sm">Participation Points (per match)</Label>
-              <Input type="number" min={0} max={10000} value={pointsParticipation}
-                onChange={(e) => setPointsParticipation(e.target.value)}
-                className="bg-card border-border font-body max-w-[200px]" />
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-heading text-sm">1st Place Points</Label>
+                  <Input type="number" min={0} max={10000} value={pointsFirst}
+                    onChange={(e) => setPointsFirst(e.target.value)}
+                    className="bg-card border-border font-body" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-heading text-sm">2nd Place Points</Label>
+                  <Input type="number" min={0} max={10000} value={pointsSecond}
+                    onChange={(e) => setPointsSecond(e.target.value)}
+                    className="bg-card border-border font-body" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-heading text-sm">3rd Place Points</Label>
+                  <Input type="number" min={0} max={10000} value={pointsThird}
+                    onChange={(e) => setPointsThird(e.target.value)}
+                    className="bg-card border-border font-body" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-heading text-sm">Participation Points (per match)</Label>
+                <Input type="number" min={0} max={10000} value={pointsParticipation}
+                  onChange={(e) => setPointsParticipation(e.target.value)}
+                  className="bg-card border-border font-body max-w-[200px]" />
+              </div>
             </div>
           )}
+
 
           <AchievementPicker value={achievementId} onChange={setAchievementId} />
           <div className="space-y-2">
