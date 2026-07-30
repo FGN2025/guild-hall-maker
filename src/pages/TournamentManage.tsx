@@ -419,11 +419,11 @@ const TournamentManage = () => {
                   ))}
 
                   <div className="px-4 py-2 text-[11px] text-muted-foreground/80 font-body bg-muted/20">
-                    Tick a player to award participation points. Placement points are additive — award
-                    1st/2nd/3rd on top of participation with the dropdown.
-                    {isGameNight &&
-                      " For Game Nights, select players and use Mark Long / Mark Short to set their participation tier before ticking them."}
+                    {isGameNight
+                      ? "Tick the purple box to award Short participation points, or the cyan box for Long. Only one tier applies per player — ticking the other swaps the award."
+                      : "Tick a player to award participation points. Placement points are additive — award 1st/2nd/3rd on top of participation with the dropdown."}
                   </div>
+
 
                 </div>
               )}
