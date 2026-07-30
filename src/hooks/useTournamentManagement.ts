@@ -650,6 +650,69 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     onError: (err: Error) => toast.error(err.message || "Failed to undo award"),
   });
 
+  // Game Night: set the tier and award its participation points in one action.
+  const awardParticipationTierMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      tier,
+      hasExistingAward,
+    }: {
+      userId: string;
+      tier: ParticipationTier;
+      hasExistingAward?: boolean;
+    }) => {
+      if (!tournamentId) throw new Error("No tournament");
+
+      const invoke = async (body: Record<string, unknown>) => {
+        const { data, error } = await supabase.functions.invoke("award-tournament-placements", {
+          body: { tournament_id: tournamentId, ...body },
+        });
+        if (error) {
+          const ctx: any = (error as any).context;
+          let msg = error.message;
+          try {
+            const parsed = await ctx?.json?.();
+            if (parsed?.error) msg = parsed.error;
+          } catch { /* ignore */ }
+          throw new Error(msg);
+        }
+        if ((data as any)?.error) throw new Error((data as any).error);
+        return data as any;
+      };
+
+      if (hasExistingAward) {
+        await invoke({ revoke_award: { user_id: userId, scope: "participation" } });
+      }
+
+      const { data: updated, error: tierError } = await supabase
+        .from("tournament_registrations")
+        .update({
+          participation_tier: tier,
+          attended: true,
+          checked_in_at: new Date().toISOString(),
+          checked_in_by: user?.id ?? null,
+        })
+        .eq("tournament_id", tournamentId)
+        .eq("user_id", userId)
+        .select("id");
+      if (tierError) throw tierError;
+      if (!updated || updated.length === 0) {
+        throw new Error("Registration was not updated — you may not have permission.");
+      }
+
+      return await invoke({
+        single_award: { user_id: userId, award: `participation_${tier}` },
+      });
+    },
+    onSuccess: (data) => {
+      toast.success(`Awarded ${data?.points ?? 0} points`);
+      queryClient.invalidateQueries({ queryKey: ["manage-players", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to award participation points"),
+  });
+
+
 
 
 
