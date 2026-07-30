@@ -185,13 +185,6 @@ const TournamentManage = () => {
   const pointsFirst = getPlacementPoints(tournament, 1);
   const pointsSecond = getPlacementPoints(tournament, 2);
   const pointsThird = getPlacementPoints(tournament, 3);
-  const allSelected = players.length > 0 && selected.length === players.length;
-  const applyTier = (tier: "long" | "short" | null) => {
-    setParticipationTier(
-      { userIds: selected, tier },
-      { onSuccess: () => setSelected([]) }
-    );
-  };
 
 
 
