@@ -323,7 +323,7 @@ Each phase ships something usable. Patcher waves follow the `operations.md` patt
 | Phase | Deliverable | Notes |
 |---|---|---|
 | **0** | Export everything from Sideqik. Decide the vidIQ plan tier. Resolve the client option from Section 5 | No code. Blocking, and time-sensitive because of the past-due banner |
-| **1** | `disc_*` schema, `client.py` against Option C, JSONL ingest, Creator Library push, Sideqik-column CSV export | Makes the 1081 rescued creators queryable in-house and proves the data model end to end |
+| **1** | `disc_*` schema, `client.py` against Option C, JSONL ingest, Creator Library push, discovery CSV export | Makes the 1081 rescued creators queryable in-house and proves the data model end to end. **Groundwork written and tested, see `docs/patchers/`** |
 | **2** | Search Builder, saved searches, search execution, funnel tabs, scoring, reason bullets | This is the phase where the tool replaces Sideqik's core loop |
 | **3** | Creator Profile drawer, content panel, topic chips, YouTube Data API enrichment, Twitch Helix as second source | Twitch matters more for FGN's cohort than its position here suggests. Pull it forward if the gaming cohort is the priority |
 | **4** | Recruitment Forms service, auto-approve rules, review queue | Closes the email gap. Arguably the highest-value phase after 2 |
@@ -362,6 +362,10 @@ Four assumptions the plan inherited from the skill summary were wrong and are no
 | A Sideqik-column CSV auto-detects on import | Scores only 2 of the 3 required signature hits. Needs a third column or a new registered schema |
 
 Still unverified, because it lives on the VPS rather than in either repo: whether Caddy can route a new public path to a FastAPI service on `127.0.0.1:8503` without disturbing the existing `outreach.fgn.gg` and `media.fgn.gg` routes. That is a Phase 4 concern, not a blocker for Phases 1 through 3.
+
+**A defect found while testing, now fixed in `wave10`.** `ingest_v2._primary_platform_from_mapping` picks the primary platform from a hardcoded `YouTube > Twitch > ...` precedence list, because the mapped-upload path has no per-platform reach columns to compare. So any creator holding both a YouTube and a Twitch link is recorded as YouTube-primary regardless of where their audience actually is. On a Twitch-leaning cohort that mislabels a large share of records, and it flows into `platform_counts`, segmentation, and the `PRIMARY_PLATFORM` template variable. This predates the discovery work and affects Sideqik uploads through the mapped path too. Rows already in the database keep their old value, so correcting the historical cohort means a re-import.
+
+**One caveat on the tier decision in Section 10.** The absolute thresholds mean `fgn_score` has to stay 0 to 100, which the plan already assumed. What testing added is confirmation that the reach-only promotion really does fire: a creator scored 62 with 640k reach tiers `A_Priority` on reach alone, ahead of a better-matched creator scored 45. Whether that is the desired behavior is Darcy's call, and changing it affects every existing campaign.
 
 ---
 
