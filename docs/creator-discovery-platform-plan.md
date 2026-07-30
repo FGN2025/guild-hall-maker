@@ -80,6 +80,8 @@ The Sideqik account is past due and the banner warns that functionality may alre
 4. Any Recruitment Form definitions and their submissions
 5. Campaign and Creator reports for whatever history the account will hand over
 
+**Export the full column set, not the 17 columns the current ingest reads.** The registered Sideqik schema describes the export as 256 columns, and its detection signature includes `Twitch Avg EMV` and `Sideqik Connect Link`. So the raw exports carry Twitch reach and earned-media data that the current mapping discards on ingest. Since vidIQ covers no Twitch at all, those columns are the only Twitch numbers FGN will have for the historical cohort until Phase 3 ships. Save the raw files, not just what the ingest keeps.
+
 The saved-search criteria are the specification for the new search builder, and the 1081 Added creators are the seed corpus that makes the new tool useful on day one instead of empty. Losing account access before this export happens turns a rebuild into a rebuild plus a re-acquisition.
 
 ---
@@ -179,7 +181,16 @@ Every run logs its spend to `disc_credit_log` and surfaces remaining balance in 
 
 ## Section 7. Data model
 
-New tables in the existing `db/outreach.db`, all prefixed `disc_` so they are visually separate from the campaign schema. Foreign keys enforced per connection, matching the existing convention.
+New tables in the existing `db/outreach.db`, all prefixed `disc_` so they are visually separate from the campaign schema.
+
+**Follow the app's actual conventions, verified against `outreach/db.py` at `a863fe1`.** These differ from the Supabase-style conventions used elsewhere in FGN, so the plan follows the app rather than the house style.
+
+- `INTEGER PRIMARY KEY AUTOINCREMENT`, not UUID
+- Structured values go in `*_json TEXT` columns (`platform_links_json`, `labels_json`, `custom_data_json`)
+- All DDL appended to the single `SCHEMA` string, applied with `executescript`, every statement `CREATE TABLE IF NOT EXISTS`
+- Indexes named `idx_<table>_<column>`
+- Foreign keys with `ON DELETE CASCADE`, relying on the `PRAGMA foreign_keys = ON` that `db.conn()` sets on every open
+- Reuse the `conn()` context manager. Do not open connections directly
 
 **Creator identity and accounts**
 
@@ -212,7 +223,24 @@ New tables in the existing `db/outreach.db`, all prefixed `disc_` so they are vi
 | `disc_form_submissions` | `form_id`, `payload_json`, `creator_id`, `status`, `reviewed_by`, `reviewed_at` |
 | `disc_credit_log` | `tool`, `params_hash`, `credits`, `called_at`, `cache_hit`. Non-negotiable given the quota |
 
-**Join to what already exists.** When a creator acquires an email, `disc_creators.email` hashes to the same SHA-256 16-hex `creator_id` the existing `Creator` dataclass uses, so discovery records and Creator Library records line up without a migration. Two export paths: a direct push into the Creator Library through `ingest_v2.process_upload_with_mapping`, and a CSV writer that emits the exact Sideqik column order, which the existing schema detector already auto-maps. The CSV path is the fallback and also the thing that proves parity.
+**Join to what already exists.** Three details, all verified in the real code rather than assumed.
+
+**The `creator_id` hash takes two inputs, not one.** `processor._creator_id` is `sha256(f"{email}|{name}")[:16]`, so a discovery record only lines up with a Creator Library record when both email and display name match. `disc_creators` stores the computed id and both inputs, and the export path recomputes rather than trusting a stored value.
+
+**`creators.file_id` is `NOT NULL` with a cascade FK to `files`.** There is no way to insert a creator without a parent file row. So the push path creates a synthetic `files` row per discovery run (label `Discovery: <search name>`, `schema_id` `fgn_discovery`) and inserts against its id. This is a benefit rather than a workaround: it makes every discovery batch appear in the existing Creator Library file filter, and deleting the batch cascades cleanly.
+
+**`creators.source_search` already exists** and is populated from the Sideqik search name. Discovery writes the `disc_searches.name` into it, so the existing Creator Library filter-by-search keeps working with no UI change.
+
+**The Sideqik-column CSV export needs one correction to the plan.** `BuiltInSchema.detect` requires at least 3 of 5 signature columns: `Sideqik Score`, `Total Reach`, `YouTube Username`, `Twitch Avg EMV`, `Sideqik Connect Link`. Only the first two appear in `fixed_mapping`. **A naive export of the 17 mapped columns scores 2 hits and will not auto-detect**, so it falls through to the column wizard, which defeats the point. Two ways to fix it.
+
+| Option | Change | Trade-off |
+|---|---|---|
+| Emit `YouTube Username` as a third column | Zero changes to existing code | Works today, but the file claims to be a Sideqik export when it is not |
+| Register an `fgn_discovery` `BuiltInSchema` | One patch to `BUILT_IN_SCHEMAS` in `schemas.py` | Honest, self-documenting, and lets the discovery format evolve independently. **Recommended** |
+
+Exact header strings matter for either path, and two are easy to get wrong: the state column is `Province/State`, not `State`, and the link columns are `X Link` and `Facebook Link`.
+
+**All six platforms are already modeled.** `INTERNAL_FIELDS` carries `youtube_link`, `twitch_link`, `tiktok_link`, `instagram_link`, `x_link` and `facebook_link`, which is exactly the icon row Sideqik renders. The export contract is therefore wider than vidIQ can fill. Discovery populates YouTube, Instagram and TikTok, Twitch arrives in Phase 3, and X and Facebook stay empty unless parsed out of channel descriptions, which the live test showed is often possible (several test channels listed Twitter and Facebook URLs in their description text).
 
 ---
 
@@ -264,7 +292,17 @@ Reason bullets are generated deterministically from the matched criteria so they
 | Growth | 30-day and 1-year subscriber and view growth |
 | Brand safety | The in-house score from `brandsafe.py` |
 
-Mapped onto the existing `A_Priority`, `B_Core`, `C_Longtail` tiers, so `create_broadcast_from_creators` keeps working with no change.
+**`fgn_score` must stay on a 0 to 100 scale, because the tier thresholds are absolute.** From `processor._assign_tier`:
+
+```python
+if score >= 70 or reach >= 500_000:  return "A_Priority"
+if score >= 40 or reach >= 50_000:   return "B_Core"
+return "C_Longtail"
+```
+
+The `or` matters. A creator clears `A_Priority` on reach alone at 500k followers regardless of score, so a low-quality but large channel already tiers high today. That is existing behavior, not something the discovery module introduces, but it is worth deciding whether to keep it. If FGN wants match quality to gate tier rather than raw size, `_assign_tier` needs its own patch, and that is a change to send behavior for every existing campaign, so it should be an explicit decision rather than a side effect.
+
+Writing `fgn_score` into the existing `sideqik_score` column keeps `create_broadcast_from_creators` and its tier filtering working with no change.
 
 ---
 
@@ -300,11 +338,34 @@ Each phase ships something usable. Patcher waves follow the `operations.md` patt
 2. **Audience demographics.** Accept a labeled proxy, or license a vendor (Modash, Phyllo, InsightIQ)? This is the one gap money can close and prompting cannot.
 3. **Twitch priority.** Keep it in Phase 3, or pull it into Phase 2 given how Twitch-heavy the cohort is?
 4. **vidIQ access path.** Ask vidIQ about a REST key (Option B) in parallel with building against Option C?
-5. **Repos.** `FGN2025/fgn_creator_outreach` and `fgn_campaign_pipeline` are not attached to this session, and there is no SSH client or key in this container. Attach the repos so implementation patches are written against real file bytes rather than a summary.
+5. **Tier thresholds.** Keep the existing `or reach >= 500_000` rule that promotes large channels to `A_Priority` regardless of score, or gate tier on match quality? Changing it affects every existing campaign's send behavior, so it needs a deliberate answer.
+6. **Export format.** Register an `fgn_discovery` schema (recommended), or emit a third Sideqik signature column so the existing detector fires?
 
 ---
 
-## Section 14. Risks
+## Section 14. Verification status
+
+Both repos are now attached and cloned, so the plan above is checked against real code rather than a summary.
+
+| Repo | Commit | Read |
+|---|---|---|
+| `fgn2025/fgn_creator_outreach` | `a863fe1` | `outreach/db.py`, `outreach/schemas.py` |
+| `fgn2025/fgn_campaign_pipeline` | `4bce0ab` | `fgn_pipeline/processor.py` |
+
+Four assumptions the plan inherited from the skill summary were wrong and are now corrected above.
+
+| Assumption | Reality |
+|---|---|
+| UUID primary keys, Supabase-style | `INTEGER PRIMARY KEY AUTOINCREMENT`, JSON in `*_json TEXT` columns |
+| `Creator` has `youtube_reach` and separate per-platform link fields | `total_reach` plus a single `platform_links` dict, serialized to `platform_links_json` |
+| `creator_id` hashes the email | Hashes `f"{email}\|{name}"`, so name must match too |
+| A Sideqik-column CSV auto-detects on import | Scores only 2 of the 3 required signature hits. Needs a third column or a new registered schema |
+
+Still unverified, because it lives on the VPS rather than in either repo: whether Caddy can route a new public path to a FastAPI service on `127.0.0.1:8503` without disturbing the existing `outreach.fgn.gg` and `media.fgn.gg` routes. That is a Phase 4 concern, not a blocker for Phases 1 through 3.
+
+---
+
+## Section 15. Risks
 
 | Risk | Mitigation |
 |---|---|
