@@ -84,7 +84,17 @@ const TournamentCard = ({
               <>
                 <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mx-auto mb-1" />
                 <div className="font-heading text-sm font-semibold text-foreground">
-                  <PrizeDisplay prizeType={(t as any).prize_type} prizePool={t.prize_pool} compact />
+                  <PrizeDisplay
+                    prizeType={(t as any).prize_type}
+                    prizePool={t.prize_pool}
+                    format={t.format}
+                    pointsFirst={(t as any).points_first}
+                    pointsSecond={(t as any).points_second}
+                    pointsThird={(t as any).points_third}
+                    pointsParticipationLong={(t as any).points_participation_long}
+                    pointsParticipationShort={(t as any).points_participation_short}
+                    compact
+                  />
                 </div>
                 <p className="text-[10px] text-muted-foreground">{info.label}</p>
               </>

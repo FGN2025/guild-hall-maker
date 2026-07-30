@@ -120,6 +120,8 @@ const TournamentManage = () => {
     isSettingParticipationTier,
     awardPlayer,
     isAwardingPlayer,
+    awardParticipationTier,
+    isAwardingParticipationTier,
     revokeAward,
     isRevokingAward,
   } = useTournamentManagement(id);
@@ -183,13 +185,6 @@ const TournamentManage = () => {
   const pointsFirst = getPlacementPoints(tournament, 1);
   const pointsSecond = getPlacementPoints(tournament, 2);
   const pointsThird = getPlacementPoints(tournament, 3);
-  const allSelected = players.length > 0 && selected.length === players.length;
-  const applyTier = (tier: "long" | "short" | null) => {
-    setParticipationTier(
-      { userIds: selected, tier },
-      { onSuccess: () => setSelected([]) }
-    );
-  };
 
 
 
@@ -288,73 +283,28 @@ const TournamentManage = () => {
               ) : (
                 <div className="divide-y divide-border">
                   {isGameNight && (
-                    <div className="px-4 py-3 bg-muted/30 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-2 text-xs font-heading text-muted-foreground">
-                          <Checkbox
-                            checked={allSelected}
-                            onCheckedChange={(v) =>
-                              setSelected(v ? players.map((p) => p.user_id) : [])
-                            }
-                            aria-label="Select all players"
-                          />
-                          Select all
-                        </label>
-                        <span className="text-xs text-muted-foreground font-display">
-                          {selected.length} selected
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="font-heading border-primary/30 text-primary hover:bg-primary/10"
-                          disabled={selected.length === 0 || isSettingParticipationTier}
-                          onClick={() => applyTier("long")}
-                        >
-                          Mark Long ({tournament.points_participation_long ?? 0} pts)
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="font-heading border-accent/30 text-accent hover:bg-accent/10"
-                          disabled={selected.length === 0 || isSettingParticipationTier}
-                          onClick={() => applyTier("short")}
-                        >
-                          Mark Short ({tournament.points_participation_short ?? 0} pts)
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="font-heading text-muted-foreground"
-                          disabled={selected.length === 0 || isSettingParticipationTier}
-                          onClick={() => applyTier(null)}
-                        >
-                          Clear tier
-                        </Button>
-                      </div>
+                    <div className="px-4 py-3 bg-muted/30 flex flex-wrap items-center gap-4">
+                      <span className="text-xs font-heading text-muted-foreground">Key:</span>
+                      <span className="flex items-center gap-2 text-xs font-heading text-accent">
+                        <span className="h-3.5 w-3.5 rounded-[4px] border border-accent bg-accent/30" />
+                        Short — {tournament.points_participation_short ?? 0} pts
+                      </span>
+                      <span className="flex items-center gap-2 text-xs font-heading text-primary">
+                        <span className="h-3.5 w-3.5 rounded-[4px] border border-primary bg-primary/30" />
+                        Long — {tournament.points_participation_long ?? 0} pts
+                      </span>
                     </div>
                   )}
                   <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground font-display flex items-center justify-between">
                     <span>Player</span>
-                    <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> Participation</span>
+                    <span className="flex items-center gap-1">
+                      <UserCheck className="h-3 w-3" /> {isGameNight ? "Short / Long" : "Participation"}
+                    </span>
                   </div>
                   {players.map((p, idx) => (
                     <div key={p.user_id} className="px-4 py-3 space-y-2">
                       <div className="flex items-center gap-3">
-                        {isGameNight ? (
-                          <Checkbox
-                            checked={selected.includes(p.user_id)}
-                            onCheckedChange={(v) =>
-                              setSelected((prev) =>
-                                v ? [...prev, p.user_id] : prev.filter((x) => x !== p.user_id)
-                              )
-                            }
-                            aria-label={`Select ${p.display_name}`}
-                          />
-                        ) : (
-                          <span className="text-xs text-muted-foreground font-display w-6">{idx + 1}</span>
-                        )}
+                        <span className="text-xs text-muted-foreground font-display w-6">{idx + 1}</span>
                         <div className="min-w-0 flex-1">
                           <p className="font-heading text-sm text-foreground truncate">
                             {p.gamer_tag || p.display_name}
@@ -363,48 +313,65 @@ const TournamentManage = () => {
                             <p className="text-xs text-muted-foreground truncate">{p.display_name}</p>
                           )}
                         </div>
-                        {isGameNight && p.participation_tier && (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "capitalize text-[10px]",
-                              p.participation_tier === "long"
-                                ? "border-primary/30 text-primary bg-primary/10"
-                                : "border-accent/30 text-accent bg-accent/10"
-                            )}
-                          >
-                            {p.participation_tier}
-                          </Badge>
-                        )}
                         <div className="flex items-center gap-2">
                           {p.participation_points !== null && (
                             <span className="text-[10px] font-display text-success">
                               +{p.participation_points} pts
                             </span>
                           )}
-                          <Checkbox
-                            checked={p.participation_points !== null}
-                            disabled={isAwardingPlayer || isRevokingAward}
-                            onCheckedChange={(v) => {
-                              if (v) {
-                                if (isGameNight && !p.participation_tier) {
-                                  toast.error("Mark this player Long or Short first");
-                                  return;
+                          {isGameNight ? (
+                            (["short", "long"] as const).map((tier) => {
+                              const awarded =
+                                p.participation_points !== null && p.participation_tier === tier;
+                              return (
+                                <Checkbox
+                                  key={tier}
+                                  checked={awarded}
+                                  disabled={
+                                    isAwardingParticipationTier ||
+                                    isAwardingPlayer ||
+                                    isRevokingAward
+                                  }
+                                  className={cn(
+                                    tier === "short"
+                                      ? "border-accent data-[state=checked]:bg-accent data-[state=checked]:border-accent data-[state=checked]:text-accent-foreground"
+                                      : "border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:text-primary-foreground"
+                                  )}
+                                  onCheckedChange={(v) => {
+                                    if (v) {
+                                      awardParticipationTier({
+                                        userId: p.user_id,
+                                        tier,
+                                        hasExistingAward: p.participation_points !== null,
+                                      });
+                                    } else {
+                                      revokeAward({ userId: p.user_id, scope: "participation" });
+                                    }
+                                  }}
+                                  aria-label={`Award ${tier} participation points to ${p.display_name}`}
+                                />
+                              );
+                            })
+                          ) : (
+                            <Checkbox
+                              checked={p.participation_points !== null}
+                              disabled={isAwardingPlayer || isRevokingAward}
+                              onCheckedChange={(v) => {
+                                if (v) {
+                                  awardPlayer({
+                                    userId: p.user_id,
+                                    award: "participation" as PlayerAward,
+                                  });
+                                } else {
+                                  revokeAward({ userId: p.user_id, scope: "participation" });
                                 }
-                                awardPlayer({
-                                  userId: p.user_id,
-                                  award: (isGameNight
-                                    ? `participation_${p.participation_tier}`
-                                    : "participation") as PlayerAward,
-                                });
-                              } else {
-                                revokeAward({ userId: p.user_id, scope: "participation" });
-                              }
-                            }}
-                            aria-label="Award participation points"
-                          />
+                              }}
+                              aria-label="Award participation points"
+                            />
+                          )}
                         </div>
                       </div>
+
 
                       {!isGameNight && (
                         p.placement ? (
@@ -452,11 +419,11 @@ const TournamentManage = () => {
                   ))}
 
                   <div className="px-4 py-2 text-[11px] text-muted-foreground/80 font-body bg-muted/20">
-                    Tick a player to award participation points. Placement points are additive — award
-                    1st/2nd/3rd on top of participation with the dropdown.
-                    {isGameNight &&
-                      " For Game Nights, select players and use Mark Long / Mark Short to set their participation tier before ticking them."}
+                    {isGameNight
+                      ? "Tick the purple box to award Short participation points, or the cyan box for Long. Only one tier applies per player — ticking the other swaps the award."
+                      : "Tick a player to award participation points. Placement points are additive — award 1st/2nd/3rd on top of participation with the dropdown."}
                   </div>
+
 
                 </div>
               )}
