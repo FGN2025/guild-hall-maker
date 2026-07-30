@@ -120,6 +120,8 @@ const TournamentManage = () => {
     isSettingParticipationTier,
     awardPlayer,
     isAwardingPlayer,
+    awardParticipationTier,
+    isAwardingParticipationTier,
     revokeAward,
     isRevokingAward,
   } = useTournamentManagement(id);
