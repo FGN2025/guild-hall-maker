@@ -3,9 +3,12 @@ import { Trophy, Gift } from "lucide-react";
 interface PrizeDisplayProps {
   prizeType?: string | null;
   prizePool?: string | null;
-  pointsFirst?: number;
-  pointsSecond?: number;
-  pointsThird?: number;
+  format?: string | null;
+  pointsFirst?: number | null;
+  pointsSecond?: number | null;
+  pointsThird?: number | null;
+  pointsParticipationLong?: number | null;
+  pointsParticipationShort?: number | null;
   prizePctFirst?: number;
   prizePctSecond?: number;
   prizePctThird?: number;
@@ -13,23 +16,23 @@ interface PrizeDisplayProps {
   compact?: boolean;
 }
 
+const isGameNightFormat = (format?: string | null) =>
+  (format ?? "").toLowerCase().replace(/[\s_-]/g, "").includes("gamenight");
+
 const PrizeDisplay = ({
   prizeType,
   prizePool,
-  pointsFirst = 10,
-  pointsSecond = 5,
-  pointsThird = 3,
-  prizePctFirst = 50,
-  prizePctSecond = 30,
-  prizePctThird = 20,
+  format,
+  pointsFirst,
+  pointsSecond,
+  pointsThird,
+  pointsParticipationLong,
+  pointsParticipationShort,
   compact = false,
 }: PrizeDisplayProps) => {
   const type = prizeType ?? "none";
 
-  if (type === "none" || (!prizePool && type !== "physical")) {
-    return <span className="text-muted-foreground">{compact ? "—" : "No Prize"}</span>;
-  }
-
+  // Physical prizes always win — show the item name.
   if (type === "physical") {
     if (compact) {
       return (
@@ -47,33 +50,53 @@ const PrizeDisplay = ({
     );
   }
 
-  // value type
-  const numericValue = parseFloat((prizePool ?? "").replace(/[^0-9.]/g, ""));
-  const pctSum = prizePctFirst + prizePctSecond + prizePctThird;
-  const hasBreakdown = !isNaN(numericValue) && numericValue > 0 && pctSum === 100;
+  const gameNight = isGameNightFormat(format);
+  const long = pointsParticipationLong ?? 0;
+  const short = pointsParticipationShort ?? 0;
+  const first = pointsFirst ?? 0;
+  const second = pointsSecond ?? 0;
+  const third = pointsThird ?? 0;
+
+  const totalPoints = gameNight ? long : first + second + third;
+
+  // Legacy fallback: older tournaments that stored a numeric point pool.
+  const legacyPool = parseFloat((prizePool ?? "").replace(/[^0-9.]/g, ""));
+  const effectivePoints =
+    totalPoints > 0 ? totalPoints : !isNaN(legacyPool) && legacyPool > 0 ? legacyPool : 0;
+
+  if (effectivePoints <= 0) {
+    return <span className="text-muted-foreground">{compact ? "—" : "No Prize"}</span>;
+  }
 
   if (compact) {
-    return <span>{prizePool} pts</span>;
+    return <span>{effectivePoints} pts</span>;
   }
+
+  const tiers = gameNight
+    ? [
+        { label: "Long Session", value: long },
+        { label: "Short Session", value: short },
+      ]
+    : [
+        { label: "1st", value: first },
+        { label: "2nd", value: second },
+        { label: "3rd", value: third },
+      ];
+
+  const hasBreakdown = tiers.some((t) => t.value > 0);
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Trophy className="h-4 w-4 text-primary" />
-        <span className="font-heading font-semibold text-foreground">{prizePool} pts</span>
+        <span className="font-heading font-semibold text-foreground">{effectivePoints} pts</span>
       </div>
       {hasBreakdown && (
-        <div className="grid grid-cols-3 gap-2 text-center">
-          {[
-            { label: "1st", pct: prizePctFirst },
-            { label: "2nd", pct: prizePctSecond },
-            { label: "3rd", pct: prizePctThird },
-          ].map((tier) => (
+        <div className={`grid gap-2 text-center ${gameNight ? "grid-cols-2" : "grid-cols-3"}`}>
+          {tiers.map((tier) => (
             <div key={tier.label} className="bg-muted rounded-lg p-2">
               <p className="text-[10px] text-muted-foreground">{tier.label}</p>
-              <p className="font-heading text-xs font-semibold text-foreground">
-                {Math.round(numericValue * (tier.pct / 100))} pts
-              </p>
+              <p className="font-heading text-xs font-semibold text-foreground">{tier.value} pts</p>
             </div>
           ))}
         </div>
