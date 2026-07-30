@@ -185,12 +185,12 @@ const TournamentDetail = () => {
                   <PrizeDisplay
                     prizeType={t.prize_type}
                     prizePool={t.prize_pool}
+                    format={t.format}
                     pointsFirst={t.points_first}
                     pointsSecond={t.points_second}
                     pointsThird={t.points_third}
-                    prizePctFirst={(t as any).prize_pct_first}
-                    prizePctSecond={(t as any).prize_pct_second}
-                    prizePctThird={(t as any).prize_pct_third}
+                    pointsParticipationLong={(t as any).points_participation_long}
+                    pointsParticipationShort={(t as any).points_participation_short}
                   />
                 </div>
             </div>
