@@ -740,6 +740,8 @@ export const useTournamentManagement = (tournamentId: string | undefined) => {
     isAwardingPlayer: awardPlayerMutation.isPending,
     revokeAward: revokeAwardMutation.mutate,
     isRevokingAward: revokeAwardMutation.isPending,
+    awardParticipationTier: awardParticipationTierMutation.mutate,
+    isAwardingParticipationTier: awardParticipationTierMutation.isPending,
   };
 
 };
