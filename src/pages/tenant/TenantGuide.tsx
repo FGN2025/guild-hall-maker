@@ -29,6 +29,7 @@ import {
   CreditCard,
   Cloud,
   Route,
+  Trophy,
 } from "lucide-react";
 import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
