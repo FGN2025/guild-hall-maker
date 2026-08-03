@@ -1,38 +1,63 @@
-## Goal
+# Tenant Challenge Scheduling & Promotion
 
-Show real point values as the prize on tournament cards/detail (since the point-pool field was removed), and rework Game Night participation awarding into two colored checkmarks per player.
+Let tenant admins and tenant marketing staff take challenges from the platform catalog, open them to their own players for a specific date window, and generate promo assets from them — without giving tenants the ability to author challenge content.
 
-## 1. Prize display driven by placement points
+## Effort assessment
 
-`src/components/tournaments/PrizeDisplay.tsx` — add a points-based mode:
-- New props: `format`, `pointsParticipationLong`, `pointsParticipationShort`.
-- Physical prize still wins (shows the item name).
-- Game Night: prize value = long participation points, e.g. `10 pts`.
-- All other formats: prize value = `pointsFirst + pointsSecond + pointsThird` (defaults 15/9/6 → `30 pts`).
-- If all point fields are 0 and no physical prize, keep showing "No Prize" / "—".
+Medium. Roughly one focused build session. No changes to challenge authoring, points, tasks, or evidence review. The work is one new table, one enrollment gate, one tenant page, and a Quick Create source addition.
 
-`src/components/tournaments/TournamentCard.tsx` — pass the format and all point fields into `PrizeDisplay` (the query already selects `*`).
+| Area | Effort |
+| --- | --- |
+| Database (new scheduling table + access rules) | Small |
+| Enrollment window enforcement | Medium — touches shared player-facing enrollment path |
+| Tenant scheduling page | Medium |
+| Quick Create parity for challenges | Small-Medium |
 
-## 2. Tournament detail page
+## What tenants get
 
-`src/pages/TournamentDetail.tsx` — pass the same new props. In the "Prize Pool" block:
-- Non-Game-Night: keep the 1st/2nd/3rd breakdown but source it from the explicit `points_first/second/third` columns instead of the old percentage math.
-- Game Night: replace the 1st/2nd/3rd breakdown with two tiles — "Long Session — {points_participation_long} pts" and "Short Session — {points_participation_short} pts".
+**Tenant admin / tenant marketing** see a new **Challenges** page in the tenant sidebar:
 
-## 3. Manage page — Game Night awarding
+- Browse the active platform challenge catalog (read-only content — name, game, difficulty, points, tasks).
+- Schedule one into a window: start date, end date, optional headline and promo blurb, optional featured flag.
+- See their scheduled windows as a list with status (Upcoming / Open / Closed) and edit or cancel them.
+- Quick Create (lightning icon) on any scheduled challenge generates a promo asset and a linked draft campaign, exactly like tenant events do today.
 
-`src/pages/TournamentManage.tsx` (Game Night branch only; non-Game-Night UI unchanged):
-- Replace the "Mark Long / Mark Short / Clear tier / Select all" bulk bar with a static legend: a cyan swatch "Long = {points_participation_long} pts" and a purple swatch "Short = {points_participation_short} pts".
-- Remove the select-checkbox to the left of each player name (row shows index number like other formats).
-- Add two checkboxes on the right of each row: purple = Short, cyan = Long.
-  - Clicking one sets that player's participation tier and awards those points in a single action.
-  - The two are mutually exclusive: checking one when the other is set revokes the previous participation award and applies the new one.
-  - Unchecking revokes the participation award and clears the tier.
-- Keep the "+N pts" awarded indicator; keep the placement dropdown hidden for Game Nights as it is today.
-- Update the footer helper text to describe the new two-checkbox flow.
+**Players in that tenant** see the challenge marked with its availability window and can only enroll while the window is open.
 
-## Technical notes
+## Enforcement rule
 
-- No database or edge-function changes. Awarding still calls `awardPlayer` with `participation_long` / `participation_short` and `revokeAward` with `scope: "participation"`; tier setting still uses the existing `setParticipationTier` mutation, now driven per-row instead of by bulk selection.
-- Purple/cyan use existing semantic tokens (`accent` for purple, `primary` for cyan) — no hardcoded color utilities.
-- Older tournaments with a legacy `prize_type = 'value'` pool keep rendering that value as a fallback when explicit points are all zero.
+A tenant challenge window is a hard gate for that tenant's players:
+
+- Before start: challenge shows "Opens Aug 10" and the enroll button is disabled.
+- During window: normal enrollment and submission.
+- After end: enrollment closed; already-enrolled players keep access to finish and submit evidence (closing a window must not strand in-flight work).
+- Players with no tenant, and platform staff, are unaffected — the existing global `start_date` / `end_date` on the challenge still applies to them.
+
+## Technical detail
+
+**New table `public.tenant_challenge_schedules`**
+- `tenant_id`, `challenge_id`, `starts_at`, `ends_at`, `headline`, `promo_copy`, `is_featured`, `created_by`
+- Unique on (`tenant_id`, `challenge_id`, `starts_at`) so re-runs of the same challenge in a later window are allowed
+- Grants: `SELECT, INSERT, UPDATE, DELETE` to `authenticated`; `SELECT` to `anon` (windows are public promo info, consistent with the existing anon read of active challenges); `ALL` to `service_role`
+- RLS: read allowed for anyone; write restricted to `is_tenant_admin_or_manager(tenant_id, auth.uid())` or `is_tenant_marketing_member(tenant_id, auth.uid())`, plus platform `admin` / `moderator`
+- Validation trigger enforcing `ends_at > starts_at` and that the referenced challenge is active (trigger, not CHECK, since it is data-dependent)
+
+**Enrollment gate**
+- New security-definer function `challenge_window_open(_challenge_id uuid, _user_id uuid)` — resolves the user's tenant via the existing `get_user_tenant`, returns true when there is no schedule row for that tenant/challenge, or when `now()` falls inside one
+- Add it to the `challenge_enrollments` INSERT policy alongside `auth.uid() = user_id`. Existing UPDATE policies are left alone so in-flight enrollments can still be completed after a window closes
+- `useChallengeEnrollment` and `ChallengeDetail` / `ChallengeCard` read the window and disable the enroll action with a reason, so the RLS rejection is never the first thing a player hits
+
+**Tenant UI**
+- `src/pages/tenant/TenantChallenges.tsx` plus `src/hooks/useTenantChallengeSchedules.ts` (list / create / update / delete, following `useTenantEvents`)
+- Route `/tenant/challenges` guarded the same way `/tenant/marketing` is; sidebar entry added
+- Date inputs use the shadcn date picker pattern
+
+**Quick Create parity**
+- Add `source_challenge_id` to `marketing_campaigns` (nullable, FK to `challenges`) so challenge-sourced campaigns are linkable the way event- and tournament-sourced ones are
+- `TenantPromoPickerDialog` gains a Challenges tab: same `composePromoLayout` scene, fed from the scheduled challenge (name, game, window start, points total as the prize line), same idempotency-keyed draft campaign creation
+
+## Explicitly out of scope
+
+- Tenants creating, editing, or deleting challenge content or tasks
+- Tenant-specific point values or evidence rules
+- Tenant-scoped challenge leaderboards
