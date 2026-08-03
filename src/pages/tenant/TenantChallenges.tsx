@@ -84,6 +84,7 @@ const TenantChallenges = () => {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
+  const [headlineTouched, setHeadlineTouched] = useState(false);
 
   const filteredCatalog = useMemo(() => {
     if (!search) return catalog;
