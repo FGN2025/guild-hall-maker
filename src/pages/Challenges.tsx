@@ -243,6 +243,8 @@ const Challenges = () => {
                       key={c.id}
                       challenge={c}
                       enrollmentCount={(enrollmentCounts as any)[c.id] || 0}
+                      windowLabel={challengeWindows[c.id]?.label ?? null}
+                      windowOpen={challengeWindows[c.id]?.open}
                     />
                   ))}
                 </div>
