@@ -226,6 +226,30 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     setReviewOpen(true);
   }
 
+  /** Open the shared image editor on a pending draft so reviewers can fix
+   *  small issues (typos, framing) instead of rejecting the whole draft. */
+  function openEditor(a: EditTarget) {
+    setEditTarget(a);
+  }
+
+  const handleEditorSave = async (blob: Blob, meta?: AssetSaveMeta) => {
+    if (!editTarget) return;
+    const file = new File([blob], `review-edit-${Date.now()}.png`, { type: "image/png" });
+    await uploadAsset.mutateAsync({
+      file,
+      label: editTarget.label ?? editTarget.file_name ?? "Reviewed asset",
+      sourceAssetId: editTarget.id ?? undefined,
+      campaignId: editTarget.campaign_id ?? undefined,
+      overlayConfig: meta?.overlayConfig ?? null,
+      backgroundUrl: meta?.backgroundUrl ?? editTarget.source_url ?? null,
+    });
+    setEditTarget(null);
+    qc.invalidateQueries({ queryKey: ["agent_drafts", tenantId] });
+    qc.invalidateQueries({ queryKey: ["agent_drafts_linked_assets", tenantId] });
+    qc.invalidateQueries({ queryKey: ["tenant_pending_review_count", tenantId] });
+  };
+
+
   const onDecide = (row: DraftRow, approve: boolean) =>
     decide.mutate({ row, approve, note: feedbackById[row.id] });
 
