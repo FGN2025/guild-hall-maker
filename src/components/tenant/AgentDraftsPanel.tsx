@@ -329,7 +329,11 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
-                  <span>Updated {formatDistanceToNow(new Date(row.updated_at), { addSuffix: true })} · {row.agent_source ?? "agent"}</span>
+                  <span>Updated {formatDistanceToNow(new Date(row.updated_at), { addSuffix: true })}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {row.agent_source ? `AI · ${row.agent_source}` : "Quick Promo"}
+                  </Badge>
+
                   {linkedLabel && (
                     <Badge variant="outline" className="text-xs gap-1">
                       <Link2 className="h-3 w-3" /> Linked to: {linkedLabel}
