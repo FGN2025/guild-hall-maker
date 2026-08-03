@@ -61,7 +61,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
         description: `Promo campaign created from the event "${evt.name}".`,
         category: "social_media",
         tenant_id: tenantId,
-        status: "draft",
+        status: "pending_review",
         source_event_id: evt.id,
         idempotency_key: `promo:${tenantId}:${evt.id}`,
       });
