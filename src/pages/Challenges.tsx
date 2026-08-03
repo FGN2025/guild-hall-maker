@@ -34,6 +34,7 @@ const Challenges = () => {
     },
   });
 
+  const { data: challengeWindows = {} } = useMyChallengeWindows();
   const { data: enrollmentCounts = {} } = useQuery({
     queryKey: ["challenge-enrollment-counts"],
     queryFn: async () => {
