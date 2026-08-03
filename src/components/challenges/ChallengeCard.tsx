@@ -10,6 +10,10 @@ import { getSkillLabel } from "@/lib/skillTaxonomy";
 interface ChallengeCardProps {
   challenge: any;
   enrollmentCount?: number;
+  /** Provider-scheduled availability, e.g. "Aug 1 – Aug 20" or "Closed Aug 20". */
+  windowLabel?: string | null;
+  /** True when the provider window is currently open. */
+  windowOpen?: boolean;
 }
 
 const difficultyColor: Record<string, string> = {
