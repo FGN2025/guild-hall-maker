@@ -410,13 +410,16 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                   </div>
                 )}
 
-                <Textarea
-                  placeholder="Optional feedback for the agent (required-ish on reject)"
-                  value={feedbackById[row.id] ?? ""}
-                  onChange={(e) => setFeedbackById((m) => ({ ...m, [row.id]: e.target.value }))}
-                  rows={2}
-                  className="text-sm"
-                />
+                {canDecide && (
+                  <Textarea
+                    placeholder="Optional feedback for the creator (required-ish on reject)"
+                    value={feedbackById[row.id] ?? ""}
+                    onChange={(e) => setFeedbackById((m) => ({ ...m, [row.id]: e.target.value }))}
+                    rows={2}
+                    className="text-sm"
+                  />
+                )}
+
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
