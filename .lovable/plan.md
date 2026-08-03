@@ -22,6 +22,24 @@ Behavior:
 - Track a `headlineTouched` flag in component state so the auto-fill stops after manual edits; reset it in `openCreate`/`openEdit`.
 - No database or hook changes; `handleSave` and Quick Promo composition stay as-is.
 
+# Edit from the review queue
+
+## The change
+
+Next to each asset preview in the Marketing > Review queue, add an **Edit image** button beside the existing "Review asset" button. Clicking it opens the same image editor used elsewhere in the marketing library, loaded with that draft's image, so a reviewer can fix a typo or tweak the design instead of rejecting and sending it back.
+
+Behavior:
+- Available on asset rows, on linked campaign assets, and on scheduled-post images.
+- Saving from the editor creates a new asset revision linked to the same campaign, still unpublished/pending review — it does not auto-approve.
+- Only reviewers who can approve (tenant Admin/Manager) see the Edit button; Marketing-only staff keep view-only access.
+- The review queue refreshes after a save so the updated image shows.
+
+## Technical notes
+
+- Files: `src/components/tenant/AgentDraftsPanel.tsx` (button + dialog state), reusing `src/components/media/AssetEditorDialog.tsx` with `baseImageUrl` set to the asset's `source_url ?? url`.
+- On save, call `useTenantMarketingAssets().uploadAsset` with the original `campaignId`, `sourceAssetId`, and the returned `overlayConfig`/`backgroundUrl`, then invalidate the review-queue queries.
+
 ## Not included
 
 The existing "Acem ATS Challenge" record is left as-is per this plan. Say the word if you also want it corrected and the promo regenerated.
+
