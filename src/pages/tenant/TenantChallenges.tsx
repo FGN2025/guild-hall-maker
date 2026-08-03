@@ -371,11 +371,20 @@ const TenantChallenges = () => {
             <div className="space-y-2">
               <Label>Headline (optional)</Label>
               <Input
-                value={form.headline}
-                onChange={(e) => setForm({ ...form, headline: e.target.value })}
-                placeholder="August Fiber Sprint"
+                value={headlineTouched ? form.headline : form.headline || defaultHeadline}
+                onChange={(e) => {
+                  setHeadlineTouched(true);
+                  setForm({ ...form, headline: e.target.value });
+                }}
+                placeholder={defaultHeadline || "August Fiber Sprint"}
               />
+              {!headlineTouched && defaultHeadline && (
+                <p className="text-xs text-muted-foreground">
+                  Auto-filled from your provider name and the challenge. Edit it if you want something different.
+                </p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label>Promo copy (optional)</Label>
               <Textarea
