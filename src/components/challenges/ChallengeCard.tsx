@@ -60,6 +60,14 @@ const ChallengeCard = ({ challenge, enrollmentCount = 0, windowLabel, windowOpen
         </div>
         <CardContent className="p-4 space-y-3">
           <h3 className="font-display font-semibold text-foreground line-clamp-1">{c.name}</h3>
+          {windowLabel && (
+            <Badge
+              variant="outline"
+              className={`text-[11px] ${windowOpen ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
+            >
+              {windowLabel}
+            </Badge>
+          )}
           {c.description && (
             <p className="text-sm text-muted-foreground font-body line-clamp-2">{c.description}</p>
           )}
