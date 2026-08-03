@@ -22,7 +22,7 @@ const difficultyColor: Record<string, string> = {
   advanced: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
-const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) => {
+const ChallengeCard = ({ challenge, enrollmentCount = 0, windowLabel, windowOpen }: ChallengeCardProps) => {
   const c = challenge;
   const { isAdmin } = useAuth();
   const gameName = c.games?.name;
