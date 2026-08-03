@@ -266,7 +266,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
       </p>
 
       {rows.length === 0 && (
-        <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">No agent drafts yet.</CardContent></Card>
+        <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">Nothing waiting for review.</CardContent></Card>
       )}
 
       {groups.map((group) => {
@@ -278,7 +278,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
               {weekLabel(group.start)}
             </h3>
             <Badge variant="outline" className="text-xs">{group.rows.length}</Badge>
-            {groupPending.length > 0 && (
+            {canDecide && groupPending.length > 0 && (
               <Button
                 size="sm"
                 variant="outline"
