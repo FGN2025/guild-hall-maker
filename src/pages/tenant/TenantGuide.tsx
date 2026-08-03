@@ -29,10 +29,23 @@ import {
   CreditCard,
   Cloud,
   Route,
+  Trophy,
 } from "lucide-react";
 import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
+  {
+    id: "whats-new-2026-08-03",
+    icon: Bell,
+    title: "What's New — August 3, 2026",
+    bullets: [
+      "Challenges in the Tenant Portal — A new Challenges page (/tenant/challenges) lets Admins, Managers, and Marketing staff schedule platform challenges for their own players and promote them. You do not author challenge content; you open an existing platform challenge for a date window.",
+      "Date Windows Gate Enrollment — Once you schedule a challenge, your players can only enroll between the Opens and Closes dates you set. Players outside your tenant are unaffected, and challenges you have not scheduled stay open as normal.",
+      "Quick Promo for Challenges — Each scheduled challenge has a Quick Promo button that renders a branded promo image (using your logo colors, the challenge cover art, the total placement points, and the window start date) and files it in your Marketing library as a draft campaign.",
+      "Prize Value on Promos — Challenge promos show the summed 1st + 2nd + 3rd placement points as the prize value, matching how tournament promos now derive their prize figure.",
+      "Player-Facing Window Badges — Challenge cards and the challenge detail page show your window ('Open until Aug 20', 'Opens Aug 12', 'Closed Aug 20'), and the Enroll button is disabled with the reason when the window is not open.",
+    ],
+  },
   {
     id: "whats-new-2026-07-24",
     icon: Bell,
@@ -69,8 +82,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "The Tenant Portal supports three roles: Admin, Manager, and Marketing.",
       "Admin — Full access to all features including ZIP codes, subscribers, integrations, team management, codes, web pages, and settings.",
-      "Manager — Access to Dashboard, Player Directory, Leads, Events, and Marketing campaigns. ZIP Codes, Subscribers, Integrations (NISC / GLDS / FGN Academy), Tenant Codes, Web Pages, Team Management, and Settings are Admin-only and not visible to Managers.",
-      "Marketing — Access to Marketing campaigns, My Assets, Web Pages, and read-only visibility of Tenant Codes. Ideal for team members focused on promotional content.",
+      "Manager — Access to Dashboard, Player Directory, Leads, Events, Challenges, and Marketing campaigns. ZIP Codes, Subscribers, Integrations (NISC / GLDS / FGN Academy), Tenant Codes, Web Pages, Team Management, and Settings are Admin-only and not visible to Managers.",
+      "Marketing — Access to Marketing campaigns, My Assets, Web Pages, Events, Challenges, and read-only visibility of Tenant Codes. Ideal for team members focused on promotional content.",
       "Role Assignment — Admins invite team members by display name or email and assign roles from the Team page.",
     ],
   },
@@ -142,6 +155,24 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Social Copy — Add pre-written social media copy to events for easy sharing by your team.",
       "Editing — Update any event detail at any time. Changes to published events are reflected immediately on the public page.",
       "Tenant Branding — Public event pages automatically apply your logo and brand colors (via CSS variables) for a professional, branded appearance.",
+    ],
+  },
+  {
+    id: "challenges",
+    icon: Trophy,
+    title: "Challenges",
+    bullets: [
+      "Navigate to Challenges (/tenant/challenges) to schedule and promote platform challenges for your players. Available to Admin, Manager, and Marketing roles.",
+      "Schedule, Don't Author — Challenge content (tasks, evidence rules, point values, skill tags) is authored by FGN platform staff. Your job is to decide which challenges your players see and when they can take them.",
+      "Platform Challenge Catalog — The lower half of the page lists every active platform challenge with its game, difficulty, and total placement points. Use the search box to filter by challenge or game name, then click Schedule.",
+      "Setting a Window — Pick an Opens date and a Closes date. The Closes date must be after the Opens date. This window is enforced at enrollment: your players cannot enroll before it opens or after it closes.",
+      "Headline & Promo Copy — Optionally override the display headline (for example 'August Fiber Sprint') and add promo copy that feeds your marketing drafts. Both are optional; leaving them blank uses the platform challenge name.",
+      "Feature for My Players — Toggle this to highlight the challenge for your tenant's audience.",
+      "Status Badges — Each scheduled window shows as Upcoming, Open, or Closed based on today's date. Statuses update automatically; there is no manual publish step.",
+      "Quick Promo — One click renders a branded promo image using your logo colors, the challenge cover art, the total 1st + 2nd + 3rd placement points as the prize value, and the window start date. The image lands in My Assets and is linked to a new draft campaign in Marketing.",
+      "Edit & Remove — Edit adjusts dates, headline, promo copy, and the featured flag (the challenge itself cannot be swapped — remove and re-schedule instead). Remove deletes the window; existing player enrollments are kept and simply stop being date-gated.",
+      "What Players See — On the Challenges list and detail pages, your players see a badge with your window ('Open until Aug 20', 'Opens Aug 12', 'Closed Aug 20'). Outside the window the Enroll button is disabled and shows the reason.",
+      "Scope — Your window only affects players tied to your tenant. Players with no provider, or in other tenants, are unaffected. A challenge you have not scheduled behaves normally for your players.",
     ],
   },
   {
