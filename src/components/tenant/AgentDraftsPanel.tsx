@@ -1,17 +1,31 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useMemo, useState } from "react";
-import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarClock, Eye, Link2 } from "lucide-react";
+import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarClock, Eye, Link2, Pencil } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
+import AssetEditorDialog, { type AssetSaveMeta } from "@/components/media/AssetEditorDialog";
+import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+/** Image a reviewer chose to open in the editor. */
+interface EditTarget {
+  id?: string | null;
+  campaign_id?: string | null;
+  file_name?: string | null;
+  label?: string | null;
+  url: string;
+  source_url?: string | null;
+  overlay_config?: Record<string, any> | null;
+}
+
 
 type Kind = "campaign" | "scheduled_post" | "asset";
 
