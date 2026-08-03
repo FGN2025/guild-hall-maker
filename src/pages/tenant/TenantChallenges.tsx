@@ -25,7 +25,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { composePromoLayout } from "@/lib/promo/composePromoLayout";
 import { renderPromoSceneToBlob } from "@/lib/promo/renderPromoBrowser";
-import { usePageTitle } from "@/hooks/usePageTitle";
+import usePageTitle from "@/hooks/usePageTitle";
 import { toast } from "sonner";
 
 const statusStyles: Record<string, string> = {
