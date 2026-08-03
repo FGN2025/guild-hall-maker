@@ -285,6 +285,7 @@ const App = () => (
               <Route path="/tenant/marketing" element={<TenantRoute><TenantMarketing /></TenantRoute>} />
               <Route path="/tenant/marketing/:id" element={<TenantRoute><TenantMarketingDetail /></TenantRoute>} />
               <Route path="/tenant/events" element={<TenantRoute><TenantEvents /></TenantRoute>} />
+              <Route path="/tenant/challenges" element={<TenantRoute><TenantChallenges /></TenantRoute>} />
               <Route path="/tenant/codes" element={<TenantRoute requiredRoles={["admin"]}><TenantCodes /></TenantRoute>} />
               <Route path="/tenant/guide" element={<TenantRoute><TenantGuide /></TenantRoute>} />
 
