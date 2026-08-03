@@ -56,6 +56,7 @@ const ChallengeDetail = () => {
     deleteEvidence, deletingEvidence,
     unenroll, unenrolling,
   } = useChallengeEnrollment(id);
+  const challengeWindow = useChallengeWindow(id);
 
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
