@@ -34,6 +34,18 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-08-03",
+    icon: Bell,
+    title: "What's New — August 3, 2026",
+    bullets: [
+      "Challenges in the Tenant Portal — A new Challenges page (/tenant/challenges) lets Admins, Managers, and Marketing staff schedule platform challenges for their own players and promote them. You do not author challenge content; you open an existing platform challenge for a date window.",
+      "Date Windows Gate Enrollment — Once you schedule a challenge, your players can only enroll between the Opens and Closes dates you set. Players outside your tenant are unaffected, and challenges you have not scheduled stay open as normal.",
+      "Quick Promo for Challenges — Each scheduled challenge has a Quick Promo button that renders a branded promo image (using your logo colors, the challenge cover art, the total placement points, and the window start date) and files it in your Marketing library as a draft campaign.",
+      "Prize Value on Promos — Challenge promos show the summed 1st + 2nd + 3rd placement points as the prize value, matching how tournament promos now derive their prize figure.",
+      "Player-Facing Window Badges — Challenge cards and the challenge detail page show your window ('Open until Aug 20', 'Opens Aug 12', 'Closed Aug 20'), and the Enroll button is disabled with the reason when the window is not open.",
+    ],
+  },
+  {
     id: "whats-new-2026-07-24",
     icon: Bell,
     title: "What's New — July 24, 2026",
