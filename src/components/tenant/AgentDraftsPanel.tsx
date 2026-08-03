@@ -422,34 +422,78 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                         <Eye className="h-4 w-4 mr-1" /> Review asset
                       </Button>
                     )}
-                    {row.kind === "scheduled_post" && row.image_url && !linked.length && (
-                      <Button variant="outline" size="sm" onClick={() => openReview({
-                        file_name: `${row.platform ?? "post"} image`,
-                        url: row.image_url,
-                        agent_source: row.agent_source,
-                        contextTitle: row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : undefined,
+                    {canDecide && row.kind === "asset" && row.url && (
+                      <Button variant="outline" size="sm" onClick={() => openEditor({
+                        id: row.id,
+                        campaign_id: row.campaign_id,
+                        file_name: row.file_name,
+                        label: row.label,
+                        url: row.url,
+                        source_url: row.source_url,
                       })}>
-                        <Eye className="h-4 w-4 mr-1" /> Review post image
+                        <Pencil className="h-4 w-4 mr-1" /> Edit image
                       </Button>
                     )}
+                    {row.kind === "scheduled_post" && row.image_url && !linked.length && (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => openReview({
+                          file_name: `${row.platform ?? "post"} image`,
+                          url: row.image_url,
+                          agent_source: row.agent_source,
+                          contextTitle: row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : undefined,
+                        })}>
+                          <Eye className="h-4 w-4 mr-1" /> Review post image
+                        </Button>
+                        {canDecide && (
+                          <Button variant="outline" size="sm" onClick={() => openEditor({
+                            campaign_id: row.campaign_id,
+                            file_name: `${row.platform ?? "post"} image`,
+                            label: `${row.platform ?? "Post"} image`,
+                            url: row.image_url!,
+                          })}>
+                            <Pencil className="h-4 w-4 mr-1" /> Edit image
+                          </Button>
+                        )}
+                      </>
+                    )}
                     {linked.map((a) => (
-                      <Button key={a.id} variant="outline" size="sm" onClick={() => openReview({
-                        id: a.id,
-                        file_name: a.file_name,
-                        label: a.label,
-                        file_path: a.file_path,
-                        url: a.url,
-                        source_url: a.source_url,
-                        campaign_id: a.campaign_id,
-                        is_published: a.is_published,
-                        agent_source: a.agent_source,
-                        notes: a.notes,
-                        contextTitle: row.kind === "campaign" ? row.title ?? undefined : undefined,
-                      })}>
-                        <Eye className="h-4 w-4 mr-1" /> {a.label ?? a.file_name ?? "asset"}
-                      </Button>
+                      <div key={a.id} className="flex gap-1">
+                        <Button variant="outline" size="sm" onClick={() => openReview({
+                          id: a.id,
+                          file_name: a.file_name,
+                          label: a.label,
+                          file_path: a.file_path,
+                          url: a.url,
+                          source_url: a.source_url,
+                          campaign_id: a.campaign_id,
+                          is_published: a.is_published,
+                          agent_source: a.agent_source,
+                          notes: a.notes,
+                          contextTitle: row.kind === "campaign" ? row.title ?? undefined : undefined,
+                        })}>
+                          <Eye className="h-4 w-4 mr-1" /> {a.label ?? a.file_name ?? "asset"}
+                        </Button>
+                        {canDecide && a.url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="Edit image"
+                            onClick={() => openEditor({
+                              id: a.id,
+                              campaign_id: a.campaign_id,
+                              file_name: a.file_name,
+                              label: a.label,
+                              url: a.url!,
+                              source_url: a.source_url,
+                            })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
                   </div>
+
                 )}
 
                 {row.feedback_note && (
