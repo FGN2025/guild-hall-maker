@@ -37,6 +37,7 @@ export interface CreateCampaignInput {
   target_platforms?: string[];
   source_event_id?: string | null;
   source_tournament_id?: string | null;
+  source_challenge_id?: string | null;
   idempotency_key?: string | null;
 }
 
