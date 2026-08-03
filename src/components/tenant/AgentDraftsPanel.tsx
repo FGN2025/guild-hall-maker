@@ -1,17 +1,31 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useMemo, useState } from "react";
-import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarClock, Eye, Link2 } from "lucide-react";
+import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarClock, Eye, Link2, Pencil } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
+import AssetEditorDialog, { type AssetSaveMeta } from "@/components/media/AssetEditorDialog";
+import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+/** Image a reviewer chose to open in the editor. */
+interface EditTarget {
+  id?: string | null;
+  campaign_id?: string | null;
+  file_name?: string | null;
+  label?: string | null;
+  url: string;
+  source_url?: string | null;
+  overlay_config?: Record<string, any> | null;
+}
+
 
 type Kind = "campaign" | "scheduled_post" | "asset";
 
@@ -59,6 +73,9 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   const [feedbackById, setFeedbackById] = useState<Record<string, string>>({});
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewAsset, setReviewAsset] = useState<AssetReviewItem | null>(null);
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  const qc = useQueryClient();
+  const { uploadAsset } = useTenantMarketingAssets();
   const decide = useDraftDecision(tenantId);
   const { tenantInfo } = useTenantAdmin();
   const { isAdmin } = useAuth();
@@ -226,6 +243,30 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     setReviewOpen(true);
   }
 
+  /** Open the shared image editor on a pending draft so reviewers can fix
+   *  small issues (typos, framing) instead of rejecting the whole draft. */
+  function openEditor(a: EditTarget) {
+    setEditTarget(a);
+  }
+
+  const handleEditorSave = async (blob: Blob, meta?: AssetSaveMeta) => {
+    if (!editTarget) return;
+    const file = new File([blob], `review-edit-${Date.now()}.png`, { type: "image/png" });
+    await uploadAsset.mutateAsync({
+      file,
+      label: editTarget.label ?? editTarget.file_name ?? "Reviewed asset",
+      sourceAssetId: editTarget.id ?? undefined,
+      campaignId: editTarget.campaign_id ?? undefined,
+      overlayConfig: meta?.overlayConfig ?? null,
+      backgroundUrl: meta?.backgroundUrl ?? editTarget.source_url ?? null,
+    });
+    setEditTarget(null);
+    qc.invalidateQueries({ queryKey: ["agent_drafts", tenantId] });
+    qc.invalidateQueries({ queryKey: ["agent_drafts_linked_assets", tenantId] });
+    qc.invalidateQueries({ queryKey: ["tenant_pending_review_count", tenantId] });
+  };
+
+
   const onDecide = (row: DraftRow, approve: boolean) =>
     decide.mutate({ row, approve, note: feedbackById[row.id] });
 
@@ -381,34 +422,78 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                         <Eye className="h-4 w-4 mr-1" /> Review asset
                       </Button>
                     )}
-                    {row.kind === "scheduled_post" && row.image_url && !linked.length && (
-                      <Button variant="outline" size="sm" onClick={() => openReview({
-                        file_name: `${row.platform ?? "post"} image`,
-                        url: row.image_url,
-                        agent_source: row.agent_source,
-                        contextTitle: row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : undefined,
+                    {canDecide && row.kind === "asset" && row.url && (
+                      <Button variant="outline" size="sm" onClick={() => openEditor({
+                        id: row.id,
+                        campaign_id: row.campaign_id,
+                        file_name: row.file_name,
+                        label: row.label,
+                        url: row.url,
+                        source_url: row.source_url,
                       })}>
-                        <Eye className="h-4 w-4 mr-1" /> Review post image
+                        <Pencil className="h-4 w-4 mr-1" /> Edit image
                       </Button>
                     )}
+                    {row.kind === "scheduled_post" && row.image_url && !linked.length && (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => openReview({
+                          file_name: `${row.platform ?? "post"} image`,
+                          url: row.image_url,
+                          agent_source: row.agent_source,
+                          contextTitle: row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : undefined,
+                        })}>
+                          <Eye className="h-4 w-4 mr-1" /> Review post image
+                        </Button>
+                        {canDecide && (
+                          <Button variant="outline" size="sm" onClick={() => openEditor({
+                            campaign_id: row.campaign_id,
+                            file_name: `${row.platform ?? "post"} image`,
+                            label: `${row.platform ?? "Post"} image`,
+                            url: row.image_url!,
+                          })}>
+                            <Pencil className="h-4 w-4 mr-1" /> Edit image
+                          </Button>
+                        )}
+                      </>
+                    )}
                     {linked.map((a) => (
-                      <Button key={a.id} variant="outline" size="sm" onClick={() => openReview({
-                        id: a.id,
-                        file_name: a.file_name,
-                        label: a.label,
-                        file_path: a.file_path,
-                        url: a.url,
-                        source_url: a.source_url,
-                        campaign_id: a.campaign_id,
-                        is_published: a.is_published,
-                        agent_source: a.agent_source,
-                        notes: a.notes,
-                        contextTitle: row.kind === "campaign" ? row.title ?? undefined : undefined,
-                      })}>
-                        <Eye className="h-4 w-4 mr-1" /> {a.label ?? a.file_name ?? "asset"}
-                      </Button>
+                      <div key={a.id} className="flex gap-1">
+                        <Button variant="outline" size="sm" onClick={() => openReview({
+                          id: a.id,
+                          file_name: a.file_name,
+                          label: a.label,
+                          file_path: a.file_path,
+                          url: a.url,
+                          source_url: a.source_url,
+                          campaign_id: a.campaign_id,
+                          is_published: a.is_published,
+                          agent_source: a.agent_source,
+                          notes: a.notes,
+                          contextTitle: row.kind === "campaign" ? row.title ?? undefined : undefined,
+                        })}>
+                          <Eye className="h-4 w-4 mr-1" /> {a.label ?? a.file_name ?? "asset"}
+                        </Button>
+                        {canDecide && a.url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="Edit image"
+                            onClick={() => openEditor({
+                              id: a.id,
+                              campaign_id: a.campaign_id,
+                              file_name: a.file_name,
+                              label: a.label,
+                              url: a.url!,
+                              source_url: a.source_url,
+                            })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
                   </div>
+
                 )}
 
                 {row.feedback_note && (
@@ -462,6 +547,16 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
 
 
       <AssetReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} asset={reviewAsset} />
+
+      {editTarget && (
+        <AssetEditorDialog
+          open={!!editTarget}
+          onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+          baseImageUrl={editTarget.source_url ?? editTarget.url}
+          initialOverlayConfig={(editTarget.overlay_config as any) ?? null}
+          onSave={handleEditorSave}
+        />
+      )}
     </div>
   );
 }

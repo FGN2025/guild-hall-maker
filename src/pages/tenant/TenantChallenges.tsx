@@ -84,6 +84,7 @@ const TenantChallenges = () => {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [quickCreating, setQuickCreating] = useState<string | null>(null);
+  const [headlineTouched, setHeadlineTouched] = useState(false);
 
   const filteredCatalog = useMemo(() => {
     if (!search) return catalog;
@@ -95,14 +96,24 @@ const TenantChallenges = () => {
 
   const selectedChallenge = catalog.find((c) => c.id === form.challenge_id) ?? null;
 
+  /** Default headline so staff don't hand-type (and misspell) the tenant name. */
+  const defaultHeadline = useMemo(() => {
+    if (!selectedChallenge) return "";
+    const tenantName = tenantInfo?.tenantName?.trim();
+    return tenantName ? `${tenantName} — ${selectedChallenge.name}` : selectedChallenge.name;
+  }, [selectedChallenge, tenantInfo?.tenantName]);
+
   const openCreate = (challengeId?: string) => {
     setEditing(null);
+    setHeadlineTouched(false);
     setForm({ ...emptyForm, challenge_id: challengeId ?? "" });
     setDialogOpen(true);
   };
 
+
   const openEdit = (s: TenantChallengeSchedule) => {
     setEditing(s);
+    setHeadlineTouched(true);
     setForm({
       challenge_id: s.challenge_id,
       starts_at: new Date(s.starts_at),
@@ -127,7 +138,7 @@ const TenantChallenges = () => {
       challenge_id: form.challenge_id,
       starts_at: form.starts_at.toISOString(),
       ends_at: form.ends_at.toISOString(),
-      headline: form.headline || null,
+      headline: (headlineTouched ? form.headline : form.headline || defaultHeadline) || null,
       promo_copy: form.promo_copy || null,
       is_featured: form.is_featured,
     };
@@ -360,11 +371,20 @@ const TenantChallenges = () => {
             <div className="space-y-2">
               <Label>Headline (optional)</Label>
               <Input
-                value={form.headline}
-                onChange={(e) => setForm({ ...form, headline: e.target.value })}
-                placeholder="August Fiber Sprint"
+                value={headlineTouched ? form.headline : form.headline || defaultHeadline}
+                onChange={(e) => {
+                  setHeadlineTouched(true);
+                  setForm({ ...form, headline: e.target.value });
+                }}
+                placeholder={defaultHeadline || "August Fiber Sprint"}
               />
+              {!headlineTouched && defaultHeadline && (
+                <p className="text-xs text-muted-foreground">
+                  Auto-filled from your provider name and the challenge. Edit it if you want something different.
+                </p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label>Promo copy (optional)</Label>
               <Textarea
