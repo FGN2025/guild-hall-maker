@@ -243,10 +243,10 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     <div className="space-y-6">
       <div className="flex items-center gap-2 flex-wrap">
         <Bot className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-heading">Agent drafts</h2>
+        <h2 className="text-lg font-heading">Review queue</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
         {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
-        {pending.length > 0 && (
+        {canDecide && pending.length > 0 && (
           <Button
             size="sm"
             className="ml-auto"
@@ -259,7 +259,10 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         )}
       </div>
       <p className="text-sm text-muted-foreground">
-        Nothing here publishes automatically. Approve to move a draft into the live workflow; reject with a note so the agent can revise it.
+        {canDecide
+          ? "Nothing here publishes automatically. Approve to make a draft live; reject with a note so the creator (or agent) can revise it."
+          : "Your drafts stay private until a tenant Admin or Manager approves them. Rejection notes appear here."}
+
       </p>
 
       {rows.length === 0 && (
