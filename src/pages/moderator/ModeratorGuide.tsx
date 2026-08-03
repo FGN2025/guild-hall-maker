@@ -29,6 +29,20 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-08-03",
+    icon: Star,
+    title: "What's New — August 3, 2026",
+    bullets: [
+      "Prize Value Comes From Placement Points — There is no separate prize field on the tournament form anymore. Cards and detail pages show the sum of the 1st + 2nd + 3rd place point awards, so fill those in accurately when you create or edit an event.",
+      "Game Nights Use Long Participation — For Game Night events the displayed prize value is the Long Participation point value, because Game Nights pay for attendance rather than bracket placement.",
+      "Prize Pool Lists Both Tiers — Tournament detail pages now show Long Participation and Short Participation point values under Prize Pool.",
+      "New Game Night Attendance Flow — In Manage Tournament for Game Nights, the bulk 'Mark long / Mark short' buttons and the left-side selection checkbox are removed. Each player row has two checkmarks on the right: purple = Short session (5 points), cyan = Long session (10 points). One click sets the tier and awards the points. A key above the roster explains the colors.",
+      "Permissions Fix — Admins and the tournament creator can now update registrations directly, alongside moderators, so the new checkmarks work for everyone running an event.",
+      "Tenant Challenge Windows — Tenants can schedule platform challenges for their own players with an Opens/Closes window. If a player reports they cannot enroll in a live challenge, check whether their provider's window is closed before troubleshooting the challenge itself.",
+    ],
+  },
+
+  {
     id: "whats-new-2026-07-24",
     icon: Star,
     title: "What's New — July 24, 2026",
