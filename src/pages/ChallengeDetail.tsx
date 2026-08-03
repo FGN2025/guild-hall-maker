@@ -6,6 +6,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChallengeDetail } from "@/hooks/useChallengeDetail";
 import { useChallengeEnrollment } from "@/hooks/useChallengeEnrollment";
+import { useChallengeWindow } from "@/hooks/useChallengeWindow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,6 +56,7 @@ const ChallengeDetail = () => {
     deleteEvidence, deletingEvidence,
     unenroll, unenrolling,
   } = useChallengeEnrollment(id);
+  const challengeWindow = useChallengeWindow(id);
 
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
@@ -376,10 +378,28 @@ const ChallengeDetail = () => {
                   </Badge>
                 )}
 
+                {challengeWindow.window && (
+                  <div className="rounded-md border border-border/60 bg-black/40 p-3 text-xs space-y-1">
+                    <p className="font-semibold text-foreground">
+                      {challengeWindow.window.headline || "Your provider's challenge window"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {new Date(challengeWindow.window.starts_at).toLocaleDateString()} —{" "}
+                      {new Date(challengeWindow.window.ends_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+
                 {!enrollment && !enrollmentLoading && (
                   user ? (
-                    <Button onClick={() => enroll()} disabled={enrolling} className="w-full gap-2">
-                      {enrolling ? "Enrolling..." : "Enroll in Challenge"}
+                    <Button
+                      onClick={() => enroll()}
+                      disabled={enrolling || !challengeWindow.canEnroll}
+                      className="w-full gap-2"
+                    >
+                      {enrolling
+                        ? "Enrolling..."
+                        : challengeWindow.blockedReason ?? "Enroll in Challenge"}
                     </Button>
                   ) : (
                     <Button onClick={() => navigate("/auth")} className="w-full gap-2">

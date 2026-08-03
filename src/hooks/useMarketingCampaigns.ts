@@ -37,6 +37,7 @@ export interface CreateCampaignInput {
   target_platforms?: string[];
   source_event_id?: string | null;
   source_tournament_id?: string | null;
+  source_challenge_id?: string | null;
   idempotency_key?: string | null;
 }
 
@@ -87,6 +88,7 @@ export function useMarketingCampaigns(publishedOnly = false) {
         target_platforms: values.target_platforms ?? [],
         source_event_id: values.source_event_id ?? null,
         source_tournament_id: values.source_tournament_id ?? null,
+        source_challenge_id: values.source_challenge_id ?? null,
         idempotency_key: values.idempotency_key ?? null,
         created_by: uid,
       };

@@ -10,6 +10,7 @@ import { Target, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageBackground from "@/components/PageBackground";
 import ChallengeCard from "@/components/challenges/ChallengeCard";
+import { useMyChallengeWindows } from "@/hooks/useChallengeWindow";
 import PointsWalletCard from "@/components/shared/PointsWalletCard";
 
 const Challenges = () => {
@@ -34,6 +35,7 @@ const Challenges = () => {
     },
   });
 
+  const { data: challengeWindows = {} } = useMyChallengeWindows();
   const { data: enrollmentCounts = {} } = useQuery({
     queryKey: ["challenge-enrollment-counts"],
     queryFn: async () => {
@@ -219,6 +221,8 @@ const Challenges = () => {
                       key={c.id}
                       challenge={c}
                       enrollmentCount={(enrollmentCounts as any)[c.id] || 0}
+                      windowLabel={challengeWindows[c.id]?.label ?? null}
+                      windowOpen={challengeWindows[c.id]?.open}
                     />
                   ))}
                 </div>
@@ -239,6 +243,8 @@ const Challenges = () => {
                       key={c.id}
                       challenge={c}
                       enrollmentCount={(enrollmentCounts as any)[c.id] || 0}
+                      windowLabel={challengeWindows[c.id]?.label ?? null}
+                      windowOpen={challengeWindows[c.id]?.open}
                     />
                   ))}
                 </div>

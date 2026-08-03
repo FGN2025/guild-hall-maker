@@ -2112,6 +2112,7 @@ export type Database = {
           is_published: boolean
           proposed_by: string | null
           social_copy: string | null
+          source_challenge_id: string | null
           source_event_id: string | null
           source_tournament_id: string | null
           status: string
@@ -2132,6 +2133,7 @@ export type Database = {
           is_published?: boolean
           proposed_by?: string | null
           social_copy?: string | null
+          source_challenge_id?: string | null
           source_event_id?: string | null
           source_tournament_id?: string | null
           status?: string
@@ -2152,6 +2154,7 @@ export type Database = {
           is_published?: boolean
           proposed_by?: string | null
           social_copy?: string | null
+          source_challenge_id?: string | null
           source_event_id?: string | null
           source_tournament_id?: string | null
           status?: string
@@ -2161,6 +2164,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_source_challenge_id_fkey"
+            columns: ["source_challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marketing_campaigns_source_event_id_fkey"
             columns: ["source_event_id"]
@@ -4123,6 +4133,77 @@ export type Database = {
           },
         ]
       }
+      tenant_challenge_schedules: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          headline: string | null
+          id: string
+          is_featured: boolean
+          promo_copy: string | null
+          starts_at: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_at: string
+          headline?: string | null
+          id?: string
+          is_featured?: boolean
+          promo_copy?: string | null
+          starts_at: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          headline?: string | null
+          id?: string
+          is_featured?: boolean
+          promo_copy?: string | null
+          starts_at?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_challenge_schedules_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_challenge_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_challenge_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_challenge_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       tenant_cloud_gaming: {
         Row: {
           blacknut_account_id: string | null
@@ -6027,6 +6108,10 @@ export type Database = {
       admin_retry_discord_role_action: {
         Args: { _log_id: string }
         Returns: undefined
+      }
+      challenge_window_open: {
+        Args: { _challenge_id: string; _user_id: string }
+        Returns: boolean
       }
       check_schedule_conflict: {
         Args: {

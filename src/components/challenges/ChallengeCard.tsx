@@ -10,6 +10,10 @@ import { getSkillLabel } from "@/lib/skillTaxonomy";
 interface ChallengeCardProps {
   challenge: any;
   enrollmentCount?: number;
+  /** Provider-scheduled availability, e.g. "Aug 1 – Aug 20" or "Closed Aug 20". */
+  windowLabel?: string | null;
+  /** True when the provider window is currently open. */
+  windowOpen?: boolean;
 }
 
 const difficultyColor: Record<string, string> = {
@@ -18,7 +22,7 @@ const difficultyColor: Record<string, string> = {
   advanced: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
-const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) => {
+const ChallengeCard = ({ challenge, enrollmentCount = 0, windowLabel, windowOpen }: ChallengeCardProps) => {
   const c = challenge;
   const { isAdmin } = useAuth();
   const gameName = c.games?.name;
@@ -56,6 +60,14 @@ const ChallengeCard = ({ challenge, enrollmentCount = 0 }: ChallengeCardProps) =
         </div>
         <CardContent className="p-4 space-y-3">
           <h3 className="font-display font-semibold text-foreground line-clamp-1">{c.name}</h3>
+          {windowLabel && (
+            <Badge
+              variant="outline"
+              className={`text-[11px] ${windowOpen ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
+            >
+              {windowLabel}
+            </Badge>
+          )}
           {c.description && (
             <p className="text-sm text-muted-foreground font-body line-clamp-2">{c.description}</p>
           )}

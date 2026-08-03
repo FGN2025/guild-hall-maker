@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe, Radio } from "lucide-react";
+import { LayoutDashboard, MapPin, Users, ArrowLeft, Database, UserCog, Settings, Megaphone, Image as ImageIcon, Calendar, BookOpen, KeyRound, ChevronDown, ShieldCheck, FileText, CreditCard, Palette, Globe, Radio, Trophy } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -41,6 +41,7 @@ const allSidebarItems = [
   { to: "/tenant/players", label: "Players", icon: Users, roles: ['admin', 'manager'] },
   { to: "/tenant/leads", label: "Leads", icon: Users, roles: ['admin', 'manager'] },
   { to: "/tenant/events", label: "Events", icon: Calendar, roles: ['admin', 'manager', 'marketing'] },
+  { to: "/tenant/challenges", label: "Challenges", icon: Trophy, roles: ['admin', 'manager', 'marketing'] },
   { to: "/tenant/zip-codes", label: "ZIP Codes", icon: MapPin, roles: ['admin', 'manager'] },
   { to: "/tenant/subscribers", label: "Subscribers", icon: Database, roles: ['admin', 'manager'] },
   { to: "/tenant/marketing", label: "Marketing", icon: Megaphone, roles: ['admin', 'manager', 'marketing'] },
