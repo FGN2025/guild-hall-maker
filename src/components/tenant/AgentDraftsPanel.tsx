@@ -58,6 +58,11 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewAsset, setReviewAsset] = useState<AssetReviewItem | null>(null);
   const decide = useDraftDecision(tenantId);
+  const { tenantInfo } = useTenantAdmin();
+  const { isAdmin } = useAuth();
+  /** Only tenant Admins/Managers (or platform admins) can approve or reject. */
+  const canDecide = isAdmin || tenantInfo?.tenantRole === "admin" || tenantInfo?.tenantRole === "manager";
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["agent_drafts", tenantId],
