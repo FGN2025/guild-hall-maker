@@ -153,8 +153,12 @@ const TenantMarketing = () => {
             <CalendarClock className="h-4 w-4" /> Scheduled
           </TabsTrigger>
           <TabsTrigger value="agent" className="gap-2 font-heading">
-            <Bot className="h-4 w-4" /> Agent Drafts
+            <Bot className="h-4 w-4" /> Review
+            {pendingReviewCount > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs">{pendingReviewCount}</Badge>
+            )}
           </TabsTrigger>
+
         </TabsList>
 
         {/* Campaigns Tab */}
