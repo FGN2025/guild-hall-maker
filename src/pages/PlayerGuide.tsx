@@ -43,6 +43,19 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-08-03",
+    icon: Bell,
+    title: "What's New — August 3, 2026",
+    bullets: [
+      "Clearer Prize Values — The prize shown on a tournament card is now the total of the 1st, 2nd, and 3rd place point awards, so what you see is what the event actually pays out. See: Tournaments.",
+      "Game Night Prizes — For Game Nights, the prize value shown is the Long Session point award, since Game Nights pay for attendance rather than placement.",
+      "Prize Pool Breakdown — Tournament detail pages now list both Long Session and Short Session participation points under Prize Pool, so you know what each attendance tier is worth before you show up.",
+      "Faster Game Night Credit — Event staff now award your session points with a single tap (purple = Short session, 5 points; cyan = Long session, 10 points), so attendance points post to your wallet sooner.",
+      "Provider Challenge Windows — If your internet provider is on FGN, they can open a challenge for a set date range. Challenge cards and detail pages show your window ('Opens Aug 12', 'Open until Aug 20', 'Closed Aug 20'), and Enroll is disabled outside it with the reason shown. Challenges your provider hasn't scheduled stay open as normal. See: Challenges & Quests.",
+    ],
+  },
+
+  {
     id: "whats-new",
     icon: Bell,
     title: "What's New — June 18, 2026",

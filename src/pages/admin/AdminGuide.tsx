@@ -51,6 +51,22 @@ import { Button } from "@/components/ui/button";
 import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 const sectionData: { id: string; icon: typeof Shield; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-08-03",
+    icon: Sparkles,
+    title: "What's New — August 3, 2026",
+    bullets: [
+      "Prize Value Derived From Placement Points — The prize figure on tournament cards and detail pages is no longer a separate field on the creation form. It is now computed as the sum of the 1st + 2nd + 3rd place point awards. Set those three values correctly and the promo/prize display follows automatically.",
+      "Game Night Prize Value — For Game Night events, the displayed prize value uses the Long Participation point value instead of placement points, since Game Nights pay on attendance rather than bracket finish.",
+      "Prize Pool Shows Both Tiers — Tournament detail pages list both Long Participation and Short Participation point values under the Prize Pool section so players know exactly what each attendance tier pays.",
+      "Game Night Attendance Checkmarks — In Manage Tournament for Game Nights, the bulk 'Mark long / Mark short' controls and the left-hand selection checkbox are gone. Each player row now has two checkmarks on the right: purple = Short session (5 points), cyan = Long session (10 points). Clicking one sets the tier and awards the points in a single action. A points key sits above the roster.",
+      "Registration Update Permissions — Platform admins and the tournament creator now have direct update rights on tournament registrations (previously moderators only), so the new one-click attendance awards work for all staff who run events.",
+      "Tenant Challenge Scheduling — Tenant Admins, Managers, and Marketing staff can schedule platform challenges for their own players at /tenant/challenges with an Opens/Closes window. The window gates enrollment for that tenant's players only; unscheduled challenges stay open as usual. Tenants never author challenge content.",
+      "Quick Promo Review Queue — Tenant Quick Promo drafts (challenges, events, tournaments) now land as 'Pending review' instead of publishing directly. They appear on the tenant Marketing → Review tab (formerly Agent Drafts) alongside AI-generated drafts, with a pending count badge. Only Tenant Admins and Managers can approve or reject; Marketing-only staff see items read-only. This is enforced in database policy, not just in the UI.",
+      "Data Exposure Hardening — Archived season standings (season_snapshots) are now readable only by signed-in users, and tenant contact emails are no longer visible to anonymous visitors while public branding fields (name, slug, logo, colors) remain open.",
+    ],
+  },
+
+  {
     id: "whats-new-2026-07-24",
     icon: Sparkles,
     title: "What's New — July 24, 2026",

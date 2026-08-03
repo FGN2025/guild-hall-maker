@@ -16,6 +16,18 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Trophy; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-08-03",
+    icon: Clock,
+    title: "What's New — August 3, 2026",
+    bullets: [
+      "Prize Value = Placement Points — Tournament cards show the sum of the 1st + 2nd + 3rd place point awards as the prize. There is no separate prize field anymore, so the number always matches the real payout.",
+      "Game Night Prize Value — Game Night cards show the Long Session participation points instead, since these events reward attendance rather than bracket placement.",
+      "Prize Pool Breakdown — The tournament detail page lists Long Session and Short Session participation point values under Prize Pool, alongside the placement awards.",
+      "One-Tap Game Night Attendance — Event staff mark your session with a single colored checkmark (purple = Short, 5 points; cyan = Long, 10 points), which sets your tier and awards the points at the same time.",
+    ],
+  },
+
+  {
     id: "whats-new-2026-07-24",
     icon: Clock,
     title: "What's New — July 24, 2026",
