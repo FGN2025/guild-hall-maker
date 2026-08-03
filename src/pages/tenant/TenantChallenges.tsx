@@ -95,11 +95,20 @@ const TenantChallenges = () => {
 
   const selectedChallenge = catalog.find((c) => c.id === form.challenge_id) ?? null;
 
+  /** Default headline so staff don't hand-type (and misspell) the tenant name. */
+  const defaultHeadline = useMemo(() => {
+    if (!selectedChallenge) return "";
+    const tenantName = tenantInfo?.tenantName?.trim();
+    return tenantName ? `${tenantName} — ${selectedChallenge.name}` : selectedChallenge.name;
+  }, [selectedChallenge, tenantInfo?.tenantName]);
+
   const openCreate = (challengeId?: string) => {
     setEditing(null);
+    setHeadlineTouched(false);
     setForm({ ...emptyForm, challenge_id: challengeId ?? "" });
     setDialogOpen(true);
   };
+
 
   const openEdit = (s: TenantChallengeSchedule) => {
     setEditing(s);
