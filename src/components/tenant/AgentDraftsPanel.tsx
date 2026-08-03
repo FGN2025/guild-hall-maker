@@ -547,6 +547,16 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
 
 
       <AssetReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} asset={reviewAsset} />
+
+      {editTarget && (
+        <AssetEditorDialog
+          open={!!editTarget}
+          onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+          baseImageUrl={editTarget.source_url ?? editTarget.url}
+          initialOverlayConfig={(editTarget.overlay_config as any) ?? null}
+          onSave={handleEditorSave}
+        />
+      )}
     </div>
   );
 }
