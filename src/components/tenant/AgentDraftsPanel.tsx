@@ -9,6 +9,8 @@ import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarCloc
 import { formatDistanceToNow } from "date-fns";
 import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 type Kind = "campaign" | "scheduled_post" | "asset";
@@ -58,6 +60,11 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewAsset, setReviewAsset] = useState<AssetReviewItem | null>(null);
   const decide = useDraftDecision(tenantId);
+  const { tenantInfo } = useTenantAdmin();
+  const { isAdmin } = useAuth();
+  /** Only tenant Admins/Managers (or platform admins) can approve or reject. */
+  const canDecide = isAdmin || tenantInfo?.tenantRole === "admin" || tenantInfo?.tenantRole === "manager";
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["agent_drafts", tenantId],
@@ -69,23 +76,24 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           .from("marketing_campaigns" as any)
           .select("id, title, description, social_copy, status, feedback_note, source_event_id, source_tournament_id, agent_source, created_at, updated_at")
           .eq("tenant_id", tenantId!)
-          .not("agent_source", "is", null)
           .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays})`)
           .order("updated_at", { ascending: false }),
         supabase
           .from("scheduled_posts" as any)
           .select("id, campaign_id, platform, caption, image_url, scheduled_at, status, feedback_note, agent_source, created_at, updated_at, conflict_flagged_at, conflict_details, undeliverable_reason")
           .eq("tenant_id", tenantId!)
-          .not("agent_source", "is", null)
           .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays})`)
           .order("updated_at", { ascending: false }),
         supabase
           .from("tenant_marketing_assets" as any)
           .select("id, campaign_id, file_name, file_path, url, source_url, label, is_published, agent_source, notes, feedback_note, created_at, updated_at")
           .eq("tenant_id", tenantId!)
-          .not("agent_source", "is", null)
           .eq("is_published", false)
+          // Review covers agent output plus campaign-linked promos (Quick Promo);
+          // loose manual uploads stay out of the queue.
+          .or("agent_source.not.is.null,campaign_id.not.is.null")
           .order("updated_at", { ascending: false }),
+
       ]);
       const rows: DraftRow[] = [
         ...((campaigns.data ?? []) as any[]).map((r) => ({ ...r, kind: "campaign" as const })),
@@ -235,10 +243,10 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     <div className="space-y-6">
       <div className="flex items-center gap-2 flex-wrap">
         <Bot className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-heading">Agent drafts</h2>
+        <h2 className="text-lg font-heading">Review queue</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
         {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
-        {pending.length > 0 && (
+        {canDecide && pending.length > 0 && (
           <Button
             size="sm"
             className="ml-auto"
@@ -251,11 +259,14 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         )}
       </div>
       <p className="text-sm text-muted-foreground">
-        Nothing here publishes automatically. Approve to move a draft into the live workflow; reject with a note so the agent can revise it.
+        {canDecide
+          ? "Nothing here publishes automatically. Approve to make a draft live; reject with a note so the creator (or agent) can revise it."
+          : "Your drafts stay private until a tenant Admin or Manager approves them. Rejection notes appear here."}
+
       </p>
 
       {rows.length === 0 && (
-        <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">No agent drafts yet.</CardContent></Card>
+        <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">Nothing waiting for review.</CardContent></Card>
       )}
 
       {groups.map((group) => {
@@ -267,7 +278,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
               {weekLabel(group.start)}
             </h3>
             <Badge variant="outline" className="text-xs">{group.rows.length}</Badge>
-            {groupPending.length > 0 && (
+            {canDecide && groupPending.length > 0 && (
               <Button
                 size="sm"
                 variant="outline"
@@ -318,7 +329,11 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
-                  <span>Updated {formatDistanceToNow(new Date(row.updated_at), { addSuffix: true })} · {row.agent_source ?? "agent"}</span>
+                  <span>Updated {formatDistanceToNow(new Date(row.updated_at), { addSuffix: true })}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {row.agent_source ? `AI · ${row.agent_source}` : "Quick Promo"}
+                  </Badge>
+
                   {linkedLabel && (
                     <Badge variant="outline" className="text-xs gap-1">
                       <Link2 className="h-3 w-3" /> Linked to: {linkedLabel}
@@ -402,30 +417,40 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                   </div>
                 )}
 
-                <Textarea
-                  placeholder="Optional feedback for the agent (required-ish on reject)"
-                  value={feedbackById[row.id] ?? ""}
-                  onChange={(e) => setFeedbackById((m) => ({ ...m, [row.id]: e.target.value }))}
-                  rows={2}
-                  className="text-sm"
-                />
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={decide.isPending}
-                    onClick={() => onDecide(row, false)}
-                  >
-                    <X className="h-4 w-4 mr-1" /> Reject
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={decide.isPending}
-                    onClick={() => onDecide(row, true)}
-                  >
-                    <Check className="h-4 w-4 mr-1" /> Approve
-                  </Button>
-                </div>
+                {canDecide && (
+                  <Textarea
+                    placeholder="Optional feedback for the creator (required-ish on reject)"
+                    value={feedbackById[row.id] ?? ""}
+                    onChange={(e) => setFeedbackById((m) => ({ ...m, [row.id]: e.target.value }))}
+                    rows={2}
+                    className="text-sm"
+                  />
+                )}
+
+                {canDecide ? (
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={decide.isPending}
+                      onClick={() => onDecide(row, false)}
+                    >
+                      <X className="h-4 w-4 mr-1" /> Reject
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={decide.isPending}
+                      onClick={() => onDecide(row, true)}
+                    >
+                      <Check className="h-4 w-4 mr-1" /> Approve
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-right">
+                    Awaiting review by a tenant Admin or Manager.
+                  </p>
+                )}
+
               </CardContent>
             </Card>
           );

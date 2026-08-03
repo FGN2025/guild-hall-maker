@@ -174,7 +174,7 @@ const TenantChallenges = () => {
           social_copy: s.promo_copy || null,
           category: "social_media",
           tenant_id: tenantId,
-          status: "draft",
+          status: "pending_review",
           source_challenge_id: s.challenge_id,
           idempotency_key: `promo:challenge:${tenantId}:${s.id}`,
         });

@@ -87,6 +87,33 @@ const TenantMarketing = () => {
     },
   });
 
+  /** Count of items waiting on a reviewer, shown on the Review tab. */
+  const { data: pendingReviewCount = 0 } = useQuery({
+    queryKey: ["tenant_pending_review_count", tenantAdmin],
+    enabled: !!tenantAdmin,
+    queryFn: async () => {
+      const [campaignsRes, postsRes, assetsRes] = await Promise.all([
+        supabase
+          .from("marketing_campaigns")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenantAdmin!)
+          .eq("status", "pending_review"),
+        supabase
+          .from("scheduled_posts")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenantAdmin!)
+          .eq("status", "pending_review"),
+        supabase
+          .from("tenant_marketing_assets")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenantAdmin!)
+          .eq("is_published", false)
+          .not("campaign_id", "is", null),
+      ]);
+      return (campaignsRes.count ?? 0) + (postsRes.count ?? 0) + (assetsRes.count ?? 0);
+    },
+  });
+
   const filtered = campaigns.filter((c) => {
     if (category !== "all" && c.category !== category) return false;
     if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
@@ -126,8 +153,12 @@ const TenantMarketing = () => {
             <CalendarClock className="h-4 w-4" /> Scheduled
           </TabsTrigger>
           <TabsTrigger value="agent" className="gap-2 font-heading">
-            <Bot className="h-4 w-4" /> Agent Drafts
+            <Bot className="h-4 w-4" /> Review
+            {pendingReviewCount > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs">{pendingReviewCount}</Badge>
+            )}
           </TabsTrigger>
+
         </TabsList>
 
         {/* Campaigns Tab */}
