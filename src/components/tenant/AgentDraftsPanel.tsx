@@ -69,23 +69,24 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           .from("marketing_campaigns" as any)
           .select("id, title, description, social_copy, status, feedback_note, source_event_id, source_tournament_id, agent_source, created_at, updated_at")
           .eq("tenant_id", tenantId!)
-          .not("agent_source", "is", null)
           .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays})`)
           .order("updated_at", { ascending: false }),
         supabase
           .from("scheduled_posts" as any)
           .select("id, campaign_id, platform, caption, image_url, scheduled_at, status, feedback_note, agent_source, created_at, updated_at, conflict_flagged_at, conflict_details, undeliverable_reason")
           .eq("tenant_id", tenantId!)
-          .not("agent_source", "is", null)
           .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays})`)
           .order("updated_at", { ascending: false }),
         supabase
           .from("tenant_marketing_assets" as any)
           .select("id, campaign_id, file_name, file_path, url, source_url, label, is_published, agent_source, notes, feedback_note, created_at, updated_at")
           .eq("tenant_id", tenantId!)
-          .not("agent_source", "is", null)
           .eq("is_published", false)
+          // Review covers agent output plus campaign-linked promos (Quick Promo);
+          // loose manual uploads stay out of the queue.
+          .or("agent_source.not.is.null,campaign_id.not.is.null")
           .order("updated_at", { ascending: false }),
+
       ]);
       const rows: DraftRow[] = [
         ...((campaigns.data ?? []) as any[]).map((r) => ({ ...r, kind: "campaign" as const })),
