@@ -113,6 +113,7 @@ const TenantChallenges = () => {
 
   const openEdit = (s: TenantChallengeSchedule) => {
     setEditing(s);
+    setHeadlineTouched(true);
     setForm({
       challenge_id: s.challenge_id,
       starts_at: new Date(s.starts_at),
