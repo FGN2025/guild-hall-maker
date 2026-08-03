@@ -88,3 +88,52 @@ export const useChallengeWindow = (challengeId: string | undefined): ChallengeWi
 
   return { window, canEnroll: true, blockedReason: null, isLoading };
 };
+
+export interface ChallengeWindowSummary {
+  label: string;
+  open: boolean;
+}
+
+/**
+ * Bulk variant for list views: one query returns every window the signed-in
+ * user's tenant has scheduled, keyed by challenge_id.
+ */
+export const useMyChallengeWindows = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["my-challenge-windows", user?.id],
+    enabled: !!user?.id,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const map: Record<string, ChallengeWindowSummary> = {};
+      const { data: tenantId } = await supabase.rpc("get_user_tenant" as any, { _user_id: user!.id });
+      if (!tenantId) return map;
+
+      const { data, error } = await supabase
+        .from("tenant_challenge_schedules" as any)
+        .select("challenge_id, starts_at, ends_at")
+        .eq("tenant_id", tenantId as string);
+      if (error) throw error;
+
+      const now = Date.now();
+      for (const row of (data ?? []) as any[]) {
+        const start = new Date(row.starts_at).getTime();
+        const end = new Date(row.ends_at).getTime();
+        const open = now >= start && now <= end;
+        const existing = map[row.challenge_id];
+        // An open window always wins over a closed/upcoming one.
+        if (existing?.open && !open) continue;
+        map[row.challenge_id] = {
+          open,
+          label: open
+            ? `Open until ${fmt(row.ends_at)}`
+            : now < start
+              ? `Opens ${fmt(row.starts_at)}`
+              : `Closed ${fmt(row.ends_at)}`,
+        };
+      }
+      return map;
+    },
+  });
+};
