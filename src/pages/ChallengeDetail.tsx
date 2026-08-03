@@ -376,10 +376,28 @@ const ChallengeDetail = () => {
                   </Badge>
                 )}
 
+                {challengeWindow.window && (
+                  <div className="rounded-md border border-border/60 bg-black/40 p-3 text-xs space-y-1">
+                    <p className="font-semibold text-foreground">
+                      {challengeWindow.window.headline || "Your provider's challenge window"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {new Date(challengeWindow.window.starts_at).toLocaleDateString()} —{" "}
+                      {new Date(challengeWindow.window.ends_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+
                 {!enrollment && !enrollmentLoading && (
                   user ? (
-                    <Button onClick={() => enroll()} disabled={enrolling} className="w-full gap-2">
-                      {enrolling ? "Enrolling..." : "Enroll in Challenge"}
+                    <Button
+                      onClick={() => enroll()}
+                      disabled={enrolling || !challengeWindow.canEnroll}
+                      className="w-full gap-2"
+                    >
+                      {enrolling
+                        ? "Enrolling..."
+                        : challengeWindow.blockedReason ?? "Enroll in Challenge"}
                     </Button>
                   ) : (
                     <Button onClick={() => navigate("/auth")} className="w-full gap-2">
