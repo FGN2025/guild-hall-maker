@@ -73,6 +73,9 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   const [feedbackById, setFeedbackById] = useState<Record<string, string>>({});
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewAsset, setReviewAsset] = useState<AssetReviewItem | null>(null);
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  const qc = useQueryClient();
+  const { uploadAsset } = useTenantMarketingAssets();
   const decide = useDraftDecision(tenantId);
   const { tenantInfo } = useTenantAdmin();
   const { isAdmin } = useAuth();
