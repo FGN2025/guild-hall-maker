@@ -138,7 +138,7 @@ const TenantChallenges = () => {
       challenge_id: form.challenge_id,
       starts_at: form.starts_at.toISOString(),
       ends_at: form.ends_at.toISOString(),
-      headline: form.headline || null,
+      headline: (headlineTouched ? form.headline : form.headline || defaultHeadline) || null,
       promo_copy: form.promo_copy || null,
       is_featured: form.is_featured,
     };
