@@ -16,6 +16,17 @@ import QuickReferenceCard from "@/components/guides/QuickReferenceCard";
 
 const sectionData: { id: string; icon: typeof Target; title: string; bullets: string[] }[] = [
   {
+    id: "whats-new-2026-08-03",
+    icon: Bell,
+    title: "What's New — August 3, 2026",
+    bullets: [
+      "Provider Challenge Windows — Internet providers on FGN can now open a platform challenge to their own players for a set date range. Challenge cards and detail pages show your provider's window ('Opens Aug 12', 'Open until Aug 20', 'Closed Aug 20').",
+      "Enrollment Gating — When your provider's window is closed, the Enroll button is disabled and shows the reason. Challenges your provider has not scheduled remain open to you as normal, and players on other providers are unaffected.",
+      "Provider Promos — Providers can generate a branded promo for a scheduled challenge; the prize figure on those promos is the total of the 1st + 2nd + 3rd place point awards. Provider promos are reviewed and approved by provider staff before they go out.",
+    ],
+  },
+
+  {
     id: "whats-new-2026-07-24",
     icon: Bell,
     title: "What's New — July 24, 2026",
