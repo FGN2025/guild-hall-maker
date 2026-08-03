@@ -9,6 +9,8 @@ import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarCloc
 import { formatDistanceToNow } from "date-fns";
 import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
+import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 type Kind = "campaign" | "scheduled_post" | "asset";
