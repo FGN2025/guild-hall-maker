@@ -420,23 +420,30 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                   />
                 )}
 
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={decide.isPending}
-                    onClick={() => onDecide(row, false)}
-                  >
-                    <X className="h-4 w-4 mr-1" /> Reject
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={decide.isPending}
-                    onClick={() => onDecide(row, true)}
-                  >
-                    <Check className="h-4 w-4 mr-1" /> Approve
-                  </Button>
-                </div>
+                {canDecide ? (
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={decide.isPending}
+                      onClick={() => onDecide(row, false)}
+                    >
+                      <X className="h-4 w-4 mr-1" /> Reject
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={decide.isPending}
+                      onClick={() => onDecide(row, true)}
+                    >
+                      <Check className="h-4 w-4 mr-1" /> Approve
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-right">
+                    Awaiting review by a tenant Admin or Manager.
+                  </p>
+                )}
+
               </CardContent>
             </Card>
           );
