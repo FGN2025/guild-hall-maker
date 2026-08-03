@@ -137,6 +137,7 @@ const TenantMarketing = lazy(() => import("./pages/tenant/TenantMarketing"));
 const TenantMarketingDetail = lazy(() => import("./pages/tenant/TenantMarketingDetail"));
 const TenantPlayers = lazy(() => import("./pages/tenant/TenantPlayers"));
 const TenantEvents = lazy(() => import("./pages/tenant/TenantEvents"));
+const TenantChallenges = lazy(() => import("./pages/tenant/TenantChallenges"));
 const TenantGuide = lazy(() => import("./pages/tenant/TenantGuide"));
 const TenantCodes = lazy(() => import("./pages/tenant/TenantCodes"));
 const TenantMarketingAssets = lazy(() => import("./pages/tenant/TenantMarketingAssets"));
