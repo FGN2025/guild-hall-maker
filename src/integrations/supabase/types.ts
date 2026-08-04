@@ -6181,6 +6181,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      fail_stalled_agent_runs: { Args: never; Returns: number }
       get_academy_queue_stats: { Args: never; Returns: Json }
       get_marketing_notification_recipients: {
         Args: { _category: string; _tenant_id: string }
