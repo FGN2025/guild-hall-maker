@@ -178,25 +178,47 @@ async function fetchMcpTools(runnerToken: string): Promise<AnthropicTool[]> {
 }
 
 async function callAnthropic(body: any) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY!,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify(body),
-  });
+  // Hard timeout: a hung upstream must not consume the whole slice budget.
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ANTHROPIC_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY!,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw new Error(`anthropic_timeout after ${ANTHROPIC_TIMEOUT_MS}ms`);
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
   const txt = await res.text();
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${txt.slice(0, 500)}`);
   return JSON.parse(txt);
 }
 
-/** Wall-clock budget for a single invocation. When exceeded mid-run we persist
- *  the transcript and hand off to a fresh invocation of this same function, so
- *  long calendar-seed runs are not silently killed by the hosting time limit. */
-const SLICE_BUDGET_MS = 200_000;
+/* Wall-clock budget for a single invocation.
+ * ROOT CAUSE (2026-08-04): this was 200s, above the edge worker's effective
+ * wall-clock ceiling (observed kills at 150s and 187s). The worker was
+ * terminated by the platform — not by a JS exception — so the `continue`
+ * branch never fired, driveRun's catch never ran, the transcript was never
+ * persisted, and the run was left `running` forever at turns_used = 4.
+ * The budget must stay well under the ceiling, and it must reserve room for
+ * one more full turn before starting it. */
+const SLICE_BUDGET_MS = 80_000;
+/** Pessimistic cost of one more model turn plus its tool round-trips. */
+const TURN_RESERVE_MS = 45_000;
+const ANTHROPIC_TIMEOUT_MS = 60_000;
+const MCP_TIMEOUT_MS = 30_000;
 const MAX_CONTINUATIONS = 15;
+
 
 async function runAgentLoop(opts: {
   runId: string;
