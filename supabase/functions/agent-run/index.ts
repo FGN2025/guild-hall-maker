@@ -228,7 +228,10 @@ const SLICE_BUDGET_MS = 80_000;
 const TURN_RESERVE_MS = 45_000;
 const ANTHROPIC_TIMEOUT_MS = 60_000;
 const MCP_TIMEOUT_MS = 30_000;
-const MAX_CONTINUATIONS = 15;
+/* A slice now covers ~1-2 turns, so a 100-turn seed legitimately needs dozens
+ * of handoffs. 15 was sized for the old 200s slice and would abort a real seed. */
+const MAX_CONTINUATIONS = 60;
+
 
 
 async function runAgentLoop(opts: {
@@ -242,6 +245,8 @@ async function runAgentLoop(opts: {
   turnsSoFar?: number;
   inputTokensSoFar?: number;
   outputTokensSoFar?: number;
+  /** Test override: shrink the slice so the continuation path is exercised. */
+  sliceBudgetMs?: number;
 }) {
   const { runId, tenantId, userId, systemPrompt, userMessage, turnCap } = opts;
   const runnerToken = await mintRunnerToken(userId, tenantId, runId, 1800);
@@ -255,14 +260,22 @@ async function runAgentLoop(opts: {
   let turns = opts.turnsSoFar ?? 0;
   let finalText = "";
   const sliceStart = Date.now();
+  const sliceBudget = opts.sliceBudgetMs ?? SLICE_BUDGET_MS;
+  // Never reserve more than the slice itself, or a shrunken test slice would
+  // hand off forever without ever taking a turn.
+  const turnReserve = Math.min(TURN_RESERVE_MS, Math.floor(sliceBudget / 2));
+  let turnsThisSlice = 0;
 
   while (turns < turnCap) {
     // Hand off BEFORE a turn we cannot certainly finish inside this worker's
     // wall-clock life. Reserving a full turn is what keeps the platform from
     // killing us mid-turn (which loses the finalize path entirely).
-    if (Date.now() - sliceStart + TURN_RESERVE_MS > SLICE_BUDGET_MS) {
+    // Guarantee forward progress: always take at least one turn per slice.
+    if (turnsThisSlice > 0 && Date.now() - sliceStart + turnReserve > sliceBudget) {
       return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages };
     }
+    turnsThisSlice += 1;
+
     turns += 1;
     const resp = await callAnthropic({
       model: ANTHROPIC_MODEL,
@@ -313,7 +326,7 @@ async function runAgentLoop(opts: {
 }
 
 /** Re-invoke this function to continue a run in a fresh invocation. */
-async function handOff(runId: string) {
+async function handOff(runId: string, sliceBudgetMs?: number) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/agent-run`, {
     method: "POST",
     headers: {
@@ -321,7 +334,7 @@ async function handOff(runId: string) {
       Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
       "x-runner-continuation": SIGNING_KEY,
     },
-    body: JSON.stringify({ resume_run_id: runId }),
+    body: JSON.stringify({ resume_run_id: runId, slice_budget_ms: sliceBudgetMs ?? null }),
   });
   if (!res.ok) throw new Error(`continuation handoff failed: ${res.status} ${await res.text()}`);
   await res.text().catch(() => "");
@@ -336,6 +349,7 @@ async function driveRun(params: {
   userMessage: string;
   turnCap: number;
   initialMessages?: any[];
+  sliceBudgetMs?: number;
 }) {
   const { run, tenantId, userId, systemPrompt, userMessage, turnCap } = params;
   try {
@@ -350,7 +364,9 @@ async function driveRun(params: {
       turnsSoFar: run.turns_used ?? 0,
       inputTokensSoFar: run.input_tokens ?? 0,
       outputTokensSoFar: run.output_tokens ?? 0,
+      sliceBudgetMs: params.sliceBudgetMs,
     });
+
 
     if (result.status === "continue") {
       const nextCount = (run.continuation_count ?? 0) + 1;
@@ -375,7 +391,7 @@ async function driveRun(params: {
         output_tokens: result.outputTokens,
         heartbeat_at: new Date().toISOString(),
       });
-      await handOff(run.id);
+      await handOff(run.id, params.sliceBudgetMs);
       return;
     }
 
@@ -441,6 +457,27 @@ Deno.serve(async (req) => {
     const resumePrompt = await loadActivePrompt(prev.mode ?? "single_campaign");
     if (!resumePrompt) return json({ error: "no active prompt" }, 500);
 
+    // Repair a transcript that was cut mid-turn: Anthropic rejects a trailing
+    // assistant message whose tool_use blocks have no matching tool_result.
+    const resumeMessages = Array.isArray(prev.transcript) ? [...(prev.transcript as any[])] : [];
+    const last = resumeMessages[resumeMessages.length - 1];
+    if (last?.role === "assistant") {
+      const pending = (last.content ?? []).filter((c: any) => c?.type === "tool_use");
+      if (pending.length) {
+        resumeMessages.push({
+          role: "user",
+          content: pending.map((tu: any) => ({
+            type: "tool_result",
+            tool_use_id: tu.id,
+            content: "interrupted: the previous slice ended before this tool returned. Re-check state before retrying it.",
+            is_error: true,
+          })),
+        });
+      } else {
+        resumeMessages.pop();
+      }
+    }
+
     const resumeWork = driveRun({
       run: prev,
       tenantId: prev.tenant_id,
@@ -448,8 +485,10 @@ Deno.serve(async (req) => {
       systemPrompt: resumePrompt.content,
       userMessage: "",
       turnCap: prev.turn_cap,
-      initialMessages: (prev.transcript as any[]) ?? undefined,
+      initialMessages: resumeMessages.length ? resumeMessages : undefined,
+      sliceBudgetMs: Number(body?.slice_budget_ms) || undefined,
     });
+
     // @ts-ignore EdgeRuntime is provided by the Supabase runtime
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(resumeWork);
     return json({ run_id: resumeId, status: "running", continuation: (prev.continuation_count ?? 0) });
@@ -476,7 +515,9 @@ Deno.serve(async (req) => {
     turn_cap,
     target_month,
     seed_density,
+    slice_budget_ms,
   } = payload ?? {};
+
   if (!tenant_id) return json({ error: "tenant_id required" }, 400);
   if (!["single_campaign", "weekly_slate", "monthly_calendar_seed"].includes(mode)) {
     return json({ error: "invalid mode" }, 400);
@@ -563,6 +604,12 @@ Deno.serve(async (req) => {
   // Background the loop so the HTTP call returns quickly with the run id.
   // waitUntil keeps the worker alive past the response; driveRun hands off to a
   // fresh invocation when a slice runs out of wall-clock budget.
+  // Platform-admin-only test override: shrink the slice so the continuation
+  // path is exercised many times in a short run. Never accepted from tenants.
+  const debugSlice = platformAdmin
+    ? Math.max(15_000, Math.min(SLICE_BUDGET_MS, Number(slice_budget_ms) || 0)) || undefined
+    : undefined;
+
   const work = driveRun({
     run,
     tenantId: tenant_id,
@@ -570,7 +617,9 @@ Deno.serve(async (req) => {
     systemPrompt: prompt.content,
     userMessage,
     turnCap: effectiveTurnCap,
+    sliceBudgetMs: debugSlice,
   });
+
   // @ts-ignore EdgeRuntime is provided by the Supabase runtime
   if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(work);
 
