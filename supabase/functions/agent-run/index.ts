@@ -52,15 +52,26 @@ async function mintRunnerToken(sub: string, tenantId: string, runId: string, ttl
 }
 
 async function mcpCall(runnerToken: string, method: string, params: unknown, id: number) {
-  const res = await fetch(AGENT_MCP_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json, text/event-stream",
-      Authorization: `Bearer ${runnerToken}`,
-    },
-    body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
-  });
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), MCP_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(AGENT_MCP_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        Authorization: `Bearer ${runnerToken}`,
+      },
+      body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw new Error(`agent-mcp ${method} timed out after ${MCP_TIMEOUT_MS}ms`);
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body?.error) {
     throw new Error(`agent-mcp ${method} failed: ${body?.error?.message ?? res.status}`);
