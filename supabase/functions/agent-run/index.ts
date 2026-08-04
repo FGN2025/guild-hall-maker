@@ -52,15 +52,26 @@ async function mintRunnerToken(sub: string, tenantId: string, runId: string, ttl
 }
 
 async function mcpCall(runnerToken: string, method: string, params: unknown, id: number) {
-  const res = await fetch(AGENT_MCP_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json, text/event-stream",
-      Authorization: `Bearer ${runnerToken}`,
-    },
-    body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
-  });
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), MCP_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(AGENT_MCP_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        Authorization: `Bearer ${runnerToken}`,
+      },
+      body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw new Error(`agent-mcp ${method} timed out after ${MCP_TIMEOUT_MS}ms`);
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body?.error) {
     throw new Error(`agent-mcp ${method} failed: ${body?.error?.message ?? res.status}`);
@@ -178,25 +189,47 @@ async function fetchMcpTools(runnerToken: string): Promise<AnthropicTool[]> {
 }
 
 async function callAnthropic(body: any) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY!,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify(body),
-  });
+  // Hard timeout: a hung upstream must not consume the whole slice budget.
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ANTHROPIC_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY!,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw new Error(`anthropic_timeout after ${ANTHROPIC_TIMEOUT_MS}ms`);
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
   const txt = await res.text();
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${txt.slice(0, 500)}`);
   return JSON.parse(txt);
 }
 
-/** Wall-clock budget for a single invocation. When exceeded mid-run we persist
- *  the transcript and hand off to a fresh invocation of this same function, so
- *  long calendar-seed runs are not silently killed by the hosting time limit. */
-const SLICE_BUDGET_MS = 200_000;
+/* Wall-clock budget for a single invocation.
+ * ROOT CAUSE (2026-08-04): this was 200s, above the edge worker's effective
+ * wall-clock ceiling (observed kills at 150s and 187s). The worker was
+ * terminated by the platform — not by a JS exception — so the `continue`
+ * branch never fired, driveRun's catch never ran, the transcript was never
+ * persisted, and the run was left `running` forever at turns_used = 4.
+ * The budget must stay well under the ceiling, and it must reserve room for
+ * one more full turn before starting it. */
+const SLICE_BUDGET_MS = 80_000;
+/** Pessimistic cost of one more model turn plus its tool round-trips. */
+const TURN_RESERVE_MS = 45_000;
+const ANTHROPIC_TIMEOUT_MS = 60_000;
+const MCP_TIMEOUT_MS = 30_000;
 const MAX_CONTINUATIONS = 15;
+
 
 async function runAgentLoop(opts: {
   runId: string;
@@ -224,7 +257,10 @@ async function runAgentLoop(opts: {
   const sliceStart = Date.now();
 
   while (turns < turnCap) {
-    if (Date.now() - sliceStart > SLICE_BUDGET_MS) {
+    // Hand off BEFORE a turn we cannot certainly finish inside this worker's
+    // wall-clock life. Reserving a full turn is what keeps the platform from
+    // killing us mid-turn (which loses the finalize path entirely).
+    if (Date.now() - sliceStart + TURN_RESERVE_MS > SLICE_BUDGET_MS) {
       return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages };
     }
     turns += 1;
@@ -237,15 +273,19 @@ async function runAgentLoop(opts: {
     });
     inputTokens += resp.usage?.input_tokens ?? 0;
     outputTokens += resp.usage?.output_tokens ?? 0;
+
+    const content = resp.content ?? [];
+    messages.push({ role: "assistant", content });
+
+    // Persist the transcript every turn: an abrupt worker kill then loses at
+    // most the current turn, and the watchdog/resume path has real state.
     await updateRun(runId, {
       turns_used: turns,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
+      transcript: messages,
       heartbeat_at: new Date().toISOString(),
     });
-
-    const content = resp.content ?? [];
-    messages.push({ role: "assistant", content });
 
     const toolUses = content.filter((c: any) => c.type === "tool_use");
     if (toolUses.length === 0) {
@@ -264,10 +304,11 @@ async function runAgentLoop(opts: {
       }
     }
     messages.push({ role: "user", content: toolResults });
-    await updateRun(runId, { heartbeat_at: new Date().toISOString() });
+    await updateRun(runId, { transcript: messages, heartbeat_at: new Date().toISOString() });
 
     if (resp.stop_reason === "end_turn" && toolUses.length === 0) break;
   }
+
   return { status: "failed" as const, turns, inputTokens, outputTokens, finalText, messages, error: "turn_cap_exceeded" };
 }
 
