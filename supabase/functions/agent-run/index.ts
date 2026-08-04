@@ -25,6 +25,10 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const ANTHROPIC_MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-6";
 const AGENT_MCP_URL = `${SUPABASE_URL}/functions/v1/agent-mcp`;
 
+/** Build stamp. Bump on every deploy that must be verified before a test run —
+ *  a GET returns it so we can prove which worker code is live. */
+const BUILD_ID = "2026-08-04T23:10Z-step3";
+
 const service = () => createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -434,6 +438,7 @@ async function driveRun(params: {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "GET") return json({ build_id: BUILD_ID });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
   const authHeader = req.headers.get("Authorization");
