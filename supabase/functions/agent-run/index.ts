@@ -246,7 +246,10 @@ async function runAgentLoop(opts: {
   const sliceStart = Date.now();
 
   while (turns < turnCap) {
-    if (Date.now() - sliceStart > SLICE_BUDGET_MS) {
+    // Hand off BEFORE a turn we cannot certainly finish inside this worker's
+    // wall-clock life. Reserving a full turn is what keeps the platform from
+    // killing us mid-turn (which loses the finalize path entirely).
+    if (Date.now() - sliceStart + TURN_RESERVE_MS > SLICE_BUDGET_MS) {
       return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages };
     }
     turns += 1;
@@ -259,15 +262,19 @@ async function runAgentLoop(opts: {
     });
     inputTokens += resp.usage?.input_tokens ?? 0;
     outputTokens += resp.usage?.output_tokens ?? 0;
+
+    const content = resp.content ?? [];
+    messages.push({ role: "assistant", content });
+
+    // Persist the transcript every turn: an abrupt worker kill then loses at
+    // most the current turn, and the watchdog/resume path has real state.
     await updateRun(runId, {
       turns_used: turns,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
+      transcript: messages,
       heartbeat_at: new Date().toISOString(),
     });
-
-    const content = resp.content ?? [];
-    messages.push({ role: "assistant", content });
 
     const toolUses = content.filter((c: any) => c.type === "tool_use");
     if (toolUses.length === 0) {
@@ -286,10 +293,11 @@ async function runAgentLoop(opts: {
       }
     }
     messages.push({ role: "user", content: toolResults });
-    await updateRun(runId, { heartbeat_at: new Date().toISOString() });
+    await updateRun(runId, { transcript: messages, heartbeat_at: new Date().toISOString() });
 
     if (resp.stop_reason === "end_turn" && toolUses.length === 0) break;
   }
+
   return { status: "failed" as const, turns, inputTokens, outputTokens, finalText, messages, error: "turn_cap_exceeded" };
 }
 
