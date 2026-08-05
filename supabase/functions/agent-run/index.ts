@@ -395,13 +395,27 @@ async function runAgentLoop(opts: {
     turnsThisSlice += 1;
 
     turns += 1;
-    const resp = await callAnthropic({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 16000,
-      system: systemPrompt,
-      tools,
-      messages,
-    });
+    let resp: any;
+    try {
+      resp = await callAnthropicWithRetry({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 16000,
+        system: systemPrompt,
+        tools,
+        messages,
+      });
+    } catch (e) {
+      const msg = (e as Error).message ?? "";
+      // A slow or stalled model call must never discard a run. The transcript
+      // is already persisted, so end the SLICE and let the next one resume.
+      if (isTransientModelError(msg)) {
+        console.warn("[agent-run] model call failed after retry, ending slice for resume:", msg);
+        turns -= 1;
+        return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages };
+      }
+      throw e;
+    }
+
     inputTokens += resp.usage?.input_tokens ?? 0;
     outputTokens += resp.usage?.output_tokens ?? 0;
 
