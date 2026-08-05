@@ -66,9 +66,13 @@ const TenantMarketingDetail = () => {
 
       <div>
         <h1 className="font-display text-3xl font-bold text-foreground">{campaign.title}</h1>
-        <Badge variant="outline" className="mt-2 capitalize">{campaign.category.replace("_", " ")}</Badge>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <CampaignStatusBadge status={resolveCampaignStatus(campaign)} />
+          <Badge variant="outline" className="capitalize">{campaign.category.replace("_", " ")}</Badge>
+        </div>
         {campaign.description && <p className="text-muted-foreground mt-3">{campaign.description}</p>}
       </div>
+
 
       {campaign.social_copy && (
         <Card>
