@@ -121,11 +121,37 @@ const TenantMarketing = () => {
     },
   });
 
-  const filtered = campaigns.filter((c) => {
-    if (category !== "all" && c.category !== category) return false;
-    if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  /** Scope: this tenant's own rows + platform library rows (tenant_id IS NULL),
+   *  matching what the tab has always shown. */
+  const scoped = useMemo(
+    () => campaigns.filter((c) => c.tenant_id === null || (tenantAdmin && c.tenant_id === tenantAdmin)),
+    [campaigns, tenantAdmin]
+  );
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const c of scoped) counts[resolveCampaignStatus(c)] = (counts[resolveCampaignStatus(c)] ?? 0) + 1;
+    return counts;
+  }, [scoped]);
+
+  const filtered = useMemo(
+    () =>
+      scoped
+        .filter((c) => {
+          if (category !== "all" && c.category !== category) return false;
+          if (statusFilter !== "all" && resolveCampaignStatus(c) !== statusFilter) return false;
+          if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
+          return true;
+        })
+        // Pending review surfaces first, then newest within each status group.
+        .sort((a, b) => {
+          const d = STATUS_ORDER[resolveCampaignStatus(a)] - STATUS_ORDER[resolveCampaignStatus(b)];
+          if (d !== 0) return d;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }),
+    [scoped, category, statusFilter, search]
+  );
+
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
