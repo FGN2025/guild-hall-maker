@@ -11,11 +11,15 @@ import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import CampaignStatusBadge, { resolveCampaignStatus } from "@/components/marketing/CampaignStatusBadge";
+
 
 const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(true);
+  // Not published-only — tenant staff open their own pending-review drafts here.
+  const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(false);
+
   const { assets, isLoading: loadingAssets, deleteAsset } = useMarketingAssets(id);
   const { saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
   const { tenantInfo } = useTenantAdmin();
@@ -64,9 +68,13 @@ const TenantMarketingDetail = () => {
 
       <div>
         <h1 className="font-display text-3xl font-bold text-foreground">{campaign.title}</h1>
-        <Badge variant="outline" className="mt-2 capitalize">{campaign.category.replace("_", " ")}</Badge>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <CampaignStatusBadge status={resolveCampaignStatus(campaign)} />
+          <Badge variant="outline" className="capitalize">{campaign.category.replace("_", " ")}</Badge>
+        </div>
         {campaign.description && <p className="text-muted-foreground mt-3">{campaign.description}</p>}
       </div>
+
 
       {campaign.social_copy && (
         <Card>

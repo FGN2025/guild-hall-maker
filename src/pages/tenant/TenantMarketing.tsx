@@ -20,14 +20,21 @@ import TenantMarketingAssets from "./TenantMarketingAssets";
 import TenantCodes from "./TenantCodes";
 import WebPagesTab from "@/components/tenant/marketing/WebPagesTab";
 import UniversalAssetsTab from "@/components/tenant/UniversalAssetsTab";
+import CampaignStatusBadge, { resolveCampaignStatus, STATUS_ORDER, CAMPAIGN_STATUS_LABELS, type CampaignStatusKey } from "@/components/marketing/CampaignStatusBadge";
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
+const STATUS_FILTERS: ("all" | CampaignStatusKey)[] = ["all", "pending_review", "approved", "published", "rejected", "draft"];
+
 
 const VALID_TABS = ["campaigns", "assets", "universal", "codes", "webpages", "social", "scheduled", "agent"] as const;
 
 const TenantMarketing = () => {
-  const { campaigns, isLoading } = useMarketingCampaigns(true);
+  // Not published-only: tenant staff must see their own drafts / pending-review
+  // campaigns (the Aug 2026 seed is the first tenant-owned unpublished set).
+  const { campaigns, isLoading } = useMarketingCampaigns(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatusKey>("all");
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
@@ -114,11 +121,37 @@ const TenantMarketing = () => {
     },
   });
 
-  const filtered = campaigns.filter((c) => {
-    if (category !== "all" && c.category !== category) return false;
-    if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  /** Scope: this tenant's own rows + platform library rows (tenant_id IS NULL),
+   *  matching what the tab has always shown. */
+  const scoped = useMemo(
+    () => campaigns.filter((c) => c.tenant_id === null || (tenantAdmin && c.tenant_id === tenantAdmin)),
+    [campaigns, tenantAdmin]
+  );
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const c of scoped) counts[resolveCampaignStatus(c)] = (counts[resolveCampaignStatus(c)] ?? 0) + 1;
+    return counts;
+  }, [scoped]);
+
+  const filtered = useMemo(
+    () =>
+      scoped
+        .filter((c) => {
+          if (category !== "all" && c.category !== category) return false;
+          if (statusFilter !== "all" && resolveCampaignStatus(c) !== statusFilter) return false;
+          if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
+          return true;
+        })
+        // Pending review surfaces first, then newest within each status group.
+        .sort((a, b) => {
+          const d = STATUS_ORDER[resolveCampaignStatus(a)] - STATUS_ORDER[resolveCampaignStatus(b)];
+          if (d !== 0) return d;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }),
+    [scoped, category, statusFilter, search]
+  );
+
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -179,6 +212,29 @@ const TenantMarketing = () => {
             </div>
           </div>
 
+          {/* Status filter — pending review is also sorted to the top by default */}
+          <div className="flex flex-wrap items-center gap-2">
+            {STATUS_FILTERS.map((s) => {
+              const count = s === "all" ? scoped.length : statusCounts[s] ?? 0;
+              if (s !== "all" && count === 0) return null;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatusFilter(s)}
+                  className={`rounded-full border px-3 py-1 text-xs font-heading transition-colors ${
+                    statusFilter === s
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border bg-muted/40 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {s === "all" ? "All" : CAMPAIGN_STATUS_LABELS[s]} <span className="opacity-70">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+
           {isLoading ? (
             <div className="flex justify-center py-16"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>
           ) : filtered.length === 0 ? (
@@ -207,14 +263,18 @@ const TenantMarketing = () => {
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-lg font-heading">{c.title}</CardTitle>
-                        {isNew && (
-                          <Badge className="bg-primary text-primary-foreground text-[10px] shrink-0">New</Badge>
-                        )}
-                        {isUpdated && (
-                          <Badge variant="secondary" className="text-[10px] shrink-0">Updated</Badge>
-                        )}
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <CampaignStatusBadge status={resolveCampaignStatus(c)} />
+                          {isNew && (
+                            <Badge className="bg-primary text-primary-foreground text-[10px] shrink-0">New</Badge>
+                          )}
+                          {isUpdated && (
+                            <Badge variant="secondary" className="text-[10px] shrink-0">Updated</Badge>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
+
                     <CardContent>
                       <Badge variant="outline" className="mb-2 capitalize">{c.category.replace("_", " ")}</Badge>
                       {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
