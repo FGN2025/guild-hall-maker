@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import CampaignStatusBadge, { resolveCampaignStatus } from "@/components/marketing/CampaignStatusBadge";
+
 
 const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
