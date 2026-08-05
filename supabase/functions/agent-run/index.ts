@@ -192,31 +192,138 @@ async function fetchMcpTools(runnerToken: string): Promise<AnthropicTool[]> {
   }));
 }
 
+/* Streaming model call.
+ * DESIGN (2026-08-05): the previous non-streaming call gave zero incremental
+ * signal, so a legitimately large turn (the calendar-seed plan turn emits a
+ * multi-tool block over 14 events) was indistinguishable from a hang and got
+ * aborted at a flat 60s. Liveness is now measured by TOKEN ARRIVAL: as long as
+ * the stream keeps producing events we keep waiting. The idle detector is the
+ * primary mechanism; the total ceiling is only defense in depth. */
 async function callAnthropic(body: any) {
-  // Hard timeout: a hung upstream must not consume the whole slice budget.
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ANTHROPIC_TIMEOUT_MS);
-  let res: Response;
+  const started = Date.now();
+  let lastEventAt = Date.now();
+  let aborted: "idle" | "total" | null = null;
+
+  const watchdog = setInterval(() => {
+    const now = Date.now();
+    if (now - lastEventAt > ANTHROPIC_IDLE_MS) { aborted = "idle"; ctrl.abort(); }
+    else if (now - started > ANTHROPIC_TOTAL_MS) { aborted = "total"; ctrl.abort(); }
+  }, 1_000);
+
+  const failure = () =>
+    aborted === "idle"
+      ? new Error(`anthropic_stream_idle: no tokens for ${ANTHROPIC_IDLE_MS}ms`)
+      : new Error(`anthropic_timeout after ${ANTHROPIC_TOTAL_MS}ms`);
+
   try {
-    res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(body),
-      signal: ctrl.signal,
-    });
-  } catch (e) {
-    if ((e as Error).name === "AbortError") throw new Error(`anthropic_timeout after ${ANTHROPIC_TIMEOUT_MS}ms`);
-    throw e;
+    let res: Response;
+    try {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY!,
+          "anthropic-version": "2023-06-01",
+          accept: "text/event-stream",
+        },
+        body: JSON.stringify({ ...body, stream: true }),
+        signal: ctrl.signal,
+      });
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw failure();
+      throw e;
+    }
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`Anthropic ${res.status}: ${txt.slice(0, 500)}`);
+    }
+    if (!res.body) throw new Error("Anthropic stream: empty body");
+
+    // Assemble the message from the SSE event stream.
+    const content: any[] = [];
+    const partials = new Map<number, string>();
+    let stopReason: string | null = null;
+    const usage = { input_tokens: 0, output_tokens: 0 };
+
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = "";
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        lastEventAt = Date.now(); // token arrival == liveness
+        buf += value;
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (!payload || payload === "[DONE]") continue;
+          let ev: any;
+          try { ev = JSON.parse(payload); } catch { continue; }
+          switch (ev.type) {
+            case "message_start":
+              usage.input_tokens += ev.message?.usage?.input_tokens ?? 0;
+              usage.output_tokens += ev.message?.usage?.output_tokens ?? 0;
+              break;
+            case "content_block_start":
+              content[ev.index] = { ...ev.content_block };
+              partials.set(ev.index, "");
+              break;
+            case "content_block_delta": {
+              const d = ev.delta ?? {};
+              if (d.type === "text_delta") {
+                content[ev.index].text = (content[ev.index].text ?? "") + (d.text ?? "");
+              } else if (d.type === "input_json_delta") {
+                partials.set(ev.index, (partials.get(ev.index) ?? "") + (d.partial_json ?? ""));
+              }
+              break;
+            }
+            case "content_block_stop": {
+              const raw = partials.get(ev.index);
+              if (content[ev.index]?.type === "tool_use") {
+                try { content[ev.index].input = raw ? JSON.parse(raw) : {}; }
+                catch { content[ev.index].input = {}; }
+              }
+              break;
+            }
+            case "message_delta":
+              stopReason = ev.delta?.stop_reason ?? stopReason;
+              usage.output_tokens += ev.usage?.output_tokens ?? 0;
+              break;
+            case "error":
+              throw new Error(`Anthropic stream error: ${ev.error?.message ?? "unknown"}`);
+          }
+        }
+      }
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw failure();
+      throw e;
+    }
+
+    return { content: content.filter(Boolean), stop_reason: stopReason, usage };
   } finally {
-    clearTimeout(t);
+    clearInterval(watchdog);
   }
-  const txt = await res.text();
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${txt.slice(0, 500)}`);
-  return JSON.parse(txt);
+}
+
+/** Timeouts are transient, never fatal: retry the same turn once with backoff. */
+function isTransientModelError(msg: string) {
+  return /anthropic_stream_idle|anthropic_timeout|Anthropic 429|Anthropic 5\d\d|stream error/i.test(msg);
+}
+
+async function callAnthropicWithRetry(body: any) {
+  try {
+    return await callAnthropic(body);
+  } catch (e) {
+    const msg = (e as Error).message ?? "";
+    if (!isTransientModelError(msg)) throw e;
+    console.warn("[agent-run] transient model error, retrying once:", msg);
+    await new Promise((r) => setTimeout(r, RETRY_BACKOFF_MS));
+    return await callAnthropic(body);
+  }
 }
 
 /* Wall-clock budget for a single invocation.
@@ -226,15 +333,22 @@ async function callAnthropic(body: any) {
  * branch never fired, driveRun's catch never ran, the transcript was never
  * persisted, and the run was left `running` forever at turns_used = 4.
  * The budget must stay well under the ceiling, and it must reserve room for
- * one more full turn before starting it. */
-const SLICE_BUDGET_MS = 80_000;
+ * one more full turn before starting it.
+ * 2026-08-05: reserve raised to 60s so a large turn effectively starts a FRESH
+ * slice — we never begin a plan-sized turn with the worker already half spent. */
+const SLICE_BUDGET_MS = 70_000;
 /** Pessimistic cost of one more model turn plus its tool round-trips. */
-const TURN_RESERVE_MS = 45_000;
-const ANTHROPIC_TIMEOUT_MS = 60_000;
+const TURN_RESERVE_MS = 60_000;
+/** Primary liveness mechanism: abort only when the stream itself stalls. */
+const ANTHROPIC_IDLE_MS = 45_000;
+/** Defense in depth only — must exceed the largest legitimate turn with margin. */
+const ANTHROPIC_TOTAL_MS = 90_000;
+const RETRY_BACKOFF_MS = 2_000;
 const MCP_TIMEOUT_MS = 30_000;
 /* A slice now covers ~1-2 turns, so a 100-turn seed legitimately needs dozens
  * of handoffs. 15 was sized for the old 200s slice and would abort a real seed. */
 const MAX_CONTINUATIONS = 60;
+
 
 
 
