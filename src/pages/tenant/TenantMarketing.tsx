@@ -20,7 +20,10 @@ import TenantMarketingAssets from "./TenantMarketingAssets";
 import TenantCodes from "./TenantCodes";
 import WebPagesTab from "@/components/tenant/marketing/WebPagesTab";
 import UniversalAssetsTab from "@/components/tenant/UniversalAssetsTab";
+import CampaignStatusBadge, { resolveCampaignStatus, STATUS_ORDER, CAMPAIGN_STATUS_LABELS, type CampaignStatusKey } from "@/components/marketing/CampaignStatusBadge";
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
+const STATUS_FILTERS: ("all" | CampaignStatusKey)[] = ["all", "pending_review", "approved", "published", "rejected", "draft"];
+
 
 const VALID_TABS = ["campaigns", "assets", "universal", "codes", "webpages", "social", "scheduled", "agent"] as const;
 
