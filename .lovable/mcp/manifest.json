@@ -863,7 +863,7 @@
       {
         "name": "get_calendar_image",
         "title": "Get the platform monthly calendar poster for a month",
-        "description": "Returns the platform-wide monthly calendar poster for the given year and month, or null when no poster has been uploaded. Used by the calendar-seed lane to create the month kickoff campaign. Graceful: a missing poster is NOT an error, it returns { image: null }.",
+        "description": "Returns the platform-wide monthly calendar poster for the given year and month, or null when no poster has been uploaded. The returned image_url is a freshly signed, time-limited URL (the calendar-images bucket is private). Used by the calendar-seed lane to create the month kickoff campaign. Graceful: a missing poster is NOT an error, it returns { image: null }.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
