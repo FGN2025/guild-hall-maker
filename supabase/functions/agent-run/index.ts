@@ -27,7 +27,7 @@ const AGENT_MCP_URL = `${SUPABASE_URL}/functions/v1/agent-mcp`;
 
 /** Build stamp. Bump on every deploy that must be verified before a test run —
  *  a GET returns it so we can prove which worker code is live. */
-const BUILD_ID = "2026-08-04T23:10Z-step3";
+const BUILD_ID = "2026-08-05T00:55Z-stream";
 
 const service = () => createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
