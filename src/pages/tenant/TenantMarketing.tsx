@@ -25,9 +25,13 @@ const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 const VALID_TABS = ["campaigns", "assets", "universal", "codes", "webpages", "social", "scheduled", "agent"] as const;
 
 const TenantMarketing = () => {
-  const { campaigns, isLoading } = useMarketingCampaigns(true);
+  // Not published-only: tenant staff must see their own drafts / pending-review
+  // campaigns (the Aug 2026 seed is the first tenant-owned unpublished set).
+  const { campaigns, isLoading } = useMarketingCampaigns(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatusKey>("all");
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
