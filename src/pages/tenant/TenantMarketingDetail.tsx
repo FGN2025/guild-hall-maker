@@ -15,7 +15,9 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 const TenantMarketingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(true);
+  // Not published-only — tenant staff open their own pending-review drafts here.
+  const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(false);
+
   const { assets, isLoading: loadingAssets, deleteAsset } = useMarketingAssets(id);
   const { saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
   const { tenantInfo } = useTenantAdmin();
