@@ -263,14 +263,18 @@ const TenantMarketing = () => {
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-lg font-heading">{c.title}</CardTitle>
-                        {isNew && (
-                          <Badge className="bg-primary text-primary-foreground text-[10px] shrink-0">New</Badge>
-                        )}
-                        {isUpdated && (
-                          <Badge variant="secondary" className="text-[10px] shrink-0">Updated</Badge>
-                        )}
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <CampaignStatusBadge status={resolveCampaignStatus(c)} />
+                          {isNew && (
+                            <Badge className="bg-primary text-primary-foreground text-[10px] shrink-0">New</Badge>
+                          )}
+                          {isUpdated && (
+                            <Badge variant="secondary" className="text-[10px] shrink-0">Updated</Badge>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
+
                     <CardContent>
                       <Badge variant="outline" className="mb-2 capitalize">{c.category.replace("_", " ")}</Badge>
                       {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
