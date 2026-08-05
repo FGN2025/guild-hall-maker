@@ -212,6 +212,29 @@ const TenantMarketing = () => {
             </div>
           </div>
 
+          {/* Status filter — pending review is also sorted to the top by default */}
+          <div className="flex flex-wrap items-center gap-2">
+            {STATUS_FILTERS.map((s) => {
+              const count = s === "all" ? scoped.length : statusCounts[s] ?? 0;
+              if (s !== "all" && count === 0) return null;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatusFilter(s)}
+                  className={`rounded-full border px-3 py-1 text-xs font-heading transition-colors ${
+                    statusFilter === s
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border bg-muted/40 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {s === "all" ? "All" : CAMPAIGN_STATUS_LABELS[s]} <span className="opacity-70">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+
           {isLoading ? (
             <div className="flex justify-center py-16"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>
           ) : filtered.length === 0 ? (
