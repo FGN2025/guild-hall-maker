@@ -113,6 +113,35 @@ export async function renderPromoSceneToPng(
     return `<polygon points="${poly}" fill="${s.color}" fill-opacity="${s.opacity}"/>`;
   }).join("");
 
+  const arcs = (p.arcs ?? []).map((a) =>
+    `<circle cx="${a.cxPct * w}" cy="${a.cyPct * h}" r="${a.rPct * w}" fill="none" stroke="${a.color}" stroke-width="${Math.max(1, a.widthPct * w)}" stroke-opacity="${a.opacity}"/>`
+  ).join("");
+
+  const shards = (p.shards ?? []).map((s) =>
+    `<polygon points="${s.points.map(([x, y]) => `${x * w},${y * h}`).join(" ")}" fill="${s.color}" fill-opacity="${s.opacity}"/>`
+  ).join("");
+
+  let halftone = "";
+  if (p.halftone) {
+    const ht = p.halftone;
+    const step = ht.spacingPct * w;
+    const maxR = ht.radiusPct * w;
+    const y0 = ht.fromYPct * h;
+    const y1 = ht.toYPct * h;
+    const parts: string[] = [];
+    let row = 0;
+    for (let y = y0; y < y1; y += step, row++) {
+      const t = 1 - (y - y0) / Math.max(1, y1 - y0);
+      const rr = maxR * (0.35 + 0.65 * t);
+      const op = ht.maxOpacity * t * t;
+      if (op < 0.01) continue;
+      for (let x = (row % 2 ? step / 2 : 0); x < w; x += step) {
+        parts.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}" fill="${ht.color}" fill-opacity="${op.toFixed(3)}"/>`);
+      }
+    }
+    halftone = parts.join("");
+  }
+
   const bgLayer = bgHref
     ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>`
     : `<rect x="0" y="0" width="${w}" height="${h}" fill="${p.baseHex}"/>
@@ -120,9 +149,23 @@ export async function renderPromoSceneToPng(
          <rect x="0" y="0" width="${w}" height="${h}" fill="url(#plate)"/>
          <rect x="0" y="0" width="${w}" height="${h}" fill="url(#grid)"/>
          <circle cx="${w * 0.78}" cy="${h * 0.14}" r="${p.glowRadiusPct * w}" fill="url(#glow)"/>
+         ${arcs}
+         ${shards}
+         ${halftone}
          ${stripes}
        </g>
        <line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="${p.edge.color}" stroke-width="${Math.max(2, p.edge.widthPct * w)}"/>`;
+
+  const scrim = (bgHref ? scene.imageScrim : scene.plateScrim) ?? {
+    startPct: scene.gradient.startPct,
+    stops: [
+      { offset: 0, color: scene.gradient.fromRgba },
+      { offset: 1, color: scene.gradient.toRgba },
+    ],
+  };
+  const scrimStops = scrim.stops
+    .map((s) => `<stop offset="${s.offset}" stop-color="${rgbaFromCss(s.color)}"/>`)
+    .join("");
 
   const gradient = `
     <defs>
@@ -138,10 +181,10 @@ export async function renderPromoSceneToPng(
       <pattern id="grid" width="${gridStep}" height="${gridStep}" patternUnits="userSpaceOnUse">
         <path d="M ${gridStep} 0 L 0 0 0 ${gridStep}" fill="none" stroke="${p.gridColor}" stroke-width="${Math.max(1, w / 1080)}"/>
       </pattern>
-      <linearGradient id="dark" x1="0" y1="${gradStartY}" x2="0" y2="${h}" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stop-color="${rgbaFromCss(scene.gradient.fromRgba)}"/>
-        <stop offset="1" stop-color="${rgbaFromCss(scene.gradient.toRgba)}"/>
+      <linearGradient id="dark" x1="0" y1="${scrim.startPct * h}" x2="0" y2="${h}" gradientUnits="userSpaceOnUse">
+        ${scrimStops}
       </linearGradient>
+
       <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
         <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
         <feOffset dx="2" dy="2" result="off"/>
