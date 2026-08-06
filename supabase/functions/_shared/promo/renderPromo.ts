@@ -101,21 +101,38 @@ export async function renderPromoSceneToPng(
   const p = scene.plate;
   const gridStep = p.gridSpacingPct * w;
 
+  // "Diagonal Field" plate geometry (mirrors renderPromoBrowser.drawPlate)
+  const fpts = p.fieldPoints.map(([x, y]) => [x * w, y * h] as [number, number]);
+  const fieldPoly = fpts.map(([x, y]) => `${x},${y}`).join(" ");
+  const [lx, ly] = fpts[3];
+  const [rx, ry] = fpts[2];
+  const stripes = p.stripes.map((s) => {
+    const dy = s.offsetPct * h;
+    const th = s.thicknessPct * h;
+    const poly = `${lx},${ly - dy} ${rx},${ry - dy} ${rx},${ry - dy - th} ${lx},${ly - dy - th}`;
+    return `<polygon points="${poly}" fill="${s.color}" fill-opacity="${s.opacity}"/>`;
+  }).join("");
+
   const bgLayer = bgHref
     ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>`
-    // Designed branded plate: diagonal brand gradient + soft glow + subtle grid
-    : `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#plate)"/>
-       <rect x="0" y="0" width="${w}" height="${h}" fill="url(#grid)"/>
-       <circle cx="${w * 0.82}" cy="${h * 0.16}" r="${p.glowRadiusPct * w}" fill="url(#glow)"/>`;
+    : `<rect x="0" y="0" width="${w}" height="${h}" fill="${p.baseHex}"/>
+       <g clip-path="url(#field)">
+         <rect x="0" y="0" width="${w}" height="${h}" fill="url(#plate)"/>
+         <rect x="0" y="0" width="${w}" height="${h}" fill="url(#grid)"/>
+         <circle cx="${w * 0.78}" cy="${h * 0.14}" r="${p.glowRadiusPct * w}" fill="url(#glow)"/>
+         ${stripes}
+       </g>
+       <line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="${p.edge.color}" stroke-width="${Math.max(2, p.edge.widthPct * w)}"/>`;
 
   const gradient = `
     <defs>
+      <clipPath id="field"><polygon points="${fieldPoly}"/></clipPath>
       <linearGradient id="plate" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse">
         <stop offset="0" stop-color="${p.fromHex}"/>
         <stop offset="1" stop-color="${p.toHex}"/>
       </linearGradient>
       <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0" stop-color="${p.glowColor}" stop-opacity="0.33"/>
+        <stop offset="0" stop-color="${p.glowColor}" stop-opacity="0.4"/>
         <stop offset="1" stop-color="${p.glowColor}" stop-opacity="0"/>
       </radialGradient>
       <pattern id="grid" width="${gridStep}" height="${gridStep}" patternUnits="userSpaceOnUse">
@@ -132,6 +149,7 @@ export async function renderPromoSceneToPng(
         <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
     </defs>`;
+
 
   const overlay = `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#dark)"/>`;
 
