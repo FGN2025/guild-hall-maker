@@ -1410,7 +1410,6 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   }
   const w = scene.width;
   const h = scene.height;
-  const gradStartY = scene.gradient.startPct * h;
   const p = scene.plate;
   const gridStep = p.gridSpacingPct * w;
   const fpts = p.fieldPoints.map(([x, y]) => [x * w, y * h]);

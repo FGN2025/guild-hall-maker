@@ -97,7 +97,6 @@ export async function renderPromoSceneToPng(
 
   const w = scene.width;
   const h = scene.height;
-  const gradStartY = scene.gradient.startPct * h;
   const p = scene.plate;
   const gridStep = p.gridSpacingPct * w;
 
