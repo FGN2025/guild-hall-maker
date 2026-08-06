@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
+import { fetchTournamentCapacity } from "@/lib/tournamentCapacity";
 
 export type Tournament = Tables<"tournaments"> & {
-  registrations_count: number;
+  registrations_count: number | null;
+  is_full: boolean;
   is_registered: boolean;
   game_cover_url?: string | null;
   effective_status: string;
@@ -13,10 +16,11 @@ export type Tournament = Tables<"tournaments"> & {
 
 export const useTournaments = () => {
   const { user } = useAuth();
+  const canSeeRegCounts = useCanSeeRegistrationCounts();
   const queryClient = useQueryClient();
 
   const tournamentsQuery = useQuery({
-    queryKey: ["tournaments", user?.id ?? null],
+    queryKey: ["tournaments", user?.id ?? null, canSeeRegCounts],
     staleTime: 60_000,
     queryFn: async () => {
       // Fetch tournaments, per-tournament registration aggregates, user's own
@@ -42,16 +46,7 @@ export const useTournaments = () => {
 
       // Per-tournament registration counts (one query, scoped by IDs)
       const tournamentIds = tournaments.map((t) => t.id);
-      const countsMap = new Map<string, number>();
-      if (tournamentIds.length > 0) {
-        const { data: regRows } = await supabase.rpc(
-          "get_tournament_registration_counts" as any,
-          { _tournament_ids: tournamentIds } as any
-        );
-        ((regRows as any[]) ?? []).forEach((r: any) => {
-          countsMap.set(r.tournament_id, Number(r.registration_count) || 0);
-        });
-      }
+      const capacityMap = await fetchTournamentCapacity(tournamentIds, canSeeRegCounts);
 
       const myRegSet = new Set(
         ((myRegsRes as any).data ?? []).map((r: any) => r.tournament_id as string)
@@ -69,7 +64,8 @@ export const useTournaments = () => {
             : t.status;
         return {
           ...t,
-          registrations_count: countsMap.get(t.id) ?? 0,
+          registrations_count: capacityMap.get(t.id)?.count ?? null,
+          is_full: capacityMap.get(t.id)?.is_full ?? false,
           is_registered: myRegSet.has(t.id),
           game_cover_url: gameCovers.get(t.game) ?? null,
           effective_status,

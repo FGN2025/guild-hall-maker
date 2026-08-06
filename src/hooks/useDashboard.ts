@@ -105,9 +105,10 @@ const buildSummary = (
 
 export const useDashboard = () => {
   const { user } = useAuth();
+  const canSeeRegCounts = useCanSeeRegistrationCounts();
 
   const registeredTournamentsQuery = useQuery({
-    queryKey: ["dashboard-tournaments", user?.id],
+    queryKey: ["dashboard-tournaments", user?.id, canSeeRegCounts],
     enabled: !!user,
     staleTime: 60_000,
     queryFn: async () => {
