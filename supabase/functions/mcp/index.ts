@@ -1134,7 +1134,7 @@ function wrapText(text, fontSize, maxWidth, maxLines, bold) {
   return lines;
 }
 function fitTitle(text, baseFontSize, maxWidth, maxLines = 3) {
-  const min = Math.round(baseFontSize * 0.55);
+  const min = Math.round(baseFontSize * 0.42);
   for (let fs2 = baseFontSize; fs2 >= min; fs2 -= 2) {
     const lines2 = wrapText(text, fs2, maxWidth, maxLines, true);
     if (lines2) return { lines: lines2, fontSize: fs2 };
@@ -1170,7 +1170,8 @@ function composePromoLayout(args) {
   const accent2 = clampHex(args.tenantAccentColor, mixHex(accent, "#22d3ee", 0.5));
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
-  const scale = W / 1080;
+  const shortEdge = Math.min(W, H);
+  const scale = shortEdge / 620;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
   const beatFs = Math.round(28 * scale);
@@ -1239,34 +1240,93 @@ function composePromoLayout(args) {
     backgroundFallbackHex: "#0f172a",
     plate: (() => {
       const copyTop = barTopY / H;
-      const fieldLeft = Math.min(0.74, Math.max(0.3, copyTop - 0.05));
-      const fieldRight = Math.max(0.16, fieldLeft - 0.14);
+      const fieldLeft = Math.min(0.74, Math.max(0.34, copyTop - 0.04));
+      const fieldRight = Math.max(0.16, fieldLeft - 0.16);
+      const light = mixHex(accent, "#ffffff", 0.35);
       return {
-        fromHex: mixHex(accent, "#0b1120", 0.42),
-        toHex: mixHex(accent2, "#0b1120", 0.78),
-        gridColor: "rgba(255,255,255,0.07)",
+        fromHex: mixHex(accent, "#0b1120", 0.28),
+        toHex: mixHex(accent2, "#0b1120", 0.6),
+        gridColor: "rgba(255,255,255,0.08)",
         gridSpacingPct: 0.055,
-        glowColor: accent,
-        glowRadiusPct: 0.45,
-        baseHex: mixHex(accent, "#080d18", 0.9),
+        glowColor: light,
+        glowRadiusPct: 0.55,
+        baseHex: mixHex(accent, "#080d18", 0.88),
         fieldPoints: [
           [0, 0],
           [1, 0],
           [1, fieldRight],
           [0, fieldLeft]
         ],
-        edge: { color: accent, widthPct: 4e-3 },
+        edge: { color: light, widthPct: 45e-4 },
         stripes: [
-          { offsetPct: 0.055, thicknessPct: 0.012, color: accent, opacity: 0.55 },
-          { offsetPct: 0.1, thicknessPct: 6e-3, color: accent2, opacity: 0.35 },
-          { offsetPct: 0.3, thicknessPct: 0.3, color: accent2, opacity: 0.1 }
-        ]
+          { offsetPct: 0.02, thicknessPct: 8e-3, color: light, opacity: 0.7 },
+          { offsetPct: 0.055, thicknessPct: 0.014, color: accent, opacity: 0.55 },
+          { offsetPct: 0.105, thicknessPct: 6e-3, color: accent2, opacity: 0.4 },
+          { offsetPct: 0.32, thicknessPct: 0.34, color: accent2, opacity: 0.14 }
+        ],
+        // Off-canvas brand arcs anchored beyond the top-right corner. They give
+        // the upper field a focal sweep instead of dead space.
+        arcs: [
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.42, widthPct: 0.01, color: light, opacity: 0.55 },
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.66, widthPct: 5e-3, color: accent, opacity: 0.45 },
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.92, widthPct: 35e-4, color: accent2, opacity: 0.32 },
+          { cxPct: -0.12, cyPct: fieldLeft * 0.55, rPct: 0.34, widthPct: 4e-3, color: accent2, opacity: 0.3 }
+        ],
+        // Angular shards raked to the same diagonal, layered for depth.
+        shards: [
+          {
+            points: [[0, 0], [0.46, 0], [0.2, fieldLeft - 0.06], [0, fieldLeft - 0.05]],
+            color: "#000000",
+            opacity: 0.22
+          },
+          {
+            points: [[0.52, 0], [0.7, 0], [0.3, fieldLeft - 0.02], [0.14, fieldLeft - 0.02]],
+            color: accent,
+            opacity: 0.35
+          },
+          {
+            points: [[0.74, 0], [0.82, 0], [0.56, fieldRight - 0.01], [0.49, fieldRight - 0.01]],
+            color: light,
+            opacity: 0.4
+          },
+          {
+            points: [[0.86, 0.02], [1, 0.1], [1, fieldRight - 0.02], [0.7, fieldRight - 0.03]],
+            color: "#ffffff",
+            opacity: 0.07
+          }
+        ],
+        halftone: {
+          spacingPct: 0.042,
+          radiusPct: 75e-4,
+          color: "#ffffff",
+          fromYPct: 0.02,
+          toYPct: fieldLeft,
+          maxOpacity: 0.3
+        }
       };
     })(),
     gradient: {
       startPct: Math.max(0.28, barTopY / H - 0.12),
       fromRgba: "rgba(0,0,0,0)",
       toRgba: "rgba(0,0,0,0.85)"
+    },
+    plateScrim: {
+      startPct: Math.max(0.28, barTopY / H - 0.12),
+      stops: [
+        { offset: 0, color: "rgba(0,0,0,0)" },
+        { offset: 1, color: "rgba(0,0,0,0.85)" }
+      ]
+    },
+    // Photo / cover art needs a heavier, earlier scrim — cover keys are busy
+    // and bright, and the copy block must stay high-contrast.
+    imageScrim: {
+      startPct: Math.max(0.1, barTopY / H - 0.3),
+      stops: [
+        { offset: 0, color: "rgba(6,10,20,0)" },
+        { offset: 0.35, color: "rgba(6,10,20,0.55)" },
+        { offset: 0.7, color: "rgba(6,10,20,0.86)" },
+        { offset: 1, color: "rgba(6,10,20,0.96)" }
+      ]
     },
     accentBar: {
       xPct: 0.04,
@@ -1350,7 +1410,6 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   }
   const w = scene.width;
   const h = scene.height;
-  const gradStartY = scene.gradient.startPct * h;
   const p = scene.plate;
   const gridStep = p.gridSpacingPct * w;
   const fpts = p.fieldPoints.map(([x, y]) => [x * w, y * h]);
@@ -1363,14 +1422,51 @@ async function renderPromoSceneToPng(scene, opts = {}) {
     const poly = `${lx},${ly - dy} ${rx},${ry - dy} ${rx},${ry - dy - th} ${lx},${ly - dy - th}`;
     return `<polygon points="${poly}" fill="${s.color}" fill-opacity="${s.opacity}"/>`;
   }).join("");
+  const arcs = (p.arcs ?? []).map(
+    (a) => `<circle cx="${a.cxPct * w}" cy="${a.cyPct * h}" r="${a.rPct * w}" fill="none" stroke="${a.color}" stroke-width="${Math.max(1, a.widthPct * w)}" stroke-opacity="${a.opacity}"/>`
+  ).join("");
+  const shards = (p.shards ?? []).map(
+    (s) => `<polygon points="${s.points.map(([x, y]) => `${x * w},${y * h}`).join(" ")}" fill="${s.color}" fill-opacity="${s.opacity}"/>`
+  ).join("");
+  let halftone = "";
+  if (p.halftone) {
+    const ht = p.halftone;
+    const step = ht.spacingPct * w;
+    const maxR = ht.radiusPct * w;
+    const y0 = ht.fromYPct * h;
+    const y1 = ht.toYPct * h;
+    const parts = [];
+    let row = 0;
+    for (let y = y0; y < y1; y += step, row++) {
+      const t = 1 - (y - y0) / Math.max(1, y1 - y0);
+      const rr = maxR * (0.35 + 0.65 * t);
+      const op = ht.maxOpacity * t * t;
+      if (op < 0.01) continue;
+      for (let x = row % 2 ? step / 2 : 0; x < w; x += step) {
+        parts.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}" fill="${ht.color}" fill-opacity="${op.toFixed(3)}"/>`);
+      }
+    }
+    halftone = parts.join("");
+  }
   const bgLayer = bgHref ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${w}" height="${h}" fill="${p.baseHex}"/>
        <g clip-path="url(#field)">
          <rect x="0" y="0" width="${w}" height="${h}" fill="url(#plate)"/>
          <rect x="0" y="0" width="${w}" height="${h}" fill="url(#grid)"/>
          <circle cx="${w * 0.78}" cy="${h * 0.14}" r="${p.glowRadiusPct * w}" fill="url(#glow)"/>
+         ${arcs}
+         ${shards}
+         ${halftone}
          ${stripes}
        </g>
        <line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="${p.edge.color}" stroke-width="${Math.max(2, p.edge.widthPct * w)}"/>`;
+  const scrim = (bgHref ? scene.imageScrim : scene.plateScrim) ?? {
+    startPct: scene.gradient.startPct,
+    stops: [
+      { offset: 0, color: scene.gradient.fromRgba },
+      { offset: 1, color: scene.gradient.toRgba }
+    ]
+  };
+  const scrimStops = scrim.stops.map((s) => `<stop offset="${s.offset}" stop-color="${rgbaFromCss(s.color)}"/>`).join("");
   const gradient = `
     <defs>
       <clipPath id="field"><polygon points="${fieldPoly}"/></clipPath>
@@ -1385,10 +1481,10 @@ async function renderPromoSceneToPng(scene, opts = {}) {
       <pattern id="grid" width="${gridStep}" height="${gridStep}" patternUnits="userSpaceOnUse">
         <path d="M ${gridStep} 0 L 0 0 0 ${gridStep}" fill="none" stroke="${p.gridColor}" stroke-width="${Math.max(1, w / 1080)}"/>
       </pattern>
-      <linearGradient id="dark" x1="0" y1="${gradStartY}" x2="0" y2="${h}" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stop-color="${rgbaFromCss(scene.gradient.fromRgba)}"/>
-        <stop offset="1" stop-color="${rgbaFromCss(scene.gradient.toRgba)}"/>
+      <linearGradient id="dark" x1="0" y1="${scrim.startPct * h}" x2="0" y2="${h}" gradientUnits="userSpaceOnUse">
+        ${scrimStops}
       </linearGradient>
+
       <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
         <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
         <feOffset dx="2" dy="2" result="off"/>

@@ -52,7 +52,26 @@ export type PromoPlate = {
   edge: { color: string; widthPct: number };
   /** Parallel accent stripes inside the field, offset along the diagonal. */
   stripes: Array<{ offsetPct: number; thicknessPct: number; color: string; opacity: number }>;
+  /** Off-canvas concentric brand arcs. Center/radius are fractions of WIDTH
+   *  (x) and HEIGHT is derived by the renderers using width units so the arcs
+   *  stay circular in both surfaces. */
+  arcs: Array<{ cxPct: number; cyPct: number; rPct: number; widthPct: number; color: string; opacity: number }>;
+  /** Angular shards echoing the diagonal rake. Points are [xPct, yPct]. */
+  shards: Array<{ points: Array<[number, number]>; color: string; opacity: number }>;
+  /** Halftone dot field that fades out as it approaches the diagonal edge. */
+  halftone: {
+    spacingPct: number;      // fraction of width between dot centers
+    radiusPct: number;       // max dot radius as fraction of width
+    color: string;
+    fromYPct: number;        // where the field starts (dense)
+    toYPct: number;          // where it has fully faded
+    maxOpacity: number;
+  };
 };
+
+export type PromoGradientStops = { startPct: number; stops: Array<{ offset: number; color: string }> };
+
+
 
 
 export type PromoScene = {
@@ -64,8 +83,13 @@ export type PromoScene = {
   /** Rendered when backgroundUrl is null OR the image fetch fails. */
   plate: PromoPlate;
   /** Bottom-anchored dark gradient for text readability. startPct is where the
-   *  gradient begins (0..1 from top). */
+   *  gradient begins (0..1 from top). Legacy two-stop form, kept for callers
+   *  that read it directly; renderers prefer plateScrim / imageScrim. */
   gradient: { startPct: number; fromRgba: string; toRgba: string };
+  /** Scrim used when the designed plate is the background (already dark). */
+  plateScrim: PromoGradientStops;
+  /** Stronger scrim used when a photo / cover art is the background. */
+  imageScrim: PromoGradientStops;
   /** Left accent bar for brand emphasis. Height is a % of canvas height. */
   accentBar: { xPct: number; yPct: number; wPct: number; hPct: number; color: string };
   texts: PromoText[];
@@ -168,7 +192,7 @@ export function fitTitle(
   maxWidth: number,
   maxLines = 3,
 ): { lines: string[]; fontSize: number } {
-  const min = Math.round(baseFontSize * 0.55);
+  const min = Math.round(baseFontSize * 0.42);
   for (let fs = baseFontSize; fs >= min; fs -= 2) {
     const lines = wrapText(text, fs, maxWidth, maxLines, true);
     if (lines) return { lines, fontSize: fs };
@@ -211,7 +235,11 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
 
-  const scale = W / 1080;
+  // Type is sized against the SHORT edge so a 1080x1350 portrait and a
+  // 1200x628 landscape read at the same optical scale. 620 is the reference
+  // short edge (the landscape sample, which reviewed well at 1.0).
+  const shortEdge = Math.min(W, H);
+  const scale = shortEdge / 620;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
 
@@ -219,6 +247,7 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   const gameFs = Math.round(30 * scale);
   const dateFs = Math.round(26 * scale);
   const prizeFs = Math.round(26 * scale);
+
 
   const { lines: titleLines, fontSize: titleFs } = fitTitle(
     args.event.name.toUpperCase(),
@@ -284,28 +313,69 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
       // The field must clear the copy block: its lowest point sits just above
       // the first line of text (beat label, or the title when there is none).
       const copyTop = barTopY / H;
-      const fieldLeft = Math.min(0.74, Math.max(0.30, copyTop - 0.05));
-      const fieldRight = Math.max(0.16, fieldLeft - 0.14); // steep upward rake
+      const fieldLeft = Math.min(0.74, Math.max(0.34, copyTop - 0.04));
+      const fieldRight = Math.max(0.16, fieldLeft - 0.16); // steep upward rake
+      const light = mixHex(accent, "#ffffff", 0.35);
       return {
-        fromHex: mixHex(accent, "#0b1120", 0.42),
-        toHex: mixHex(accent2, "#0b1120", 0.78),
-        gridColor: "rgba(255,255,255,0.07)",
+        fromHex: mixHex(accent, "#0b1120", 0.28),
+        toHex: mixHex(accent2, "#0b1120", 0.6),
+        gridColor: "rgba(255,255,255,0.08)",
         gridSpacingPct: 0.055,
-        glowColor: accent,
-        glowRadiusPct: 0.45,
-        baseHex: mixHex(accent, "#080d18", 0.9),
+        glowColor: light,
+        glowRadiusPct: 0.55,
+        baseHex: mixHex(accent, "#080d18", 0.88),
         fieldPoints: [
           [0, 0],
           [1, 0],
           [1, fieldRight],
           [0, fieldLeft],
         ] as Array<[number, number]>,
-        edge: { color: accent, widthPct: 0.004 },
+        edge: { color: light, widthPct: 0.0045 },
         stripes: [
-          { offsetPct: 0.055, thicknessPct: 0.012, color: accent, opacity: 0.55 },
-          { offsetPct: 0.10, thicknessPct: 0.006, color: accent2, opacity: 0.35 },
-          { offsetPct: 0.30, thicknessPct: 0.30, color: accent2, opacity: 0.10 },
+          { offsetPct: 0.02, thicknessPct: 0.008, color: light, opacity: 0.7 },
+          { offsetPct: 0.055, thicknessPct: 0.014, color: accent, opacity: 0.55 },
+          { offsetPct: 0.105, thicknessPct: 0.006, color: accent2, opacity: 0.4 },
+          { offsetPct: 0.32, thicknessPct: 0.34, color: accent2, opacity: 0.14 },
         ],
+        // Off-canvas brand arcs anchored beyond the top-right corner. They give
+        // the upper field a focal sweep instead of dead space.
+        arcs: [
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.42, widthPct: 0.010, color: light, opacity: 0.55 },
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.66, widthPct: 0.005, color: accent, opacity: 0.45 },
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.92, widthPct: 0.0035, color: accent2, opacity: 0.32 },
+          { cxPct: -0.12, cyPct: fieldLeft * 0.55, rPct: 0.34, widthPct: 0.004, color: accent2, opacity: 0.3 },
+        ],
+        // Angular shards raked to the same diagonal, layered for depth.
+        shards: [
+          {
+            points: [[0, 0], [0.46, 0], [0.20, fieldLeft - 0.06], [0, fieldLeft - 0.05]] as Array<[number, number]>,
+            color: "#000000",
+            opacity: 0.22,
+          },
+          {
+            points: [[0.52, 0], [0.70, 0], [0.30, fieldLeft - 0.02], [0.14, fieldLeft - 0.02]] as Array<[number, number]>,
+            color: accent,
+            opacity: 0.35,
+          },
+          {
+            points: [[0.74, 0], [0.82, 0], [0.56, fieldRight - 0.01], [0.49, fieldRight - 0.01]] as Array<[number, number]>,
+            color: light,
+            opacity: 0.4,
+          },
+          {
+            points: [[0.86, 0.02], [1, 0.10], [1, fieldRight - 0.02], [0.70, fieldRight - 0.03]] as Array<[number, number]>,
+            color: "#ffffff",
+            opacity: 0.07,
+          },
+        ],
+        halftone: {
+          spacingPct: 0.042,
+          radiusPct: 0.0075,
+          color: "#ffffff",
+          fromYPct: 0.02,
+          toYPct: fieldLeft,
+          maxOpacity: 0.3,
+        },
       };
     })(),
 
@@ -314,6 +384,25 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
       fromRgba: "rgba(0,0,0,0)",
       toRgba: "rgba(0,0,0,0.85)",
     },
+    plateScrim: {
+      startPct: Math.max(0.28, (barTopY / H) - 0.12),
+      stops: [
+        { offset: 0, color: "rgba(0,0,0,0)" },
+        { offset: 1, color: "rgba(0,0,0,0.85)" },
+      ],
+    },
+    // Photo / cover art needs a heavier, earlier scrim — cover keys are busy
+    // and bright, and the copy block must stay high-contrast.
+    imageScrim: {
+      startPct: Math.max(0.10, (barTopY / H) - 0.30),
+      stops: [
+        { offset: 0, color: "rgba(6,10,20,0)" },
+        { offset: 0.35, color: "rgba(6,10,20,0.55)" },
+        { offset: 0.7, color: "rgba(6,10,20,0.86)" },
+        { offset: 1, color: "rgba(6,10,20,0.96)" },
+      ],
+    },
+
     accentBar: {
       xPct: 0.04,
       yPct: barTopY / H,
