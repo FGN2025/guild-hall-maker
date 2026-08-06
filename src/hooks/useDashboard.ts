@@ -124,17 +124,16 @@ export const useDashboard = () => {
           .select("id, name, game, status, start_date, format, max_participants, prize_pool")
           .in("id", tournamentIds)
           .order("start_date", { ascending: true }),
-        supabase
-          .from("tournament_registrations")
-          .select("tournament_id")
-          .in("tournament_id", tournamentIds),
+        supabase.rpc("get_tournament_registration_counts" as any, {
+          _tournament_ids: tournamentIds,
+        } as any),
       ]);
 
       if (tournamentsRes.error) throw tournamentsRes.error;
 
       const countsMap = new Map<string, number>();
-      (allRegsRes.data ?? []).forEach((r: any) => {
-        countsMap.set(r.tournament_id, (countsMap.get(r.tournament_id) ?? 0) + 1);
+      (((allRegsRes as any).data as any[]) ?? []).forEach((r: any) => {
+        countsMap.set(r.tournament_id, Number(r.registration_count) || 0);
       });
 
       return (tournamentsRes.data ?? []).map((t: any) => ({

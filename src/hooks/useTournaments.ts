@@ -44,12 +44,12 @@ export const useTournaments = () => {
       const tournamentIds = tournaments.map((t) => t.id);
       const countsMap = new Map<string, number>();
       if (tournamentIds.length > 0) {
-        const { data: regRows } = await supabase
-          .from("tournament_registrations")
-          .select("tournament_id")
-          .in("tournament_id", tournamentIds);
-        (regRows ?? []).forEach((r: any) => {
-          countsMap.set(r.tournament_id, (countsMap.get(r.tournament_id) ?? 0) + 1);
+        const { data: regRows } = await supabase.rpc(
+          "get_tournament_registration_counts" as any,
+          { _tournament_ids: tournamentIds } as any
+        );
+        ((regRows as any[]) ?? []).forEach((r: any) => {
+          countsMap.set(r.tournament_id, Number(r.registration_count) || 0);
         });
       }
 
