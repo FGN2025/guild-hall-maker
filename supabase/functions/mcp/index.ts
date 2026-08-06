@@ -1074,7 +1074,7 @@ var propose_portal_banner_update_default = defineTool20({
 import { defineTool as defineTool21 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z19 } from "npm:zod@^3.25.76";
 
-// supabase/functions/_shared/promo/composePromoLayout.ts
+// src/lib/promo/composePromoLayout.ts
 var PROMO_DIMENSIONS = {
   portrait: { width: 1080, height: 1350 },
   square: { width: 1080, height: 1080 },
