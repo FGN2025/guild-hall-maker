@@ -31,6 +31,48 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 
+  // --- housekeeping actions -------------------------------------------------
+  if (body.action === "cleanup") {
+    const report: Record<string, unknown> = {};
+
+    // 1. Design-sample objects (all versions) under the tenant prefix.
+    const prefix = `${TENANT_ID}/design-samples`;
+    const { data: samples } = await svc.storage.from(BUCKET).list(prefix, { limit: 1000 });
+    const sampleNames = (samples ?? []).map((f) => `${prefix}/${f.name}`);
+    // nested version folders (v1/v2/v3)
+    for (const f of samples ?? []) {
+      if (f.id === null) {
+        const { data: inner } = await svc.storage.from(BUCKET).list(`${prefix}/${f.name}`, { limit: 1000 });
+        for (const g of inner ?? []) sampleNames.push(`${prefix}/${f.name}/${g.name}`);
+      }
+    }
+    const toRemove = sampleNames.filter((n) => !n.endsWith("/.emptyFolderPlaceholder"));
+    if (toRemove.length) await svc.storage.from(BUCKET).remove(toRemove);
+    report.design_samples_removed = toRemove;
+
+    // 2. Superseded seed-run assets on the August Seed campaigns.
+    const { data: camps } = await svc.from("marketing_campaigns")
+      .select("id").eq("tenant_id", TENANT_ID).like("title", `%${TITLE_SUFFIX}`);
+    const ids = (camps ?? []).map((c) => c.id);
+    const { data: old } = await svc.from("tenant_marketing_assets")
+      .select("id, file_path, background_url")
+      .in("campaign_id", ids).eq("agent_source", "claude-mcp");
+    const paths: string[] = [];
+    for (const a of old ?? []) {
+      if (a.file_path) paths.push(a.file_path);
+      const m = (a.background_url ?? "").match(/tenant-marketing\/([^?]+)/);
+      if (m) paths.push(decodeURIComponent(m[1]));
+    }
+    if (paths.length) await svc.storage.from(BUCKET).remove(paths);
+    if (old?.length) {
+      await svc.from("tenant_marketing_assets").delete().in("id", old.map((a) => a.id));
+    }
+    report.superseded_assets_deleted = old?.length ?? 0;
+    report.superseded_objects_removed = paths.length;
+    return json(report);
+  }
+
+
   const { data: tenant } = await svc
     .from("tenants").select("name, primary_color, accent_color").eq("id", TENANT_ID).maybeSingle();
 
