@@ -187,16 +187,16 @@ export async function renderPromoSceneToBlob(scene: PromoScene): Promise<Blob> {
     }
     ctx.clip();
     ctx.fillStyle = hg;
-    ctx.fillRect(x, y, pw, ph);
-
-    // Soften the panel's top edge so it reads as a shadow, not a box.
-    const vg = ctx.createLinearGradient(0, y, 0, y + feather);
-    vg.addColorStop(0, "rgba(0,0,0,1)");
-    vg.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.fillStyle = vg;
-    ctx.fillRect(x, y, pw, feather);
-    ctx.globalCompositeOperation = "source-over";
+    // Body below the feather, then the feather itself painted as alpha-ramped
+    // strips. (A destination-out mask would punch a hole in the artwork.)
+    ctx.fillRect(x, y + feather, pw, ph - feather);
+    const strips = 28;
+    for (let i = 0; i < strips; i++) {
+      const t = (i + 0.5) / strips;          // 0 at panel top -> 1 at feather end
+      ctx.globalAlpha = t;
+      ctx.fillRect(x, y + (i / strips) * feather, pw, feather / strips + 1);
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 
