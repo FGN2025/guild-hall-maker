@@ -157,18 +157,18 @@ export function normalizeEventTitle(args: {
   const collapsed = collapseDescriptors(out);
   if (collapsed && collapsed !== out) { out = collapsed; rules.push("collapse_descriptors"); }
 
-  // 4. Leading game name — the game already prints on its own metadata line.
-  //    Applied LAST and only kept when what remains still says something; the
-  //    fallback is this same title WITH the game, not the raw redundant row.
+  // 4. Leading game name — stripped ONLY when what remains is genuinely
+  //    distinguishing on its own. The headline must carry the most identifying
+  //    thing on the graphic; redundancy with the metadata line is a far smaller
+  //    sin than an anonymous headline.
   const withGame = out;
   let guarded: string | null = null;
   if (args.game) {
     const stripped = stripLeading(out, args.game);
     if (stripped) {
-      if (isBare(stripped)) {
-        guarded = "bare_descriptor";       // e.g. "Rocket League Tournament" -> "Tournament"
-      } else if (key(stripped).length < 3) {
-        guarded = "too_short";
+      const reject = standaloneRejection(stripped);
+      if (reject) {
+        guarded = reject; // e.g. "Valorant Game Night" -> "Game Night": rejected
       } else {
         out = stripped;
         rules.push("strip_leading_game");
@@ -178,7 +178,8 @@ export function normalizeEventTitle(args: {
 
   // Final safety: never emit an empty or degenerate title.
   if (!key(out)) { out = squash(before); guarded = guarded ?? "empty_result"; }
-  else if (out !== withGame && isBare(out)) { out = withGame; guarded = "bare_descriptor"; }
+  else if (out !== withGame && standaloneRejection(out)) { out = withGame; guarded = "bare_descriptor"; }
+
 
   const after = out;
   const parts = [`before="${before}"`, `after="${after}"`, `rules=[${rules.join(",")}]`];

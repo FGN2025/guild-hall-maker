@@ -1108,6 +1108,7 @@ var GENERIC = [
   "play",
   "playoffs"
 ];
+var MIN_STANDALONE_CHARS = 12;
 var MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec";
 function squash(s) {
   return s.replace(/\s+/g, " ").trim();
@@ -1144,6 +1145,17 @@ function isBare(s) {
   if (!k) return true;
   return k.split(" ").every((w) => GENERIC.includes(w));
 }
+function leadsGeneric(s) {
+  const k = key(s);
+  if (!k) return true;
+  return GENERIC.includes(k.split(" ")[0]);
+}
+function standaloneRejection(s) {
+  if (isBare(s)) return "bare_descriptor";
+  if (leadsGeneric(s)) return "anonymous_qualifier";
+  if (key(s).replace(/\s+/g, "").length < MIN_STANDALONE_CHARS) return "too_short";
+  return null;
+}
 function normalizeEventTitle(args) {
   const before = args.name ?? "";
   const rules = [];
@@ -1176,10 +1188,9 @@ function normalizeEventTitle(args) {
   if (args.game) {
     const stripped = stripLeading(out, args.game);
     if (stripped) {
-      if (isBare(stripped)) {
-        guarded = "bare_descriptor";
-      } else if (key(stripped).length < 3) {
-        guarded = "too_short";
+      const reject = standaloneRejection(stripped);
+      if (reject) {
+        guarded = reject;
       } else {
         out = stripped;
         rules.push("strip_leading_game");
@@ -1189,7 +1200,7 @@ function normalizeEventTitle(args) {
   if (!key(out)) {
     out = squash(before);
     guarded = guarded ?? "empty_result";
-  } else if (out !== withGame && isBare(out)) {
+  } else if (out !== withGame && standaloneRejection(out)) {
     out = withGame;
     guarded = "bare_descriptor";
   }
