@@ -13,19 +13,17 @@ export type TitleNormalization = {
   log: string;
 };
 
+// Deliberately conservative: only words that are pure event descriptors.
+// Words like "league", "cup", "open" or "night" are excluded because they occur
+// inside real game and event names (Rocket League, Game Night).
 const DESCRIPTORS = [
   "tournament",
+  "tournaments",
   "championship",
   "championships",
   "invitational",
-  "cup",
-  "open",
-  "series",
   "showdown",
   "clash",
-  "league",
-  "event",
-  "night",
 ];
 
 const MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec";

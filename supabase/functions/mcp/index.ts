@@ -1077,17 +1077,12 @@ import { z as z19 } from "npm:zod@^3.25.76";
 // src/lib/promo/normalizeEventTitle.ts
 var DESCRIPTORS = [
   "tournament",
+  "tournaments",
   "championship",
   "championships",
   "invitational",
-  "cup",
-  "open",
-  "series",
   "showdown",
-  "clash",
-  "league",
-  "event",
-  "night"
+  "clash"
 ];
 var MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec";
 function squash(s) {
