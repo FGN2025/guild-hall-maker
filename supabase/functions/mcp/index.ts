@@ -778,6 +778,29 @@ var propose_scheduled_post_default = defineTool15({
         const { data: existing } = await supabase.from("scheduled_posts").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
         if (existing) return okJson({ ...existing, _idempotent: true }, "scheduled_post");
       }
+      let asset = null;
+      if (input.asset_id) {
+        const { data: data2 } = await supabase.from("tenant_marketing_assets").select("id, url, file_path, tenant_id").eq("id", input.asset_id).maybeSingle();
+        asset = data2 ?? null;
+        if (!asset) {
+          return { content: [{ type: "text", text: `asset_id ${input.asset_id} not found or not visible.` }], isError: true };
+        }
+      } else if (input.image_url) {
+        const { data: data2 } = await supabase.from("tenant_marketing_assets").select("id, url, file_path, tenant_id").eq("tenant_id", input.tenant_id).eq("url", input.image_url).maybeSingle();
+        asset = data2 ?? null;
+      }
+      if (!asset) {
+        return {
+          content: [{
+            type: "text",
+            text: "No source asset. Pass asset_id from compose_event_promo (compose once per beat) or attach_tenant_asset_draft."
+          }],
+          isError: true
+        };
+      }
+      if (asset.tenant_id !== input.tenant_id) {
+        return { content: [{ type: "text", text: `Asset ${asset.id} belongs to a different tenant.` }], isError: true };
+      }
       let resolvedConnectionId = input.connection_id ?? null;
       if (!resolvedConnectionId && input.platform !== "discord") {
         const { data: activeConns } = await supabase.from("social_connections").select("id").eq("tenant_id", input.tenant_id).eq("platform", input.platform).eq("is_active", true).limit(2);
@@ -789,7 +812,9 @@ var propose_scheduled_post_default = defineTool15({
         tenant_id: input.tenant_id,
         user_id: uid,
         platform: input.platform,
-        image_url: input.image_url,
+        asset_id: asset.id,
+        image_url: asset.url ?? input.image_url ?? null,
+        image_path: asset.file_path,
         caption: input.caption ?? "",
         scheduled_at: when.toISOString(),
         status: "pending_review",

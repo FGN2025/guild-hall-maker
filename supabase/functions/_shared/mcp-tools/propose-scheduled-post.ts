@@ -41,6 +41,42 @@ export default defineTool({
         if (existing) return okJson({ ...existing, _idempotent: true }, "scheduled_post");
       }
 
+      // Resolve the source asset. The graphic ALWAYS comes from a
+      // tenant_marketing_assets row so the post is provably tied to the beat
+      // that was composed for it (DB trigger enforces the same invariant).
+      let asset: { id: string; url: string | null; file_path: string | null; tenant_id: string } | null = null;
+      if (input.asset_id) {
+        const { data } = await supabase
+          .from("tenant_marketing_assets")
+          .select("id, url, file_path, tenant_id")
+          .eq("id", input.asset_id)
+          .maybeSingle();
+        asset = (data as any) ?? null;
+        if (!asset) {
+          return { content: [{ type: "text", text: `asset_id ${input.asset_id} not found or not visible.` }], isError: true };
+        }
+      } else if (input.image_url) {
+        const { data } = await supabase
+          .from("tenant_marketing_assets")
+          .select("id, url, file_path, tenant_id")
+          .eq("tenant_id", input.tenant_id)
+          .eq("url", input.image_url)
+          .maybeSingle();
+        asset = (data as any) ?? null;
+      }
+      if (!asset) {
+        return {
+          content: [{
+            type: "text",
+            text: "No source asset. Pass asset_id from compose_event_promo (compose once per beat) or attach_tenant_asset_draft.",
+          }],
+          isError: true,
+        };
+      }
+      if (asset.tenant_id !== input.tenant_id) {
+        return { content: [{ type: "text", text: `Asset ${asset.id} belongs to a different tenant.` }], isError: true };
+      }
+
       // Bind connection_id at insert time when exactly one active connection exists
       // for the platform. Leaves null when zero or ambiguous — the dispatcher's
       // undeliverable precheck handles the zero case and it will also fall back
@@ -65,7 +101,9 @@ export default defineTool({
           tenant_id: input.tenant_id,
           user_id: uid,
           platform: input.platform,
-          image_url: input.image_url,
+          asset_id: asset.id,
+          image_url: asset.url ?? input.image_url ?? null,
+          image_path: asset.file_path,
           caption: input.caption ?? "",
           scheduled_at: when.toISOString(),
           status: "pending_review",
