@@ -6,11 +6,12 @@ export default defineTool({
   name: "update_scheduled_post",
   title: "Update / resubmit scheduled post",
   description:
-    "Revise a draft/pending_review/rejected scheduled post. If the row is currently 'rejected', the update flips its status back to 'pending_review' and preserves the existing feedback_note for audit. scheduled_at (if provided) MUST be ISO 8601 with explicit offset.",
+    "Revise a draft/pending_review/rejected scheduled post. If the row is currently 'rejected', the update flips its status back to 'pending_review' and preserves the existing feedback_note for audit. scheduled_at (if provided) MUST be ISO 8601 with explicit offset. To change the graphic pass `asset_id` (from compose_event_promo / attach_tenant_asset_draft) — the image and storage path are taken from that asset. Passing image_url alone is rejected when it does not belong to an asset.",
   inputSchema: {
     id: z.string().uuid(),
     platform: z.string().optional(),
-    image_url: z.string().url().optional(),
+    asset_id: z.string().uuid().optional().describe("New source asset for this post's graphic."),
+    image_url: z.string().url().optional().describe("Legacy path: must be the url of an existing asset."),
     caption: z.string().optional(),
     scheduled_at: z.string().optional(),
     campaign_id: z.string().uuid().nullish(),
