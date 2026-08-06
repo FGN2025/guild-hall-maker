@@ -62,6 +62,51 @@ Deno.serve(async (req) => {
 
   // --- housekeeping actions -------------------------------------------------
 
+  // Purge storage objects under the tenant's agent prefix that no
+  // tenant_marketing_assets row and no scheduled_posts row references.
+  // Dry-run by default; pass {"action":"purge_orphans","apply":true} to delete.
+  if (body.action === "purge_orphans") {
+    const prefix = `${TENANT_ID}/agent/2026/08`;
+    const { data: objs, error: lErr } = await svc.storage.from(BUCKET).list(prefix, { limit: 1000 });
+    if (lErr) return json({ error: lErr.message }, 500);
+    const names = (objs ?? []).filter((o) => o.id !== null).map((o) => `${prefix}/${o.name}`);
+
+    const { data: assets } = await svc.from("tenant_marketing_assets")
+      .select("file_path, background_url").eq("tenant_id", TENANT_ID);
+    const { data: posts } = await svc.from("scheduled_posts")
+      .select("image_path, image_url").eq("tenant_id", TENANT_ID);
+
+    const referenced = new Set<string>();
+    for (const a of assets ?? []) {
+      if (a.file_path) referenced.add(a.file_path);
+      const m = (a.background_url ?? "").match(/tenant-marketing\/([^?]+)/);
+      if (m) referenced.add(decodeURIComponent(m[1]));
+    }
+    for (const p of posts ?? []) {
+      if ((p as any).image_path) referenced.add((p as any).image_path);
+      const m = ((p as any).image_url ?? "").match(/tenant-marketing\/([^?]+)/);
+      if (m) referenced.add(decodeURIComponent(m[1]));
+    }
+
+    const orphans = names.filter((n) => !referenced.has(n));
+    let removed: string[] = [];
+    if (body.apply === true && orphans.length) {
+      const { error } = await svc.storage.from(BUCKET).remove(orphans);
+      if (error) return json({ error: error.message, orphans }, 500);
+      removed = orphans;
+    }
+    return json({
+      prefix,
+      objects_listed: names.length,
+      referenced: referenced.size,
+      orphans_found: orphans.length,
+      orphans,
+      applied: body.apply === true,
+      removed: removed.length,
+    });
+  }
+
+
   if (body.action === "cleanup") {
     const report: Record<string, unknown> = {};
 
