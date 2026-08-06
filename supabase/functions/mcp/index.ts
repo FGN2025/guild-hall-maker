@@ -1142,7 +1142,7 @@ function collapseDescriptors(s) {
 function isBare(s) {
   const k = key(s);
   if (!k) return true;
-  return k.split(" ").every((w) => DESCRIPTORS.includes(w));
+  return k.split(" ").every((w) => GENERIC.includes(w));
 }
 function normalizeEventTitle(args) {
   const before = args.name ?? "";

@@ -96,11 +96,33 @@ function collapseDescriptors(s: string): string {
   return squash(kept.join(" ")).replace(/[\s\-–—:|,·•]+$/, "");
 }
 
+/** Every word is a generic event word — names no event on its own. */
 function isBare(s: string): boolean {
   const k = key(s);
   if (!k) return true;
-  return k.split(" ").every((w) => DESCRIPTORS.includes(w));
+  return k.split(" ").every((w) => GENERIC.includes(w));
 }
+
+/** Leads with a generic descriptor ("Tournament - Solo / No Build") — reads anonymously. */
+function leadsGeneric(s: string): boolean {
+  const k = key(s);
+  if (!k) return true;
+  return GENERIC.includes(k.split(" ")[0]);
+}
+
+/**
+ * A remainder may replace the full title only when it is genuinely
+ * distinguishing on its own: it carries a qualifier beyond generic event
+ * words, does not lead with a generic descriptor, and is long enough to read
+ * as a name. Otherwise the game name stays in the headline.
+ */
+function standaloneRejection(s: string): string | null {
+  if (isBare(s)) return "bare_descriptor";
+  if (leadsGeneric(s)) return "anonymous_qualifier";
+  if (key(s).replace(/\s+/g, "").length < MIN_STANDALONE_CHARS) return "too_short";
+  return null;
+}
+
 
 export function normalizeEventTitle(args: {
   name: string;
