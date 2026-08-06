@@ -14,8 +14,7 @@ export type TitleNormalization = {
 };
 
 // Deliberately conservative: only words that are pure event descriptors.
-// Words like "league", "cup", "open" or "night" are excluded because they occur
-// inside real game and event names (Rocket League, Game Night).
+// Used ONLY for collapsing repeats ("Championship Tournament" -> "Championship").
 const DESCRIPTORS = [
   "tournament",
   "tournaments",
@@ -25,6 +24,39 @@ const DESCRIPTORS = [
   "showdown",
   "clash",
 ];
+
+// Wider set used ONLY by the game-strip guard. A remainder built purely from
+// these words is anonymous — it names no event, so the game must stay in the
+// headline. Includes words we deliberately never collapse (they appear inside
+// real game names) because here they are only tested on the post-strip tail.
+const GENERIC = [
+  ...DESCRIPTORS,
+  "game",
+  "games",
+  "night",
+  "nights",
+  "cup",
+  "open",
+  "league",
+  "series",
+  "event",
+  "events",
+  "final",
+  "finals",
+  "match",
+  "matches",
+  "session",
+  "sessions",
+  "scrim",
+  "scrims",
+  "lan",
+  "play",
+  "playoffs",
+];
+
+/** Shortest remainder we accept as a standalone headline. */
+const MIN_STANDALONE_CHARS = 12;
+
 
 const MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec";
 

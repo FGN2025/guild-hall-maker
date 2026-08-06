@@ -1084,6 +1084,30 @@ var DESCRIPTORS = [
   "showdown",
   "clash"
 ];
+var GENERIC = [
+  ...DESCRIPTORS,
+  "game",
+  "games",
+  "night",
+  "nights",
+  "cup",
+  "open",
+  "league",
+  "series",
+  "event",
+  "events",
+  "final",
+  "finals",
+  "match",
+  "matches",
+  "session",
+  "sessions",
+  "scrim",
+  "scrims",
+  "lan",
+  "play",
+  "playoffs"
+];
 var MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec";
 function squash(s) {
   return s.replace(/\s+/g, " ").trim();
