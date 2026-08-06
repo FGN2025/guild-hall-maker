@@ -423,17 +423,37 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
         { offset: 1, color: "rgba(0,0,0,0.85)" },
       ],
     },
-    // Photo / cover art needs a heavier, earlier scrim — cover keys are busy
-    // and bright, and the copy block must stay high-contrast.
+    // Photo / cover art: keep the global scrim LIGHT so the key art stays
+    // vivid. Contrast for the copy is won locally by copyPanel below.
     imageScrim: {
-      startPct: Math.max(0.10, (barTopY / H) - 0.30),
+      startPct: Math.max(0.30, (barTopY / H) - 0.10),
       stops: [
         { offset: 0, color: "rgba(6,10,20,0)" },
-        { offset: 0.35, color: "rgba(6,10,20,0.55)" },
-        { offset: 0.7, color: "rgba(6,10,20,0.86)" },
-        { offset: 1, color: "rgba(6,10,20,0.96)" },
+        { offset: 0.55, color: "rgba(6,10,20,0.34)" },
+        { offset: 1, color: "rgba(6,10,20,0.78)" },
       ],
     },
+    // Tight local plate behind the copy column only: opaque at the accent bar,
+    // fading out before the right edge so the artwork reads through.
+    copyPanel: (() => {
+      const top = Math.max(0, barTopY / H - 0.028);
+      const bottom = Math.min(1, barBottomY / H + 0.030);
+      const widest = Math.max(
+        ...texts.map((t) => estimateTextWidth(t.text, t.fontSize, t.fontWeight === "bold")),
+        safeWidth * 0.5,
+      );
+      const wPct = Math.min(0.96, (widest / W) + marginPct + 0.10);
+      return {
+        xPct: 0.02,
+        yPct: top,
+        wPct,
+        hPct: bottom - top,
+        radiusPct: 0.02,
+        fromRgba: "rgba(6,10,20,0.80)",
+        toRgba: "rgba(6,10,20,0)",
+        featherPct: 0.16,
+      };
+    })(),
 
     accentBar: {
       xPct: 0.04,
@@ -443,6 +463,7 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
       color: accent,
     },
     texts,
+    titleNormalization: titleNorm,
   };
 }
 
