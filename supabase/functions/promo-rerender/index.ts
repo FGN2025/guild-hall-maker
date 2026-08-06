@@ -97,16 +97,14 @@ Deno.serve(async (req) => {
       scene.backgroundUrl = art.url;
 
       const png = await renderPromoSceneToPng(scene);
-      const platePng = await renderPromoSceneToPng(scene, { includeText: false });
 
       const slug = beat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       const uuid = crypto.randomUUID();
       const base = `${TENANT_ID}/agent/2026/08/${TAG}-promo-${evt.id}-${slug}-${uuid}`;
       const path = `${base}.png`;
-      const platePath = `${base}-plate.png`;
 
-      for (const [p, bytes] of [[path, png], [platePath, platePng]] as const) {
-        const { error } = await svc.storage.from(BUCKET).upload(p as string, bytes as Uint8Array, {
+      {
+        const { error } = await svc.storage.from(BUCKET).upload(path, png, {
           contentType: "image/png", upsert: true,
         });
         if (error) throw error;
@@ -118,7 +116,8 @@ Deno.serve(async (req) => {
         return data.signedUrl;
       };
       const url = await sign(path);
-      const plateUrl = await sign(platePath);
+      const plateUrl = null;
+
 
       const { data: asset, error: aErr } = await svc.from("tenant_marketing_assets").insert({
         tenant_id: TENANT_ID,
