@@ -1775,13 +1775,15 @@ var BUCKET2 = "tenant-marketing";
 var compose_event_promo_default = defineTool21({
   name: "compose_event_promo",
   title: "Compose a deterministic promo image from a published event",
-  description: "Lane 1 (calendar-lane) composer. Layouts an event (tournament OR tenant event) with the tenant's brand color and beat label into a PNG using pure server-side rendering (no external image generation cost), uploads it into the tenant-marketing bucket, and inserts a tenant_marketing_assets draft row identical in shape to attach_tenant_asset_draft \u2014 including overlay_config so the draft opens in the editor as separately-editable text layers. Provide exactly one of tournament_id or event_id.",
+  description: "Lane 1 (calendar-lane) composer. Layouts an event (tournament OR tenant event) with the tenant's brand color and beat label into a PNG using pure server-side rendering (no external image generation cost), uploads it into the tenant-marketing bucket, and inserts a tenant_marketing_assets draft row identical in shape to attach_tenant_asset_draft \u2014 including overlay_config so the draft opens in the editor as separately-editable text layers. Provide exactly one of tournament_id or event_id. CALL ONCE PER BEAT: the beat label is baked into the rendered graphic, so each scheduled post must use the url returned by the compose call for its own beat. Reusing one composed image across announce and day-of posts is a defect.",
   inputSchema: {
     tenant_id: z19.string().uuid(),
     tournament_id: z19.string().uuid().optional(),
     event_id: z19.string().uuid().optional(),
     format: z19.enum(["portrait", "square", "landscape", "story"]).default("portrait"),
-    beat_label: z19.string().optional().describe("e.g. 'Announce', 'Countdown', 'Day-Of', 'Recap'"),
+    beat_label: z19.string().optional().describe(
+      "The beat this render is for: 'Announce', 'Countdown', 'Day-Of', or 'Recap'. Baked into the image, so compose separately for every beat you schedule."
+    ),
     campaign_id: z19.string().uuid().optional(),
     file_name: z19.string().optional()
   },
