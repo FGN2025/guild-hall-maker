@@ -189,10 +189,10 @@ export async function renderPromoSceneToBlob(scene: PromoScene): Promise<Blob> {
     ctx.fillStyle = hg;
     ctx.fillRect(x, y, pw, ph);
 
-    // Soften the panel's top and bottom edges so it reads as a shadow, not a box.
-    const vg = ctx.createLinearGradient(0, y, 0, y + ph);
-    vg.addColorStop(0, "rgba(0,0,0,0)");
-    vg.addColorStop(Math.min(0.5, feather / ph), "rgba(0,0,0,0)");
+    // Soften the panel's top edge so it reads as a shadow, not a box.
+    const vg = ctx.createLinearGradient(0, y, 0, y + feather);
+    vg.addColorStop(0, "rgba(0,0,0,1)");
+    vg.addColorStop(1, "rgba(0,0,0,0)");
     ctx.globalCompositeOperation = "destination-out";
     ctx.fillStyle = vg;
     ctx.fillRect(x, y, pw, feather);

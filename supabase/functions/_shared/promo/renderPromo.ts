@@ -195,6 +195,35 @@ export async function renderPromoSceneToPng(
 
   const overlay = `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#dark)"/>`;
 
+  // Local copy panel — photo/cover backgrounds only.
+  const cp = scene.copyPanel;
+  let copyPanel = "";
+  let copyPanelDefs = "";
+  if (bgHref && cp) {
+    const x = cp.xPct * w;
+    const y = cp.yPct * h;
+    const pw = cp.wPct * w;
+    const ph = cp.hPct * h;
+    const r = cp.radiusPct * w;
+    const feather = Math.max(1, cp.featherPct * ph);
+    const mid = cp.fromRgba.replace(/0?\.\d+\)$/, "0.5)");
+    copyPanelDefs = `
+      <linearGradient id="cpx" x1="${x}" y1="0" x2="${x + pw}" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="${cp.fromRgba}"/>
+        <stop offset="0.62" stop-color="${mid}"/>
+        <stop offset="1" stop-color="${cp.toRgba}"/>
+      </linearGradient>
+      <linearGradient id="cpy" x1="0" y1="${y}" x2="0" y2="${y + feather}" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#000" stop-opacity="0"/>
+        <stop offset="1" stop-color="#000" stop-opacity="1"/>
+      </linearGradient>
+      <mask id="cpmask">
+        <rect x="${x}" y="${y}" width="${pw}" height="${ph}" fill="#fff"/>
+        <rect x="${x}" y="${y}" width="${pw}" height="${feather}" fill="url(#cpy)"/>
+      </mask>`;
+    copyPanel = `<rect x="${x}" y="${y}" width="${pw}" height="${ph}" rx="${r}" ry="${r}" fill="url(#cpx)" mask="url(#cpmask)"/>`;
+  }
+
   const ab = scene.accentBar;
   const accent = `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
 
