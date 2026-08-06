@@ -168,7 +168,7 @@ const TenantChallenges = () => {
           prize_pool: totalPoints > 0 ? String(totalPoints) : null,
           prize_type: totalPoints > 0 ? "value" : "none",
         },
-        tenantName: tenantInfo?.name ?? null,
+        tenantName: tenantInfo?.tenantName ?? null,
         tenantPrimaryColor: tenantInfo?.primaryColor,
         tenantAccentColor: tenantInfo?.accentColor,
         format: "portrait",
