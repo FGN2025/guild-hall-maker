@@ -1240,34 +1240,93 @@ function composePromoLayout(args) {
     backgroundFallbackHex: "#0f172a",
     plate: (() => {
       const copyTop = barTopY / H;
-      const fieldLeft = Math.min(0.74, Math.max(0.3, copyTop - 0.05));
-      const fieldRight = Math.max(0.16, fieldLeft - 0.14);
+      const fieldLeft = Math.min(0.74, Math.max(0.34, copyTop - 0.04));
+      const fieldRight = Math.max(0.16, fieldLeft - 0.16);
+      const light = mixHex(accent, "#ffffff", 0.35);
       return {
-        fromHex: mixHex(accent, "#0b1120", 0.42),
-        toHex: mixHex(accent2, "#0b1120", 0.78),
-        gridColor: "rgba(255,255,255,0.07)",
+        fromHex: mixHex(accent, "#0b1120", 0.28),
+        toHex: mixHex(accent2, "#0b1120", 0.6),
+        gridColor: "rgba(255,255,255,0.08)",
         gridSpacingPct: 0.055,
-        glowColor: accent,
-        glowRadiusPct: 0.45,
-        baseHex: mixHex(accent, "#080d18", 0.9),
+        glowColor: light,
+        glowRadiusPct: 0.55,
+        baseHex: mixHex(accent, "#080d18", 0.88),
         fieldPoints: [
           [0, 0],
           [1, 0],
           [1, fieldRight],
           [0, fieldLeft]
         ],
-        edge: { color: accent, widthPct: 4e-3 },
+        edge: { color: light, widthPct: 45e-4 },
         stripes: [
-          { offsetPct: 0.055, thicknessPct: 0.012, color: accent, opacity: 0.55 },
-          { offsetPct: 0.1, thicknessPct: 6e-3, color: accent2, opacity: 0.35 },
-          { offsetPct: 0.3, thicknessPct: 0.3, color: accent2, opacity: 0.1 }
-        ]
+          { offsetPct: 0.02, thicknessPct: 8e-3, color: light, opacity: 0.7 },
+          { offsetPct: 0.055, thicknessPct: 0.014, color: accent, opacity: 0.55 },
+          { offsetPct: 0.105, thicknessPct: 6e-3, color: accent2, opacity: 0.4 },
+          { offsetPct: 0.32, thicknessPct: 0.34, color: accent2, opacity: 0.14 }
+        ],
+        // Off-canvas brand arcs anchored beyond the top-right corner. They give
+        // the upper field a focal sweep instead of dead space.
+        arcs: [
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.42, widthPct: 0.01, color: light, opacity: 0.55 },
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.66, widthPct: 5e-3, color: accent, opacity: 0.45 },
+          { cxPct: 1.06, cyPct: -0.03, rPct: 0.92, widthPct: 35e-4, color: accent2, opacity: 0.32 },
+          { cxPct: -0.12, cyPct: fieldLeft * 0.55, rPct: 0.34, widthPct: 4e-3, color: accent2, opacity: 0.3 }
+        ],
+        // Angular shards raked to the same diagonal, layered for depth.
+        shards: [
+          {
+            points: [[0, 0], [0.46, 0], [0.2, fieldLeft - 0.06], [0, fieldLeft - 0.05]],
+            color: "#000000",
+            opacity: 0.22
+          },
+          {
+            points: [[0.52, 0], [0.7, 0], [0.3, fieldLeft - 0.02], [0.14, fieldLeft - 0.02]],
+            color: accent,
+            opacity: 0.35
+          },
+          {
+            points: [[0.74, 0], [0.82, 0], [0.56, fieldRight - 0.01], [0.49, fieldRight - 0.01]],
+            color: light,
+            opacity: 0.4
+          },
+          {
+            points: [[0.86, 0.02], [1, 0.1], [1, fieldRight - 0.02], [0.7, fieldRight - 0.03]],
+            color: "#ffffff",
+            opacity: 0.07
+          }
+        ],
+        halftone: {
+          spacingPct: 0.042,
+          radiusPct: 75e-4,
+          color: "#ffffff",
+          fromYPct: 0.02,
+          toYPct: fieldLeft,
+          maxOpacity: 0.3
+        }
       };
     })(),
     gradient: {
       startPct: Math.max(0.28, barTopY / H - 0.12),
       fromRgba: "rgba(0,0,0,0)",
       toRgba: "rgba(0,0,0,0.85)"
+    },
+    plateScrim: {
+      startPct: Math.max(0.28, barTopY / H - 0.12),
+      stops: [
+        { offset: 0, color: "rgba(0,0,0,0)" },
+        { offset: 1, color: "rgba(0,0,0,0.85)" }
+      ]
+    },
+    // Photo / cover art needs a heavier, earlier scrim — cover keys are busy
+    // and bright, and the copy block must stay high-contrast.
+    imageScrim: {
+      startPct: Math.max(0.1, barTopY / H - 0.3),
+      stops: [
+        { offset: 0, color: "rgba(6,10,20,0)" },
+        { offset: 0.35, color: "rgba(6,10,20,0.55)" },
+        { offset: 0.7, color: "rgba(6,10,20,0.86)" },
+        { offset: 1, color: "rgba(6,10,20,0.96)" }
+      ]
     },
     accentBar: {
       xPct: 0.04,
