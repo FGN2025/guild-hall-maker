@@ -1573,10 +1573,13 @@ var compose_event_promo_default = defineTool21({
         agent_source: "claude-mcp",
         proposed_by: uid,
         created_by: uid,
-        notes: input.beat_label ? `Beat: ${input.beat_label}` : null
+        notes: [
+          input.beat_label ? `Beat: ${input.beat_label}` : null,
+          `Art: ${art.provenance}${art.matchedGameName ? ` (${art.matchedGameName}, ${art.matchMethod})` : ""}`
+        ].filter(Boolean).join(" \xB7 ")
       }).select().single();
       if (insErr) throw insErr;
-      return okJson(row, "asset");
+      return okJson({ ...row, art_provenance: art }, "asset");
     } catch (err) {
       return toolError(err, "compose_event_promo");
     }
