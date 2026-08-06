@@ -305,7 +305,13 @@ const TenantMarketing = () => {
                       {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
                       <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
                         <ImageIcon className="h-3.5 w-3.5" />
-                        <span>{assetMap[c.id] ? `${assetMap[c.id].count} asset${assetMap[c.id].count !== 1 ? 's' : ''}` : 'No assets yet'}</span>
+                        <span>
+                          {assetMap[c.id]?.count
+                            ? `${assetMap[c.id].count} asset${assetMap[c.id].count !== 1 ? "s" : ""}`
+                            : assetMap[c.id]?.first_url
+                              ? "Art on posts"
+                              : "No assets yet"}
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
