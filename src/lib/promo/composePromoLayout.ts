@@ -52,7 +52,26 @@ export type PromoPlate = {
   edge: { color: string; widthPct: number };
   /** Parallel accent stripes inside the field, offset along the diagonal. */
   stripes: Array<{ offsetPct: number; thicknessPct: number; color: string; opacity: number }>;
+  /** Off-canvas concentric brand arcs. Center/radius are fractions of WIDTH
+   *  (x) and HEIGHT is derived by the renderers using width units so the arcs
+   *  stay circular in both surfaces. */
+  arcs: Array<{ cxPct: number; cyPct: number; rPct: number; widthPct: number; color: string; opacity: number }>;
+  /** Angular shards echoing the diagonal rake. Points are [xPct, yPct]. */
+  shards: Array<{ points: Array<[number, number]>; color: string; opacity: number }>;
+  /** Halftone dot field that fades out as it approaches the diagonal edge. */
+  halftone: {
+    spacingPct: number;      // fraction of width between dot centers
+    radiusPct: number;       // max dot radius as fraction of width
+    color: string;
+    fromYPct: number;        // where the field starts (dense)
+    toYPct: number;          // where it has fully faded
+    maxOpacity: number;
+  };
 };
+
+export type PromoGradientStops = { startPct: number; stops: Array<{ offset: number; color: string }> };
+
+
 
 
 export type PromoScene = {
