@@ -16,6 +16,10 @@ export default defineMcp({
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
+    // The SDK owns this function's routing, so the RFC 9728 metadata document
+    // (the one unauthenticated GET path) carries the deploy stamp. Probe:
+    // GET /functions/v1/mcp/.well-known/oauth-protected-resource
+    resourceDocumentation: `https://fgn.gg/docs/mcp#build=${BUILD_ID}`,
   }),
   tools,
 });
