@@ -149,10 +149,16 @@ export async function renderPromoSceneToBlob(scene: PromoScene): Promise<Blob> {
   }
   if (!drew) drawPlate(ctx, scene);
 
-  // Bottom-anchored gradient
-  const grad = ctx.createLinearGradient(0, scene.height * scene.gradient.startPct, 0, scene.height);
-  grad.addColorStop(0, scene.gradient.fromRgba);
-  grad.addColorStop(1, scene.gradient.toRgba);
+  // Bottom-anchored scrim — heavier when a photo/cover art is the background.
+  const scrim = (drew ? scene.imageScrim : scene.plateScrim) ?? {
+    startPct: scene.gradient.startPct,
+    stops: [
+      { offset: 0, color: scene.gradient.fromRgba },
+      { offset: 1, color: scene.gradient.toRgba },
+    ],
+  };
+  const grad = ctx.createLinearGradient(0, scene.height * scrim.startPct, 0, scene.height);
+  for (const s of scrim.stops) grad.addColorStop(s.offset, s.color);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, scene.width, scene.height);
 
