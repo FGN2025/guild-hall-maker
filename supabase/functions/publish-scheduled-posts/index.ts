@@ -145,19 +145,46 @@ Deno.serve(async (req) => {
     let failed = 0;
     let undeliverable = 0;
 
-    async function resolveImageUrl(raw: string | null | undefined): Promise<string | null> {
+    /** Durable image resolution.
+     *  A signed URL is a cache, never the source of truth. We mint a fresh one
+     *  from the canonical object path, preferring (1) scheduled_posts.image_path,
+     *  (2) the linked asset's file_path, (3) a path parsed out of the stored URL.
+     *  Only if all three miss do we fall back to the stored (possibly expired) URL. */
+    async function resolveObjectPath(post: any): Promise<string | null> {
+      if (post.image_path) return post.image_path;
+      if (post.asset_id) {
+        const { data } = await supabase
+          .from("tenant_marketing_assets")
+          .select("file_path")
+          .eq("id", post.asset_id)
+          .maybeSingle();
+        if (data?.file_path) return data.file_path;
+      }
+      const raw: string | null = post.image_url ?? null;
       if (!raw) return null;
       const marker = "/tenant-marketing/";
       const idx = raw.indexOf(marker);
-      if (idx === -1) return raw;
+      if (idx === -1) return null;
       let objectPath = raw.slice(idx + marker.length);
       const q = objectPath.indexOf("?");
       if (q !== -1) objectPath = objectPath.slice(0, q);
-      objectPath = decodeURIComponent(objectPath);
+      return decodeURIComponent(objectPath);
+    }
+
+    async function resolveImageUrl(post: any): Promise<string | null> {
+      const objectPath = await resolveObjectPath(post);
+      if (!objectPath) return post.image_url ?? null;
       const { data, error } = await supabase.storage
         .from("tenant-marketing")
         .createSignedUrl(objectPath, 60 * 60);
-      if (error || !data?.signedUrl) return raw;
+      if (error || !data?.signedUrl) {
+        console.warn(`[publish] could not sign ${objectPath}: ${error?.message ?? "no url"}`);
+        return post.image_url ?? null;
+      }
+      // Backfill the canonical path so the next dispatch skips the parse.
+      if (!post.image_path) {
+        await supabase.from("scheduled_posts").update({ image_path: objectPath }).eq("id", post.id);
+      }
       return data.signedUrl;
     }
 
