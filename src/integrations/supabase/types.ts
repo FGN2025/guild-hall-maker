@@ -3546,6 +3546,7 @@ export type Database = {
           feedback_note: string | null
           id: string
           idempotency_key: string | null
+          image_path: string | null
           image_url: string
           overdue_notified_at: string | null
           platform: string
@@ -3575,6 +3576,7 @@ export type Database = {
           feedback_note?: string | null
           id?: string
           idempotency_key?: string | null
+          image_path?: string | null
           image_url: string
           overdue_notified_at?: string | null
           platform: string
@@ -3604,6 +3606,7 @@ export type Database = {
           feedback_note?: string | null
           id?: string
           idempotency_key?: string | null
+          image_path?: string | null
           image_url?: string
           overdue_notified_at?: string | null
           platform?: string
