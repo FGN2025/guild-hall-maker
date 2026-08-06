@@ -747,11 +747,14 @@ import { z as z13 } from "npm:zod@^3.25.76";
 var propose_scheduled_post_default = defineTool15({
   name: "propose_scheduled_post",
   title: "Propose a scheduled social post",
-  description: "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or \xB1HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms.",
+  description: "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or \xB1HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
   inputSchema: {
     tenant_id: z13.string().uuid(),
     platform: z13.string().describe("One of the tenant's connected_platforms values."),
-    image_url: z13.string().url().describe("Permanent Supabase Storage URL from attach_tenant_asset_draft.url."),
+    asset_id: z13.string().uuid().optional().describe(
+      "id of the tenant_marketing_assets row this post's graphic came from (compose_event_promo / attach_tenant_asset_draft). Required in practice; omit only when passing an image_url that already belongs to an existing asset."
+    ),
+    image_url: z13.string().url().optional().describe("Legacy path: asset URL. Ignored when asset_id is supplied."),
     caption: z13.string().optional(),
     scheduled_at: z13.string().describe("ISO 8601 with explicit offset, e.g. 2026-07-24T14:00:00-05:00 or ...Z."),
     campaign_id: z13.string().uuid().optional(),
