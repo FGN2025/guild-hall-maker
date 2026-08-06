@@ -76,7 +76,14 @@ export default defineTool({
         format: input.format,
         beatLabel: input.beat_label ?? null,
       });
-      scene.backgroundUrl = evt.image_url ?? null;
+      // Background art: event image -> game cover art -> branded plate.
+      const art = await resolveEventArt(
+        { image_url: evt.image_url ?? null, game: evt.game ?? null, name: evt.name },
+        userSupabase,
+      );
+      scene.backgroundUrl = art.url;
+      console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
+
 
       const png = await renderPromoSceneToPng(scene);
       // Text-free plate: the editor uses this as its base image so the

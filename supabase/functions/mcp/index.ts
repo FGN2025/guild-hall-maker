@@ -1446,7 +1446,12 @@ var compose_event_promo_default = defineTool21({
         format: input.format,
         beatLabel: input.beat_label ?? null
       });
-      scene.backgroundUrl = evt.image_url ?? null;
+      const art = await resolveEventArt(
+        { image_url: evt.image_url ?? null, game: evt.game ?? null, name: evt.name },
+        userSupabase
+      );
+      scene.backgroundUrl = art.url;
+      console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
       const png = await renderPromoSceneToPng(scene);
       const platePng = await renderPromoSceneToPng(scene, { includeText: false });
       const beat = (input.beat_label ?? "promo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "promo";
