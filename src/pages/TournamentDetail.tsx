@@ -25,12 +25,14 @@ import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay
 import { format } from "date-fns";
 import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 import PageBackground from "@/components/PageBackground";
+import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
 
 const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAdmin, isModerator } = useAuth();
+  const canSeeRegCount = useCanSeeRegistrationCounts();
   const { register, unregister, isRegistering } = useTournaments();
   const [inviteCode, setInviteCode] = useState("");
   const [verifying, setVerifying] = useState(false);
@@ -159,7 +161,7 @@ const TournamentDetail = () => {
                   {
                     icon: Users,
                     label: "Players",
-                    value: isAdmin ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max`,
+                    value: canSeeRegCount ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max`,
                   },
                   {
                     icon: Gamepad2,

@@ -73,7 +73,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Tenant Branding Page — A new dedicated banner-page editor at /tenant/branding opens the full Web Page Editor for your tenant's primary banner page. The page is auto-created the first time you visit. See the new Tenant Branding section below.",
       "Discord Auto-Announce on Event Publish — When you publish a tenant event, an announcement is automatically posted to the configured Discord channel (if your tenant has a webhook registered). No manual posting needed.",
-      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, tenant admins receive an automated email summary of all new tournament, quest, and challenge sign-ups from the previous 7 days across the platform. Delivery-only; no configuration UI.",
+      "Registration Counts Are Platform-Only — Tenant staff (Admin, Manager, Marketing) see a tournament's player capacity (for example \"16 max\") but never how many players have registered. Live registered counts are reserved for platform Admins and Moderators.",
       "Manager Role Clarified — The Manager role permissions bullet in the Roles section has been corrected. Managers see the Dashboard, Player Directory, Leads, Events, and Marketing campaigns only. ZIP Codes, Subscribers, Integrations, Tenant Codes, Web Pages, Team, and Settings remain Admin-only.",
       "Skill Tag Sync — Skill tags on challenges and quests now propagate to player Skill Passports when your tenant has FGN Academy sync enabled.",
     ],
@@ -435,10 +435,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: Bell,
     title: "Automated Staff Emails",
     bullets: [
-      "Two scheduled emails are sent to tenant admin staff automatically. Neither has an in-app UI — they are delivery-only.",
-      "Weekly Registrations Digest — Every Friday at 4 PM Pacific (23:00 UTC), tenant admins receive an email summary of new tournament, quest, and challenge sign-ups from the previous 7 days across the platform. Groups by event with Pacific-time timestamps.",
-      "Idempotency — The digest uses a date-based idempotency key, so a same-day retry won't double-send.",
-      "If You Stop Receiving Them — Check spam first; then check whether the one-click unsubscribe in the email footer was clicked. Ask a platform admin to verify your address is on the recipient list.",
+      "Automated staff email is delivery-only — there is no in-app UI.",
+      "No Sign-Up Digest for Tenant Staff — Tenant staff do not receive registration or sign-up summaries. Player sign-up detail and registered counts are reserved for platform Admins and Moderators. You will see event capacity in the app, not the number registered.",
       "Discord Auto-Announce — When you publish a tenant event, a DB trigger fires the configured Discord webhook for your tenant's event channel (if registered). No email — this posts directly to Discord.",
     ],
   },

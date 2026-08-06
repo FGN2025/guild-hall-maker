@@ -72,6 +72,8 @@ describe("Data Shielding — enrollment/registration counts", () => {
   beforeEach(() => {
     mockAuth.isAdmin = false;
     mockAuth.isModerator = false;
+    mockAuth.isMarketing = false;
+    mockAuth.roleLoading = false;
     mockAuth.user = null;
   });
 
@@ -109,9 +111,42 @@ describe("Data Shielding — enrollment/registration counts", () => {
       expect(screen.getByText("32/64")).toBeInTheDocument();
     });
 
-    it("shows only max participants for moderator (non-admin)", () => {
+    it("shows registration ratio for platform moderator", () => {
       mockAuth.isModerator = true;
       mockAuth.isAdmin = false;
+      render(
+        <TournamentCard tournament={baseTournament} {...tournamentHandlers} />,
+        { wrapper }
+      );
+      expect(screen.getByText("32/64")).toBeInTheDocument();
+    });
+
+    it("shows only max participants for tenant marketing role", () => {
+      mockAuth.isMarketing = true;
+      render(
+        <TournamentCard tournament={baseTournament} {...tournamentHandlers} />,
+        { wrapper }
+      );
+      expect(screen.queryByText("32/64")).not.toBeInTheDocument();
+      expect(screen.getByText("64 max")).toBeInTheDocument();
+    });
+
+    it("shows only max participants for the tournament creator when not platform staff", () => {
+      mockAuth.user = { id: "creator-user" } as any;
+      render(
+        <TournamentCard
+          tournament={{ ...baseTournament, created_by: "creator-user" }}
+          {...tournamentHandlers}
+        />,
+        { wrapper }
+      );
+      expect(screen.queryByText("32/64")).not.toBeInTheDocument();
+      expect(screen.getByText("64 max")).toBeInTheDocument();
+    });
+
+    it("hides the count while roles are still loading", () => {
+      mockAuth.isAdmin = true;
+      mockAuth.roleLoading = true;
       render(
         <TournamentCard tournament={baseTournament} {...tournamentHandlers} />,
         { wrapper }
