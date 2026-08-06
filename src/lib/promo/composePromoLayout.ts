@@ -4,6 +4,8 @@
 //     (MCP compose_event_promo tool)
 // No DOM, no canvas, no Deno imports — pure data in / declarative scene out.
 
+import { normalizeEventTitle, type TitleNormalization } from "./normalizeEventTitle.ts";
+
 export type PromoFormat = "portrait" | "square" | "landscape" | "story";
 
 export const PROMO_DIMENSIONS: Record<PromoFormat, { width: number; height: number }> = {
@@ -71,8 +73,21 @@ export type PromoPlate = {
 
 export type PromoGradientStops = { startPct: number; stops: Array<{ offset: number; color: string }> };
 
-
-
+/** Local contrast plate drawn ONLY behind the copy block when a photo / cover
+ *  art is the background. Lets the global scrim stay light so the art keeps its
+ *  colour while the type still passes contrast. */
+export type PromoCopyPanel = {
+  xPct: number;
+  yPct: number;
+  wPct: number;
+  hPct: number;
+  radiusPct: number;
+  /** Horizontal fade: opaque at the left edge, transparent at the right. */
+  fromRgba: string;
+  toRgba: string;
+  /** Vertical soft feather at the top of the panel (0..1 of panel height). */
+  featherPct: number;
+};
 
 export type PromoScene = {
   format: PromoFormat;
@@ -88,11 +103,15 @@ export type PromoScene = {
   gradient: { startPct: number; fromRgba: string; toRgba: string };
   /** Scrim used when the designed plate is the background (already dark). */
   plateScrim: PromoGradientStops;
-  /** Stronger scrim used when a photo / cover art is the background. */
+  /** Light global scrim used when a photo / cover art is the background. */
   imageScrim: PromoGradientStops;
+  /** Local panel behind the copy block, image backgrounds only. */
+  copyPanel: PromoCopyPanel;
   /** Left accent bar for brand emphasis. Height is a % of canvas height. */
   accentBar: { xPct: number; yPct: number; wPct: number; hPct: number; color: string };
   texts: PromoText[];
+  /** Audit record of the display-side title rewrite (source row untouched). */
+  titleNormalization: TitleNormalization;
 };
 
 export type PromoEventInput = {
