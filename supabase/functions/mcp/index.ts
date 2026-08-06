@@ -862,12 +862,13 @@ var update_scheduled_post_default = defineTool16({
     if (guard) return guard;
     try {
       const supabase = supabaseForUser(ctx);
-      const { data: current, error: fetchErr } = await supabase.from("scheduled_posts").select("id, status").eq("id", id).maybeSingle();
+      const { data: current, error: fetchErr } = await supabase.from("scheduled_posts").select("id, status, tenant_id").eq("id", id).maybeSingle();
       if (fetchErr) throw fetchErr;
       if (!current) return { content: [{ type: "text", text: "Scheduled post not found or access denied." }], isError: true };
       const patch = {};
       for (const [k, v] of Object.entries(fields)) {
         if (v === void 0) continue;
+        if (k === "image_url" || k === "asset_id") continue;
         if (k === "scheduled_at" && typeof v === "string") {
           try {
             patch.scheduled_at = parseIsoWithOffset(v).toISOString();
@@ -877,6 +878,23 @@ var update_scheduled_post_default = defineTool16({
         } else {
           patch[k] = v;
         }
+      }
+      if (fields.asset_id || fields.image_url) {
+        let q = supabase.from("tenant_marketing_assets").select("id, url, file_path, tenant_id");
+        q = fields.asset_id ? q.eq("id", fields.asset_id) : q.eq("url", fields.image_url);
+        const { data: asset } = await q.maybeSingle();
+        if (!asset) {
+          return {
+            content: [{ type: "text", text: "No matching asset. Pass asset_id from compose_event_promo or attach_tenant_asset_draft." }],
+            isError: true
+          };
+        }
+        if (asset.tenant_id !== current.tenant_id) {
+          return { content: [{ type: "text", text: "Asset belongs to a different tenant." }], isError: true };
+        }
+        patch.asset_id = asset.id;
+        patch.image_url = asset.url;
+        patch.image_path = asset.file_path;
       }
       if (current.status === "rejected") {
         patch.status = "pending_review";

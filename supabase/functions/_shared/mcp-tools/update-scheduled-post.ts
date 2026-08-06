@@ -25,7 +25,7 @@ export default defineTool({
 
       const { data: current, error: fetchErr } = await supabase
         .from("scheduled_posts")
-        .select("id, status")
+        .select("id, status, tenant_id")
         .eq("id", id)
         .maybeSingle();
       if (fetchErr) throw fetchErr;
@@ -34,12 +34,33 @@ export default defineTool({
       const patch: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(fields)) {
         if (v === undefined) continue;
+        if (k === "image_url" || k === "asset_id") continue; // handled below
         if (k === "scheduled_at" && typeof v === "string") {
           try { patch.scheduled_at = parseIsoWithOffset(v).toISOString(); }
           catch (e: any) { return { content: [{ type: "text", text: e.message }], isError: true }; }
         } else {
           patch[k] = v;
         }
+      }
+
+      // Graphic changes always resolve through a tenant_marketing_assets row so
+      // image, storage path and asset link stay in lockstep.
+      if (fields.asset_id || fields.image_url) {
+        let q = supabase.from("tenant_marketing_assets").select("id, url, file_path, tenant_id");
+        q = fields.asset_id ? q.eq("id", fields.asset_id) : q.eq("url", fields.image_url!);
+        const { data: asset } = await q.maybeSingle();
+        if (!asset) {
+          return {
+            content: [{ type: "text", text: "No matching asset. Pass asset_id from compose_event_promo or attach_tenant_asset_draft." }],
+            isError: true,
+          };
+        }
+        if ((asset as any).tenant_id !== current.tenant_id) {
+          return { content: [{ type: "text", text: "Asset belongs to a different tenant." }], isError: true };
+        }
+        patch.asset_id = (asset as any).id;
+        patch.image_url = (asset as any).url;
+        patch.image_path = (asset as any).file_path;
       }
 
       if (current.status === "rejected") {
