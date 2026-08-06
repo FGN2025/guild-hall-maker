@@ -4,9 +4,9 @@
 // `max_posts`, and deleted once the lane work closes.
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { composePromoLayout } from "../_shared/promo/composePromoLayout.ts";
-import { renderPromoSceneToPng } from "../_shared/promo/renderPromo.ts";
-import { resolveEventArt } from "../_shared/promo/resolveEventArt.ts";
+import { composePromoLayout } from "./promo/composePromoLayout.ts";
+import { renderPromoSceneToPng } from "./promo/renderPromo.ts";
+import { resolveEventArt } from "./promo/resolveEventArt.ts";
 
 const TENANT_ID = "41a2e493-079a-4a17-a3a9-aebdd5fe5f81";
 const TITLE_SUFFIX = "-- August Seed";
