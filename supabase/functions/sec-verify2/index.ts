@@ -48,6 +48,9 @@ Deno.serve(async (req) => {
     const none = await mkUser(`sec2-none-${stamp}@fgn-test.dev`);
     created.push(inA.id, inA2.id, inB.id, none.id);
 
+    // every signup is auto-enrolled into the platform FGN tenant; strip it so
+    // the synthetic users have exactly the memberships under test
+    for (const id of created) await admin.from("user_service_interests").delete().eq("user_id", id);
     await admin.from("user_service_interests").insert([
       { user_id: inA.id, tenant_id: tA.id },
       { user_id: inA2.id, tenant_id: tA.id },
@@ -73,6 +76,7 @@ Deno.serve(async (req) => {
       same_tenant_member: await tokenFor(inA),
       other_tenant_member: await tokenFor(inB),
       no_membership: await tokenFor(none),
+      self_owner: await tokenFor(inA2),
     };
 
     const targets = [
