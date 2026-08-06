@@ -6261,6 +6261,14 @@ export type Database = {
           zip_code: string
         }[]
       }
+      get_tournament_capacity: {
+        Args: { _tournament_ids: string[] }
+        Returns: {
+          is_full: boolean
+          max_participants: number
+          tournament_id: string
+        }[]
+      }
       get_tournament_registration_counts: {
         Args: { _tournament_ids: string[] }
         Returns: {
@@ -6338,6 +6346,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      shares_any_tenant: {
+        Args: { _target: string; _viewer: string }
+        Returns: boolean
       }
       shares_tenant_with: {
         Args: { _target: string; _viewer: string }

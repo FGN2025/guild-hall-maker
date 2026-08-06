@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 import PageBackground from "@/components/PageBackground";
 import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
+import { fetchTournamentCapacity } from "@/lib/tournamentCapacity";
 
 const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
@@ -39,7 +40,7 @@ const TournamentDetail = () => {
 
 
   const { data: tournament, isLoading } = useQuery({
-    queryKey: ["tournament-detail", id],
+    queryKey: ["tournament-detail", id, canSeeRegCount],
     queryFn: async () => {
       const { data: t, error } = await supabase
         .from("tournaments")
@@ -48,10 +49,8 @@ const TournamentDetail = () => {
         .single();
       if (error) throw error;
 
-      const [countsRes, myRegRes] = await Promise.all([
-        supabase.rpc("get_tournament_registration_counts" as any, {
-          _tournament_ids: [id!],
-        } as any),
+      const [capacityMap, myRegRes] = await Promise.all([
+        fetchTournamentCapacity([id!], canSeeRegCount),
         user
           ? supabase
               .from("tournament_registrations")
@@ -68,16 +67,19 @@ const TournamentDetail = () => {
         .eq("name", t.game)
         .maybeSingle();
 
+      const cap = capacityMap.get(id!);
+
       return {
         ...t,
-        registrations_count:
-          Number((((countsRes as any).data as any[]) ?? [])[0]?.registration_count) || 0,
+        registrations_count: cap?.count ?? null,
+        is_full: cap?.is_full ?? false,
         is_registered: !!(myRegRes as any)?.data,
         game_cover_url: games?.cover_image_url ?? null,
       };
     },
     enabled: !!id,
   });
+
 
   if (isLoading) {
     return (
@@ -99,7 +101,7 @@ const TournamentDetail = () => {
   }
 
   const t = tournament;
-  const isFull = t.registrations_count >= t.max_participants;
+  const isFull = t.is_full;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const isCreator = user?.id === t.created_by;
   const canManage = isAdmin || isModerator || isCreator;
@@ -171,7 +173,10 @@ const TournamentDetail = () => {
                   {
                     icon: Users,
                     label: "Players",
-                    value: canSeeRegCount ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max`,
+                    value:
+                      canSeeRegCount && t.registrations_count !== null
+                        ? `${t.registrations_count} / ${t.max_participants}`
+                        : `${t.max_participants} max`,
                   },
                   {
                     icon: Gamepad2,

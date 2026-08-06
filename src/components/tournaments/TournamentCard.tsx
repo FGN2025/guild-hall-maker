@@ -35,7 +35,7 @@ const TournamentCard = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const canSeeRegCount = useCanSeeRegistrationCounts();
-  const isFull = t.registrations_count >= t.max_participants;
+  const isFull = t.is_full;
   const showRegCount = canSeeRegCount;
   const isPast = t.effective_status === "closed";
   const canRegister = (t.effective_status === "open" || t.effective_status === "upcoming") && !isFull && !t.is_registered;
@@ -78,7 +78,7 @@ const TournamentCard = ({
       <div className="mt-auto grid grid-cols-3 gap-2 sm:gap-3 text-center">
         {[
           { icon: Calendar, label: "Date", value: dateStr },
-          { icon: Users, label: "Players", value: showRegCount ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max` },
+          { icon: Users, label: "Players", value: showRegCount && t.registrations_count !== null ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max` },
           { icon: null, label: "Prize", value: null, isPrize: true },
         ].map((info: any) => (
           <div key={info.label} className="bg-muted rounded-lg p-3">
