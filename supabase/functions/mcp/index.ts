@@ -1279,6 +1279,8 @@ function formatPrizeLabel(pool, prizeType) {
   if (!raw) return null;
   const type = (prizeType ?? "value").toLowerCase();
   if (type === "none") return null;
+  const numeric = raw.replace(/,/g, "").match(/\d+(\.\d+)?/);
+  if (numeric && Number(numeric[0]) === 0) return null;
   if (type === "physical") return raw;
   if (/^\d[\d,]*(\.\d+)?$/.test(raw)) return `${raw} pts`;
   if (/[a-zA-Z$€£¥]/.test(raw)) return raw;
@@ -1354,7 +1356,8 @@ function composePromoLayout(args) {
   const accent2 = clampHex(args.tenantAccentColor, mixHex(accent, "#22d3ee", 0.5));
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
-  const scale = Math.min(H, W * 1.35) / 628;
+  const TYPE_SCALE = 0.75;
+  const scale = Math.min(H, W * 1.35) / 628 * TYPE_SCALE;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
   const beatFs = Math.round(28 * scale);
@@ -1409,7 +1412,7 @@ function composePromoLayout(args) {
   }
   if (prizeLabel) {
     texts.push({
-      text: `Prize: ${prizeLabel}`,
+      text: `Prize Pool: ${prizeLabel}`,
       xPct: marginPct,
       yPct: prizeY / H,
       fontSize: prizeFs,

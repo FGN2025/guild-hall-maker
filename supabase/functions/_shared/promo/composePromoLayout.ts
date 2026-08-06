@@ -144,7 +144,12 @@ function formatDate(iso: string | null | undefined): string {
 }
 
 /** `tournaments.prize_pool` is free text. Bare numbers mean POINTS when
- *  prize_type is 'value'. Never print an ambiguous unitless number. */
+ *  prize_type is 'value'. Never print an ambiguous unitless number.
+ *
+ *  ZERO IS NOT NULL, but it renders the same way: a numerically-zero pool
+ *  ("0", "0.00", "0 pts", "$0") returns null so the line is omitted rather
+ *  than publishing "Prize Pool: 0 pts". Game nights with no pot therefore
+ *  print no prize line at all. */
 export function formatPrizeLabel(
   pool: string | null | undefined,
   prizeType?: string | null,
@@ -153,6 +158,12 @@ export function formatPrizeLabel(
   if (!raw) return null;
   const type = (prizeType ?? "value").toLowerCase();
   if (type === "none") return null;
+
+  // Zero check runs before every branch: pull the first number out of the
+  // string and suppress when it is exactly zero.
+  const numeric = raw.replace(/,/g, "").match(/\d+(\.\d+)?/);
+  if (numeric && Number(numeric[0]) === 0) return null;
+
   if (type === "physical") return raw;
   // value type
   if (/^\d[\d,]*(\.\d+)?$/.test(raw)) return `${raw} pts`;
@@ -263,7 +274,13 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   // down harder than 1080x1080 at the same viewing height. Reference is the
   // landscape short edge (628) that reviewed well at 1.0. Width is still a
   // ceiling so a very tall canvas can't produce type wider than the safe area.
-  const scale = Math.min(H, W * 1.35) / 628;
+  //
+  // TYPE_SCALE is a single multiplier on that shared basis, so a change here
+  // moves portrait, square and landscape by exactly the same proportion and no
+  // format can drift out of step. 0.75 = the 25% reduction Darcy asked for, so
+  // the copy block stops covering resolved key art.
+  const TYPE_SCALE = 0.75;
+  const scale = (Math.min(H, W * 1.35) / 628) * TYPE_SCALE;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
 
@@ -325,7 +342,7 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   }
   if (prizeLabel) {
     texts.push({
-      text: `Prize: ${prizeLabel}`,
+      text: `Prize Pool: ${prizeLabel}`,
       xPct: marginPct, yPct: prizeY / H,
       fontSize: prizeFs, color: accent, fontWeight: "bold",
     });
