@@ -60,10 +60,12 @@ Deno.serve(async (req) => {
       .from("tenants").select("id, name, primary_color, accent_color")
       .eq("slug", "acme-broadband").maybeSingle();
 
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const stamp: string = body.stamp ?? new Date().toISOString().replace(/[:.]/g, "-");
+    const only: string[] = body.keys ?? CASES.map((c) => c.key);
     const out: any[] = [];
 
-    for (const c of CASES) {
+    for (const c of CASES.filter((c) => only.includes(c.key))) {
       const { data: t } = await supabase
         .from("tournaments")
         .select("id, name, game, start_date, prize_pool, prize_type, image_url")
@@ -111,7 +113,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ build: "2026-08-06T22:20Z-typescale-prizepool", cases: out }, null, 2), {
+    return new Response(JSON.stringify({ build: "2026-08-06T22:20Z-typescale-prizepool", stamp, cases: out }, null, 2), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
