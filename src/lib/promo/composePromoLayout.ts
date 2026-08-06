@@ -280,14 +280,35 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
     backgroundUrl: null, // caller fills from event.image_url — kept separate so
                          // the layout is decoupled from image loading
     backgroundFallbackHex: "#0f172a",
-    plate: {
-      fromHex: mixHex(accent, "#0b1120", 0.62),
-      toHex: mixHex(accent2, "#0b1120", 0.86),
-      gridColor: "rgba(255,255,255,0.06)",
-      gridSpacingPct: 0.055,
-      glowColor: accent,
-      glowRadiusPct: 0.55,
-    },
+    plate: (() => {
+      // The field must clear the copy block: its lowest point sits just above
+      // the first line of text (beat label, or the title when there is none).
+      const copyTop = barTopY / H;
+      const fieldLeft = Math.min(0.74, Math.max(0.30, copyTop - 0.05));
+      const fieldRight = Math.max(0.16, fieldLeft - 0.14); // steep upward rake
+      return {
+        fromHex: mixHex(accent, "#0b1120", 0.42),
+        toHex: mixHex(accent2, "#0b1120", 0.78),
+        gridColor: "rgba(255,255,255,0.07)",
+        gridSpacingPct: 0.055,
+        glowColor: accent,
+        glowRadiusPct: 0.45,
+        baseHex: mixHex(accent, "#080d18", 0.9),
+        fieldPoints: [
+          [0, 0],
+          [1, 0],
+          [1, fieldRight],
+          [0, fieldLeft],
+        ] as Array<[number, number]>,
+        edge: { color: accent, widthPct: 0.004 },
+        stripes: [
+          { offsetPct: 0.055, thicknessPct: 0.012, color: accent, opacity: 0.55 },
+          { offsetPct: 0.10, thicknessPct: 0.006, color: accent2, opacity: 0.35 },
+          { offsetPct: 0.30, thicknessPct: 0.30, color: accent2, opacity: 0.10 },
+        ],
+      };
+    })(),
+
     gradient: {
       startPct: Math.max(0.28, (barTopY / H) - 0.12),
       fromRgba: "rgba(0,0,0,0)",
