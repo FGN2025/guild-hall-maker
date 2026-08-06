@@ -48,6 +48,7 @@ import { jwtVerify } from "jose";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { tools } from "../_shared/mcp-tools/_registry.ts";
+import { BUILD_ID } from "../_shared/build-id.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
