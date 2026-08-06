@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
       const { data: asset, error: aErr } = await svc.from("tenant_marketing_assets").insert({
         tenant_id: TENANT_ID,
         campaign_id: camp.id,
-        file_name: `${scene.titleNormalization.output} — ${beat}.png`,
+        file_name: `${scene.titleNormalization.after} — ${beat}.png`,
         file_path: path,
         url,
         background_url: plateUrl,
@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
         rung: art.provenance,
         art_log: art.log,
         title_in: evt.name,
-        title_out: scene.titleNormalization.output,
+        title_out: scene.titleNormalization.after,
         title_log: scene.titleNormalization.log,
         asset_id: asset.id,
         path,
