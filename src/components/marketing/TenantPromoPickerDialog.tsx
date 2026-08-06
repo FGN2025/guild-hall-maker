@@ -127,8 +127,10 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
   const handleQuickCreate = async (evt: TenantEvent) => {
     setQuickCreating(evt.id);
     try {
-      const scene = buildTenantEventPromo(evt, tenantPrimaryColor);
+      const { scene, art } = await buildTenantEventPromoWithArt(evt, tenantPrimaryColor);
+      console.info(`[quick-create] event=${evt.id} ${art.log}`);
       const blob = await renderPromoSceneToBlob(scene);
+
       const campaignId = await ensureCampaign(evt);
       await onSave(blob, {
         overlayConfig: sceneToOverlayConfig(scene),
