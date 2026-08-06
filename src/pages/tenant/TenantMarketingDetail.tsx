@@ -165,6 +165,34 @@ const TenantMarketingDetail = () => {
         )}
       </div>
 
+      {/* Composed promos live in the tenant library (agent-authored). Shown here
+          read-only so a campaign with art never looks empty. */}
+      {composedPromos.length > 0 && (
+        <div>
+          <h2 className="font-heading text-lg font-semibold mb-1">Composed Promos</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Art generated for this campaign, stored in your tenant library.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {composedPromos.map((a) => (
+              <Card key={a.id} className="overflow-hidden">
+                <img src={a.url} alt={a.label} className="w-full h-48 object-cover" loading="lazy" />
+                <CardContent className="pt-4 space-y-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="secondary">{a.label}</Badge>
+                    {a.agent_source && <Badge variant="outline">Agent</Badge>}
+                    {!a.is_published && <Badge variant="outline">Draft</Badge>}
+                  </div>
+                  <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
+                    <Download className="h-4 w-4 mr-2" /> Download
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {editorAssetUrl && editorAssetMeta && (
         <AssetEditorDialog
           open={!!editorAssetUrl}
