@@ -49,7 +49,50 @@ function drawPlate(ctx: CanvasRenderingContext2D, scene: PromoScene) {
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, w, h);
 
-  // 3c. Parallel stripes running along the diagonal, above the edge
+  // 3c. Off-canvas brand arcs
+  for (const a of plate.arcs ?? []) {
+    ctx.globalAlpha = a.opacity;
+    ctx.strokeStyle = a.color;
+    ctx.lineWidth = Math.max(1, a.widthPct * w);
+    ctx.beginPath();
+    ctx.arc(a.cxPct * w, a.cyPct * h, a.rPct * w, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // 3d. Angular shards
+  for (const s of plate.shards ?? []) {
+    ctx.globalAlpha = s.opacity;
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    s.points.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x * w, y * h) : ctx.lineTo(x * w, y * h)));
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // 3e. Halftone dot field, fading toward the diagonal edge
+  const ht = plate.halftone;
+  if (ht) {
+    const step = ht.spacingPct * w;
+    const maxR = ht.radiusPct * w;
+    const y0 = ht.fromYPct * h;
+    const y1 = ht.toYPct * h;
+    ctx.fillStyle = ht.color;
+    for (let y = y0, row = 0; y < y1; y += step, row++) {
+      const t = 1 - (y - y0) / Math.max(1, y1 - y0); // 1 at top -> 0 at edge
+      const rr = maxR * (0.35 + 0.65 * t);
+      ctx.globalAlpha = ht.maxOpacity * t * t;
+      for (let x = (row % 2 ? step / 2 : 0); x < w; x += step) {
+        ctx.beginPath();
+        ctx.arc(x, y, rr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // 3f. Parallel stripes running along the diagonal, above the edge
   const [, , [rx, ry], [lx, ly]] = pts;
   for (const s of plate.stripes) {
     const dy = s.offsetPct * h;
@@ -66,6 +109,7 @@ function drawPlate(ctx: CanvasRenderingContext2D, scene: PromoScene) {
     ctx.globalAlpha = 1;
   }
   ctx.restore();
+
 
   // 4. Bright accent line along the diagonal edge
   ctx.strokeStyle = plate.edge.color;
