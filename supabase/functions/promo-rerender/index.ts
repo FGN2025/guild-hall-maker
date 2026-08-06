@@ -31,7 +31,37 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 
+  // Renders a plate-rung exemplar (art resolution forced to miss) so reviewers
+  // can spot-check the fallback even in a month where every event matched art.
+  if (body.action === "plate_demo") {
+    const { data: t } = await svc.from("tournaments")
+      .select("id, name, game, start_date, prize_pool, prize_type")
+      .eq("id", body.tournament_id).maybeSingle();
+    if (!t) return json({ error: "tournament not found" }, 404);
+    const { data: tn } = await svc.from("tenants")
+      .select("name, primary_color, accent_color").eq("id", TENANT_ID).maybeSingle();
+    const scene = composePromoLayout({
+      event: {
+        name: t.name, game: t.game ?? null, start_date: t.start_date ?? null,
+        prize_pool: t.prize_pool ?? null, prize_type: t.prize_type ?? null,
+      },
+      tenantName: (tn as any)?.name ?? null,
+      tenantPrimaryColor: (tn as any)?.primary_color ?? null,
+      tenantAccentColor: (tn as any)?.accent_color ?? null,
+      format: "portrait",
+      beatLabel: body.beat_label ?? "Announce",
+    });
+    scene.backgroundUrl = null; // force the plate rung
+    const png = await renderPromoSceneToPng(scene);
+    const p = `${TENANT_ID}/spotcheck/plate-exemplar-${t.id}.png`;
+    const up = await svc.storage.from(BUCKET).upload(p, png, { contentType: "image/png", upsert: true });
+    if (up.error) return json({ error: up.error.message }, 500);
+    const { data: s } = await svc.storage.from(BUCKET).createSignedUrl(p, 60 * 60 * 24 * 7);
+    return json({ path: p, url: s?.signedUrl, title: scene.titleNormalization });
+  }
+
   // --- housekeeping actions -------------------------------------------------
+
   if (body.action === "cleanup") {
     const report: Record<string, unknown> = {};
 
