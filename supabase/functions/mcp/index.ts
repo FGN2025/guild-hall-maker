@@ -27,8 +27,8 @@ function supabaseForUser(ctx) {
 }
 function supabaseServiceRole() {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
-  return createClient(url, key, {
+  const key2 = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient(url, key2, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
@@ -43,10 +43,10 @@ function toolError(err, name) {
   console.error(`[fgn-mcp] ${name} failed`, msg);
   return { content: [{ type: "text", text: msg || "tool execution failed" }], isError: true };
 }
-function okJson(payload, key) {
+function okJson(payload, key2) {
   return {
     content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-    structuredContent: { [key]: payload }
+    structuredContent: { [key2]: payload }
   };
 }
 function parseIsoWithOffset(input) {
@@ -1074,6 +1074,100 @@ var propose_portal_banner_update_default = defineTool20({
 import { defineTool as defineTool21 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z19 } from "npm:zod@^3.25.76";
 
+// src/lib/promo/normalizeEventTitle.ts
+var DESCRIPTORS = [
+  "tournament",
+  "championship",
+  "championships",
+  "invitational",
+  "cup",
+  "open",
+  "series",
+  "showdown",
+  "clash",
+  "league",
+  "event",
+  "night"
+];
+var MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec";
+function squash(s) {
+  return s.replace(/\s+/g, " ").trim();
+}
+function key(s) {
+  return s.toLowerCase().replace(/[\u2019'’]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+function stripLeading(title, prefix) {
+  const p = key(prefix);
+  if (!p) return null;
+  const t = key(title);
+  if (t === p) return null;
+  if (!t.startsWith(`${p} `)) return null;
+  const words = title.trim().split(/\s+/);
+  const prefixWords = p.split(" ").length;
+  const rest = words.slice(prefixWords).join(" ");
+  return squash(rest.replace(/^[\s\-–—:|,·•]+/, ""));
+}
+function normalizeEventTitle(args) {
+  const before = args.name ?? "";
+  const rules = [];
+  let out = squash(before);
+  if (args.tenantName) {
+    const stripped = stripLeading(out, args.tenantName);
+    if (stripped) {
+      out = stripped;
+      rules.push("strip_leading_tenant");
+    }
+  }
+  if (args.game) {
+    const stripped = stripLeading(out, args.game);
+    if (stripped) {
+      out = stripped;
+      rules.push("strip_leading_game");
+    }
+  }
+  if (args.dateShown) {
+    const dateSuffix = new RegExp(
+      `[\\s\\-\u2013\u2014:|,\xB7\u2022(\\[]+((${MONTHS})\\.?\\s*\\d{0,2}(st|nd|rd|th)?(,?\\s*\\d{4})?|\\d{1,2}[\\/.\\-]\\d{1,2}([\\/.\\-]\\d{2,4})?|(q[1-4]\\s*)?\\d{4})[)\\]]?\\s*$`,
+      "i"
+    );
+    const next = squash(out.replace(dateSuffix, ""));
+    if (next && next !== out) {
+      out = next;
+      rules.push("strip_trailing_date");
+    }
+  }
+  const words = out.split(/\s+/);
+  const seen = [];
+  const kept = [];
+  for (const w of words) {
+    const k = key(w);
+    if (DESCRIPTORS.includes(k) && seen.includes(k)) continue;
+    if (DESCRIPTORS.includes(k)) {
+      if (seen.length) {
+        seen.push(k);
+        continue;
+      }
+      seen.push(k);
+    }
+    kept.push(w);
+  }
+  const collapsed = squash(kept.join(" "));
+  if (collapsed !== out) {
+    out = collapsed;
+    rules.push("collapse_descriptors");
+  }
+  let guarded = null;
+  const outKey = key(out);
+  const bareDescriptor = outKey.length > 0 && outKey.split(" ").every((w) => DESCRIPTORS.includes(w));
+  if (!outKey) guarded = "empty_result";
+  else if (outKey.length < 3) guarded = "too_short";
+  else if (bareDescriptor) guarded = "bare_descriptor";
+  if (guarded) out = squash(before);
+  const after = out;
+  const log = guarded ? `title=guarded reason=${guarded} rules=[${rules.join(",")}] before="${before}" after="${after}"` : rules.length ? `title=normalized rules=[${rules.join(",")}] before="${before}" after="${after}"` : `title=unchanged before="${before}"`;
+  return { before, after, rules: guarded ? [] : rules, guarded, log };
+}
+
 // src/lib/promo/composePromoLayout.ts
 var PROMO_DIMENSIONS = {
   portrait: { width: 1080, height: 1350 },
@@ -1170,16 +1264,21 @@ function composePromoLayout(args) {
   const accent2 = clampHex(args.tenantAccentColor, mixHex(accent, "#22d3ee", 0.5));
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
-  const shortEdge = Math.min(W, H);
-  const scale = shortEdge / 620;
+  const scale = Math.min(H, W * 1.35) / 628;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
   const beatFs = Math.round(28 * scale);
   const gameFs = Math.round(30 * scale);
   const dateFs = Math.round(26 * scale);
   const prizeFs = Math.round(26 * scale);
+  const titleNorm = normalizeEventTitle({
+    name: args.event.name,
+    game: args.event.game ?? null,
+    dateShown: !!dateStr,
+    tenantName: args.tenantName ?? null
+  });
   const { lines: titleLines, fontSize: titleFs } = fitTitle(
-    args.event.name.toUpperCase(),
+    titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
     3

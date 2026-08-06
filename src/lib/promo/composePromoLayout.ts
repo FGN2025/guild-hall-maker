@@ -127,6 +127,8 @@ export type ComposePromoArgs = {
   event: PromoEventInput;
   tenantPrimaryColor?: string | null;
   tenantAccentColor?: string | null;
+  /** Used display-side only, to strip a redundant leading tenant name. */
+  tenantName?: string | null;
   format?: PromoFormat;
   beatLabel?: string | null;
 };
@@ -254,11 +256,14 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
 
-  // Type is sized against the SHORT edge so a 1080x1350 portrait and a
-  // 1200x628 landscape read at the same optical scale. 620 is the reference
-  // short edge (the landscape sample, which reviewed well at 1.0).
-  const shortEdge = Math.min(W, H);
-  const scale = shortEdge / 620;
+  // Type is sized so the copy block holds the same optical weight when each
+  // format is viewed at the SAME DISPLAY SIZE (i.e. scaled to fit a feed slot,
+  // which is height-bound for tall formats). Sizing against the short edge —
+  // the previous rule — under-sized portrait, because 1080x1350 gets scaled
+  // down harder than 1080x1080 at the same viewing height. Reference is the
+  // landscape short edge (628) that reviewed well at 1.0. Width is still a
+  // ceiling so a very tall canvas can't produce type wider than the safe area.
+  const scale = Math.min(H, W * 1.35) / 628;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
 
@@ -267,9 +272,17 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   const dateFs = Math.round(26 * scale);
   const prizeFs = Math.round(26 * scale);
 
+  // Display-side title normalization. Never mutates the source row; the audit
+  // record rides along on the scene so callers can log before/after.
+  const titleNorm = normalizeEventTitle({
+    name: args.event.name,
+    game: args.event.game ?? null,
+    dateShown: !!dateStr,
+    tenantName: args.tenantName ?? null,
+  });
 
   const { lines: titleLines, fontSize: titleFs } = fitTitle(
-    args.event.name.toUpperCase(),
+    titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
     3,
