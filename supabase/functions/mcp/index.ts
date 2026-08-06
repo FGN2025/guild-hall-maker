@@ -1767,7 +1767,7 @@ var compose_event_promo_default = defineTool21({
         }
         evt = data;
       }
-      const { data: tenant } = await userSupabase.from("tenants").select("primary_color, accent_color").eq("id", input.tenant_id).maybeSingle();
+      const { data: tenant } = await userSupabase.from("tenants").select("name, primary_color, accent_color").eq("id", input.tenant_id).maybeSingle();
       const scene = composePromoLayout({
         event: {
           name: evt.name,
@@ -1776,11 +1776,13 @@ var compose_event_promo_default = defineTool21({
           prize_pool: evt.prize_pool ?? null,
           prize_type: evt.prize_type ?? null
         },
+        tenantName: tenant?.name ?? null,
         tenantPrimaryColor: tenant?.primary_color ?? null,
         tenantAccentColor: tenant?.accent_color ?? null,
         format: input.format,
         beatLabel: input.beat_label ?? null
       });
+      console.log(`[compose_event_promo] event=${evt.id} ${scene.titleNormalization.log}`);
       const art = await resolveEventArt(
         { image_url: evt.image_url ?? null, game: evt.game ?? null, name: evt.name },
         userSupabase
