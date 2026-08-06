@@ -121,6 +121,3 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.send-weekly-registrations-digest]
     verify_jwt = false
-
-[functions.sec-verify2]
-verify_jwt = false
