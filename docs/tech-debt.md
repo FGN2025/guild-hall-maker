@@ -81,9 +81,9 @@ orphans are live editor base plates, referenced through
 `tenant_marketing_assets.background_url` rather than `file_path`. They were
 correctly excluded from the purge and survive:
 
-- `.../rerender-2026-08-promo-20819ce1-...-day-of-e5d06e2d-...-plate.png` — asset `a4c2cf92` "MECCHA CHAMELEON Game Night - Aug 7 — Day-Of"
-- `.../rerender-2026-08-promo-347d6525-...-day-of-a86c5887-...-plate.png` — asset `44402817` "Roblox Tournament - Aug 5 — Day-Of"
-- `.../rerender-2026-08-promo-89cdaa97-...-announce-55ffd691-...-plate.png` — asset `295f83a5` "Forza Horizon 6 Tournament - Aug 14 — Announce"
+- `41a2e493-.../agent/2026/08/rerender-2026-08-promo-20819ce1-...-day-of-e5d06e2d-...-plate.png` — `tenant_marketing_assets.a4c2cf92-5868-48af-a497-e0c174fcd6ee` (Portrait 1080x1350)
+- `41a2e493-.../agent/2026/08/rerender-2026-08-promo-347d6525-...-day-of-a86c5887-...-plate.png` — `tenant_marketing_assets.44402817-823d-410b-9936-0322facc8307` (Portrait 1080x1350)
+- `41a2e493-.../agent/2026/08/rerender-2026-08-promo-89cdaa97-...-announce-55ffd691-...-plate.png` — `tenant_marketing_assets.295f83a5-a518-4363-a795-66bc243cb505` (Portrait 1080x1350)
 
 Open, out of that step's scope: the wider `tenant-marketing` bucket holds 217
 objects, of which 172 are referenced by neither `file_path`, `background_url` nor
