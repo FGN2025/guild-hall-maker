@@ -235,7 +235,11 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
 
-  const scale = W / 1080;
+  // Type is sized against the SHORT edge so a 1080x1350 portrait and a
+  // 1200x628 landscape read at the same optical scale. 620 is the reference
+  // short edge (the landscape sample, which reviewed well at 1.0).
+  const shortEdge = Math.min(W, H);
+  const scale = shortEdge / 620;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
 
@@ -243,6 +247,7 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   const gameFs = Math.round(30 * scale);
   const dateFs = Math.round(26 * scale);
   const prizeFs = Math.round(26 * scale);
+
 
   const { lines: titleLines, fontSize: titleFs } = fitTitle(
     args.event.name.toUpperCase(),

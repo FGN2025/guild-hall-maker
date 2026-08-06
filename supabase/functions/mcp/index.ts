@@ -1170,7 +1170,8 @@ function composePromoLayout(args) {
   const accent2 = clampHex(args.tenantAccentColor, mixHex(accent, "#22d3ee", 0.5));
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
-  const scale = W / 1080;
+  const shortEdge = Math.min(W, H);
+  const scale = shortEdge / 620;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
   const beatFs = Math.round(28 * scale);
