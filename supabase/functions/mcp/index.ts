@@ -1074,7 +1074,7 @@ var propose_portal_banner_update_default = defineTool20({
 import { defineTool as defineTool21 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z19 } from "npm:zod@^3.25.76";
 
-// supabase/functions/_shared/promo/composePromoLayout.ts
+// src/lib/promo/composePromoLayout.ts
 var PROMO_DIMENSIONS = {
   portrait: { width: 1080, height: 1350 },
   square: { width: 1080, height: 1080 },
@@ -1237,14 +1237,32 @@ function composePromoLayout(args) {
     // caller fills from event.image_url — kept separate so
     // the layout is decoupled from image loading
     backgroundFallbackHex: "#0f172a",
-    plate: {
-      fromHex: mixHex(accent, "#0b1120", 0.62),
-      toHex: mixHex(accent2, "#0b1120", 0.86),
-      gridColor: "rgba(255,255,255,0.06)",
-      gridSpacingPct: 0.055,
-      glowColor: accent,
-      glowRadiusPct: 0.55
-    },
+    plate: (() => {
+      const copyTop = barTopY / H;
+      const fieldLeft = Math.min(0.74, Math.max(0.3, copyTop - 0.05));
+      const fieldRight = Math.max(0.16, fieldLeft - 0.14);
+      return {
+        fromHex: mixHex(accent, "#0b1120", 0.42),
+        toHex: mixHex(accent2, "#0b1120", 0.78),
+        gridColor: "rgba(255,255,255,0.07)",
+        gridSpacingPct: 0.055,
+        glowColor: accent,
+        glowRadiusPct: 0.45,
+        baseHex: mixHex(accent, "#080d18", 0.9),
+        fieldPoints: [
+          [0, 0],
+          [1, 0],
+          [1, fieldRight],
+          [0, fieldLeft]
+        ],
+        edge: { color: accent, widthPct: 4e-3 },
+        stripes: [
+          { offsetPct: 0.055, thicknessPct: 0.012, color: accent, opacity: 0.55 },
+          { offsetPct: 0.1, thicknessPct: 6e-3, color: accent2, opacity: 0.35 },
+          { offsetPct: 0.3, thicknessPct: 0.3, color: accent2, opacity: 0.1 }
+        ]
+      };
+    })(),
     gradient: {
       startPct: Math.max(0.28, barTopY / H - 0.12),
       fromRgba: "rgba(0,0,0,0)",
@@ -1335,17 +1353,33 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   const gradStartY = scene.gradient.startPct * h;
   const p = scene.plate;
   const gridStep = p.gridSpacingPct * w;
-  const bgLayer = bgHref ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#plate)"/>
-       <rect x="0" y="0" width="${w}" height="${h}" fill="url(#grid)"/>
-       <circle cx="${w * 0.82}" cy="${h * 0.16}" r="${p.glowRadiusPct * w}" fill="url(#glow)"/>`;
+  const fpts = p.fieldPoints.map(([x, y]) => [x * w, y * h]);
+  const fieldPoly = fpts.map(([x, y]) => `${x},${y}`).join(" ");
+  const [lx, ly] = fpts[3];
+  const [rx, ry] = fpts[2];
+  const stripes = p.stripes.map((s) => {
+    const dy = s.offsetPct * h;
+    const th = s.thicknessPct * h;
+    const poly = `${lx},${ly - dy} ${rx},${ry - dy} ${rx},${ry - dy - th} ${lx},${ly - dy - th}`;
+    return `<polygon points="${poly}" fill="${s.color}" fill-opacity="${s.opacity}"/>`;
+  }).join("");
+  const bgLayer = bgHref ? `<image href="${bgHref}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${w}" height="${h}" fill="${p.baseHex}"/>
+       <g clip-path="url(#field)">
+         <rect x="0" y="0" width="${w}" height="${h}" fill="url(#plate)"/>
+         <rect x="0" y="0" width="${w}" height="${h}" fill="url(#grid)"/>
+         <circle cx="${w * 0.78}" cy="${h * 0.14}" r="${p.glowRadiusPct * w}" fill="url(#glow)"/>
+         ${stripes}
+       </g>
+       <line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="${p.edge.color}" stroke-width="${Math.max(2, p.edge.widthPct * w)}"/>`;
   const gradient = `
     <defs>
+      <clipPath id="field"><polygon points="${fieldPoly}"/></clipPath>
       <linearGradient id="plate" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse">
         <stop offset="0" stop-color="${p.fromHex}"/>
         <stop offset="1" stop-color="${p.toHex}"/>
       </linearGradient>
       <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0" stop-color="${p.glowColor}" stop-opacity="0.33"/>
+        <stop offset="0" stop-color="${p.glowColor}" stop-opacity="0.4"/>
         <stop offset="1" stop-color="${p.glowColor}" stop-opacity="0"/>
       </radialGradient>
       <pattern id="grid" width="${gridStep}" height="${gridStep}" patternUnits="userSpaceOnUse">
@@ -1390,6 +1424,62 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   });
   const png = resvg.render().asPng();
   return png;
+}
+
+// supabase/functions/_shared/promo/resolveEventArt.ts
+function normalizeGameName(s) {
+  return s.toLowerCase().replace(/[\u2019'’]/g, "").replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+}
+async function resolveEventArt(event, supabase) {
+  const gameQuery = (event.game ?? "").trim() || null;
+  const eventImage = (event.image_url ?? "").trim();
+  if (eventImage) {
+    return {
+      url: eventImage,
+      provenance: "event_image",
+      gameQuery,
+      matchedGameName: null,
+      matchedGameId: null,
+      matchMethod: "none",
+      log: `art=event_image url=${eventImage}`
+    };
+  }
+  if (gameQuery) {
+    const { data, error } = await supabase.from("games").select("id, name, slug, cover_image_url").not("cover_image_url", "is", null);
+    if (!error && Array.isArray(data) && data.length) {
+      const rows = data;
+      const target = normalizeGameName(gameQuery);
+      const exact = rows.find((g) => g.name.trim().toLowerCase() === gameQuery.toLowerCase());
+      const normalized = exact ?? rows.find((g) => normalizeGameName(g.name) === target);
+      const bySlug = normalized ?? rows.find((g) => (g.slug ?? "").toLowerCase() === normalizeGameName(gameQuery).replace(/ /g, "-"));
+      const contains = bySlug ?? [...rows].sort((a, b) => normalizeGameName(b.name).length - normalizeGameName(a.name).length).find((g) => {
+        const n = normalizeGameName(g.name);
+        return n.length >= 4 && (target.includes(n) || n.includes(target));
+      });
+      const hit = contains;
+      if (hit?.cover_image_url) {
+        const method = exact ? "exact" : normalized ? "normalized" : bySlug ? "slug" : "contains";
+        return {
+          url: hit.cover_image_url,
+          provenance: "game_cover",
+          gameQuery,
+          matchedGameName: hit.name,
+          matchedGameId: hit.id,
+          matchMethod: method,
+          log: `art=game_cover match=${method} query="${gameQuery}" matched="${hit.name}" url=${hit.cover_image_url}`
+        };
+      }
+    }
+  }
+  return {
+    url: null,
+    provenance: "plate",
+    gameQuery,
+    matchedGameName: null,
+    matchedGameId: null,
+    matchMethod: "none",
+    log: gameQuery ? `art=plate reason=no_event_image_and_no_game_cover query="${gameQuery}"` : "art=plate reason=no_event_image_and_no_game"
+  };
 }
 
 // supabase/functions/_shared/mcp-tools/compose-event-promo.ts
@@ -1446,7 +1536,12 @@ var compose_event_promo_default = defineTool21({
         format: input.format,
         beatLabel: input.beat_label ?? null
       });
-      scene.backgroundUrl = evt.image_url ?? null;
+      const art = await resolveEventArt(
+        { image_url: evt.image_url ?? null, game: evt.game ?? null, name: evt.name },
+        userSupabase
+      );
+      scene.backgroundUrl = art.url;
+      console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
       const png = await renderPromoSceneToPng(scene);
       const platePng = await renderPromoSceneToPng(scene, { includeText: false });
       const beat = (input.beat_label ?? "promo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "promo";
@@ -1512,10 +1607,13 @@ var compose_event_promo_default = defineTool21({
         agent_source: "claude-mcp",
         proposed_by: uid,
         created_by: uid,
-        notes: input.beat_label ? `Beat: ${input.beat_label}` : null
+        notes: [
+          input.beat_label ? `Beat: ${input.beat_label}` : null,
+          `Art: ${art.provenance}${art.matchedGameName ? ` (${art.matchedGameName}, ${art.matchMethod})` : ""}`
+        ].filter(Boolean).join(" \xB7 ")
       }).select().single();
       if (insErr) throw insErr;
-      return okJson(row, "asset");
+      return okJson({ ...row, art_provenance: art }, "asset");
     } catch (err) {
       return toolError(err, "compose_event_promo");
     }

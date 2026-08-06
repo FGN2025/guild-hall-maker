@@ -22,9 +22,18 @@ export type PromoText = {
   fontWeight?: "normal" | "bold";
 };
 
-/** Designed branded fallback used when the event has no usable cover art.
- *  Diagonal brand gradient plus a subtle grid so a missing image still
- *  produces a publishable graphic instead of flat empty navy. */
+/** "Diagonal Field" — the designed branded fallback used when an event has no
+ *  usable cover art (and no game cover art either).
+ *
+ *  Structure, top to bottom:
+ *    1. Deep ink base fill (baseHex) — the copy always sits on this.
+ *    2. A steep diagonal FIELD polygon across the upper canvas, filled with a
+ *       brand gradient (fromHex -> toHex). Its lower edge is the "diagonal".
+ *    3. Grid, glow disc and parallel stripes, all CLIPPED to the field so the
+ *       lower copy area stays clean.
+ *    4. A bright 1-2px accent line drawn along the diagonal edge.
+ *
+ *  Everything is expressed in percentages so both renderers agree exactly. */
 export type PromoPlate = {
   fromHex: string;
   toHex: string;
@@ -32,10 +41,19 @@ export type PromoPlate = {
   gridColor: string;
   /** Grid cell size as a fraction of canvas width. */
   gridSpacingPct: number;
-  /** Large soft brand-colored glow disc, top-right. */
+  /** Large soft brand-colored glow disc inside the field. */
   glowColor: string;
   glowRadiusPct: number;
+  /** Deep ink base behind everything. */
+  baseHex: string;
+  /** Field polygon, clockwise, as [xPct, yPct] pairs. */
+  fieldPoints: Array<[number, number]>;
+  /** Bright line along the field's diagonal edge. */
+  edge: { color: string; widthPct: number };
+  /** Parallel accent stripes inside the field, offset along the diagonal. */
+  stripes: Array<{ offsetPct: number; thicknessPct: number; color: string; opacity: number }>;
 };
+
 
 export type PromoScene = {
   format: PromoFormat;
@@ -262,14 +280,35 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
     backgroundUrl: null, // caller fills from event.image_url — kept separate so
                          // the layout is decoupled from image loading
     backgroundFallbackHex: "#0f172a",
-    plate: {
-      fromHex: mixHex(accent, "#0b1120", 0.62),
-      toHex: mixHex(accent2, "#0b1120", 0.86),
-      gridColor: "rgba(255,255,255,0.06)",
-      gridSpacingPct: 0.055,
-      glowColor: accent,
-      glowRadiusPct: 0.55,
-    },
+    plate: (() => {
+      // The field must clear the copy block: its lowest point sits just above
+      // the first line of text (beat label, or the title when there is none).
+      const copyTop = barTopY / H;
+      const fieldLeft = Math.min(0.74, Math.max(0.30, copyTop - 0.05));
+      const fieldRight = Math.max(0.16, fieldLeft - 0.14); // steep upward rake
+      return {
+        fromHex: mixHex(accent, "#0b1120", 0.42),
+        toHex: mixHex(accent2, "#0b1120", 0.78),
+        gridColor: "rgba(255,255,255,0.07)",
+        gridSpacingPct: 0.055,
+        glowColor: accent,
+        glowRadiusPct: 0.45,
+        baseHex: mixHex(accent, "#080d18", 0.9),
+        fieldPoints: [
+          [0, 0],
+          [1, 0],
+          [1, fieldRight],
+          [0, fieldLeft],
+        ] as Array<[number, number]>,
+        edge: { color: accent, widthPct: 0.004 },
+        stripes: [
+          { offsetPct: 0.055, thicknessPct: 0.012, color: accent, opacity: 0.55 },
+          { offsetPct: 0.10, thicknessPct: 0.006, color: accent2, opacity: 0.35 },
+          { offsetPct: 0.30, thicknessPct: 0.30, color: accent2, opacity: 0.10 },
+        ],
+      };
+    })(),
+
     gradient: {
       startPct: Math.max(0.28, (barTopY / H) - 0.12),
       fromRgba: "rgba(0,0,0,0)",

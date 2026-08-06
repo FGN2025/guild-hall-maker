@@ -12,6 +12,8 @@ import AssetEditorDialog, { type AssetSaveMeta, type SavedOverlayConfig } from "
 import type { TenantEvent } from "@/hooks/useTenantEvents";
 import { composePromoLayout, promoSceneToEditorTexts, type PromoScene } from "@/lib/promo/composePromoLayout";
 import { renderPromoSceneToBlob } from "@/lib/promo/renderPromoBrowser";
+import { resolveEventArt, type ResolvedEventArt } from "@/lib/promo/resolveEventArt";
+
 import { useMarketingCampaigns } from "@/hooks/useMarketingCampaigns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -37,6 +39,19 @@ export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: strin
   scene.backgroundUrl = e.image_url || null;
   return scene;
 }
+
+/** Same as buildTenantEventPromo but runs the shared art resolver so a missing
+ *  event image falls back to the game's cover art before the branded plate. */
+export async function buildTenantEventPromoWithArt(
+  e: TenantEvent,
+  tenantPrimaryColor?: string | null,
+): Promise<{ scene: PromoScene; art: ResolvedEventArt }> {
+  const scene = buildTenantEventPromo(e, tenantPrimaryColor);
+  const art = await resolveEventArt({ image_url: e.image_url, game: e.game, name: e.name }, supabase);
+  scene.backgroundUrl = art.url;
+  return { scene, art };
+}
+
 
 export async function renderPromoToBlob(scene: PromoScene): Promise<Blob> {
   return renderPromoSceneToBlob(scene);
@@ -112,8 +127,10 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
   const handleQuickCreate = async (evt: TenantEvent) => {
     setQuickCreating(evt.id);
     try {
-      const scene = buildTenantEventPromo(evt, tenantPrimaryColor);
+      const { scene, art } = await buildTenantEventPromoWithArt(evt, tenantPrimaryColor);
+      console.info(`[quick-create] event=${evt.id} ${art.log}`);
       const blob = await renderPromoSceneToBlob(scene);
+
       const campaignId = await ensureCampaign(evt);
       await onSave(blob, {
         overlayConfig: sceneToOverlayConfig(scene),
@@ -213,7 +230,13 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => { setSelectedEvent(evt); setSelectedScene(buildTenantEventPromo(evt, tenantPrimaryColor)); }}
+                  onClick={async () => {
+                    setSelectedEvent(evt);
+                    const { scene, art } = await buildTenantEventPromoWithArt(evt, tenantPrimaryColor);
+                    console.info(`[promo-edit] event=${evt.id} ${art.log}`);
+                    setSelectedScene(scene);
+                  }}
+
                   title="Open in editor"
                 >
                   <Pencil className="h-3.5 w-3.5" />

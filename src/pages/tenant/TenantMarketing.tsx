@@ -54,30 +54,55 @@ const TenantMarketing = () => {
     setSearchParams(searchParams, { replace: true });
   };
 
-  // Fetch asset counts + first thumbnail per campaign in a single query
+  // Campaign thumbnails come from three places, in priority order:
+  //   1. marketing_assets      — the shared platform library (manual uploads)
+  //   2. tenant_marketing_assets — where the marketing agent writes composed
+  //      promos (library boundary intact: read-only here, never written to (1))
+  //   3. scheduled_posts.image_url — art attached only at post level
   const { data: assetSummaryRaw } = useQuery({
     queryKey: ["marketing_asset_summaries"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("marketing_assets" as any)
-        .select("campaign_id, url")
-        .order("display_order", { ascending: true });
-      if (error) throw error;
-      return data as unknown as { campaign_id: string; url: string }[];
+      const [libRes, tenantRes, postsRes] = await Promise.all([
+        supabase.from("marketing_assets" as any).select("campaign_id, url").order("display_order", { ascending: true }),
+        supabase
+          .from("tenant_marketing_assets" as any)
+          .select("campaign_id, url")
+          .not("campaign_id", "is", null)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("scheduled_posts" as any)
+          .select("campaign_id, image_url")
+          .not("campaign_id", "is", null)
+          .not("image_url", "is", null),
+      ]);
+      if (libRes.error) throw libRes.error;
+      return {
+        library: (libRes.data ?? []) as unknown as { campaign_id: string; url: string }[],
+        tenant: (tenantRes.data ?? []) as unknown as { campaign_id: string; url: string }[],
+        posts: (postsRes.data ?? []) as unknown as { campaign_id: string; image_url: string }[],
+      };
     },
   });
 
   const assetMap = useMemo(() => {
     const map: Record<string, { count: number; first_url: string }> = {};
     if (!assetSummaryRaw) return map;
-    for (const row of assetSummaryRaw) {
-      if (!map[row.campaign_id]) {
-        map[row.campaign_id] = { count: 0, first_url: row.url };
-      }
-      map[row.campaign_id].count++;
+    const add = (campaignId: string | null, url: string | null) => {
+      if (!campaignId) return;
+      if (!map[campaignId]) map[campaignId] = { count: 0, first_url: url ?? "" };
+      else if (!map[campaignId].first_url && url) map[campaignId].first_url = url;
+      map[campaignId].count++;
+    };
+    for (const row of assetSummaryRaw.library) add(row.campaign_id, row.url);
+    for (const row of assetSummaryRaw.tenant) add(row.campaign_id, row.url);
+    // Post images do not count as library assets — they only supply a thumbnail.
+    for (const row of assetSummaryRaw.posts) {
+      if (!map[row.campaign_id]) map[row.campaign_id] = { count: 0, first_url: row.image_url };
+      else if (!map[row.campaign_id].first_url) map[row.campaign_id].first_url = row.image_url;
     }
     return map;
   }, [assetSummaryRaw]);
+
 
   // Get the user's tenant_id
   const { data: tenantAdmin } = useQuery({
@@ -251,10 +276,10 @@ const TenantMarketing = () => {
                 return (
                   <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
                     {assetMap[c.id]?.first_url && (
-                      <div className="h-12 w-full bg-muted">
+                      <div className="h-32 w-full bg-muted">
                         <img
                           src={assetMap[c.id].first_url}
-                          alt=""
+                          alt={`${c.title} promo art`}
                           className="h-full w-full object-cover"
                           loading="lazy"
                         />
@@ -280,7 +305,13 @@ const TenantMarketing = () => {
                       {c.description && <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
                       <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
                         <ImageIcon className="h-3.5 w-3.5" />
-                        <span>{assetMap[c.id] ? `${assetMap[c.id].count} asset${assetMap[c.id].count !== 1 ? 's' : ''}` : 'No assets yet'}</span>
+                        <span>
+                          {assetMap[c.id]?.count
+                            ? `${assetMap[c.id].count} asset${assetMap[c.id].count !== 1 ? "s" : ""}`
+                            : assetMap[c.id]?.first_url
+                              ? "Art on posts"
+                              : "No assets yet"}
+                        </span>
                       </div>
                     </CardContent>
                   </Card>

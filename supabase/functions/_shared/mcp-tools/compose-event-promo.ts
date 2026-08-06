@@ -3,6 +3,8 @@ import { z } from "zod";
 import { supabaseForUser, supabaseServiceRole, requireAuth, okJson, toolError } from "./_shared.ts";
 import { composePromoLayout, promoSceneToEditorTexts, PROMO_DIMENSIONS } from "../promo/composePromoLayout.ts";
 import { renderPromoSceneToPng } from "../promo/renderPromo.ts";
+import { resolveEventArt } from "../promo/resolveEventArt.ts";
+
 
 const BUCKET = "tenant-marketing";
 
@@ -76,7 +78,14 @@ export default defineTool({
         format: input.format,
         beatLabel: input.beat_label ?? null,
       });
-      scene.backgroundUrl = evt.image_url ?? null;
+      // Background art: event image -> game cover art -> branded plate.
+      const art = await resolveEventArt(
+        { image_url: evt.image_url ?? null, game: evt.game ?? null, name: evt.name },
+        userSupabase,
+      );
+      scene.backgroundUrl = art.url;
+      console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
+
 
       const png = await renderPromoSceneToPng(scene);
       // Text-free plate: the editor uses this as its base image so the
@@ -158,13 +167,17 @@ export default defineTool({
           agent_source: "claude-mcp",
           proposed_by: uid,
           created_by: uid,
-          notes: input.beat_label ? `Beat: ${input.beat_label}` : null,
+          notes: [
+            input.beat_label ? `Beat: ${input.beat_label}` : null,
+            `Art: ${art.provenance}${art.matchedGameName ? ` (${art.matchedGameName}, ${art.matchMethod})` : ""}`,
+          ].filter(Boolean).join(" · "),
         })
         .select()
         .single();
       if (insErr) throw insErr;
 
-      return okJson(row, "asset");
+      return okJson({ ...row, art_provenance: art }, "asset");
+
     } catch (err) {
       return toolError(err, "compose_event_promo");
     }
