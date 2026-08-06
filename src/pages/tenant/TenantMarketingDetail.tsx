@@ -21,7 +21,8 @@ const TenantMarketingDetail = () => {
   const { campaigns, isLoading: loadingCampaigns } = useMarketingCampaigns(false);
 
   const { assets, isLoading: loadingAssets, deleteAsset } = useMarketingAssets(id);
-  const { saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
+  const { assets: tenantAssets, saveFromLibrary, uploadAsset } = useTenantMarketingAssets();
+  const composedPromos = tenantAssets.filter((a) => a.campaign_id === id);
   const { tenantInfo } = useTenantAdmin();
   const [copied, setCopied] = useState(false);
   const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
