@@ -83,8 +83,13 @@ export type PromoScene = {
   /** Rendered when backgroundUrl is null OR the image fetch fails. */
   plate: PromoPlate;
   /** Bottom-anchored dark gradient for text readability. startPct is where the
-   *  gradient begins (0..1 from top). */
+   *  gradient begins (0..1 from top). Legacy two-stop form, kept for callers
+   *  that read it directly; renderers prefer plateScrim / imageScrim. */
   gradient: { startPct: number; fromRgba: string; toRgba: string };
+  /** Scrim used when the designed plate is the background (already dark). */
+  plateScrim: PromoGradientStops;
+  /** Stronger scrim used when a photo / cover art is the background. */
+  imageScrim: PromoGradientStops;
   /** Left accent bar for brand emphasis. Height is a % of canvas height. */
   accentBar: { xPct: number; yPct: number; wPct: number; hPct: number; color: string };
   texts: PromoText[];
