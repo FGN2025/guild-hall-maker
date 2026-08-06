@@ -11,7 +11,7 @@
 // resvg is loaded lazily via a dynamic npm: specifier so that this module is
 // import-safe for the build-time MCP manifest extractor (Node cannot resolve
 // `npm:` specifiers; Deno resolves them at runtime on first render).
-import type { PromoScene } from "../../../../src/lib/promo/composePromoLayout.ts";
+import type { PromoScene } from "./composePromoLayout.ts";
 
 const FONT_URLS = [
   "https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans.ttf",
