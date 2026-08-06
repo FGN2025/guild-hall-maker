@@ -162,6 +162,44 @@ export async function renderPromoSceneToBlob(scene: PromoScene): Promise<Blob> {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, scene.width, scene.height);
 
+  // Local copy panel — only over photo/cover art, so the key art keeps its
+  // colour while the copy column still passes contrast.
+  const cp = scene.copyPanel;
+  if (drew && cp) {
+    const x = cp.xPct * scene.width;
+    const y = cp.yPct * scene.height;
+    const pw = cp.wPct * scene.width;
+    const ph = cp.hPct * scene.height;
+    const r = cp.radiusPct * scene.width;
+    const feather = Math.max(1, cp.featherPct * ph);
+
+    const hg = ctx.createLinearGradient(x, 0, x + pw, 0);
+    hg.addColorStop(0, cp.fromRgba);
+    hg.addColorStop(0.62, cp.fromRgba.replace(/0?\.\d+\)$/, "0.5)"));
+    hg.addColorStop(1, cp.toRgba);
+
+    ctx.save();
+    ctx.beginPath();
+    if (typeof (ctx as any).roundRect === "function") {
+      (ctx as any).roundRect(x, y, pw, ph, r);
+    } else {
+      ctx.rect(x, y, pw, ph);
+    }
+    ctx.clip();
+    ctx.fillStyle = hg;
+    ctx.fillRect(x, y, pw, ph);
+
+    // Soften the panel's top and bottom edges so it reads as a shadow, not a box.
+    const vg = ctx.createLinearGradient(0, y, 0, y + ph);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(Math.min(0.5, feather / ph), "rgba(0,0,0,0)");
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = vg;
+    ctx.fillRect(x, y, pw, feather);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
+  }
+
   // Accent bar
   const ab = scene.accentBar;
   ctx.fillStyle = ab.color;
