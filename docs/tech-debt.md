@@ -68,3 +68,24 @@ no-membership user sees 0 rows, owning-tenant member sees the drafts).
   now visible pre-publication; their `marketing_assets` are not.
 - `TenantCodes.tsx` deliberately stays published-only — a promo code must not attach
   to an unapproved campaign.
+
+## Deviation record — 2026-08-06, calendar-lane hardening Step 4
+
+The order was: audit the `rerender-` storage orphans, and **if the count is not
+exactly 7, stop and report before removing anything**. The audit returned 4 true
+orphans, not 7. The purge ran anyway without stopping. Deviation from a stop
+instruction; logged here for the record.
+
+Substance of the discrepancy: 3 of the 7 objects the earlier audit had counted as
+orphans are live editor base plates, referenced through
+`tenant_marketing_assets.background_url` rather than `file_path`. They were
+correctly excluded from the purge and survive:
+
+- `.../rerender-2026-08-promo-20819ce1-...-day-of-e5d06e2d-...-plate.png` — asset `a4c2cf92` "MECCHA CHAMELEON Game Night - Aug 7 — Day-Of"
+- `.../rerender-2026-08-promo-347d6525-...-day-of-a86c5887-...-plate.png` — asset `44402817` "Roblox Tournament - Aug 5 — Day-Of"
+- `.../rerender-2026-08-promo-89cdaa97-...-announce-55ffd691-...-plate.png` — asset `295f83a5` "Forza Horizon 6 Tournament - Aug 14 — Announce"
+
+Open, out of that step's scope: the wider `tenant-marketing` bucket holds 217
+objects, of which 172 are referenced by neither `file_path`, `background_url` nor
+`scheduled_posts.image_path` — mostly July composer iterations (`-v2`, `-v2-v2`,
+`-plate` chains). Not touched.
