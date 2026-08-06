@@ -5,26 +5,34 @@
 
 import type { PromoScene } from "./composePromoLayout";
 
-/** Designed branded fallback: diagonal brand gradient + soft glow + grid.
- *  Used whenever the event has no usable cover art, so a missing image still
- *  yields a publishable graphic instead of flat empty navy. */
+/** "Diagonal Field" branded fallback. See PromoPlate in composePromoLayout for
+ *  the design contract; this is the canvas rasterization of it. */
 function drawPlate(ctx: CanvasRenderingContext2D, scene: PromoScene) {
   const { width: w, height: h, plate } = scene;
+
+  // 1. Deep ink base
+  ctx.fillStyle = plate.baseHex;
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. Field polygon
+  const pts = plate.fieldPoints.map(([x, y]) => [x * w, y * h] as [number, number]);
+  const fieldPath = () => {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+    ctx.closePath();
+  };
+
+  ctx.save();
+  fieldPath();
+  ctx.clip();
+
   const g = ctx.createLinearGradient(0, 0, w, h);
   g.addColorStop(0, plate.fromHex);
   g.addColorStop(1, plate.toHex);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 
-  // Soft brand glow, top-right
-  const r = plate.glowRadiusPct * w;
-  const glow = ctx.createRadialGradient(w * 0.82, h * 0.16, 0, w * 0.82, h * 0.16, r);
-  glow.addColorStop(0, `${plate.glowColor}55`);
-  glow.addColorStop(1, `${plate.glowColor}00`);
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, w, h);
-
-  // Subtle grid
+  // 3a. Grid (clipped to field)
   const step = plate.gridSpacingPct * w;
   ctx.strokeStyle = plate.gridColor;
   ctx.lineWidth = Math.max(1, w / 1080);
@@ -32,7 +40,42 @@ function drawPlate(ctx: CanvasRenderingContext2D, scene: PromoScene) {
   for (let x = step; x < w; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
   for (let y = step; y < h; y += step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
   ctx.stroke();
+
+  // 3b. Soft brand glow, upper right of the field
+  const r = plate.glowRadiusPct * w;
+  const glow = ctx.createRadialGradient(w * 0.78, h * 0.14, 0, w * 0.78, h * 0.14, r);
+  glow.addColorStop(0, `${plate.glowColor}66`);
+  glow.addColorStop(1, `${plate.glowColor}00`);
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+
+  // 3c. Parallel stripes running along the diagonal, above the edge
+  const [, , [rx, ry], [lx, ly]] = pts;
+  for (const s of plate.stripes) {
+    const dy = s.offsetPct * h;
+    const th = s.thicknessPct * h;
+    ctx.globalAlpha = s.opacity;
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.moveTo(lx, ly - dy);
+    ctx.lineTo(rx, ry - dy);
+    ctx.lineTo(rx, ry - dy - th);
+    ctx.lineTo(lx, ly - dy - th);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+
+  // 4. Bright accent line along the diagonal edge
+  ctx.strokeStyle = plate.edge.color;
+  ctx.lineWidth = Math.max(2, plate.edge.widthPct * w);
+  ctx.beginPath();
+  ctx.moveTo(lx, ly);
+  ctx.lineTo(rx, ry);
+  ctx.stroke();
 }
+
 
 export async function renderPromoSceneToBlob(scene: PromoScene): Promise<Blob> {
   const canvas = document.createElement("canvas");
