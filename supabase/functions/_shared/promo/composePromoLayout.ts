@@ -342,7 +342,7 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   }
   if (prizeLabel) {
     texts.push({
-      text: `Prize: ${prizeLabel}`,
+      text: `Prize Pool: ${prizeLabel}`,
       xPct: marginPct, yPct: prizeY / H,
       fontSize: prizeFs, color: accent, fontWeight: "bold",
     });

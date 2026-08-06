@@ -1412,7 +1412,7 @@ function composePromoLayout(args) {
   }
   if (prizeLabel) {
     texts.push({
-      text: `Prize: ${prizeLabel}`,
+      text: `Prize Pool: ${prizeLabel}`,
       xPct: marginPct,
       yPct: prizeY / H,
       fontSize: prizeFs,
