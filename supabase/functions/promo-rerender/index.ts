@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
   const { data: campaigns, error: cErr } = await svc
     .from("marketing_campaigns")
-    .select("id, title, source_tournament_id, source_event_id")
+    .select("id, title, source_tournament_id, source_event_id, created_by")
     .eq("tenant_id", TENANT_ID)
     .like("title", `%${TITLE_SUFFIX}`);
   if (cErr) return json({ error: cErr.message }, 500);
@@ -130,6 +130,8 @@ Deno.serve(async (req) => {
         label: `Portrait ${scene.width}x${scene.height}`,
         is_published: false,
         agent_source: "calendar-lane-rerender",
+        created_by: (camp as any).created_by,
+        proposed_by: (camp as any).created_by,
         notes: [
           `Beat: ${beat}`,
           `Art: ${art.provenance}${art.matchedGameName ? ` (${art.matchedGameName}, ${art.matchMethod})` : ""}`,
