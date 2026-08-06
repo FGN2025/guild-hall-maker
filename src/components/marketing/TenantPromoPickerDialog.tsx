@@ -230,7 +230,13 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => { setSelectedEvent(evt); setSelectedScene(buildTenantEventPromo(evt, tenantPrimaryColor)); }}
+                  onClick={async () => {
+                    setSelectedEvent(evt);
+                    const { scene, art } = await buildTenantEventPromoWithArt(evt, tenantPrimaryColor);
+                    console.info(`[promo-edit] event=${evt.id} ${art.log}`);
+                    setSelectedScene(scene);
+                  }}
+
                   title="Open in editor"
                 >
                   <Pencil className="h-3.5 w-3.5" />
