@@ -6203,6 +6203,23 @@ export type Database = {
       }
       fail_stalled_agent_runs: { Args: never; Returns: number }
       get_academy_queue_stats: { Args: never; Returns: Json }
+      get_leaderboard_standings: {
+        Args: { _limit?: number }
+        Returns: {
+          avatar_url: string
+          challenges_completed: number
+          display_name: string
+          gamer_tag: string
+          losses: number
+          points: number
+          rank: number
+          tier: string
+          tournaments_played: number
+          user_id: string
+          win_rate: number
+          wins: number
+        }[]
+      }
       get_marketing_notification_recipients: {
         Args: { _category: string; _tenant_id: string }
         Returns: {
@@ -6211,6 +6228,32 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_season_progression: {
+        Args: never
+        Returns: {
+          avg_points: number
+          season_name: string
+          total_players: number
+          total_points: number
+        }[]
+      }
+      get_season_standings: {
+        Args: { _limit?: number; _season_id: string }
+        Returns: {
+          avatar_url: string
+          challenges_completed: number
+          display_name: string
+          gamer_tag: string
+          losses: number
+          points: number
+          rank: number
+          tier: string
+          tournaments_played: number
+          user_id: string
+          wins: number
+        }[]
+      }
+      get_season_stats_summary: { Args: { _season_id: string }; Returns: Json }
       get_tenant_health_summary: {
         Args: never
         Returns: {
@@ -6318,6 +6361,14 @@ export type Database = {
       is_tournament_participant: {
         Args: { _tournament_id: string; _user_id: string }
         Returns: boolean
+      }
+      leaderboard_challenge_tier: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          challenges_completed: number
+          tier: string
+          user_id: string
+        }[]
       }
       lookup_providers_by_zip: {
         Args: { _zip: string }
