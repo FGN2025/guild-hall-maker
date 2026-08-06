@@ -270,7 +270,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        const freshImage = await resolveImageUrl(post.image_url);
+        const freshImage = await resolveImageUrl(post);
         let publishRes: Response;
 
         if (post.platform === "discord") {
