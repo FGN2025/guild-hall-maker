@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
+import { fetchTournamentCapacity } from "@/lib/tournamentCapacity";
 
 export interface DashboardStats {
   tournamentsRegistered: number;
@@ -18,7 +20,8 @@ export interface RegisteredTournament {
   status: string;
   start_date: string;
   format: string;
-  registrations_count: number;
+  registrations_count: number | null;
+  is_full: boolean;
   max_participants: number;
   prize_pool: string | null;
 }
@@ -118,23 +121,16 @@ export const useDashboard = () => {
 
       const tournamentIds = regs.map((r) => r.tournament_id);
 
-      const [tournamentsRes, allRegsRes] = await Promise.all([
+      const [tournamentsRes, capacityMap] = await Promise.all([
         supabase
           .from("tournaments")
           .select("id, name, game, status, start_date, format, max_participants, prize_pool")
           .in("id", tournamentIds)
           .order("start_date", { ascending: true }),
-        supabase.rpc("get_tournament_registration_counts" as any, {
-          _tournament_ids: tournamentIds,
-        } as any),
+        fetchTournamentCapacity(tournamentIds, canSeeRegCounts),
       ]);
 
       if (tournamentsRes.error) throw tournamentsRes.error;
-
-      const countsMap = new Map<string, number>();
-      (((allRegsRes as any).data as any[]) ?? []).forEach((r: any) => {
-        countsMap.set(r.tournament_id, Number(r.registration_count) || 0);
-      });
 
       return (tournamentsRes.data ?? []).map((t: any) => ({
         id: t.id,
@@ -143,7 +139,8 @@ export const useDashboard = () => {
         status: t.status,
         start_date: t.start_date,
         format: t.format,
-        registrations_count: countsMap.get(t.id) ?? 0,
+        registrations_count: capacityMap.get(t.id)?.count ?? null,
+        is_full: capacityMap.get(t.id)?.is_full ?? false,
         max_participants: t.max_participants,
         prize_pool: t.prize_pool,
       })) as RegisteredTournament[];

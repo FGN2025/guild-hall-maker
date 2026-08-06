@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 import PageBackground from "@/components/PageBackground";
 import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
+import { fetchTournamentCapacity } from "@/lib/tournamentCapacity";
 
 const TournamentDetail = () => {
   usePageTitle("Tournament Detail");
@@ -100,7 +101,7 @@ const TournamentDetail = () => {
   }
 
   const t = tournament;
-  const isFull = t.registrations_count >= t.max_participants;
+  const isFull = t.is_full;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const isCreator = user?.id === t.created_by;
   const canManage = isAdmin || isModerator || isCreator;
@@ -172,7 +173,10 @@ const TournamentDetail = () => {
                   {
                     icon: Users,
                     label: "Players",
-                    value: canSeeRegCount ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max`,
+                    value:
+                      canSeeRegCount && t.registrations_count !== null
+                        ? `${t.registrations_count} / ${t.max_participants}`
+                        : `${t.max_participants} max`,
                   },
                   {
                     icon: Gamepad2,
