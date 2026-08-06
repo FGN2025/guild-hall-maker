@@ -48,10 +48,19 @@ const TournamentDetail = () => {
         .single();
       if (error) throw error;
 
-      const { data: regs } = await supabase
-        .from("tournament_registrations")
-        .select("user_id")
-        .eq("tournament_id", id!);
+      const [countsRes, myRegRes] = await Promise.all([
+        supabase.rpc("get_tournament_registration_counts" as any, {
+          _tournament_ids: [id!],
+        } as any),
+        user
+          ? supabase
+              .from("tournament_registrations")
+              .select("user_id")
+              .eq("tournament_id", id!)
+              .eq("user_id", user.id)
+              .maybeSingle()
+          : Promise.resolve({ data: null } as any),
+      ]);
 
       const { data: games } = await supabase
         .from("games")
@@ -61,8 +70,9 @@ const TournamentDetail = () => {
 
       return {
         ...t,
-        registrations_count: regs?.length ?? 0,
-        is_registered: user ? (regs ?? []).some((r) => r.user_id === user.id) : false,
+        registrations_count:
+          Number((((countsRes as any).data as any[]) ?? [])[0]?.registration_count) || 0,
+        is_registered: !!(myRegRes as any)?.data,
         game_cover_url: games?.cover_image_url ?? null,
       };
     },

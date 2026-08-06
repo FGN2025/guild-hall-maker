@@ -6261,6 +6261,13 @@ export type Database = {
           zip_code: string
         }[]
       }
+      get_tournament_registration_counts: {
+        Args: { _tournament_ids: string[] }
+        Returns: {
+          registration_count: number
+          tournament_id: string
+        }[]
+      }
       get_tournament_registration_private: {
         Args: { _registration_id: string }
         Returns: {
