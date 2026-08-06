@@ -2028,8 +2028,9 @@ var mcp_default = defineMcp({
     acceptedAudiences: "authenticated",
     // The SDK owns this function's routing, so the RFC 9728 metadata document
     // (the one unauthenticated GET path) carries the deploy stamp. Probe:
-    // GET /functions/v1/mcp/.well-known/oauth-protected-resource
-    resourceDocumentation: `https://fgn.gg/docs/mcp#build=${BUILD_ID}`
+    // GET /functions/v1/mcp/.well-known/oauth-protected-resource (no fragment or
+    // query allowed in this field, so the stamp rides a path segment).
+    resourceDocumentation: `https://fgn.gg/docs/mcp/build/${encodeURIComponent(BUILD_ID)}`
   }),
   tools
 });

@@ -5,6 +5,7 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://yrhwzmkenjgiujhofucx.supabase.co/auth/v1",
+    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-08-06T17%3A05Z-calendar-hardening",
     "accepted_audiences": [
       "authenticated"
     ]
@@ -499,7 +500,7 @@
       {
         "name": "propose_scheduled_post",
         "title": "Propose a scheduled social post",
-        "description": "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or ±HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms.",
+        "description": "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or ±HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -516,10 +517,15 @@
               "type": "string",
               "description": "One of the tenant's connected_platforms values."
             },
+            "asset_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "id of the tenant_marketing_assets row this post's graphic came from (compose_event_promo / attach_tenant_asset_draft). Required in practice; omit only when passing an image_url that already belongs to an existing asset."
+            },
             "image_url": {
               "type": "string",
               "format": "uri",
-              "description": "Permanent Supabase Storage URL from attach_tenant_asset_draft.url."
+              "description": "Legacy path: asset URL. Ignored when asset_id is supplied."
             },
             "caption": {
               "type": "string"
@@ -543,7 +549,6 @@
           "required": [
             "tenant_id",
             "platform",
-            "image_url",
             "scheduled_at"
           ],
           "additionalProperties": false,
@@ -554,7 +559,7 @@
       {
         "name": "update_scheduled_post",
         "title": "Update / resubmit scheduled post",
-        "description": "Revise a draft/pending_review/rejected scheduled post. If the row is currently 'rejected', the update flips its status back to 'pending_review' and preserves the existing feedback_note for audit. scheduled_at (if provided) MUST be ISO 8601 with explicit offset.",
+        "description": "Revise a draft/pending_review/rejected scheduled post. If the row is currently 'rejected', the update flips its status back to 'pending_review' and preserves the existing feedback_note for audit. scheduled_at (if provided) MUST be ISO 8601 with explicit offset. To change the graphic pass `asset_id` (from compose_event_promo / attach_tenant_asset_draft) — the image and storage path are taken from that asset. Passing image_url alone is rejected when it does not belong to an asset.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -570,9 +575,15 @@
             "platform": {
               "type": "string"
             },
+            "asset_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "New source asset for this post's graphic."
+            },
             "image_url": {
               "type": "string",
-              "format": "uri"
+              "format": "uri",
+              "description": "Legacy path: must be the url of an existing asset."
             },
             "caption": {
               "type": "string"

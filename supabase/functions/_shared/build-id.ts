@@ -10,7 +10,7 @@
 //   GET /functions/v1/agent-run   -> {"build_id": ...}
 //   GET /functions/v1/agent-mcp   -> {"build_id": ...}
 //   GET /functions/v1/mcp/.well-known/oauth-protected-resource
-//        -> resource_documentation: https://fgn.gg/docs/mcp#build=<BUILD_ID>
+//        -> resource_documentation: https://fgn.gg/docs/mcp/build/<BUILD_ID>
 //
 // (The `mcp` function is SDK-generated and has no free route, so the stamp
 // rides the one unauthenticated field the RFC 9728 metadata document lets us
