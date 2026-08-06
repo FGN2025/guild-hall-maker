@@ -14,8 +14,7 @@ export type TitleNormalization = {
 };
 
 // Deliberately conservative: only words that are pure event descriptors.
-// Words like "league", "cup", "open" or "night" are excluded because they occur
-// inside real game and event names (Rocket League, Game Night).
+// Used ONLY for collapsing repeats ("Championship Tournament" -> "Championship").
 const DESCRIPTORS = [
   "tournament",
   "tournaments",
@@ -25,6 +24,39 @@ const DESCRIPTORS = [
   "showdown",
   "clash",
 ];
+
+// Wider set used ONLY by the game-strip guard. A remainder built purely from
+// these words is anonymous — it names no event, so the game must stay in the
+// headline. Includes words we deliberately never collapse (they appear inside
+// real game names) because here they are only tested on the post-strip tail.
+const GENERIC = [
+  ...DESCRIPTORS,
+  "game",
+  "games",
+  "night",
+  "nights",
+  "cup",
+  "open",
+  "league",
+  "series",
+  "event",
+  "events",
+  "final",
+  "finals",
+  "match",
+  "matches",
+  "session",
+  "sessions",
+  "scrim",
+  "scrims",
+  "lan",
+  "play",
+  "playoffs",
+];
+
+/** Shortest remainder we accept as a standalone headline. */
+const MIN_STANDALONE_CHARS = 12;
+
 
 const MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec";
 
@@ -64,11 +96,33 @@ function collapseDescriptors(s: string): string {
   return squash(kept.join(" ")).replace(/[\s\-–—:|,·•]+$/, "");
 }
 
+/** Every word is a generic event word — names no event on its own. */
 function isBare(s: string): boolean {
   const k = key(s);
   if (!k) return true;
-  return k.split(" ").every((w) => DESCRIPTORS.includes(w));
+  return k.split(" ").every((w) => GENERIC.includes(w));
 }
+
+/** Leads with a generic descriptor ("Tournament - Solo / No Build") — reads anonymously. */
+function leadsGeneric(s: string): boolean {
+  const k = key(s);
+  if (!k) return true;
+  return GENERIC.includes(k.split(" ")[0]);
+}
+
+/**
+ * A remainder may replace the full title only when it is genuinely
+ * distinguishing on its own: it carries a qualifier beyond generic event
+ * words, does not lead with a generic descriptor, and is long enough to read
+ * as a name. Otherwise the game name stays in the headline.
+ */
+function standaloneRejection(s: string): string | null {
+  if (isBare(s)) return "bare_descriptor";
+  if (leadsGeneric(s)) return "anonymous_qualifier";
+  if (key(s).replace(/\s+/g, "").length < MIN_STANDALONE_CHARS) return "too_short";
+  return null;
+}
+
 
 export function normalizeEventTitle(args: {
   name: string;
@@ -103,18 +157,18 @@ export function normalizeEventTitle(args: {
   const collapsed = collapseDescriptors(out);
   if (collapsed && collapsed !== out) { out = collapsed; rules.push("collapse_descriptors"); }
 
-  // 4. Leading game name — the game already prints on its own metadata line.
-  //    Applied LAST and only kept when what remains still says something; the
-  //    fallback is this same title WITH the game, not the raw redundant row.
+  // 4. Leading game name — stripped ONLY when what remains is genuinely
+  //    distinguishing on its own. The headline must carry the most identifying
+  //    thing on the graphic; redundancy with the metadata line is a far smaller
+  //    sin than an anonymous headline.
   const withGame = out;
   let guarded: string | null = null;
   if (args.game) {
     const stripped = stripLeading(out, args.game);
     if (stripped) {
-      if (isBare(stripped)) {
-        guarded = "bare_descriptor";       // e.g. "Rocket League Tournament" -> "Tournament"
-      } else if (key(stripped).length < 3) {
-        guarded = "too_short";
+      const reject = standaloneRejection(stripped);
+      if (reject) {
+        guarded = reject; // e.g. "Valorant Game Night" -> "Game Night": rejected
       } else {
         out = stripped;
         rules.push("strip_leading_game");
@@ -124,7 +178,8 @@ export function normalizeEventTitle(args: {
 
   // Final safety: never emit an empty or degenerate title.
   if (!key(out)) { out = squash(before); guarded = guarded ?? "empty_result"; }
-  else if (out !== withGame && isBare(out)) { out = withGame; guarded = "bare_descriptor"; }
+  else if (out !== withGame && standaloneRejection(out)) { out = withGame; guarded = "bare_descriptor"; }
+
 
   const after = out;
   const parts = [`before="${before}"`, `after="${after}"`, `rules=[${rules.join(",")}]`];
