@@ -168,12 +168,14 @@ const TenantChallenges = () => {
           prize_pool: totalPoints > 0 ? String(totalPoints) : null,
           prize_type: totalPoints > 0 ? "value" : "none",
         },
+        tenantName: tenantInfo?.tenantName ?? null,
         tenantPrimaryColor: tenantInfo?.primaryColor,
         tenantAccentColor: tenantInfo?.accentColor,
         format: "portrait",
         beatLabel: "Challenge",
       });
       scene.backgroundUrl = c.cover_image_url || c.games?.cover_image_url || null;
+      console.info(`[promo] challenge=${c.id} ${scene.titleNormalization.log}`);
 
       const blob = await renderPromoSceneToBlob(scene);
 

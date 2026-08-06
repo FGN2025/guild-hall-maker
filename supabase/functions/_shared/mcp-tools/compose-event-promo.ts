@@ -61,7 +61,7 @@ export default defineTool({
       // Fetch tenant brand color
       const { data: tenant } = await userSupabase
         .from("tenants")
-        .select("primary_color, accent_color")
+        .select("name, primary_color, accent_color")
         .eq("id", input.tenant_id)
         .maybeSingle();
 
@@ -73,11 +73,14 @@ export default defineTool({
           prize_pool: evt.prize_pool ?? null,
           prize_type: evt.prize_type ?? null,
         },
+        tenantName: (tenant as any)?.name ?? null,
         tenantPrimaryColor: (tenant as any)?.primary_color ?? null,
         tenantAccentColor: (tenant as any)?.accent_color ?? null,
         format: input.format,
         beatLabel: input.beat_label ?? null,
       });
+      console.log(`[compose_event_promo] event=${evt.id} ${scene.titleNormalization.log}`);
+
       // Background art: event image -> game cover art -> branded plate.
       const art = await resolveEventArt(
         { image_url: evt.image_url ?? null, game: evt.game ?? null, name: evt.name },

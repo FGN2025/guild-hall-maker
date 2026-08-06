@@ -27,8 +27,8 @@ function supabaseForUser(ctx) {
 }
 function supabaseServiceRole() {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
-  return createClient(url, key, {
+  const key2 = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+  return createClient(url, key2, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
@@ -43,10 +43,10 @@ function toolError(err, name) {
   console.error(`[fgn-mcp] ${name} failed`, msg);
   return { content: [{ type: "text", text: msg || "tool execution failed" }], isError: true };
 }
-function okJson(payload, key) {
+function okJson(payload, key2) {
   return {
     content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-    structuredContent: { [key]: payload }
+    structuredContent: { [key2]: payload }
   };
 }
 function parseIsoWithOffset(input) {
@@ -1074,6 +1074,108 @@ var propose_portal_banner_update_default = defineTool20({
 import { defineTool as defineTool21 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z19 } from "npm:zod@^3.25.76";
 
+// src/lib/promo/normalizeEventTitle.ts
+var DESCRIPTORS = [
+  "tournament",
+  "tournaments",
+  "championship",
+  "championships",
+  "invitational",
+  "showdown",
+  "clash"
+];
+var MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec";
+function squash(s) {
+  return s.replace(/\s+/g, " ").trim();
+}
+function key(s) {
+  return s.toLowerCase().replace(/[\u2019'’]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+function stripLeading(title, prefix) {
+  const p = key(prefix);
+  if (!p) return null;
+  const t = key(title);
+  if (t === p) return null;
+  if (!t.startsWith(`${p} `)) return null;
+  const words = title.trim().split(/\s+/);
+  const prefixWords = p.split(" ").length;
+  const rest = words.slice(prefixWords).join(" ");
+  return squash(rest.replace(/^[\s\-–—:|,·•]+/, ""));
+}
+function collapseDescriptors(s) {
+  const seen = [];
+  const kept = [];
+  for (const w of s.split(/\s+/)) {
+    const k = key(w);
+    if (DESCRIPTORS.includes(k)) {
+      if (seen.length) continue;
+      seen.push(k);
+    }
+    kept.push(w);
+  }
+  return squash(kept.join(" ")).replace(/[\s\-–—:|,·•]+$/, "");
+}
+function isBare(s) {
+  const k = key(s);
+  if (!k) return true;
+  return k.split(" ").every((w) => DESCRIPTORS.includes(w));
+}
+function normalizeEventTitle(args) {
+  const before = args.name ?? "";
+  const rules = [];
+  let out = squash(before);
+  if (args.tenantName) {
+    const stripped = stripLeading(out, args.tenantName);
+    if (stripped) {
+      out = stripped;
+      rules.push("strip_leading_tenant");
+    }
+  }
+  if (args.dateShown) {
+    const dateSuffix = new RegExp(
+      `[\\s\\-\u2013\u2014:|,\xB7\u2022(\\[]+((${MONTHS})\\.?\\s*\\d{0,2}(st|nd|rd|th)?(,?\\s*\\d{4})?|\\d{1,2}[\\/.\\-]\\d{1,2}([\\/.\\-]\\d{2,4})?|(q[1-4]\\s*)?\\d{4})[)\\]]?\\s*$`,
+      "i"
+    );
+    const next = squash(out.replace(dateSuffix, "")).replace(/[\s\-–—:|,·•]+$/, "");
+    if (next && next !== out) {
+      out = squash(next);
+      rules.push("strip_trailing_date");
+    }
+  }
+  const collapsed = collapseDescriptors(out);
+  if (collapsed && collapsed !== out) {
+    out = collapsed;
+    rules.push("collapse_descriptors");
+  }
+  const withGame = out;
+  let guarded = null;
+  if (args.game) {
+    const stripped = stripLeading(out, args.game);
+    if (stripped) {
+      if (isBare(stripped)) {
+        guarded = "bare_descriptor";
+      } else if (key(stripped).length < 3) {
+        guarded = "too_short";
+      } else {
+        out = stripped;
+        rules.push("strip_leading_game");
+      }
+    }
+  }
+  if (!key(out)) {
+    out = squash(before);
+    guarded = guarded ?? "empty_result";
+  } else if (out !== withGame && isBare(out)) {
+    out = withGame;
+    guarded = "bare_descriptor";
+  }
+  const after = out;
+  const parts = [`before="${before}"`, `after="${after}"`, `rules=[${rules.join(",")}]`];
+  if (guarded) parts.unshift(`guard=${guarded}`);
+  const log = `title=${guarded ? "guarded" : rules.length ? "normalized" : "unchanged"} ${parts.join(" ")}`;
+  return { before, after, rules, guarded, log };
+}
+
 // src/lib/promo/composePromoLayout.ts
 var PROMO_DIMENSIONS = {
   portrait: { width: 1080, height: 1350 },
@@ -1170,16 +1272,21 @@ function composePromoLayout(args) {
   const accent2 = clampHex(args.tenantAccentColor, mixHex(accent, "#22d3ee", 0.5));
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
-  const shortEdge = Math.min(W, H);
-  const scale = shortEdge / 620;
+  const scale = Math.min(H, W * 1.35) / 628;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
   const beatFs = Math.round(28 * scale);
   const gameFs = Math.round(30 * scale);
   const dateFs = Math.round(26 * scale);
   const prizeFs = Math.round(26 * scale);
+  const titleNorm = normalizeEventTitle({
+    name: args.event.name,
+    game: args.event.game ?? null,
+    dateShown: !!dateStr,
+    tenantName: args.tenantName ?? null
+  });
   const { lines: titleLines, fontSize: titleFs } = fitTitle(
-    args.event.name.toUpperCase(),
+    titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
     3
@@ -1317,17 +1424,37 @@ function composePromoLayout(args) {
         { offset: 1, color: "rgba(0,0,0,0.85)" }
       ]
     },
-    // Photo / cover art needs a heavier, earlier scrim — cover keys are busy
-    // and bright, and the copy block must stay high-contrast.
+    // Photo / cover art: keep the global scrim LIGHT so the key art stays
+    // vivid. Contrast for the copy is won locally by copyPanel below.
     imageScrim: {
-      startPct: Math.max(0.1, barTopY / H - 0.3),
+      startPct: Math.max(0.3, barTopY / H - 0.1),
       stops: [
         { offset: 0, color: "rgba(6,10,20,0)" },
-        { offset: 0.35, color: "rgba(6,10,20,0.55)" },
-        { offset: 0.7, color: "rgba(6,10,20,0.86)" },
-        { offset: 1, color: "rgba(6,10,20,0.96)" }
+        { offset: 0.55, color: "rgba(6,10,20,0.34)" },
+        { offset: 1, color: "rgba(6,10,20,0.78)" }
       ]
     },
+    // Tight local plate behind the copy column only: opaque at the accent bar,
+    // fading out before the right edge so the artwork reads through.
+    copyPanel: (() => {
+      const top = Math.max(0, barTopY / H - 0.028);
+      const bottom = Math.min(1, barBottomY / H + 0.03);
+      const widest = Math.max(
+        ...texts.map((t) => estimateTextWidth(t.text, t.fontSize, t.fontWeight === "bold")),
+        safeWidth * 0.5
+      );
+      const wPct = Math.min(0.96, widest / W + marginPct + 0.1);
+      return {
+        xPct: 0.02,
+        yPct: top,
+        wPct,
+        hPct: bottom - top,
+        radiusPct: 0.02,
+        fromRgba: "rgba(6,10,20,0.80)",
+        toRgba: "rgba(6,10,20,0)",
+        featherPct: 0.16
+      };
+    })(),
     accentBar: {
       xPct: 0.04,
       yPct: barTopY / H,
@@ -1335,7 +1462,8 @@ function composePromoLayout(args) {
       hPct: (barBottomY - barTopY) / H,
       color: accent
     },
-    texts
+    texts,
+    titleNormalization: titleNorm
   };
 }
 function promoSceneToEditorTexts(scene) {
@@ -1493,6 +1621,33 @@ async function renderPromoSceneToPng(scene, opts = {}) {
       </filter>
     </defs>`;
   const overlay = `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#dark)"/>`;
+  const cp = scene.copyPanel;
+  let copyPanel = "";
+  let copyPanelDefs = "";
+  if (bgHref && cp) {
+    const x = cp.xPct * w;
+    const y = cp.yPct * h;
+    const pw = cp.wPct * w;
+    const ph = cp.hPct * h;
+    const r = cp.radiusPct * w;
+    const feather = Math.max(1, cp.featherPct * ph);
+    const mid = cp.fromRgba.replace(/0?\.\d+\)$/, "0.5)");
+    copyPanelDefs = `
+      <linearGradient id="cpx" x1="${x}" y1="0" x2="${x + pw}" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="${cp.fromRgba}"/>
+        <stop offset="0.62" stop-color="${mid}"/>
+        <stop offset="1" stop-color="${cp.toRgba}"/>
+      </linearGradient>
+      <linearGradient id="cpy" x1="0" y1="${y}" x2="0" y2="${y + feather}" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#000" stop-opacity="0"/>
+        <stop offset="1" stop-color="#000" stop-opacity="1"/>
+      </linearGradient>
+      <mask id="cpmask">
+        <rect x="${x}" y="${y}" width="${pw}" height="${ph}" fill="#fff"/>
+        <rect x="${x}" y="${y}" width="${pw}" height="${feather}" fill="url(#cpy)"/>
+      </mask>`;
+    copyPanel = `<rect x="${x}" y="${y}" width="${pw}" height="${ph}" rx="${r}" ry="${r}" fill="url(#cpx)" mask="url(#cpmask)"/>`;
+  }
   const ab = scene.accentBar;
   const accent = `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
   const textNodes = (includeText ? scene.texts : []).map((t) => {
@@ -1505,6 +1660,8 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   ${gradient}
   ${bgLayer}
   ${overlay}
+  <defs>${copyPanelDefs}</defs>
+  ${copyPanel}
   ${accent}
   ${textNodes}
 </svg>`;
@@ -1618,7 +1775,7 @@ var compose_event_promo_default = defineTool21({
         }
         evt = data;
       }
-      const { data: tenant } = await userSupabase.from("tenants").select("primary_color, accent_color").eq("id", input.tenant_id).maybeSingle();
+      const { data: tenant } = await userSupabase.from("tenants").select("name, primary_color, accent_color").eq("id", input.tenant_id).maybeSingle();
       const scene = composePromoLayout({
         event: {
           name: evt.name,
@@ -1627,11 +1784,13 @@ var compose_event_promo_default = defineTool21({
           prize_pool: evt.prize_pool ?? null,
           prize_type: evt.prize_type ?? null
         },
+        tenantName: tenant?.name ?? null,
         tenantPrimaryColor: tenant?.primary_color ?? null,
         tenantAccentColor: tenant?.accent_color ?? null,
         format: input.format,
         beatLabel: input.beat_label ?? null
       });
+      console.log(`[compose_event_promo] event=${evt.id} ${scene.titleNormalization.log}`);
       const art = await resolveEventArt(
         { image_url: evt.image_url ?? null, game: evt.game ?? null, name: evt.name },
         userSupabase

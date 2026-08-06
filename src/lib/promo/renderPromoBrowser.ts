@@ -162,6 +162,44 @@ export async function renderPromoSceneToBlob(scene: PromoScene): Promise<Blob> {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, scene.width, scene.height);
 
+  // Local copy panel — only over photo/cover art, so the key art keeps its
+  // colour while the copy column still passes contrast.
+  const cp = scene.copyPanel;
+  if (drew && cp) {
+    const x = cp.xPct * scene.width;
+    const y = cp.yPct * scene.height;
+    const pw = cp.wPct * scene.width;
+    const ph = cp.hPct * scene.height;
+    const r = cp.radiusPct * scene.width;
+    const feather = Math.max(1, cp.featherPct * ph);
+
+    const hg = ctx.createLinearGradient(x, 0, x + pw, 0);
+    hg.addColorStop(0, cp.fromRgba);
+    hg.addColorStop(0.62, cp.fromRgba.replace(/0?\.\d+\)$/, "0.5)"));
+    hg.addColorStop(1, cp.toRgba);
+
+    ctx.save();
+    ctx.beginPath();
+    if (typeof (ctx as any).roundRect === "function") {
+      (ctx as any).roundRect(x, y, pw, ph, r);
+    } else {
+      ctx.rect(x, y, pw, ph);
+    }
+    ctx.clip();
+    ctx.fillStyle = hg;
+    // Body below the feather, then the feather itself painted as alpha-ramped
+    // strips. (A destination-out mask would punch a hole in the artwork.)
+    ctx.fillRect(x, y + feather, pw, ph - feather);
+    const strips = 28;
+    for (let i = 0; i < strips; i++) {
+      const t = (i + 0.5) / strips;          // 0 at panel top -> 1 at feather end
+      ctx.globalAlpha = t;
+      ctx.fillRect(x, y + (i / strips) * feather, pw, feather / strips + 1);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
   // Accent bar
   const ab = scene.accentBar;
   ctx.fillStyle = ab.color;

@@ -4,6 +4,8 @@
 //     (MCP compose_event_promo tool)
 // No DOM, no canvas, no Deno imports — pure data in / declarative scene out.
 
+import { normalizeEventTitle, type TitleNormalization } from "./normalizeEventTitle.ts";
+
 export type PromoFormat = "portrait" | "square" | "landscape" | "story";
 
 export const PROMO_DIMENSIONS: Record<PromoFormat, { width: number; height: number }> = {
@@ -71,8 +73,21 @@ export type PromoPlate = {
 
 export type PromoGradientStops = { startPct: number; stops: Array<{ offset: number; color: string }> };
 
-
-
+/** Local contrast plate drawn ONLY behind the copy block when a photo / cover
+ *  art is the background. Lets the global scrim stay light so the art keeps its
+ *  colour while the type still passes contrast. */
+export type PromoCopyPanel = {
+  xPct: number;
+  yPct: number;
+  wPct: number;
+  hPct: number;
+  radiusPct: number;
+  /** Horizontal fade: opaque at the left edge, transparent at the right. */
+  fromRgba: string;
+  toRgba: string;
+  /** Vertical soft feather at the top of the panel (0..1 of panel height). */
+  featherPct: number;
+};
 
 export type PromoScene = {
   format: PromoFormat;
@@ -88,11 +103,15 @@ export type PromoScene = {
   gradient: { startPct: number; fromRgba: string; toRgba: string };
   /** Scrim used when the designed plate is the background (already dark). */
   plateScrim: PromoGradientStops;
-  /** Stronger scrim used when a photo / cover art is the background. */
+  /** Light global scrim used when a photo / cover art is the background. */
   imageScrim: PromoGradientStops;
+  /** Local panel behind the copy block, image backgrounds only. */
+  copyPanel: PromoCopyPanel;
   /** Left accent bar for brand emphasis. Height is a % of canvas height. */
   accentBar: { xPct: number; yPct: number; wPct: number; hPct: number; color: string };
   texts: PromoText[];
+  /** Audit record of the display-side title rewrite (source row untouched). */
+  titleNormalization: TitleNormalization;
 };
 
 export type PromoEventInput = {
@@ -108,6 +127,8 @@ export type ComposePromoArgs = {
   event: PromoEventInput;
   tenantPrimaryColor?: string | null;
   tenantAccentColor?: string | null;
+  /** Used display-side only, to strip a redundant leading tenant name. */
+  tenantName?: string | null;
   format?: PromoFormat;
   beatLabel?: string | null;
 };
@@ -235,11 +256,14 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   const dateStr = formatDate(args.event.start_date);
   const prizeLabel = formatPrizeLabel(args.event.prize_pool, args.event.prize_type);
 
-  // Type is sized against the SHORT edge so a 1080x1350 portrait and a
-  // 1200x628 landscape read at the same optical scale. 620 is the reference
-  // short edge (the landscape sample, which reviewed well at 1.0).
-  const shortEdge = Math.min(W, H);
-  const scale = shortEdge / 620;
+  // Type is sized so the copy block holds the same optical weight when each
+  // format is viewed at the SAME DISPLAY SIZE (i.e. scaled to fit a feed slot,
+  // which is height-bound for tall formats). Sizing against the short edge —
+  // the previous rule — under-sized portrait, because 1080x1350 gets scaled
+  // down harder than 1080x1080 at the same viewing height. Reference is the
+  // landscape short edge (628) that reviewed well at 1.0. Width is still a
+  // ceiling so a very tall canvas can't produce type wider than the safe area.
+  const scale = Math.min(H, W * 1.35) / 628;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
 
@@ -248,9 +272,17 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   const dateFs = Math.round(26 * scale);
   const prizeFs = Math.round(26 * scale);
 
+  // Display-side title normalization. Never mutates the source row; the audit
+  // record rides along on the scene so callers can log before/after.
+  const titleNorm = normalizeEventTitle({
+    name: args.event.name,
+    game: args.event.game ?? null,
+    dateShown: !!dateStr,
+    tenantName: args.tenantName ?? null,
+  });
 
   const { lines: titleLines, fontSize: titleFs } = fitTitle(
-    args.event.name.toUpperCase(),
+    titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
     3,
@@ -391,17 +423,37 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
         { offset: 1, color: "rgba(0,0,0,0.85)" },
       ],
     },
-    // Photo / cover art needs a heavier, earlier scrim — cover keys are busy
-    // and bright, and the copy block must stay high-contrast.
+    // Photo / cover art: keep the global scrim LIGHT so the key art stays
+    // vivid. Contrast for the copy is won locally by copyPanel below.
     imageScrim: {
-      startPct: Math.max(0.10, (barTopY / H) - 0.30),
+      startPct: Math.max(0.30, (barTopY / H) - 0.10),
       stops: [
         { offset: 0, color: "rgba(6,10,20,0)" },
-        { offset: 0.35, color: "rgba(6,10,20,0.55)" },
-        { offset: 0.7, color: "rgba(6,10,20,0.86)" },
-        { offset: 1, color: "rgba(6,10,20,0.96)" },
+        { offset: 0.55, color: "rgba(6,10,20,0.34)" },
+        { offset: 1, color: "rgba(6,10,20,0.78)" },
       ],
     },
+    // Tight local plate behind the copy column only: opaque at the accent bar,
+    // fading out before the right edge so the artwork reads through.
+    copyPanel: (() => {
+      const top = Math.max(0, barTopY / H - 0.028);
+      const bottom = Math.min(1, barBottomY / H + 0.030);
+      const widest = Math.max(
+        ...texts.map((t) => estimateTextWidth(t.text, t.fontSize, t.fontWeight === "bold")),
+        safeWidth * 0.5,
+      );
+      const wPct = Math.min(0.96, (widest / W) + marginPct + 0.10);
+      return {
+        xPct: 0.02,
+        yPct: top,
+        wPct,
+        hPct: bottom - top,
+        radiusPct: 0.02,
+        fromRgba: "rgba(6,10,20,0.80)",
+        toRgba: "rgba(6,10,20,0)",
+        featherPct: 0.16,
+      };
+    })(),
 
     accentBar: {
       xPct: 0.04,
@@ -411,6 +463,7 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
       color: accent,
     },
     texts,
+    titleNormalization: titleNorm,
   };
 }
 

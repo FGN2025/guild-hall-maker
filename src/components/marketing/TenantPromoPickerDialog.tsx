@@ -29,14 +29,20 @@ interface TenantPromoPickerDialogProps {
 /** Legacy helpers preserved for existing imports elsewhere in the codebase.
  *  Internally they delegate to the shared composer so human and agent output
  *  stay pixel-identical (layout parity). */
-export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: string | null): PromoScene {
+export function buildTenantEventPromo(
+  e: TenantEvent,
+  tenantPrimaryColor?: string | null,
+  tenantName?: string | null,
+): PromoScene {
   const scene = composePromoLayout({
     event: { name: e.name, game: e.game, start_date: e.start_date, prize_pool: e.prize_pool, prize_type: (e as any).prize_type },
 
     tenantPrimaryColor,
+    tenantName,
     format: "landscape", // legacy default matched the old 1200x628 render
   });
   scene.backgroundUrl = e.image_url || null;
+  console.info(`[promo] event=${e.id} ${scene.titleNormalization.log}`);
   return scene;
 }
 
@@ -45,8 +51,9 @@ export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: strin
 export async function buildTenantEventPromoWithArt(
   e: TenantEvent,
   tenantPrimaryColor?: string | null,
+  tenantName?: string | null,
 ): Promise<{ scene: PromoScene; art: ResolvedEventArt }> {
-  const scene = buildTenantEventPromo(e, tenantPrimaryColor);
+  const scene = buildTenantEventPromo(e, tenantPrimaryColor, tenantName);
   const art = await resolveEventArt({ image_url: e.image_url, game: e.game, name: e.name }, supabase);
   scene.backgroundUrl = art.url;
   return { scene, art };
