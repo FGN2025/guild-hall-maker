@@ -3,6 +3,8 @@ import { z } from "zod";
 import { supabaseForUser, supabaseServiceRole, requireAuth, okJson, toolError } from "./_shared.ts";
 import { composePromoLayout, promoSceneToEditorTexts, PROMO_DIMENSIONS } from "../promo/composePromoLayout.ts";
 import { renderPromoSceneToPng } from "../promo/renderPromo.ts";
+import { resolveEventArt } from "../promo/resolveEventArt.ts";
+
 
 const BUCKET = "tenant-marketing";
 
