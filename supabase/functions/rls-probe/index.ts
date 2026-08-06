@@ -49,10 +49,11 @@ Deno.serve(async () => {
     const b = await mkUser("nomember"); created.push(b.id);
     const c = await mkUser("acme"); created.push(c.id);
 
-    await admin.from("tenant_admins").insert([
+    const ins = await admin.from("tenant_admins").insert([
       { tenant_id: OTHER, user_id: a.id, role: "admin" },
       { tenant_id: ACME, user_id: c.id, role: "admin" },
-    ]);
+    ]).select("id, tenant_id, user_id, role");
+    const membership = { error: ins.error?.message ?? null, rows: ins.data ?? [] };
 
     const results = {
       case1_different_tenant_member: { email: a.email, ...(await probe(a.email, a.password)) },
@@ -68,7 +69,7 @@ Deno.serve(async () => {
       .select("id", { count: "exact", head: true })
       .in("user_id", created);
 
-    return new Response(JSON.stringify({ results, cleanup: { deleted_users: created, leftover_admin_rows: leftover ?? 0 } }, null, 2), {
+    return new Response(JSON.stringify({ results, membership, cleanup: { deleted_users: created, leftover_admin_rows: leftover ?? 0 } }, null, 2), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
