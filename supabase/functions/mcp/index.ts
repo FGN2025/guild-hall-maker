@@ -1279,6 +1279,8 @@ function formatPrizeLabel(pool, prizeType) {
   if (!raw) return null;
   const type = (prizeType ?? "value").toLowerCase();
   if (type === "none") return null;
+  const numeric = raw.replace(/,/g, "").match(/\d+(\.\d+)?/);
+  if (numeric && Number(numeric[0]) === 0) return null;
   if (type === "physical") return raw;
   if (/^\d[\d,]*(\.\d+)?$/.test(raw)) return `${raw} pts`;
   if (/[a-zA-Z$€£¥]/.test(raw)) return raw;

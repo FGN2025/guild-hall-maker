@@ -144,7 +144,12 @@ function formatDate(iso: string | null | undefined): string {
 }
 
 /** `tournaments.prize_pool` is free text. Bare numbers mean POINTS when
- *  prize_type is 'value'. Never print an ambiguous unitless number. */
+ *  prize_type is 'value'. Never print an ambiguous unitless number.
+ *
+ *  ZERO IS NOT NULL, but it renders the same way: a numerically-zero pool
+ *  ("0", "0.00", "0 pts", "$0") returns null so the line is omitted rather
+ *  than publishing "Prize Pool: 0 pts". Game nights with no pot therefore
+ *  print no prize line at all. */
 export function formatPrizeLabel(
   pool: string | null | undefined,
   prizeType?: string | null,
@@ -153,6 +158,12 @@ export function formatPrizeLabel(
   if (!raw) return null;
   const type = (prizeType ?? "value").toLowerCase();
   if (type === "none") return null;
+
+  // Zero check runs before every branch: pull the first number out of the
+  // string and suppress when it is exactly zero.
+  const numeric = raw.replace(/,/g, "").match(/\d+(\.\d+)?/);
+  if (numeric && Number(numeric[0]) === 0) return null;
+
   if (type === "physical") return raw;
   // value type
   if (/^\d[\d,]*(\.\d+)?$/.test(raw)) return `${raw} pts`;
