@@ -274,7 +274,13 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   // down harder than 1080x1080 at the same viewing height. Reference is the
   // landscape short edge (628) that reviewed well at 1.0. Width is still a
   // ceiling so a very tall canvas can't produce type wider than the safe area.
-  const scale = Math.min(H, W * 1.35) / 628;
+  //
+  // TYPE_SCALE is a single multiplier on that shared basis, so a change here
+  // moves portrait, square and landscape by exactly the same proportion and no
+  // format can drift out of step. 0.75 = the 25% reduction Darcy asked for, so
+  // the copy block stops covering resolved key art.
+  const TYPE_SCALE = 0.75;
+  const scale = (Math.min(H, W * 1.35) / 628) * TYPE_SCALE;
   const marginPct = 0.06;
   const safeWidth = W * (1 - marginPct * 2);
 
