@@ -12,13 +12,15 @@ export default defineTool({
   name: "compose_event_promo",
   title: "Compose a deterministic promo image from a published event",
   description:
-    "Lane 1 (calendar-lane) composer. Layouts an event (tournament OR tenant event) with the tenant's brand color and beat label into a PNG using pure server-side rendering (no external image generation cost), uploads it into the tenant-marketing bucket, and inserts a tenant_marketing_assets draft row identical in shape to attach_tenant_asset_draft — including overlay_config so the draft opens in the editor as separately-editable text layers. Provide exactly one of tournament_id or event_id.",
+    "Lane 1 (calendar-lane) composer. Layouts an event (tournament OR tenant event) with the tenant's brand color and beat label into a PNG using pure server-side rendering (no external image generation cost), uploads it into the tenant-marketing bucket, and inserts a tenant_marketing_assets draft row identical in shape to attach_tenant_asset_draft — including overlay_config so the draft opens in the editor as separately-editable text layers. Provide exactly one of tournament_id or event_id. CALL ONCE PER BEAT: the beat label is baked into the rendered graphic, so each scheduled post must use the url returned by the compose call for its own beat. Reusing one composed image across announce and day-of posts is a defect.",
   inputSchema: {
     tenant_id: z.string().uuid(),
     tournament_id: z.string().uuid().optional(),
     event_id: z.string().uuid().optional(),
     format: z.enum(["portrait", "square", "landscape", "story"]).default("portrait"),
-    beat_label: z.string().optional().describe("e.g. 'Announce', 'Countdown', 'Day-Of', 'Recap'"),
+    beat_label: z.string().optional().describe(
+      "The beat this render is for: 'Announce', 'Countdown', 'Day-Of', or 'Recap'. Baked into the image, so compose separately for every beat you schedule.",
+    ),
     campaign_id: z.string().uuid().optional(),
     file_name: z.string().optional(),
   },
