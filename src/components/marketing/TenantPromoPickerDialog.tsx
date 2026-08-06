@@ -38,6 +38,19 @@ export function buildTenantEventPromo(e: TenantEvent, tenantPrimaryColor?: strin
   return scene;
 }
 
+/** Same as buildTenantEventPromo but runs the shared art resolver so a missing
+ *  event image falls back to the game's cover art before the branded plate. */
+export async function buildTenantEventPromoWithArt(
+  e: TenantEvent,
+  tenantPrimaryColor?: string | null,
+): Promise<{ scene: PromoScene; art: ResolvedEventArt }> {
+  const scene = buildTenantEventPromo(e, tenantPrimaryColor);
+  const art = await resolveEventArt({ image_url: e.image_url, game: e.game, name: e.name }, supabase);
+  scene.backgroundUrl = art.url;
+  return { scene, art };
+}
+
+
 export async function renderPromoToBlob(scene: PromoScene): Promise<Blob> {
   return renderPromoSceneToBlob(scene);
 }
