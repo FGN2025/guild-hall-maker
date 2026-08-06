@@ -240,6 +240,8 @@ export async function renderPromoSceneToPng(
   ${gradient}
   ${bgLayer}
   ${overlay}
+  <defs>${copyPanelDefs}</defs>
+  ${copyPanel}
   ${accent}
   ${textNodes}
 </svg>`;
