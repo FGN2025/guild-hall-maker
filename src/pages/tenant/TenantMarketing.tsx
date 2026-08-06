@@ -276,10 +276,10 @@ const TenantMarketing = () => {
                 return (
                   <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden" onClick={() => navigate(`/tenant/marketing/${c.id}`)}>
                     {assetMap[c.id]?.first_url && (
-                      <div className="h-12 w-full bg-muted">
+                      <div className="h-32 w-full bg-muted">
                         <img
                           src={assetMap[c.id].first_url}
-                          alt=""
+                          alt={`${c.title} promo art`}
                           className="h-full w-full object-cover"
                           loading="lazy"
                         />
