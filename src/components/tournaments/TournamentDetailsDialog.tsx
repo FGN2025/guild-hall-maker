@@ -24,7 +24,7 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
   const canSeeRegCount = useCanSeeRegistrationCounts();
   if (!t) return null;
 
-  const isFull = t.registrations_count >= t.max_participants;
+  const isFull = t.is_full;
   const canRegister = (t.status === "open" || t.status === "upcoming") && !isFull && !t.is_registered;
   const isCreator = user?.id === t.created_by;
 
@@ -50,7 +50,7 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
           <div className="grid grid-cols-2 gap-3">
             {[
               { icon: Calendar, label: "Start Date", value: format(new Date(t.start_date), "MMM d, yyyy · h:mm a") },
-              { icon: Users, label: "Players", value: canSeeRegCount ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max` },
+              { icon: Users, label: "Players", value: canSeeRegCount && t.registrations_count !== null ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max` },
               { icon: Trophy, label: "Prize Pool", value: t.prize_pool || "None" },
               { icon: Gamepad2, label: "Entry Fee", value: t.entry_fee ? `$${t.entry_fee}` : "Free" },
             ].map((info) => (
