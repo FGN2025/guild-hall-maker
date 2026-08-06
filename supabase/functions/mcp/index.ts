@@ -1134,7 +1134,7 @@ function wrapText(text, fontSize, maxWidth, maxLines, bold) {
   return lines;
 }
 function fitTitle(text, baseFontSize, maxWidth, maxLines = 3) {
-  const min = Math.round(baseFontSize * 0.55);
+  const min = Math.round(baseFontSize * 0.42);
   for (let fs2 = baseFontSize; fs2 >= min; fs2 -= 2) {
     const lines2 = wrapText(text, fs2, maxWidth, maxLines, true);
     if (lines2) return { lines: lines2, fontSize: fs2 };

@@ -192,7 +192,7 @@ export function fitTitle(
   maxWidth: number,
   maxLines = 3,
 ): { lines: string[]; fontSize: number } {
-  const min = Math.round(baseFontSize * 0.55);
+  const min = Math.round(baseFontSize * 0.42);
   for (let fs = baseFontSize; fs >= min; fs -= 2) {
     const lines = wrapText(text, fs, maxWidth, maxLines, true);
     if (lines) return { lines, fontSize: fs };
