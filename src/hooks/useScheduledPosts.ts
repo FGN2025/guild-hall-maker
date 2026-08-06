@@ -10,6 +10,10 @@ export type ScheduledPost = {
   connection_id: string;
   platform: string;
   image_url: string;
+  /** Canonical object path in the tenant-marketing bucket; signed URLs derive from this. */
+  image_path?: string | null;
+  /** tenant_marketing_assets row this post's graphic came from. */
+  asset_id?: string | null;
   caption: string;
   scheduled_at: string;
   status: string;

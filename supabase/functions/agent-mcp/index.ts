@@ -48,6 +48,7 @@ import { jwtVerify } from "jose";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { tools } from "../_shared/mcp-tools/_registry.ts";
+import { BUILD_ID } from "../_shared/build-id.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -213,6 +214,14 @@ async function dispatchToolCall(claims: RunnerClaims, name: string, rawArgs: any
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  // Unauthenticated build probe — same shape as agent-run. Returns only the
+  // deploy stamp so a verification can cite the code that is actually live.
+  if (req.method === "GET") {
+    return new Response(JSON.stringify({ build_id: BUILD_ID }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
   if (req.method !== "POST") {
     return new Response("method not allowed", { status: 405, headers: CORS });
   }

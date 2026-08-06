@@ -3533,6 +3533,7 @@ export type Database = {
       scheduled_posts: {
         Row: {
           agent_source: string | null
+          asset_id: string | null
           campaign_id: string | null
           caption: string | null
           conflict_details: Json | null
@@ -3545,6 +3546,7 @@ export type Database = {
           feedback_note: string | null
           id: string
           idempotency_key: string | null
+          image_path: string | null
           image_url: string
           overdue_notified_at: string | null
           platform: string
@@ -3561,6 +3563,7 @@ export type Database = {
         }
         Insert: {
           agent_source?: string | null
+          asset_id?: string | null
           campaign_id?: string | null
           caption?: string | null
           conflict_details?: Json | null
@@ -3573,6 +3576,7 @@ export type Database = {
           feedback_note?: string | null
           id?: string
           idempotency_key?: string | null
+          image_path?: string | null
           image_url: string
           overdue_notified_at?: string | null
           platform: string
@@ -3589,6 +3593,7 @@ export type Database = {
         }
         Update: {
           agent_source?: string | null
+          asset_id?: string | null
           campaign_id?: string | null
           caption?: string | null
           conflict_details?: Json | null
@@ -3601,6 +3606,7 @@ export type Database = {
           feedback_note?: string | null
           id?: string
           idempotency_key?: string | null
+          image_path?: string | null
           image_url?: string
           overdue_notified_at?: string | null
           platform?: string
@@ -3616,6 +3622,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "scheduled_posts_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_marketing_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_posts_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["adopted_asset_id"]
+          },
           {
             foreignKeyName: "scheduled_posts_campaign_id_fkey"
             columns: ["campaign_id"]

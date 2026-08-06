@@ -747,11 +747,14 @@ import { z as z13 } from "npm:zod@^3.25.76";
 var propose_scheduled_post_default = defineTool15({
   name: "propose_scheduled_post",
   title: "Propose a scheduled social post",
-  description: "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or \xB1HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms.",
+  description: "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or \xB1HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
   inputSchema: {
     tenant_id: z13.string().uuid(),
     platform: z13.string().describe("One of the tenant's connected_platforms values."),
-    image_url: z13.string().url().describe("Permanent Supabase Storage URL from attach_tenant_asset_draft.url."),
+    asset_id: z13.string().uuid().optional().describe(
+      "id of the tenant_marketing_assets row this post's graphic came from (compose_event_promo / attach_tenant_asset_draft). Required in practice; omit only when passing an image_url that already belongs to an existing asset."
+    ),
+    image_url: z13.string().url().optional().describe("Legacy path: asset URL. Ignored when asset_id is supplied."),
     caption: z13.string().optional(),
     scheduled_at: z13.string().describe("ISO 8601 with explicit offset, e.g. 2026-07-24T14:00:00-05:00 or ...Z."),
     campaign_id: z13.string().uuid().optional(),
@@ -775,6 +778,29 @@ var propose_scheduled_post_default = defineTool15({
         const { data: existing } = await supabase.from("scheduled_posts").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
         if (existing) return okJson({ ...existing, _idempotent: true }, "scheduled_post");
       }
+      let asset = null;
+      if (input.asset_id) {
+        const { data: data2 } = await supabase.from("tenant_marketing_assets").select("id, url, file_path, tenant_id").eq("id", input.asset_id).maybeSingle();
+        asset = data2 ?? null;
+        if (!asset) {
+          return { content: [{ type: "text", text: `asset_id ${input.asset_id} not found or not visible.` }], isError: true };
+        }
+      } else if (input.image_url) {
+        const { data: data2 } = await supabase.from("tenant_marketing_assets").select("id, url, file_path, tenant_id").eq("tenant_id", input.tenant_id).eq("url", input.image_url).maybeSingle();
+        asset = data2 ?? null;
+      }
+      if (!asset) {
+        return {
+          content: [{
+            type: "text",
+            text: "No source asset. Pass asset_id from compose_event_promo (compose once per beat) or attach_tenant_asset_draft."
+          }],
+          isError: true
+        };
+      }
+      if (asset.tenant_id !== input.tenant_id) {
+        return { content: [{ type: "text", text: `Asset ${asset.id} belongs to a different tenant.` }], isError: true };
+      }
       let resolvedConnectionId = input.connection_id ?? null;
       if (!resolvedConnectionId && input.platform !== "discord") {
         const { data: activeConns } = await supabase.from("social_connections").select("id").eq("tenant_id", input.tenant_id).eq("platform", input.platform).eq("is_active", true).limit(2);
@@ -786,7 +812,9 @@ var propose_scheduled_post_default = defineTool15({
         tenant_id: input.tenant_id,
         user_id: uid,
         platform: input.platform,
-        image_url: input.image_url,
+        asset_id: asset.id,
+        image_url: asset.url ?? input.image_url ?? null,
+        image_path: asset.file_path,
         caption: input.caption ?? "",
         scheduled_at: when.toISOString(),
         status: "pending_review",
@@ -817,11 +845,12 @@ import { z as z14 } from "npm:zod@^3.25.76";
 var update_scheduled_post_default = defineTool16({
   name: "update_scheduled_post",
   title: "Update / resubmit scheduled post",
-  description: "Revise a draft/pending_review/rejected scheduled post. If the row is currently 'rejected', the update flips its status back to 'pending_review' and preserves the existing feedback_note for audit. scheduled_at (if provided) MUST be ISO 8601 with explicit offset.",
+  description: "Revise a draft/pending_review/rejected scheduled post. If the row is currently 'rejected', the update flips its status back to 'pending_review' and preserves the existing feedback_note for audit. scheduled_at (if provided) MUST be ISO 8601 with explicit offset. To change the graphic pass `asset_id` (from compose_event_promo / attach_tenant_asset_draft) \u2014 the image and storage path are taken from that asset. Passing image_url alone is rejected when it does not belong to an asset.",
   inputSchema: {
     id: z14.string().uuid(),
     platform: z14.string().optional(),
-    image_url: z14.string().url().optional(),
+    asset_id: z14.string().uuid().optional().describe("New source asset for this post's graphic."),
+    image_url: z14.string().url().optional().describe("Legacy path: must be the url of an existing asset."),
     caption: z14.string().optional(),
     scheduled_at: z14.string().optional(),
     campaign_id: z14.string().uuid().nullish(),
@@ -833,12 +862,13 @@ var update_scheduled_post_default = defineTool16({
     if (guard) return guard;
     try {
       const supabase = supabaseForUser(ctx);
-      const { data: current, error: fetchErr } = await supabase.from("scheduled_posts").select("id, status").eq("id", id).maybeSingle();
+      const { data: current, error: fetchErr } = await supabase.from("scheduled_posts").select("id, status, tenant_id").eq("id", id).maybeSingle();
       if (fetchErr) throw fetchErr;
       if (!current) return { content: [{ type: "text", text: "Scheduled post not found or access denied." }], isError: true };
       const patch = {};
       for (const [k, v] of Object.entries(fields)) {
         if (v === void 0) continue;
+        if (k === "image_url" || k === "asset_id") continue;
         if (k === "scheduled_at" && typeof v === "string") {
           try {
             patch.scheduled_at = parseIsoWithOffset(v).toISOString();
@@ -848,6 +878,23 @@ var update_scheduled_post_default = defineTool16({
         } else {
           patch[k] = v;
         }
+      }
+      if (fields.asset_id || fields.image_url) {
+        let q = supabase.from("tenant_marketing_assets").select("id, url, file_path, tenant_id");
+        q = fields.asset_id ? q.eq("id", fields.asset_id) : q.eq("url", fields.image_url);
+        const { data: asset } = await q.maybeSingle();
+        if (!asset) {
+          return {
+            content: [{ type: "text", text: "No matching asset. Pass asset_id from compose_event_promo or attach_tenant_asset_draft." }],
+            isError: true
+          };
+        }
+        if (asset.tenant_id !== current.tenant_id) {
+          return { content: [{ type: "text", text: "Asset belongs to a different tenant." }], isError: true };
+        }
+        patch.asset_id = asset.id;
+        patch.image_url = asset.url;
+        patch.image_path = asset.file_path;
       }
       if (current.status === "rejected") {
         patch.status = "pending_review";
@@ -1074,7 +1121,7 @@ var propose_portal_banner_update_default = defineTool20({
 import { defineTool as defineTool21 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z19 } from "npm:zod@^3.25.76";
 
-// src/lib/promo/normalizeEventTitle.ts
+// supabase/functions/_shared/promo/normalizeEventTitle.ts
 var DESCRIPTORS = [
   "tournament",
   "tournaments",
@@ -1211,7 +1258,7 @@ function normalizeEventTitle(args) {
   return { before, after, rules, guarded, log };
 }
 
-// src/lib/promo/composePromoLayout.ts
+// supabase/functions/_shared/promo/composePromoLayout.ts
 var PROMO_DIMENSIONS = {
   portrait: { width: 1080, height: 1350 },
   square: { width: 1080, height: 1080 },
@@ -1966,6 +2013,9 @@ var tools = [
   get_calendar_image_default
 ];
 
+// supabase/functions/_shared/build-id.ts
+var BUILD_ID = "2026-08-06T17:05Z-calendar-hardening";
+
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
 var mcp_default = defineMcp({
@@ -1975,7 +2025,12 @@ var mcp_default = defineMcp({
   instructions: "Tools for the FGN gaming platform. Read-only: `get_me`, `list_tournaments`, `list_challenges`/`get_challenge`, `list_games`, `list_tenants`, `get_brand_kit`, `list_upcoming_events`, `get_calendar_image` (platform monthly calendar poster for a year/month, returns null when none exists), `list_platform_templates` (pass `tenant_id` to see per-tenant `adopted` / `adopted_asset_id`; use `universal_only=true` for platform-wide universal assets), `list_tenant_assets`, `list_pending_agent_drafts`. Marketing agent (drafts only \u2014 nothing publishes without tenant admin approval): `create_campaign_draft`, `update_campaign_draft`, `attach_tenant_asset_draft` (downloads external URLs server-side into tenant storage; use the `url` of an unadopted universal asset as `source_url` and pass its id as `source_asset_id` to localize it into the tenant library), `compose_event_promo` (deterministic server-side promo composition from a published tournament or tenant event \u2014 the calendar-seed lane's only image source), `propose_scheduled_post`, `update_scheduled_post`. Slate runs: prefer proposing localized treatments of unadopted universal assets before generating new imagery. Each turn: call `list_pending_agent_drafts` first and revise rejected work (address feedback_note) before proposing new drafts. Use `idempotency_key` on create/propose calls so retries never duplicate.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
-    acceptedAudiences: "authenticated"
+    acceptedAudiences: "authenticated",
+    // The SDK owns this function's routing, so the RFC 9728 metadata document
+    // (the one unauthenticated GET path) carries the deploy stamp. Probe:
+    // GET /functions/v1/mcp/.well-known/oauth-protected-resource (no fragment or
+    // query allowed in this field, so the stamp rides a path segment).
+    resourceDocumentation: `https://fgn.gg/docs/mcp/build/${encodeURIComponent(BUILD_ID)}`
   }),
   tools
 });

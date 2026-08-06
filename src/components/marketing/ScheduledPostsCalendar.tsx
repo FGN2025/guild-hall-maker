@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Facebook, Instagram, Twitter, Linkedin, CalendarIcon, X, Clock, ExternalLink, AlertTriangle, Check } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
+import { StoredImage } from "@/components/marketing/StoredImage";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -179,8 +180,12 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                         <p className="text-sm text-muted-foreground line-clamp-1">{post.caption}</p>
                       )}
                     </div>
-                    {post.image_url && (
-                      <img src={post.image_url} alt="" className="h-12 w-12 rounded object-cover shrink-0" />
+                    {(post.image_path || post.image_url) && (
+                      <StoredImage
+                        path={post.image_path}
+                        fallbackUrl={post.image_url}
+                        className="h-12 w-12 rounded object-cover shrink-0"
+                      />
                     )}
                   </CardContent>
                 </Card>
@@ -201,8 +206,12 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
           </DialogHeader>
           {detailPost && (
             <div className="space-y-4">
-              {detailPost.image_url && (
-                <img src={detailPost.image_url} alt="" className="w-full h-48 object-cover rounded-lg" />
+              {(detailPost.image_path || detailPost.image_url) && (
+                <StoredImage
+                  path={detailPost.image_path}
+                  fallbackUrl={detailPost.image_url}
+                  className="w-full h-48 object-cover rounded-lg"
+                />
               )}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">

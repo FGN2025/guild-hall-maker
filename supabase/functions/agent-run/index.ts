@@ -25,9 +25,10 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const ANTHROPIC_MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-6";
 const AGENT_MCP_URL = `${SUPABASE_URL}/functions/v1/agent-mcp`;
 
-/** Build stamp. Bump on every deploy that must be verified before a test run —
- *  a GET returns it so we can prove which worker code is live. */
-const BUILD_ID = "2026-08-05T00:55Z-stream";
+/** Build stamp — shared single source in ../_shared/build-id.ts so agent-run,
+ *  agent-mcp and mcp can never disagree about which code is live. */
+import { BUILD_ID } from "../_shared/build-id.ts";
+
 
 const service = () => createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
