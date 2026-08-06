@@ -7,6 +7,7 @@ import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
 
 interface Props {
   tournament: Tournament | null;
@@ -19,7 +20,8 @@ interface Props {
 
 const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister, onUnregister, isRegistering }: Props) => {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
+  const canSeeRegCount = useCanSeeRegistrationCounts();
   if (!t) return null;
 
   const isFull = t.registrations_count >= t.max_participants;
@@ -48,7 +50,7 @@ const TournamentDetailsDialog = ({ tournament: t, open, onOpenChange, onRegister
           <div className="grid grid-cols-2 gap-3">
             {[
               { icon: Calendar, label: "Start Date", value: format(new Date(t.start_date), "MMM d, yyyy · h:mm a") },
-              { icon: Users, label: "Players", value: isAdmin ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max` },
+              { icon: Users, label: "Players", value: canSeeRegCount ? `${t.registrations_count} / ${t.max_participants}` : `${t.max_participants} max` },
               { icon: Trophy, label: "Prize Pool", value: t.prize_pool || "None" },
               { icon: Gamepad2, label: "Entry Fee", value: t.entry_fee ? `$${t.entry_fee}` : "Free" },
             ].map((info) => (

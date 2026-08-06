@@ -24,6 +24,7 @@ import CreateTournamentDialog from "@/components/tournaments/CreateTournamentDia
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
 import PlacementValidatorPanel from "@/components/tournaments/PlacementValidatorPanel";
+import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -41,6 +42,7 @@ const ALL_STATUSES = ["all", "open", "upcoming", "in_progress", "completed", "ca
 
 const ModeratorTournaments = () => {
   const { user, isAdmin } = useAuth();
+  const canSeeRegCount = useCanSeeRegistrationCounts();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -256,7 +258,7 @@ const ModeratorTournaments = () => {
                   <TableCell>
                     <Badge variant="outline" className={statusColor[t.status] ?? ""}>{t.status.replace("_", " ")}</Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{isAdmin ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max`}</TableCell>
+                  <TableCell className="text-muted-foreground">{canSeeRegCount ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max`}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {format(new Date(t.start_date), "MMM d, yyyy")}
                   </TableCell>
@@ -373,7 +375,7 @@ const ModeratorTournaments = () => {
                   </div>
                   <div className="bg-muted rounded-lg p-2">
                     <Users className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
-                    <p className="font-heading text-xs font-semibold text-foreground">{isAdmin ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max`}</p>
+                    <p className="font-heading text-xs font-semibold text-foreground">{canSeeRegCount ? `${t.registrations_count}/${t.max_participants}` : `${t.max_participants} max`}</p>
                   </div>
                   <div className="bg-muted rounded-lg p-2">
                     <div className="font-heading text-xs font-semibold text-foreground">
@@ -443,7 +445,7 @@ const ModeratorTournaments = () => {
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { icon: Calendar, label: "Start Date", value: format(new Date(detailTournament.start_date), "MMM d, yyyy · h:mm a") },
-                  { icon: Users, label: "Players", value: isAdmin ? `${detailTournament.registrations_count} / ${detailTournament.max_participants}` : `${detailTournament.max_participants} max` },
+                  { icon: Users, label: "Players", value: canSeeRegCount ? `${detailTournament.registrations_count} / ${detailTournament.max_participants}` : `${detailTournament.max_participants} max` },
                   { icon: Trophy, label: "Prize Pool", value: detailTournament.prize_pool || "None" },
                   { icon: Gamepad2, label: "Entry Fee", value: detailTournament.entry_fee ? `$${detailTournament.entry_fee}` : "Free" },
                 ].map((info) => (
