@@ -1107,6 +1107,24 @@ function stripLeading(title, prefix) {
   const rest = words.slice(prefixWords).join(" ");
   return squash(rest.replace(/^[\s\-–—:|,·•]+/, ""));
 }
+function collapseDescriptors(s) {
+  const seen = [];
+  const kept = [];
+  for (const w of s.split(/\s+/)) {
+    const k = key(w);
+    if (DESCRIPTORS.includes(k)) {
+      if (seen.length) continue;
+      seen.push(k);
+    }
+    kept.push(w);
+  }
+  return squash(kept.join(" ")).replace(/[\s\-–—:|,·•]+$/, "");
+}
+function isBare(s) {
+  const k = key(s);
+  if (!k) return true;
+  return k.split(" ").every((w) => DESCRIPTORS.includes(w));
+}
 function normalizeEventTitle(args) {
   const before = args.name ?? "";
   const rules = [];
@@ -1118,54 +1136,49 @@ function normalizeEventTitle(args) {
       rules.push("strip_leading_tenant");
     }
   }
-  if (args.game) {
-    const stripped = stripLeading(out, args.game);
-    if (stripped) {
-      out = stripped;
-      rules.push("strip_leading_game");
-    }
-  }
   if (args.dateShown) {
     const dateSuffix = new RegExp(
       `[\\s\\-\u2013\u2014:|,\xB7\u2022(\\[]+((${MONTHS})\\.?\\s*\\d{0,2}(st|nd|rd|th)?(,?\\s*\\d{4})?|\\d{1,2}[\\/.\\-]\\d{1,2}([\\/.\\-]\\d{2,4})?|(q[1-4]\\s*)?\\d{4})[)\\]]?\\s*$`,
       "i"
     );
-    const next = squash(out.replace(dateSuffix, ""));
+    const next = squash(out.replace(dateSuffix, "")).replace(/[\s\-–—:|,·•]+$/, "");
     if (next && next !== out) {
-      out = next;
+      out = squash(next);
       rules.push("strip_trailing_date");
     }
   }
-  const words = out.split(/\s+/);
-  const seen = [];
-  const kept = [];
-  for (const w of words) {
-    const k = key(w);
-    if (DESCRIPTORS.includes(k) && seen.includes(k)) continue;
-    if (DESCRIPTORS.includes(k)) {
-      if (seen.length) {
-        seen.push(k);
-        continue;
-      }
-      seen.push(k);
-    }
-    kept.push(w);
-  }
-  const collapsed = squash(kept.join(" "));
-  if (collapsed !== out) {
+  const collapsed = collapseDescriptors(out);
+  if (collapsed && collapsed !== out) {
     out = collapsed;
     rules.push("collapse_descriptors");
   }
+  const withGame = out;
   let guarded = null;
-  const outKey = key(out);
-  const bareDescriptor = outKey.length > 0 && outKey.split(" ").every((w) => DESCRIPTORS.includes(w));
-  if (!outKey) guarded = "empty_result";
-  else if (outKey.length < 3) guarded = "too_short";
-  else if (bareDescriptor) guarded = "bare_descriptor";
-  if (guarded) out = squash(before);
+  if (args.game) {
+    const stripped = stripLeading(out, args.game);
+    if (stripped) {
+      if (isBare(stripped)) {
+        guarded = "bare_descriptor";
+      } else if (key(stripped).length < 3) {
+        guarded = "too_short";
+      } else {
+        out = stripped;
+        rules.push("strip_leading_game");
+      }
+    }
+  }
+  if (!key(out)) {
+    out = squash(before);
+    guarded = guarded ?? "empty_result";
+  } else if (out !== withGame && isBare(out)) {
+    out = withGame;
+    guarded = "bare_descriptor";
+  }
   const after = out;
-  const log = guarded ? `title=guarded reason=${guarded} rules=[${rules.join(",")}] before="${before}" after="${after}"` : rules.length ? `title=normalized rules=[${rules.join(",")}] before="${before}" after="${after}"` : `title=unchanged before="${before}"`;
-  return { before, after, rules: guarded ? [] : rules, guarded, log };
+  const parts = [`before="${before}"`, `after="${after}"`, `rules=[${rules.join(",")}]`];
+  if (guarded) parts.unshift(`guard=${guarded}`);
+  const log = `title=${guarded ? "guarded" : rules.length ? "normalized" : "unchanged"} ${parts.join(" ")}`;
+  return { before, after, rules, guarded, log };
 }
 
 // src/lib/promo/composePromoLayout.ts

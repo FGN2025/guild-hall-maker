@@ -52,6 +52,26 @@ function stripLeading(title: string, prefix: string): string | null {
   return squash(rest.replace(/^[\s\-–—:|,·•]+/, ""));
 }
 
+function collapseDescriptors(s: string): string {
+  const seen: string[] = [];
+  const kept: string[] = [];
+  for (const w of s.split(/\s+/)) {
+    const k = key(w);
+    if (DESCRIPTORS.includes(k)) {
+      if (seen.length) continue; // repeated or second distinct descriptor drops
+      seen.push(k);
+    }
+    kept.push(w);
+  }
+  return squash(kept.join(" ")).replace(/[\s\-–—:|,·•]+$/, "");
+}
+
+function isBare(s: string): boolean {
+  const k = key(s);
+  if (!k) return true;
+  return k.split(" ").every((w) => DESCRIPTORS.includes(w));
+}
+
 export function normalizeEventTitle(args: {
   name: string;
   game?: string | null;
@@ -69,13 +89,7 @@ export function normalizeEventTitle(args: {
     if (stripped) { out = stripped; rules.push("strip_leading_tenant"); }
   }
 
-  // 2. Leading game name — the game already prints on its own metadata line.
-  if (args.game) {
-    const stripped = stripLeading(out, args.game);
-    if (stripped) { out = stripped; rules.push("strip_leading_game"); }
-  }
-
-  // 3. Trailing date suffix, only when the date is already in the metadata.
+  // 2. Trailing date suffix, only when the date is already in the metadata.
   if (args.dateShown) {
     const dateSuffix = new RegExp(
       `[\\s\\-–—:|,·•(\\[]+((${MONTHS})\\.?\\s*\\d{0,2}(st|nd|rd|th)?(,?\\s*\\d{4})?` +
@@ -83,43 +97,41 @@ export function normalizeEventTitle(args: {
       `|(q[1-4]\\s*)?\\d{4})[)\\]]?\\s*$`,
       "i",
     );
-    const next = squash(out.replace(dateSuffix, ""));
-    if (next && next !== out) { out = next; rules.push("strip_trailing_date"); }
+    const next = squash(out.replace(dateSuffix, "")).replace(/[\s\-–—:|,·•]+$/, "");
+    if (next && next !== out) { out = squash(next); rules.push("strip_trailing_date"); }
   }
 
-  // 4. Collapse a repeated descriptor ("Championship Tournament" -> "Championship").
-  const words = out.split(/\s+/);
-  const seen: string[] = [];
-  const kept: string[] = [];
-  for (const w of words) {
-    const k = key(w);
-    if (DESCRIPTORS.includes(k) && seen.includes(k)) continue;
-    if (DESCRIPTORS.includes(k)) {
-      if (seen.length) { seen.push(k); continue; } // second distinct descriptor drops
-      seen.push(k);
-    }
-    kept.push(w);
-  }
-  const collapsed = squash(kept.join(" "));
-  if (collapsed !== out) { out = collapsed; rules.push("collapse_descriptors"); }
+  // 3. Collapse redundant descriptors ("Championship Tournament" -> "Championship").
+  const collapsed = collapseDescriptors(out);
+  if (collapsed && collapsed !== out) { out = collapsed; rules.push("collapse_descriptors"); }
 
-  // Guards — a normalization that mangles an unusual title is worse than a
-  // redundant one, so fall back to the verbatim source name.
+  // 4. Leading game name — the game already prints on its own metadata line.
+  //    Applied LAST and only kept when what remains still says something; the
+  //    fallback is this same title WITH the game, not the raw redundant row.
+  const withGame = out;
   let guarded: string | null = null;
-  const outKey = key(out);
-  const bareDescriptor = outKey.length > 0 && outKey.split(" ").every((w) => DESCRIPTORS.includes(w));
-  if (!outKey) guarded = "empty_result";
-  else if (outKey.length < 3) guarded = "too_short";
-  else if (bareDescriptor) guarded = "bare_descriptor";
+  if (args.game) {
+    const stripped = stripLeading(out, args.game);
+    if (stripped) {
+      if (isBare(stripped)) {
+        guarded = "bare_descriptor";       // e.g. "Rocket League Tournament" -> "Tournament"
+      } else if (key(stripped).length < 3) {
+        guarded = "too_short";
+      } else {
+        out = stripped;
+        rules.push("strip_leading_game");
+      }
+    }
+  }
 
-  if (guarded) out = squash(before);
+  // Final safety: never emit an empty or degenerate title.
+  if (!key(out)) { out = squash(before); guarded = guarded ?? "empty_result"; }
+  else if (out !== withGame && isBare(out)) { out = withGame; guarded = "bare_descriptor"; }
 
   const after = out;
-  const log = guarded
-    ? `title=guarded reason=${guarded} rules=[${rules.join(",")}] before="${before}" after="${after}"`
-    : rules.length
-      ? `title=normalized rules=[${rules.join(",")}] before="${before}" after="${after}"`
-      : `title=unchanged before="${before}"`;
+  const parts = [`before="${before}"`, `after="${after}"`, `rules=[${rules.join(",")}]`];
+  if (guarded) parts.unshift(`guard=${guarded}`);
+  const log = `title=${guarded ? "guarded" : rules.length ? "normalized" : "unchanged"} ${parts.join(" ")}`;
 
-  return { before, after, rules: guarded ? [] : rules, guarded, log };
+  return { before, after, rules, guarded, log };
 }
