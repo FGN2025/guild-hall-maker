@@ -49,6 +49,12 @@ Deno.serve(async () => {
     const b = await mkUser("nomember"); created.push(b.id);
     const c = await mkUser("acme"); created.push(c.id);
 
+    // handle_new_user seeds a profile that can trip prevent_player_tenant_admin;
+    // clear the player markers so these synthetics can be real tenant staff.
+    await admin.from("profiles").update({ zip_code: null }).in("user_id", created);
+    await admin.from("user_service_interests").delete().in("user_id", created);
+    await admin.from("tenant_subscribers").delete().in("user_id", created);
+
     const ins = await admin.from("tenant_admins").insert([
       { tenant_id: OTHER, user_id: a.id, role: "admin" },
       { tenant_id: ACME, user_id: c.id, role: "admin" },
