@@ -77,21 +77,38 @@ Deno.serve(async (req) => {
       );
       scene.backgroundUrl = art.url;
 
-      const png = await renderPromoSceneToPng(scene);
-      const plate = await renderPromoSceneToPng(scene, { includeText: false });
-      const newSha = await sha256(png);
-
-      const uuid = crypto.randomUUID();
+      // `stage` splits the two renders across separate invocations for events
+      // whose cover art is large enough to OOM a single worker (SSBU, 1.5 MB).
+      const stage: "both" | "image" | "plate" = body.stage ?? "both";
+      const uuid = body.base ?? crypto.randomUUID();
       const base = `${asset.tenant_id}/agent/2026/08/v6-typescale-promo-${eventId}-${beatSlug}-${uuid}`;
       const path = `${base}.png`;
       const platePath = `${base}-plate.png`;
-      for (const [p, b] of [[path, png], [platePath, plate]] as [string, Uint8Array][]) {
-        const { error: ue } = await s.storage.from(BUCKET).upload(p, b, { contentType: "image/png", upsert: false });
+      const ttl = 60 * 60 * 24 * 365;
+
+      let newSha: string | null = null;
+      if (stage === "both" || stage === "image") {
+        const png = await renderPromoSceneToPng(scene);
+        newSha = await sha256(png);
+        const { error: ue } = await s.storage.from(BUCKET).upload(path, png, { contentType: "image/png", upsert: false });
+        if (ue) throw ue;
+        if (stage === "image") {
+          out.push({ asset_id: assetId, stage, base: uuid, new_path: path, new_sha256: newSha });
+          continue;
+        }
+      }
+      {
+        const plate = await renderPromoSceneToPng(scene, { includeText: false });
+        const { error: ue } = await s.storage.from(BUCKET).upload(platePath, plate, { contentType: "image/png", upsert: false });
         if (ue) throw ue;
       }
-      const ttl = 60 * 60 * 24 * 365;
+      if (newSha === null) {
+        const dl = await s.storage.from(BUCKET).download(path);
+        newSha = await sha256(new Uint8Array(await dl.data!.arrayBuffer()));
+      }
       const su = await s.storage.from(BUCKET).createSignedUrl(path, ttl);
       const sp = await s.storage.from(BUCKET).createSignedUrl(platePath, ttl);
+
 
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
