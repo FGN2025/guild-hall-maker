@@ -2017,7 +2017,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-08-06T17:05Z-calendar-hardening";
+var BUILD_ID = "2026-08-06T22:20Z-typescale-prizepool";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
