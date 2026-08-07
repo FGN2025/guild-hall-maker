@@ -32,6 +32,17 @@ Deno.serve(async (req) => {
   console.log = (...a: unknown[]) => { logs.push(a.map(String).join(" ")); origLog(...a); };
 
   try {
+    const body0 = await req.clone().json().catch(() => ({} as any));
+    if (Array.isArray(body0.sign)) {
+      const sb = svc();
+      const out: Record<string, string | null> = {};
+      for (const path of body0.sign) {
+        const { data } = await sb.storage.from("tenant-marketing").createSignedUrl(path, 60 * 60 * 12);
+        out[path] = data?.signedUrl ?? null;
+      }
+      return Response.json({ build_id: BUILD_ID, signed: out });
+    }
+
     const { data: evt, error } = await s
       .from("tournaments")
       .select("id, name, game, start_date, prize_pool, prize_type, image_url")
