@@ -1651,7 +1651,7 @@ function downscalePng(dataUrl, srcW, srcH, targetW) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" viewBox="0 0 ${targetW} ${targetH}"><image href="${dataUrl}" x="0" y="0" width="${targetW}" height="${targetH}" preserveAspectRatio="none"/></svg>`;
   return new ResvgCtor(svg, { fitTo: { mode: "width", value: targetW } }).render().asPng();
 }
-async function preparePromoBackground(url, scene) {
+async function preparePromoBackground2(url, scene) {
   if (!url) return null;
   await ensureWasm();
   let res;
@@ -1724,7 +1724,7 @@ function rgbaFromCss(rgba) {
 async function renderPromoSceneToPng(scene, opts = {}) {
   const includeText = opts.includeText !== false;
   await ensureWasm();
-  const prepared = opts.background !== void 0 ? opts.background : await preparePromoBackground(scene.backgroundUrl, scene);
+  const prepared = opts.background !== void 0 ? opts.background : await preparePromoBackground2(scene.backgroundUrl, scene);
   const bgHref = prepared?.dataUrl ?? null;
   const w = scene.width;
   const h = scene.height;
@@ -1989,8 +1989,10 @@ var compose_event_promo_default = defineTool21({
       );
       scene.backgroundUrl = art.url;
       console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
-      const png = await renderPromoSceneToPng(scene);
-      const platePng = await renderPromoSceneToPng(scene, { includeText: false });
+      const bg = await preparePromoBackground(scene.backgroundUrl, scene);
+      if (bg) console.log(`[compose_event_promo] event=${evt.id} background ${bg.log}`);
+      const png = await renderPromoSceneToPng(scene, { background: bg });
+      const platePng = await renderPromoSceneToPng(scene, { includeText: false, background: bg });
       const beat = (input.beat_label ?? "promo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "promo";
       const now = /* @__PURE__ */ new Date();
       const yyyy = now.getUTCFullYear();

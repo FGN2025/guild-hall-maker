@@ -92,11 +92,18 @@ export default defineTool({
       console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
 
 
-      const png = await renderPromoSceneToPng(scene);
+      // Prepare the art ONCE and reuse it for both renders. Fetching and
+      // base64-inlining the same cover twice is what exhausted worker memory
+      // on large covers; see preparePromoBackground.
+      const bg = await preparePromoBackground(scene.backgroundUrl, scene);
+      if (bg) console.log(`[compose_event_promo] event=${evt.id} background ${bg.log}`);
+
+      const png = await renderPromoSceneToPng(scene, { background: bg });
       // Text-free plate: the editor uses this as its base image so the
       // overlay_config text layers hydrate as the ONLY copy of the text
       // (composing over the flattened render would double every string).
-      const platePng = await renderPromoSceneToPng(scene, { includeText: false });
+      const platePng = await renderPromoSceneToPng(scene, { includeText: false, background: bg });
+
 
       // Storage upload — tenant-marketing bucket (composer output ingests via
       // the same path attach_tenant_asset_draft uses).
