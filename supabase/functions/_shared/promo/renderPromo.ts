@@ -138,7 +138,17 @@ function downscalePng(dataUrl: string, srcW: number, srcH: number, targetW: numb
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" viewBox="0 0 ${targetW} ${targetH}">` +
     `<image href="${dataUrl}" x="0" y="0" width="${targetW}" height="${targetH}" preserveAspectRatio="none"/></svg>`;
-  return new ResvgCtor(svg, { fitTo: { mode: "width", value: targetW } }).render().asPng();
+  let r: any = null;
+  let img: any = null;
+  try {
+    r = new ResvgCtor(svg, { fitTo: { mode: "width", value: targetW } });
+    img = r.render();
+    return img.asPng();
+  } finally {
+    try { img?.free?.(); } catch { /* already freed */ }
+    try { r?.free?.(); } catch { /* already freed */ }
+  }
+
 }
 
 /**
