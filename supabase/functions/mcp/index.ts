@@ -2168,7 +2168,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-08-07T05:50Z-bg-budget";
+var BUILD_ID = "2026-08-07T06:05Z-wasm-free";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
