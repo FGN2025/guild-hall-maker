@@ -59,21 +59,21 @@ Deno.serve(async (req) => {
     );
     scene.backgroundUrl = art.url;
 
-    // === the exact three lines compose_event_promo now runs ===
-    const mem = () => { try { const m = (Deno as any).memoryUsage(); return { rssMB: +(m.rss/1e6).toFixed(1), heapMB: +(m.heapUsed/1e6).toFixed(1), extMB: +(m.external/1e6).toFixed(1) }; } catch { return null; } };
-    const memTrace: Record<string, unknown> = { start: mem() };
-    const tPrep = Date.now();
-    const bg = body.no_bg ? null : await preparePromoBackground(scene.backgroundUrl, scene, { pixelBudget: body.pixel_budget, byteCeiling: body.byte_ceiling });
-    const prepMs = Date.now() - tPrep;
-    memTrace.after_prepare = mem();
-    const tR1 = Date.now();
-    const png = await renderPromoSceneToPng(scene, { background: bg });
-    const r1Ms = Date.now() - tR1;
-    memTrace.after_render_full = mem();
-    const tR2 = Date.now();
-    const plate = await renderPromoSceneToPng(scene, { includeText: false, background: bg });
-    const r2Ms = Date.now() - tR2;
-    memTrace.after_render_plate = mem();
+    // === exactly what compose_event_promo now runs: two worker renders ===
+    const call = async (includeText: boolean) => {
+      const t = Date.now();
+      const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/promo-render`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+        body: JSON.stringify({ scene, includeText }),
+      });
+      if (!res.ok) throw new PromoRenderError("worker_failed", JSON.stringify(await res.json().catch(() => ({}))));
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      return { bytes, ms: Date.now() - t, workerMs: res.headers.get("x-promo-ms"), bg: res.headers.get("x-promo-background") };
+    };
+    const full = await call(true);
+    const plateR = await call(false);
+    const png = full.bytes, plate = plateR.bytes;
 
     return Response.json({
       build_id: BUILD_ID,
@@ -81,14 +81,13 @@ Deno.serve(async (req) => {
       single_invocation: true,
       event: { id: evt.id, name: evt.name, game: evt.game },
       art: { provenance: art.provenance, url: art.url },
-      background: bg
-        ? { log: bg.log, bytes: bg.bytes, width: bg.width, height: bg.height, downscaled: bg.downscaled, inline_chars: bg.dataUrl.length }
-        : null,
+      background: full.bg,
       render: {
         png_bytes: png.length, png_sha256: await sha256(png),
         plate_bytes: plate.length, plate_sha256: await sha256(plate),
       },
-      timings_ms: { prepare: prepMs, render_full: r1Ms, render_plate: r2Ms, total: Date.now() - t0 },
+      timings_ms: { render_full: full.ms, worker_full_cpu: full.workerMs, render_plate: plateR.ms, worker_plate_cpu: plateR.workerMs, total: Date.now() - t0 },
+
       mem: memTrace,
       logs,
     });
