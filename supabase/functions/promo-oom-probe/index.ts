@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
     // === the exact three lines compose_event_promo now runs ===
     const tPrep = Date.now();
-    const bg = await preparePromoBackground(scene.backgroundUrl, scene);
+    const bg = await preparePromoBackground(scene.backgroundUrl, scene, { pixelBudget: body.pixel_budget, byteCeiling: body.byte_ceiling });
     const prepMs = Date.now() - tPrep;
     const tR1 = Date.now();
     const png = await renderPromoSceneToPng(scene, { background: bg });
