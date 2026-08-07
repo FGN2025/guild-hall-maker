@@ -203,7 +203,7 @@ export async function preparePromoBackground(
       if (target >= curW) break;
       const srcUrl = `data:${contentType};base64,${toBase64(curBytes)}`;
       try {
-        curBytes = downscalePng(srcUrl, curW, curH, target);
+        curBytes = downscalePng(srcUrl, curW, curH, target) as Uint8Array<ArrayBuffer>;
       } catch (e) {
         throw new PromoRenderError(
           "background_downscale_failed",
