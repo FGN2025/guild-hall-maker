@@ -1873,7 +1873,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-08-07T06:05Z-wasm-free";
+var BUILD_ID = "2026-08-07T07:10Z-split-render";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
