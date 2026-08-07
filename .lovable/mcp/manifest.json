@@ -5,7 +5,7 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://yrhwzmkenjgiujhofucx.supabase.co/auth/v1",
-    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-08-06T22%3A20Z-typescale-prizepool",
+    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-08-07T05%3A50Z-bg-budget",
     "accepted_audiences": [
       "authenticated"
     ]

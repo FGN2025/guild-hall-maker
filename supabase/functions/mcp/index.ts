@@ -2140,7 +2140,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-08-06T22:20Z-typescale-prizepool";
+var BUILD_ID = "2026-08-07T05:50Z-bg-budget";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
