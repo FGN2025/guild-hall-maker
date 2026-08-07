@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       },
       timings_ms: { render_full: full.ms, worker_full_cpu: full.workerMs, render_plate: plateR.ms, worker_plate_cpu: plateR.workerMs, total: Date.now() - t0 },
 
-      mem: memTrace,
+
       logs,
     });
   } catch (err) {
