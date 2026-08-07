@@ -416,16 +416,28 @@ export async function renderPromoSceneToPng(
   ${textNodes}
 </svg>`;
 
-  const resvg = new ResvgCtor(svg, {
-    background: scene.backgroundFallbackHex,
-    fitTo: { mode: "width", value: w },
-    font: {
-      loadSystemFonts: false, // deterministic — only the buffers below
-      fontBuffers,
-      defaultFontFamily: SERVER_FONT_FAMILY,
-    },
-  });
+  // wasm-bindgen objects are NOT garbage collected — an unfreed Resvg keeps
+  // its parsed tree and decoded source bitmap in wasm linear memory, and an
+  // unfreed RenderedImage keeps the full w*h*4 output pixmap. Linear memory
+  // only ever grows, so leaking one render made the second one (the plate)
+  // allocate a whole second set on top. That is what actually blew the worker.
+  let resvg: any = null;
+  let rendered: any = null;
+  try {
+    resvg = new ResvgCtor(svg, {
+      background: scene.backgroundFallbackHex,
+      fitTo: { mode: "width", value: w },
+      font: {
+        loadSystemFonts: false, // deterministic — only the buffers below
+        fontBuffers,
+        defaultFontFamily: SERVER_FONT_FAMILY,
+      },
+    });
+    rendered = resvg.render();
+    return rendered.asPng();
+  } finally {
+    try { rendered?.free?.(); } catch { /* already freed */ }
+    try { resvg?.free?.(); } catch { /* already freed */ }
+  }
 
-  const png = resvg.render().asPng();
-  return png;
 }

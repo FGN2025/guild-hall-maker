@@ -1855,18 +1855,31 @@ async function renderPromoSceneToPng(scene, opts = {}) {
   ${accent}
   ${textNodes}
 </svg>`;
-  const resvg = new ResvgCtor(svg, {
-    background: scene.backgroundFallbackHex,
-    fitTo: { mode: "width", value: w },
-    font: {
-      loadSystemFonts: false,
-      // deterministic — only the buffers below
-      fontBuffers,
-      defaultFontFamily: SERVER_FONT_FAMILY
+  let resvg = null;
+  let rendered = null;
+  try {
+    resvg = new ResvgCtor(svg, {
+      background: scene.backgroundFallbackHex,
+      fitTo: { mode: "width", value: w },
+      font: {
+        loadSystemFonts: false,
+        // deterministic — only the buffers below
+        fontBuffers,
+        defaultFontFamily: SERVER_FONT_FAMILY
+      }
+    });
+    rendered = resvg.render();
+    return rendered.asPng();
+  } finally {
+    try {
+      rendered?.free?.();
+    } catch {
     }
-  });
-  const png = resvg.render().asPng();
-  return png;
+    try {
+      resvg?.free?.();
+    } catch {
+    }
+  }
 }
 
 // supabase/functions/_shared/promo/resolveEventArt.ts
