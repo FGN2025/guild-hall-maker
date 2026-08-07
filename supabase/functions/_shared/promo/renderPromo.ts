@@ -194,13 +194,13 @@ export async function preparePromoBackground(
   ];
 
   const longEdge = Math.max(scene.width, scene.height);
-  const maxEdge = Math.round(longEdge * BACKGROUND_PIXEL_BUDGET);
+  const maxEdge = Math.round(longEdge * pixelBudget);
   let downscaled = false;
   let w = dims?.width ?? null;
   let h = dims?.height ?? null;
 
   const overPixels = !!dims && Math.max(dims.width, dims.height) > maxEdge;
-  const overBytes = originalBytes > BACKGROUND_BYTE_CEILING;
+  const overBytes = originalBytes > byteCeiling;
 
   if ((overPixels || overBytes) && dims) {
     let curBytes = bytes;
@@ -211,7 +211,7 @@ export async function preparePromoBackground(
         ? Math.max(1, Math.round((curW * maxEdge) / Math.max(curW, curH)))
         : curW;
       // Byte pressure gets halved per pass on top of the pixel budget.
-      const target = curBytes.length > BACKGROUND_BYTE_CEILING
+      const target = curBytes.length > byteCeiling
         ? Math.max(320, Math.round(Math.min(byEdge, curW) / 2))
         : byEdge;
       if (target >= curW) break;
@@ -229,7 +229,7 @@ export async function preparePromoBackground(
       curW = target;
       contentType = "image/png";
       downscaled = true;
-      if (curBytes.length <= BACKGROUND_BYTE_CEILING && Math.max(curW, curH) <= maxEdge) break;
+      if (curBytes.length <= byteCeiling && Math.max(curW, curH) <= maxEdge) break;
     }
     bytes = curBytes;
     w = curW;
@@ -237,11 +237,11 @@ export async function preparePromoBackground(
     notes.push(`downscaled->${curW}x${curH} ${bytes.length}B`);
   }
 
-  if (bytes.length > BACKGROUND_BYTE_CEILING) {
+  if (bytes.length > byteCeiling) {
     throw new PromoRenderError(
       "background_too_large",
-      `Background art is ${bytes.length} bytes after ${MAX_DOWNSCALE_PASSES} downscale passes, ceiling is ${BACKGROUND_BYTE_CEILING}.`,
-      { url, bytes: bytes.length, ceiling: BACKGROUND_BYTE_CEILING },
+      `Background art is ${bytes.length} bytes after ${MAX_DOWNSCALE_PASSES} downscale passes, ceiling is ${byteCeiling}.`,
+      { url, bytes: bytes.length, ceiling: byteCeiling },
     );
   }
 

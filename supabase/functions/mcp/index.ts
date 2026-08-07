@@ -1689,19 +1689,19 @@ async function preparePromoBackground(url, scene, tuning = {}) {
     `src=${originalBytes}B${dims ? ` ${dims.width}x${dims.height}` : " dims=unknown"}`
   ];
   const longEdge = Math.max(scene.width, scene.height);
-  const maxEdge = Math.round(longEdge * BACKGROUND_PIXEL_BUDGET);
+  const maxEdge = Math.round(longEdge * pixelBudget);
   let downscaled = false;
   let w = dims?.width ?? null;
   let h = dims?.height ?? null;
   const overPixels = !!dims && Math.max(dims.width, dims.height) > maxEdge;
-  const overBytes = originalBytes > BACKGROUND_BYTE_CEILING;
+  const overBytes = originalBytes > byteCeiling;
   if ((overPixels || overBytes) && dims) {
     let curBytes = bytes;
     let curW = dims.width;
     let curH = dims.height;
     for (let pass = 0; pass < MAX_DOWNSCALE_PASSES; pass++) {
       const byEdge = Math.max(curW, curH) > maxEdge ? Math.max(1, Math.round(curW * maxEdge / Math.max(curW, curH))) : curW;
-      const target = curBytes.length > BACKGROUND_BYTE_CEILING ? Math.max(320, Math.round(Math.min(byEdge, curW) / 2)) : byEdge;
+      const target = curBytes.length > byteCeiling ? Math.max(320, Math.round(Math.min(byEdge, curW) / 2)) : byEdge;
       if (target >= curW) break;
       const srcUrl = `data:${contentType};base64,${toBase64(curBytes)}`;
       try {
@@ -1717,18 +1717,18 @@ async function preparePromoBackground(url, scene, tuning = {}) {
       curW = target;
       contentType = "image/png";
       downscaled = true;
-      if (curBytes.length <= BACKGROUND_BYTE_CEILING && Math.max(curW, curH) <= maxEdge) break;
+      if (curBytes.length <= byteCeiling && Math.max(curW, curH) <= maxEdge) break;
     }
     bytes = curBytes;
     w = curW;
     h = curH;
     notes.push(`downscaled->${curW}x${curH} ${bytes.length}B`);
   }
-  if (bytes.length > BACKGROUND_BYTE_CEILING) {
+  if (bytes.length > byteCeiling) {
     throw new PromoRenderError(
       "background_too_large",
-      `Background art is ${bytes.length} bytes after ${MAX_DOWNSCALE_PASSES} downscale passes, ceiling is ${BACKGROUND_BYTE_CEILING}.`,
-      { url, bytes: bytes.length, ceiling: BACKGROUND_BYTE_CEILING }
+      `Background art is ${bytes.length} bytes after ${MAX_DOWNSCALE_PASSES} downscale passes, ceiling is ${byteCeiling}.`,
+      { url, bytes: bytes.length, ceiling: byteCeiling }
     );
   }
   const dataUrl = `data:${contentType};base64,${toBase64(bytes)}`;
