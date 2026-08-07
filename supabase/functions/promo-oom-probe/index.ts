@@ -60,15 +60,20 @@ Deno.serve(async (req) => {
     scene.backgroundUrl = art.url;
 
     // === the exact three lines compose_event_promo now runs ===
+    const mem = () => { try { const m = (Deno as any).memoryUsage(); return { rssMB: +(m.rss/1e6).toFixed(1), heapMB: +(m.heapUsed/1e6).toFixed(1), extMB: +(m.external/1e6).toFixed(1) }; } catch { return null; } };
+    const memTrace: Record<string, unknown> = { start: mem() };
     const tPrep = Date.now();
-    const bg = await preparePromoBackground(scene.backgroundUrl, scene, { pixelBudget: body.pixel_budget, byteCeiling: body.byte_ceiling });
+    const bg = body.no_bg ? null : await preparePromoBackground(scene.backgroundUrl, scene, { pixelBudget: body.pixel_budget, byteCeiling: body.byte_ceiling });
     const prepMs = Date.now() - tPrep;
+    memTrace.after_prepare = mem();
     const tR1 = Date.now();
     const png = await renderPromoSceneToPng(scene, { background: bg });
     const r1Ms = Date.now() - tR1;
+    memTrace.after_render_full = mem();
     const tR2 = Date.now();
     const plate = await renderPromoSceneToPng(scene, { includeText: false, background: bg });
     const r2Ms = Date.now() - tR2;
+    memTrace.after_render_plate = mem();
 
     return Response.json({
       build_id: BUILD_ID,
@@ -84,6 +89,7 @@ Deno.serve(async (req) => {
         plate_bytes: plate.length, plate_sha256: await sha256(plate),
       },
       timings_ms: { prepare: prepMs, render_full: r1Ms, render_plate: r2Ms, total: Date.now() - t0 },
+      mem: memTrace,
       logs,
     });
   } catch (err) {
