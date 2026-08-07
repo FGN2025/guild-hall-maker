@@ -1634,6 +1634,33 @@ async function resolveEventArt(event, supabase) {
 }
 
 // supabase/functions/_shared/mcp-tools/compose-event-promo.ts
+async function renderViaWorker(scene, includeText) {
+  const base = Deno.env.get("SUPABASE_URL");
+  const key2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!base || !key2) throw new PromoRenderError("render_worker_unconfigured", "promo-render worker is not reachable from this function.");
+  const res = await fetch(`${base}/functions/v1/promo-render`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key2}` },
+    body: JSON.stringify({ scene, includeText })
+  });
+  if (!res.ok) {
+    let payload = {};
+    try {
+      payload = await res.json();
+    } catch {
+      payload = { message: await res.text().catch(() => "") };
+    }
+    throw new PromoRenderError(
+      String(payload.code ?? `render_worker_http_${res.status}`),
+      String(payload.message ?? `promo-render returned ${res.status}`),
+      { includeText, status: res.status, ...payload.detail ?? {} }
+    );
+  }
+  console.log(
+    `[compose_event_promo] render includeText=${includeText} ms=${res.headers.get("x-promo-ms")} bg=${res.headers.get("x-promo-background")}`
+  );
+  return new Uint8Array(await res.arrayBuffer());
+}
 var BUCKET2 = "tenant-marketing";
 var compose_event_promo_default = defineTool21({
   name: "compose_event_promo",
