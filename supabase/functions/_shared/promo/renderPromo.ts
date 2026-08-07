@@ -236,6 +236,34 @@ export async function preparePromoBackground(
   return { dataUrl, bytes: bytes.length, width: w, height: h, downscaled, log: notes.join(" ") };
 }
 
+function rgbaFromCss(rgba: string): string {
+  // resvg understands rgba() natively; passthrough
+  return rgba;
+}
+
+/**
+ * Render a scene.
+ *
+ * `includeText: false` produces the text-free "background plate" (image +
+ * gradient + accent bar) that the editor uses as its base so overlay_config
+ * text layers are not drawn on top of already-baked glyphs.
+ *
+ * `background` lets a caller that needs BOTH outputs prepare the art once with
+ * `preparePromoBackground` and reuse it. Omit it and the art is prepared
+ * per-call; pass `null` to render with no art at all.
+ */
+export async function renderPromoSceneToPng(
+  scene: PromoScene,
+  opts: { includeText?: boolean; background?: PreparedBackground | null } = {},
+): Promise<Uint8Array> {
+  const includeText = opts.includeText !== false;
+  await ensureWasm();
+
+  const prepared = opts.background !== undefined
+    ? opts.background
+    : await preparePromoBackground(scene.backgroundUrl, scene);
+  const bgHref: string | null = prepared?.dataUrl ?? null;
+
 
   const w = scene.width;
   const h = scene.height;

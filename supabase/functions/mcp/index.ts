@@ -1597,19 +1597,126 @@ async function ensureWasm() {
 function escapeXml(s) {
   return s.replace(/[<>&'"]/g, (c) => c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === "&" ? "&amp;" : c === "'" ? "&apos;" : "&quot;");
 }
-async function fetchAsDataUrl(url) {
+var PromoRenderError = class extends Error {
+  code;
+  detail;
+  constructor(code, message, detail = {}) {
+    super(message);
+    this.name = "PromoRenderError";
+    this.code = code;
+    this.detail = detail;
+  }
+};
+var BACKGROUND_PIXEL_BUDGET = 1.25;
+var BACKGROUND_BYTE_CEILING = 4e6;
+var MAX_DOWNSCALE_PASSES = 3;
+function toBase64(buf) {
+  const CHUNK = 32768;
+  const parts = [];
+  for (let i = 0; i < buf.length; i += CHUNK) {
+    parts.push(String.fromCharCode(...buf.subarray(i, i + CHUNK)));
+  }
+  return btoa(parts.join(""));
+}
+function sniffDimensions(b) {
+  if (b.length > 24 && b[0] === 137 && b[1] === 80 && b[2] === 78 && b[3] === 71) {
+    const dv = new DataView(b.buffer, b.byteOffset);
+    return { width: dv.getUint32(16), height: dv.getUint32(20) };
+  }
+  if (b.length > 10 && b[0] === 71 && b[1] === 73 && b[2] === 70) {
+    const dv = new DataView(b.buffer, b.byteOffset);
+    return { width: dv.getUint16(6, true), height: dv.getUint16(8, true) };
+  }
+  if (b.length > 4 && b[0] === 255 && b[1] === 216) {
+    let i = 2;
+    while (i + 9 < b.length) {
+      if (b[i] !== 255) {
+        i++;
+        continue;
+      }
+      const marker = b[i + 1];
+      if (marker >= 192 && marker <= 207 && marker !== 196 && marker !== 200 && marker !== 204) {
+        const dv = new DataView(b.buffer, b.byteOffset);
+        return { height: dv.getUint16(i + 5), width: dv.getUint16(i + 7) };
+      }
+      const len = b[i + 2] << 8 | b[i + 3];
+      if (len <= 0) break;
+      i += 2 + len;
+    }
+  }
+  return null;
+}
+function downscalePng(dataUrl, srcW, srcH, targetW) {
+  const targetH = Math.max(1, Math.round(srcH * targetW / srcW));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" viewBox="0 0 ${targetW} ${targetH}"><image href="${dataUrl}" x="0" y="0" width="${targetW}" height="${targetH}" preserveAspectRatio="none"/></svg>`;
+  return new ResvgCtor(svg, { fitTo: { mode: "width", value: targetW } }).render().asPng();
+}
+async function preparePromoBackground(url, scene) {
+  if (!url) return null;
+  await ensureWasm();
+  let res;
   try {
-    const res = await fetch(url, { redirect: "follow" });
-    if (!res.ok) return null;
-    const ct = res.headers.get("content-type") ?? "image/jpeg";
-    const buf = new Uint8Array(await res.arrayBuffer());
-    let bin = "";
-    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-    const b64 = btoa(bin);
-    return `data:${ct};base64,${b64}`;
-  } catch {
+    res = await fetch(url, { redirect: "follow" });
+  } catch (e) {
+    throw new PromoRenderError("background_fetch_failed", `Background fetch threw: ${e.message}`, { url });
+  }
+  if (!res.ok) {
+    await res.body?.cancel();
     return null;
   }
+  let contentType = res.headers.get("content-type") ?? "image/jpeg";
+  let bytes = new Uint8Array(await res.arrayBuffer());
+  const originalBytes = bytes.length;
+  const dims = sniffDimensions(bytes);
+  const notes = [
+    `src=${originalBytes}B${dims ? ` ${dims.width}x${dims.height}` : " dims=unknown"}`
+  ];
+  const longEdge = Math.max(scene.width, scene.height);
+  const maxEdge = Math.round(longEdge * BACKGROUND_PIXEL_BUDGET);
+  let downscaled = false;
+  let w = dims?.width ?? null;
+  let h = dims?.height ?? null;
+  const overPixels = !!dims && Math.max(dims.width, dims.height) > maxEdge;
+  const overBytes = originalBytes > BACKGROUND_BYTE_CEILING;
+  if ((overPixels || overBytes) && dims) {
+    let curBytes = bytes;
+    let curW = dims.width;
+    let curH = dims.height;
+    for (let pass = 0; pass < MAX_DOWNSCALE_PASSES; pass++) {
+      const byEdge = Math.max(curW, curH) > maxEdge ? Math.max(1, Math.round(curW * maxEdge / Math.max(curW, curH))) : curW;
+      const target = curBytes.length > BACKGROUND_BYTE_CEILING ? Math.max(320, Math.round(Math.min(byEdge, curW) / 2)) : byEdge;
+      if (target >= curW) break;
+      const srcUrl = `data:${contentType};base64,${toBase64(curBytes)}`;
+      try {
+        curBytes = downscalePng(srcUrl, curW, curH, target);
+      } catch (e) {
+        throw new PromoRenderError(
+          "background_downscale_failed",
+          `Could not downscale background (${curW}x${curH}, ${curBytes.length}B): ${e.message}`,
+          { url, width: curW, height: curH, bytes: curBytes.length }
+        );
+      }
+      curH = Math.max(1, Math.round(curH * target / curW));
+      curW = target;
+      contentType = "image/png";
+      downscaled = true;
+      if (curBytes.length <= BACKGROUND_BYTE_CEILING && Math.max(curW, curH) <= maxEdge) break;
+    }
+    bytes = curBytes;
+    w = curW;
+    h = curH;
+    notes.push(`downscaled->${curW}x${curH} ${bytes.length}B`);
+  }
+  if (bytes.length > BACKGROUND_BYTE_CEILING) {
+    throw new PromoRenderError(
+      "background_too_large",
+      `Background art is ${bytes.length} bytes after ${MAX_DOWNSCALE_PASSES} downscale passes, ceiling is ${BACKGROUND_BYTE_CEILING}.`,
+      { url, bytes: bytes.length, ceiling: BACKGROUND_BYTE_CEILING }
+    );
+  }
+  const dataUrl = `data:${contentType};base64,${toBase64(bytes)}`;
+  notes.push(`inline=${dataUrl.length}B`);
+  return { dataUrl, bytes: bytes.length, width: w, height: h, downscaled, log: notes.join(" ") };
 }
 function rgbaFromCss(rgba) {
   return rgba;
@@ -1617,10 +1724,8 @@ function rgbaFromCss(rgba) {
 async function renderPromoSceneToPng(scene, opts = {}) {
   const includeText = opts.includeText !== false;
   await ensureWasm();
-  let bgHref = null;
-  if (scene.backgroundUrl) {
-    bgHref = await fetchAsDataUrl(scene.backgroundUrl);
-  }
+  const prepared = opts.background !== void 0 ? opts.background : await preparePromoBackground(scene.backgroundUrl, scene);
+  const bgHref = prepared?.dataUrl ?? null;
   const w = scene.width;
   const h = scene.height;
   const p = scene.plate;
