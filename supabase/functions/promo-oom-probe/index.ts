@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   console.log = (...a: unknown[]) => { logs.push(a.map(String).join(" ")); origLog(...a); };
 
   try {
-    const body0 = await req.clone().json().catch(() => ({} as any));
+    const body0 = body as any;
     if (Array.isArray(body0.sign)) {
       const sb = svc();
       const out: Record<string, string | null> = {};
