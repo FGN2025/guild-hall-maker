@@ -164,9 +164,13 @@ function downscalePng(dataUrl: string, srcW: number, srcH: number, targetW: numb
 export async function preparePromoBackground(
   url: string | null | undefined,
   scene: Pick<PromoScene, "width" | "height">,
+  tuning: { pixelBudget?: number; byteCeiling?: number } = {},
 ): Promise<PreparedBackground | null> {
   if (!url) return null;
   await ensureWasm();
+  const pixelBudget = tuning.pixelBudget ?? BACKGROUND_PIXEL_BUDGET;
+  const byteCeiling = tuning.byteCeiling ?? BACKGROUND_BYTE_CEILING;
+
 
   let res: Response;
   try {

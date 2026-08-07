@@ -1666,9 +1666,11 @@ function downscalePng(dataUrl, srcW, srcH, targetW) {
     }
   }
 }
-async function preparePromoBackground(url, scene) {
+async function preparePromoBackground(url, scene, tuning = {}) {
   if (!url) return null;
   await ensureWasm();
+  const pixelBudget = tuning.pixelBudget ?? BACKGROUND_PIXEL_BUDGET;
+  const byteCeiling = tuning.byteCeiling ?? BACKGROUND_BYTE_CEILING;
   let res;
   try {
     res = await fetch(url, { redirect: "follow" });
