@@ -92,17 +92,17 @@ export default defineTool({
       console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
 
 
-      // Prepare the art ONCE and reuse it for both renders. Fetching and
-      // base64-inlining the same cover twice is what exhausted worker memory
-      // on large covers; see preparePromoBackground.
-      const bg = await preparePromoBackground(scene.backgroundUrl, scene);
-      if (bg) console.log(`[compose_event_promo] event=${evt.id} background ${bg.log}`);
-
-      const png = await renderPromoSceneToPng(scene, { background: bg });
+      // Each raster goes to its own worker. One 1080x1350 render costs ~1.0-1.3s
+      // of CPU and the edge CPU budget is ~2s per request, so rendering the
+      // flattened promo AND the text-free editor plate in this request is what
+      // used to kill the run on the larger formats/covers. This tool now spends
+      // its own budget on DB and storage work only.
+      const png = await renderViaWorker(scene, true);
       // Text-free plate: the editor uses this as its base image so the
       // overlay_config text layers hydrate as the ONLY copy of the text
       // (composing over the flattened render would double every string).
-      const platePng = await renderPromoSceneToPng(scene, { includeText: false, background: bg });
+      const platePng = await renderViaWorker(scene, false);
+
 
 
       // Storage upload — tenant-marketing bucket (composer output ingests via
