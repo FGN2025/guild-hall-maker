@@ -2064,6 +2064,22 @@ var compose_event_promo_default = defineTool21({
       if (insErr) throw insErr;
       return okJson({ ...row, art_provenance: art }, "asset");
     } catch (err) {
+      if (err instanceof PromoRenderError) {
+        console.error(`[compose_event_promo] render_failed code=${err.code} ${err.message}`, err.detail);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              error: "compose_event_promo failed while preparing the background art",
+              code: err.code,
+              message: err.message,
+              detail: err.detail,
+              hint: "The event's image_url or the game's cover_image_url is too large to compose. Replace it with art no larger than 4 MB, or clear it so the composer falls back to the generated plate."
+            }, null, 2)
+          }],
+          isError: true
+        };
+      }
       return toolError(err, "compose_event_promo");
     }
   }
