@@ -58,20 +58,196 @@ function escapeXml(s: string): string {
   ));
 }
 
-async function fetchAsDataUrl(url: string): Promise<string | null> {
+/** Classified render failure. Callers surface `code` instead of letting the
+ *  worker die with a raw WORKER_RESOURCE_LIMIT that shows up as an opaque
+ *  badge error. */
+export class PromoRenderError extends Error {
+  code: string;
+  detail: Record<string, unknown>;
+  constructor(code: string, message: string, detail: Record<string, unknown> = {}) {
+    super(message);
+    this.name = "PromoRenderError";
+    this.code = code;
+    this.detail = detail;
+  }
+}
+
+// Background budget. Two independent ceilings:
+//  - PIXEL: art wider/taller than this multiple of the output is pointless
+//    detail and expensive to rasterize, so it gets downscaled.
+//  - BYTE: a hard stop. Encoded art above this cannot be inlined safely even
+//    after downscaling, and is reported as a classified error.
+const BACKGROUND_PIXEL_BUDGET = 1.25; // x the longest output edge
+const BACKGROUND_BYTE_CEILING = 4_000_000;
+const MAX_DOWNSCALE_PASSES = 3;
+
+/** Chunked base64. `bin += String.fromCharCode(b)` over a 1.5 MB buffer builds
+ *  a 1.5 M-link rope before it is ever flattened; this keeps peak strings small. */
+function toBase64(buf: Uint8Array): string {
+  const CHUNK = 0x8000;
+  const parts: string[] = [];
+  for (let i = 0; i < buf.length; i += CHUNK) {
+    parts.push(String.fromCharCode(...buf.subarray(i, i + CHUNK)));
+  }
+  return btoa(parts.join(""));
+}
+
+/** Intrinsic dimensions from the file header — no decode, no allocation. */
+function sniffDimensions(b: Uint8Array): { width: number; height: number } | null {
+  // PNG: IHDR width/height at bytes 16..24
+  if (b.length > 24 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) {
+    const dv = new DataView(b.buffer, b.byteOffset);
+    return { width: dv.getUint32(16), height: dv.getUint32(20) };
+  }
+  // GIF
+  if (b.length > 10 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) {
+    const dv = new DataView(b.buffer, b.byteOffset);
+    return { width: dv.getUint16(6, true), height: dv.getUint16(8, true) };
+  }
+  // JPEG: walk the segment chain to the first SOF marker
+  if (b.length > 4 && b[0] === 0xff && b[1] === 0xd8) {
+    let i = 2;
+    while (i + 9 < b.length) {
+      if (b[i] !== 0xff) { i++; continue; }
+      const marker = b[i + 1];
+      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+        const dv = new DataView(b.buffer, b.byteOffset);
+        return { height: dv.getUint16(i + 5), width: dv.getUint16(i + 7) };
+      }
+      const len = (b[i + 2] << 8) | b[i + 3];
+      if (len <= 0) break;
+      i += 2 + len;
+    }
+  }
+  return null;
+}
+
+export interface PreparedBackground {
+  dataUrl: string;
+  bytes: number;
+  width: number | null;
+  height: number | null;
+  downscaled: boolean;
+  log: string;
+}
+
+/** Re-raster art through resvg at a bounded width. resvg is already loaded for
+ *  the promo render itself, so this adds no dependency. */
+function downscalePng(dataUrl: string, srcW: number, srcH: number, targetW: number): Uint8Array {
+  const targetH = Math.max(1, Math.round((srcH * targetW) / srcW));
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${targetW}" height="${targetH}" viewBox="0 0 ${targetW} ${targetH}">` +
+    `<image href="${dataUrl}" x="0" y="0" width="${targetW}" height="${targetH}" preserveAspectRatio="none"/></svg>`;
+  let r: any = null;
+  let img: any = null;
   try {
-    const res = await fetch(url, { redirect: "follow" });
-    if (!res.ok) return null;
-    const ct = res.headers.get("content-type") ?? "image/jpeg";
-    const buf = new Uint8Array(await res.arrayBuffer());
-    // base64 encode
-    let bin = "";
-    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-    const b64 = btoa(bin);
-    return `data:${ct};base64,${b64}`;
-  } catch {
+    r = new ResvgCtor(svg, { fitTo: { mode: "width", value: targetW } });
+    img = r.render();
+    return img.asPng();
+  } finally {
+    try { img?.free?.(); } catch { /* already freed */ }
+    try { r?.free?.(); } catch { /* already freed */ }
+  }
+
+}
+
+/**
+ * Fetch the background ONCE and hand back an inline-ready data URL.
+ *
+ * This exists so a caller that needs both the flattened render and the
+ * text-free editor plate does not fetch, base64-encode and inline the same art
+ * twice. Doing it twice is what pushed a 1.5 MB cover past the edge worker's
+ * memory ceiling: each pass materialised a ~3 MB binary string, a ~2 MB base64
+ * string and a ~2 MB SVG document, and every one of those was then copied into
+ * resvg's wasm linear memory, which only ever grows.
+ */
+export async function preparePromoBackground(
+  url: string | null | undefined,
+  scene: Pick<PromoScene, "width" | "height">,
+  tuning: { pixelBudget?: number; byteCeiling?: number } = {},
+): Promise<PreparedBackground | null> {
+  if (!url) return null;
+  await ensureWasm();
+  const pixelBudget = tuning.pixelBudget ?? BACKGROUND_PIXEL_BUDGET;
+  const byteCeiling = tuning.byteCeiling ?? BACKGROUND_BYTE_CEILING;
+
+
+  let res: Response;
+  try {
+    res = await fetch(url, { redirect: "follow" });
+  } catch (e) {
+    throw new PromoRenderError("background_fetch_failed", `Background fetch threw: ${(e as Error).message}`, { url });
+  }
+  if (!res.ok) {
+    // A missing/expired art URL is not fatal — the caller falls back to the
+    // generated plate, which is a designed surface in its own right.
+    await res.body?.cancel();
     return null;
   }
+
+  let contentType = res.headers.get("content-type") ?? "image/jpeg";
+  let bytes = new Uint8Array(await res.arrayBuffer());
+  const originalBytes = bytes.length;
+  const dims = sniffDimensions(bytes);
+  const notes: string[] = [
+    `src=${originalBytes}B${dims ? ` ${dims.width}x${dims.height}` : " dims=unknown"}`,
+  ];
+
+  const longEdge = Math.max(scene.width, scene.height);
+  const maxEdge = Math.round(longEdge * pixelBudget);
+  let downscaled = false;
+  let w = dims?.width ?? null;
+  let h = dims?.height ?? null;
+
+  const overPixels = !!dims && Math.max(dims.width, dims.height) > maxEdge;
+  const overBytes = originalBytes > byteCeiling;
+
+  if ((overPixels || overBytes) && dims) {
+    let curBytes = bytes;
+    let curW = dims.width;
+    let curH = dims.height;
+    for (let pass = 0; pass < MAX_DOWNSCALE_PASSES; pass++) {
+      const byEdge = Math.max(curW, curH) > maxEdge
+        ? Math.max(1, Math.round((curW * maxEdge) / Math.max(curW, curH)))
+        : curW;
+      // Byte pressure gets halved per pass on top of the pixel budget.
+      const target = curBytes.length > byteCeiling
+        ? Math.max(320, Math.round(Math.min(byEdge, curW) / 2))
+        : byEdge;
+      if (target >= curW) break;
+      const srcUrl = `data:${contentType};base64,${toBase64(curBytes)}`;
+      try {
+        curBytes = downscalePng(srcUrl, curW, curH, target) as Uint8Array<ArrayBuffer>;
+      } catch (e) {
+        throw new PromoRenderError(
+          "background_downscale_failed",
+          `Could not downscale background (${curW}x${curH}, ${curBytes.length}B): ${(e as Error).message}`,
+          { url, width: curW, height: curH, bytes: curBytes.length },
+        );
+      }
+      curH = Math.max(1, Math.round((curH * target) / curW));
+      curW = target;
+      contentType = "image/png";
+      downscaled = true;
+      if (curBytes.length <= byteCeiling && Math.max(curW, curH) <= maxEdge) break;
+    }
+    bytes = curBytes;
+    w = curW;
+    h = curH;
+    notes.push(`downscaled->${curW}x${curH} ${bytes.length}B`);
+  }
+
+  if (bytes.length > byteCeiling) {
+    throw new PromoRenderError(
+      "background_too_large",
+      `Background art is ${bytes.length} bytes after ${MAX_DOWNSCALE_PASSES} downscale passes, ceiling is ${byteCeiling}.`,
+      { url, bytes: bytes.length, ceiling: byteCeiling },
+    );
+  }
+
+  const dataUrl = `data:${contentType};base64,${toBase64(bytes)}`;
+  notes.push(`inline=${dataUrl.length}B`);
+  return { dataUrl, bytes: bytes.length, width: w, height: h, downscaled, log: notes.join(" ") };
 }
 
 function rgbaFromCss(rgba: string): string {
@@ -79,21 +255,29 @@ function rgbaFromCss(rgba: string): string {
   return rgba;
 }
 
-/** Render a scene. `includeText: false` produces the text-free "background
- *  plate" (image + gradient + accent bar) that the editor uses as its base so
- *  overlay_config text layers are not drawn on top of already-baked glyphs. */
+/**
+ * Render a scene.
+ *
+ * `includeText: false` produces the text-free "background plate" (image +
+ * gradient + accent bar) that the editor uses as its base so overlay_config
+ * text layers are not drawn on top of already-baked glyphs.
+ *
+ * `background` lets a caller that needs BOTH outputs prepare the art once with
+ * `preparePromoBackground` and reuse it. Omit it and the art is prepared
+ * per-call; pass `null` to render with no art at all.
+ */
 export async function renderPromoSceneToPng(
   scene: PromoScene,
-  opts: { includeText?: boolean } = {},
+  opts: { includeText?: boolean; background?: PreparedBackground | null } = {},
 ): Promise<Uint8Array> {
   const includeText = opts.includeText !== false;
   await ensureWasm();
 
-  // Preload background as data URL for self-contained SVG
-  let bgHref: string | null = null;
-  if (scene.backgroundUrl) {
-    bgHref = await fetchAsDataUrl(scene.backgroundUrl);
-  }
+  const prepared = opts.background !== undefined
+    ? opts.background
+    : await preparePromoBackground(scene.backgroundUrl, scene);
+  const bgHref: string | null = prepared?.dataUrl ?? null;
+
 
   const w = scene.width;
   const h = scene.height;
@@ -246,16 +430,28 @@ export async function renderPromoSceneToPng(
   ${textNodes}
 </svg>`;
 
-  const resvg = new ResvgCtor(svg, {
-    background: scene.backgroundFallbackHex,
-    fitTo: { mode: "width", value: w },
-    font: {
-      loadSystemFonts: false, // deterministic — only the buffers below
-      fontBuffers,
-      defaultFontFamily: SERVER_FONT_FAMILY,
-    },
-  });
+  // wasm-bindgen objects are NOT garbage collected — an unfreed Resvg keeps
+  // its parsed tree and decoded source bitmap in wasm linear memory, and an
+  // unfreed RenderedImage keeps the full w*h*4 output pixmap. Linear memory
+  // only ever grows, so leaking one render made the second one (the plate)
+  // allocate a whole second set on top. That is what actually blew the worker.
+  let resvg: any = null;
+  let rendered: any = null;
+  try {
+    resvg = new ResvgCtor(svg, {
+      background: scene.backgroundFallbackHex,
+      fitTo: { mode: "width", value: w },
+      font: {
+        loadSystemFonts: false, // deterministic — only the buffers below
+        fontBuffers,
+        defaultFontFamily: SERVER_FONT_FAMILY,
+      },
+    });
+    rendered = resvg.render();
+    return rendered.asPng();
+  } finally {
+    try { rendered?.free?.(); } catch { /* already freed */ }
+    try { resvg?.free?.(); } catch { /* already freed */ }
+  }
 
-  const png = resvg.render().asPng();
-  return png;
 }

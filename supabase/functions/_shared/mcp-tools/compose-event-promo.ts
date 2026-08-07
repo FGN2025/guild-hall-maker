@@ -2,7 +2,41 @@ import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, supabaseServiceRole, requireAuth, okJson, toolError } from "./_shared.ts";
 import { composePromoLayout, promoSceneToEditorTexts, PROMO_DIMENSIONS } from "../promo/composePromoLayout.ts";
-import { renderPromoSceneToPng } from "../promo/renderPromo.ts";
+import { PromoRenderError } from "../promo/renderPromo.ts";
+import type { PromoScene } from "../promo/composePromoLayout.ts";
+
+/**
+ * Rasterize one scene in a dedicated `promo-render` worker so the render gets
+ * a CPU budget of its own. Any classified failure from the renderer is
+ * re-thrown as a PromoRenderError so the tool reports a named cause instead of
+ * an opaque worker error.
+ */
+async function renderViaWorker(scene: PromoScene, includeText: boolean): Promise<Uint8Array> {
+  const base = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!base || !key) throw new PromoRenderError("render_worker_unconfigured", "promo-render worker is not reachable from this function.");
+
+  const res = await fetch(`${base}/functions/v1/promo-render`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({ scene, includeText }),
+  });
+
+  if (!res.ok) {
+    let payload: Record<string, unknown> = {};
+    try { payload = await res.json(); } catch { payload = { message: await res.text().catch(() => "") }; }
+    throw new PromoRenderError(
+      String(payload.code ?? `render_worker_http_${res.status}`),
+      String(payload.message ?? `promo-render returned ${res.status}`),
+      { includeText, status: res.status, ...(payload.detail as Record<string, unknown> ?? {}) },
+    );
+  }
+  console.log(
+    `[compose_event_promo] render includeText=${includeText} ms=${res.headers.get("x-promo-ms")} bg=${res.headers.get("x-promo-background")}`,
+  );
+  return new Uint8Array(await res.arrayBuffer());
+}
+
 import { resolveEventArt } from "../promo/resolveEventArt.ts";
 
 
@@ -92,11 +126,18 @@ export default defineTool({
       console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
 
 
-      const png = await renderPromoSceneToPng(scene);
+      // Each raster goes to its own worker. One 1080x1350 render costs ~1.0-1.3s
+      // of CPU and the edge CPU budget is ~2s per request, so rendering the
+      // flattened promo AND the text-free editor plate in this request is what
+      // used to kill the run on the larger formats/covers. This tool now spends
+      // its own budget on DB and storage work only.
+      const png = await renderViaWorker(scene, true);
       // Text-free plate: the editor uses this as its base image so the
       // overlay_config text layers hydrate as the ONLY copy of the text
       // (composing over the flattened render would double every string).
-      const platePng = await renderPromoSceneToPng(scene, { includeText: false });
+      const platePng = await renderViaWorker(scene, false);
+
+
 
       // Storage upload — tenant-marketing bucket (composer output ingests via
       // the same path attach_tenant_asset_draft uses).
@@ -184,7 +225,26 @@ export default defineTool({
       return okJson({ ...row, art_provenance: art }, "asset");
 
     } catch (err) {
+      if (err instanceof PromoRenderError) {
+        // Loud and classified: the agent sees a named cause it can report or
+        // route around, instead of the run dying on an opaque worker error.
+        console.error(`[compose_event_promo] render_failed code=${err.code} ${err.message}`, err.detail);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              error: "compose_event_promo failed while preparing the background art",
+              code: err.code,
+              message: err.message,
+              detail: err.detail,
+              hint: "The event's image_url or the game's cover_image_url is too large to compose. Replace it with art no larger than 4 MB, or clear it so the composer falls back to the generated plate.",
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
       return toolError(err, "compose_event_promo");
     }
+
   },
 });
