@@ -172,6 +172,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
       }
     }
     setBulkBusyKey(null);
+    qc.invalidateQueries({ queryKey: ["ahead_pending_posts", tenantId] });
     if (failures.length) {
       toast.error(`Approved ${ok} of ${targets.length}. ${failures.length} failed: ${failures[0]}`);
     } else {
