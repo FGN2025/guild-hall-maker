@@ -603,6 +603,23 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           onSave={handleEditorSave}
         />
       )}
+
+      <ConfirmDialog
+        open={!!aheadConfirm}
+        onOpenChange={(open) => { if (!open) setAheadConfirm(null); }}
+        title={`Approve ${aheadConfirm?.rows.length ?? 0} upcoming post${aheadConfirm?.rows.length === 1 ? "" : "s"}?`}
+        description={
+          `Only posts still scheduled after ${
+            aheadConfirm?.cutoff ? new Date(aheadConfirm.cutoff).toLocaleString() : "the server cutoff"
+          } are included. Posts whose slot has already passed, and anything not awaiting review, are left untouched.`
+        }
+        onConfirm={() => {
+          const targets = aheadConfirm?.rows ?? [];
+          setAheadConfirm(null);
+          if (targets.length) bulkApprove("__ahead__", targets);
+        }}
+      />
     </div>
   );
+
 }
