@@ -135,12 +135,18 @@ const TenantMarketingDetail = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        setEditorAssetUrl(a.url);
+                        // Open on the TEXT-FREE plate with the composed copy
+                        // rehydrated as live layers — editing the flat PNG
+                        // bakes the headline in and it gets cropped, not
+                        // reflowed, when the reviewer switches format.
+                        setEditorAssetUrl((a as any).background_url ?? a.url);
                         setEditorAssetMeta({ id: a.source_asset_id ?? a.id, label: a.label });
+                        setEditorOverlayConfig(((a as any).overlay_config as Record<string, any>) ?? null);
                       }}
                     >
                       <Pencil className="h-4 w-4 mr-2" /> Customize
                     </Button>
+
                     <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
                       <Download className="h-4 w-4 mr-2" /> Download
                     </Button>
