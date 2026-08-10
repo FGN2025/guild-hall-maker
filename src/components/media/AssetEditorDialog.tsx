@@ -188,6 +188,47 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     }
   }, [open]);
 
+  // ── Tier 2: re-compose the promo copy block for the chosen format ──────────
+  // Assets produced by the server composer carry their composer inputs in
+  // overlay_config.promo. For those, switching format runs the SAME layout
+  // engine at the new aspect ratio (fresh wrapping, format-correct type scale)
+  // instead of proportionally squashing a portrait block into a banner.
+  const promoArgs = initialOverlayConfig?.promo ?? null;
+  const pendingPromoFormat = useRef<PromoFormat | null>(null);
+
+  const handleSetFormat = (fmt: CanvasFormat) => {
+    if (fmt.key === activeFormat.key) return;
+    if (promoArgs && fmt.key !== "original") {
+      pendingPromoFormat.current = fmt.key as PromoFormat;
+    }
+    setFormat(fmt);
+  };
+
+  // Runs after setFormat has applied the new canvasSize, so pct → px mapping
+  // and the font downscale both use the size the user is actually looking at.
+  useEffect(() => {
+    const target = pendingPromoFormat.current;
+    if (!target || !promoArgs) return;
+    if (activeFormat.key !== target) return;
+    if (!canvasSize.width || !canvasSize.height) return;
+    pendingPromoFormat.current = null;
+    try {
+      const scene = composePromoLayout({ ...promoArgs, format: target });
+      const k = canvasSize.width / scene.width; // scene is at output resolution
+      applyTemplate(
+        promoSceneToEditorTexts(scene).map((t) => ({
+          ...t,
+          fontSize: Math.max(1, Math.round(t.fontSize * k)),
+        })) as any
+      );
+    } catch {
+      // Layout failure must never strand the editor — the Tier 1 reflow that
+      // setFormat already applied stays in place as the fallback.
+    }
+  }, [activeFormat.key, canvasSize.width, canvasSize.height, promoArgs, applyTemplate]);
+
+
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) addLogo(file);
