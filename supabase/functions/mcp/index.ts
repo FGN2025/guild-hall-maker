@@ -1759,6 +1759,7 @@ var compose_event_promo_default = defineTool21({
       const plateUrl = await sign(platePath);
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
+        promo: promoArgs,
         overlays: promoSceneToEditorTexts(scene).map((t) => ({
           id: crypto.randomUUID(),
           type: "text",

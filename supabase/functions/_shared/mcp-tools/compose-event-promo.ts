@@ -187,6 +187,7 @@ export default defineTool({
 
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
+        promo: promoArgs,
         overlays: promoSceneToEditorTexts(scene).map((t) => ({
           id: crypto.randomUUID(),
           type: "text",
