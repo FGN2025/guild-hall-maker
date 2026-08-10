@@ -93,6 +93,6 @@ Deno.serve(async (req) => {
     }
     return Response.json(out, { headers: corsHeaders });
   } catch (e) {
-    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500, headers: corsHeaders });
+    return Response.json({ error: e instanceof Error ? e.message : JSON.stringify(e) }, { status: 500, headers: corsHeaders });
   }
 });
