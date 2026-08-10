@@ -29,6 +29,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  composePromoLayout,
+  promoSceneToEditorTexts,
+  type ComposePromoArgs as PromoArgs,
+  type PromoFormat,
+} from "@/lib/promo/composePromoLayout";
 
 const FONT_OPTIONS = [
   { value: "sans-serif", label: "Sans-serif" },
