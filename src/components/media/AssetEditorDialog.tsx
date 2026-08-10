@@ -156,6 +156,13 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     (c) => compatiblePlatforms.includes(c.platform)
   );
 
+  // Follow a late-arriving base image (callers may resolve the text-free plate
+  // asynchronously after opening the dialog).
+  useEffect(() => {
+    if (!open || !baseImageUrl) return;
+    setBaseImageUrl(baseImageUrl);
+  }, [open, baseImageUrl, setBaseImageUrl]);
+
   // Hydrate from persisted overlay_config (composer output, prior edits)
   useEffect(() => {
     if (!open) return;
