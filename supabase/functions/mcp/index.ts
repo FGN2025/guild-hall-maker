@@ -1703,7 +1703,7 @@ var compose_event_promo_default = defineTool21({
         evt = data;
       }
       const { data: tenant } = await userSupabase.from("tenants").select("name, primary_color, accent_color").eq("id", input.tenant_id).maybeSingle();
-      const scene = composePromoLayout({
+      const promoArgs = {
         event: {
           name: evt.name,
           game: evt.game ?? null,
@@ -1716,7 +1716,8 @@ var compose_event_promo_default = defineTool21({
         tenantAccentColor: tenant?.accent_color ?? null,
         format: input.format,
         beatLabel: input.beat_label ?? null
-      });
+      };
+      const scene = composePromoLayout(promoArgs);
       console.log(`[compose_event_promo] event=${evt.id} ${scene.titleNormalization.log}`);
       const art = await resolveEventArt(
         { image_url: evt.image_url ?? null, game: evt.game ?? null, name: evt.name },
@@ -1758,6 +1759,7 @@ var compose_event_promo_default = defineTool21({
       const plateUrl = await sign(platePath);
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
+        promo: promoArgs,
         overlays: promoSceneToEditorTexts(scene).map((t) => ({
           id: crypto.randomUUID(),
           type: "text",

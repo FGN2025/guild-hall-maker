@@ -9,6 +9,7 @@ import { ArrowLeft, Download, Copy, Check, BookmarkPlus, Pencil, Trash2 } from "
 import { useState } from "react";
 import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
+import { derivePromoArgs, beatLabelFromOverlays } from "@/lib/promo/derivePromoArgs";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import CampaignStatusBadge, { resolveCampaignStatus } from "@/components/marketing/CampaignStatusBadge";
@@ -27,6 +28,8 @@ const TenantMarketingDetail = () => {
   const [copied, setCopied] = useState(false);
   const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
   const [editorAssetMeta, setEditorAssetMeta] = useState<{ id: string; label: string } | null>(null);
+  /** Composer/editor layers for the asset being customized (null for plain library art). */
+  const [editorOverlayConfig, setEditorOverlayConfig] = useState<Record<string, any> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; file_path: string; label: string } | null>(null);
   const campaign = campaigns.find((c) => c.id === id);
 
@@ -134,13 +137,32 @@ const TenantMarketingDetail = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        setEditorAssetUrl(a.url);
+                      onClick={async () => {
+                        // Open on the TEXT-FREE plate with the composed copy
+                        // rehydrated as live layers — editing the flat PNG
+                        // bakes the headline in and it gets cropped, not
+                        // reflowed, when the reviewer switches format.
+                        setEditorAssetUrl((a as any).background_url ?? a.url);
                         setEditorAssetMeta({ id: a.source_asset_id ?? a.id, label: a.label });
+                        const cfg = ((a as any).overlay_config as Record<string, any>) ?? null;
+                        setEditorOverlayConfig(cfg);
+                        // Legacy assets have no persisted composer inputs; rebuild
+                        // them from the campaign's event so format switches can
+                        // re-layout rather than merely rescale.
+                        if (cfg && !cfg.promo) {
+                          const promo = await derivePromoArgs({
+                            tenantId: tenantInfo?.tenantId,
+                            sourceEventId: campaign.source_event_id,
+                            sourceTournamentId: campaign.source_tournament_id,
+                            beatLabel: beatLabelFromOverlays(cfg.overlays),
+                          });
+                          if (promo) setEditorOverlayConfig({ ...cfg, promo });
+                        }
                       }}
                     >
                       <Pencil className="h-4 w-4 mr-2" /> Customize
                     </Button>
+
                     <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
                       <Download className="h-4 w-4 mr-2" /> Download
                     </Button>
@@ -163,6 +185,7 @@ const TenantMarketingDetail = () => {
                       onClick={() => {
                         setEditorAssetUrl(a.url);
                         setEditorAssetMeta({ id: a.id, label: a.label });
+                        setEditorOverlayConfig(null);
                       }}
                     >
                       <Pencil className="h-4 w-4 mr-2" /> Customize
@@ -206,8 +229,9 @@ const TenantMarketingDetail = () => {
       {editorAssetUrl && editorAssetMeta && (
         <AssetEditorDialog
           open={!!editorAssetUrl}
-          onOpenChange={(open) => { if (!open) { setEditorAssetUrl(null); setEditorAssetMeta(null); } }}
+          onOpenChange={(open) => { if (!open) { setEditorAssetUrl(null); setEditorAssetMeta(null); setEditorOverlayConfig(null); } }}
           baseImageUrl={editorAssetUrl}
+          initialOverlayConfig={editorOverlayConfig as any}
           onSave={async (blob, meta) => {
             const file = new File([blob], `customized-${Date.now()}.png`, { type: "image/png" });
             await uploadAsset.mutateAsync({

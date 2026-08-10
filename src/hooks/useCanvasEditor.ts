@@ -256,20 +256,57 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     setBaseImageUrlState(url);
   }, []);
 
-  // Set format
+  /** Reflow every overlay from one canvas size to another.
+   *  Positions move proportionally on each axis; type and object sizes use the
+   *  smaller of the two ratios so nothing overflows the new safe area. */
+  const reflowOverlays = useCallback(
+    (from: { width: number; height: number }, to: { width: number; height: number }) => {
+      if (!from.width || !from.height || !to.width || !to.height) return;
+      if (from.width === to.width && from.height === to.height) return;
+      const kx = to.width / from.width;
+      const ky = to.height / from.height;
+      const k = Math.min(kx, ky);
+      pushState(
+        overlays.map((o) => {
+          const next: any = { ...o, x: Math.round(o.x * kx), y: Math.round(o.y * ky) };
+          if (o.type === "text") {
+            next.fontSize = Math.max(1, Math.round(o.fontSize * k));
+          } else {
+            next.width = Math.round((o as any).width * kx);
+            next.height = Math.round((o as any).height * ky);
+            if (o.type === "shape" && typeof o.strokeWidth === "number") {
+              next.strokeWidth = Math.max(0, o.strokeWidth * k);
+            }
+          }
+          return next as Overlay;
+        })
+      );
+    },
+    [overlays, pushState]
+  );
+
+  // Set format — the canvas resizes AND the overlays reflow with it, so text
+  // authored for one aspect ratio never lands off-canvas in another.
   const setFormat = useCallback((format: CanvasFormat) => {
     setActiveFormat(format);
+    const prev = canvasSize;
+    let next = prev;
     if (format.key === "original" && baseImage) {
       const maxW = 800;
       const scale = Math.min(1, maxW / baseImage.naturalWidth);
-      setCanvasSize({
+      next = {
         width: Math.round(baseImage.naturalWidth * scale),
         height: Math.round(baseImage.naturalHeight * scale),
-      });
+      };
     } else if (format.key !== "original") {
-      setCanvasSize({ width: format.displayWidth, height: format.displayHeight });
+      next = { width: format.displayWidth, height: format.displayHeight };
     }
-  }, [baseImage]);
+    if (next !== prev) {
+      setCanvasSize(next);
+      reflowOverlays(prev, next);
+    }
+  }, [baseImage, canvasSize, reflowOverlays]);
+
 
   // Render
   const renderCanvas = useCallback(() => {

@@ -106,7 +106,10 @@ export default defineTool({
         .eq("id", input.tenant_id)
         .maybeSingle();
 
-      const scene = composePromoLayout({
+      // Kept as a named value: it is both the render input AND what we persist
+      // on the asset, so the editor can re-compose the copy block when a
+      // reviewer switches aspect ratio instead of rescaling a fixed layout.
+      const promoArgs = {
         event: {
           name: evt.name,
           game: evt.game ?? null,
@@ -119,7 +122,9 @@ export default defineTool({
         tenantAccentColor: (tenant as any)?.accent_color ?? null,
         format: input.format,
         beatLabel: input.beat_label ?? null,
-      });
+      };
+      const scene = composePromoLayout(promoArgs);
+
       console.log(`[compose_event_promo] event=${evt.id} ${scene.titleNormalization.log}`);
 
       // Background art: event image -> game cover art -> branded plate.
@@ -182,6 +187,7 @@ export default defineTool({
 
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
+        promo: promoArgs,
         overlays: promoSceneToEditorTexts(scene).map((t) => ({
           id: crypto.randomUUID(),
           type: "text",

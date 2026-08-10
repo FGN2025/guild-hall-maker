@@ -29,6 +29,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  composePromoLayout,
+  promoSceneToEditorTexts,
+  type ComposePromoArgs as PromoArgs,
+  type PromoFormat,
+} from "@/lib/promo/composePromoLayout";
 
 const FONT_OPTIONS = [
   { value: "sans-serif", label: "Sans-serif" },
@@ -61,6 +67,9 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
 export type SavedOverlayConfig = {
   canvas?: { format?: string; width?: number; height?: number };
   overlays: Array<Record<string, any>>;
+  /** Composer inputs, persisted so the editor can RE-COMPOSE the copy block
+   *  for a different aspect ratio instead of merely rescaling it. */
+  promo?: PromoArgs | null;
 };
 
 export type AssetSaveMeta = {
@@ -81,6 +90,7 @@ interface AssetEditorDialogProps {
    *  the asset re-opens fully editable. */
   initialOverlayConfig?: SavedOverlayConfig | null;
 }
+
 
 const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTexts, initialOverlayConfig }: AssetEditorDialogProps) => {
   const {
@@ -146,6 +156,13 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     (c) => compatiblePlatforms.includes(c.platform)
   );
 
+  // Follow a late-arriving base image (callers may resolve the text-free plate
+  // asynchronously after opening the dialog).
+  useEffect(() => {
+    if (!open || !baseImageUrl) return;
+    setBaseImageUrl(baseImageUrl);
+  }, [open, baseImageUrl, setBaseImageUrl]);
+
   // Hydrate from persisted overlay_config (composer output, prior edits)
   useEffect(() => {
     if (!open) return;
@@ -178,6 +195,47 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     }
   }, [open]);
 
+  // ── Tier 2: re-compose the promo copy block for the chosen format ──────────
+  // Assets produced by the server composer carry their composer inputs in
+  // overlay_config.promo. For those, switching format runs the SAME layout
+  // engine at the new aspect ratio (fresh wrapping, format-correct type scale)
+  // instead of proportionally squashing a portrait block into a banner.
+  const promoArgs = initialOverlayConfig?.promo ?? null;
+  const pendingPromoFormat = useRef<PromoFormat | null>(null);
+
+  const handleSetFormat = (fmt: CanvasFormat) => {
+    if (fmt.key === activeFormat.key) return;
+    if (promoArgs && fmt.key !== "original") {
+      pendingPromoFormat.current = fmt.key as PromoFormat;
+    }
+    setFormat(fmt);
+  };
+
+  // Runs after setFormat has applied the new canvasSize, so pct → px mapping
+  // and the font downscale both use the size the user is actually looking at.
+  useEffect(() => {
+    const target = pendingPromoFormat.current;
+    if (!target || !promoArgs) return;
+    if (activeFormat.key !== target) return;
+    if (!canvasSize.width || !canvasSize.height) return;
+    pendingPromoFormat.current = null;
+    try {
+      const scene = composePromoLayout({ ...promoArgs, format: target });
+      const k = canvasSize.width / scene.width; // scene is at output resolution
+      applyTemplate(
+        promoSceneToEditorTexts(scene).map((t) => ({
+          ...t,
+          fontSize: Math.max(1, Math.round(t.fontSize * k)),
+        })) as any
+      );
+    } catch {
+      // Layout failure must never strand the editor — the Tier 1 reflow that
+      // setFormat already applied stays in place as the fallback.
+    }
+  }, [activeFormat.key, canvasSize.width, canvasSize.height, promoArgs, applyTemplate]);
+
+
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) addLogo(file);
@@ -207,7 +265,11 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
       }
       return { ...o };
     }),
+    // Carry the composer inputs forward so a reviewer-saved copy is still
+    // re-composable per format.
+    promo: promoArgs ?? null,
   });
+
 
   const handleSave = async () => {
     setSaving(true);
@@ -274,7 +336,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               size="sm"
               variant={activeFormat.key === fmt.key ? "default" : "outline"}
               className="gap-1.5 text-xs"
-              onClick={() => setFormat(fmt)}
+              onClick={() => handleSetFormat(fmt)}
             >
               {FORMAT_ICONS[fmt.key]}
               {fmt.label}
