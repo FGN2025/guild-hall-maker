@@ -171,6 +171,7 @@ const TenantMarketingDetail = () => {
                       onClick={() => {
                         setEditorAssetUrl(a.url);
                         setEditorAssetMeta({ id: a.id, label: a.label });
+                        setEditorOverlayConfig(null);
                       }}
                     >
                       <Pencil className="h-4 w-4 mr-2" /> Customize
