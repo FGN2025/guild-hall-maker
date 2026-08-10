@@ -35,6 +35,11 @@ async function mkUser(role: string | null, tenantId: string | null) {
   const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (error) throw error;
   if (role && tenantId) {
+    // Synthetic accounts are born as players (profile + interests); clear those
+    // markers so the "players cannot join a tenant team" guard doesn't fire.
+    await admin.from("user_service_interests").delete().eq("user_id", data.user.id);
+    await admin.from("tenant_subscribers").delete().eq("user_id", data.user.id);
+    await admin.from("profiles").update({ zip_code: null }).eq("user_id", data.user.id);
     const { error: e2 } = await admin.from("tenant_admins").insert({ tenant_id: tenantId, user_id: data.user.id, role });
     if (e2) throw e2;
   }
