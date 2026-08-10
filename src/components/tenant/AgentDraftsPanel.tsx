@@ -289,20 +289,38 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     if (!a.id) return;
     const { data } = await supabase
       .from("tenant_marketing_assets")
-      .select("background_url, overlay_config")
+      .select("background_url, overlay_config, campaign_id")
       .eq("id", a.id)
       .maybeSingle();
     if (!data) return;
+    let cfg = ((data as any).overlay_config as Record<string, any>) ?? null;
+    // Legacy assets predate persisted composer inputs; rebuild them from the
+    // campaign's event so a format switch can re-layout, not just rescale.
+    if (cfg && !cfg.promo && (data as any).campaign_id) {
+      const { data: camp } = await supabase
+        .from("marketing_campaigns")
+        .select("source_event_id, source_tournament_id")
+        .eq("id", (data as any).campaign_id)
+        .maybeSingle();
+      const promo = await derivePromoArgs({
+        tenantId: tenantInfo?.tenantId,
+        sourceEventId: (camp as any)?.source_event_id ?? null,
+        sourceTournamentId: (camp as any)?.source_tournament_id ?? null,
+        beatLabel: beatLabelFromOverlays(cfg.overlays),
+      });
+      if (promo) cfg = { ...cfg, promo };
+    }
     setEditTarget((cur) =>
       cur && cur.id === a.id
         ? {
             ...cur,
             source_url: (data as any).background_url ?? cur.source_url ?? null,
-            overlay_config: ((data as any).overlay_config as Record<string, any>) ?? cur.overlay_config ?? null,
+            overlay_config: cfg ?? cur.overlay_config ?? null,
           }
         : cur
     );
   }
+
 
 
   const handleEditorSave = async (blob: Blob, meta?: AssetSaveMeta) => {
