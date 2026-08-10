@@ -325,7 +325,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               size="sm"
               variant={activeFormat.key === fmt.key ? "default" : "outline"}
               className="gap-1.5 text-xs"
-              onClick={() => setFormat(fmt)}
+              onClick={() => handleSetFormat(fmt)}
             >
               {FORMAT_ICONS[fmt.key]}
               {fmt.label}
