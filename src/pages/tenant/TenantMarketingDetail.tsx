@@ -27,6 +27,8 @@ const TenantMarketingDetail = () => {
   const [copied, setCopied] = useState(false);
   const [editorAssetUrl, setEditorAssetUrl] = useState<string | null>(null);
   const [editorAssetMeta, setEditorAssetMeta] = useState<{ id: string; label: string } | null>(null);
+  /** Composer/editor layers for the asset being customized (null for plain library art). */
+  const [editorOverlayConfig, setEditorOverlayConfig] = useState<Record<string, any> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; file_path: string; label: string } | null>(null);
   const campaign = campaigns.find((c) => c.id === id);
 
