@@ -9,6 +9,7 @@ import { Bot, Check, X, Loader2, MessageSquare, Image as ImageIcon, CalendarCloc
 import { formatDistanceToNow } from "date-fns";
 import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
 import AssetEditorDialog, { type AssetSaveMeta } from "@/components/media/AssetEditorDialog";
+import { derivePromoArgs, beatLabelFromOverlays } from "@/lib/promo/derivePromoArgs";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
 import { useAheadPendingPosts, fetchAheadPendingPosts } from "@/hooks/useAheadPendingPosts";
