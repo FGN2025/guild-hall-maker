@@ -258,7 +258,11 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
       }
       return { ...o };
     }),
+    // Carry the composer inputs forward so a reviewer-saved copy is still
+    // re-composable per format.
+    promo: promoArgs ?? null,
   });
+
 
   const handleSave = async () => {
     setSaving(true);
