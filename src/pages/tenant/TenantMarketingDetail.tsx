@@ -214,8 +214,9 @@ const TenantMarketingDetail = () => {
       {editorAssetUrl && editorAssetMeta && (
         <AssetEditorDialog
           open={!!editorAssetUrl}
-          onOpenChange={(open) => { if (!open) { setEditorAssetUrl(null); setEditorAssetMeta(null); } }}
+          onOpenChange={(open) => { if (!open) { setEditorAssetUrl(null); setEditorAssetMeta(null); setEditorOverlayConfig(null); } }}
           baseImageUrl={editorAssetUrl}
+          initialOverlayConfig={editorOverlayConfig as any}
           onSave={async (blob, meta) => {
             const file = new File([blob], `customized-${Date.now()}.png`, { type: "image/png" });
             await uploadAsset.mutateAsync({
