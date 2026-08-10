@@ -11,6 +11,8 @@ import { AssetReviewDialog, type AssetReviewItem } from "./AssetReviewDialog";
 import AssetEditorDialog, { type AssetSaveMeta } from "@/components/media/AssetEditorDialog";
 import { useTenantMarketingAssets } from "@/hooks/useTenantMarketingAssets";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
+import { useAheadPendingPosts, fetchAheadPendingPosts } from "@/hooks/useAheadPendingPosts";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -170,12 +172,44 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
       }
     }
     setBulkBusyKey(null);
+    qc.invalidateQueries({ queryKey: ["ahead_pending_posts", tenantId] });
     if (failures.length) {
       toast.error(`Approved ${ok} of ${targets.length}. ${failures.length} failed: ${failures[0]}`);
     } else {
       toast.success(`Approved ${ok} draft${ok === 1 ? "" : "s"}`);
     }
   };
+
+  // ---- Ahead-only bulk approve -------------------------------------------
+  // Acts on scheduled posts whose slot is still in the future. The cutoff is
+  // evaluated by Postgres (see useAheadPendingPosts), never by the browser
+  // clock, so two reviewers in different timezones act on the same set. This is
+  // a FILTER over the existing approval path — it writes status only through
+  // useDraftDecision, exactly like the other bulk buttons.
+  const { data: ahead } = useAheadPendingPosts(tenantId);
+  const [aheadConfirm, setAheadConfirm] = useState<{ rows: DraftRow[]; cutoff: string | null } | null>(null);
+
+  const aheadRows = useMemo(() => {
+    const idSet = new Set(ahead?.ids ?? []);
+    return rows.filter((r) => r.kind === "scheduled_post" && r.status === "pending_review" && idSet.has(r.id));
+  }, [rows, ahead]);
+
+  const openAheadConfirm = async () => {
+    if (!tenantId) return;
+    try {
+      // Re-read at click time so an aged-out slot can't slip through on a stale cache.
+      const fresh = await fetchAheadPendingPosts(tenantId);
+      const idSet = new Set(fresh.ids);
+      const targets = rows.filter(
+        (r) => r.kind === "scheduled_post" && r.status === "pending_review" && idSet.has(r.id),
+      );
+      setAheadConfirm({ rows: targets, cutoff: fresh.serverNow });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not read the upcoming set");
+    }
+  };
+
+
 
 
   const campaignIds = useMemo(() => {
@@ -287,10 +321,22 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         <h2 className="text-lg font-heading">Review queue</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
         {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
+        {canDecide && aheadRows.length > 0 && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="ml-auto"
+            disabled={!!bulkBusyKey}
+            onClick={openAheadConfirm}
+          >
+            {bulkBusyKey === "__ahead__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CalendarClock className="h-4 w-4 mr-1" />}
+            Approve upcoming only ({aheadRows.length})
+          </Button>
+        )}
         {canDecide && pending.length > 0 && (
           <Button
             size="sm"
-            className="ml-auto"
+            className={aheadRows.length > 0 ? "" : "ml-auto"}
             disabled={!!bulkBusyKey}
             onClick={() => bulkApprove("__all__", pending)}
           >
@@ -299,6 +345,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           </Button>
         )}
       </div>
+
       <p className="text-sm text-muted-foreground">
         {canDecide
           ? "Nothing here publishes automatically. Approve to make a draft live; reject with a note so the creator (or agent) can revise it."
@@ -557,6 +604,23 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           onSave={handleEditorSave}
         />
       )}
+
+      <ConfirmDialog
+        open={!!aheadConfirm}
+        onOpenChange={(open) => { if (!open) setAheadConfirm(null); }}
+        title={`Approve ${aheadConfirm?.rows.length ?? 0} upcoming post${aheadConfirm?.rows.length === 1 ? "" : "s"}?`}
+        description={
+          `Only posts still scheduled after ${
+            aheadConfirm?.cutoff ? new Date(aheadConfirm.cutoff).toLocaleString() : "the server cutoff"
+          } are included. Posts whose slot has already passed, and anything not awaiting review, are left untouched.`
+        }
+        onConfirm={() => {
+          const targets = aheadConfirm?.rows ?? [];
+          setAheadConfirm(null);
+          if (targets.length) bulkApprove("__ahead__", targets);
+        }}
+      />
     </div>
   );
+
 }
