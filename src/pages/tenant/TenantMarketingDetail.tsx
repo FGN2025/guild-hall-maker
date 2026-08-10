@@ -136,14 +136,27 @@ const TenantMarketingDetail = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
+                      onClick={async () => {
                         // Open on the TEXT-FREE plate with the composed copy
                         // rehydrated as live layers — editing the flat PNG
                         // bakes the headline in and it gets cropped, not
                         // reflowed, when the reviewer switches format.
                         setEditorAssetUrl((a as any).background_url ?? a.url);
                         setEditorAssetMeta({ id: a.source_asset_id ?? a.id, label: a.label });
-                        setEditorOverlayConfig(((a as any).overlay_config as Record<string, any>) ?? null);
+                        const cfg = ((a as any).overlay_config as Record<string, any>) ?? null;
+                        setEditorOverlayConfig(cfg);
+                        // Legacy assets have no persisted composer inputs; rebuild
+                        // them from the campaign's event so format switches can
+                        // re-layout rather than merely rescale.
+                        if (cfg && !cfg.promo) {
+                          const promo = await derivePromoArgs({
+                            tenantId: tenantInfo?.tenantId,
+                            sourceEventId: campaign.source_event_id,
+                            sourceTournamentId: campaign.source_tournament_id,
+                            beatLabel: beatLabelFromOverlays(cfg.overlays),
+                          });
+                          if (promo) setEditorOverlayConfig({ ...cfg, promo });
+                        }
                       }}
                     >
                       <Pencil className="h-4 w-4 mr-2" /> Customize
