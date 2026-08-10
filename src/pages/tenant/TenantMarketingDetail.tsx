@@ -107,19 +107,55 @@ const TenantMarketingDetail = () => {
         </Card>
       )}
 
+      {/* TD-001 repair: the composer writes to `tenant_marketing_assets`, so the
+          variants panel reads that table first and falls back to any legacy
+          `marketing_assets` rows (older platform-authored campaigns). */}
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-4">Asset Variants</h2>
+        <h2 className="font-heading text-lg font-semibold mb-1">Asset Variants</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Art attached to this campaign, including graphics composed by the marketing agent.
+        </p>
         {loadingAssets ? (
           <div className="flex justify-center py-8"><div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full" /></div>
-        ) : assets.length === 0 ? (
+        ) : composedPromos.length === 0 && assets.length === 0 ? (
           <p className="text-sm text-muted-foreground">No assets available for this campaign.</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
+            {composedPromos.map((a) => (
+              <Card key={a.id} className="overflow-hidden">
+                <img src={a.url} alt={a.label} className="w-full h-48 object-cover" loading="lazy" />
+                <CardContent className="pt-4 space-y-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="secondary">{a.label}</Badge>
+                    {a.agent_source && <Badge variant="outline">Agent</Badge>}
+                    {!a.is_published && <Badge variant="outline">Draft</Badge>}
+                  </div>
+                  <div className="flex flex-wrap gap-2 w-full">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditorAssetUrl(a.url);
+                        setEditorAssetMeta({ id: a.source_asset_id ?? a.id, label: a.label });
+                      }}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" /> Customize
+                    </Button>
+                    <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
+                      <Download className="h-4 w-4 mr-2" /> Download
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
             {assets.map((a) => (
               <Card key={a.id} className="overflow-hidden">
-                <img src={a.url} alt={a.label} className="w-full h-48 object-cover" />
+                <img src={a.url} alt={a.label} className="w-full h-48 object-cover" loading="lazy" />
                 <CardContent className="pt-4 space-y-3">
-                  <Badge variant="secondary">{a.label}</Badge>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="secondary">{a.label}</Badge>
+                    <Badge variant="outline">Library</Badge>
+                  </div>
                   <div className="flex flex-wrap gap-2 w-full">
                     <Button
                       size="sm"
@@ -166,33 +202,6 @@ const TenantMarketingDetail = () => {
         )}
       </div>
 
-      {/* Composed promos live in the tenant library (agent-authored). Shown here
-          read-only so a campaign with art never looks empty. */}
-      {composedPromos.length > 0 && (
-        <div>
-          <h2 className="font-heading text-lg font-semibold mb-1">Composed Promos</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Art generated for this campaign, stored in your tenant library.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {composedPromos.map((a) => (
-              <Card key={a.id} className="overflow-hidden">
-                <img src={a.url} alt={a.label} className="w-full h-48 object-cover" loading="lazy" />
-                <CardContent className="pt-4 space-y-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="secondary">{a.label}</Badge>
-                    {a.agent_source && <Badge variant="outline">Agent</Badge>}
-                    {!a.is_published && <Badge variant="outline">Draft</Badge>}
-                  </div>
-                  <Button size="sm" onClick={() => handleDownload(a.url, a.label)}>
-                    <Download className="h-4 w-4 mr-2" /> Download
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
 
       {editorAssetUrl && editorAssetMeta && (
         <AssetEditorDialog
