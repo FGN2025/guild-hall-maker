@@ -61,6 +61,9 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
 export type SavedOverlayConfig = {
   canvas?: { format?: string; width?: number; height?: number };
   overlays: Array<Record<string, any>>;
+  /** Composer inputs, persisted so the editor can RE-COMPOSE the copy block
+   *  for a different aspect ratio instead of merely rescaling it. */
+  promo?: PromoArgs | null;
 };
 
 export type AssetSaveMeta = {
@@ -81,6 +84,7 @@ interface AssetEditorDialogProps {
    *  the asset re-opens fully editable. */
   initialOverlayConfig?: SavedOverlayConfig | null;
 }
+
 
 const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTexts, initialOverlayConfig }: AssetEditorDialogProps) => {
   const {
