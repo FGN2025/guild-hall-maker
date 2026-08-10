@@ -278,10 +278,32 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   }
 
   /** Open the shared image editor on a pending draft so reviewers can fix
-   *  small issues (typos, framing) instead of rejecting the whole draft. */
-  function openEditor(a: EditTarget) {
+   *  small issues (typos, framing) instead of rejecting the whole draft.
+   *
+   *  The list rows don't carry background_url/overlay_config, so fetch them
+   *  here: the editor must open on the TEXT-FREE plate with the copy hydrated
+   *  as live layers, otherwise the baked-in headline is what gets cropped when
+   *  the reviewer switches format. */
+  async function openEditor(a: EditTarget) {
     setEditTarget(a);
+    if (!a.id) return;
+    const { data } = await supabase
+      .from("tenant_marketing_assets")
+      .select("background_url, overlay_config")
+      .eq("id", a.id)
+      .maybeSingle();
+    if (!data) return;
+    setEditTarget((cur) =>
+      cur && cur.id === a.id
+        ? {
+            ...cur,
+            source_url: (data as any).background_url ?? cur.source_url ?? null,
+            overlay_config: ((data as any).overlay_config as Record<string, any>) ?? cur.overlay_config ?? null,
+          }
+        : cur
+    );
   }
+
 
   const handleEditorSave = async (blob: Blob, meta?: AssetSaveMeta) => {
     if (!editTarget) return;
