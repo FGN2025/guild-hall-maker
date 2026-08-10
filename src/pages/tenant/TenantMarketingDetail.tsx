@@ -9,6 +9,7 @@ import { ArrowLeft, Download, Copy, Check, BookmarkPlus, Pencil, Trash2 } from "
 import { useState } from "react";
 import { toast } from "sonner";
 import AssetEditorDialog from "@/components/media/AssetEditorDialog";
+import { derivePromoArgs, beatLabelFromOverlays } from "@/lib/promo/derivePromoArgs";
 import CampaignCodeLinker from "@/components/tenant/CampaignCodeLinker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import CampaignStatusBadge, { resolveCampaignStatus } from "@/components/marketing/CampaignStatusBadge";
