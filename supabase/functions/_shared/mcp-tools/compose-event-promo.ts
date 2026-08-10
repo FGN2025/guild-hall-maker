@@ -5,6 +5,11 @@ import { composePromoLayout, promoSceneToEditorTexts, PROMO_DIMENSIONS } from ".
 import { PromoRenderError } from "../promo/renderPromo.ts";
 import type { PromoScene } from "../promo/composePromoLayout.ts";
 
+// Type-only declaration so the app typecheck (Node libs) accepts the Deno
+// runtime global; erased at emit, no behaviour change in the edge runtime.
+declare const Deno: { env: { get(key: string): string | undefined } };
+
+
 /**
  * Rasterize one scene in a dedicated `promo-render` worker so the render gets
  * a CPU budget of its own. Any classified failure from the renderer is
