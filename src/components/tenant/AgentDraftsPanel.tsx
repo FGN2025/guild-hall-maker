@@ -177,6 +177,37 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     }
   };
 
+  // ---- Ahead-only bulk approve -------------------------------------------
+  // Acts on scheduled posts whose slot is still in the future. The cutoff is
+  // evaluated by Postgres (see useAheadPendingPosts), never by the browser
+  // clock, so two reviewers in different timezones act on the same set. This is
+  // a FILTER over the existing approval path — it writes status only through
+  // useDraftDecision, exactly like the other bulk buttons.
+  const { data: ahead } = useAheadPendingPosts(tenantId);
+  const [aheadConfirm, setAheadConfirm] = useState<{ rows: DraftRow[]; cutoff: string | null } | null>(null);
+
+  const aheadRows = useMemo(() => {
+    const idSet = new Set(ahead?.ids ?? []);
+    return rows.filter((r) => r.kind === "scheduled_post" && r.status === "pending_review" && idSet.has(r.id));
+  }, [rows, ahead]);
+
+  const openAheadConfirm = async () => {
+    if (!tenantId) return;
+    try {
+      // Re-read at click time so an aged-out slot can't slip through on a stale cache.
+      const fresh = await fetchAheadPendingPosts(tenantId);
+      const idSet = new Set(fresh.ids);
+      const targets = rows.filter(
+        (r) => r.kind === "scheduled_post" && r.status === "pending_review" && idSet.has(r.id),
+      );
+      setAheadConfirm({ rows: targets, cutoff: fresh.serverNow });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not read the upcoming set");
+    }
+  };
+
+
+
 
   const campaignIds = useMemo(() => {
     const ids = new Set<string>();
