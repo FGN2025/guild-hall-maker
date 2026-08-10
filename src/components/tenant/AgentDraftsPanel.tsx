@@ -320,10 +320,22 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         <h2 className="text-lg font-heading">Review queue</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
         {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
+        {canDecide && aheadRows.length > 0 && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="ml-auto"
+            disabled={!!bulkBusyKey}
+            onClick={openAheadConfirm}
+          >
+            {bulkBusyKey === "__ahead__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CalendarClock className="h-4 w-4 mr-1" />}
+            Approve upcoming only ({aheadRows.length})
+          </Button>
+        )}
         {canDecide && pending.length > 0 && (
           <Button
             size="sm"
-            className="ml-auto"
+            className={aheadRows.length > 0 ? "" : "ml-auto"}
             disabled={!!bulkBusyKey}
             onClick={() => bulkApprove("__all__", pending)}
           >
@@ -332,6 +344,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           </Button>
         )}
       </div>
+
       <p className="text-sm text-muted-foreground">
         {canDecide
           ? "Nothing here publishes automatically. Approve to make a draft live; reject with a note so the creator (or agent) can revise it."
