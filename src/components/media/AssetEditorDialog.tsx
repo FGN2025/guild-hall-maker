@@ -70,10 +70,16 @@ export type SavedOverlayConfig = {
   overlays: Array<Record<string, any>>;
   /** Manual background framing (pan + zoom) applied by the editor. */
   background?: { zoom?: number; offsetX?: number; offsetY?: number } | null;
+  /** Fixed scrim layer (bottom gradient + copy panel + accent bar). Kept out
+   *  of the background plate so it never pans/zooms with the artwork. */
+  scrim?: ScrimSpec | null;
+  /** Whether the scrim was composed for a photo/cover background. */
+  scrimImageBg?: boolean | null;
   /** Composer inputs, persisted so the editor can RE-COMPOSE the copy block
    *  for a different aspect ratio instead of merely rescaling it. */
   promo?: PromoArgs | null;
 };
+
 
 export type AssetSaveMeta = {
   overlayConfig: SavedOverlayConfig;
