@@ -264,6 +264,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     try {
       const scene = composePromoLayout({ ...promoArgs, format: target });
       const k = canvasSize.width / scene.width; // scene is at output resolution
+      // The scrim is a canvas-fixed layer, so it re-composes with the format
+      // rather than being cropped along with the artwork.
+      setScrim(scrimFromScene(scene, scrimIsImageBg));
       applyTemplate(
         promoSceneToEditorTexts(scene).map((t) => ({
           ...t,
@@ -274,7 +277,8 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
       // Layout failure must never strand the editor — the Tier 1 reflow that
       // setFormat already applied stays in place as the fallback.
     }
-  }, [activeFormat.key, canvasSize.width, canvasSize.height, promoArgs, applyTemplate]);
+  }, [activeFormat.key, canvasSize.width, canvasSize.height, promoArgs, applyTemplate, scrimIsImageBg, setScrim]);
+
 
 
 
