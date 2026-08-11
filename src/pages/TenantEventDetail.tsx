@@ -87,8 +87,23 @@ const TenantEventDetail = () => {
   const brandColor = tenant.primary_color || undefined;
   const isRegistered = !!(myReg as any)?.id;
 
+  const ev = event as any;
+  const eventPath = `/events/${tenantSlug}/${eventId}`;
+  const seoDescription = toMetaDescription(
+    ev?.description,
+    `${ev?.name ?? "Event"} hosted by ${tenant.name}. See the schedule, format and prizes, then register to play.`,
+  );
+
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={ev?.game ? `${ev.name} — ${ev.game}` : (ev?.name ?? "Event")}
+        description={seoDescription}
+        path={eventPath}
+        image={ev?.image_url ?? tenant.logo_url ?? undefined}
+        type="article"
+        jsonLd={ev ? buildEventJsonLd(ev, eventPath, tenant.name) : undefined}
+      />
       {/* Header */}
       <header className="border-b" style={{ backgroundColor: brandColor ? `${brandColor}10` : undefined }}>
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-3">
