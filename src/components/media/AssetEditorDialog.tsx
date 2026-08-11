@@ -144,6 +144,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     zoomBackgroundAt,
     resetBackgroundTransform,
     applyBgTransform,
+    scrim,
+    setScrim,
+
     cursorStyle,
     setBaseImageUrl,
     baseImageUrl: currentBaseImageUrl,
