@@ -1634,14 +1634,14 @@ async function resolveEventArt(event, supabase) {
 }
 
 // supabase/functions/_shared/mcp-tools/compose-event-promo.ts
-async function renderViaWorker(scene, includeText) {
+async function renderViaWorker(scene, includeText, includeScrim = true) {
   const base = Deno.env.get("SUPABASE_URL");
   const key2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!base || !key2) throw new PromoRenderError("render_worker_unconfigured", "promo-render worker is not reachable from this function.");
   const res = await fetch(`${base}/functions/v1/promo-render`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key2}` },
-    body: JSON.stringify({ scene, includeText })
+    body: JSON.stringify({ scene, includeText, includeScrim })
   });
   if (!res.ok) {
     let payload = {};
@@ -1726,7 +1726,7 @@ var compose_event_promo_default = defineTool21({
       scene.backgroundUrl = art.url;
       console.log(`[compose_event_promo] event=${evt.id} ${art.log}`);
       const png = await renderViaWorker(scene, true);
-      const platePng = await renderViaWorker(scene, false);
+      const platePng = await renderViaWorker(scene, false, false);
       const beat = (input.beat_label ?? "promo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "promo";
       const now = /* @__PURE__ */ new Date();
       const yyyy = now.getUTCFullYear();
@@ -1760,6 +1760,13 @@ var compose_event_promo_default = defineTool21({
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
         promo: promoArgs,
+        scrimImageBg: !!scene.backgroundUrl,
+        scrim: {
+          startPct: (scene.backgroundUrl ? scene.imageScrim : scene.plateScrim).startPct,
+          stops: (scene.backgroundUrl ? scene.imageScrim : scene.plateScrim).stops,
+          copyPanel: scene.backgroundUrl ? scene.copyPanel : null,
+          accentBar: scene.accentBar
+        },
         overlays: promoSceneToEditorTexts(scene).map((t) => ({
           id: crypto.randomUUID(),
           type: "text",

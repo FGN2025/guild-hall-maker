@@ -36,6 +36,8 @@ import {
   type ComposePromoArgs as PromoArgs,
   type PromoFormat,
 } from "@/lib/promo/composePromoLayout";
+import { scrimFromScene, type ScrimSpec } from "@/lib/promo/drawScrim";
+
 
 const FONT_OPTIONS = [
   { value: "sans-serif", label: "Sans-serif" },
@@ -70,10 +72,16 @@ export type SavedOverlayConfig = {
   overlays: Array<Record<string, any>>;
   /** Manual background framing (pan + zoom) applied by the editor. */
   background?: { zoom?: number; offsetX?: number; offsetY?: number } | null;
+  /** Fixed scrim layer (bottom gradient + copy panel + accent bar). Kept out
+   *  of the background plate so it never pans/zooms with the artwork. */
+  scrim?: ScrimSpec | null;
+  /** Whether the scrim was composed for a photo/cover background. */
+  scrimImageBg?: boolean | null;
   /** Composer inputs, persisted so the editor can RE-COMPOSE the copy block
    *  for a different aspect ratio instead of merely rescaling it. */
   promo?: PromoArgs | null;
 };
+
 
 export type AssetSaveMeta = {
   overlayConfig: SavedOverlayConfig;
@@ -136,6 +144,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     zoomBackgroundAt,
     resetBackgroundTransform,
     applyBgTransform,
+    scrim,
+    setScrim,
+
     cursorStyle,
     setBaseImageUrl,
     baseImageUrl: currentBaseImageUrl,
@@ -186,6 +197,8 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     const t = setTimeout(() => {
       hydrateOverlays(initialOverlayConfig.overlays, initialOverlayConfig.canvas);
       applyBgTransform(initialOverlayConfig.background);
+      setScrim(initialOverlayConfig.scrim ?? null);
+
       hydratedRef.current = true;
     }, 0);
     return () => clearTimeout(t);
@@ -203,6 +216,8 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
       appliedInitialRef.current = false;
       hydratedRef.current = false;
       resetBackgroundTransform();
+      setScrim(null);
+
     }
   }, [open, resetBackgroundTransform]);
 
@@ -230,7 +245,11 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
   // engine at the new aspect ratio (fresh wrapping, format-correct type scale)
   // instead of proportionally squashing a portrait block into a banner.
   const promoArgs = initialOverlayConfig?.promo ?? null;
+  const scrimIsImageBg =
+    initialOverlayConfig?.scrimImageBg ??
+    Boolean(initialOverlayConfig?.scrim?.copyPanel);
   const pendingPromoFormat = useRef<PromoFormat | null>(null);
+
 
   const handleSetFormat = (fmt: CanvasFormat) => {
     if (fmt.key === activeFormat.key) return;
@@ -251,6 +270,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     try {
       const scene = composePromoLayout({ ...promoArgs, format: target });
       const k = canvasSize.width / scene.width; // scene is at output resolution
+      // The scrim is a canvas-fixed layer, so it re-composes with the format
+      // rather than being cropped along with the artwork.
+      setScrim(scrimFromScene(scene, scrimIsImageBg));
       applyTemplate(
         promoSceneToEditorTexts(scene).map((t) => ({
           ...t,
@@ -261,7 +283,8 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
       // Layout failure must never strand the editor — the Tier 1 reflow that
       // setFormat already applied stays in place as the fallback.
     }
-  }, [activeFormat.key, canvasSize.width, canvasSize.height, promoArgs, applyTemplate]);
+  }, [activeFormat.key, canvasSize.width, canvasSize.height, promoArgs, applyTemplate, scrimIsImageBg, setScrim]);
+
 
 
 
@@ -297,6 +320,9 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     // Carry the composer inputs forward so a reviewer-saved copy is still
     // re-composable per format.
     background: { ...bgTransform },
+    scrim: scrim ?? null,
+    scrimImageBg: scrimIsImageBg,
+
     promo: promoArgs ?? null,
   });
 

@@ -16,7 +16,7 @@ declare const Deno: { env: { get(key: string): string | undefined } };
  * re-thrown as a PromoRenderError so the tool reports a named cause instead of
  * an opaque worker error.
  */
-async function renderViaWorker(scene: PromoScene, includeText: boolean): Promise<Uint8Array> {
+async function renderViaWorker(scene: PromoScene, includeText: boolean, includeScrim = true): Promise<Uint8Array> {
   const base = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!base || !key) throw new PromoRenderError("render_worker_unconfigured", "promo-render worker is not reachable from this function.");
@@ -24,7 +24,7 @@ async function renderViaWorker(scene: PromoScene, includeText: boolean): Promise
   const res = await fetch(`${base}/functions/v1/promo-render`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ scene, includeText }),
+    body: JSON.stringify({ scene, includeText, includeScrim }),
   });
 
   if (!res.ok) {
@@ -145,7 +145,10 @@ export default defineTool({
       // Text-free plate: the editor uses this as its base image so the
       // overlay_config text layers hydrate as the ONLY copy of the text
       // (composing over the flattened render would double every string).
-      const platePng = await renderViaWorker(scene, false);
+      // Scrim-free as well: the bottom gradient / copy panel / accent bar are
+      // persisted in overlay_config and painted by the editor as a fixed layer,
+      // so panning or zooming the artwork no longer drags the shadow with it.
+      const platePng = await renderViaWorker(scene, false, false);
 
 
 
@@ -188,6 +191,13 @@ export default defineTool({
       const overlayConfig = {
         canvas: { format: scene.format, width: scene.width, height: scene.height },
         promo: promoArgs,
+        scrimImageBg: !!scene.backgroundUrl,
+        scrim: {
+          startPct: (scene.backgroundUrl ? scene.imageScrim : scene.plateScrim).startPct,
+          stops: (scene.backgroundUrl ? scene.imageScrim : scene.plateScrim).stops,
+          copyPanel: scene.backgroundUrl ? scene.copyPanel : null,
+          accentBar: scene.accentBar,
+        },
         overlays: promoSceneToEditorTexts(scene).map((t) => ({
           id: crypto.randomUUID(),
           type: "text",

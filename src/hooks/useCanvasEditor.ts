@@ -4,9 +4,12 @@ import { useCanvasSnap } from "./canvas/useCanvasSnap";
 import { useCanvasInteraction, getOverlayBounds, getResizeHandles } from "./canvas/useCanvasInteraction";
 import type { Overlay, LogoOverlay, TextOverlay, ShapeOverlay, SnapGuide, CanvasFormat } from "./canvas/canvasTypes";
 import { CANVAS_FORMATS } from "./canvas/canvasTypes";
+import { drawScrim, type ScrimSpec } from "@/lib/promo/drawScrim";
 
 export type { Overlay, LogoOverlay, TextOverlay, ShapeOverlay, SnapGuide, CanvasFormat };
+export type { ScrimSpec };
 export { CANVAS_FORMATS };
+
 
 /** Compute center-crop source rect from image into target aspect ratio */
 function centerCropRect(
@@ -210,6 +213,10 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
   const bgTransformRef = useRef<BgTransform>(DEFAULT_BG_TRANSFORM);
   bgTransformRef.current = bgTransform;
   const [baseImageUrl, setBaseImageUrlState] = useState(initialBaseImageUrl);
+  // Fixed scrim layer (bottom gradient + copy panel + accent bar). Canvas
+  // relative — it must NOT move when the background is panned or zoomed.
+  const [scrim, setScrim] = useState<ScrimSpec | null>(null);
+
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
   // ── Background pan / zoom ────────────────────────────────────────────────
@@ -449,6 +456,11 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.globalAlpha = prevAlpha;
     }
 
+    // Fixed scrim — painted after the (pannable) artwork, before the overlays.
+    if (scrim) drawScrim(ctx, canvas.width, canvas.height, scrim);
+
+
+
     overlays.forEach((o) => {
       if (o.type === "logo") {
         ctx.drawImage(o.img, o.x, o.y, o.width, o.height);
@@ -527,7 +539,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.stroke();
       ctx.setLineDash([]);
     });
-  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor, bgOpacity, bgTransform]);
+  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor, bgOpacity, bgTransform, scrim]);
 
   useEffect(() => {
     renderCanvas();
@@ -796,6 +808,10 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.globalAlpha = prevAlpha;
     }
 
+    if (scrim) drawScrim(ctx, exportW, exportH, scrim);
+
+
+
     overlays.forEach((o) => {
       if (o.type === "logo") {
         ctx.drawImage(o.img, o.x * scaleX, o.y * scaleY, o.width * scaleX, o.height * scaleY);
@@ -816,7 +832,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     });
 
     return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
-  }, [baseImage, overlays, canvasSize, activeFormat, bgColor, bgOpacity, bgTransform]);
+  }, [baseImage, overlays, canvasSize, activeFormat, bgColor, bgOpacity, bgTransform, scrim]);
 
   const selectedOverlay = overlays.find((o) => o.id === selectedId) ?? null;
 
@@ -862,6 +878,9 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     zoomBackgroundAt,
     resetBackgroundTransform,
     applyBgTransform,
+    scrim,
+    setScrim,
+
     cursorStyle: interaction.cursorStyle,
     setBaseImageUrl,
     baseImageUrl,

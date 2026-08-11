@@ -12,6 +12,7 @@ import AssetEditorDialog, { type AssetSaveMeta, type SavedOverlayConfig } from "
 import type { TenantEvent } from "@/hooks/useTenantEvents";
 import { composePromoLayout, promoSceneToEditorTexts, type PromoScene } from "@/lib/promo/composePromoLayout";
 import { renderPromoSceneToBlob } from "@/lib/promo/renderPromoBrowser";
+import { scrimFromScene } from "@/lib/promo/drawScrim";
 import { resolveEventArt, type ResolvedEventArt } from "@/lib/promo/resolveEventArt";
 
 import { useMarketingCampaigns } from "@/hooks/useMarketingCampaigns";
@@ -118,6 +119,9 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
 
   const sceneToOverlayConfig = (scene: PromoScene): SavedOverlayConfig => ({
     canvas: { format: scene.format, width: scene.width, height: scene.height },
+    // Fixed layer: stays put when the artwork is panned or zoomed.
+    scrim: scrimFromScene(scene, !!scene.backgroundUrl),
+    scrimImageBg: !!scene.backgroundUrl,
     overlays: promoSceneToEditorTexts(scene).map((t) => ({
       id: crypto.randomUUID(),
       type: "text",
@@ -130,6 +134,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
       fontWeight: t.fontWeight,
     })),
   });
+
 
   const handleQuickCreate = async (evt: TenantEvent) => {
     setQuickCreating(evt.id);
