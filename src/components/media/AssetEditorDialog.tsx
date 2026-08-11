@@ -14,6 +14,7 @@ import {
   Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
   Send, CalendarClock, Facebook, Instagram, Twitter, Linkedin, Clock,
   Bold, Italic, Underline, Triangle, Diamond, Star, ArrowRight, Hexagon,
+  ZoomIn, ZoomOut, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
