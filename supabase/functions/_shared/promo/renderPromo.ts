@@ -268,9 +268,14 @@ function rgbaFromCss(rgba: string): string {
  */
 export async function renderPromoSceneToPng(
   scene: PromoScene,
-  opts: { includeText?: boolean; background?: PreparedBackground | null } = {},
+  opts: { includeText?: boolean; includeScrim?: boolean; background?: PreparedBackground | null } = {},
 ): Promise<Uint8Array> {
   const includeText = opts.includeText !== false;
+  // `includeScrim: false` renders the artwork WITHOUT the bottom gradient,
+  // copy panel and accent bar. The editor paints those itself as a
+  // canvas-fixed layer, so panning/zooming the art no longer drags the
+  // shadow behind the copy along with it.
+  const includeScrim = opts.includeScrim !== false;
   await ensureWasm();
 
   const prepared = opts.background !== undefined
@@ -377,13 +382,13 @@ export async function renderPromoSceneToPng(
     </defs>`;
 
 
-  const overlay = `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#dark)"/>`;
+  const overlay = includeScrim ? `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#dark)"/>` : "";
 
   // Local copy panel — photo/cover backgrounds only.
   const cp = scene.copyPanel;
   let copyPanel = "";
   let copyPanelDefs = "";
-  if (bgHref && cp) {
+  if (includeScrim && bgHref && cp) {
     const x = cp.xPct * w;
     const y = cp.yPct * h;
     const pw = cp.wPct * w;
@@ -409,7 +414,7 @@ export async function renderPromoSceneToPng(
   }
 
   const ab = scene.accentBar;
-  const accent = `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
+  const accent = !includeScrim ? "" : `<rect x="${ab.xPct * w}" y="${ab.yPct * h}" width="${ab.wPct * w}" height="${ab.hPct * h}" fill="${ab.color}"/>`;
 
 
   const textNodes = (includeText ? scene.texts : []).map((t) => {

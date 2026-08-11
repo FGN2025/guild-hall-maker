@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     return Response.json({ error: "forbidden" }, { status: 403, headers: corsHeaders });
   }
 
-  let body: { scene?: PromoScene; includeText?: boolean };
+  let body: { scene?: PromoScene; includeText?: boolean; includeScrim?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -51,6 +51,7 @@ Deno.serve(async (req) => {
     const bg = await preparePromoBackground(scene.backgroundUrl, scene);
     const png = await renderPromoSceneToPng(scene, {
       includeText: body.includeText !== false,
+      includeScrim: body.includeScrim !== false,
       background: bg,
     });
     return new Response(png, {
