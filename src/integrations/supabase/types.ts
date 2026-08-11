@@ -6422,7 +6422,6 @@ export type Database = {
           read_ct: number
         }[]
       }
-      selftest_review_ceiling: { Args: never; Returns: Json }
       shares_any_tenant: {
         Args: { _target: string; _viewer: string }
         Returns: boolean
