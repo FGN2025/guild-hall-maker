@@ -6142,6 +6142,7 @@ export type Database = {
       }
     }
     Functions: {
+      _selftest_review_ceiling_body: { Args: never; Returns: undefined }
       admin_resync_tenant_registrations: { Args: never; Returns: Json }
       admin_retry_discord_role_action: {
         Args: { _log_id: string }
@@ -6421,6 +6422,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      selftest_review_ceiling: { Args: never; Returns: Json }
       shares_any_tenant: {
         Args: { _target: string; _viewer: string }
         Returns: boolean
