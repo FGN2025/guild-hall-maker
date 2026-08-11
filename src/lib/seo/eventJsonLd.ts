@@ -28,6 +28,15 @@ const eventStatus = (status?: string | null) => {
 };
 
 /**
+ * Titles frequently already contain the game ("Forza Horizon 6 Tournament -
+ * Aug 28"), so only append it when it isn't already present.
+ */
+export function eventHeadline(name: string, game?: string | null): string {
+  if (!game) return name;
+  return name.toLowerCase().includes(game.toLowerCase()) ? name : `${name} — ${game}`;
+}
+
+/**
  * Builds schema.org Event JSON-LD for a tournament or tenant event. These are
  * online competitions, so attendanceMode is always virtual and the location is
  * a VirtualLocation pointing back at the event page.
@@ -42,7 +51,7 @@ export function buildEventJsonLd(
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Event",
-    name: event.game ? `${event.name} — ${event.game}` : event.name,
+    name: eventHeadline(event.name, event.game),
     url,
     eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
     eventStatus: eventStatus(event.status),
