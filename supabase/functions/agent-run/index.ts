@@ -372,6 +372,8 @@ async function runAgentLoop(opts: {
   turnsSoFar?: number;
   inputTokensSoFar?: number;
   outputTokensSoFar?: number;
+  /** Run start instant, used for live created-row progress. */
+  startedAtIso?: string;
   /** Test override: shrink the slice so the continuation path is exercised. */
   sliceBudgetMs?: number;
 }) {
