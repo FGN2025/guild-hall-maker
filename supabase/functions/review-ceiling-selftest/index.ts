@@ -141,8 +141,8 @@ Deno.serve(async (req) => {
     for (const a of [aRunner, aHuman]) {
       await client.queryArray(
         `INSERT INTO public.tenant_marketing_assets (id, tenant_id, file_name, file_path, url, created_by, is_published, agent_source, proposed_by)
-         VALUES ($1,$2,'__ceiling_selftest__.png','__ceiling_selftest__/'||$1||'.png',
-                 'https://example.invalid/__ceiling_selftest__/'||$1||'.png',$3,false,'selftest',$3)`,
+         VALUES ($1::uuid,$2::uuid,'__ceiling_selftest__.png','__ceiling_selftest__/'||$1::text||'.png',
+                 'https://example.invalid/__ceiling_selftest__/'||$1::text||'.png',$3::uuid,false,'selftest',$3::uuid)`,
         [a, tenant, uid],
       );
     }
