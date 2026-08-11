@@ -515,22 +515,39 @@ export function useCanvasInteraction(
             hasMoved: false,
           };
         }
+      } else if (panBackground) {
+        bgPanRef.current = { lastX: mx, lastY: my, hasMoved: false };
       } else {
         setSelectedId(null);
       }
     },
-    [hitTest, canvasRef, setSelectedId],
+    [hitTest, canvasRef, setSelectedId, panBackground],
   );
 
   const onTouchMove = useCallback(
     (e: React.TouchEvent<HTMLCanvasElement>) => {
-      if (!dragRef.current) return;
-      const drag = dragRef.current;
       const touch = e.touches[0];
       const canvas = canvasRef.current;
       const rect = canvas?.getBoundingClientRect();
       if (!canvas || !rect || !touch) return;
       const { mx, my } = getCanvasCoords(touch.clientX, touch.clientY, canvas, rect);
+
+      // Background pan (single finger on empty canvas)
+      if (bgPanRef.current && panBackground) {
+        const pan = bgPanRef.current;
+        const dx = mx - pan.lastX;
+        const dy = my - pan.lastY;
+        if (!pan.hasMoved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+        pan.hasMoved = true;
+        pan.lastX = mx;
+        pan.lastY = my;
+        e.preventDefault();
+        panBackground(dx, dy);
+        return;
+      }
+
+      if (!dragRef.current) return;
+      const drag = dragRef.current;
 
       if (!drag.hasMoved) {
         const dist = Math.hypot(mx - drag.startX, my - drag.startY);
@@ -557,7 +574,7 @@ export function useCanvasInteraction(
         return next;
       });
     },
-    [canvasRef, snapOverlay, setGuides, setOverlaysLive],
+    [canvasRef, snapOverlay, setGuides, setOverlaysLive, panBackground],
   );
 
   const onTouchEnd = useCallback(() => {
@@ -565,8 +582,12 @@ export function useCanvasInteraction(
       pushState(overlays);
       clearGuides();
     }
+    if (bgPanRef.current && !bgPanRef.current.hasMoved) {
+      setSelectedId(null);
+    }
+    bgPanRef.current = null;
     dragRef.current = null;
-  }, [overlays, pushState, clearGuides]);
+  }, [overlays, pushState, clearGuides, setSelectedId]);
 
   // Keyboard handler
   const onKeyDown = useCallback(
