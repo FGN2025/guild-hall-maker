@@ -441,15 +441,11 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     if (baseImage) {
       const prevAlpha = ctx.globalAlpha;
       ctx.globalAlpha = bgOpacity;
-      if (activeFormat.key !== "original") {
-        const { sx, sy, sw, sh } = centerCropRect(
-          baseImage.naturalWidth, baseImage.naturalHeight,
-          canvas.width, canvas.height
-        );
-        ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-      } else {
-        ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
-      }
+      const { sx, sy, sw, sh } = computeSourceRect(
+        baseImage.naturalWidth, baseImage.naturalHeight,
+        canvas.width, canvas.height, bgTransform
+      );
+      ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
       ctx.globalAlpha = prevAlpha;
     }
 
