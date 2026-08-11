@@ -808,6 +808,10 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.globalAlpha = prevAlpha;
     }
 
+    if (scrim) drawScrim(ctx, exportW, exportH, scrim);
+
+
+
     overlays.forEach((o) => {
       if (o.type === "logo") {
         ctx.drawImage(o.img, o.x * scaleX, o.y * scaleY, o.width * scaleX, o.height * scaleY);
