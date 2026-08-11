@@ -338,6 +338,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     clearGuides,
     deleteOverlay,
     updateOverlay,
+    panBackground,
   );
 
   // Load base image
