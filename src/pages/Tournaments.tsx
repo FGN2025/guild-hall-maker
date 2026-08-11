@@ -1,6 +1,7 @@
 import { useState, useMemo, CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
+import Seo, { SITE_URL } from "@/components/Seo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
