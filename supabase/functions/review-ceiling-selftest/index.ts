@@ -221,6 +221,7 @@ Deno.serve(async (req) => {
     for (const c of cases) {
       let passed = false;
       let detail = "";
+      let sqlstate: string | null = null;
       await client.queryArray("SAVEPOINT sp");
       try {
         await client.queryArray(`SET LOCAL ROLE ${c.role}`);
@@ -230,6 +231,9 @@ Deno.serve(async (req) => {
         detail = passed ? "statement succeeded, as required" : "STATEMENT SUCCEEDED BUT SHOULD HAVE BEEN REFUSED";
       } catch (e: any) {
         detail = e?.fields?.message ?? (e instanceof Error ? e.message : String(e));
+        // Record the SQLSTATE so a refusal can be shown to be an authorization
+        // refusal (42501) rather than a constraint or typo.
+        sqlstate = e?.fields?.code ?? null;
         if (c.expect === "allow") {
           passed = false;
           detail = `statement was REFUSED but must succeed: ${detail}`;
@@ -243,7 +247,7 @@ Deno.serve(async (req) => {
       // later cases, deny-cases that wrongly succeeded must not persist.
       await client.queryArray("ROLLBACK TO SAVEPOINT sp");
       await client.queryArray("RESET ROLE");
-      results.push({ id: c.id, group: c.group, path: c.path, case: c.desc, expect: c.expect, passed, detail });
+      results.push({ id: c.id, group: c.group, path: c.path, case: c.desc, expect: c.expect, passed, sqlstate, detail });
     }
   } catch (e) {
     return await finish(client, {
