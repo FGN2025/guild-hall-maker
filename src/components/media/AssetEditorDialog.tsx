@@ -67,6 +67,8 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
 export type SavedOverlayConfig = {
   canvas?: { format?: string; width?: number; height?: number };
   overlays: Array<Record<string, any>>;
+  /** Manual background framing (pan + zoom) applied by the editor. */
+  background?: { zoom?: number; offsetX?: number; offsetY?: number } | null;
   /** Composer inputs, persisted so the editor can RE-COMPOSE the copy block
    *  for a different aspect ratio instead of merely rescaling it. */
   promo?: PromoArgs | null;
