@@ -776,14 +776,10 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     if (baseImage) {
       const prevAlpha = ctx.globalAlpha;
       ctx.globalAlpha = bgOpacity;
-      if (activeFormat.key !== "original") {
-        const { sx, sy, sw, sh } = centerCropRect(
-          baseImage.naturalWidth, baseImage.naturalHeight, exportW, exportH
-        );
-        ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, exportW, exportH);
-      } else {
-        ctx.drawImage(baseImage, 0, 0, exportW, exportH);
-      }
+      const { sx, sy, sw, sh } = computeSourceRect(
+        baseImage.naturalWidth, baseImage.naturalHeight, exportW, exportH, bgTransform
+      );
+      ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, exportW, exportH);
       ctx.globalAlpha = prevAlpha;
     }
 
