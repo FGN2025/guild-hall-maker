@@ -216,6 +216,8 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
       appliedInitialRef.current = false;
       hydratedRef.current = false;
       resetBackgroundTransform();
+      setScrim(null);
+
     }
   }, [open, resetBackgroundTransform]);
 
