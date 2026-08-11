@@ -213,6 +213,10 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
   const bgTransformRef = useRef<BgTransform>(DEFAULT_BG_TRANSFORM);
   bgTransformRef.current = bgTransform;
   const [baseImageUrl, setBaseImageUrlState] = useState(initialBaseImageUrl);
+  // Fixed scrim layer (bottom gradient + copy panel + accent bar). Canvas
+  // relative — it must NOT move when the background is panned or zoomed.
+  const [scrim, setScrim] = useState<ScrimSpec | null>(null);
+
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
   // ── Background pan / zoom ────────────────────────────────────────────────
