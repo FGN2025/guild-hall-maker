@@ -80,6 +80,7 @@ const EmbedCalendar = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
+        {embedSeo}
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
@@ -88,6 +89,7 @@ const EmbedCalendar = () => {
   if (!config) {
     return (
       <div className="flex items-center justify-center h-screen bg-background text-muted-foreground">
+        {embedSeo}
         Calendar not found or inactive.
       </div>
     );
@@ -98,6 +100,7 @@ const EmbedCalendar = () => {
       className="relative min-h-screen w-full overflow-hidden font-sans"
       style={{ "--cal-primary": primaryColor, "--cal-accent": accentColor } as React.CSSProperties}
     >
+      {embedSeo}
       {/* Background */}
       {config.bg_image_url && (
         <div className="absolute inset-0 z-0">
