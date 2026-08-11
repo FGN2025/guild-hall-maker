@@ -27,9 +27,10 @@ import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 import PageBackground from "@/components/PageBackground";
 import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
 import { fetchTournamentCapacity } from "@/lib/tournamentCapacity";
+import Seo from "@/components/Seo";
+import { buildEventJsonLd, toMetaDescription } from "@/lib/seo/eventJsonLd";
 
 const TournamentDetail = () => {
-  usePageTitle("Tournament Detail");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAdmin, isModerator } = useAuth();
