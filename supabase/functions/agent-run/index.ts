@@ -441,6 +441,14 @@ async function runAgentLoop(opts: {
       heartbeat_at: new Date().toISOString(),
     });
 
+    // Live progress: refresh the created-row ids while the run is still
+    // running so the UI can show rows-created instead of a bare spinner.
+    if (opts.startedAtIso && turns % 3 === 0) {
+      try {
+        await updateRun(runId, { created_row_ids: await collectCreatedRowIds(tenantId, userId, opts.startedAtIso) });
+      } catch { /* progress is best-effort, never fail a run over it */ }
+    }
+
     const toolUses = content.filter((c: any) => c.type === "tool_use");
     if (toolUses.length === 0) {
       finalText = content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n\n");
