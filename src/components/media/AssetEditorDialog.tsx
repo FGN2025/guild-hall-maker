@@ -197,6 +197,8 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     const t = setTimeout(() => {
       hydrateOverlays(initialOverlayConfig.overlays, initialOverlayConfig.canvas);
       applyBgTransform(initialOverlayConfig.background);
+      setScrim(initialOverlayConfig.scrim ?? null);
+
       hydratedRef.current = true;
     }, 0);
     return () => clearTimeout(t);
