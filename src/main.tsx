@@ -25,12 +25,14 @@ try {
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme={initialTheme}
-      enableSystem={false}
-    >
-      <App />
-    </ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme={initialTheme}
+        enableSystem={false}
+      >
+        <App />
+      </ThemeProvider>
+    </HelmetProvider>
   </ErrorBoundary>
 );
