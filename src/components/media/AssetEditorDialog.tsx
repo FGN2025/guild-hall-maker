@@ -243,7 +243,11 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
   // engine at the new aspect ratio (fresh wrapping, format-correct type scale)
   // instead of proportionally squashing a portrait block into a banner.
   const promoArgs = initialOverlayConfig?.promo ?? null;
+  const scrimIsImageBg =
+    initialOverlayConfig?.scrimImageBg ??
+    Boolean(initialOverlayConfig?.scrim?.copyPanel);
   const pendingPromoFormat = useRef<PromoFormat | null>(null);
+
 
   const handleSetFormat = (fmt: CanvasFormat) => {
     if (fmt.key === activeFormat.key) return;
