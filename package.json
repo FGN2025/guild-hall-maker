@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "predev": "tsx scripts/generate-sitemap.ts",
-    "prebuild": "tsx scripts/generate-sitemap.ts"
+    "prebuild": "tsx scripts/generate-sitemap.ts && vitest run",
+    "test:ceiling": "vitest run src/test/review-ceiling.regression.test.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
