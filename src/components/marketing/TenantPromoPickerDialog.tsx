@@ -12,6 +12,7 @@ import AssetEditorDialog, { type AssetSaveMeta, type SavedOverlayConfig } from "
 import type { TenantEvent } from "@/hooks/useTenantEvents";
 import { composePromoLayout, promoSceneToEditorTexts, type PromoScene } from "@/lib/promo/composePromoLayout";
 import { renderPromoSceneToBlob } from "@/lib/promo/renderPromoBrowser";
+import { scrimFromScene } from "@/lib/promo/drawScrim";
 import { resolveEventArt, type ResolvedEventArt } from "@/lib/promo/resolveEventArt";
 
 import { useMarketingCampaigns } from "@/hooks/useMarketingCampaigns";
