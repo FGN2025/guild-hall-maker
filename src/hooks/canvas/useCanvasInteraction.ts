@@ -228,11 +228,13 @@ export function useCanvasInteraction(
   clearGuides: () => void,
   deleteOverlay: (id: string) => void,
   updateOverlay: (id: string, updates: Record<string, unknown>) => void,
+  panBackground?: (dxPx: number, dyPx: number) => void,
 ) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [cursorStyle, setCursorStyle] = useState<string>("default");
   const dragRef = useRef<DragState>(null);
   const resizeRef = useRef<ResizeState>(null);
+  const bgPanRef = useRef<{ lastX: number; lastY: number; hasMoved: boolean } | null>(null);
 
   // ── Hit test: geometry-aware, returns ALL candidates sorted by z-order (top first) ──
   const hitTestAll = useCallback(
