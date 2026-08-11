@@ -473,10 +473,10 @@ export function useCanvasInteraction(
         setCursorStyle(hover.locked ? "not-allowed" : "grab");
       } else {
         setHoveredId(null);
-        setCursorStyle("default");
+        setCursorStyle(panBackground ? "grab" : "default");
       }
     },
-    [hitTest, selectedId, overlays, canvasRef, snapOverlay, setGuides, setOverlaysLive],
+    [hitTest, selectedId, overlays, canvasRef, snapOverlay, setGuides, setOverlaysLive, panBackground],
   );
 
   const onMouseUp = useCallback(() => {
@@ -484,10 +484,14 @@ export function useCanvasInteraction(
       pushState(overlays);
       clearGuides();
     }
+    if (bgPanRef.current && !bgPanRef.current.hasMoved) {
+      setSelectedId(null);
+    }
+    bgPanRef.current = null;
     dragRef.current = null;
     resizeRef.current = null;
     setCursorStyle("default");
-  }, [overlays, pushState, clearGuides]);
+  }, [overlays, pushState, clearGuides, setSelectedId]);
 
   // Touch handlers
   const onTouchStart = useCallback(
