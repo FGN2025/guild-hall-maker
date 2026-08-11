@@ -4,9 +4,12 @@ import { useCanvasSnap } from "./canvas/useCanvasSnap";
 import { useCanvasInteraction, getOverlayBounds, getResizeHandles } from "./canvas/useCanvasInteraction";
 import type { Overlay, LogoOverlay, TextOverlay, ShapeOverlay, SnapGuide, CanvasFormat } from "./canvas/canvasTypes";
 import { CANVAS_FORMATS } from "./canvas/canvasTypes";
+import { drawScrim, type ScrimSpec } from "@/lib/promo/drawScrim";
 
 export type { Overlay, LogoOverlay, TextOverlay, ShapeOverlay, SnapGuide, CanvasFormat };
+export type { ScrimSpec };
 export { CANVAS_FORMATS };
+
 
 /** Compute center-crop source rect from image into target aspect ratio */
 function centerCropRect(
