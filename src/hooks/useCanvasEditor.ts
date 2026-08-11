@@ -456,6 +456,11 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.globalAlpha = prevAlpha;
     }
 
+    // Fixed scrim — painted after the (pannable) artwork, before the overlays.
+    if (scrim) drawScrim(ctx, canvas.width, canvas.height, scrim);
+
+
+
     overlays.forEach((o) => {
       if (o.type === "logo") {
         ctx.drawImage(o.img, o.x, o.y, o.width, o.height);
