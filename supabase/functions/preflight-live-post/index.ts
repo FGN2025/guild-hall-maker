@@ -35,20 +35,20 @@ Deno.serve(async (req) => {
 
   const { data: conn } = await supabase
     .from("social_connections")
-    .select("id, platform, account_name, account_id, is_active, expires_at, access_token")
+    .select("id, platform, account_name, page_id, is_active, token_expires_at, access_token")
     .eq("id", post.connection_id)
     .maybeSingle();
 
   // --- Graph read call, explicitly not a publish -----------------------------
   let graph: Record<string, unknown> = { attempted: false };
   if (conn?.access_token) {
-    const url = `https://graph.facebook.com/v21.0/${conn.account_id}?fields=id,name,fan_count&access_token=${encodeURIComponent(conn.access_token)}`;
+    const url = `https://graph.facebook.com/v21.0/${conn.page_id}?fields=id,name,fan_count&access_token=${encodeURIComponent(conn.access_token)}`;
     const res = await fetch(url);
     const body = await res.json().catch(() => ({}));
     graph = {
       attempted: true,
       method: "GET",
-      endpoint: `https://graph.facebook.com/v21.0/${conn.account_id}?fields=id,name,fan_count`,
+      endpoint: `https://graph.facebook.com/v21.0/${conn.page_id}?fields=id,name,fan_count`,
       http_status: res.status,
       authenticated: res.ok,
       response: body,
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     caption_verbatim: post.caption,
     connection: conn
       ? { id: conn.id, platform: conn.platform, account_name: conn.account_name,
-          account_id: conn.account_id, is_active: conn.is_active, expires_at: conn.expires_at }
+          page_id: conn.page_id, is_active: conn.is_active, token_expires_at: conn.token_expires_at }
       : null,
     graph,
     storage: { signed: !!signed?.signedUrl, sign_error: signErr?.message ?? null, head_status, bytes },
