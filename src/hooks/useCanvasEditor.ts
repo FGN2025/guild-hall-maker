@@ -533,6 +533,19 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     renderCanvas();
   }, [renderCanvas]);
 
+  // Re-clamp the manual framing whenever the frame or the image changes so a
+  // format switch can never reveal empty edges.
+  useEffect(() => {
+    const t = bgTransformRef.current;
+    if (!baseImage) return;
+    if (t.zoom === 1 && t.offsetX === 0 && t.offsetY === 0) return;
+    const next = clampTransform(t);
+    if (next.offsetX !== t.offsetX || next.offsetY !== t.offsetY) {
+      bgTransformRef.current = next;
+      setBgTransform(next);
+    }
+  }, [baseImage, canvasSize.width, canvasSize.height, clampTransform]);
+
   // Add logo from file
   const addLogo = useCallback((file: File) => {
     const url = URL.createObjectURL(file);
