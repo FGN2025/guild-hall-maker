@@ -295,6 +295,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     }),
     // Carry the composer inputs forward so a reviewer-saved copy is still
     // re-composable per format.
+    background: { ...bgTransform },
     promo: promoArgs ?? null,
   });
 
