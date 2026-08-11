@@ -36,6 +36,8 @@ import {
   type ComposePromoArgs as PromoArgs,
   type PromoFormat,
 } from "@/lib/promo/composePromoLayout";
+import { scrimFromScene, type ScrimSpec } from "@/lib/promo/drawScrim";
+
 
 const FONT_OPTIONS = [
   { value: "sans-serif", label: "Sans-serif" },
