@@ -523,6 +523,54 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                       className="w-6 h-6 rounded border border-input cursor-pointer"
                     />
                   </div>
+
+                  {/* Manual framing: zoom + pan */}
+                  <div className="pt-2 mt-1 border-t border-border space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Zoom</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{Math.round(bgZoom * 100)}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => zoomBackgroundAt(1 / 1.15)}
+                        aria-label="Zoom out background"
+                      >
+                        <ZoomOut className="h-3 w-3" />
+                      </Button>
+                      <Slider
+                        min={100}
+                        max={400}
+                        step={1}
+                        value={[Math.round(bgZoom * 100)]}
+                        onValueChange={([v]) => setBgZoom(v / 100)}
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => zoomBackgroundAt(1.15)}
+                        aria-label="Zoom in background"
+                      >
+                        <ZoomIn className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] text-muted-foreground">
+                        Drag empty canvas to pan · scroll to zoom
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs"
+                        onClick={resetBackgroundTransform}
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" /> Reset
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
