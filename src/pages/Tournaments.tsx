@@ -83,6 +83,12 @@ const Tournaments = () => {
 
   return (
     <>
+      <Seo
+        title="Esports Tournaments"
+        description="Browse open and upcoming esports tournaments on FGN Esports. Filter by game, check formats and prize pools, and register to compete."
+        path="/tournaments"
+        jsonLd={tournamentListJsonLd}
+      />
       <PageBackground pageSlug="tournaments" />
       <div className="relative z-10">
         <div className="sticky top-[-1rem] md:top-[-1.5rem] z-20 bg-background -mx-4 px-4 md:-mx-6 md:px-6 -mt-4 pt-4 md:-mt-6 md:pt-6 pb-4">
