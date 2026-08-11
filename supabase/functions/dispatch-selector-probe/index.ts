@@ -27,7 +27,16 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const hdr = req.headers.get("Authorization") || "";
   const presented = hdr.startsWith("Bearer ") ? hdr.slice(7) : req.headers.get("apikey") || "";
-  if (!presented || (presented !== anonKey && presented !== serviceKey && !presented.startsWith("sb_publishable_"))) {
+  let authorized = presented !== "" && (presented === anonKey || presented === serviceKey || presented.startsWith("sb_publishable_"));
+  if (!authorized && presented.startsWith("eyJ")) {
+    try {
+      const p = presented.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const pad = p.length % 4 === 0 ? "" : "=".repeat(4 - (p.length % 4));
+      const role = JSON.parse(atob(p + pad)).role;
+      authorized = role === "anon" || role === "service_role";
+    } catch (_) { /* not a JWT */ }
+  }
+  if (!authorized) {
     return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
