@@ -212,6 +212,99 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
   const [baseImageUrl, setBaseImageUrlState] = useState(initialBaseImageUrl);
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
 
+  // ── Background pan / zoom ────────────────────────────────────────────────
+  const baseImageRef = useRef<HTMLImageElement | null>(null);
+  baseImageRef.current = baseImage;
+  const canvasSizeRef = useRef(canvasSize);
+  canvasSizeRef.current = canvasSize;
+
+  /** Clamp an offset so the source rect can never leave the image. */
+  const clampTransform = useCallback((t: BgTransform): BgTransform => {
+    const img = baseImageRef.current;
+    const cs = canvasSizeRef.current;
+    if (!img || !cs.width || !cs.height) return t;
+    const r = computeSourceRect(img.naturalWidth, img.naturalHeight, cs.width, cs.height, t);
+    const base = centerCropRect(img.naturalWidth, img.naturalHeight, cs.width, cs.height);
+    const zoom = Math.max(1, t.zoom || 1);
+    const centeredX = base.sx + (base.sw - base.sw / zoom) / 2;
+    const centeredY = base.sy + (base.sh - base.sh / zoom) / 2;
+    return {
+      zoom,
+      offsetX: (r.sx - centeredX) / img.naturalWidth,
+      offsetY: (r.sy - centeredY) / img.naturalHeight,
+    };
+  }, []);
+
+  /** Drag the background by a delta expressed in canvas pixels. */
+  const panBackground = useCallback((dxPx: number, dyPx: number) => {
+    const img = baseImageRef.current;
+    const cs = canvasSizeRef.current;
+    if (!img || !cs.width || !cs.height) return;
+    const t = bgTransformRef.current;
+    const r = computeSourceRect(img.naturalWidth, img.naturalHeight, cs.width, cs.height, t);
+    const next = clampTransform({
+      zoom: t.zoom,
+      offsetX: t.offsetX - (dxPx * (r.sw / cs.width)) / img.naturalWidth,
+      offsetY: t.offsetY - (dyPx * (r.sh / cs.height)) / img.naturalHeight,
+    });
+    bgTransformRef.current = next;
+    setBgTransform(next);
+  }, [clampTransform]);
+
+  /** Zoom by a multiplicative factor, keeping the point under (px, py) fixed. */
+  const zoomBackgroundAt = useCallback((factor: number, px?: number, py?: number) => {
+    const img = baseImageRef.current;
+    const cs = canvasSizeRef.current;
+    if (!img || !cs.width || !cs.height) return;
+    const t = bgTransformRef.current;
+    const nextZoom = Math.min(4, Math.max(1, (t.zoom || 1) * factor));
+    if (nextZoom === t.zoom) return;
+    const ax = px ?? cs.width / 2;
+    const ay = py ?? cs.height / 2;
+    const before = computeSourceRect(img.naturalWidth, img.naturalHeight, cs.width, cs.height, t);
+    // Source point currently under the cursor
+    const srcX = before.sx + (ax / cs.width) * before.sw;
+    const srcY = before.sy + (ay / cs.height) * before.sh;
+
+    const probe = computeSourceRect(
+      img.naturalWidth, img.naturalHeight, cs.width, cs.height,
+      { zoom: nextZoom, offsetX: t.offsetX, offsetY: t.offsetY },
+    );
+    // Desired top-left so srcX/srcY still sits under the cursor
+    const wantSx = srcX - (ax / cs.width) * probe.sw;
+    const wantSy = srcY - (ay / cs.height) * probe.sh;
+    const next = clampTransform({
+      zoom: nextZoom,
+      offsetX: t.offsetX + (wantSx - probe.sx) / img.naturalWidth,
+      offsetY: t.offsetY + (wantSy - probe.sy) / img.naturalHeight,
+    });
+    bgTransformRef.current = next;
+    setBgTransform(next);
+  }, [clampTransform]);
+
+  const setBgZoom = useCallback((zoom: number) => {
+    const t = bgTransformRef.current;
+    zoomBackgroundAt(Math.max(1, zoom) / (t.zoom || 1));
+  }, [zoomBackgroundAt]);
+
+  const resetBackgroundTransform = useCallback(() => {
+    bgTransformRef.current = DEFAULT_BG_TRANSFORM;
+    setBgTransform(DEFAULT_BG_TRANSFORM);
+  }, []);
+
+  const applyBgTransform = useCallback((t: Partial<BgTransform> | null | undefined) => {
+    if (!t) return;
+    const next = {
+      zoom: Math.min(4, Math.max(1, t.zoom ?? 1)),
+      offsetX: t.offsetX ?? 0,
+      offsetY: t.offsetY ?? 0,
+    };
+    bgTransformRef.current = next;
+    setBgTransform(next);
+  }, []);
+
+
+
   // Update overlay helper for keyboard handler
   const updateOverlay = useCallback((id: string, updates: Record<string, unknown>) => {
     const next = overlays.map((o) => {
