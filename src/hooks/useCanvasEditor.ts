@@ -29,6 +29,27 @@ function centerCropRect(
   return { sx, sy, sw, sh };
 }
 
+export type BgTransform = { zoom: number; offsetX: number; offsetY: number };
+
+export const DEFAULT_BG_TRANSFORM: BgTransform = { zoom: 1, offsetX: 0, offsetY: 0 };
+
+/** Source rect for the background, honouring manual zoom + pan.
+ *  offsetX/offsetY are normalized to the image's own dimensions so the framing
+ *  survives format switches and export upscaling. */
+export function computeSourceRect(
+  imgW: number, imgH: number, targetW: number, targetH: number, t: BgTransform
+): { sx: number; sy: number; sw: number; sh: number } {
+  const base = centerCropRect(imgW, imgH, targetW, targetH);
+  const zoom = Math.max(1, t.zoom || 1);
+  const sw = base.sw / zoom;
+  const sh = base.sh / zoom;
+  let sx = base.sx + (base.sw - sw) / 2 + (t.offsetX || 0) * imgW;
+  let sy = base.sy + (base.sh - sh) / 2 + (t.offsetY || 0) * imgH;
+  sx = Math.min(Math.max(sx, 0), Math.max(0, imgW - sw));
+  sy = Math.min(Math.max(sy, 0), Math.max(0, imgH - sh));
+  return { sx, sy, sw, sh };
+}
+
 /** Build a path for polygon-based shapes */
 function buildShapePath(ctx: CanvasRenderingContext2D, o: ShapeOverlay, scaleX: number, scaleY: number) {
   const x = o.x * scaleX;
