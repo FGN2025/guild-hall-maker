@@ -35,8 +35,30 @@ const TenantEventPage = () => {
   const brandColor = tenant.primary_color || undefined;
   const accentColor = tenant.accent_color || undefined;
 
+  const eventListJsonLd =
+    events && events.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: `${tenant.name} esports events`,
+          itemListElement: events.slice(0, 20).map((e: any, index: number) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            url: `${SITE_URL}/events/${tenantSlug}/${e.id}`,
+            name: e.name,
+          })),
+        }
+      : undefined;
+
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={`${tenant.name} Esports Events`}
+        description={`Upcoming esports tournaments and community gaming events hosted by ${tenant.name}. See dates, games and prizes, and sign up to play.`}
+        path={`/events/${tenantSlug}`}
+        image={tenant.logo_url ?? undefined}
+        jsonLd={eventListJsonLd}
+      />
       {/* Branded Header */}
       <header
         className="border-b"
