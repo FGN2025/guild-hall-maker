@@ -515,6 +515,7 @@ async function driveRun(params: {
       turnsSoFar: run.turns_used ?? 0,
       inputTokensSoFar: run.input_tokens ?? 0,
       outputTokensSoFar: run.output_tokens ?? 0,
+      startedAtIso: run.started_at,
       sliceBudgetMs: params.sliceBudgetMs,
     });
 
@@ -525,6 +526,7 @@ async function driveRun(params: {
         await updateRun(run.id, {
           status: "failed",
           error_message: "continuation_limit_exceeded",
+          failure_kind: classifyFailure("continuation_limit_exceeded"),
           finished_at: new Date().toISOString(),
           turns_used: result.turns,
           input_tokens: result.inputTokens,
@@ -540,6 +542,7 @@ async function driveRun(params: {
         turns_used: result.turns,
         input_tokens: result.inputTokens,
         output_tokens: result.outputTokens,
+        created_row_ids: await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => undefined),
         heartbeat_at: new Date().toISOString(),
       });
       await handOff(run.id, params.sliceBudgetMs);
@@ -558,11 +561,13 @@ async function driveRun(params: {
     };
     if (result.status === "completed") {
       patch.status = "completed";
+      patch.failure_kind = null;
       await updateRun(run.id, patch);
       await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
     } else {
       patch.status = "failed";
       patch.error_message = (result as any).error ?? "unknown";
+      patch.failure_kind = classifyFailure(patch.error_message);
       await updateRun(run.id, patch);
       await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
     }
@@ -573,6 +578,7 @@ async function driveRun(params: {
     await updateRun(run.id, {
       status: "failed",
       error_message: msg,
+      failure_kind: classifyFailure(msg),
       finished_at: new Date().toISOString(),
       created_row_ids: created,
     });
