@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.selftest_review_ceiling();

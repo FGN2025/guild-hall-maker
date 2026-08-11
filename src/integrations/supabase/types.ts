@@ -6142,6 +6142,7 @@ export type Database = {
       }
     }
     Functions: {
+      _selftest_review_ceiling_body: { Args: never; Returns: undefined }
       admin_resync_tenant_registrations: { Args: never; Returns: Json }
       admin_retry_discord_role_action: {
         Args: { _log_id: string }
