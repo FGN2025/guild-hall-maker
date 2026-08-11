@@ -29,6 +29,27 @@ function centerCropRect(
   return { sx, sy, sw, sh };
 }
 
+export type BgTransform = { zoom: number; offsetX: number; offsetY: number };
+
+export const DEFAULT_BG_TRANSFORM: BgTransform = { zoom: 1, offsetX: 0, offsetY: 0 };
+
+/** Source rect for the background, honouring manual zoom + pan.
+ *  offsetX/offsetY are normalized to the image's own dimensions so the framing
+ *  survives format switches and export upscaling. */
+export function computeSourceRect(
+  imgW: number, imgH: number, targetW: number, targetH: number, t: BgTransform
+): { sx: number; sy: number; sw: number; sh: number } {
+  const base = centerCropRect(imgW, imgH, targetW, targetH);
+  const zoom = Math.max(1, t.zoom || 1);
+  const sw = base.sw / zoom;
+  const sh = base.sh / zoom;
+  let sx = base.sx + (base.sw - sw) / 2 + (t.offsetX || 0) * imgW;
+  let sy = base.sy + (base.sh - sh) / 2 + (t.offsetY || 0) * imgH;
+  sx = Math.min(Math.max(sx, 0), Math.max(0, imgW - sw));
+  sy = Math.min(Math.max(sy, 0), Math.max(0, imgH - sh));
+  return { sx, sy, sw, sh };
+}
+
 /** Build a path for polygon-based shapes */
 function buildShapePath(ctx: CanvasRenderingContext2D, o: ShapeOverlay, scaleX: number, scaleY: number) {
   const x = o.x * scaleX;
@@ -185,8 +206,104 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
   const [activeFormat, setActiveFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [bgColor, setBgColor] = useState("#1a1a2e");
   const [bgOpacity, setBgOpacity] = useState(1);
+  const [bgTransform, setBgTransform] = useState<BgTransform>(DEFAULT_BG_TRANSFORM);
+  const bgTransformRef = useRef<BgTransform>(DEFAULT_BG_TRANSFORM);
+  bgTransformRef.current = bgTransform;
   const [baseImageUrl, setBaseImageUrlState] = useState(initialBaseImageUrl);
   const { guides, setGuides, snapOverlay, clearGuides } = useCanvasSnap(canvasSize.width, canvasSize.height);
+
+  // ── Background pan / zoom ────────────────────────────────────────────────
+  const baseImageRef = useRef<HTMLImageElement | null>(null);
+  baseImageRef.current = baseImage;
+  const canvasSizeRef = useRef(canvasSize);
+  canvasSizeRef.current = canvasSize;
+
+  /** Clamp an offset so the source rect can never leave the image. */
+  const clampTransform = useCallback((t: BgTransform): BgTransform => {
+    const img = baseImageRef.current;
+    const cs = canvasSizeRef.current;
+    if (!img || !cs.width || !cs.height) return t;
+    const r = computeSourceRect(img.naturalWidth, img.naturalHeight, cs.width, cs.height, t);
+    const base = centerCropRect(img.naturalWidth, img.naturalHeight, cs.width, cs.height);
+    const zoom = Math.max(1, t.zoom || 1);
+    const centeredX = base.sx + (base.sw - base.sw / zoom) / 2;
+    const centeredY = base.sy + (base.sh - base.sh / zoom) / 2;
+    return {
+      zoom,
+      offsetX: (r.sx - centeredX) / img.naturalWidth,
+      offsetY: (r.sy - centeredY) / img.naturalHeight,
+    };
+  }, []);
+
+  /** Drag the background by a delta expressed in canvas pixels. */
+  const panBackground = useCallback((dxPx: number, dyPx: number) => {
+    const img = baseImageRef.current;
+    const cs = canvasSizeRef.current;
+    if (!img || !cs.width || !cs.height) return;
+    const t = bgTransformRef.current;
+    const r = computeSourceRect(img.naturalWidth, img.naturalHeight, cs.width, cs.height, t);
+    const next = clampTransform({
+      zoom: t.zoom,
+      offsetX: t.offsetX - (dxPx * (r.sw / cs.width)) / img.naturalWidth,
+      offsetY: t.offsetY - (dyPx * (r.sh / cs.height)) / img.naturalHeight,
+    });
+    bgTransformRef.current = next;
+    setBgTransform(next);
+  }, [clampTransform]);
+
+  /** Zoom by a multiplicative factor, keeping the point under (px, py) fixed. */
+  const zoomBackgroundAt = useCallback((factor: number, px?: number, py?: number) => {
+    const img = baseImageRef.current;
+    const cs = canvasSizeRef.current;
+    if (!img || !cs.width || !cs.height) return;
+    const t = bgTransformRef.current;
+    const nextZoom = Math.min(4, Math.max(1, (t.zoom || 1) * factor));
+    if (nextZoom === t.zoom) return;
+    const ax = px ?? cs.width / 2;
+    const ay = py ?? cs.height / 2;
+    const before = computeSourceRect(img.naturalWidth, img.naturalHeight, cs.width, cs.height, t);
+    // Source point currently under the cursor
+    const srcX = before.sx + (ax / cs.width) * before.sw;
+    const srcY = before.sy + (ay / cs.height) * before.sh;
+
+    const probe = computeSourceRect(
+      img.naturalWidth, img.naturalHeight, cs.width, cs.height,
+      { zoom: nextZoom, offsetX: t.offsetX, offsetY: t.offsetY },
+    );
+    // Desired top-left so srcX/srcY still sits under the cursor
+    const wantSx = srcX - (ax / cs.width) * probe.sw;
+    const wantSy = srcY - (ay / cs.height) * probe.sh;
+    const next = clampTransform({
+      zoom: nextZoom,
+      offsetX: t.offsetX + (wantSx - probe.sx) / img.naturalWidth,
+      offsetY: t.offsetY + (wantSy - probe.sy) / img.naturalHeight,
+    });
+    bgTransformRef.current = next;
+    setBgTransform(next);
+  }, [clampTransform]);
+
+  const setBgZoom = useCallback((zoom: number) => {
+    const t = bgTransformRef.current;
+    zoomBackgroundAt(Math.max(1, zoom) / (t.zoom || 1));
+  }, [zoomBackgroundAt]);
+
+  const resetBackgroundTransform = useCallback(() => {
+    bgTransformRef.current = DEFAULT_BG_TRANSFORM;
+    setBgTransform(DEFAULT_BG_TRANSFORM);
+  }, []);
+
+  const applyBgTransform = useCallback((t: Partial<BgTransform> | null | undefined) => {
+    if (!t) return;
+    const next = {
+      zoom: Math.min(4, Math.max(1, t.zoom ?? 1)),
+      offsetX: t.offsetX ?? 0,
+      offsetY: t.offsetY ?? 0,
+    };
+    bgTransformRef.current = next;
+    setBgTransform(next);
+  }, []);
+
+
 
   // Update overlay helper for keyboard handler
   const updateOverlay = useCallback((id: string, updates: Record<string, unknown>) => {
@@ -221,6 +338,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     clearGuides,
     deleteOverlay,
     updateOverlay,
+    panBackground,
   );
 
   // Load base image
@@ -323,15 +441,11 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     if (baseImage) {
       const prevAlpha = ctx.globalAlpha;
       ctx.globalAlpha = bgOpacity;
-      if (activeFormat.key !== "original") {
-        const { sx, sy, sw, sh } = centerCropRect(
-          baseImage.naturalWidth, baseImage.naturalHeight,
-          canvas.width, canvas.height
-        );
-        ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-      } else {
-        ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
-      }
+      const { sx, sy, sw, sh } = computeSourceRect(
+        baseImage.naturalWidth, baseImage.naturalHeight,
+        canvas.width, canvas.height, bgTransform
+      );
+      ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
       ctx.globalAlpha = prevAlpha;
     }
 
@@ -413,11 +527,24 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
       ctx.stroke();
       ctx.setLineDash([]);
     });
-  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor, bgOpacity]);
+  }, [overlays, baseImage, selectedId, interaction.hoveredId, guides, activeFormat, bgColor, bgOpacity, bgTransform]);
 
   useEffect(() => {
     renderCanvas();
   }, [renderCanvas]);
+
+  // Re-clamp the manual framing whenever the frame or the image changes so a
+  // format switch can never reveal empty edges.
+  useEffect(() => {
+    const t = bgTransformRef.current;
+    if (!baseImage) return;
+    if (t.zoom === 1 && t.offsetX === 0 && t.offsetY === 0) return;
+    const next = clampTransform(t);
+    if (next.offsetX !== t.offsetX || next.offsetY !== t.offsetY) {
+      bgTransformRef.current = next;
+      setBgTransform(next);
+    }
+  }, [baseImage, canvasSize.width, canvasSize.height, clampTransform]);
 
   // Add logo from file
   const addLogo = useCallback((file: File) => {
@@ -662,14 +789,10 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     if (baseImage) {
       const prevAlpha = ctx.globalAlpha;
       ctx.globalAlpha = bgOpacity;
-      if (activeFormat.key !== "original") {
-        const { sx, sy, sw, sh } = centerCropRect(
-          baseImage.naturalWidth, baseImage.naturalHeight, exportW, exportH
-        );
-        ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, exportW, exportH);
-      } else {
-        ctx.drawImage(baseImage, 0, 0, exportW, exportH);
-      }
+      const { sx, sy, sw, sh } = computeSourceRect(
+        baseImage.naturalWidth, baseImage.naturalHeight, exportW, exportH, bgTransform
+      );
+      ctx.drawImage(baseImage, sx, sy, sw, sh, 0, 0, exportW, exportH);
       ctx.globalAlpha = prevAlpha;
     }
 
@@ -693,7 +816,7 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     });
 
     return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
-  }, [baseImage, overlays, canvasSize, activeFormat, bgColor, bgOpacity]);
+  }, [baseImage, overlays, canvasSize, activeFormat, bgColor, bgOpacity, bgTransform]);
 
   const selectedOverlay = overlays.find((o) => o.id === selectedId) ?? null;
 
@@ -732,6 +855,13 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     setBgColor,
     bgOpacity,
     setBgOpacity,
+    bgTransform,
+    bgZoom: bgTransform.zoom,
+    setBgZoom,
+    panBackground,
+    zoomBackgroundAt,
+    resetBackgroundTransform,
+    applyBgTransform,
     cursorStyle: interaction.cursorStyle,
     setBaseImageUrl,
     baseImageUrl,

@@ -14,6 +14,7 @@ import {
   Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
   Send, CalendarClock, Facebook, Instagram, Twitter, Linkedin, Clock,
   Bold, Italic, Underline, Triangle, Diamond, Star, ArrowRight, Hexagon,
+  ZoomIn, ZoomOut, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -67,6 +68,8 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
 export type SavedOverlayConfig = {
   canvas?: { format?: string; width?: number; height?: number };
   overlays: Array<Record<string, any>>;
+  /** Manual background framing (pan + zoom) applied by the editor. */
+  background?: { zoom?: number; offsetX?: number; offsetY?: number } | null;
   /** Composer inputs, persisted so the editor can RE-COMPOSE the copy block
    *  for a different aspect ratio instead of merely rescaling it. */
   promo?: PromoArgs | null;
@@ -127,6 +130,12 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     setBgColor,
     bgOpacity,
     setBgOpacity,
+    bgTransform,
+    bgZoom,
+    setBgZoom,
+    zoomBackgroundAt,
+    resetBackgroundTransform,
+    applyBgTransform,
     cursorStyle,
     setBaseImageUrl,
     baseImageUrl: currentBaseImageUrl,
@@ -176,10 +185,11 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     // Defer hydration one tick so setFormat has applied canvasSize
     const t = setTimeout(() => {
       hydrateOverlays(initialOverlayConfig.overlays, initialOverlayConfig.canvas);
+      applyBgTransform(initialOverlayConfig.background);
       hydratedRef.current = true;
     }, 0);
     return () => clearTimeout(t);
-  }, [open, initialOverlayConfig, hydrateOverlays, setFormat]);
+  }, [open, initialOverlayConfig, hydrateOverlays, setFormat, applyBgTransform]);
 
   useEffect(() => {
     if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0 && !initialOverlayConfig) {
@@ -192,8 +202,27 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     if (!open) {
       appliedInitialRef.current = false;
       hydratedRef.current = false;
+      resetBackgroundTransform();
     }
-  }, [open]);
+  }, [open, resetBackgroundTransform]);
+
+  // Cursor-anchored wheel / trackpad-pinch zoom on the background. React's
+  // onWheel is passive, so preventDefault only works on a native listener.
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el || !open) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+      const px = (e.clientX - rect.left) * (el.width / rect.width);
+      const py = (e.clientY - rect.top) * (el.height / rect.height);
+      zoomBackgroundAt(Math.exp(-dy * 0.0015), px, py);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [open, canvasRef, zoomBackgroundAt, canvasSize.width, canvasSize.height]);
 
   // ── Tier 2: re-compose the promo copy block for the chosen format ──────────
   // Assets produced by the server composer carry their composer inputs in
@@ -267,6 +296,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     }),
     // Carry the composer inputs forward so a reviewer-saved copy is still
     // re-composable per format.
+    background: { ...bgTransform },
     promo: promoArgs ?? null,
   });
 
@@ -493,6 +523,54 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
                       onChange={(e) => setBgColor(e.target.value)}
                       className="w-6 h-6 rounded border border-input cursor-pointer"
                     />
+                  </div>
+
+                  {/* Manual framing: zoom + pan */}
+                  <div className="pt-2 mt-1 border-t border-border space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Zoom</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{Math.round(bgZoom * 100)}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => zoomBackgroundAt(1 / 1.15)}
+                        aria-label="Zoom out background"
+                      >
+                        <ZoomOut className="h-3 w-3" />
+                      </Button>
+                      <Slider
+                        min={100}
+                        max={400}
+                        step={1}
+                        value={[Math.round(bgZoom * 100)]}
+                        onValueChange={([v]) => setBgZoom(v / 100)}
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => zoomBackgroundAt(1.15)}
+                        aria-label="Zoom in background"
+                      >
+                        <ZoomIn className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] text-muted-foreground">
+                        Drag empty canvas to pan · scroll to zoom
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs"
+                        onClick={resetBackgroundTransform}
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" /> Reset
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

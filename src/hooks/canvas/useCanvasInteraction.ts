@@ -228,11 +228,13 @@ export function useCanvasInteraction(
   clearGuides: () => void,
   deleteOverlay: (id: string) => void,
   updateOverlay: (id: string, updates: Record<string, unknown>) => void,
+  panBackground?: (dxPx: number, dyPx: number) => void,
 ) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [cursorStyle, setCursorStyle] = useState<string>("default");
   const dragRef = useRef<DragState>(null);
   const resizeRef = useRef<ResizeState>(null);
+  const bgPanRef = useRef<{ lastX: number; lastY: number; hasMoved: boolean } | null>(null);
 
   // ── Hit test: geometry-aware, returns ALL candidates sorted by z-order (top first) ──
   const hitTestAll = useCallback(
@@ -347,11 +349,16 @@ export function useCanvasInteraction(
             hasMoved: false,
           };
         }
+      } else if (panBackground) {
+        // Empty canvas — start a background pan. Deselection happens on mouseup
+        // if the pointer never moved, so a plain click still clears selection.
+        bgPanRef.current = { lastX: mx, lastY: my, hasMoved: false };
+        setCursorStyle("grabbing");
       } else {
         setSelectedId(null);
       }
     },
-    [hitTest, hitTestBelow, selectedId, overlays, canvasRef, setSelectedId],
+    [hitTest, hitTestBelow, selectedId, overlays, canvasRef, setSelectedId, panBackground],
   );
 
   const onMouseMove = useCallback(
@@ -360,6 +367,20 @@ export function useCanvasInteraction(
       const rect = canvas?.getBoundingClientRect();
       if (!canvas || !rect) return;
       const { mx, my } = getCanvasCoords(e.clientX, e.clientY, canvas, rect);
+
+      // Background pan mode
+      if (bgPanRef.current && panBackground) {
+        const pan = bgPanRef.current;
+        const dx = mx - pan.lastX;
+        const dy = my - pan.lastY;
+        if (!pan.hasMoved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+        pan.hasMoved = true;
+        pan.lastX = mx;
+        pan.lastY = my;
+        panBackground(dx, dy);
+        return;
+      }
+
 
       // Resize mode
       if (resizeRef.current) {
@@ -452,10 +473,10 @@ export function useCanvasInteraction(
         setCursorStyle(hover.locked ? "not-allowed" : "grab");
       } else {
         setHoveredId(null);
-        setCursorStyle("default");
+        setCursorStyle(panBackground ? "grab" : "default");
       }
     },
-    [hitTest, selectedId, overlays, canvasRef, snapOverlay, setGuides, setOverlaysLive],
+    [hitTest, selectedId, overlays, canvasRef, snapOverlay, setGuides, setOverlaysLive, panBackground],
   );
 
   const onMouseUp = useCallback(() => {
@@ -463,10 +484,14 @@ export function useCanvasInteraction(
       pushState(overlays);
       clearGuides();
     }
+    if (bgPanRef.current && !bgPanRef.current.hasMoved) {
+      setSelectedId(null);
+    }
+    bgPanRef.current = null;
     dragRef.current = null;
     resizeRef.current = null;
     setCursorStyle("default");
-  }, [overlays, pushState, clearGuides]);
+  }, [overlays, pushState, clearGuides, setSelectedId]);
 
   // Touch handlers
   const onTouchStart = useCallback(
@@ -490,22 +515,39 @@ export function useCanvasInteraction(
             hasMoved: false,
           };
         }
+      } else if (panBackground) {
+        bgPanRef.current = { lastX: mx, lastY: my, hasMoved: false };
       } else {
         setSelectedId(null);
       }
     },
-    [hitTest, canvasRef, setSelectedId],
+    [hitTest, canvasRef, setSelectedId, panBackground],
   );
 
   const onTouchMove = useCallback(
     (e: React.TouchEvent<HTMLCanvasElement>) => {
-      if (!dragRef.current) return;
-      const drag = dragRef.current;
       const touch = e.touches[0];
       const canvas = canvasRef.current;
       const rect = canvas?.getBoundingClientRect();
       if (!canvas || !rect || !touch) return;
       const { mx, my } = getCanvasCoords(touch.clientX, touch.clientY, canvas, rect);
+
+      // Background pan (single finger on empty canvas)
+      if (bgPanRef.current && panBackground) {
+        const pan = bgPanRef.current;
+        const dx = mx - pan.lastX;
+        const dy = my - pan.lastY;
+        if (!pan.hasMoved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+        pan.hasMoved = true;
+        pan.lastX = mx;
+        pan.lastY = my;
+        e.preventDefault();
+        panBackground(dx, dy);
+        return;
+      }
+
+      if (!dragRef.current) return;
+      const drag = dragRef.current;
 
       if (!drag.hasMoved) {
         const dist = Math.hypot(mx - drag.startX, my - drag.startY);
@@ -532,7 +574,7 @@ export function useCanvasInteraction(
         return next;
       });
     },
-    [canvasRef, snapOverlay, setGuides, setOverlaysLive],
+    [canvasRef, snapOverlay, setGuides, setOverlaysLive, panBackground],
   );
 
   const onTouchEnd = useCallback(() => {
@@ -540,8 +582,12 @@ export function useCanvasInteraction(
       pushState(overlays);
       clearGuides();
     }
+    if (bgPanRef.current && !bgPanRef.current.hasMoved) {
+      setSelectedId(null);
+    }
+    bgPanRef.current = null;
     dragRef.current = null;
-  }, [overlays, pushState, clearGuides]);
+  }, [overlays, pushState, clearGuides, setSelectedId]);
 
   // Keyboard handler
   const onKeyDown = useCallback(
