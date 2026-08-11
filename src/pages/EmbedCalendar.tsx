@@ -72,6 +72,10 @@ const EmbedCalendar = () => {
   const primaryColor = config?.primary_color || "#6366f1";
   const accentColor = config?.accent_color || primaryColor;
 
+  // This route is an iframe target, not a destination page — keep it out of
+  // the index so it never competes with the real calendar/tournament pages.
+  const embedSeo = <Seo title="Event Calendar" noindex />;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
