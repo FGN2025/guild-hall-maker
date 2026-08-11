@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import Seo from "@/components/Seo";
-import { buildEventJsonLd, toMetaDescription } from "@/lib/seo/eventJsonLd";
+import { buildEventJsonLd, eventHeadline, toMetaDescription } from "@/lib/seo/eventJsonLd";
 import { usePublicTenantBySlug, usePublicTenantEvent, usePublicEventAssets } from "@/hooks/usePublicTenantEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,7 +99,7 @@ const TenantEventDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <Seo
-        title={ev?.game ? `${ev.name} — ${ev.game}` : (ev?.name ?? "Event")}
+        title={ev?.name ? eventHeadline(ev.name, ev.game) : "Event"}
         description={seoDescription}
         path={eventPath}
         image={ev?.image_url ?? tenant.logo_url ?? undefined}

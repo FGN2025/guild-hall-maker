@@ -27,7 +27,7 @@ import PageBackground from "@/components/PageBackground";
 import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
 import { fetchTournamentCapacity } from "@/lib/tournamentCapacity";
 import Seo from "@/components/Seo";
-import { buildEventJsonLd, toMetaDescription } from "@/lib/seo/eventJsonLd";
+import { buildEventJsonLd, eventHeadline, toMetaDescription } from "@/lib/seo/eventJsonLd";
 
 const TournamentDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -115,7 +115,7 @@ const TournamentDetail = () => {
   return (
     <div className="relative">
       <Seo
-        title={`${t.name} — ${t.game} Tournament`}
+        title={eventHeadline(t.name, t.game)}
         description={seoDescription}
         path={`/tournaments/${t.id}`}
         image={coverUrl ?? undefined}
