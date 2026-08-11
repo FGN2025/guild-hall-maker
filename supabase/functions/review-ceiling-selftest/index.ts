@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
       await client.queryArray("SAVEPOINT sp");
       try {
         await client.queryArray(`SET LOCAL ROLE ${c.role}`);
-        await client.queryArray("SELECT set_config('request.jwt.claims', $1, true)", [c.claims]);
+        await client.queryArray("SELECT set_config('request.jwt.claims', $1::text, true)", [c.claims]);
         await client.queryArray(c.sql);
         passed = c.expect === "allow";
         detail = passed ? "statement succeeded, as required" : "STATEMENT SUCCEEDED BUT SHOULD HAVE BEEN REFUSED";
