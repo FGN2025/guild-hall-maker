@@ -33,6 +33,30 @@ const Tournaments = () => {
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
+  // ItemList of upcoming/open tournaments so the hub is eligible for
+  // Google's event carousel rather than being read as a bare index page.
+  const tournamentListJsonLd = useMemo(() => {
+    const upcoming = tournaments
+      .filter((t) => t.status === "open" || t.status === "upcoming")
+      .slice(0, 20);
+
+    if (upcoming.length === 0) return undefined;
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Upcoming esports tournaments",
+      itemListElement: upcoming.map((t, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${SITE_URL}/tournaments/${t.id}`,
+        name: t.name,
+      })),
+    };
+  }, [tournaments]);
+
+
+
   const filtered = useMemo(() => {
     const result = tournaments.filter((t) => {
       const matchesSearch =
