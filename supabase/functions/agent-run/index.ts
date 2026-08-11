@@ -673,6 +673,9 @@ Deno.serve(async (req) => {
     turn_cap,
     target_month,
     seed_density,
+    range_start,
+    range_end,
+    include_kickoff,
     slice_budget_ms,
   } = payload ?? {};
 
@@ -682,6 +685,7 @@ Deno.serve(async (req) => {
   }
   if (instruction && String(instruction).length > 500) return json({ error: "instruction max 500 chars" }, 400);
 
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   let seedMonth: string | null = null;
   if (mode === "monthly_calendar_seed") {
     if (!target_month || !/^\d{4}-\d{2}$/.test(String(target_month))) {
@@ -690,6 +694,11 @@ Deno.serve(async (req) => {
     const mNum = Number(String(target_month).slice(5, 7));
     if (mNum < 1 || mNum > 12) return json({ error: "target_month month out of range" }, 400);
     seedMonth = String(target_month);
+    if (range_start && !DATE_RE.test(String(range_start))) return json({ error: "range_start must be YYYY-MM-DD" }, 400);
+    if (range_end && !DATE_RE.test(String(range_end))) return json({ error: "range_end must be YYYY-MM-DD" }, 400);
+    if (range_start && range_end && String(range_start) > String(range_end)) {
+      return json({ error: "range_start must not be after range_end" }, 400);
+    }
   }
   if (seed_density && !["light", "standard", "full"].includes(seed_density)) {
     return json({ error: "seed_density must be light, standard or full" }, 400);
