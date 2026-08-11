@@ -310,8 +310,12 @@ export async function buildPreflight(
   let beatsIncluded = 0, beatsSkipped = 0;
   for (const it of raw) for (const b of it.beats) (b.included ? beatsIncluded++ : beatsSkipped++);
 
+  // An event with every beat skipped gets no campaign at all — counting it
+  // would overstate the plan and manufacture a false divergence later.
+  const eventsWithWork = raw.filter((it) => it.beats.some((b) => b.included)).length;
+
   const expected = {
-    campaigns: raw.length + (kickoff.included ? 1 : 0),
+    campaigns: eventsWithWork + (kickoff.included ? 1 : 0),
     assets: beatsIncluded + (kickoff.included ? 1 : 0),
     posts: (beatsIncluded + (kickoff.included ? 1 : 0)) * platformCount,
     beats_included: beatsIncluded,
