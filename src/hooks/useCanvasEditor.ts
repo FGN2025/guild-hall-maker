@@ -878,6 +878,9 @@ export function useCanvasEditor(initialBaseImageUrl?: string) {
     zoomBackgroundAt,
     resetBackgroundTransform,
     applyBgTransform,
+    scrim,
+    setScrim,
+
     cursorStyle: interaction.cursorStyle,
     setBaseImageUrl,
     baseImageUrl,
