@@ -118,6 +118,9 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
 
   const sceneToOverlayConfig = (scene: PromoScene): SavedOverlayConfig => ({
     canvas: { format: scene.format, width: scene.width, height: scene.height },
+    // Fixed layer: stays put when the artwork is panned or zoomed.
+    scrim: scrimFromScene(scene, !!scene.backgroundUrl),
+    scrimImageBg: !!scene.backgroundUrl,
     overlays: promoSceneToEditorTexts(scene).map((t) => ({
       id: crypto.randomUUID(),
       type: "text",
@@ -130,6 +133,7 @@ export function TenantPromoPickerDialog({ open, onOpenChange, tenantId, onSave, 
       fontWeight: t.fontWeight,
     })),
   });
+
 
   const handleQuickCreate = async (evt: TenantEvent) => {
     setQuickCreating(evt.id);
