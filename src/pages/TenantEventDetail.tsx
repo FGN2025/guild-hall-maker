@@ -1,5 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
+import Seo from "@/components/Seo";
+import { buildEventJsonLd, toMetaDescription } from "@/lib/seo/eventJsonLd";
 import { usePublicTenantBySlug, usePublicTenantEvent, usePublicEventAssets } from "@/hooks/usePublicTenantEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
