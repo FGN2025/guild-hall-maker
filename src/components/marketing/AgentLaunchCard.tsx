@@ -2,14 +2,21 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgentLaunchGate, useAgentRuns } from "@/hooks/useAgentRuns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, Loader2 } from "lucide-react";
+import { Bot, Loader2, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Props = { tenantId: string; role: "admin" | "manager" | "marketing" | string };
@@ -35,6 +42,29 @@ function monthOptions() {
   return out;
 }
 
+/** Inclusive first/last day of a YYYY-MM, as YYYY-MM-DD. */
+function monthBounds(ym: string) {
+  const y = Number(ym.slice(0, 4));
+  const m = Number(ym.slice(5, 7));
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return { start: `${ym}-01`, end: `${ym}-${String(last).padStart(2, "0")}` };
+}
+
+type Preflight = {
+  scope: {
+    tenant_id: string; tenant_name?: string | null; timezone: string; target_month: string;
+    range_start: string; range_end: string; include_kickoff: boolean; density: string;
+    instruction: string | null; run_date: string;
+  };
+  kickoff: { included: boolean; reason: string; scheduled_at?: string | null };
+  platforms: string[];
+  items: Array<{
+    kind: string; id: string; title: string; date: string;
+    beats: Array<{ beat: string; action: "create" | "skip"; scheduled_at: string | null; reason: string }>;
+  }>;
+  expected: { campaigns: number; posts: number; assets: number };
+};
+
 export default function AgentLaunchCard({ tenantId, role }: Props) {
   const canLaunch = role === "admin" || role === "manager";
   const gate = useAgentLaunchGate();
@@ -50,8 +80,28 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [targetMonth, setTargetMonth] = useState<string>(MONTHS[0].value);
   const [density, setDensity] = useState<string>("");
+  // Structured scope. The range defaults from the month and stays editable;
+  // once the user edits it we stop re-deriving it on month change.
+  const [rangeStart, setRangeStart] = useState<string>(monthBounds(MONTHS[0].value).start);
+  const [rangeEnd, setRangeEnd] = useState<string>(monthBounds(MONTHS[0].value).end);
+  const [rangeTouched, setRangeTouched] = useState(false);
+  const [includeKickoff, setIncludeKickoff] = useState(true);
+  // Pre-flight, computed server side from the same module the runner uses.
+  const [preflight, setPreflight] = useState<Preflight | null>(null);
+  const [preflighting, setPreflighting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const isSeedMode = mode === "monthly_calendar_seed";
+
+  const onMonthChange = (v: string) => {
+    setTargetMonth(v);
+    setPreflight(null);
+    if (!rangeTouched) {
+      const b = monthBounds(v);
+      setRangeStart(b.start);
+      setRangeEnd(b.end);
+    }
+  };
 
   // Tenant default seed density — used as the placeholder when the launcher
   // does not override it for this run.
@@ -91,6 +141,45 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
     setTimeout(() => setActiveRunId(null), 0);
   }
 
+  const scopeBody = () => ({
+    tenant_id: tenantId,
+    target_month: targetMonth,
+    range_start: rangeStart,
+    range_end: rangeEnd,
+    include_kickoff: includeKickoff,
+    seed_density: density || undefined,
+    instruction: instruction || undefined,
+  });
+
+  const runPreflight = async () => {
+    setPreflighting(true);
+    setPreflight(null);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-preflight`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sess.session?.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify(scopeBody()),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        toast({ title: "Pre-flight failed", description: body.error ?? `HTTP ${res.status}`, variant: "destructive" });
+        return null;
+      }
+      setPreflight(body.preflight as Preflight);
+      return body.preflight as Preflight;
+    } catch (e: any) {
+      toast({ title: "Pre-flight failed", description: e.message, variant: "destructive" });
+      return null;
+    } finally {
+      setPreflighting(false);
+    }
+  };
+
   const launch = async () => {
     setLaunching(true);
     try {
@@ -114,6 +203,9 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
           instruction: instruction || undefined,
           target_month: isSeedMode ? targetMonth : undefined,
           seed_density: isSeedMode ? density || undefined : undefined,
+          range_start: isSeedMode ? rangeStart : undefined,
+          range_end: isSeedMode ? rangeEnd : undefined,
+          include_kickoff: isSeedMode ? includeKickoff : undefined,
         }),
       });
       const body = await res.json();
@@ -129,7 +221,15 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
       toast({ title: "Launch failed", description: e.message, variant: "destructive" });
     } finally {
       setLaunching(false);
+      setConfirmOpen(false);
     }
+  };
+
+  /** Seed runs must show the effective plan before they spend anything. */
+  const onLaunchClick = async () => {
+    if (!isSeedMode) return launch();
+    const pf = preflight ?? (await runPreflight());
+    if (pf) setConfirmOpen(true);
   };
 
   if (!canLaunch) return null;
@@ -155,7 +255,7 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Mode</Label>
-            <Select value={mode} onValueChange={(v: any) => setMode(v)}>
+            <Select value={mode} onValueChange={(v: any) => { setMode(v); setPreflight(null); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="single_campaign">Single campaign</SelectItem>
@@ -167,7 +267,7 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
           {isSeedMode ? (
             <div>
               <Label>Target month</Label>
-              <Select value={targetMonth} onValueChange={setTargetMonth}>
+              <Select value={targetMonth} onValueChange={onMonthChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {MONTHS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
@@ -189,21 +289,55 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
         </div>
 
         {isSeedMode ? (
-          <div>
-            <Label>Seed density</Label>
-            <Select value={density || "__default__"} onValueChange={(v) => setDensity(v === "__default__" ? "" : v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__default__">Tenant default ({tenantDensity ?? "standard"})</SelectItem>
-                <SelectItem value="light">Light — one day-of post per event</SelectItem>
-                <SelectItem value="standard">Standard — announce plus day-of</SelectItem>
-                <SelectItem value="full">Full — announce, countdown, day-of, recap</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Composition only. The seed lane never generates imagery and never publishes.
-            </p>
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Range start</Label>
+                <Input
+                  type="date"
+                  value={rangeStart}
+                  onChange={(e) => { setRangeStart(e.target.value); setRangeTouched(true); setPreflight(null); }}
+                />
+              </div>
+              <div>
+                <Label>Range end</Label>
+                <Input
+                  type="date"
+                  value={rangeEnd}
+                  onChange={(e) => { setRangeEnd(e.target.value); setRangeTouched(true); setPreflight(null); }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded border p-2">
+              <div>
+                <Label className="cursor-pointer">Include monthly kickoff</Label>
+                <p className="text-xs text-muted-foreground">
+                  Skipped automatically when the month is already underway at run time.
+                </p>
+              </div>
+              <Switch
+                checked={includeKickoff}
+                onCheckedChange={(v) => { setIncludeKickoff(v); setPreflight(null); }}
+              />
+            </div>
+
+            <div>
+              <Label>Seed density</Label>
+              <Select value={density || "__default__"} onValueChange={(v) => { setDensity(v === "__default__" ? "" : v); setPreflight(null); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__default__">Tenant default ({tenantDensity ?? "standard"})</SelectItem>
+                  <SelectItem value="light">Light — one day-of post per event</SelectItem>
+                  <SelectItem value="standard">Standard — announce plus day-of</SelectItem>
+                  <SelectItem value="full">Full — announce, countdown, day-of, recap</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Composition only. The seed lane never generates imagery and never publishes.
+              </p>
+            </div>
+          </>
         ) : (
           <div>
             <Label>Anchor event (optional)</Label>
@@ -221,23 +355,96 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
           <Label>Launcher instruction (optional, 500 char max)</Label>
           <Textarea
             value={instruction}
-            onChange={(e) => setInstruction(e.target.value.slice(0, 500))}
-            placeholder="Any specific focus for this run…"
+            onChange={(e) => { setInstruction(e.target.value.slice(0, 500)); setPreflight(null); }}
+            placeholder="Nuance only — scope travels in the fields above…"
             className="min-h-[80px]"
           />
           <div className="text-xs text-muted-foreground text-right">{instruction.length}/500</div>
         </div>
 
-        <div className="flex gap-2">
-          <Button onClick={launch} disabled={disabled || launching || !!activeRun}>
-            {(launching || activeRun) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {activeRun ? `Run ${activeRun.status}…` : "Launch"}
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={onLaunchClick} disabled={disabled || launching || preflighting || !!activeRun}>
+            {(launching || preflighting || activeRun) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {activeRun ? `Run ${activeRun.status}…` : isSeedMode ? "Pre-flight & launch" : "Launch"}
           </Button>
+          {isSeedMode && (
+            <Button variant="secondary" onClick={runPreflight} disabled={preflighting || !!activeRun}>
+              <ListChecks className="mr-2 h-4 w-4" />
+              Pre-flight only
+            </Button>
+          )}
           <Button variant="outline" onClick={() => navigate("/tenant/marketing?tab=agent")}>
             Open Agent Drafts
           </Button>
         </div>
+
+        {isSeedMode && preflight && <PreflightSummary pf={preflight} />}
       </CardContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm run scope</AlertDialogTitle>
+            <AlertDialogDescription>
+              This is exactly what will be sent to the runner. Nothing outside it will be created.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {preflight && (
+            <ScrollArea className="max-h-[50vh] pr-3">
+              <PreflightSummary pf={preflight} />
+            </ScrollArea>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={launch} disabled={launching}>Launch run</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
+  );
+}
+
+function PreflightSummary({ pf }: { pf: Preflight }) {
+  return (
+    <div className="rounded border bg-muted/40 p-3 space-y-3 text-sm">
+      <div className="flex flex-wrap gap-2 items-center">
+        <Badge variant="outline">{pf.scope.target_month}</Badge>
+        <Badge variant="outline">{pf.scope.range_start} → {pf.scope.range_end}</Badge>
+        <Badge variant="outline">density {pf.scope.density}</Badge>
+        <Badge variant={pf.kickoff.included ? "default" : "secondary"}>
+          kickoff {pf.kickoff.included ? "included" : "skipped"}
+        </Badge>
+        <span className="text-xs text-muted-foreground">{pf.scope.timezone}</span>
+      </div>
+      <p className="text-xs text-muted-foreground">Kickoff: {pf.kickoff.reason}</p>
+      <p className="text-xs text-muted-foreground">
+        Platforms: {pf.platforms.length ? pf.platforms.join(", ") : "none connected"}
+      </p>
+      <div className="font-medium">
+        Expected: {pf.expected.campaigns} campaign(s) · {pf.expected.posts} post(s) · {pf.expected.assets} asset(s)
+      </div>
+      <div className="space-y-2">
+        {pf.items.length === 0 && <p className="text-muted-foreground">No events in range.</p>}
+        {pf.items.map((it) => (
+          <div key={`${it.kind}:${it.id}`} className="rounded border bg-background p-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{it.kind}</Badge>
+              <span className="font-medium">{it.title}</span>
+              <span className="text-xs text-muted-foreground">{new Date(it.date).toLocaleString()}</span>
+            </div>
+            <ul className="mt-1 space-y-0.5 text-xs">
+              {it.beats.map((b) => (
+                <li key={b.beat} className={b.action === "create" ? "" : "text-muted-foreground"}>
+                  <span className="font-mono">{b.action === "create" ? "✓" : "–"}</span>{" "}
+                  <span className="font-medium">{b.beat}</span>
+                  {b.scheduled_at ? ` · ${new Date(b.scheduled_at).toLocaleString()}` : ""}
+                  {` · ${b.reason}`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

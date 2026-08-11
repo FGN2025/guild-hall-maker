@@ -255,15 +255,21 @@ export type Database = {
           created_at: string
           created_row_ids: Json
           error_message: string | null
+          failure_kind: string | null
           finished_at: string | null
           heartbeat_at: string | null
           id: string
+          include_kickoff: boolean | null
           input_tokens: number
           instruction: string | null
           launched_by: string
           mode: string | null
           output_tokens: number
+          preflight: Json | null
           prompt_version: number | null
+          range_end: string | null
+          range_start: string | null
+          scope: Json | null
           seed_density: string | null
           started_at: string
           status: string
@@ -283,15 +289,21 @@ export type Database = {
           created_at?: string
           created_row_ids?: Json
           error_message?: string | null
+          failure_kind?: string | null
           finished_at?: string | null
           heartbeat_at?: string | null
           id?: string
+          include_kickoff?: boolean | null
           input_tokens?: number
           instruction?: string | null
           launched_by: string
           mode?: string | null
           output_tokens?: number
+          preflight?: Json | null
           prompt_version?: number | null
+          range_end?: string | null
+          range_start?: string | null
+          scope?: Json | null
           seed_density?: string | null
           started_at?: string
           status?: string
@@ -311,15 +323,21 @@ export type Database = {
           created_at?: string
           created_row_ids?: Json
           error_message?: string | null
+          failure_kind?: string | null
           finished_at?: string | null
           heartbeat_at?: string | null
           id?: string
+          include_kickoff?: boolean | null
           input_tokens?: number
           instruction?: string | null
           launched_by?: string
           mode?: string | null
           output_tokens?: number
+          preflight?: Json | null
           prompt_version?: number | null
+          range_end?: string | null
+          range_start?: string | null
+          scope?: Json | null
           seed_density?: string | null
           started_at?: string
           status?: string

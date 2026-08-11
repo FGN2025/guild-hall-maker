@@ -9,7 +9,17 @@ export type AgentRun = {
   archetype: string | null;
   anchor: string | null;
   instruction: string | null;
-  status: "running" | "succeeded" | "failed";
+  status: "running" | "succeeded" | "completed" | "failed";
+  /** Structured scope recorded at launch (seed lane). */
+  scope: any | null;
+  /** Server-computed pre-flight snapshot recorded at launch (seed lane). */
+  preflight: any | null;
+  failure_kind: string | null;
+  target_month: string | null;
+  seed_density: string | null;
+  range_start: string | null;
+  range_end: string | null;
+  include_kickoff: boolean | null;
   turn_cap: number;
   turns_used: number;
   input_tokens: number;

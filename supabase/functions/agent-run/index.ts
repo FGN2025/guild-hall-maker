@@ -28,6 +28,14 @@ const AGENT_MCP_URL = `${SUPABASE_URL}/functions/v1/agent-mcp`;
 /** Build stamp — shared single source in ../_shared/build-id.ts so agent-run,
  *  agent-mcp and mcp can never disagree about which code is live. */
 import { BUILD_ID } from "../_shared/build-id.ts";
+/* Structured scope: the pre-flight the launcher confirms and the constraint
+ * block this runner injects come from ONE module, so they cannot drift. */
+import {
+  buildPreflight,
+  renderConstraintBlock,
+  scopeSummary,
+  classifyFailure,
+} from "../_shared/seed-scope.ts";
 
 
 const service = () => createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -364,6 +372,8 @@ async function runAgentLoop(opts: {
   turnsSoFar?: number;
   inputTokensSoFar?: number;
   outputTokensSoFar?: number;
+  /** Run start instant, used for live created-row progress. */
+  startedAtIso?: string;
   /** Test override: shrink the slice so the continuation path is exercised. */
   sliceBudgetMs?: number;
 }) {
@@ -433,6 +443,14 @@ async function runAgentLoop(opts: {
       heartbeat_at: new Date().toISOString(),
     });
 
+    // Live progress: refresh the created-row ids while the run is still
+    // running so the UI can show rows-created instead of a bare spinner.
+    if (opts.startedAtIso && turns % 3 === 0) {
+      try {
+        await updateRun(runId, { created_row_ids: await collectCreatedRowIds(tenantId, userId, opts.startedAtIso) });
+      } catch { /* progress is best-effort, never fail a run over it */ }
+    }
+
     const toolUses = content.filter((c: any) => c.type === "tool_use");
     if (toolUses.length === 0) {
       finalText = content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n\n");
@@ -497,6 +515,7 @@ async function driveRun(params: {
       turnsSoFar: run.turns_used ?? 0,
       inputTokensSoFar: run.input_tokens ?? 0,
       outputTokensSoFar: run.output_tokens ?? 0,
+      startedAtIso: run.started_at,
       sliceBudgetMs: params.sliceBudgetMs,
     });
 
@@ -507,6 +526,7 @@ async function driveRun(params: {
         await updateRun(run.id, {
           status: "failed",
           error_message: "continuation_limit_exceeded",
+          failure_kind: classifyFailure("continuation_limit_exceeded"),
           finished_at: new Date().toISOString(),
           turns_used: result.turns,
           input_tokens: result.inputTokens,
@@ -522,6 +542,7 @@ async function driveRun(params: {
         turns_used: result.turns,
         input_tokens: result.inputTokens,
         output_tokens: result.outputTokens,
+        created_row_ids: await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => undefined),
         heartbeat_at: new Date().toISOString(),
       });
       await handOff(run.id, params.sliceBudgetMs);
@@ -540,11 +561,13 @@ async function driveRun(params: {
     };
     if (result.status === "completed") {
       patch.status = "completed";
+      patch.failure_kind = null;
       await updateRun(run.id, patch);
       await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
     } else {
       patch.status = "failed";
       patch.error_message = (result as any).error ?? "unknown";
+      patch.failure_kind = classifyFailure(patch.error_message);
       await updateRun(run.id, patch);
       await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
     }
@@ -555,6 +578,7 @@ async function driveRun(params: {
     await updateRun(run.id, {
       status: "failed",
       error_message: msg,
+      failure_kind: classifyFailure(msg),
       finished_at: new Date().toISOString(),
       created_row_ids: created,
     });
@@ -649,6 +673,9 @@ Deno.serve(async (req) => {
     turn_cap,
     target_month,
     seed_density,
+    range_start,
+    range_end,
+    include_kickoff,
     slice_budget_ms,
   } = payload ?? {};
 
@@ -658,6 +685,7 @@ Deno.serve(async (req) => {
   }
   if (instruction && String(instruction).length > 500) return json({ error: "instruction max 500 chars" }, 400);
 
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   let seedMonth: string | null = null;
   if (mode === "monthly_calendar_seed") {
     if (!target_month || !/^\d{4}-\d{2}$/.test(String(target_month))) {
@@ -666,6 +694,11 @@ Deno.serve(async (req) => {
     const mNum = Number(String(target_month).slice(5, 7));
     if (mNum < 1 || mNum > 12) return json({ error: "target_month month out of range" }, 400);
     seedMonth = String(target_month);
+    if (range_start && !DATE_RE.test(String(range_start))) return json({ error: "range_start must be YYYY-MM-DD" }, 400);
+    if (range_end && !DATE_RE.test(String(range_end))) return json({ error: "range_end must be YYYY-MM-DD" }, 400);
+    if (range_start && range_end && String(range_start) > String(range_end)) {
+      return json({ error: "range_start must not be after range_end" }, 400);
+    }
   }
   if (seed_density && !["light", "standard", "full"].includes(seed_density)) {
     return json({ error: "seed_density must be light, standard or full" }, 400);
@@ -706,6 +739,34 @@ Deno.serve(async (req) => {
   const modeCap = await turnCapForMode(mode);
   const effectiveTurnCap = Math.max(1, Math.min(modeCap, Number(turn_cap) || modeCap));
 
+  // Structured scope. For the seed lane the run's authorised work is computed
+  // HERE, server side, by the same module the pre-flight endpoint calls. The
+  // model is told the plan; it does not infer it from prose.
+  let preflight: any = null;
+  let scopeRow: any = null;
+  let effRangeStart: string | null = null;
+  let effRangeEnd: string | null = null;
+  let effIncludeKickoff: boolean | null = null;
+  if (mode === "monthly_calendar_seed") {
+    try {
+      preflight = await buildPreflight(svc, {
+        tenant_id,
+        target_month: seedMonth!,
+        range_start: range_start ?? null,
+        range_end: range_end ?? null,
+        include_kickoff: typeof include_kickoff === "boolean" ? include_kickoff : true,
+        density: (effectiveDensity as any) ?? null,
+        instruction: instruction ?? null,
+      });
+      effRangeStart = preflight.scope.range_start;
+      effRangeEnd = preflight.scope.range_end;
+      effIncludeKickoff = preflight.scope.include_kickoff;
+      scopeRow = { ...preflight.scope, summary: scopeSummary(preflight), expected: preflight.expected, kickoff: preflight.kickoff };
+    } catch (e) {
+      return json({ error: `preflight failed: ${(e as Error).message}` }, 500);
+    }
+  }
+
   const { data: run, error: runErr } = await svc.from("agent_runs").insert({
     tenant_id,
     launched_by: userId,
@@ -719,21 +780,31 @@ Deno.serve(async (req) => {
     turn_cap: effectiveTurnCap,
     target_month: seedMonth,
     seed_density: effectiveDensity,
+    range_start: effRangeStart,
+    range_end: effRangeEnd,
+    include_kickoff: effIncludeKickoff,
+    scope: scopeRow,
+    preflight,
   }).select().single();
   if (runErr || !run) return json({ error: runErr?.message ?? "run insert failed" }, 500);
 
-  const userMessage = [
-    `Tenant id: ${tenant_id}`,
-    `Mode: ${mode}`,
-    seedMonth ? `Target month: ${seedMonth}` : null,
-    effectiveDensity ? `Seed density: ${effectiveDensity}` : null,
-    archetype ? `Archetype: ${archetype}` : null,
-    anchor_event_id ? `Anchor tenant_event_id: ${anchor_event_id}` : null,
-    anchor_tournament_id ? `Anchor tournament_id: ${anchor_tournament_id}` : null,
-    instruction ? `Launcher instruction: ${instruction}` : null,
-    "",
-    "Follow the workflow strictly. Every write must be pending_review.",
-  ].filter(Boolean).join("\n");
+  const userMessage = preflight
+    ? [
+        renderConstraintBlock(preflight),
+        "",
+        `Mode: ${mode}`,
+        "Follow the workflow strictly. Every write must be pending_review.",
+      ].join("\n")
+    : [
+        `Tenant id: ${tenant_id}`,
+        `Mode: ${mode}`,
+        archetype ? `Archetype: ${archetype}` : null,
+        anchor_event_id ? `Anchor tenant_event_id: ${anchor_event_id}` : null,
+        anchor_tournament_id ? `Anchor tournament_id: ${anchor_tournament_id}` : null,
+        instruction ? `Launcher instruction: ${instruction}` : null,
+        "",
+        "Follow the workflow strictly. Every write must be pending_review.",
+      ].filter(Boolean).join("\n");
 
   // Background the loop so the HTTP call returns quickly with the run id.
   // waitUntil keeps the worker alive past the response; driveRun hands off to a
