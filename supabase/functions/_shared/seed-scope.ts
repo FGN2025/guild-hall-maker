@@ -118,7 +118,9 @@ function localParts(at: Date, tz: string) {
 }
 
 function isoWithOffset(at: Date, tz: string): string {
-  const off = tzOffsetMinutes(at, tz);
+  // Round: tzOffsetMinutes derives from a date-diff that carries the source
+  // instant's milliseconds, which would otherwise leak a fractional offset.
+  const off = Math.round(tzOffsetMinutes(at, tz));
   const sign = off >= 0 ? "+" : "-";
   const abs = Math.abs(off);
   const hh = String(Math.floor(abs / 60)).padStart(2, "0");
@@ -127,7 +129,7 @@ function isoWithOffset(at: Date, tz: string): string {
   const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour12: false, second: "2-digit" })
     .formatToParts(at).find((x) => x.type === "second")?.value ?? "00";
   return `${l.y}-${String(l.mo).padStart(2, "0")}-${String(l.d).padStart(2, "0")}T` +
-    `${String(l.h).padStart(2, "0")}:${String(l.mi).padStart(2, "0")}:${s}${sign}${hh}:${mm}`;
+    `${String(l.h).padStart(2, "0")}:${String(l.mi).padStart(2, "0")}:${s.padStart(2, "0")}${sign}${hh}:${mm}`;
 }
 
 function lastDayOfMonth(y: number, m: number) {
