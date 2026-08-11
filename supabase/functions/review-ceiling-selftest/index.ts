@@ -210,12 +210,12 @@ Deno.serve(async (req) => {
       { id: "X1", group: "adjacent", path: "anon", role: "anon", claims: null, expect: "deny", pattern: "permission denied",
         desc: "anon cannot read tenants.contact_email (column-level grant)", sql: `SELECT contact_email FROM public.tenants LIMIT 1` },
       { id: "X2", group: "adjacent", path: "anon", role: "anon", claims: null, expect: "deny", pattern: "permission denied",
-        desc: "anon cannot execute the guarded registration-count aggregate", sql: `SELECT public.get_tournament_registration_counts()` },
+        desc: "anon cannot execute the guarded registration-count aggregate", sql: `SELECT public.get_tournament_registration_counts(ARRAY[]::uuid[])` },
       { id: "X3", group: "adjacent", path: "anon", role: "anon", claims: null, expect: "allow",
-        desc: "the public capacity aggregate stays callable by anon", sql: `SELECT public.get_tournament_capacity()` },
-      { id: "X4", group: "adjacent", path: "anon", role: "anon", claims: null, expect: "allow",
-        desc: "anon reads zero social_connections rows (token exposure)",
-        sql: `DO $$ DECLARE n int; BEGIN SELECT count(*) INTO n FROM public.social_connections; IF n > 0 THEN RAISE EXCEPTION 'anon can read % social_connections rows', n; END IF; END $$` },
+        desc: "the public capacity aggregate stays callable by anon", sql: `SELECT public.get_tournament_capacity(ARRAY[]::uuid[])` },
+      { id: "X4", group: "adjacent", path: "anon", role: "anon", claims: null, expect: "deny", pattern: "permission denied",
+        desc: "anon cannot reach social_connections at all (stored token exposure)",
+        sql: `SELECT 1 FROM public.social_connections LIMIT 1` },
     ];
 
     for (const c of cases) {
