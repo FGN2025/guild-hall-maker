@@ -28,6 +28,14 @@ const AGENT_MCP_URL = `${SUPABASE_URL}/functions/v1/agent-mcp`;
 /** Build stamp — shared single source in ../_shared/build-id.ts so agent-run,
  *  agent-mcp and mcp can never disagree about which code is live. */
 import { BUILD_ID } from "../_shared/build-id.ts";
+/* Structured scope: the pre-flight the launcher confirms and the constraint
+ * block this runner injects come from ONE module, so they cannot drift. */
+import {
+  buildPreflight,
+  renderConstraintBlock,
+  scopeSummary,
+  classifyFailure,
+} from "../_shared/seed-scope.ts";
 
 
 const service = () => createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
