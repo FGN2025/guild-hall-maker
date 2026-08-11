@@ -184,10 +184,11 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     // Defer hydration one tick so setFormat has applied canvasSize
     const t = setTimeout(() => {
       hydrateOverlays(initialOverlayConfig.overlays, initialOverlayConfig.canvas);
+      applyBgTransform(initialOverlayConfig.background);
       hydratedRef.current = true;
     }, 0);
     return () => clearTimeout(t);
-  }, [open, initialOverlayConfig, hydrateOverlays, setFormat]);
+  }, [open, initialOverlayConfig, hydrateOverlays, setFormat, applyBgTransform]);
 
   useEffect(() => {
     if (initialTexts && initialTexts.length > 0 && !appliedInitialRef.current && canvasSize.width > 0 && !initialOverlayConfig) {
@@ -200,8 +201,27 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
     if (!open) {
       appliedInitialRef.current = false;
       hydratedRef.current = false;
+      resetBackgroundTransform();
     }
-  }, [open]);
+  }, [open, resetBackgroundTransform]);
+
+  // Cursor-anchored wheel / trackpad-pinch zoom on the background. React's
+  // onWheel is passive, so preventDefault only works on a native listener.
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el || !open) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+      const px = (e.clientX - rect.left) * (el.width / rect.width);
+      const py = (e.clientY - rect.top) * (el.height / rect.height);
+      zoomBackgroundAt(Math.exp(-dy * 0.0015), px, py);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [open, canvasRef, zoomBackgroundAt, canvasSize.width, canvasSize.height]);
 
   // ── Tier 2: re-compose the promo copy block for the chosen format ──────────
   // Assets produced by the server composer carry their composer inputs in
