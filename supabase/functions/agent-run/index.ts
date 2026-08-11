@@ -739,6 +739,34 @@ Deno.serve(async (req) => {
   const modeCap = await turnCapForMode(mode);
   const effectiveTurnCap = Math.max(1, Math.min(modeCap, Number(turn_cap) || modeCap));
 
+  // Structured scope. For the seed lane the run's authorised work is computed
+  // HERE, server side, by the same module the pre-flight endpoint calls. The
+  // model is told the plan; it does not infer it from prose.
+  let preflight: any = null;
+  let scopeRow: any = null;
+  let effRangeStart: string | null = null;
+  let effRangeEnd: string | null = null;
+  let effIncludeKickoff: boolean | null = null;
+  if (mode === "monthly_calendar_seed") {
+    try {
+      preflight = await buildPreflight(svc, {
+        tenant_id,
+        target_month: seedMonth!,
+        range_start: range_start ?? null,
+        range_end: range_end ?? null,
+        include_kickoff: typeof include_kickoff === "boolean" ? include_kickoff : true,
+        density: (effectiveDensity as any) ?? null,
+        instruction: instruction ?? null,
+      });
+      effRangeStart = preflight.scope.range_start;
+      effRangeEnd = preflight.scope.range_end;
+      effIncludeKickoff = preflight.scope.include_kickoff;
+      scopeRow = { ...preflight.scope, summary: scopeSummary(preflight), expected: preflight.expected, kickoff: preflight.kickoff };
+    } catch (e) {
+      return json({ error: `preflight failed: ${(e as Error).message}` }, 500);
+    }
+  }
+
   const { data: run, error: runErr } = await svc.from("agent_runs").insert({
     tenant_id,
     launched_by: userId,
@@ -752,21 +780,31 @@ Deno.serve(async (req) => {
     turn_cap: effectiveTurnCap,
     target_month: seedMonth,
     seed_density: effectiveDensity,
+    range_start: effRangeStart,
+    range_end: effRangeEnd,
+    include_kickoff: effIncludeKickoff,
+    scope: scopeRow,
+    preflight,
   }).select().single();
   if (runErr || !run) return json({ error: runErr?.message ?? "run insert failed" }, 500);
 
-  const userMessage = [
-    `Tenant id: ${tenant_id}`,
-    `Mode: ${mode}`,
-    seedMonth ? `Target month: ${seedMonth}` : null,
-    effectiveDensity ? `Seed density: ${effectiveDensity}` : null,
-    archetype ? `Archetype: ${archetype}` : null,
-    anchor_event_id ? `Anchor tenant_event_id: ${anchor_event_id}` : null,
-    anchor_tournament_id ? `Anchor tournament_id: ${anchor_tournament_id}` : null,
-    instruction ? `Launcher instruction: ${instruction}` : null,
-    "",
-    "Follow the workflow strictly. Every write must be pending_review.",
-  ].filter(Boolean).join("\n");
+  const userMessage = preflight
+    ? [
+        renderConstraintBlock(preflight),
+        "",
+        `Mode: ${mode}`,
+        "Follow the workflow strictly. Every write must be pending_review.",
+      ].join("\n")
+    : [
+        `Tenant id: ${tenant_id}`,
+        `Mode: ${mode}`,
+        archetype ? `Archetype: ${archetype}` : null,
+        anchor_event_id ? `Anchor tenant_event_id: ${anchor_event_id}` : null,
+        anchor_tournament_id ? `Anchor tournament_id: ${anchor_tournament_id}` : null,
+        instruction ? `Launcher instruction: ${instruction}` : null,
+        "",
+        "Follow the workflow strictly. Every write must be pending_review.",
+      ].filter(Boolean).join("\n");
 
   // Background the loop so the HTTP call returns quickly with the run id.
   // waitUntil keeps the worker alive past the response; driveRun hands off to a
