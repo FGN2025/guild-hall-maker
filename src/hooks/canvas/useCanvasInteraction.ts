@@ -349,11 +349,16 @@ export function useCanvasInteraction(
             hasMoved: false,
           };
         }
+      } else if (panBackground) {
+        // Empty canvas — start a background pan. Deselection happens on mouseup
+        // if the pointer never moved, so a plain click still clears selection.
+        bgPanRef.current = { lastX: mx, lastY: my, hasMoved: false };
+        setCursorStyle("grabbing");
       } else {
         setSelectedId(null);
       }
     },
-    [hitTest, hitTestBelow, selectedId, overlays, canvasRef, setSelectedId],
+    [hitTest, hitTestBelow, selectedId, overlays, canvasRef, setSelectedId, panBackground],
   );
 
   const onMouseMove = useCallback(
