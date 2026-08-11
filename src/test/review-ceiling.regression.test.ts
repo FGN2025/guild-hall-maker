@@ -21,7 +21,10 @@ describe("marketing approval ceiling — live database regression matrix", () =>
     const res = await fetch(`${URL_BASE}/functions/v1/review-ceiling-selftest`, {
       method: "POST",
       headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({}),
+      // CEILING_FAULT lets anyone reproduce a red run on demand:
+      //   CEILING_FAULT=security_definer|drop_claim_check|drop_insert_guard
+      // The fault is applied inside the rolled-back transaction only.
+      body: JSON.stringify({ fault: process.env.CEILING_FAULT ?? "" }),
     });
     const body = await res.json();
 
