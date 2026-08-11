@@ -48,6 +48,11 @@ export function useDraftDecision(tenantId: string | null | undefined) {
               notes: trimmed ? `[Rejected] ${trimmed}` : "[Rejected]",
             };
       } else if (row.kind === "scheduled_post") {
+        // DISPATCHER CONTRACT: publish-scheduled-posts selects
+        //   .eq("status", "pending")  (supabase/functions/publish-scheduled-posts/index.ts:130)
+        // so a human approval MUST write exactly "pending". Do not write
+        // "approved" here — that value belongs to marketing_campaigns only and
+        // would silently strand the post. See docs/tech-debt.md (status naming).
         patch = approve
           ? { status: "pending", feedback_note: trimmed }
           : { status: "rejected", feedback_note: trimmed };
