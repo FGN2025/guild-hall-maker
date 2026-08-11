@@ -6356,6 +6356,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_agent_actor: { Args: never; Returns: boolean }
       is_tenant_admin: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
