@@ -368,6 +368,20 @@ export function useCanvasInteraction(
       if (!canvas || !rect) return;
       const { mx, my } = getCanvasCoords(e.clientX, e.clientY, canvas, rect);
 
+      // Background pan mode
+      if (bgPanRef.current && panBackground) {
+        const pan = bgPanRef.current;
+        const dx = mx - pan.lastX;
+        const dy = my - pan.lastY;
+        if (!pan.hasMoved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+        pan.hasMoved = true;
+        pan.lastX = mx;
+        pan.lastY = my;
+        panBackground(dx, dy);
+        return;
+      }
+
+
       // Resize mode
       if (resizeRef.current) {
         const { overlayId, handle, startX, startY, origX, origY, origW, origH } = resizeRef.current;
