@@ -89,3 +89,24 @@ Open, out of that step's scope: the wider `tenant-marketing` bucket holds 217
 objects, of which 172 are referenced by neither `file_path`, `background_url` nor
 `scheduled_posts.image_path` — mostly July composer iterations (`-v2`, `-v2-v2`,
 `-plate` chains). Not touched.
+
+## Status-vocabulary collision — `pending` vs `pending_review` (logged 2026-08-11)
+
+`scheduled_posts.status` uses `pending` to mean "approved, awaiting its dispatch
+window", sitting one underscore away from `pending_review`, which means the
+opposite (not approved). The dispatcher matches `pending` exactly.
+
+- `src/hooks/useDraftDecision.ts:50-58` — approval path, writes `pending` for
+  scheduled posts and `approved` for campaigns (two vocabularies, one hook).
+- `src/components/marketing/ScheduledPostsCalendar.tsx:88` — optimistic local
+  state mirrors the same `pending` value.
+
+Cleanup (rename to `approved`/`queued` + dispatcher + migration) is deliberately
+deferred; it was not done on the day of the first live publish.
+
+## Pending, written but NOT applied
+
+- `docs/migrations-pending/2026-08-11-scheduled-posts-default-draft.sql` — flips
+  the `scheduled_posts.status` column default from `pending` (dispatchable) to
+  `draft`. Held back because it changes insert behaviour of the table the live
+  dispatcher reads. Run as the first change after the first live post publishes.
