@@ -1,6 +1,7 @@
 import { useState, useMemo, CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
+import Seo, { SITE_URL } from "@/components/Seo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, Trophy, ArrowUpDown } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -31,6 +32,30 @@ const Tournaments = () => {
   const [sortBy, setSortBy] = useState("date_asc");
   const [page, setPage] = useState(1);
   const pageSize = 12;
+
+  // ItemList of upcoming/open tournaments so the hub is eligible for
+  // Google's event carousel rather than being read as a bare index page.
+  const tournamentListJsonLd = useMemo(() => {
+    const upcoming = tournaments
+      .filter((t) => t.status === "open" || t.status === "upcoming")
+      .slice(0, 20);
+
+    if (upcoming.length === 0) return undefined;
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Upcoming esports tournaments",
+      itemListElement: upcoming.map((t, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${SITE_URL}/tournaments/${t.id}`,
+        name: t.name,
+      })),
+    };
+  }, [tournaments]);
+
+
 
   const filtered = useMemo(() => {
     const result = tournaments.filter((t) => {
@@ -83,6 +108,12 @@ const Tournaments = () => {
 
   return (
     <>
+      <Seo
+        title="Esports Tournaments"
+        description="Browse open and upcoming esports tournaments on FGN Esports. Filter by game, check formats and prize pools, and register to compete."
+        path="/tournaments"
+        jsonLd={tournamentListJsonLd}
+      />
       <PageBackground pageSlug="tournaments" />
       <div className="relative z-10">
         <div className="sticky top-[-1rem] md:top-[-1.5rem] z-20 bg-background -mx-4 px-4 md:-mx-6 md:px-6 -mt-4 pt-4 md:-mt-6 md:pt-6 pb-4">

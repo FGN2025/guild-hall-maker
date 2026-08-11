@@ -1,5 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
+import Seo from "@/components/Seo";
+import { buildEventJsonLd, eventHeadline, toMetaDescription } from "@/lib/seo/eventJsonLd";
 import { usePublicTenantBySlug, usePublicTenantEvent, usePublicEventAssets } from "@/hooks/usePublicTenantEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,8 +89,23 @@ const TenantEventDetail = () => {
   const brandColor = tenant.primary_color || undefined;
   const isRegistered = !!(myReg as any)?.id;
 
+  const ev = event as any;
+  const eventPath = `/events/${tenantSlug}/${eventId}`;
+  const seoDescription = toMetaDescription(
+    ev?.description,
+    `${ev?.name ?? "Event"} hosted by ${tenant.name}. See the schedule, format and prizes, then register to play.`,
+  );
+
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={ev?.name ? eventHeadline(ev.name, ev.game) : "Event"}
+        description={seoDescription}
+        path={eventPath}
+        image={ev?.image_url ?? tenant.logo_url ?? undefined}
+        type="article"
+        jsonLd={ev ? buildEventJsonLd(ev, eventPath, tenant.name) : undefined}
+      />
       {/* Header */}
       <header className="border-b" style={{ backgroundColor: brandColor ? `${brandColor}10` : undefined }}>
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-3">

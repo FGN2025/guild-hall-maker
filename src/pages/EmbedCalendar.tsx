@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import usePageTitle from "@/hooks/usePageTitle";
+import Seo from "@/components/Seo";
 import {
   format,
   startOfMonth,
@@ -72,9 +73,14 @@ const EmbedCalendar = () => {
   const primaryColor = config?.primary_color || "#6366f1";
   const accentColor = config?.accent_color || primaryColor;
 
+  // This route is an iframe target, not a destination page — keep it out of
+  // the index so it never competes with the real calendar/tournament pages.
+  const embedSeo = <Seo title="Event Calendar" noindex />;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
+        {embedSeo}
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
@@ -83,6 +89,7 @@ const EmbedCalendar = () => {
   if (!config) {
     return (
       <div className="flex items-center justify-center h-screen bg-background text-muted-foreground">
+        {embedSeo}
         Calendar not found or inactive.
       </div>
     );
@@ -93,6 +100,7 @@ const EmbedCalendar = () => {
       className="relative min-h-screen w-full overflow-hidden font-sans"
       style={{ "--cal-primary": primaryColor, "--cal-accent": accentColor } as React.CSSProperties}
     >
+      {embedSeo}
       {/* Background */}
       {config.bg_image_url && (
         <div className="absolute inset-0 z-0">

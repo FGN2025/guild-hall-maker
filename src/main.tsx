@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "next-themes";
+import { HelmetProvider } from "react-helmet-async";
 import ErrorBoundary from "./components/ErrorBoundary";
 import App from "./App.tsx";
 import "./index.css";
@@ -24,12 +25,14 @@ try {
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme={initialTheme}
-      enableSystem={false}
-    >
-      <App />
-    </ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme={initialTheme}
+        enableSystem={false}
+      >
+        <App />
+      </ThemeProvider>
+    </HelmetProvider>
   </ErrorBoundary>
 );

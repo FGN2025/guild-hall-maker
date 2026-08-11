@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import usePageTitle from "@/hooks/usePageTitle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,9 +26,10 @@ import RulesPdfViewer from "@/components/tournaments/RulesPdfViewer";
 import PageBackground from "@/components/PageBackground";
 import { useCanSeeRegistrationCounts } from "@/hooks/useCanSeeRegistrationCounts";
 import { fetchTournamentCapacity } from "@/lib/tournamentCapacity";
+import Seo from "@/components/Seo";
+import { buildEventJsonLd, eventHeadline, toMetaDescription } from "@/lib/seo/eventJsonLd";
 
 const TournamentDetail = () => {
-  usePageTitle("Tournament Detail");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAdmin, isModerator } = useAuth();
@@ -107,8 +107,21 @@ const TournamentDetail = () => {
   const canManage = isAdmin || isModerator || isCreator;
   const coverUrl = t.image_url || t.game_cover_url;
 
+  const seoDescription = toMetaDescription(
+    t.description,
+    `${t.name} — a ${t.game} tournament on FGN Esports. Check the schedule, format and prize pool, then register to compete.`,
+  );
+
   return (
     <div className="relative">
+      <Seo
+        title={eventHeadline(t.name, t.game)}
+        description={seoDescription}
+        path={`/tournaments/${t.id}`}
+        image={coverUrl ?? undefined}
+        type="article"
+        jsonLd={buildEventJsonLd(t, `/tournaments/${t.id}`)}
+      />
       <PageBackground pageSlug="tournaments" />
       <div className="space-y-6 relative z-10">
       {/* Back button */}
