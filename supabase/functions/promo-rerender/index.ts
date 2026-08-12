@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       .eq("id", asset.tenant_id)
       .maybeSingle();
 
-    const format = (asset.overlay_config as any)?.canvas?.format ?? body.format ?? "portrait";
+    const format = body.format ?? (asset.overlay_config as any)?.canvas?.format ?? "portrait";
     const promoArgs = {
       event: {
         name: evt.name,
