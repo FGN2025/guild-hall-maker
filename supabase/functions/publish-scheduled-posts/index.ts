@@ -126,11 +126,15 @@ Deno.serve(async (req) => {
         .eq("id", p.id);
     }
 
-    // 2. Undeliverable check: pending posts due but no active social_connection for their platform.
+    // 2. Undeliverable check: approved posts due but no active social_connection for their platform.
+    //    Gate: status must be the explicit approved value AND the row must carry
+    //    an approval stamp. A row that reached 'pending' without provenance is
+    //    refused rather than improvised on.
     const { data: duePosts, error } = await supabase
       .from("scheduled_posts")
       .select("*")
       .eq("status", "pending")
+      .not("approved_at", "is", null)
       .lte("scheduled_at", nowIso)
       .limit(50);
 
@@ -171,15 +175,29 @@ Deno.serve(async (req) => {
       return decodeURIComponent(objectPath);
     }
 
-    async function resolveImageUrl(post: any): Promise<string | null> {
+    /** Throws a named ImageUnresolvable so a broken graphic is a loud failure,
+     *  never a post that ships without art. */
+    class ImageUnresolvable extends Error {}
+
+    async function resolveImageUrl(post: any): Promise<string> {
       const objectPath = await resolveObjectPath(post);
-      if (!objectPath) return post.image_url ?? null;
+      if (!objectPath) {
+        throw new ImageUnresolvable("image_unresolvable: no storage object path for this post");
+      }
       const { data, error } = await supabase.storage
         .from("tenant-marketing")
         .createSignedUrl(objectPath, 60 * 60);
       if (error || !data?.signedUrl) {
-        console.warn(`[publish] could not sign ${objectPath}: ${error?.message ?? "no url"}`);
-        return post.image_url ?? null;
+        throw new ImageUnresolvable(
+          `image_unresolvable: could not sign ${objectPath} (${error?.message ?? "no url"})`,
+        );
+      }
+      // Verify the object actually has bytes before we hand it to Graph API.
+      const head = await fetch(data.signedUrl, { method: "HEAD" });
+      if (!head.ok) {
+        throw new ImageUnresolvable(
+          `image_unresolvable: signed url for ${objectPath} returned HTTP ${head.status}`,
+        );
       }
       // Backfill the canonical path so the next dispatch skips the parse.
       if (!post.image_path) {
@@ -359,13 +377,29 @@ Deno.serve(async (req) => {
           failed++;
         }
       } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        const isImage = msg.startsWith("image_unresolvable");
         await supabase
           .from("scheduled_posts")
           .update({
             status: "failed",
-            error_message: e instanceof Error ? e.message : String(e),
+            error_message: msg,
+            ...(isImage ? { undeliverable_reason: "image_unresolvable" } : {}),
           })
           .eq("id", post.id);
+        if (isImage) {
+          await supabase.rpc("enqueue_marketing_notification", {
+            _tenant_id: post.tenant_id,
+            _category: "dispatch_error",
+            _related_kind: "scheduled_post",
+            _related_id: post.id,
+            _title: "Scheduled post graphic could not be resolved",
+            _message: `The graphic for a ${post.platform} post could not be signed or fetched, so nothing was published. ${msg}`,
+            _link: "/tenant/marketing?tab=agent",
+            _agent_source: post.agent_source,
+            _payload: { id: post.id, reason: "image_unresolvable" },
+          });
+        }
         failed++;
       }
     }
