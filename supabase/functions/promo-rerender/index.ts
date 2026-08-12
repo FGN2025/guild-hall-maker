@@ -131,6 +131,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Spot-check sample: renders and uploads under a /samples/ prefix and
+    // returns a signed URL. NO database row is created or updated, so nothing
+    // enters the reviewed set or any tenant's approval queue.
+    if (body.sample) {
+      const samplePng = await renderViaWorker(scene, true);
+      const samplePath = `${asset.tenant_id}/samples/${format}-${evt.id}-${crypto.randomUUID()}.png`;
+      const up = await supabase.storage.from(BUCKET).upload(samplePath, samplePng, { contentType: "image/png" });
+      if (up.error) throw up.error;
+      const { data: sUrl, error: sErr } = await supabase.storage.from(BUCKET).createSignedUrl(samplePath, 60 * 60 * 24 * 7);
+      if (sErr || !sUrl) throw sErr;
+      return Response.json(
+        { sample: true, db_writes: 0, event: evt.name, beat: promoArgs.beatLabel, format, path: samplePath, url: sUrl.signedUrl, art: art.log, build_id: BUILD_ID },
+        { headers: corsHeaders },
+      );
+    }
+
     const png = await renderViaWorker(scene, true);
     const platePng = await renderViaWorker(scene, false, false);
 
