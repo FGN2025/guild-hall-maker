@@ -153,12 +153,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://play.fgn.gg/tournaments/b085ec9d-8ea4-4f09-b154-b1c1455186ce</loc>
-    <lastmod>2026-07-22T17:24:36.956111+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://play.fgn.gg/events/ninestar-connect</loc>
     <lastmod>2026-03-04T00:41:59.454051+00:00</lastmod>
     <changefreq>daily</changefreq>

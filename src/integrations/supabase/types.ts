@@ -3551,6 +3551,8 @@ export type Database = {
       scheduled_posts: {
         Row: {
           agent_source: string | null
+          approved_at: string | null
+          approved_by: string | null
           asset_id: string | null
           campaign_id: string | null
           caption: string | null
@@ -3581,6 +3583,8 @@ export type Database = {
         }
         Insert: {
           agent_source?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           asset_id?: string | null
           campaign_id?: string | null
           caption?: string | null
@@ -3611,6 +3615,8 @@ export type Database = {
         }
         Update: {
           agent_source?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           asset_id?: string | null
           campaign_id?: string | null
           caption?: string | null

@@ -77,16 +77,30 @@ Deno.serve(async (req) => {
     const after = await client.queryObject(`SELECT id, status FROM public.scheduled_posts WHERE id=$1`, [synthetic]);
     steps.push({ step: "human approval (useDraftDecision patch)", result: after.rows[0] });
 
+    // 2b. A second synthetic that is NEVER approved: it must not be selected.
+    const unapproved = crypto.randomUUID();
+    await client.queryArray(
+      `INSERT INTO public.scheduled_posts
+         (id, tenant_id, user_id, platform, image_url, caption, scheduled_at, status, agent_source, proposed_by)
+       VALUES ($1,$2,$3,'facebook','https://example.invalid/synthetic2.png',
+               'SYNTHETIC never-approved probe — never published',
+               now() - interval '1 minute', 'pending_review', 'probe', $3)`,
+      [unapproved, tenant, uid],
+    );
+
     // 3. The dispatcher's exact selector, as the dispatcher's role.
+    //    status='pending' AND approved_at IS NOT NULL AND scheduled_at <= now()
     await client.queryArray(`SET LOCAL ROLE service_role`);
     const picked = await client.queryObject(
       `SELECT id, status, scheduled_at, platform FROM public.scheduled_posts
-        WHERE status = 'pending' AND scheduled_at <= now() ORDER BY scheduled_at LIMIT 50`);
+        WHERE status = 'pending' AND approved_at IS NOT NULL AND scheduled_at <= now()
+        ORDER BY scheduled_at LIMIT 50`);
     await client.queryArray("RESET ROLE");
     steps.push({
-      step: "dispatcher selector: status='pending' AND scheduled_at <= now() LIMIT 50",
+      step: "dispatcher selector: status='pending' AND approved_at IS NOT NULL AND scheduled_at <= now() LIMIT 50",
       rows: picked.rows,
-      synthetic_present: picked.rows.some((r: any) => r.id === synthetic),
+      approved_synthetic_present: picked.rows.some((r: any) => r.id === synthetic),
+      unapproved_synthetic_present: picked.rows.some((r: any) => r.id === unapproved),
     });
 
     // 4. Cleanup: the whole transaction unwinds, so the synthetic row is gone.
