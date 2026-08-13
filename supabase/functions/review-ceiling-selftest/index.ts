@@ -150,7 +150,10 @@ Deno.serve(async (req) => {
       [pRAppr, "pending_review"], [pOAppr, "pending_review"],
       [pHAppr, "pending_review"], [pHRej, "pending_review"],
       [pRRev, "rejected"], [pORev, "rejected"],
-      [pDPub, "pending"], [pDFail, "pending"],
+      // The two "already approved" fixtures cannot be INSERTed at 'pending':
+      // the ceiling refuses any insert past pending_review. They are seeded at
+      // pending_review and then promoted below via a human-shaped UPDATE.
+      [pDPub, "pending_review"], [pDFail, "pending_review"],
     ];
     for (const [id, status] of posts) {
       await client.queryArray(
@@ -159,6 +162,22 @@ Deno.serve(async (req) => {
         [id, tenant, uid, status],
       );
     }
+
+    // Promote the two dispatcher fixtures to 'pending' the only legal way:
+    // an UPDATE performed by a human-shaped actor (JWT claims carrying a sub).
+    await client.queryArray("SAVEPOINT seed_approve");
+    await client.queryArray(
+      "SELECT set_config('request.jwt.claims', $1::text, true)",
+      [JSON.stringify({ sub: uid, role: "authenticated" })],
+    );
+    await client.queryArray(
+      `UPDATE public.scheduled_posts SET status='pending', approved_at=now(), approved_by=$2
+       WHERE id = ANY($1::uuid[])`,
+      [`{${pDPub},${pDFail}}`, uid],
+    );
+    await client.queryArray("SELECT set_config('request.jwt.claims', NULL, true)");
+    await client.queryArray("RELEASE SAVEPOINT seed_approve");
+
 
     // ---------------- the 16-case matrix (+4 adjacent) ----------------
     const insertPost = (withStatus: boolean) =>
@@ -169,16 +188,16 @@ Deno.serve(async (req) => {
       // 8 agent refusals: 4 shapes x 2 agent paths
       { id: "A1-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
         desc: "insert scheduled_post with an explicit publishable status", sql: insertPost(true) },
-      { id: "A2-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
-        desc: "insert scheduled_post OMITTING status (column default 'pending' is publishable)", sql: insertPost(false) },
+      { id: "A2-runner", group: "agent_allowed", path: "runner (service_role)", role: "service_role", claims: null, expect: "allow",
+        desc: "insert scheduled_post OMITTING status lands on the safe 'draft' default", sql: insertPost(false) },
       { id: "A3-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
         desc: "approve itself: pending_review -> pending", sql: `UPDATE public.scheduled_posts SET status='pending' WHERE id='${pRAppr}'` },
       { id: "A4-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
         desc: "publish an asset: is_published false -> true", sql: `UPDATE public.tenant_marketing_assets SET is_published=true WHERE id='${aRunner}'` },
       { id: "A1-oauth", group: "agent_refusal", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "deny",
         desc: "insert scheduled_post with an explicit publishable status", sql: insertPost(true) },
-      { id: "A2-oauth", group: "agent_refusal", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "deny",
-        desc: "insert scheduled_post OMITTING status (publishable default)", sql: insertPost(false) },
+      { id: "A2-oauth", group: "agent_allowed", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "allow",
+        desc: "insert scheduled_post OMITTING status lands on the safe 'draft' default", sql: insertPost(false) },
       { id: "A3-oauth", group: "agent_refusal", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "deny",
         desc: "approve itself: pending_review -> pending", sql: `UPDATE public.scheduled_posts SET status='pending' WHERE id='${pOAppr}'` },
       { id: "A4-oauth", group: "agent_refusal", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "deny",
