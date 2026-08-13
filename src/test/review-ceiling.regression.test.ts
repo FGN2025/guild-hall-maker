@@ -49,7 +49,10 @@ describe("marketing approval ceiling — live database regression matrix", () =>
     for (const g of ["agent_refusal", "human_success", "revision_loop", "dispatcher", "adjacent"]) {
       expect(groups.has(g), `missing case group: ${g}`).toBe(true);
     }
-    expect(body.cases.filter((c: any) => c.group === "agent_refusal").length).toBe(8);
+    // 6 refusals: the two "omit status" cases are now allow-cases because the
+    // column default is 'draft' (unpublishable) rather than 'pending'.
+    expect(body.cases.filter((c: any) => c.group === "agent_refusal").length).toBe(6);
+    expect(body.cases.filter((c: any) => c.group === "agent_allowed").length).toBe(2);
     expect(body.cases.filter((c: any) => c.group === "human_success").length).toBe(4);
     expect(body.cases.filter((c: any) => c.group === "revision_loop").length).toBe(2);
     expect(body.cases.filter((c: any) => c.group === "dispatcher").length).toBe(2);
