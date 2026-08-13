@@ -215,15 +215,9 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
           const { error } = await supabase.from("tenant_admins").insert({ user_id: userId, tenant_id: tenantId, role });
           if (error) throw error;
         }
-        // Ensure user_service_interests record exists for this tenant (supplementary, not critical)
-        try {
-          const { data: existingInterest } = await supabase.from("user_service_interests").select("id").eq("user_id", userId).eq("tenant_id", tenantId).maybeSingle();
-          if (!existingInterest) {
-            await supabase.from("user_service_interests").insert({ user_id: userId, tenant_id: tenantId } as any);
-          }
-        } catch {
-          // Interest record is supplementary — tenant role assignment still succeeds
-        }
+        // Note: player/provider links live in user_service_interests and are
+        // managed separately via setUserTenant — never as a side-effect here.
+
       }
     },
     onSuccess: () => {
