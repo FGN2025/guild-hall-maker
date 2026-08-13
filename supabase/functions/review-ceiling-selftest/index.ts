@@ -188,8 +188,8 @@ Deno.serve(async (req) => {
       // 8 agent refusals: 4 shapes x 2 agent paths
       { id: "A1-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
         desc: "insert scheduled_post with an explicit publishable status", sql: insertPost(true) },
-      { id: "A2-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
-        desc: "insert scheduled_post OMITTING status (column default 'pending' is publishable)", sql: insertPost(false) },
+      { id: "A2-runner", group: "agent_allowed", path: "runner (service_role)", role: "service_role", claims: null, expect: "allow",
+        desc: "insert scheduled_post OMITTING status lands on the safe 'draft' default", sql: insertPost(false) },
       { id: "A3-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
         desc: "approve itself: pending_review -> pending", sql: `UPDATE public.scheduled_posts SET status='pending' WHERE id='${pRAppr}'` },
       { id: "A4-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
