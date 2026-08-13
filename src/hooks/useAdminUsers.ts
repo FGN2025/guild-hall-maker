@@ -233,5 +233,62 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  return { users, isLoading, setRole, setTenantRole, resendConfirmation, deleteUser };
+  // Assign / change / clear a player's ISP (provider) link.
+  // Players are linked via user_service_interests — NOT tenant_admins, which is staff-only
+  // and blocked by the prevent_player_tenant_admin trigger.
+  const setUserTenant = useMutation({
+    mutationFn: async ({ userId, tenantId: newTenantId }: { userId: string; tenantId: string | null }) => {
+      const { data: existing, error: fetchError } = await supabase
+        .from("user_service_interests")
+        .select("id")
+        .eq("user_id", userId);
+      if (fetchError) throw fetchError;
+
+      if (!newTenantId) {
+        if (existing?.length) {
+          const { error } = await supabase
+            .from("user_service_interests")
+            .delete()
+            .in("id", existing.map((r: any) => r.id));
+          if (error) throw error;
+        }
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("zip_code")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existing?.length) {
+        const [first, ...rest] = existing as any[];
+        const { error } = await supabase
+          .from("user_service_interests")
+          .update({ tenant_id: newTenantId })
+          .eq("id", first.id);
+        if (error) throw error;
+        if (rest.length) {
+          await supabase.from("user_service_interests").delete().in("id", rest.map((r: any) => r.id));
+        }
+      } else {
+        const { error } = await supabase.from("user_service_interests").insert({
+          user_id: userId,
+          tenant_id: newTenantId,
+          zip_code: (profile as any)?.zip_code ?? null,
+          status: "new",
+        } as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ title: vars.tenantId ? "Provider assigned" : "Provider cleared" });
+    },
+    onError: (e: any) =>
+      toast({ title: "Could not update provider", description: e.message, variant: "destructive" }),
+  });
+
+  return { users, isLoading, setRole, setTenantRole, setUserTenant, resendConfirmation, deleteUser };
 };
+
