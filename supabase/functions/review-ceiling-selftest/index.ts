@@ -150,7 +150,10 @@ Deno.serve(async (req) => {
       [pRAppr, "pending_review"], [pOAppr, "pending_review"],
       [pHAppr, "pending_review"], [pHRej, "pending_review"],
       [pRRev, "rejected"], [pORev, "rejected"],
-      [pDPub, "pending"], [pDFail, "pending"],
+      // The two "already approved" fixtures cannot be INSERTed at 'pending':
+      // the ceiling refuses any insert past pending_review. They are seeded at
+      // pending_review and then promoted below via a human-shaped UPDATE.
+      [pDPub, "pending_review"], [pDFail, "pending_review"],
     ];
     for (const [id, status] of posts) {
       await client.queryArray(
@@ -159,6 +162,22 @@ Deno.serve(async (req) => {
         [id, tenant, uid, status],
       );
     }
+
+    // Promote the two dispatcher fixtures to 'pending' the only legal way:
+    // an UPDATE performed by a human-shaped actor (JWT claims carrying a sub).
+    await client.queryArray("SAVEPOINT seed_approve");
+    await client.queryArray(
+      "SELECT set_config('request.jwt.claims', $1::text, true)",
+      [JSON.stringify({ sub: uid, role: "authenticated" })],
+    );
+    await client.queryArray(
+      `UPDATE public.scheduled_posts SET status='pending', approved_at=now(), approved_by=$2
+       WHERE id = ANY($1::uuid[])`,
+      [`{${pDPub},${pDFail}}`, uid],
+    );
+    await client.queryArray("SELECT set_config('request.jwt.claims', NULL, true)");
+    await client.queryArray("RELEASE SAVEPOINT seed_approve");
+
 
     // ---------------- the 16-case matrix (+4 adjacent) ----------------
     const insertPost = (withStatus: boolean) =>
