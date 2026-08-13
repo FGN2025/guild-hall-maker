@@ -1,37 +1,37 @@
-# Approve all 17 drafts, then lock the default to draft
+# Fix: cannot assign an ISP to a player
 
-All 17 scheduled posts currently sit in `pending_review`, spanning tonight 22:45Z through 28 August. Darcy's verdict: they all pass. This plan flips them to the dispatchable state, watches the first real publish, then applies the pending default-to-draft migration.
+## What is broken
 
-## Step 1 — Approve all 17
+In Admin > Users, the only control that assigns a provider (ISP/tenant) to a user is the tenant picker. When a tenant is picked, the app writes a **tenant staff record** (`tenant_admins`, role `admin`) rather than a player-to-provider link.
 
-Write `status = 'pending'` (the exact value the dispatcher selects on) to every row currently in `pending_review`, scoped to those rows only. This is the same field and value the human "Approve" button writes in `useDraftDecision.ts`, so no new code path is introduced.
+A database trigger (`prevent_player_tenant_admin`) deliberately blocks that write for anyone who looks like a player — has a ZIP code on their profile, an existing service interest, a subscriber record, or a matched legacy record — and raises:
 
-Scope guard: the update is keyed on `status = 'pending_review'` for the Acme tenant's rows only — no unscoped writes, no other columns touched.
+"This user is registered as a player and cannot be added to a tenant team." (error 42501)
 
-Then re-read all 17 rows and report status, scheduled time, platform, and whether each has an `image_path` + linked `asset_id` so nothing dispatches with a rotted image.
+So for exactly the population you want to assign, the action always fails. The trigger is correct; the UI is using the wrong table.
 
-## Step 2 — Watch the 22:45Z publish
+Confirmed by reading the trigger definition, the assignment code in `useAdminUsers.ts`, and the policies on both tables.
 
-The Mario Kart post fires first. After the window, read back:
-- final status, `published_at`, `post_url` (real Facebook post id on page 108876075355045)
-- any `error_message`
-- the dispatcher's function logs for that invocation
+## The fix
 
-If it fails, report the failure and stop — do not apply the migration.
+Separate the two concepts in the admin UI:
 
-## Step 3 — Apply the default-to-draft migration
+1. **Assign ISP (player link)** — writes `user_service_interests` (user_id, tenant_id, status `new`, zip_code copied from the profile when present). This is the table `get_user_tenant` and the ISP-linked checks already read, so the player immediately counts as ISP-linked for the prize shop and tenant-scoped features. Platform admins already have insert/delete policies on it.
+2. **Tenant Role (staff)** — keeps writing `tenant_admins`, unchanged, and stays for staff only.
 
-Once a real post id is confirmed, run `docs/migrations-pending/2026-08-11-scheduled-posts-default-draft.sql`:
+Also:
+- Allow **changing** and **clearing** a player's ISP, not just setting it once (currently there is no way to move a player between providers).
+- Stop the side-effect where granting a tenant role silently creates a service-interest row; keep staff and player links independent.
+- Surface the real database message in the toast when a write is refused, so a blocked staff assignment reads as an explanation rather than a generic error.
 
-```sql
-ALTER TABLE public.scheduled_posts ALTER COLUMN status SET DEFAULT 'draft';
-```
+## Technical notes
 
-Then confirm the column default reads `draft`, and confirm the 16 remaining approved posts still read `pending` (the default change must not touch existing rows).
+- `src/hooks/useAdminUsers.ts`: add `setUserTenant` mutation (upsert/delete on `user_service_interests`), remove the interest side-effect from `setTenantRole`, invalidate `admin-users`.
+- `src/pages/admin/AdminUsers.tsx`: the Tenant column becomes an editable provider select (All providers list + "None") wired to `setUserTenant`; the Tenant Role column keeps its existing staff dropdown and only shows a value when a `tenant_admins` record exists.
+- No migration and no RLS change required — existing policies already permit platform admins to manage `user_service_interests`.
 
-## Notes and risks
+## Verification
 
-- Approving all 17 means every one publishes automatically at its scheduled time with no further human gate. That is the intent, but it is worth stating plainly.
-- One post (the original 20:00Z window) already has `overdue_notified_at` stamped; the overdue notice will not re-fire, publishing itself is unaffected.
-- The approval ceiling is unaffected: these are human-authored approvals, which the trigger permits. Agent-authored writes to `pending` still get refused.
-- No frontend changes in this plan.
+- Assign a provider to a player who has a ZIP code and confirm the row appears in `user_service_interests` and the Tenant column updates.
+- Re-assign the same player to a different provider, then clear it.
+- Confirm assigning a staff tenant role to a non-player still works and that a player-role attempt shows the trigger's explanation.
