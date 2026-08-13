@@ -194,52 +194,53 @@ const AdminUsers = () => {
                           </Tooltip>
                         ) : "—"}
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{u.tenant_name ?? "—"}</TableCell>
+                      <TableCell>
+                        {u.user_id === currentUser?.id ? (
+                          <span className="text-muted-foreground text-sm">{u.tenant_name ?? "—"}</span>
+                        ) : (
+                          <Select
+                            value={u.tenant_id ?? "none"}
+                            onValueChange={(v) =>
+                              setUserTenant.mutate({ userId: u.user_id, tenantId: v === "none" ? null : v })
+                            }
+                            disabled={setUserTenant.isPending}
+                          >
+                            <SelectTrigger className="w-[150px] text-xs">
+                              <SelectValue placeholder="Assign provider..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No provider</SelectItem>
+                              {tenants.map((t) => (
+                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {u.user_id === currentUser?.id ? (
                           tenantRoleBadge(u.tenant_role)
+                        ) : !u.tenant_id ? (
+                          <span className="text-muted-foreground text-xs">—</span>
                         ) : (
-                          <div className="flex items-center gap-1">
-                            {/* Tenant picker if user has no tenant */}
-                            {!u.tenant_id && (
-                              <Select
-                                value=""
-                                onValueChange={(tId) => {
-                                  // When tenant is picked, we'll need to also pick a role — default to 'admin'
-                                  setTenantRole.mutate({ userId: u.user_id, tenantId: tId, role: "admin" });
-                                }}
-                                disabled={setTenantRole.isPending}
-                              >
-                                <SelectTrigger className="w-[120px] text-xs">
-                                  <SelectValue placeholder="Assign..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {tenants.map((t) => (
-                                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                            {u.tenant_id && (
-                              <Select
-                                value={u.tenant_role ?? "none"}
-                                onValueChange={(val) => setTenantRole.mutate({ userId: u.user_id, tenantId: u.tenant_id!, role: val })}
-                                disabled={setTenantRole.isPending}
-                              >
-                                <SelectTrigger className="w-[130px] text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">None</SelectItem>
-                                  <SelectItem value="admin">Tenant Admin</SelectItem>
-                                  <SelectItem value="manager">Manager</SelectItem>
-                                  <SelectItem value="marketing">Marketing</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </div>
+                          <Select
+                            value={u.tenant_role ?? "none"}
+                            onValueChange={(val) => setTenantRole.mutate({ userId: u.user_id, tenantId: u.tenant_id!, role: val })}
+                            disabled={setTenantRole.isPending}
+                          >
+                            <SelectTrigger className="w-[130px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem value="admin">Tenant Admin</SelectItem>
+                              <SelectItem value="manager">Manager</SelectItem>
+                              <SelectItem value="marketing">Marketing</SelectItem>
+                            </SelectContent>
+                          </Select>
                         )}
                       </TableCell>
+
                       <TableCell>{roleBadge(u.role)}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {new Date(u.created_at).toLocaleDateString()}
