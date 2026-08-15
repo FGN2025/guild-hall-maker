@@ -2,7 +2,11 @@
 
 **Build plan to replace Sideqik with an in-house discovery module inside FGN Creator Outreach**
 
-Status: plan, not yet implemented. Written 2026-07-30.
+Status: **scope superseded by `creator-platform-strategy.md` (2026-08-15).** Read that first.
+
+This document remains the technical reference. Its data model, vidIQ capability map, credit economics, and the three tested patchers in `docs/patchers/` all stand. What the strategy document changes is scope and priority: it reorders the phases around ISP-territory recruitment, adds 17 explicit non-goals, and revisits whether the generic parts should be bought rather than built.
+
+Written 2026-07-30.
 
 ---
 
