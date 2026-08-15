@@ -1,0 +1,720 @@
+<title>The Recruitment Wedge</title>
+
+<style>
+  :root {
+    --ground: #F6F8FB;
+    --surface: #FFFFFF;
+    --surface-2: #EEF2F7;
+    --line: #D8E0EA;
+    --line-soft: #E7EDF4;
+    --text: #0B0F14;
+    --text-2: #46545F;
+    --text-3: #77869A;
+    --violet: #7C3AED;
+    --cyan: #06A5A5;
+    --azure: #2E8BFF;
+    --amber: #B87503;
+    --green: #16A34A;
+    --muted: #8494A8;
+    --shadow: 0 1px 2px rgba(11,15,20,.05), 0 8px 24px -12px rgba(11,15,20,.18);
+    --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0B0F14;
+      --surface: #121821;
+      --surface-2: #18202B;
+      --line: #26313F;
+      --line-soft: #1C2531;
+      --text: #EEF3F9;
+      --text-2: #A9B7C6;
+      --text-3: #7F8FA1;
+      --violet: #A57BFB;
+      --cyan: #00D4D4;
+      --azure: #61A6FF;
+      --amber: #F59E0B;
+      --green: #34D07A;
+      --muted: #7A8A9E;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0B0F14;
+    --surface: #121821;
+    --surface-2: #18202B;
+    --line: #26313F;
+    --line-soft: #1C2531;
+    --text: #EEF3F9;
+    --text-2: #A9B7C6;
+    --text-3: #7F8FA1;
+    --violet: #A57BFB;
+    --cyan: #00D4D4;
+    --azure: #61A6FF;
+    --amber: #F59E0B;
+    --green: #34D07A;
+    --muted: #7A8A9E;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16.5px;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .prose { max-width: 68ch; }
+
+  /* ---------- masthead ---------- */
+  header.masthead {
+    padding: 56px 0 30px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .eyebrow .tick { color: var(--violet); }
+  h1 {
+    font-size: clamp(34px, 5.4vw, 50px);
+    line-height: 1.06;
+    letter-spacing: -.028em;
+    font-weight: 700;
+    margin: 0 0 18px;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-size: clamp(17px, 2.1vw, 19.5px);
+    line-height: 1.55;
+    color: var(--text-2);
+    max-width: 60ch;
+    margin: 0 0 26px;
+  }
+  .standfirst strong { color: var(--text); font-weight: 600; }
+  .meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+  }
+
+  /* ---------- the cost inversion ---------- */
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin: 0 0 18px;
+  }
+  .fig {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 20px 18px;
+    box-shadow: var(--shadow);
+    border-top: 3px solid var(--edge, var(--line));
+  }
+  .fig .amount {
+    font-family: var(--mono);
+    font-size: 27px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--edge, var(--text));
+    display: block;
+    margin-bottom: 6px;
+  }
+  .fig .what { font-size: 14.5px; font-weight: 600; margin-bottom: 4px; }
+  .fig .note { font-size: 13.5px; color: var(--text-3); line-height: 1.45; }
+
+  /* ---------- verdict ---------- */
+  .verdict {
+    background: var(--surface-2);
+    border-left: 3px solid var(--azure);
+    border-radius: 0 10px 10px 0;
+    padding: 22px 24px;
+    margin: 28px 0 8px;
+  }
+  .verdict .label {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--azure);
+    display: block;
+    margin-bottom: 10px;
+  }
+  .verdict p { margin: 0 0 12px; font-size: 17px; }
+  .verdict p:last-child { margin-bottom: 0; }
+  .verdict strong { font-weight: 650; }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 54px; }
+  h2 {
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-weight: 500;
+    margin: 0 0 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  h3 {
+    font-size: clamp(22px, 3vw, 27px);
+    line-height: 1.2;
+    letter-spacing: -.02em;
+    font-weight: 650;
+    margin: 20px 0 14px;
+    text-wrap: balance;
+  }
+  h4 {
+    font-size: 16.5px;
+    font-weight: 650;
+    margin: 30px 0 10px;
+    letter-spacing: -.008em;
+  }
+  p { margin: 0 0 15px; }
+  ul { margin: 0 0 15px; padding-left: 22px; }
+  li { margin-bottom: 7px; }
+  a { color: var(--violet); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--azure);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  /* ---------- tables ---------- */
+  .scroll { overflow-x: auto; margin: 0 0 18px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 560px; }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-weight: 500;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    background: var(--surface-2);
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; color: var(--text-2); }
+  tr:last-child td { border-bottom: none; }
+  td strong { color: var(--text); font-weight: 600; }
+  td.id { font-family: var(--mono); font-size: 12.5px; color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---------- status chips ---------- */
+  .chip {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .c-have    { color: var(--green);  border-color: color-mix(in srgb, var(--green) 40%, transparent); }
+  .c-planned { color: var(--cyan);   border-color: color-mix(in srgb, var(--cyan) 42%, transparent); }
+  .c-wedge   { color: var(--azure);  border-color: color-mix(in srgb, var(--azure) 48%, transparent); background: color-mix(in srgb, var(--azure) 9%, transparent); }
+  .c-partial { color: var(--amber);  border-color: color-mix(in srgb, var(--amber) 42%, transparent); }
+  .c-buy     { color: var(--violet); border-color: color-mix(in srgb, var(--violet) 42%, transparent); }
+  .c-skip    { color: var(--muted);  border-color: color-mix(in srgb, var(--muted) 34%, transparent); }
+
+  /* ---------- register ---------- */
+  details.pillar {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  details.pillar > summary {
+    cursor: pointer;
+    padding: 15px 18px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    list-style: none;
+  }
+  details.pillar > summary::-webkit-details-marker { display: none; }
+  details.pillar > summary::before {
+    content: "+";
+    font-family: var(--mono);
+    color: var(--text-3);
+    font-size: 15px;
+    width: 12px;
+    flex: none;
+  }
+  details.pillar[open] > summary::before { content: "\2212"; }
+  details.pillar[open] > summary { border-bottom: 1px solid var(--line-soft); }
+  .pillar-n {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .pillar-name { font-weight: 650; font-size: 15.5px; }
+  .pillar-counts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  details.pillar .scroll { border: none; border-radius: 0; margin: 0; }
+  details.pillar table { min-width: 620px; }
+
+  .coverage {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0 8px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+  .coverage span {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .coverage b { color: var(--text); font-weight: 650; }
+
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--amber);
+    background: var(--surface);
+    border-radius: 0 10px 10px 0;
+    padding: 18px 20px;
+    margin: 22px 0;
+    font-size: 15.5px;
+    color: var(--text-2);
+  }
+  .callout b { color: var(--text); }
+
+  .never { border-left-color: var(--muted); }
+  .never b { color: var(--text); }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+    color: var(--text-3);
+  }
+  footer ul { padding-left: 18px; columns: 2; column-gap: 34px; }
+  footer li { margin-bottom: 5px; break-inside: avoid; }
+  footer a { color: var(--text-2); }
+
+  @media (max-width: 600px) {
+    body { padding: 0 16px 72px; font-size: 16px; }
+    header.masthead { padding-top: 40px; }
+    .pillar-counts { margin-left: 0; width: 100%; }
+    footer ul { columns: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>FGN</span><span class="tick">/</span><span>Creator Platform</span><span class="tick">/</span><span>Build vs Buy</span>
+    </div>
+    <h1>The Recruitment Wedge</h1>
+    <p class="standfirst">
+      We set out to replicate Sideqik. The market research says that for generic influencer
+      marketing, building is indefensible. But <strong>FGN is not doing generic influencer
+      marketing</strong>, and the part it is doing cannot be bought.
+    </p>
+    <div class="meta">
+      <span>15 Aug 2026</span>
+      <span>Supersedes the discovery plan scope</span>
+      <span>62 capabilities tracked</span>
+    </div>
+  </header>
+
+  <section style="margin-top:0">
+    <h2>The finding that changes the decision</h2>
+    <h3>Licensing the data costs three times more than buying the finished product</h3>
+    <div class="figures">
+      <div class="fig" style="--edge: var(--amber)">
+        <span class="amount">$16,200</span>
+        <div class="what">Modash, per year</div>
+        <div class="note">Raw creator discovery data. An API, not a product.</div>
+      </div>
+      <div class="fig" style="--edge: var(--green)">
+        <span class="amount">$6,000</span>
+        <div class="what">Aspire or Upfluence, per year</div>
+        <div class="note">A complete mid-market platform. All eight pillars, finished.</div>
+      </div>
+      <div class="fig" style="--edge: var(--violet)">
+        <span class="amount">$30k&ndash;39k</span>
+        <div class="what">CreatorIQ, per year</div>
+        <div class="note">Enterprise entry. Six figures at scale.</div>
+      </div>
+    </div>
+    <p class="prose">
+      If the goal were generic influencer marketing, the answer would be to buy Aspire and stop
+      building. More expensive on data alone, plus the entire engineering cost, to end up behind.
+      That is the honest verdict, and it is worth stating plainly before the argument for building.
+    </p>
+
+    <div class="verdict">
+      <span class="label">Verdict</span>
+      <p><strong>Do not rebuild the category. Build the wedge, buy or defer the commodity.</strong></p>
+      <p>
+        The saved searches give the real business away. Farm Simulator Challenge and Construction
+        Simulator Challenge recruit creators into FGN challenges. <strong>HCTC Texas Gamers</strong>
+        and <strong>Arizona Minecraft Players</strong> are geo-bounded recruitment inside ISP partner
+        territories. No commercial platform can answer &ldquo;find Minecraft creators living in ZIP
+        codes served by HCTC.&rdquo; CreatorIQ cannot. GRIN cannot. Sideqik could not either, which
+        is why those searches settled for state-level filters.
+      </p>
+      <p>
+        FGN already owns the missing half: <code>tenant_zip_codes</code>,
+        <code>national_zip_codes</code>, <code>lookup_providers_by_zip</code> and the multi-tenant
+        ISP model in play.fgn.gg. The thing no vendor sells is the thing FGN already built.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the category actually sells</h2>
+    <h3>Eight pillars, and we were building one and a half</h3>
+    <p class="prose">
+      Every serious vendor has some version of all eight, which is why, as GRIN&rsquo;s own buyer
+      guide concedes, feature lists blur together. Sideqik&rsquo;s left nav listed ten items.
+      Discovery was one of them.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Pillar</th><th>Category status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="id">1</td><td><strong>Discovery</strong><br>Database, filters, lookalike search</td><td>Table stakes. Differentiator is data quality, not size</td></tr>
+          <tr><td class="id">2</td><td><strong>Vetting</strong><br>Fake followers, brand safety, FTC history</td><td>Table stakes, increasingly a compliance requirement</td></tr>
+          <tr><td class="id">3</td><td><strong>Creator CRM</strong><br>Records, tags, lifecycle, history</td><td>Table stakes. The actual system of record</td></tr>
+          <tr><td class="id">4</td><td><strong>Recruitment</strong><br>Application pages, opt-in marketplaces</td><td>Rising fast. Aspire&rsquo;s 1M+ opt-in marketplace is the model</td></tr>
+          <tr><td class="id">5</td><td><strong>Campaign workflow</strong><br>Briefs, contracts, approvals, rights</td><td>Table stakes at mid-market and above</td></tr>
+          <tr><td class="id">6</td><td><strong>Activation</strong><br>Codes, affiliate, seeding, TikTok Shop, licensing</td><td>Fastest-moving pillar. Where budget is shifting</td></tr>
+          <tr><td class="id">7</td><td><strong>Payments</strong><br>Global payouts, W-9/W-8, 1099 filing</td><td>Increasingly outsourced to specialists</td></tr>
+          <tr><td class="id">8</td><td><strong>Measurement</strong><br>Reach, EMV, attribution, incrementality</td><td>Table stakes to show, genuinely hard to do well</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Where the market is moving in 2026</h4>
+    <p class="prose">
+      Compensation is shifting from flat fees to performance, with three to six month partnerships
+      and creators treated as affiliate partners. Social commerce is the engine: TikTok Shop is
+      projected at $23.4 billion in US ecommerce sales this year, up 48 percent. Creator licensing,
+      previously called whitelisting, has become a standard line item.
+    </p>
+    <div class="callout">
+      <b>Measurement is consolidating away from EMV.</b> The criticisms are now mainstream: no
+      industry-standard calculation, it ignores audience quality, and a high EMV does not prove
+      revenue impact. 79 percent of marketers cite measuring influencer ROI as their biggest
+      obstacle. Sideqik showed FGN <b>$0 earned media value</b> and Share of Voice was never
+      enabled, so FGN never used that layer. Rebuilding it would mean rebuilding a metric the
+      market is abandoning and FGN never touched.
+    </div>
+  </section>
+
+  <section>
+    <h2>Why FGN is a different business</h2>
+    <h3>Recruitment bounded by service territory, not brand campaigns bounded by budget</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>The category assumes</th><th>FGN reality</th></tr></thead>
+        <tbody>
+          <tr><td>Goal is product sales, measured in GMV or ROAS</td><td><strong>Creator activation</strong> into challenges, tournaments and the Academy</td></tr>
+          <tr><td>Geography matters at country or metro level</td><td>Geography matters at <strong>ISP service territory and ZIP</strong></td></tr>
+          <tr><td>The creator promotes to their audience</td><td>The creator <strong>participates</strong>, and their audience follows</td></tr>
+          <tr><td>Success is attributed revenue</td><td>Enrollment, completion, retention, subscriber lift</td></tr>
+          <tr><td>The brand is one advertiser</td><td>FGN is a <strong>multi-tenant platform</strong> serving many ISPs</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose">
+      The wedge is narrow, defensible, and it is the only part of this worth building. Everything
+      else is either commodity we can buy or scope we should decline.
+    </p>
+  </section>
+
+  <section>
+    <h2>Tracked feature register</h2>
+    <h3>62 capabilities, each with a position</h3>
+    <p class="prose">
+      The category&rsquo;s standard capabilities, with FGN&rsquo;s status on each. This is the
+      backlog and the coverage scorecard in one place. Seven items are marked
+      <span class="chip c-wedge">wedge</span>, meaning no commercial vendor offers them.
+    </p>
+    <div class="coverage">
+      <span><b>11</b> have</span>
+      <span><b>30</b> planned</span>
+      <span><b>7</b> of those are the wedge</span>
+      <span><b>4</b> buy</span>
+      <span><b>17</b> deliberate skips</span>
+    </div>
+
+    <details class="pillar" open>
+      <summary>
+        <span class="pillar-n">01</span><span class="pillar-name">Discovery</span>
+        <span class="pillar-counts">
+          <span class="chip c-planned">8 planned</span><span class="chip c-wedge">1 wedge</span>
+          <span class="chip c-partial">2 partial</span><span class="chip c-skip">2 skip</span>
+        </span>
+      </summary>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Capability</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="id">1.1</td><td>Keyword and topic search</td><td><span class="chip c-planned">planned</span></td><td>Phase 2</td></tr>
+          <tr><td class="id">1.2</td><td>Semantic, natural-language search</td><td><span class="chip c-planned">planned</span></td><td>vidIQ provides it</td></tr>
+          <tr><td class="id">1.3</td><td>Filter by follower count</td><td><span class="chip c-planned">planned</span></td><td>Phase 2</td></tr>
+          <tr><td class="id">1.4</td><td>Filter by platform</td><td><span class="chip c-partial">partial</span></td><td>No Twitch until phase 3</td></tr>
+          <tr><td class="id">1.5</td><td>Filter by creator country</td><td><span class="chip c-planned">planned</span></td><td>Phase 2</td></tr>
+          <tr><td class="id">1.6</td><td>Filter by state and city</td><td><span class="chip c-partial">partial</span></td><td>Parsed, low confidence</td></tr>
+          <tr><td class="id">1.7</td><td><strong>Filter by ISP territory and ZIP</strong></td><td><span class="chip c-wedge">wedge</span></td><td>No vendor offers this</td></tr>
+          <tr><td class="id">1.8</td><td>Filter by language</td><td><span class="chip c-planned">planned</span></td><td>Phase 2</td></tr>
+          <tr><td class="id">1.9</td><td>Filter by game played</td><td><span class="chip c-planned">planned</span></td><td>Vertical requirement</td></tr>
+          <tr><td class="id">1.10</td><td>Lookalike and similar-creator search</td><td><span class="chip c-planned">planned</span></td><td>vidIQ is strong here</td></tr>
+          <tr><td class="id">1.11</td><td>Audience demographics filters</td><td><span class="chip c-skip">skip</span></td><td>Needs a paid vendor</td></tr>
+          <tr><td class="id">1.12</td><td>Creator age and gender filters</td><td><span class="chip c-skip">skip</span></td><td>Unavailable, low value here</td></tr>
+          <tr><td class="id">1.13</td><td>Saved searches with counters</td><td><span class="chip c-planned">planned</span></td><td>Phase 2</td></tr>
+          <tr><td class="id">1.14</td><td>Growth and breakout filters</td><td><span class="chip c-planned">planned</span></td><td>Better than Sideqik had</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+    <details class="pillar">
+      <summary>
+        <span class="pillar-n">02</span><span class="pillar-name">Vetting</span>
+        <span class="pillar-counts"><span class="chip c-planned">2 planned</span><span class="chip c-skip">3 skip</span></span>
+      </summary>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Capability</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="id">2.1</td><td>Fake follower and bot detection</td><td><span class="chip c-skip">skip</span></td><td>Needs vendor data</td></tr>
+          <tr><td class="id">2.2</td><td>Brand safety content scanning</td><td><span class="chip c-planned">planned</span></td><td>LLM pass, phase 6</td></tr>
+          <tr><td class="id">2.3</td><td>FTC disclosure history</td><td><span class="chip c-skip">skip</span></td><td>FGN runs no paid endorsements</td></tr>
+          <tr><td class="id">2.4</td><td>Engagement rate calculation</td><td><span class="chip c-planned">planned</span></td><td>Phase 2</td></tr>
+          <tr><td class="id">2.5</td><td>Audience overlap between creators</td><td><span class="chip c-skip">skip</span></td><td>Advanced, low value</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+    <details class="pillar">
+      <summary>
+        <span class="pillar-n">03</span><span class="pillar-name">Creator CRM</span>
+        <span class="pillar-counts"><span class="chip c-have">6 have</span><span class="chip c-wedge">1 wedge</span><span class="chip c-partial">1 partial</span><span class="chip c-planned">1 planned</span></span>
+      </summary>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Capability</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="id">3.1</td><td>Creator profile record</td><td><span class="chip c-have">have</span></td><td><code>creators</code>, <code>disc_creators</code></td></tr>
+          <tr><td class="id">3.2</td><td>Multi-platform account linking</td><td><span class="chip c-have">have</span></td><td><code>disc_creator_accounts</code></td></tr>
+          <tr><td class="id">3.3</td><td>Tags and labels</td><td><span class="chip c-have">have</span></td><td>Shipped</td></tr>
+          <tr><td class="id">3.4</td><td>Lifecycle funnel stages</td><td><span class="chip c-have">have</span></td><td>All five Sideqik stages</td></tr>
+          <tr><td class="id">3.5</td><td>Communication history</td><td><span class="chip c-partial">partial</span></td><td>Resend send log only</td></tr>
+          <tr><td class="id">3.6</td><td>Notes and manual enrichment</td><td><span class="chip c-have">have</span></td><td>Shipped</td></tr>
+          <tr><td class="id">3.7</td><td>Tier and scoring</td><td><span class="chip c-have">have</span></td><td><code>fgn_score</code> plus tiers</td></tr>
+          <tr><td class="id">3.8</td><td>Metric history over time</td><td><span class="chip c-have">have</span></td><td>Sideqik charged for this</td></tr>
+          <tr><td class="id">3.9</td><td><strong>Link creator to ISP tenant</strong></td><td><span class="chip c-wedge">wedge</span></td><td>Phase 3</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+    <details class="pillar">
+      <summary>
+        <span class="pillar-n">04</span><span class="pillar-name">Recruitment and intake</span>
+        <span class="pillar-counts"><span class="chip c-planned">5 planned</span><span class="chip c-wedge">2 wedge</span></span>
+      </summary>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Capability</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="id">4.1</td><td>Public application page</td><td><span class="chip c-planned">planned</span></td><td>Priority, phase 4</td></tr>
+          <tr><td class="id">4.2</td><td><strong>Branded per-tenant application pages</strong></td><td><span class="chip c-wedge">wedge</span></td><td>Each ISP gets its own</td></tr>
+          <tr><td class="id">4.3</td><td>Auto-approve rules</td><td><span class="chip c-planned">planned</span></td><td>Phase 4</td></tr>
+          <tr><td class="id">4.4</td><td>Review queue</td><td><span class="chip c-planned">planned</span></td><td>Phase 4</td></tr>
+          <tr><td class="id">4.5</td><td>Creator self-service portal</td><td><span class="chip c-planned">planned</span></td><td>Phase 6</td></tr>
+          <tr><td class="id">4.6</td><td>Social account OAuth connect</td><td><span class="chip c-planned">planned</span></td><td>Closes email and Twitch gaps together</td></tr>
+          <tr><td class="id">4.7</td><td><strong>Consented first-party metrics</strong></td><td><span class="chip c-wedge">wedge</span></td><td>The owned-community moat</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+    <details class="pillar">
+      <summary>
+        <span class="pillar-n">05</span><span class="pillar-name">Campaign workflow</span>
+        <span class="pillar-counts"><span class="chip c-have">2 have</span><span class="chip c-planned">1 planned</span><span class="chip c-partial">1 partial</span><span class="chip c-skip">2 skip</span></span>
+      </summary>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Capability</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="id">5.1</td><td>Campaign records</td><td><span class="chip c-have">have</span></td><td><code>campaigns</code></td></tr>
+          <tr><td class="id">5.2</td><td>Outreach email sequences</td><td><span class="chip c-have">have</span></td><td>Resend pipeline</td></tr>
+          <tr><td class="id">5.3</td><td>Briefs and deliverables</td><td><span class="chip c-planned">planned</span></td><td>Mapped to challenges</td></tr>
+          <tr><td class="id">5.4</td><td>Contracts and e-signature</td><td><span class="chip c-skip">skip</span></td><td>Use a dedicated tool if ever needed</td></tr>
+          <tr><td class="id">5.5</td><td>Content submission and approval</td><td><span class="chip c-partial">partial</span></td><td>Challenge evidence already exists</td></tr>
+          <tr><td class="id">5.6</td><td>UGC rights management</td><td><span class="chip c-skip">skip</span></td><td>Not FGN&rsquo;s model</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+    <details class="pillar">
+      <summary>
+        <span class="pillar-n">06</span><span class="pillar-name">Activation</span>
+        <span class="pillar-counts"><span class="chip c-wedge">1 wedge</span><span class="chip c-planned">1 planned</span><span class="chip c-partial">1 partial</span><span class="chip c-skip">4 skip</span></span>
+      </summary>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Capability</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="id">6.1</td><td>Promo and discount codes</td><td><span class="chip c-partial">partial</span></td><td><code>tenant_campaign_codes</code> exists</td></tr>
+          <tr><td class="id">6.2</td><td>Affiliate tracking links</td><td><span class="chip c-skip">skip</span></td><td>No ecommerce</td></tr>
+          <tr><td class="id">6.3</td><td>Product seeding</td><td><span class="chip c-skip">skip</span></td><td>No physical product</td></tr>
+          <tr><td class="id">6.4</td><td>TikTok Shop integration</td><td><span class="chip c-skip">skip</span></td><td>Fast-growing, wrong business</td></tr>
+          <tr><td class="id">6.5</td><td>Creator licensing, paid amplification</td><td><span class="chip c-skip">skip</span></td><td>Revisit if FGN buys paid social</td></tr>
+          <tr><td class="id">6.6</td><td><strong>Challenge and tournament enrollment</strong></td><td><span class="chip c-wedge">wedge</span></td><td>The actual activation</td></tr>
+          <tr><td class="id">6.7</td><td>Academy pathway enrollment</td><td><span class="chip c-planned">planned</span></td><td>Phase 6</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+    <details class="pillar">
+      <summary>
+        <span class="pillar-n">07</span><span class="pillar-name">Payments</span>
+        <span class="pillar-counts"><span class="chip c-buy">3 buy</span><span class="chip c-partial">1 partial</span></span>
+      </summary>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Capability</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="id">7.1</td><td>Creator payouts</td><td><span class="chip c-buy">buy</span></td><td>Tipalti or Trolley</td></tr>
+          <tr><td class="id">7.2</td><td>W-9, W-8 collection and 1099 filing</td><td><span class="chip c-buy">buy</span></td><td>Never hand-roll tax</td></tr>
+          <tr><td class="id">7.3</td><td>Multi-currency and global</td><td><span class="chip c-buy">buy</span></td><td>Vendor territory</td></tr>
+          <tr><td class="id">7.4</td><td>Prize and reward fulfilment</td><td><span class="chip c-partial">partial</span></td><td><code>prizes</code> already exists</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+    <details class="pillar">
+      <summary>
+        <span class="pillar-n">08</span><span class="pillar-name">Measurement</span>
+        <span class="pillar-counts"><span class="chip c-wedge">1 wedge</span><span class="chip c-planned">3 planned</span><span class="chip c-skip">4 skip</span></span>
+      </summary>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Capability</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="id">8.1</td><td>Reach and engagement reporting</td><td><span class="chip c-planned">planned</span></td><td>Phase 5</td></tr>
+          <tr><td class="id">8.2</td><td>Earned Media Value</td><td><span class="chip c-skip">skip</span></td><td>Showed $0, market is leaving it</td></tr>
+          <tr><td class="id">8.3</td><td>Share of Voice</td><td><span class="chip c-skip">skip</span></td><td>Never enabled</td></tr>
+          <tr><td class="id">8.4</td><td>Conversion attribution</td><td><span class="chip c-planned">planned</span></td><td>Code-based</td></tr>
+          <tr><td class="id">8.5</td><td>Incrementality testing</td><td><span class="chip c-skip">skip</span></td><td>Wrong scale</td></tr>
+          <tr><td class="id">8.6</td><td><strong>Recruitment funnel conversion</strong></td><td><span class="chip c-wedge">wedge</span></td><td>The primary metric</td></tr>
+          <tr><td class="id">8.7</td><td>Challenge completion and retention</td><td><span class="chip c-planned">planned</span></td><td>Phase 5</td></tr>
+          <tr><td class="id">8.8</td><td>ISP subscriber lift by tenant</td><td><span class="chip c-skip">skip</span></td><td>Phase 6 if the wedge proves out</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Revised sequence</h2>
+    <h3>The wedge and the moat move early</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Phase</th><th>Deliverable</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td class="id">0</td><td>Export everything from Sideqik. Settle the vidIQ budget and the Twitch question</td><td>Unchanged, still urgent</td></tr>
+          <tr><td class="id">1</td><td>Schema, ingest, Creator Library integration, discovery export</td><td><strong>Done and tested</strong></td></tr>
+          <tr><td class="id">2</td><td>Search builder, saved searches, funnel, scoring, reason bullets</td><td>Unchanged</td></tr>
+          <tr><td class="id">3</td><td><strong>ISP territory and ZIP filtering. Twitch as second source</strong></td><td>Promoted, the wedge</td></tr>
+          <tr><td class="id">4</td><td><strong>Recruitment forms, per-tenant branded, OAuth connect</strong></td><td>Promoted, the moat</td></tr>
+          <tr><td class="id">5</td><td>Challenge activation, recruitment funnel measurement, briefs</td><td>Reframed from EMV</td></tr>
+          <tr><td class="id">6</td><td>Brand safety, creator portal, Academy pathways, subscriber lift</td><td>Reframed</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout never">
+      <b>Explicit non-goals.</b> EMV, Share of Voice, TikTok Shop, affiliate links, product seeding,
+      UGC rights, e-signature, and hand-rolled payments. These are the guardrail against scope
+      creeping back toward a full platform clone. Revisit them deliberately, not by drift.
+    </div>
+  </section>
+
+  <section>
+    <h2>Open decisions</h2>
+    <h3>One question gates the rest</h3>
+    <p class="prose">
+      <strong>Do you accept the wedge framing?</strong> If FGN&rsquo;s creator work is really generic
+      brand-influencer marketing, the honest answer is to buy Aspire at roughly $6,000 a year and
+      stop building. If it is ISP-territory creator recruitment into challenges, no vendor sells it
+      and building is right. Everything below follows from that answer.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Decision</th><th>Why it matters now</th></tr></thead>
+        <tbody>
+          <tr><td class="id">2</td><td>vidIQ budget</td><td>150 credits a cycle supports a demo, not phase 2</td></tr>
+          <tr><td class="id">3</td><td>Twitch follower count</td><td>One API call settles it. Changes phase 3 substantially</td></tr>
+          <tr><td class="id">4</td><td>Payments vendor, when prizes start</td><td>Pick one rather than building</td></tr>
+          <tr><td class="id">5</td><td>Tier thresholds</td><td>Reach-only promotion to A_Priority fires today</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <b>The risk worth naming.</b> The wedge could be a story we tell ourselves. Phase 3 is the
+      test: if ISP-territory filtering does not change which creators actually get recruited, the
+      wedge is not real and buying becomes the right answer. That failure is cheap and visible fast,
+      which is the main argument for sequencing it early.
+    </div>
+  </section>
+
+  <footer>
+    <p>Sources</p>
+    <ul>
+      <li><a href="https://grin.co/compare">GRIN buyer&rsquo;s guide 2026</a></li>
+      <li><a href="https://www.g2.com/categories/influencer-marketing-platforms">G2 category</a></li>
+      <li><a href="https://hashmeta.com/blog/creator-management-platforms-compared-grin-vs-creatoriq-vs-aspire/">Grin vs CreatorIQ vs Aspire</a></li>
+      <li><a href="https://sproutsocial.com/insights/influencer-marketing-trends/">Sprout Social, 2026 trends</a></li>
+      <li><a href="https://www.modash.io/influencer-marketing-api/pricing">Modash API pricing</a></li>
+      <li><a href="https://www.getphyllo.com/post/phyllo-vs-modash-authenticated-creator-data-vs-public-database">Phyllo vs Modash</a></li>
+      <li><a href="https://stackinfluence.com/blog/influencer-marketing-platform-pricing">Platform pricing 2026</a></li>
+      <li><a href="https://www.favikon.com/blog/influencer-marketing-platform-pricing">Favikon, real costs</a></li>
+      <li><a href="https://mysocial.io/blog/what-is-earned-media-value-influencer-marketing/">EMV explained</a></li>
+      <li><a href="https://www.socialpilot.co/insights/influencer-marketing-roi">ROI benchmarks 2026</a></li>
+      <li><a href="https://www.meltwater.com/en/blog/influencer-marketing-brand-safety">Brand safety guide</a></li>
+      <li><a href="https://instreamly.com/posts/top-10-gaming-influencer-platforms/">Gaming influencer platforms</a></li>
+      <li><a href="https://www.cloutboost.com/blog/top-10-influencer-outreach-tools-for-gaming-publishers-2026">Tools for gaming publishers</a></li>
+      <li><a href="https://tipalti.com/industries/video-media-industry-solutions/">Tipalti creator payments</a></li>
+    </ul>
+  </footer>
+
+</div>
