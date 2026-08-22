@@ -51,6 +51,12 @@
     <priority>0.2</priority>
   </url>
   <url>
+    <loc>https://play.fgn.gg/tournaments/9891a9d6-7754-446b-947b-95d4172f09e0</loc>
+    <lastmod>2026-08-18T15:08:58.815572+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://play.fgn.gg/tournaments/5fa1e3c6-d101-4f15-a9bd-33bb989a518a</loc>
     <lastmod>2026-07-29T19:54:10.417967+00:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -71,12 +77,6 @@
   <url>
     <loc>https://play.fgn.gg/tournaments/5ad42203-e25e-4fc6-aac0-9e4d3378557e</loc>
     <lastmod>2026-07-22T17:24:57.314403+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://play.fgn.gg/tournaments/9891a9d6-7754-446b-947b-95d4172f09e0</loc>
-    <lastmod>2026-07-22T17:26:07.081161+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -107,24 +107,6 @@
   <url>
     <loc>https://play.fgn.gg/tournaments/e0c3ce77-0665-40a9-8fa0-319e06adaf2e</loc>
     <lastmod>2026-07-22T17:22:58.531976+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://play.fgn.gg/tournaments/89cdaa97-f650-409c-bd52-dc524abd92dc</loc>
-    <lastmod>2026-07-29T19:53:55.06303+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://play.fgn.gg/tournaments/f49755d2-b408-4272-bff7-3c045441a841</loc>
-    <lastmod>2026-08-14T04:02:44.232333+00:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://play.fgn.gg/tournaments/6afb7ced-f479-4572-a49f-541da148f0d3</loc>
-    <lastmod>2026-07-22T17:27:47.187152+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
