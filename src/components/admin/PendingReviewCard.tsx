@@ -16,15 +16,16 @@ const PendingReviewCard = () => {
     refetchInterval: 120_000,
     queryFn: async () => {
       const nowIso = new Date().toISOString();
-      const [posts, campaigns, assets, lapsed] = await Promise.all([
-        supabase.from("scheduled_posts").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
-        supabase.from("marketing_campaigns").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
-        supabase.from("marketing_assets").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
-        supabase
-          .from("scheduled_posts")
+      const countPending = (table: "scheduled_posts" | "marketing_campaigns" | "marketing_assets") =>
+        (supabase.from(table) as any)
           .select("id", { count: "exact", head: true })
-          .eq("status", "pending_review")
-          .lt("scheduled_at", nowIso),
+          .eq("status", "pending_review");
+
+      const [posts, campaigns, assets, lapsed] = await Promise.all([
+        countPending("scheduled_posts"),
+        countPending("marketing_campaigns"),
+        countPending("marketing_assets"),
+        countPending("scheduled_posts").lt("scheduled_at", nowIso),
       ]);
       return {
         total: (posts.count ?? 0) + (campaigns.count ?? 0) + (assets.count ?? 0),
