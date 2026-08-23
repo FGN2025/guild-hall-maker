@@ -103,9 +103,11 @@ Deno.serve(async (req) => {
         const { data: userRow } = await supabase.auth.admin.getUserById(uid);
         const email = userRow?.user?.email;
         if (!email) continue;
-        await supabase.rpc("enqueue_email", {
-          queue_name: "transactional_emails",
-          payload: {
+        // Canonical send path: render-then-enqueue via send-transactional-email.
+        // Never enqueue a raw template job — process-email-queue only consumes
+        // pre-rendered payloads and silently dead-letters anything else.
+        const { error: sendErr } = await supabase.functions.invoke("send-transactional-email", {
+          body: {
             templateName: "marketing-draft-digest",
             recipientEmail: email,
             idempotencyKey: `mkt-digest-${row.id}-${uid}-${row.updated_at}`,
@@ -117,7 +119,11 @@ Deno.serve(async (req) => {
             },
           },
         });
-        digestsSent++;
+        if (sendErr) {
+          console.error("[digest] send-transactional-email failed", { uid, error: sendErr.message });
+        } else {
+          digestsSent++;
+        }
       }
       await supabase.from("marketing_notification_state").delete().eq("id", row.id);
     }
