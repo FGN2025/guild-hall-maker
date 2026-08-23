@@ -349,7 +349,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     setEditTarget(null);
     qc.invalidateQueries({ queryKey: ["agent_drafts", tenantId] });
     qc.invalidateQueries({ queryKey: ["agent_drafts_linked_assets", tenantId] });
-    qc.invalidateQueries({ queryKey: ["tenant_pending_review_count", tenantId] });
+    qc.invalidateQueries({ queryKey: [TENANT_REVIEW_QUEUE_KEY] });
   };
 
 
