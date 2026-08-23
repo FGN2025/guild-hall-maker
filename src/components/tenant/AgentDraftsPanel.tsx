@@ -435,14 +435,15 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
               <Button
                 size="sm"
                 variant="outline"
-                className="ml-auto"
+                className="ml-auto min-h-[44px]"
                 disabled={!!bulkBusyKey}
-                onClick={() => bulkApprove(group.key, groupPending)}
+                onClick={() => setBulkConfirm({ key: group.key, rows: groupPending, label: `${groupPending.length} item${groupPending.length === 1 ? "" : "s"} in ${weekLabel(group.start)}` })}
               >
                 {bulkBusyKey === group.key ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
                 Approve week ({groupPending.length})
               </Button>
             )}
+
           </div>
           <div className="grid gap-4">
           {group.rows.map((row) => {
