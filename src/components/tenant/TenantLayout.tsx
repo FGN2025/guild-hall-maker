@@ -37,6 +37,8 @@ interface TenantLayoutProps {
 const TenantLayout = ({ children, tenantInfo, tenantRole, isPlatformAdmin, allTenants, selectedTenantId, onTenantChange }: TenantLayoutProps) => {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const { data: reviewQueue } = useTenantReviewQueue(tenantInfo.tenantId);
+
 
   // Apply tenant brand colors as CSS custom properties
   useEffect(() => {
