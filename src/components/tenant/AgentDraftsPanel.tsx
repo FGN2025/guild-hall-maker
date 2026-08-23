@@ -753,6 +753,24 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           if (targets.length) bulkApprove("__ahead__", targets);
         }}
       />
+
+      {/* Unbounded bulk approvals: name the count, warn that lapsed posts are
+          included, and require a second tap. */}
+      <ConfirmDialog
+        open={!!bulkConfirm}
+        onOpenChange={(open) => { if (!open) setBulkConfirm(null); }}
+        title={`Approve ${bulkConfirm?.label ?? ""}?`}
+        description={
+          "This approves every one of them at once and they become publishable on your real public pages. Posts whose scheduled slot has already passed are included — those will be held back by the staleness guard and need rescheduling. There is no undo."
+        }
+        confirmLabel="Approve them all"
+        onConfirm={() => {
+          const target = bulkConfirm;
+          setBulkConfirm(null);
+          if (target?.rows.length) bulkApprove(target.key, target.rows);
+        }}
+      />
+
     </div>
   );
 
