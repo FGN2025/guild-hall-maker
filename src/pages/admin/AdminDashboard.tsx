@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import PrizeBudgetCard from "@/components/admin/PrizeBudgetCard";
 import PointsReconciliationCard from "@/components/admin/PointsReconciliationCard";
+import PendingReviewCard from "@/components/admin/PendingReviewCard";
 
 const AdminDashboard = () => {
   usePageTitle("Admin Dashboard");

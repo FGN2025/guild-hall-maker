@@ -3,6 +3,8 @@ import { template as discordBacklogReminder } from './discord-backlog-reminder.t
 import { template as weeklyRegistrationsDigest } from './weekly-registrations-digest.tsx'
 import { template as marketingAlert } from './marketing-alert.tsx'
 import { template as marketingDraftDigest } from './marketing-draft-digest.tsx'
+import { template as emailLossSummary } from './email-loss-summary.tsx'
+import { template as pendingReviewDigest } from './pending-review-digest.tsx'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -17,4 +19,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'weekly-registrations-digest': weeklyRegistrationsDigest,
   'marketing-alert': marketingAlert,
   'marketing-draft-digest': marketingDraftDigest,
+  'email-loss-summary': emailLossSummary,
+  'pending-review-digest': pendingReviewDigest,
 }
