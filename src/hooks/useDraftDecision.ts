@@ -79,7 +79,10 @@ export function useDraftDecision(tenantId: string | null | undefined) {
       // Refresh both surfaces so Scheduled + Agent Drafts stay consistent.
       qc.invalidateQueries({ queryKey: ["agent_drafts", tenantId] });
       qc.invalidateQueries({ queryKey: ["scheduled_posts", tenantId] });
+      // Portal bell + Marketing badge read the same queue; keep them honest.
+      qc.invalidateQueries({ queryKey: ["tenant_review_queue"] });
     },
+
     onError: (err: any) => toast.error(err?.message ?? "Update failed"),
   });
 }
