@@ -17,6 +17,8 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { StoredImage } from "@/components/marketing/StoredImage";
+import PostArtworkDialog, { beatFromPath } from "./PostArtworkDialog";
 
 /** Image a reviewer chose to open in the editor. */
 interface EditTarget {
@@ -41,6 +43,7 @@ interface DraftRow {
   social_copy?: string | null;
   platform?: string | null;
   image_url?: string | null;
+  image_path?: string | null;
   url?: string | null;
   file_name?: string | null;
   file_path?: string | null;
@@ -77,6 +80,11 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewAsset, setReviewAsset] = useState<AssetReviewItem | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  /** Full-resolution artwork viewer; only the opened post loads native res. */
+  const [artwork, setArtwork] = useState<null | {
+    path?: string | null; url?: string | null; title?: string | null;
+    beat?: string | null; scheduledAt?: string | null; caption?: string | null;
+  }>(null);
   const qc = useQueryClient();
   const { uploadAsset } = useTenantMarketingAssets();
   const decide = useDraftDecision(tenantId);
@@ -100,7 +108,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           .order("updated_at", { ascending: false }),
         supabase
           .from("scheduled_posts" as any)
-          .select("id, campaign_id, platform, caption, image_url, scheduled_at, status, feedback_note, agent_source, created_at, updated_at, conflict_flagged_at, conflict_details, undeliverable_reason")
+          .select("id, campaign_id, platform, caption, image_url, image_path, scheduled_at, status, feedback_note, agent_source, created_at, updated_at, conflict_flagged_at, conflict_details, undeliverable_reason")
           .eq("tenant_id", tenantId!)
           // Stale-window failures surface here too, so an approved post the
           // dispatcher refused (too old) is visible with its reason instead of
@@ -491,15 +499,57 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                 )}
                 {row.kind === "scheduled_post" && (
                   <div className="flex gap-3">
-                    {row.image_url && <img src={row.image_url} alt="" className="h-24 w-24 rounded object-cover bg-muted shrink-0" loading="lazy" />}
+                    {(row.image_path || row.image_url) && (
+                      <button
+                        type="button"
+                        className="shrink-0 rounded overflow-hidden ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        title="Open full-size artwork"
+                        onClick={() => setArtwork({
+                          path: row.image_path,
+                          url: row.image_url,
+                          title: `${row.platform ?? "post"} artwork`,
+                          beat: beatFromPath(row.image_path),
+                          scheduledAt: row.scheduled_at,
+                          caption: row.caption,
+                        })}
+                      >
+                        <StoredImage
+                          path={row.image_path}
+                          fallbackUrl={row.image_url}
+                          transformWidth={256}
+                          alt={`Promo artwork for the ${row.platform ?? "post"} scheduled ${row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : "with no time"}`}
+                          className="h-24 w-24 rounded object-cover bg-muted"
+                        />
+                      </button>
+                    )}
                     {row.caption && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{row.caption}</p>}
                   </div>
                 )}
-                {row.kind === "asset" && row.url && (
-                  <img src={row.url} alt={row.file_name ?? ""} className="max-h-40 rounded object-contain bg-muted" loading="lazy" />
+                {row.kind === "asset" && (row.file_path || row.url) && (
+                  <button
+                    type="button"
+                    className="block rounded overflow-hidden ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    title="Open full-size artwork"
+                    onClick={() => setArtwork({
+                      path: row.file_path,
+                      url: row.url,
+                      title: row.label ?? row.file_name ?? "Asset artwork",
+                      beat: beatFromPath(row.file_path, row.file_name),
+                      scheduledAt: null,
+                      caption: row.notes,
+                    })}
+                  >
+                    <StoredImage
+                      path={row.file_path}
+                      fallbackUrl={row.url}
+                      transformWidth={320}
+                      alt={row.label ?? row.file_name ?? "Marketing asset artwork"}
+                      className="max-h-40 rounded object-contain bg-muted"
+                    />
+                  </button>
                 )}
 
-                {(row.kind === "asset" || linked.length > 0 || (row.kind === "scheduled_post" && row.image_url)) && (
+                {(row.kind === "asset" || linked.length > 0 || (row.kind === "scheduled_post" && (row.image_url || row.image_path))) && (
                   <div className="flex flex-wrap gap-2">
                     {row.kind === "asset" && (
                       <Button variant="outline" size="sm" onClick={() => openReview({
