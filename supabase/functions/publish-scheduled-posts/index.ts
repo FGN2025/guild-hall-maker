@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { BUILD_ID } from "../_shared/build-id.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,13 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Unauthenticated build stamp probe.
+  if (req.method === "GET") {
+    return new Response(JSON.stringify({ build_id: BUILD_ID }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -50,6 +58,22 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const nowIso = new Date().toISOString();
+
+    // --- Staleness guard -------------------------------------------------
+    // An approved post whose window passed long ago must never publish: a bulk
+    // approve of backdated rows would otherwise fire them all in one minute.
+    // The window is configurable at tick time (no deploy) via app_settings.
+    let staleWindowHours = 6;
+    {
+      const { data: setting } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "scheduled_post_stale_window_hours")
+        .maybeSingle();
+      const parsed = Number(setting?.value);
+      if (Number.isFinite(parsed) && parsed > 0) staleWindowHours = parsed;
+    }
+    const staleCutoffIso = new Date(Date.now() - staleWindowHours * 3600_000).toISOString();
 
     // 0. Flush marketing draft digests whose window has elapsed.
     let digestsSent = 0;
@@ -126,23 +150,71 @@ Deno.serve(async (req) => {
         .eq("id", p.id);
     }
 
+    // 1b. Stale sweep: approved posts whose window closed more than
+    //     staleWindowHours ago are failed with a distinct reason instead of
+    //     being published late. A human can reschedule them forward (which
+    //     makes them eligible again) or cancel them; they never sit silently.
+    let staleSkipped = 0;
+    const { data: stalePosts } = await supabase
+      .from("scheduled_posts")
+      .select("id, tenant_id, platform, scheduled_at, agent_source")
+      .eq("status", "pending")
+      .not("approved_at", "is", null)
+      .lt("scheduled_at", staleCutoffIso)
+      .limit(100);
+
+    for (const p of stalePosts ?? []) {
+      await supabase
+        .from("scheduled_posts")
+        .update({
+          status: "failed",
+          undeliverable_reason: "stale_window",
+          error_message:
+            `stale_window: scheduled for ${p.scheduled_at}, more than ${staleWindowHours}h ago. ` +
+            `Not published. Reschedule it forward and re-approve to send.`,
+        })
+        .eq("id", p.id)
+        .eq("status", "pending");
+      await supabase.rpc("enqueue_marketing_notification", {
+        _tenant_id: p.tenant_id,
+        _category: "dispatch_error",
+        _related_kind: "scheduled_post",
+        _related_id: p.id,
+        _title: "Scheduled post was too old to publish",
+        _message: `A ${p.platform} post approved for ${p.scheduled_at} is more than ${staleWindowHours}h past its window, so it was not published. Reschedule it forward to send it.`,
+        _link: "/tenant/marketing?tab=agent",
+        _agent_source: p.agent_source,
+        _payload: { id: p.id, reason: "stale_window", stale_window_hours: staleWindowHours },
+      });
+      staleSkipped++;
+    }
+
     // 2. Undeliverable check: approved posts due but no active social_connection for their platform.
     //    Gate: status must be the explicit approved value AND the row must carry
     //    an approval stamp. A row that reached 'pending' without provenance is
-    //    refused rather than improvised on.
+    //    refused rather than improvised on. The scheduled_at range is bounded on
+    //    BOTH sides: due (<= now) and not stale (>= now - staleWindowHours).
     const { data: duePosts, error } = await supabase
       .from("scheduled_posts")
       .select("*")
       .eq("status", "pending")
       .not("approved_at", "is", null)
       .lte("scheduled_at", nowIso)
+      .gte("scheduled_at", staleCutoffIso)
       .limit(50);
 
     if (error) throw error;
     if (!duePosts || duePosts.length === 0) {
-      return new Response(JSON.stringify({ processed: 0, overdue_notified: overduePending?.length ?? 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          processed: 0,
+          overdue_notified: overduePending?.length ?? 0,
+          stale_skipped: staleSkipped,
+          stale_window_hours: staleWindowHours,
+          build_id: BUILD_ID,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     let processed = 0;
@@ -410,7 +482,10 @@ Deno.serve(async (req) => {
         failed,
         undeliverable,
         overdue_notified: overduePending?.length ?? 0,
+        stale_skipped: staleSkipped,
+        stale_window_hours: staleWindowHours,
         total: duePosts.length,
+        build_id: BUILD_ID,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

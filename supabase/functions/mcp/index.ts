@@ -1882,7 +1882,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-08-12T00:00Z-structured-scope";
+var BUILD_ID = "2026-08-23T19:45Z-staleness-guard";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";

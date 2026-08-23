@@ -102,7 +102,10 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           .from("scheduled_posts" as any)
           .select("id, campaign_id, platform, caption, image_url, scheduled_at, status, feedback_note, agent_source, created_at, updated_at, conflict_flagged_at, conflict_details, undeliverable_reason")
           .eq("tenant_id", tenantId!)
-          .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays})`)
+          // Stale-window failures surface here too, so an approved post the
+          // dispatcher refused (too old) is visible with its reason instead of
+          // silently disappearing from the queue.
+          .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays}),and(status.eq.failed,undeliverable_reason.eq.stale_window)`)
           .order("updated_at", { ascending: false }),
         supabase
           .from("tenant_marketing_assets" as any)
@@ -452,9 +455,13 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                     {(row as any).conflict_flagged_at && (
                       <Badge variant="destructive" className="text-xs">Schedule conflict</Badge>
                     )}
-                    {(row as any).undeliverable_reason && (
+                    {(row as any).undeliverable_reason === "stale_window" ? (
+                      <Badge variant="destructive" className="text-xs">
+                        Missed window — reschedule to send
+                      </Badge>
+                    ) : (row as any).undeliverable_reason ? (
                       <Badge variant="destructive" className="text-xs">Undeliverable</Badge>
-                    )}
+                    ) : null}
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
