@@ -1,5 +1,6 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { BUILD_ID } from '../_shared/build-id.ts'
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -72,21 +73,37 @@ function resolveLogIdentity(payload: Record<string, any>): string {
 // Raise a NON-EMAIL signal that something dead-lettered.
 // Deliberately in-app + log row only: an email alert about the email path
 // failing cannot be trusted to arrive, because the email path is what failed.
+//
+// This function is an alarm. An alarm that can fail quietly is worse than no
+// alarm, so every step is error-checked and any failure of the alarm itself is
+// persisted as a `dlq-signal-failure` row in email_send_log.
 async function raiseDlqSignal(
   supabase: ReturnType<typeof createClient>,
   queue: string,
   template: string,
   recipient: string,
   reason: string
-): Promise<void> {
+): Promise<{ ok: boolean; ids: string[]; error?: string }> {
+  let stage = 'select_admins'
   try {
-    const { data: admins } = await supabase
+    const { data: admins, error: adminError } = await supabase
       .from('user_roles')
       .select('user_id')
       .eq('role', 'admin')
 
-    const rows = (admins ?? []).map((a: any) => ({
-      user_id: a.user_id,
+    if (adminError) {
+      throw new Error(`admin lookup failed: ${adminError.message} (${adminError.code ?? 'no code'})`)
+    }
+    const adminIds = Array.from(
+      new Set((admins ?? []).map((a: any) => a.user_id).filter(Boolean))
+    )
+    if (adminIds.length === 0) {
+      throw new Error('no platform admins resolved — nobody would ever see this dead letter')
+    }
+
+    stage = 'insert_notifications'
+    const rows = adminIds.map((userId: string) => ({
+      user_id: userId,
       type: 'warning',
       title: 'Email dead-lettered',
       message: `A ${template} email to ${recipient} was discarded after repeated failures (${queue}): ${reason}`.slice(0, 500),
@@ -94,13 +111,48 @@ async function raiseDlqSignal(
       category: 'email_dlq',
       related_kind: 'email',
     }))
-    if (rows.length > 0) {
-      await supabase.from('notifications').insert(rows)
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('notifications')
+      .insert(rows)
+      .select('id, user_id')
+
+    if (insertError) {
+      throw new Error(
+        `notification insert failed: ${insertError.message} (${insertError.code ?? 'no code'}) ${insertError.details ?? ''} ${insertError.hint ?? ''}`.trim()
+      )
     }
+    if (!inserted || inserted.length !== rows.length) {
+      throw new Error(`notification insert persisted ${inserted?.length ?? 0} of ${rows.length} rows`)
+    }
+
+    console.log('DLQ in-app signal raised', {
+      queue,
+      recipients: inserted.length,
+      notification_ids: inserted.map((r: any) => r.id),
+    })
+    return { ok: true, ids: inserted.map((r: any) => r.id as string) }
   } catch (e) {
-    console.error('Failed to raise DLQ in-app signal', { queue, error: String(e) })
+    const message = `stage=${stage}: ${e instanceof Error ? e.message : String(e)}`
+    console.error('CRITICAL: DLQ in-app signal FAILED', { queue, template, recipient, error: message })
+
+    // The alarm broke. Leave a durable, greppable trace on a path that does not
+    // depend on the alarm, on email, or on the notifications table.
+    const { error: fallbackError } = await supabase.from('email_send_log').insert({
+      message_id: `dlq-signal-failure-${queue}-${Date.now()}`,
+      template_name: 'dlq-signal-failure',
+      recipient_email: recipient,
+      status: 'dlq',
+      error_message: message.slice(0, 1000),
+      metadata: { queue, template, dlq_reason: reason, stage, signal_failed: true },
+    })
+    if (fallbackError) {
+      console.error('CRITICAL: could not even log the DLQ signal failure', { queue, error: fallbackError })
+    }
+    return { ok: false, ids: [], error: message }
   }
 }
+
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
@@ -181,7 +233,7 @@ Deno.serve(async (req) => {
 
   if (state?.retry_after_until && new Date(state.retry_after_until) > new Date()) {
     return new Response(
-      JSON.stringify({ skipped: true, reason: 'rate_limited' }),
+      JSON.stringify({ skipped: true, reason: 'rate_limited', build_id: BUILD_ID }),
       { headers: { 'Content-Type': 'application/json' } }
     )
   }
@@ -414,7 +466,7 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ processed: totalProcessed }),
+    JSON.stringify({ processed: totalProcessed, build_id: BUILD_ID }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 })
