@@ -15,4 +15,4 @@
 // (The `mcp` function is SDK-generated and has no free route, so the stamp
 // rides the one unauthenticated field the RFC 9728 metadata document lets us
 // control.)
-export const BUILD_ID = "2026-08-23T22:40Z-review-thumbs";
+export const BUILD_ID = "2026-08-24T00:20Z-mobile-review-lap1";
