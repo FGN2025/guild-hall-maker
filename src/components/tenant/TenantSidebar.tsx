@@ -145,6 +145,8 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
             ? { color: brandColor, backgroundColor: hexToRgba(brandColor, 0.1), borderColor: hexToRgba(brandColor, 0.3) }
             : undefined;
 
+          const showBadge = item.to === "/tenant/marketing" && pendingReviewCount > 0;
+
           return (
             <Link
               key={item.to}
@@ -160,10 +162,19 @@ const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatform
             >
               <item.icon className="h-5 w-5" />
               {item.label}
+              {showBadge && (
+                <span
+                  aria-label={`${pendingReviewCount} awaiting review`}
+                  className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                >
+                  {pendingReviewCount > 99 ? "99+" : pendingReviewCount}
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
+
       <div className="p-4 border-t border-border">
         <Link
           to={isPlatformAdmin ? "/admin" : "/dashboard"}
