@@ -527,17 +527,22 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                           caption: row.caption,
                         })}
                       >
+                        {/* object-contain, portrait box: a square crop cut the
+                            headline and prize line off the 4:5 promos, which is
+                            exactly the copy a reviewer is checking. */}
                         <StoredImage
                           path={row.image_path}
                           fallbackUrl={row.image_url}
                           transformWidth={256}
                           alt={`Promo artwork for the ${row.platform ?? "post"} scheduled ${row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : "with no time"}`}
-                          className="h-24 w-24 rounded object-cover bg-muted"
+                          className="h-[7.5rem] w-24 rounded object-contain bg-muted"
                         />
+                        <span className="sr-only">Open full-size artwork</span>
                       </button>
                     )}
                     {row.caption && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{row.caption}</p>}
                   </div>
+
                 )}
                 {row.kind === "asset" && (row.file_path || row.url) && (
                   <button
