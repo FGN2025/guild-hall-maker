@@ -119,32 +119,11 @@ const TenantMarketing = () => {
     },
   });
 
-  /** Count of items waiting on a reviewer, shown on the Review tab. */
-  const { data: pendingReviewCount = 0 } = useQuery({
-    queryKey: ["tenant_pending_review_count", tenantAdmin],
-    enabled: !!tenantAdmin,
-    queryFn: async () => {
-      const [campaignsRes, postsRes, assetsRes] = await Promise.all([
-        supabase
-          .from("marketing_campaigns")
-          .select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenantAdmin!)
-          .eq("status", "pending_review"),
-        supabase
-          .from("scheduled_posts")
-          .select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenantAdmin!)
-          .eq("status", "pending_review"),
-        supabase
-          .from("tenant_marketing_assets")
-          .select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenantAdmin!)
-          .eq("is_published", false)
-          .not("campaign_id", "is", null),
-      ]);
-      return (campaignsRes.count ?? 0) + (postsRes.count ?? 0) + (assetsRes.count ?? 0);
-    },
-  });
+  /** Count of items waiting on a reviewer, shown on the Review tab and banner.
+   *  Shared with the portal bell so both surfaces can never disagree. */
+  const { data: reviewQueue } = useTenantReviewQueue(tenantAdmin ?? tenantInfo?.tenantId ?? null);
+  const pendingReviewCount = reviewQueue?.total ?? 0;
+
 
   /** Scope: this tenant's own rows + platform library rows (tenant_id IS NULL),
    *  matching what the tab has always shown. */
