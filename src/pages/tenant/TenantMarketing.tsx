@@ -228,7 +228,6 @@ const TenantMarketing = () => {
         </div>
 
 
-        </TabsList>
 
         {/* Campaigns Tab */}
         <TabsContent value="campaigns" className="space-y-6">
