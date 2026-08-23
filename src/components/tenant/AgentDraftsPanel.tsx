@@ -693,6 +693,18 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
 
       <AssetReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} asset={reviewAsset} />
 
+      <PostArtworkDialog
+        open={!!artwork}
+        onOpenChange={(open) => { if (!open) setArtwork(null); }}
+        path={artwork?.path}
+        fallbackUrl={artwork?.url}
+        title={artwork?.title}
+        beat={artwork?.beat}
+        scheduledAt={artwork?.scheduledAt}
+        caption={artwork?.caption}
+      />
+
+
       {editTarget && (
         <AssetEditorDialog
           open={!!editTarget}
