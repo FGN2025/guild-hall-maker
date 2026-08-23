@@ -40,6 +40,8 @@ export function StoredImage({
 }) {
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  /** Set when a transformed render 400s (transformations disabled on the tier). */
+  const [noTransform, setNoTransform] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -49,7 +51,7 @@ export function StoredImage({
       return;
     }
     (async () => {
-      if (transformWidth) {
+      if (transformWidth && !noTransform) {
         const { data, error } = await supabase.storage
           .from(bucket)
           .createSignedUrl(path, 60 * 60, { transform: { width: transformWidth, resize: "contain", quality } });
@@ -66,7 +68,7 @@ export function StoredImage({
     return () => {
       active = false;
     };
-  }, [path, fallbackUrl, bucket, transformWidth, quality]);
+  }, [path, fallbackUrl, bucket, transformWidth, quality, noTransform]);
 
   if (!src || failed) {
     return (
@@ -87,7 +89,16 @@ export function StoredImage({
       alt={alt}
       className={className}
       loading={eager ? "eager" : "lazy"}
-      onError={() => setFailed(true)}
+      onError={() => {
+        // A transformed render can fail where the original succeeds; retry the
+        // untransformed object once before showing the reviewer an error.
+        if (transformWidth && !noTransform) {
+          setNoTransform(true);
+          setSrc(null);
+          return;
+        }
+        setFailed(true);
+      }}
     />
   );
 }
