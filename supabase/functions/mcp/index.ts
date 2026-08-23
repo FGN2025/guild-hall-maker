@@ -1882,7 +1882,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-08-23T21:10Z-review-loop";
+var BUILD_ID = "2026-08-23T21:55Z-dlq-signal";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
