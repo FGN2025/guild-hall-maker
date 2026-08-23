@@ -51,6 +51,22 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const nowIso = new Date().toISOString();
 
+    // --- Staleness guard -------------------------------------------------
+    // An approved post whose window passed long ago must never publish: a bulk
+    // approve of backdated rows would otherwise fire them all in one minute.
+    // The window is configurable at tick time (no deploy) via app_settings.
+    let staleWindowHours = 6;
+    {
+      const { data: setting } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "scheduled_post_stale_window_hours")
+        .maybeSingle();
+      const parsed = Number(setting?.value);
+      if (Number.isFinite(parsed) && parsed > 0) staleWindowHours = parsed;
+    }
+    const staleCutoffIso = new Date(Date.now() - staleWindowHours * 3600_000).toISOString();
+
     // 0. Flush marketing draft digests whose window has elapsed.
     let digestsSent = 0;
     const { data: dueDigests } = await supabase
