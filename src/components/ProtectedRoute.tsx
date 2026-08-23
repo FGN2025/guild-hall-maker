@@ -1,8 +1,11 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { authUrlFor } from "@/lib/returnPath";
 
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user, loading, roleLoading, emailConfirmed } = useAuth();
+  const location = useLocation();
+
 
   // Skip the full-screen spinner if a session is already cached on disk —
   // Supabase will rehydrate it synchronously, so we can render optimistically.
