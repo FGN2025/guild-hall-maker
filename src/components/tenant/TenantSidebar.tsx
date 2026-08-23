@@ -58,7 +58,7 @@ const allSidebarItems = [
 ];
 
 
-const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatformAdmin, allTenants, selectedTenantId, onTenantChange }: TenantSidebarProps) => {
+const TenantSidebar = ({ tenantName, tenantRole, logoUrl, brandColor, isPlatformAdmin, allTenants, selectedTenantId, onTenantChange, pendingReviewCount = 0 }: TenantSidebarProps) => {
   const location = useLocation();
 
   const sidebarItems = allSidebarItems.filter((item) => item.roles.includes(tenantRole));
