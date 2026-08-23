@@ -262,3 +262,15 @@
     color: #333 !important;
   }
 }
+
+/* Hide the horizontal scrollbar on swipeable tab rows (mobile-first nav).
+   The row is still keyboard- and wheel-scrollable; only the chrome is hidden. */
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

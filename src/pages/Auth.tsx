@@ -16,6 +16,8 @@ import ZipCheckStep from "@/components/auth/ZipCheckStep";
 import SubscriberVerifyStep from "@/components/auth/SubscriberVerifyStep";
 import { useRegistrationZipCheck } from "@/hooks/useRegistrationZipCheck";
 import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
+import { sanitizeReturnPath } from "@/lib/returnPath";
+
 
 type SignupStep = "zip" | "subscriber-verify" | "account" | "confirmation";
 
@@ -37,13 +39,14 @@ const Auth = () => {
   const [legacyUsername, setLegacyUsername] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Same-origin relative redirect after auth (used by OAuth consent flow).
+  // Same-origin relative redirect after auth. Used by the OAuth consent flow
+  // and by the guard routes, which stamp `next` when a digest deep link hits a
+  // signed-out browser (mail webviews always do). Validation is centralised in
+  // sanitizeReturnPath so only same-origin relative paths can ever be honoured.
   const nextParam = searchParams.get("next");
-  const safeNext =
-    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-      ? nextParam
-      : null;
+  const safeNext = sanitizeReturnPath(nextParam);
   const postAuthTarget = safeNext ?? "/dashboard";
+
 
   // Redirect authenticated users away from /auth
   useEffect(() => {

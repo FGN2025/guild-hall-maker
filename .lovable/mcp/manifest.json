@@ -5,7 +5,7 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://yrhwzmkenjgiujhofucx.supabase.co/auth/v1",
-    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-08-23T22%3A40Z-review-thumbs",
+    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-08-24T00%3A20Z-mobile-review-lap1",
     "accepted_audiences": [
       "authenticated"
     ]

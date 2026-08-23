@@ -1,7 +1,9 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { authUrlFor } from "@/lib/returnPath";
 import TenantLayout from "./TenantLayout";
+
 
 export type TenantRoleName = "admin" | "manager" | "marketing";
 
@@ -14,6 +16,7 @@ const TenantRoute = ({
 }) => {
   const { user, loading, isAdmin, emailConfirmed } = useAuth();
   const { isTenantAdmin, isLoading, tenantInfo, isPlatformAdminMode, allTenants, selectedTenantId, setSelectedTenantId } = useTenantAdmin();
+  const location = useLocation();
 
   if (loading || isLoading) {
     return (
@@ -23,7 +26,9 @@ const TenantRoute = ({
     );
   }
 
-  if (!user) return <Navigate to="/auth" replace />;
+  // No session at all (the mail-webview case): carry the target through /auth.
+  if (!user) return <Navigate to={authUrlFor(location)} replace />;
+
   if (!emailConfirmed) return <Navigate to="/confirm-email" replace />;
   if (!isTenantAdmin && !isAdmin) return <Navigate to="/dashboard" replace />;
 

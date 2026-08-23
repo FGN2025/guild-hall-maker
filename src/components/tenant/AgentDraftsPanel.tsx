@@ -19,6 +19,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { StoredImage } from "@/components/marketing/StoredImage";
 import PostArtworkDialog, { beatFromPath } from "./PostArtworkDialog";
+import { TENANT_REVIEW_QUEUE_KEY } from "@/hooks/useTenantReviewQueue";
+
 
 /** Image a reviewer chose to open in the editor. */
 interface EditTarget {
@@ -200,6 +202,9 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   // useDraftDecision, exactly like the other bulk buttons.
   const { data: ahead } = useAheadPendingPosts(tenantId);
   const [aheadConfirm, setAheadConfirm] = useState<{ rows: DraftRow[]; cutoff: string | null } | null>(null);
+  /** Confirmation gate for the unbounded bulk approvals (all / this week). */
+  const [bulkConfirm, setBulkConfirm] = useState<{ key: string; rows: DraftRow[]; label: string } | null>(null);
+
 
   const aheadRows = useMemo(() => {
     const idSet = new Set(ahead?.ids ?? []);
@@ -349,7 +354,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     setEditTarget(null);
     qc.invalidateQueries({ queryKey: ["agent_drafts", tenantId] });
     qc.invalidateQueries({ queryKey: ["agent_drafts_linked_assets", tenantId] });
-    qc.invalidateQueries({ queryKey: ["tenant_pending_review_count", tenantId] });
+    qc.invalidateQueries({ queryKey: [TENANT_REVIEW_QUEUE_KEY] });
   };
 
 
@@ -373,30 +378,38 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         <h2 className="text-lg font-heading">Review queue</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
         {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
-        {canDecide && aheadRows.length > 0 && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className="ml-auto"
-            disabled={!!bulkBusyKey}
-            onClick={openAheadConfirm}
-          >
-            {bulkBusyKey === "__ahead__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CalendarClock className="h-4 w-4 mr-1" />}
-            Approve upcoming only ({aheadRows.length})
-          </Button>
-        )}
-        {canDecide && pending.length > 0 && (
-          <Button
-            size="sm"
-            className={aheadRows.length > 0 ? "" : "ml-auto"}
-            disabled={!!bulkBusyKey}
-            onClick={() => bulkApprove("__all__", pending)}
-          >
-            {bulkBusyKey === "__all__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
-            Approve all {pending.length} pending
-          </Button>
-        )}
       </div>
+
+      {/* Bulk actions live on their own row, full width on a phone, and every
+          one of them is confirmed first. They publish to real public pages, so
+          a mis-tap must never be one tap away from a decision button. */}
+      {canDecide && (aheadRows.length > 0 || pending.length > 0) && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          {aheadRows.length > 0 && (
+            <Button
+              variant="secondary"
+              className="min-h-[44px] w-full sm:w-auto"
+              disabled={!!bulkBusyKey}
+              onClick={openAheadConfirm}
+            >
+              {bulkBusyKey === "__ahead__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CalendarClock className="h-4 w-4 mr-1" />}
+              Approve upcoming only ({aheadRows.length})
+            </Button>
+          )}
+          {pending.length > 0 && (
+            <Button
+              variant="outline"
+              className="min-h-[44px] w-full sm:w-auto"
+              disabled={!!bulkBusyKey}
+              onClick={() => setBulkConfirm({ key: "__all__", rows: pending, label: `all ${pending.length} pending item${pending.length === 1 ? "" : "s"}` })}
+            >
+              {bulkBusyKey === "__all__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+              Approve all {pending.length} pending
+            </Button>
+          )}
+        </div>
+      )}
+
 
       <p className="text-sm text-muted-foreground">
         {canDecide
@@ -422,14 +435,15 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
               <Button
                 size="sm"
                 variant="outline"
-                className="ml-auto"
+                className="ml-auto min-h-[44px]"
                 disabled={!!bulkBusyKey}
-                onClick={() => bulkApprove(group.key, groupPending)}
+                onClick={() => setBulkConfirm({ key: group.key, rows: groupPending, label: `${groupPending.length} item${groupPending.length === 1 ? "" : "s"} in ${weekLabel(group.start)}` })}
               >
                 {bulkBusyKey === group.key ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
                 Approve week ({groupPending.length})
               </Button>
             )}
+
           </div>
           <div className="grid gap-4">
           {group.rows.map((row) => {
@@ -513,17 +527,22 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                           caption: row.caption,
                         })}
                       >
+                        {/* object-contain, portrait box: a square crop cut the
+                            headline and prize line off the 4:5 promos, which is
+                            exactly the copy a reviewer is checking. */}
                         <StoredImage
                           path={row.image_path}
                           fallbackUrl={row.image_url}
                           transformWidth={256}
                           alt={`Promo artwork for the ${row.platform ?? "post"} scheduled ${row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : "with no time"}`}
-                          className="h-24 w-24 rounded object-cover bg-muted"
+                          className="h-[7.5rem] w-24 rounded object-contain bg-muted"
                         />
+                        <span className="sr-only">Open full-size artwork</span>
                       </button>
                     )}
                     {row.caption && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{row.caption}</p>}
                   </div>
+
                 )}
                 {row.kind === "asset" && (row.file_path || row.url) && (
                   <button
@@ -658,17 +677,20 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                 )}
 
                 {canDecide ? (
-                  <div className="flex justify-end gap-2">
+                  /* 44px targets, pushed to opposite ends of the card. Reject
+                     and Approve were 36px tall and 8px apart in the bottom-right
+                     corner — the exact spot a right thumb lands. */
+                  <div className="flex items-center justify-between gap-4">
                     <Button
                       variant="outline"
-                      size="sm"
+                      className="min-h-[44px] min-w-[44px] flex-1 max-w-[45%]"
                       disabled={decide.isPending}
                       onClick={() => onDecide(row, false)}
                     >
                       <X className="h-4 w-4 mr-1" /> Reject
                     </Button>
                     <Button
-                      size="sm"
+                      className="min-h-[44px] min-w-[44px] flex-1 max-w-[45%]"
                       disabled={decide.isPending}
                       onClick={() => onDecide(row, true)}
                     >
@@ -676,6 +698,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                     </Button>
                   </div>
                 ) : (
+
                   <p className="text-xs text-muted-foreground text-right">
                     Awaiting review by a tenant Admin or Manager.
                   </p>
@@ -730,6 +753,24 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           if (targets.length) bulkApprove("__ahead__", targets);
         }}
       />
+
+      {/* Unbounded bulk approvals: name the count, warn that lapsed posts are
+          included, and require a second tap. */}
+      <ConfirmDialog
+        open={!!bulkConfirm}
+        onOpenChange={(open) => { if (!open) setBulkConfirm(null); }}
+        title={`Approve ${bulkConfirm?.label ?? ""}?`}
+        description={
+          "This approves every one of them at once and they become publishable on your real public pages. Posts whose scheduled slot has already passed are included — those will be held back by the staleness guard and need rescheduling. There is no undo."
+        }
+        confirmLabel="Approve them all"
+        onConfirm={() => {
+          const target = bulkConfirm;
+          setBulkConfirm(null);
+          if (target?.rows.length) bulkApprove(target.key, target.rows);
+        }}
+      />
+
     </div>
   );
 

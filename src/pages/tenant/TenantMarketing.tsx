@@ -21,6 +21,10 @@ import TenantCodes from "./TenantCodes";
 import WebPagesTab from "@/components/tenant/marketing/WebPagesTab";
 import UniversalAssetsTab from "@/components/tenant/UniversalAssetsTab";
 import CampaignStatusBadge, { resolveCampaignStatus, STATUS_ORDER, CAMPAIGN_STATUS_LABELS, type CampaignStatusKey } from "@/components/marketing/CampaignStatusBadge";
+import { useTenantReviewQueue } from "@/hooks/useTenantReviewQueue";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+
 const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 const STATUS_FILTERS: ("all" | CampaignStatusKey)[] = ["all", "pending_review", "approved", "published", "rejected", "draft"];
 
@@ -119,32 +123,11 @@ const TenantMarketing = () => {
     },
   });
 
-  /** Count of items waiting on a reviewer, shown on the Review tab. */
-  const { data: pendingReviewCount = 0 } = useQuery({
-    queryKey: ["tenant_pending_review_count", tenantAdmin],
-    enabled: !!tenantAdmin,
-    queryFn: async () => {
-      const [campaignsRes, postsRes, assetsRes] = await Promise.all([
-        supabase
-          .from("marketing_campaigns")
-          .select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenantAdmin!)
-          .eq("status", "pending_review"),
-        supabase
-          .from("scheduled_posts")
-          .select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenantAdmin!)
-          .eq("status", "pending_review"),
-        supabase
-          .from("tenant_marketing_assets")
-          .select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenantAdmin!)
-          .eq("is_published", false)
-          .not("campaign_id", "is", null),
-      ]);
-      return (campaignsRes.count ?? 0) + (postsRes.count ?? 0) + (assetsRes.count ?? 0);
-    },
-  });
+  /** Count of items waiting on a reviewer, shown on the Review tab and banner.
+   *  Shared with the portal bell so both surfaces can never disagree. */
+  const { data: reviewQueue } = useTenantReviewQueue(tenantAdmin ?? tenantInfo?.tenantId ?? null);
+  const pendingReviewCount = reviewQueue?.total ?? 0;
+
 
   /** Scope: this tenant's own rows + platform library rows (tenant_id IS NULL),
    *  matching what the tab has always shown. */
@@ -179,45 +162,72 @@ const TenantMarketing = () => {
 
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
-          <Megaphone className="h-8 w-8 text-primary" /> Marketing
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
+          <Megaphone className="h-7 w-7 sm:h-8 sm:w-8 text-primary" /> Marketing
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Campaigns, assets, codes, and web pages in one place</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="bg-muted">
-          <TabsTrigger value="campaigns" className="gap-2 font-heading">
-            <Megaphone className="h-4 w-4" /> Campaigns
-          </TabsTrigger>
-          <TabsTrigger value="assets" className="gap-2 font-heading">
-            <ImageIcon className="h-4 w-4" /> My Assets
-          </TabsTrigger>
-          <TabsTrigger value="universal" className="gap-2 font-heading">
-            <Globe className="h-4 w-4" /> Universal Assets
-          </TabsTrigger>
-          <TabsTrigger value="codes" className="gap-2 font-heading">
-            <KeyRound className="h-4 w-4" /> Codes
-          </TabsTrigger>
-          <TabsTrigger value="webpages" className="gap-2 font-heading">
-            <FileText className="h-4 w-4" /> Web Pages
-          </TabsTrigger>
-          <TabsTrigger value="social" className="gap-2 font-heading">
-            <Share2 className="h-4 w-4" /> Social Accounts
-          </TabsTrigger>
-          <TabsTrigger value="scheduled" className="gap-2 font-heading">
-            <CalendarClock className="h-4 w-4" /> Scheduled
-          </TabsTrigger>
-          <TabsTrigger value="agent" className="gap-2 font-heading">
-            <Bot className="h-4 w-4" /> Review
-            {pendingReviewCount > 0 && (
-              <Badge variant="secondary" className="ml-1 text-xs">{pendingReviewCount}</Badge>
+      {/* Reviewer shortcut. The tab row scrolls, but on a 390px phone a reviewer
+          arriving from a digest email should never have to find a tab at all. */}
+      {pendingReviewCount > 0 && activeTab !== "agent" && (
+        <div className="rounded-lg border border-primary/40 bg-primary/10 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              {pendingReviewCount} item{pendingReviewCount === 1 ? "" : "s"} waiting for review
+            </p>
+            {reviewQueue && (reviewQueue.lapsed > 0 || reviewQueue.dueSoon > 0) && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {reviewQueue.lapsed > 0 && `${reviewQueue.lapsed} past their slot`}
+                {reviewQueue.lapsed > 0 && reviewQueue.dueSoon > 0 && " · "}
+                {reviewQueue.dueSoon > 0 && `${reviewQueue.dueSoon} due within 48h`}
+              </p>
             )}
-          </TabsTrigger>
+          </div>
+          <Button className="min-h-[44px] w-full sm:w-auto" onClick={() => handleTabChange("agent")}>
+            Review now <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      )}
 
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        {/* Horizontally scrollable on narrow screens — an eight-item row cannot
+            fit at 390px, and the Review tab must never be the one clipped off. */}
+        <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">
+          <TabsList className="bg-muted w-max flex-nowrap justify-start">
+            <TabsTrigger value="agent" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <Bot className="h-4 w-4" /> Review
+              {pendingReviewCount > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs">{pendingReviewCount}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <Megaphone className="h-4 w-4" /> Campaigns
+            </TabsTrigger>
+            <TabsTrigger value="assets" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <ImageIcon className="h-4 w-4" /> My Assets
+            </TabsTrigger>
+            <TabsTrigger value="universal" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <Globe className="h-4 w-4" /> Universal Assets
+            </TabsTrigger>
+            <TabsTrigger value="codes" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <KeyRound className="h-4 w-4" /> Codes
+            </TabsTrigger>
+            <TabsTrigger value="webpages" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <FileText className="h-4 w-4" /> Web Pages
+            </TabsTrigger>
+            <TabsTrigger value="social" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <Share2 className="h-4 w-4" /> Social Accounts
+            </TabsTrigger>
+            <TabsTrigger value="scheduled" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <CalendarClock className="h-4 w-4" /> Scheduled
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+
 
         {/* Campaigns Tab */}
         <TabsContent value="campaigns" className="space-y-6">
