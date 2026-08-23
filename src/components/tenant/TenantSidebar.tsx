@@ -34,7 +34,10 @@ export interface TenantSidebarProps {
   allTenants?: TenantListItem[];
   selectedTenantId?: string | null;
   onTenantChange?: (id: string | null) => void;
+  /** Items awaiting review — badged on the Marketing entry. */
+  pendingReviewCount?: number;
 }
+
 
 const allSidebarItems = [
   { to: "/tenant", label: "Dashboard", icon: LayoutDashboard, roles: ['admin', 'manager'] },
