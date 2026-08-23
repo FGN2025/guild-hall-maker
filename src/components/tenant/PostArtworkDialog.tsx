@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import { StoredImage } from "@/components/marketing/StoredImage";
 
 /** Best-effort beat read from the composed object name (announce / day-of / ...). */
@@ -58,24 +56,12 @@ export default function PostArtworkDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        hideClose
-        className="p-0 gap-0 w-screen max-w-none h-[100dvh] rounded-none sm:w-auto sm:max-w-3xl sm:h-auto sm:max-h-[92vh] sm:rounded-lg flex flex-col"
+        className="[&>button]:h-11 [&>button]:w-11 [&>button]:top-2 [&>button]:right-2 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button>svg]:h-5 [&>button>svg]:w-5 p-0 gap-0 w-screen max-w-none h-[100dvh] rounded-none sm:w-auto sm:max-w-3xl sm:h-auto sm:max-h-[92vh] sm:rounded-lg flex flex-col"
       >
         <DialogHeader className="p-3 pb-2 border-b space-y-2 shrink-0">
-          <div className="flex items-start justify-between gap-2">
-            <DialogTitle className="text-sm font-heading text-left leading-tight pr-1">
-              {title ?? "Post artwork"}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Close artwork"
-              className="h-11 w-11 shrink-0 -mt-2 -mr-1"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
+          <DialogTitle className="text-sm font-heading text-left leading-tight pr-12">
+            {title ?? "Post artwork"}
+          </DialogTitle>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {beat && <Badge variant="outline" className="capitalize">Beat: {beat}</Badge>}
             <Badge variant="outline">
