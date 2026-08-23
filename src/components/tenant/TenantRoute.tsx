@@ -1,7 +1,9 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
+import { authUrlFor } from "@/lib/returnPath";
 import TenantLayout from "./TenantLayout";
+
 
 export type TenantRoleName = "admin" | "manager" | "marketing";
 
