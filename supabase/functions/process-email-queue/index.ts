@@ -1,5 +1,6 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { BUILD_ID } from '../_shared/build-id.ts'
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -232,7 +233,7 @@ Deno.serve(async (req) => {
 
   if (state?.retry_after_until && new Date(state.retry_after_until) > new Date()) {
     return new Response(
-      JSON.stringify({ skipped: true, reason: 'rate_limited' }),
+      JSON.stringify({ skipped: true, reason: 'rate_limited', build_id: BUILD_ID }),
       { headers: { 'Content-Type': 'application/json' } }
     )
   }
@@ -465,7 +466,7 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ processed: totalProcessed }),
+    JSON.stringify({ processed: totalProcessed, build_id: BUILD_ID }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 })
