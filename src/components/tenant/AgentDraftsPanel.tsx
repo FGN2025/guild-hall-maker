@@ -19,6 +19,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { StoredImage } from "@/components/marketing/StoredImage";
 import PostArtworkDialog, { beatFromPath } from "./PostArtworkDialog";
+import { TENANT_REVIEW_QUEUE_KEY } from "@/hooks/useTenantReviewQueue";
+
 
 /** Image a reviewer chose to open in the editor. */
 interface EditTarget {
