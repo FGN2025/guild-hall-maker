@@ -202,6 +202,9 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   // useDraftDecision, exactly like the other bulk buttons.
   const { data: ahead } = useAheadPendingPosts(tenantId);
   const [aheadConfirm, setAheadConfirm] = useState<{ rows: DraftRow[]; cutoff: string | null } | null>(null);
+  /** Confirmation gate for the unbounded bulk approvals (all / this week). */
+  const [bulkConfirm, setBulkConfirm] = useState<{ key: string; rows: DraftRow[]; label: string } | null>(null);
+
 
   const aheadRows = useMemo(() => {
     const idSet = new Set(ahead?.ids ?? []);
