@@ -68,23 +68,29 @@ const TenantLayout = ({ children, tenantInfo, tenantRole, isPlatformAdmin, allTe
     allTenants,
     selectedTenantId,
     onTenantChange,
+    pendingReviewCount: reviewQueue?.total ?? 0,
   };
 
   if (!isMobile) {
     return (
       <div className="h-screen bg-background flex overflow-hidden tenant-portal">
         <TenantSidebar {...sidebarProps} />
-        <main className="flex-1 p-8 overflow-auto">{children}</main>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex justify-end px-8 pt-4 shrink-0">
+            <TenantReviewBell tenantId={tenantInfo.tenantId} />
+          </div>
+          <main className="flex-1 px-8 pb-8 overflow-auto">{children}</main>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden tenant-portal">
-      <header className="h-12 flex items-center border-b border-border px-4 bg-background shrink-0" style={brandAccent ? { borderBottomColor: brandAccent } : undefined}>
+      <header className="h-14 flex items-center border-b border-border px-2 bg-background shrink-0" style={brandAccent ? { borderBottomColor: brandAccent } : undefined}>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="Open menu">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -95,10 +101,14 @@ const TenantLayout = ({ children, tenantInfo, tenantRole, isPlatformAdmin, allTe
           </SheetContent>
         </Sheet>
         {tenantInfo.logoUrl ? (
-          <img src={tenantInfo.logoUrl} alt={tenantInfo.tenantName} className="ml-3 h-6 w-6 rounded object-contain" />
+          <img src={tenantInfo.logoUrl} alt={tenantInfo.tenantName} className="ml-2 h-6 w-6 rounded object-contain" />
         ) : null}
-        <span className={`${tenantInfo.logoUrl ? 'ml-2' : 'ml-3'} font-display text-sm font-bold truncate`} style={brandAccent ? { color: brandAccent } : undefined}>{tenantInfo.tenantName}</span>
+        <span className={`${tenantInfo.logoUrl ? 'ml-2' : 'ml-2'} font-display text-sm font-bold truncate`} style={brandAccent ? { color: brandAccent } : undefined}>{tenantInfo.tenantName}</span>
+        <div className="ml-auto">
+          <TenantReviewBell tenantId={tenantInfo.tenantId} />
+        </div>
       </header>
+
       <main className="flex-1 p-4 overflow-auto">{children}</main>
     </div>
   );
