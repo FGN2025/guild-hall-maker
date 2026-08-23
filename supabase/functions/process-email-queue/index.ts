@@ -52,6 +52,56 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
   }
 }
 
+// Best-effort recipient identity for logging. NEVER returns undefined: a
+// dead letter must always produce a log row, even when the payload is
+// malformed and no recipient can be determined (that is exactly the failure
+// mode that made 65 dead letters invisible in July/August 2026).
+function resolveLogIdentity(payload: Record<string, any>): string {
+  const candidates = [
+    payload?.to,
+    payload?.recipientEmail,
+    payload?.recipient_email,
+    payload?.templateData?.recipientEmail,
+  ]
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.includes('@')) return c
+  }
+  return 'unknown-recipient@invalid'
+}
+
+// Raise a NON-EMAIL signal that something dead-lettered.
+// Deliberately in-app + log row only: an email alert about the email path
+// failing cannot be trusted to arrive, because the email path is what failed.
+async function raiseDlqSignal(
+  supabase: ReturnType<typeof createClient>,
+  queue: string,
+  template: string,
+  recipient: string,
+  reason: string
+): Promise<void> {
+  try {
+    const { data: admins } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin')
+
+    const rows = (admins ?? []).map((a: any) => ({
+      user_id: a.user_id,
+      type: 'warning',
+      title: 'Email dead-lettered',
+      message: `A ${template} email to ${recipient} was discarded after repeated failures (${queue}): ${reason}`.slice(0, 500),
+      link: '/admin/settings',
+      category: 'email_dlq',
+      related_kind: 'email',
+    }))
+    if (rows.length > 0) {
+      await supabase.from('notifications').insert(rows)
+    }
+  } catch (e) {
+    console.error('Failed to raise DLQ in-app signal', { queue, error: String(e) })
+  }
+}
+
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
   supabase: ReturnType<typeof createClient>,
@@ -59,14 +109,24 @@ async function moveToDlq(
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
 ): Promise<void> {
-  const payload = msg.message
-  await supabase.from('email_send_log').insert({
-    message_id: payload.message_id,
-    template_name: (payload.label || queue) as string,
-    recipient_email: payload.to,
+  const payload = (msg.message ?? {}) as Record<string, any>
+  const recipient = resolveLogIdentity(payload)
+  const template = (payload.label || payload.templateName || queue) as string
+
+  const { error: logError } = await supabase.from('email_send_log').insert({
+    message_id: (payload.message_id as string) ?? `dlq-${queue}-${msg.msg_id}`,
+    template_name: template,
+    recipient_email: recipient,
     status: 'dlq',
     error_message: reason,
+    metadata: { queue, msg_id: msg.msg_id, recipient_resolved: recipient !== 'unknown-recipient@invalid' },
   })
+  if (logError) {
+    console.error('CRITICAL: failed to write dlq log row', { queue, msg_id: msg.msg_id, error: logError })
+  }
+
+  await raiseDlqSignal(supabase, queue, template, recipient, reason)
+
   const { error } = await supabase.rpc('move_to_dlq', {
     source_queue: queue,
     dlq_name: `${queue}_dlq`,
