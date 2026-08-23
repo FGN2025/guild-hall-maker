@@ -16,6 +16,8 @@ import ZipCheckStep from "@/components/auth/ZipCheckStep";
 import SubscriberVerifyStep from "@/components/auth/SubscriberVerifyStep";
 import { useRegistrationZipCheck } from "@/hooks/useRegistrationZipCheck";
 import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
+import { sanitizeReturnPath } from "@/lib/returnPath";
+
 
 type SignupStep = "zip" | "subscriber-verify" | "account" | "confirmation";
 
