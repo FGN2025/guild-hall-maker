@@ -26,8 +26,10 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   if (loading) return null;
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    // Carry the intended destination through sign-in (digest email deep links).
+    return <Navigate to={authUrlFor(location)} replace />;
   }
+
 
   if (!emailConfirmed) {
     return <Navigate to="/confirm-email" replace />;
