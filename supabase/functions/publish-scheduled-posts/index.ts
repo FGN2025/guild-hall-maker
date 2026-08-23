@@ -482,7 +482,10 @@ Deno.serve(async (req) => {
         failed,
         undeliverable,
         overdue_notified: overduePending?.length ?? 0,
+        stale_skipped: staleSkipped,
+        stale_window_hours: staleWindowHours,
         total: duePosts.length,
+        build_id: BUILD_ID,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
