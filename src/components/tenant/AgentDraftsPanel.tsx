@@ -677,17 +677,20 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                 )}
 
                 {canDecide ? (
-                  <div className="flex justify-end gap-2">
+                  /* 44px targets, pushed to opposite ends of the card. Reject
+                     and Approve were 36px tall and 8px apart in the bottom-right
+                     corner — the exact spot a right thumb lands. */
+                  <div className="flex items-center justify-between gap-4">
                     <Button
                       variant="outline"
-                      size="sm"
+                      className="min-h-[44px] min-w-[44px] flex-1 max-w-[45%]"
                       disabled={decide.isPending}
                       onClick={() => onDecide(row, false)}
                     >
                       <X className="h-4 w-4 mr-1" /> Reject
                     </Button>
                     <Button
-                      size="sm"
+                      className="min-h-[44px] min-w-[44px] flex-1 max-w-[45%]"
                       disabled={decide.isPending}
                       onClick={() => onDecide(row, true)}
                     >
@@ -695,6 +698,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                     </Button>
                   </div>
                 ) : (
+
                   <p className="text-xs text-muted-foreground text-right">
                     Awaiting review by a tenant Admin or Manager.
                   </p>
