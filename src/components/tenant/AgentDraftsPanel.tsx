@@ -375,30 +375,38 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         <h2 className="text-lg font-heading">Review queue</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
         {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
-        {canDecide && aheadRows.length > 0 && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className="ml-auto"
-            disabled={!!bulkBusyKey}
-            onClick={openAheadConfirm}
-          >
-            {bulkBusyKey === "__ahead__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CalendarClock className="h-4 w-4 mr-1" />}
-            Approve upcoming only ({aheadRows.length})
-          </Button>
-        )}
-        {canDecide && pending.length > 0 && (
-          <Button
-            size="sm"
-            className={aheadRows.length > 0 ? "" : "ml-auto"}
-            disabled={!!bulkBusyKey}
-            onClick={() => bulkApprove("__all__", pending)}
-          >
-            {bulkBusyKey === "__all__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
-            Approve all {pending.length} pending
-          </Button>
-        )}
       </div>
+
+      {/* Bulk actions live on their own row, full width on a phone, and every
+          one of them is confirmed first. They publish to real public pages, so
+          a mis-tap must never be one tap away from a decision button. */}
+      {canDecide && (aheadRows.length > 0 || pending.length > 0) && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          {aheadRows.length > 0 && (
+            <Button
+              variant="secondary"
+              className="min-h-[44px] w-full sm:w-auto"
+              disabled={!!bulkBusyKey}
+              onClick={openAheadConfirm}
+            >
+              {bulkBusyKey === "__ahead__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CalendarClock className="h-4 w-4 mr-1" />}
+              Approve upcoming only ({aheadRows.length})
+            </Button>
+          )}
+          {pending.length > 0 && (
+            <Button
+              variant="outline"
+              className="min-h-[44px] w-full sm:w-auto"
+              disabled={!!bulkBusyKey}
+              onClick={() => setBulkConfirm({ key: "__all__", rows: pending, label: `all ${pending.length} pending item${pending.length === 1 ? "" : "s"}` })}
+            >
+              {bulkBusyKey === "__all__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+              Approve all {pending.length} pending
+            </Button>
+          )}
+        </div>
+      )}
+
 
       <p className="text-sm text-muted-foreground">
         {canDecide
