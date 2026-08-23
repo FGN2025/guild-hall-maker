@@ -4,6 +4,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import TenantSidebar from "./TenantSidebar";
+import TenantReviewBell from "./TenantReviewBell";
+import { useTenantReviewQueue } from "@/hooks/useTenantReviewQueue";
+
 
 interface TenantListItem {
   id: string;
