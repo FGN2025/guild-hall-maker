@@ -431,6 +431,15 @@ const AdminTenants = () => {
                 key={t.id}
                 tenant={t}
                 health={healthMap?.get(t.id)}
+                parentName={t.parent_tenant_id ? tenantById.get(t.parent_tenant_id)?.name ?? null : null}
+                subAccountCount={childCounts.get(t.id) ?? 0}
+                parentOptions={parentOptions
+                  .filter((p) => p.id !== t.id)
+                  .map((p) => ({ id: p.id, name: p.name }))}
+                canHaveParent={(childCounts.get(t.id) ?? 0) === 0}
+                onParentChange={(parentTenantId) =>
+                  setParentTenant.mutate({ id: t.id, parentTenantId })
+                }
                 onToggleStatus={(checked) =>
                   updateTenant.mutate({ id: t.id, status: checked ? "active" : "inactive" })
                 }
