@@ -543,8 +543,12 @@ function TenantCard({
     },
   });
 
+  const isSubAccount = !!t.parent_tenant_id;
+
   return (
-    <div className={`border rounded-lg p-4 bg-card space-y-3 ${t.status !== "active" ? "border-dashed border-muted opacity-60" : "border-border"}`}>
+    <div
+      className={`border rounded-lg p-4 bg-card space-y-3 ${t.status !== "active" ? "border-dashed border-muted opacity-60" : "border-border"} ${isSubAccount ? "sm:ml-8 border-l-4 border-l-primary/50" : ""}`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <LogoPicker
@@ -555,7 +559,20 @@ function TenantCard({
             tenantId={t.id}
           />
           <div>
-            <h3 className="font-heading font-semibold text-foreground">{t.name}</h3>
+            <h3 className="font-heading font-semibold text-foreground flex items-center gap-2 flex-wrap">
+              {t.name}
+              {isSubAccount && (
+                <Badge variant="outline" className="text-[10px] gap-1">
+                  <CornerDownRight className="h-3 w-3" />
+                  Sub-account of {parentName ?? "another provider"}
+                </Badge>
+              )}
+              {!isSubAccount && (subAccountCount ?? 0) > 0 && (
+                <Badge variant="secondary" className="text-[10px]">
+                  {subAccountCount} sub-account{subAccountCount === 1 ? "" : "s"}
+                </Badge>
+              )}
+            </h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
               /{t.slug}
               {t.contact_email && ` · ${t.contact_email}`}
