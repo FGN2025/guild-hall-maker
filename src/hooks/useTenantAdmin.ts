@@ -40,6 +40,18 @@ function getTenantSnapshot(): string | null {
   return localStorage.getItem(SELECTED_TENANT_KEY);
 }
 
+/** Set the active tenant outside of React (e.g. right after claiming an invite). */
+export function selectTenantId(id: string | null) {
+  if (id) {
+    localStorage.setItem(SELECTED_TENANT_KEY, id);
+  } else {
+    localStorage.removeItem(SELECTED_TENANT_KEY);
+  }
+  window.dispatchEvent(new Event(TENANT_CHANGE_EVENT));
+}
+
+
+
 export function useTenantAdmin() {
   const { user, isAdmin } = useAuth();
   const selectedTenantId = useSyncExternalStore(subscribeTenantStore, getTenantSnapshot, getTenantSnapshot);
