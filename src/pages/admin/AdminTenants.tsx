@@ -614,6 +614,9 @@ function TenantCard({
           <Button variant="outline" size="sm" className="gap-1" onClick={onOpenAdmins}>
             <Users className="h-4 w-4" /> Admins
           </Button>
+          {!isSubAccount && (
+            <CreateSubAccountDialog parentTenantId={t.id} parentTenantName={t.name} />
+          )}
           <Badge variant="outline" className="gap-1 text-xs">
             <MapPin className="h-3 w-3" /> {health?.zip_count ?? zipCount ?? 0} ZIPs
           </Badge>
