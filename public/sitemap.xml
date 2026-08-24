@@ -620,4 +620,10 @@
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://play.fgn.gg/events/college-test-1</loc>
+    <lastmod>2026-08-24T20:17:22.651098+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>
