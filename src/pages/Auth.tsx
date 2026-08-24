@@ -119,7 +119,7 @@ const Auth = () => {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [signupStep, email, navigate]);
+  }, [signupStep, email, navigate, postAuthTarget]);
 
   const handleZipCheck = async () => {
     await checkZip(zipCode, bypassCode || undefined);
