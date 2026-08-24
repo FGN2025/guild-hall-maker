@@ -484,6 +484,11 @@ const AdminTenants = () => {
 function TenantCard({
   tenant,
   health,
+  parentName,
+  subAccountCount,
+  parentOptions,
+  canHaveParent,
+  onParentChange,
   onToggleStatus,
   onLogoUpdated,
   onOpenAdmins,
@@ -492,8 +497,13 @@ function TenantCard({
   onPlanTierChange,
   onManage,
 }: {
-  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean; plan_tier?: "basic" | "pro" | null };
+  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean; plan_tier?: "basic" | "pro" | null; parent_tenant_id?: string | null };
   health?: TenantHealth;
+  parentName?: string | null;
+  subAccountCount?: number;
+  parentOptions?: { id: string; name: string }[];
+  canHaveParent?: boolean;
+  onParentChange?: (parentTenantId: string | null) => void;
   onToggleStatus: (checked: boolean) => void;
   onLogoUpdated: (url: string) => void;
   onOpenAdmins: () => void;
