@@ -17,6 +17,7 @@ import SubscriberVerifyStep from "@/components/auth/SubscriberVerifyStep";
 import { useRegistrationZipCheck } from "@/hooks/useRegistrationZipCheck";
 import { useDisplayNameCheck } from "@/hooks/useDisplayNameCheck";
 import { sanitizeReturnPath } from "@/lib/returnPath";
+import { selectTenantId } from "@/hooks/useTenantAdmin";
 
 
 type SignupStep = "zip" | "subscriber-verify" | "account" | "confirmation";
@@ -46,6 +47,21 @@ const Auth = () => {
   const nextParam = searchParams.get("next");
   const safeNext = sanitizeReturnPath(nextParam);
   const postAuthTarget = safeNext ?? "/dashboard";
+
+  // Invited staff land on the tenant portal for the tenant that invited them, so
+  // after claiming the invitation we make that tenant the active selection.
+  const claimInvitations = async () => {
+    try { await supabase.rpc("claim_pending_invitations"); } catch { return; }
+    if (!isInviteFlow || !tenantSlugParam) return;
+    try {
+      const { data } = await supabase
+        .from("tenants")
+        .select("id")
+        .eq("slug", tenantSlugParam)
+        .maybeSingle();
+      if (data?.id) selectTenantId(data.id);
+    } catch { /* non-fatal — the tenant switcher still works */ }
+  };
 
 
   // Redirect authenticated users away from /auth
@@ -97,13 +113,13 @@ const Auth = () => {
     const interval = setInterval(async () => {
       const { data } = await supabase.auth.getSession();
       if (data?.session?.user?.email_confirmed_at) {
-        try { await supabase.rpc('claim_pending_invitations'); } catch {}
+        await claimInvitations();
         toast.success("Email verified! Welcome!");
-        navigate("/dashboard", { replace: true });
+        navigate(postAuthTarget, { replace: true });
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [signupStep, email, navigate]);
+  }, [signupStep, email, navigate, postAuthTarget]);
 
   const handleZipCheck = async () => {
     await checkZip(zipCode, bypassCode || undefined);
@@ -224,7 +240,7 @@ const Auth = () => {
         toast.error(error.message);
       } else {
         // Claim any pending tenant invitations silently
-        try { await supabase.rpc('claim_pending_invitations'); } catch {}
+        await claimInvitations();
         toast.success("Welcome back!");
         navigate(postAuthTarget);
       }
@@ -485,7 +501,7 @@ const Auth = () => {
                     }
                   } else {
                     // Claim any pending tenant invitations
-                    try { await supabase.rpc('claim_pending_invitations'); } catch {}
+                    await claimInvitations();
                     toast.success("Welcome!");
                     navigate(postAuthTarget);
                   }
