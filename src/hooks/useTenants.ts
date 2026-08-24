@@ -15,6 +15,7 @@ export interface Tenant {
   updated_at: string;
   require_subscriber_validation?: boolean;
   plan_tier?: "basic" | "pro" | null;
+  parent_tenant_id?: string | null;
 }
 
 
@@ -23,6 +24,7 @@ interface TenantAdmin {
   tenant_id: string;
   user_id: string;
   role: string;
+  source?: string | null;
   created_at: string;
   profile?: {
     display_name: string | null;
@@ -50,7 +52,7 @@ interface UpdateTenantInput {
   status?: string;
   require_subscriber_validation?: boolean;
   plan_tier?: "basic" | "pro" | null;
-
+  parent_tenant_id?: string | null;
 }
 
 export function useTenants() {
@@ -332,4 +334,65 @@ export function useTenantAdmins(tenantId: string | null) {
   });
 
   return { admins, isLoading, invitations, invitationsLoading, addAdmin, removeAdmin, updateRole, createInvitation, cancelInvitation, resendInvitation };
+}
+
+/* ─── Sub-accounts ─── */
+
+export interface CreateSubTenantInput {
+  parentTenantId: string;
+  name: string;
+  slug?: string;
+  contactEmail?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  /** Existing platform user nominated as the sub-account's main manager. */
+  managerUserId?: string;
+  /** Or invite by email if they have no account yet. */
+  managerEmail?: string;
+}
+
+export function useSubTenants() {
+  const queryClient = useQueryClient();
+
+  const createSubTenant = useMutation({
+    mutationFn: async (input: CreateSubTenantInput) => {
+      const { data, error } = await supabase.functions.invoke("provision-sub-tenant", {
+        body: input,
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as {
+        success: boolean;
+        tenant: { id: string; name: string; slug: string; parent_tenant_id: string | null };
+        seatedManagers: number;
+        invitationCreated: boolean;
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      queryClient.invalidateQueries({ queryKey: ["all-tenants-list"] });
+      queryClient.invalidateQueries({ queryKey: ["tenant-admins", data.tenant.id] });
+      const seats = data.seatedManagers + (data.invitationCreated ? 1 : 0);
+      toast.success(`Sub-account created with ${seats} manager seat${seats === 1 ? "" : "s"}.`);
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to create sub-account."),
+  });
+
+  const setParentTenant = useMutation({
+    mutationFn: async ({ id, parentTenantId }: { id: string; parentTenantId: string | null }) => {
+      const { error } = await supabase
+        .from("tenants")
+        .update({ parent_tenant_id: parentTenantId } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      toast.success("Account hierarchy updated.");
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to update hierarchy."),
+  });
+
+  return { createSubTenant, setParentTenant };
 }

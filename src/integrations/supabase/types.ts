@@ -4136,6 +4136,7 @@ export type Database = {
           created_at: string
           id: string
           role: string
+          source: string
           tenant_id: string
           user_id: string
         }
@@ -4143,6 +4144,7 @@ export type Database = {
           created_at?: string
           id?: string
           role?: string
+          source?: string
           tenant_id: string
           user_id: string
         }
@@ -4150,6 +4152,7 @@ export type Database = {
           created_at?: string
           id?: string
           role?: string
+          source?: string
           tenant_id?: string
           user_id?: string
         }
@@ -5126,6 +5129,7 @@ export type Database = {
           marketing_seed_density: string
           name: string
           onboarding_completed: boolean
+          parent_tenant_id: string | null
           plan_tier: string | null
           primary_color: string | null
           require_subscriber_validation: boolean
@@ -5143,6 +5147,7 @@ export type Database = {
           marketing_seed_density?: string
           name: string
           onboarding_completed?: boolean
+          parent_tenant_id?: string | null
           plan_tier?: string | null
           primary_color?: string | null
           require_subscriber_validation?: boolean
@@ -5160,6 +5165,7 @@ export type Database = {
           marketing_seed_density?: string
           name?: string
           onboarding_completed?: boolean
+          parent_tenant_id?: string | null
           plan_tier?: string | null
           primary_color?: string | null
           require_subscriber_validation?: boolean
@@ -5168,7 +5174,29 @@ export type Database = {
           timezone?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tenants_parent_tenant_id_fkey"
+            columns: ["parent_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenants_parent_tenant_id_fkey"
+            columns: ["parent_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenants_parent_tenant_id_fkey"
+            columns: ["parent_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
       }
       tournament_placements: {
         Row: {

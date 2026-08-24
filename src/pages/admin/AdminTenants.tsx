@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTenants, useTenantAdmins, type TenantInvitation } from "@/hooks/useTenants";
+import { useTenants, useTenantAdmins, useSubTenants, type TenantInvitation } from "@/hooks/useTenants";
+import { CreateSubAccountDialog } from "@/components/tenant/CreateSubAccountDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,6 +149,7 @@ const AdminTenants = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { tenants, isLoading, error, createTenant, updateTenant, deleteTenant } = useTenants();
+  const { setParentTenant } = useSubTenants();
   const { data: healthMap } = useTenantHealthMap();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
@@ -165,11 +167,23 @@ const AdminTenants = () => {
   };
   const gapCount = tenants.filter((t) => hasGap(t.id, t.status)).length;
 
-  const filteredTenants = tenants
+  // Hierarchy helpers — depth is capped at 1 by the database
+  const tenantById = new Map(tenants.map((t) => [t.id, t]));
+  const childCounts = new Map<string, number>();
+  tenants.forEach((t) => {
+    if (t.parent_tenant_id) {
+      childCounts.set(t.parent_tenant_id, (childCounts.get(t.parent_tenant_id) ?? 0) + 1);
+    }
+  });
+  const subAccountCount = tenants.filter((t) => !!t.parent_tenant_id).length;
+  const parentOptions = tenants.filter((t) => !t.parent_tenant_id && (childCounts.get(t.id) ?? 0) >= 0);
+
+  const sortedTenants = tenants
     .filter((t) => {
       if (statusFilter === "active" && t.status !== "active") return false;
       if (statusFilter === "inactive" && t.status === "active") return false;
       if (statusFilter === "gaps" && !hasGap(t.id, t.status)) return false;
+      if (statusFilter === "subs" && !t.parent_tenant_id) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (t.name?.toLowerCase().includes(q)) || (t.slug?.toLowerCase().includes(q));
@@ -190,6 +204,17 @@ const AdminTenants = () => {
         default: return 0;
       }
     });
+
+  // Group sub-accounts directly beneath their parent when the parent is visible
+  const visibleIds = new Set(sortedTenants.map((t) => t.id));
+  const filteredTenants: typeof sortedTenants = [];
+  sortedTenants.forEach((t) => {
+    if (t.parent_tenant_id && visibleIds.has(t.parent_tenant_id)) return;
+    filteredTenants.push(t);
+    sortedTenants
+      .filter((c) => c.parent_tenant_id === t.id)
+      .forEach((c) => filteredTenants.push(c));
+  });
 
   // Admin assignment sheet
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
