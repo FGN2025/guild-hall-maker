@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTenants, useTenantAdmins, type TenantInvitation } from "@/hooks/useTenants";
+import { useTenants, useTenantAdmins, useSubTenants, type TenantInvitation } from "@/hooks/useTenants";
+import { CreateSubAccountDialog } from "@/components/tenant/CreateSubAccountDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound, Mail, Clock, Loader2, ExternalLink, ArrowUpDown, Info, Send } from "lucide-react";
+import { Plus, Trash2, Building2, Users, UserPlus, Upload, X, MapPin, Search, KeyRound, Mail, Clock, Loader2, ExternalLink, ArrowUpDown, Info, Send, CornerDownRight, Unlink } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -148,6 +149,7 @@ const AdminTenants = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { tenants, isLoading, error, createTenant, updateTenant, deleteTenant } = useTenants();
+  const { setParentTenant } = useSubTenants();
   const { data: healthMap } = useTenantHealthMap();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contact_email: "", logo_url: "", primary_color: "", accent_color: "" });
@@ -165,11 +167,23 @@ const AdminTenants = () => {
   };
   const gapCount = tenants.filter((t) => hasGap(t.id, t.status)).length;
 
-  const filteredTenants = tenants
+  // Hierarchy helpers — depth is capped at 1 by the database
+  const tenantById = new Map(tenants.map((t) => [t.id, t]));
+  const childCounts = new Map<string, number>();
+  tenants.forEach((t) => {
+    if (t.parent_tenant_id) {
+      childCounts.set(t.parent_tenant_id, (childCounts.get(t.parent_tenant_id) ?? 0) + 1);
+    }
+  });
+  const subAccountCount = tenants.filter((t) => !!t.parent_tenant_id).length;
+  const parentOptions = tenants.filter((t) => !t.parent_tenant_id && (childCounts.get(t.id) ?? 0) >= 0);
+
+  const sortedTenants = tenants
     .filter((t) => {
       if (statusFilter === "active" && t.status !== "active") return false;
       if (statusFilter === "inactive" && t.status === "active") return false;
       if (statusFilter === "gaps" && !hasGap(t.id, t.status)) return false;
+      if (statusFilter === "subs" && !t.parent_tenant_id) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (t.name?.toLowerCase().includes(q)) || (t.slug?.toLowerCase().includes(q));
@@ -190,6 +204,17 @@ const AdminTenants = () => {
         default: return 0;
       }
     });
+
+  // Group sub-accounts directly beneath their parent when the parent is visible
+  const visibleIds = new Set(sortedTenants.map((t) => t.id));
+  const filteredTenants: typeof sortedTenants = [];
+  sortedTenants.forEach((t) => {
+    if (t.parent_tenant_id && visibleIds.has(t.parent_tenant_id)) return;
+    filteredTenants.push(t);
+    sortedTenants
+      .filter((c) => c.parent_tenant_id === t.id)
+      .forEach((c) => filteredTenants.push(c));
+  });
 
   // Admin assignment sheet
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
@@ -360,6 +385,7 @@ const AdminTenants = () => {
                 <TabsTrigger value="gaps" className="data-[state=active]:bg-destructive/20">
                   Coverage Gaps ({gapCount})
                 </TabsTrigger>
+                <TabsTrigger value="subs">Sub-accounts ({subAccountCount})</TabsTrigger>
               </TabsList>
             </Tabs>
             <Select value={sortOption} onValueChange={setSortOption}>
@@ -405,6 +431,15 @@ const AdminTenants = () => {
                 key={t.id}
                 tenant={t}
                 health={healthMap?.get(t.id)}
+                parentName={t.parent_tenant_id ? tenantById.get(t.parent_tenant_id)?.name ?? null : null}
+                subAccountCount={childCounts.get(t.id) ?? 0}
+                parentOptions={parentOptions
+                  .filter((p) => p.id !== t.id)
+                  .map((p) => ({ id: p.id, name: p.name }))}
+                canHaveParent={(childCounts.get(t.id) ?? 0) === 0}
+                onParentChange={(parentTenantId) =>
+                  setParentTenant.mutate({ id: t.id, parentTenantId })
+                }
                 onToggleStatus={(checked) =>
                   updateTenant.mutate({ id: t.id, status: checked ? "active" : "inactive" })
                 }
@@ -449,6 +484,11 @@ const AdminTenants = () => {
 function TenantCard({
   tenant,
   health,
+  parentName,
+  subAccountCount,
+  parentOptions,
+  canHaveParent,
+  onParentChange,
   onToggleStatus,
   onLogoUpdated,
   onOpenAdmins,
@@ -457,8 +497,13 @@ function TenantCard({
   onPlanTierChange,
   onManage,
 }: {
-  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean; plan_tier?: "basic" | "pro" | null };
+  tenant: { id: string; name: string; slug: string; logo_url: string | null; contact_email: string | null; status: string; primary_color: string | null; accent_color: string | null; require_subscriber_validation?: boolean; plan_tier?: "basic" | "pro" | null; parent_tenant_id?: string | null };
   health?: TenantHealth;
+  parentName?: string | null;
+  subAccountCount?: number;
+  parentOptions?: { id: string; name: string }[];
+  canHaveParent?: boolean;
+  onParentChange?: (parentTenantId: string | null) => void;
   onToggleStatus: (checked: boolean) => void;
   onLogoUpdated: (url: string) => void;
   onOpenAdmins: () => void;
@@ -498,8 +543,12 @@ function TenantCard({
     },
   });
 
+  const isSubAccount = !!t.parent_tenant_id;
+
   return (
-    <div className={`border rounded-lg p-4 bg-card space-y-3 ${t.status !== "active" ? "border-dashed border-muted opacity-60" : "border-border"}`}>
+    <div
+      className={`border rounded-lg p-4 bg-card space-y-3 ${t.status !== "active" ? "border-dashed border-muted opacity-60" : "border-border"} ${isSubAccount ? "sm:ml-8 border-l-4 border-l-primary/50" : ""}`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <LogoPicker
@@ -510,7 +559,20 @@ function TenantCard({
             tenantId={t.id}
           />
           <div>
-            <h3 className="font-heading font-semibold text-foreground">{t.name}</h3>
+            <h3 className="font-heading font-semibold text-foreground flex items-center gap-2 flex-wrap">
+              {t.name}
+              {isSubAccount && (
+                <Badge variant="outline" className="text-[10px] gap-1">
+                  <CornerDownRight className="h-3 w-3" />
+                  Sub-account of {parentName ?? "another provider"}
+                </Badge>
+              )}
+              {!isSubAccount && (subAccountCount ?? 0) > 0 && (
+                <Badge variant="secondary" className="text-[10px]">
+                  {subAccountCount} sub-account{subAccountCount === 1 ? "" : "s"}
+                </Badge>
+              )}
+            </h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
               /{t.slug}
               {t.contact_email && ` · ${t.contact_email}`}
@@ -552,6 +614,9 @@ function TenantCard({
           <Button variant="outline" size="sm" className="gap-1" onClick={onOpenAdmins}>
             <Users className="h-4 w-4" /> Admins
           </Button>
+          {!isSubAccount && (
+            <CreateSubAccountDialog parentTenantId={t.id} parentTenantName={t.name} />
+          )}
           <Badge variant="outline" className="gap-1 text-xs">
             <MapPin className="h-3 w-3" /> {health?.zip_count ?? zipCount ?? 0} ZIPs
           </Badge>
@@ -611,6 +676,40 @@ function TenantCard({
           </Badge>
         )}
       </div>
+      {onParentChange && (canHaveParent || isSubAccount) && (
+        <div className="flex items-center gap-2 pl-1 border-t border-border pt-2 flex-wrap">
+          <Label className="text-xs text-muted-foreground">Parent account</Label>
+          <Select
+            value={t.parent_tenant_id ?? "none"}
+            onValueChange={(v) => onParentChange(v === "none" ? null : v)}
+          >
+            <SelectTrigger className="h-8 w-56 text-xs">
+              <SelectValue placeholder="Top-level account" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Top-level account</SelectItem>
+              {(parentOptions ?? []).map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isSubAccount && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1 text-xs"
+              onClick={() => onParentChange(null)}
+            >
+              <Unlink className="h-3.5 w-3.5" /> Detach
+            </Button>
+          )}
+          {!canHaveParent && !isSubAccount && (
+            <span className="text-xs text-muted-foreground">
+              Has sub-accounts — cannot become a sub-account itself.
+            </span>
+          )}
+        </div>
+      )}
     </div>
 
   );

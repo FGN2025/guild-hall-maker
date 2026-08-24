@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserPlus, Trash2, UserCog, Shield, User, Mail, Clock } from "lucide-react";
+import { CreateSubAccountDialog } from "@/components/tenant/CreateSubAccountDialog";
 import { toast } from "sonner";
 
 const TenantTeam = () => {
@@ -153,11 +154,19 @@ const TenantTeam = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Team</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage who has access to your tenant admin dashboard.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Team</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage who has access to your tenant admin dashboard.
+          </p>
+        </div>
+        {tenantInfo?.tenantRole === "admin" && tenantId && (
+          <CreateSubAccountDialog
+            parentTenantId={tenantId}
+            parentTenantName={tenantInfo.tenantName}
+          />
+        )}
       </div>
 
       {/* Add member */}
