@@ -676,6 +676,40 @@ function TenantCard({
           </Badge>
         )}
       </div>
+      {onParentChange && (canHaveParent || isSubAccount) && (
+        <div className="flex items-center gap-2 pl-1 border-t border-border pt-2 flex-wrap">
+          <Label className="text-xs text-muted-foreground">Parent account</Label>
+          <Select
+            value={t.parent_tenant_id ?? "none"}
+            onValueChange={(v) => onParentChange(v === "none" ? null : v)}
+          >
+            <SelectTrigger className="h-8 w-56 text-xs">
+              <SelectValue placeholder="Top-level account" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Top-level account</SelectItem>
+              {(parentOptions ?? []).map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isSubAccount && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1 text-xs"
+              onClick={() => onParentChange(null)}
+            >
+              <Unlink className="h-3.5 w-3.5" /> Detach
+            </Button>
+          )}
+          {!canHaveParent && !isSubAccount && (
+            <span className="text-xs text-muted-foreground">
+              Has sub-accounts — cannot become a sub-account itself.
+            </span>
+          )}
+        </div>
+      )}
     </div>
 
   );
