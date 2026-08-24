@@ -196,6 +196,7 @@ Deno.serve(async (req) => {
             tenantName: sub.name,
             role: "manager",
             invitedBy: caller.email,
+            tenantSlug: sub.slug,
           },
         });
       } catch (e) {
