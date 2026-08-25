@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Calendar, Trophy, Star, Clock, Compass, Target } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isInFeaturedWindow } from "@/lib/featuredWindow";
 
 interface FeaturedEvent {
   id: string;
@@ -36,11 +37,12 @@ const FeaturedEventsPreview = ({ maxItems, types, showStats = true }: Props) => 
     queryKey: ["featured-events-preview", enabledTypes.join(","), maxItems],
     queryFn: async () => {
       const results: FeaturedEvent[] = [];
+      const now = new Date();
 
       if (enabledTypes.includes("tournament")) {
         const { data: tourneys } = await (supabase
           .from("tournaments")
-          .select("id, name, game, start_date, prize_pool, image_url") as any)
+          .select("id, name, game, start_date, prize_pool, image_url, featured_start_at, featured_end_at") as any)
           .eq("is_featured", true)
           .order("start_date", { ascending: true });
 
@@ -51,7 +53,7 @@ const FeaturedEventsPreview = ({ maxItems, types, showStats = true }: Props) => 
           (gamesData ?? []).forEach((g: any) => { if (g.cover_image_url) gameCovers[g.name] = g.cover_image_url; });
         }
 
-        (tourneys ?? []).forEach((t: any) => {
+        (tourneys ?? []).filter((t: any) => isInFeaturedWindow(t.featured_start_at, t.featured_end_at, now)).forEach((t: any) => {
           results.push({
             id: t.id, type: "tournament", title: t.name, game: t.game,
             stat1Label: "Date", stat1Value: t.start_date ? format(new Date(t.start_date), "MMM d") : "TBD",
@@ -64,10 +66,10 @@ const FeaturedEventsPreview = ({ maxItems, types, showStats = true }: Props) => 
       if (enabledTypes.includes("challenge")) {
         const { data: challenges } = await (supabase
           .from("challenges")
-          .select("id, name, points_first, estimated_minutes, cover_image_url, games(name, cover_image_url)") as any)
+          .select("id, name, points_first, estimated_minutes, cover_image_url, featured_start_at, featured_end_at, games(name, cover_image_url)") as any)
           .eq("is_featured", true).eq("is_active", true);
 
-        (challenges ?? []).forEach((c: any) => {
+        (challenges ?? []).filter((c: any) => isInFeaturedWindow(c.featured_start_at, c.featured_end_at, now)).forEach((c: any) => {
           results.push({
             id: c.id, type: "challenge", title: c.name, game: c.games?.name ?? "",
             stat1Label: "Points", stat1Value: `${c.points_first} pts`,
@@ -80,10 +82,10 @@ const FeaturedEventsPreview = ({ maxItems, types, showStats = true }: Props) => 
       if (enabledTypes.includes("quest")) {
         const { data: quests } = await (supabase
           .from("quests")
-          .select("id, name, points_first, xp_reward, cover_image_url, games(name, cover_image_url)") as any)
+          .select("id, name, points_first, xp_reward, cover_image_url, featured_start_at, featured_end_at, games(name, cover_image_url)") as any)
           .eq("is_featured", true).eq("is_active", true);
 
-        (quests ?? []).forEach((q: any) => {
+        (quests ?? []).filter((q: any) => isInFeaturedWindow(q.featured_start_at, q.featured_end_at, now)).forEach((q: any) => {
           results.push({
             id: q.id, type: "quest", title: q.name, game: q.games?.name ?? "",
             stat1Label: "Points", stat1Value: `${q.points_first} pts`,
