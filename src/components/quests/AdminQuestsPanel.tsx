@@ -15,14 +15,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Compass, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Link2, Megaphone,
+  Shield, Plus, Pencil, ClipboardList, Eye, CheckCircle2, XCircle, Image as ImageIcon, Megaphone,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateQuestDialog from "@/components/quests/CreateQuestDialog";
 import EditQuestDialog from "@/components/quests/EditQuestDialog";
-import AdminChainsTab from "@/components/quests/AdminChainsTab";
+// NOTE: AdminChainsTab intentionally not imported — the Chains tab is hidden until the feature is built out.
 import { EventPromoEditorDialog, buildQuestPromo } from "@/components/marketing/EventPromoEditor";
 import type { PromoData } from "@/components/marketing/EventPromoEditor";
 import {
@@ -370,7 +370,7 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
         <TabsList>
           <TabsTrigger value="oversight" className="gap-1.5"><ClipboardList className="h-4 w-4" /> Oversight</TabsTrigger>
           <TabsTrigger value="review" className="gap-1.5"><Eye className="h-4 w-4" /> Evidence Review</TabsTrigger>
-          <TabsTrigger value="chains" className="gap-1.5"><Link2 className="h-4 w-4" /> Chains</TabsTrigger>
+          {/* Chains tab hidden until the quest-chains feature is built out */}
         </TabsList>
 
         <TabsContent value="oversight" className="mt-4">
@@ -643,9 +643,8 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
           })}
         </TabsContent>
 
-        <TabsContent value="chains" className="mt-4">
-          <AdminChainsTab />
-        </TabsContent>
+        {/* <TabsContent value="chains"> hidden — see note above */}
+
       </Tabs>
 
       {/* Details Dialog */}

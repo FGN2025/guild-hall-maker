@@ -104,9 +104,23 @@ opposite (not approved). The dispatcher matches `pending` exactly.
 Cleanup (rename to `approved`/`queued` + dispatcher + migration) is deliberately
 deferred; it was not done on the day of the first live publish.
 
-## Pending, written but NOT applied
+## Resolved — 2026-08-25
 
-- `docs/migrations-pending/2026-08-11-scheduled-posts-default-draft.sql` — flips
-  the `scheduled_posts.status` column default from `pending` (dispatchable) to
-  `draft`. Held back because it changes insert behaviour of the table the live
-  dispatcher reads. Run as the first change after the first live post publishes.
+- `scheduled_posts.status` column default is now `'draft'` (verified in the live
+  schema). The held migration file was applied out-of-band; removed from
+  `docs/migrations-pending/`.
+
+## `email_send_log` pending markers (logged 2026-08-25)
+
+The enqueue path writes a `pending` row and the queue processor records each
+outcome as a NEW row with the same `message_id` — it never updates the marker.
+A healthy send therefore leaves a cosmetic `pending` row behind forever. As of
+2026-08-25 there are 158 such rows, and every one has a terminal sibling
+(`sent`/`failed`/`dlq`): none represent undelivered mail, and re-sending them
+would duplicate-send.
+
+Going forward, `process-email-queue` runs a sweep: a `pending` row older than
+24h with NO non-pending sibling means the queue entry was genuinely lost, so
+the sweep marks it `failed` (`never processed`) and raises the dead-letter
+signal. When querying for stuck mail, always join against terminal siblings —
+a bare `status = 'pending'` count is meaningless on this table.

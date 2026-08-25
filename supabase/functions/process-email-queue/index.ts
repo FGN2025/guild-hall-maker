@@ -465,8 +465,57 @@ Deno.serve(async (req) => {
     }
   }
 
+  // 3. Sweep orphaned 'pending' log rows. The enqueue path writes a 'pending'
+  // marker and the processor records outcomes as NEW rows with the same
+  // message_id, so a healthy send leaves a cosmetic 'pending' row behind.
+  // A 'pending' row with NO non-pending sibling after 24h means the queue
+  // entry was lost before any send attempt — the mail never went out. Mark it
+  // failed and raise the dead-letter signal so it is seen.
+  const sweepCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data: stalePending, error: sweepError } = await supabase
+    .from('email_send_log')
+    .select('id, message_id, template_name, recipient_email')
+    .eq('status', 'pending')
+    .lt('created_at', sweepCutoff)
+    .limit(50)
+
+  let swept = 0
+  if (sweepError) {
+    console.error('Pending sweep query failed', { error: sweepError })
+  } else if (stalePending?.length) {
+    for (const row of stalePending) {
+      if (!row.message_id) continue
+      const { data: outcome } = await supabase
+        .from('email_send_log')
+        .select('id')
+        .eq('message_id', row.message_id)
+        .neq('status', 'pending')
+        .limit(1)
+      if (outcome?.length) continue // outcome exists on a sibling row; marker is cosmetic
+
+      const reason = 'never processed: no send outcome within 24h of enqueue'
+      const { error: updError } = await supabase
+        .from('email_send_log')
+        .update({ status: 'failed', error_message: reason })
+        .eq('id', row.id)
+        .eq('status', 'pending') // guard against racing a real outcome
+      if (updError) {
+        console.error('Pending sweep update failed', { id: row.id, error: updError })
+        continue
+      }
+      swept++
+      await raiseDlqSignal(
+        supabase,
+        'unknown',
+        row.template_name ?? 'unknown',
+        row.recipient_email ?? 'unknown-recipient@invalid',
+        reason
+      )
+    }
+  }
+
   return new Response(
-    JSON.stringify({ processed: totalProcessed, build_id: BUILD_ID }),
+    JSON.stringify({ processed: totalProcessed, swept_orphaned_pending: swept, build_id: BUILD_ID }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 })

@@ -128,3 +128,70 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = false
   [functions.review-ceiling-selftest]
     verify_jwt = false
+
+  # Machine-invoked workers (cron / queue / function-to-function). Each
+  # validates the service-role bearer in code, so the gateway JWT check is
+  # disabled explicitly rather than relying on the default.
+  [functions.process-academy-achievement-queue]
+    verify_jwt = false
+  [functions.process-academy-chain-queue]
+    verify_jwt = false
+  [functions.process-academy-quest-queue]
+    verify_jwt = false
+  [functions.process-academy-sync-queue]
+    verify_jwt = false
+  [functions.process-academy-task-queue]
+    verify_jwt = false
+  [functions.process-passport-refresh-queue]
+    verify_jwt = false
+  [functions.sync-achievement-to-academy]
+    verify_jwt = false
+  [functions.sync-challenge-task-to-academy]
+    verify_jwt = false
+  [functions.sync-quest-chain-to-academy]
+    verify_jwt = false
+  [functions.sync-quest-to-academy]
+    verify_jwt = false
+  [functions.monitor-academy-sync]
+    verify_jwt = false
+  [functions.academy-health]
+    verify_jwt = false
+  [functions.pending-review-digest]
+    verify_jwt = false
+  [functions.reengagement-email]
+    verify_jwt = false
+  [functions.tournament-promo-email]
+    verify_jwt = false
+  [functions.weekly-recap-email]
+    verify_jwt = false
+  [functions.promo-render]
+    verify_jwt = false
+  [functions.check-ban-status]
+    verify_jwt = false
+
+  # Client-invoked by signed-in users (or via anon key, which is a valid JWT).
+  # Explicitly documented; the gateway verifies the caller's JWT.
+  [functions.game-server-status]
+    verify_jwt = true
+  [functions.steam-game-schema]
+    verify_jwt = true
+  [functions.verify-steam-task-completion]
+    verify_jwt = true
+  [functions.academy-passport-link]
+    verify_jwt = true
+  [functions.adopt-universal-asset]
+    verify_jwt = true
+  [functions.provision-sub-tenant]
+    verify_jwt = true
+  [functions.delete-user]
+    verify_jwt = true
+  [functions.import-points]
+    verify_jwt = true
+  [functions.align-points-to-rubric]
+    verify_jwt = true
+  [functions.award-tournament-placements]
+    verify_jwt = true
+  [functions.reconcile-tournament-points]
+    verify_jwt = true
+  [functions.discord-register-commands]
+    verify_jwt = true

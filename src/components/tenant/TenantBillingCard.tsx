@@ -88,10 +88,15 @@ const TenantBillingCard = () => {
         <div className="grid gap-3 sm:grid-cols-2">
           {TENANT_PLANS.map((plan) => {
             const isCurrent = currentTier === plan.tier;
-            const canUpgrade = currentTier === "basic" && plan.tier === "pro";
-            const canDowngrade = currentTier === "pro" && plan.tier === "basic";
+            // Plans without real Stripe IDs (placeholder catalog entries) are
+            // display-only — never offer a checkout that would fail.
+            const isPlaceholder = plan.price_id.includes("placeholder");
+            const canUpgrade = !isPlaceholder && currentTier === "basic" && plan.tier === "pro";
+            const canDowngrade = !isPlaceholder && currentTier === "pro" && plan.tier === "basic";
             const label = isCurrent
               ? "Current Plan"
+              : isPlaceholder
+              ? "Coming Soon"
               : canUpgrade
               ? "Upgrade"
               : canDowngrade
@@ -114,7 +119,7 @@ const TenantBillingCard = () => {
                 <p className="text-xs text-muted-foreground min-h-[2.5rem]">{plan.description}</p>
                 <Button
                   onClick={() => subscribe(plan.price_id)}
-                  disabled={!!actionLoading || isCurrent}
+                  disabled={!!actionLoading || isCurrent || isPlaceholder}
                   variant={isCurrent ? "outline" : canUpgrade ? "default" : "secondary"}
                   className="w-full gap-2"
                   size="sm"

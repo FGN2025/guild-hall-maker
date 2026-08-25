@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Toggle } from "@/components/ui/toggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  ImagePlus, Type, Trash2, Download, Save, ExternalLink,
+  ImagePlus, Type, Trash2, Download, Save,
   LayoutTemplate, Undo2, Redo2, Layers, Square, RectangleHorizontal,
   RectangleVertical, Smartphone, Circle, Minus, ChevronUp, ChevronDown,
   Lock, Unlock, Library, ChevronsUp, ChevronsDown, ImageIcon,
@@ -878,10 +878,7 @@ const AssetEditorDialog = ({ open, onOpenChange, baseImageUrl, onSave, initialTe
               </div>
             )}
 
-            {/* Canva placeholder */}
-            <Button size="sm" variant="ghost" className="w-full text-muted-foreground" disabled>
-              <ExternalLink className="h-4 w-4 mr-1" /> Open in Canva — Coming Soon
-            </Button>
+          
           </div>
         </div>
 
