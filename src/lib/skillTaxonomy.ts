@@ -43,6 +43,8 @@ export const SKILL_GROUPS: SkillGroup[] = [
       mk("cdl", "fuel-mgmt", "Fuel Management"),
       mk("cdl", "cargo-securement", "Cargo Securement"),
       mk("cdl", "hazmat-awareness", "Hazmat Awareness"),
+      mk("cdl", "shifting", "Shifting"),
+      mk("cdl", "coupling", "Coupling"),
     ],
   },
   {
