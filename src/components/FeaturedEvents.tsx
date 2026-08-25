@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isInFeaturedWindow } from "@/lib/featuredWindow";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface FeaturedEvent {
@@ -37,11 +38,12 @@ const FeaturedEvents = () => {
     queryKey: ["featured-events"],
     queryFn: async () => {
       const results: FeaturedEvent[] = [];
+      const now = new Date();
 
       // Fetch featured tournaments
       const { data: tourneys } = await (supabase
         .from("tournaments")
-        .select("id, name, game, start_date, max_participants, prize_pool, format, status, image_url") as any)
+        .select("id, name, game, start_date, max_participants, prize_pool, format, status, image_url, featured_start_at, featured_end_at") as any)
         .eq("is_featured", true)
         .order("start_date", { ascending: true });
 
@@ -61,7 +63,7 @@ const FeaturedEvents = () => {
         });
       }
 
-      (tourneys ?? []).forEach((t: any) => {
+      (tourneys ?? []).filter((t: any) => isInFeaturedWindow(t.featured_start_at, t.featured_end_at, now)).forEach((t: any) => {
         results.push({
           id: t.id,
           type: "tournament",
@@ -83,12 +85,12 @@ const FeaturedEvents = () => {
       // Fetch featured challenges
       const { data: challenges } = await (supabase
         .from("challenges")
-        .select("id, name, difficulty, points_first, estimated_minutes, cover_image_url, game_id, games(name, cover_image_url)") as any)
+        .select("id, name, difficulty, points_first, estimated_minutes, cover_image_url, game_id, featured_start_at, featured_end_at, games(name, cover_image_url)") as any)
         .eq("is_featured", true)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      (challenges ?? []).forEach((c: any) => {
+      (challenges ?? []).filter((c: any) => isInFeaturedWindow(c.featured_start_at, c.featured_end_at, now)).forEach((c: any) => {
         results.push({
           id: c.id,
           type: "challenge",
@@ -110,12 +112,12 @@ const FeaturedEvents = () => {
       // Fetch featured quests
       const { data: quests } = await (supabase
         .from("quests")
-        .select("id, name, difficulty, points_first, xp_reward, estimated_minutes, cover_image_url, game_id, games(name, cover_image_url)") as any)
+        .select("id, name, difficulty, points_first, xp_reward, estimated_minutes, cover_image_url, game_id, featured_start_at, featured_end_at, games(name, cover_image_url)") as any)
         .eq("is_featured", true)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      (quests ?? []).forEach((q: any) => {
+      (quests ?? []).filter((q: any) => isInFeaturedWindow(q.featured_start_at, q.featured_end_at, now)).forEach((q: any) => {
         results.push({
           id: q.id,
           type: "quest",

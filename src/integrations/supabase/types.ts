@@ -827,6 +827,8 @@ export type Database = {
           display_order: number | null
           end_date: string | null
           estimated_minutes: number | null
+          featured_end_at: string | null
+          featured_start_at: string | null
           game_id: string | null
           id: string
           is_active: boolean
@@ -866,6 +868,8 @@ export type Database = {
           display_order?: number | null
           end_date?: string | null
           estimated_minutes?: number | null
+          featured_end_at?: string | null
+          featured_start_at?: string | null
           game_id?: string | null
           id?: string
           is_active?: boolean
@@ -905,6 +909,8 @@ export type Database = {
           display_order?: number | null
           end_date?: string | null
           estimated_minutes?: number | null
+          featured_end_at?: string | null
+          featured_start_at?: string | null
           game_id?: string | null
           id?: string
           is_active?: boolean
@@ -3427,6 +3433,8 @@ export type Database = {
           difficulty: string
           end_date: string | null
           estimated_minutes: number | null
+          featured_end_at: string | null
+          featured_start_at: string | null
           game_id: string | null
           id: string
           is_active: boolean
@@ -3461,6 +3469,8 @@ export type Database = {
           difficulty?: string
           end_date?: string | null
           estimated_minutes?: number | null
+          featured_end_at?: string | null
+          featured_start_at?: string | null
           game_id?: string | null
           id?: string
           is_active?: boolean
@@ -3495,6 +3505,8 @@ export type Database = {
           difficulty?: string
           end_date?: string | null
           estimated_minutes?: number | null
+          featured_end_at?: string | null
+          featured_start_at?: string | null
           game_id?: string | null
           id?: string
           is_active?: boolean
@@ -5293,6 +5305,8 @@ export type Database = {
           discord_role_id: string | null
           end_date: string | null
           entry_fee: number | null
+          featured_end_at: string | null
+          featured_start_at: string | null
           format: string
           game: string
           id: string
@@ -5331,6 +5345,8 @@ export type Database = {
           discord_role_id?: string | null
           end_date?: string | null
           entry_fee?: number | null
+          featured_end_at?: string | null
+          featured_start_at?: string | null
           format?: string
           game: string
           id?: string
@@ -5369,6 +5385,8 @@ export type Database = {
           discord_role_id?: string | null
           end_date?: string | null
           entry_fee?: number | null
+          featured_end_at?: string | null
+          featured_start_at?: string | null
           format?: string
           game?: string
           id?: string

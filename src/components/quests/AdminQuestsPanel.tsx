@@ -129,7 +129,10 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
 
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, current }: { id: string; current: boolean }) => {
-      const { error } = await supabase.from("quests").update({ is_featured: !current } as any).eq("id", id);
+      const update = !current
+        ? { is_featured: true, featured_start_at: new Date().toISOString(), featured_end_at: null }
+        : { is_featured: false, featured_start_at: null, featured_end_at: null };
+      const { error } = await supabase.from("quests").update(update as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
