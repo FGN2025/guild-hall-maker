@@ -151,4 +151,27 @@ describe("AuthContext TOKEN_REFRESHED / in-flight guard", () => {
     expect(screen.getByTestId("role-loading").textContent).toBe("false");
     expect(roleLoadingLog.slice(logLengthAfterLoad).every((v) => v === "false")).toBe(true);
   });
+
+  it("does not flip roleLoading true on a background role refetch after roles are loaded", async () => {
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>
+    );
+
+    await waitFor(() => expect(harness.userRolesCalls).toBe(1));
+    await resolveRoles();
+    await waitFor(() => expect(screen.getByTestId("role-loading").textContent).toBe("false"));
+
+    await act(async () => {
+      harness.authCallback?.("SIGNED_IN", adminSession);
+    });
+
+    expect(harness.userRolesCalls).toBe(2);
+    expect(screen.getByTestId("role-loading").textContent).toBe("false");
+
+    await resolveRoles();
+    expect(screen.getByTestId("role-loading").textContent).toBe("false");
+    expect(screen.getByTestId("is-admin").textContent).toBe("true");
+  });
 });
