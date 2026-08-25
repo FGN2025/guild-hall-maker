@@ -127,17 +127,56 @@ Deno.serve(async (req) => {
     // Check if this Discord ID is already linked to another account
     const { data: existing } = await serviceClient
       .from("profiles")
-      .select("user_id")
+      .select("user_id, display_name")
       .eq("discord_id", discordId)
       .neq("user_id", userId)
       .maybeSingle();
 
     if (existing) {
+      // Surface WHO holds the link (masked) so the player can self-resolve.
+      let conflictEmailMasked: string | null = null;
+      try {
+        const { data: authUser } = await serviceClient.auth.admin.getUserById(existing.user_id);
+        const email = authUser?.user?.email ?? null;
+        if (email) {
+          const [local, domain] = email.split("@");
+          const maskedLocal =
+            local.length <= 2 ? `${local[0]}*` : `${local[0]}${"*".repeat(Math.max(1, local.length - 2))}${local[local.length - 1]}`;
+          const domainParts = (domain ?? "").split(".");
+          const maskedDomain = domainParts
+            .map((part, i) =>
+              i === domainParts.length - 1
+                ? part
+                : part.length <= 1
+                ? part
+                : `${part[0]}${"*".repeat(part.length - 1)}`
+            )
+            .join(".");
+          conflictEmailMasked = `${maskedLocal}@${maskedDomain}`;
+        }
+      } catch (_e) {
+        // masking is best-effort; never block the response on it
+      }
+
+      // Log identifiers only — never emails or tokens.
+      console.error(
+        `discord link conflict: discord_id=${discordId} discord_username=${discordUsername} attempted_by=${userId} held_by=${existing.user_id}`
+      );
+
+      const holder = existing.display_name || "another player";
       return new Response(
-        JSON.stringify({ error: "This Discord account is already linked to another player." }),
+        JSON.stringify({
+          error: `This Discord account (${discordUsername}) is already linked to ${holder}${
+            conflictEmailMasked ? ` (${conflictEmailMasked})` : ""
+          }. Sign in as that account, or contact support to move the link.`,
+          conflictDisplayName: existing.display_name ?? null,
+          conflictEmailMasked,
+          discordUsername,
+        }),
         { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
 
     // Update the user's profile
     const { error: updateError } = await serviceClient

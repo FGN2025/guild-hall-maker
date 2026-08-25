@@ -76,12 +76,25 @@ const LinkDiscord = () => {
           body: { code, redirect_uri: redirectUri },
         });
 
-        if (error) throw error;
-        if (data?.error) {
-          toast.error(data.error);
+        if (error) {
+          // Non-2xx responses (e.g. 409 conflict) carry the detailed body on error.context
+          let message = error.message || "Failed to link Discord";
+          try {
+            const body = await (error as any)?.context?.json?.();
+            if (body?.error) message = body.error;
+          } catch {
+            /* fall back to the generic message */
+          }
+          toast.error(message, { duration: 10000 });
           setLinking(false);
           return;
         }
+        if (data?.error) {
+          toast.error(data.error, { duration: 10000 });
+          setLinking(false);
+          return;
+        }
+
 
         toast.success(`Discord linked: ${data.discord_username}`);
         setLinked(true);
