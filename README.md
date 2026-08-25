@@ -525,6 +525,30 @@ All edge functions are Deno-based, deployed automatically, and located in `supab
 |----------|---------|
 | `monitor-academy-sync` | Hourly check for academy sync failures (cron) |
 
+### Scheduled Jobs (pg_cron)
+
+These jobs exist in the live database (created out-of-band, not via migration
+files). Verify with `SELECT jobname, schedule, active FROM cron.job`.
+
+| Job | Schedule | Purpose |
+|-----|----------|---------|
+| `process-academy-achievement-queue` | every 2 min | Drain academy achievement sync queue |
+| `process-academy-chain-queue-every-2min` | every 2 min | Drain academy chain sync queue |
+| `process-academy-quest-queue` | every 2 min | Drain academy quest sync queue |
+| `process-academy-task-queue-every-2min` | every 2 min | Drain academy task sync queue |
+| `process-academy-sync-queue` | every 2 min | Drain academy completion sync queue |
+| `process-passport-refresh-queue-every-2min` | every 2 min | Drain Skill Passport refresh queue |
+| `monitor-academy-sync-hourly` | hourly | Alert admins on academy sync failures |
+| `backfill-academy-sync` | daily 03:15 | Reconcile missed academy sync rows |
+| `publish-scheduled-posts-every-minute` | every minute | Dispatch due scheduled social posts |
+| `fail-stalled-agent-runs` | periodic | Mark stalled agent runs failed |
+| `pending-review-digest-daily` | daily | Digest of posts awaiting review |
+| `reengagement-email` / `tournament-promo-email` / `weekly-recap-email` | scheduled | Lifecycle email sends |
+| `deactivate-expired-bypass-codes` | hourly :15 | Deactivate bypass codes past `expires_at` |
+
+Note: there is no cron for `process-email-queue` by design — email sends are
+woken event-driven by the `enqueue_email` trigger path (`email_queue_wake`).
+
 ### Shared Email Templates
 
 Located in `supabase/functions/_shared/email-templates/`:
