@@ -538,12 +538,20 @@ files). Verify with `SELECT jobname, schedule, active FROM cron.job`.
 | `process-academy-task-queue-every-2min` | every 2 min | Drain academy task sync queue |
 | `process-academy-sync-queue` | every 2 min | Drain academy completion sync queue |
 | `process-passport-refresh-queue-every-2min` | every 2 min | Drain Skill Passport refresh queue |
-| `monitor-academy-sync-hourly` | hourly | Alert admins on academy sync failures |
+| `monitor-academy-sync-hourly` | hourly :00 | Alert admins on academy sync failures |
 | `backfill-academy-sync` | daily 03:15 | Reconcile missed academy sync rows |
 | `publish-scheduled-posts-every-minute` | every minute | Dispatch due scheduled social posts |
-| `fail-stalled-agent-runs` | periodic | Mark stalled agent runs failed |
-| `pending-review-digest-daily` | daily | Digest of posts awaiting review |
-| `reengagement-email` / `tournament-promo-email` / `weekly-recap-email` | scheduled | Lifecycle email sends |
+| `process-discord-role-retry-queue` | every minute | Retry failed Discord role actions |
+| `fail-stalled-agent-runs` | every 2 min | Mark stalled agent runs failed |
+| `pending-review-digest-daily` | daily 14:00 | Digest of posts awaiting review |
+| `tournament-reminders-hourly` | hourly :00 | Tournament starting-soon reminders |
+| `tournament-promo-email` | daily 14:00 | Tournament promotion emails |
+| `auto-archive-past-tournaments` | daily 03:15 | Archive tournaments past end date |
+| `rotate-season-monthly` | 1st of month 00:00 | Season rotation |
+| `discord-backlog-daily-reminder` | daily 12:00 | Remind mods of Discord link backlog |
+| `weekly-registrations-digest` | Fri 23:00 | Weekly registration summary |
+| `reengagement-email` | Wed 12:00 | Re-engagement emails to inactive users |
+| `weekly-recap-email` | Mon 10:00 | Weekly activity recap emails |
 | `deactivate-expired-bypass-codes` | hourly :15 | Deactivate bypass codes past `expires_at` |
 
 Note: there is no cron for `process-email-queue` by design — email sends are
