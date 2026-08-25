@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useEcosystemAuth } from "@/hooks/useEcosystemAuth";
 import DiscordRoleManager from "@/components/admin/DiscordRoleManager";
+import DiscordLinkLookup from "@/components/admin/DiscordLinkLookup";
+
 import DiscordWebhookManager from "@/components/admin/DiscordWebhookManager";
 import DiscordChannelRouteManager from "@/components/admin/DiscordChannelRouteManager";
 import EcosystemSyncHealth from "@/components/admin/EcosystemSyncHealth";
