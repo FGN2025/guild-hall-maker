@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -49,74 +49,95 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [roleLoading, setRoleLoading] = useState(true);
   const [discordLinked, setDiscordLinked] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('loading');
-  const fetchingRef = { current: false };
+  // Must persist across renders — a plain object is recreated each render and
+  // cannot guard overlapping auth-event refetches.
+  const fetchingRef = useRef(false);
+  const rolesLoadedRef = useRef(false);
+
+  const resetRoles = () => {
+    setIsAdmin(false);
+    setIsModerator(false);
+    setIsMarketing(false);
+    setIsTenantStaff(false);
+    setDiscordLinked(false);
+    setRoleLoading(false);
+    setSubscriptionStatus("inactive");
+    rolesLoadedRef.current = false;
+  };
 
   const fetchRoleAndDiscord = async (userId: string) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     // SECURITY: Never hydrate role flags from localStorage. Privileged UI must
     // only render after the server confirms roles via user_roles RLS query.
-    setRoleLoading(true);
-    const [roleResult, profileResult, tenantAdminResult] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", userId),
-      supabase.from("profiles").select("discord_id, discord_bypass_approved").eq("user_id", userId).maybeSingle(),
-      supabase.from("tenant_admins").select("id").eq("user_id", userId).limit(1),
-    ]);
-    const roles = (roleResult.data ?? []).map((r) => r.role);
-    setIsAdmin(roles.includes("admin"));
-    setIsModerator(roles.includes("moderator"));
-    setIsMarketing(roles.includes("marketing"));
-    const isTenant = (tenantAdminResult.data ?? []).length > 0;
-    setIsTenantStaff(isTenant);
-    const dl = !!profileResult.data?.discord_id || !!profileResult.data?.discord_bypass_approved;
-    setDiscordLinked(dl);
-    setRoleLoading(false);
-    fetchingRef.current = false;
+    // Skip flipping loading true on a background refetch — that unmounts
+    // AdminRoute children (e.g. Challenge Manager) and remounts a spinner.
+    if (!rolesLoadedRef.current) {
+      setRoleLoading(true);
+    }
+    try {
+      const [roleResult, profileResult, tenantAdminResult] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+        supabase.from("profiles").select("discord_id, discord_bypass_approved").eq("user_id", userId).maybeSingle(),
+        supabase.from("tenant_admins").select("id").eq("user_id", userId).limit(1),
+      ]);
+      const roles = (roleResult.data ?? []).map((r) => r.role);
+      setIsAdmin(roles.includes("admin"));
+      setIsModerator(roles.includes("moderator"));
+      setIsMarketing(roles.includes("marketing"));
+      const isTenant = (tenantAdminResult.data ?? []).length > 0;
+      setIsTenantStaff(isTenant);
+      const dl = !!profileResult.data?.discord_id || !!profileResult.data?.discord_bypass_approved;
+      setDiscordLinked(dl);
+      setRoleLoading(false);
+      rolesLoadedRef.current = true;
 
-
-    // Subscription status: hydrate from cache immediately, refresh in background.
-    // Never blocks roleLoading or page render.
-    if (isTenant) {
-      const cacheKey = `fgn_sub_status_${userId}`;
-      const cached = localStorage.getItem(cacheKey);
-      let cachedFresh = false;
-      if (cached) {
-        try {
-          const { status, ts } = JSON.parse(cached);
-          setSubscriptionStatus(
-            status === "active" || status === "trialing"
-              ? "active"
-              : status === "past_due"
-              ? "past_due"
-              : "inactive"
-          );
-          cachedFresh = Date.now() - ts < 5 * 60 * 1000;
-        } catch {
-          // ignore malformed cache
+      // Subscription status: hydrate from cache immediately, refresh in background.
+      // Never blocks roleLoading or page render.
+      if (isTenant) {
+        const cacheKey = `fgn_sub_status_${userId}`;
+        const cached = localStorage.getItem(cacheKey);
+        let cachedFresh = false;
+        if (cached) {
+          try {
+            const { status, ts } = JSON.parse(cached);
+            setSubscriptionStatus(
+              status === "active" || status === "trialing"
+                ? "active"
+                : status === "past_due"
+                ? "past_due"
+                : "inactive"
+            );
+            cachedFresh = Date.now() - ts < 5 * 60 * 1000;
+          } catch {
+            // ignore malformed cache
+          }
         }
+
+        if (cachedFresh) return;
+
+        // Background refresh (fire-and-forget)
+        supabase.functions
+          .invoke("check-subscription", { body: { userId } })
+          .then(({ data }) => {
+            const status = data?.status;
+            const mapped: SubscriptionStatus =
+              status === "active" || status === "trialing"
+                ? "active"
+                : status === "past_due"
+                ? "past_due"
+                : "inactive";
+            setSubscriptionStatus(mapped);
+            localStorage.setItem(cacheKey, JSON.stringify({ status, ts: Date.now() }));
+          })
+          .catch(() => {
+            if (!cached) setSubscriptionStatus("inactive");
+          });
+      } else {
+        setSubscriptionStatus("inactive");
       }
-
-      if (cachedFresh) return;
-
-      // Background refresh (fire-and-forget)
-      supabase.functions
-        .invoke("check-subscription", { body: { userId } })
-        .then(({ data }) => {
-          const status = data?.status;
-          const mapped: SubscriptionStatus =
-            status === "active" || status === "trialing"
-              ? "active"
-              : status === "past_due"
-              ? "past_due"
-              : "inactive";
-          setSubscriptionStatus(mapped);
-          localStorage.setItem(cacheKey, JSON.stringify({ status, ts: Date.now() }));
-        })
-        .catch(() => {
-          if (!cached) setSubscriptionStatus("inactive");
-        });
-    } else {
-      setSubscriptionStatus("inactive");
+    } finally {
+      fetchingRef.current = false;
     }
   };
 
@@ -128,20 +149,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        // Token refresh is not a role change. Refetching here set roleLoading
+        // true and remounted /admin/challenges on every TOKEN_REFRESHED.
+        if (event === "TOKEN_REFRESHED") {
+          return;
+        }
         if (session?.user) {
           fetchRoleAndDiscord(session.user.id);
         } else {
-          setIsAdmin(false);
-          setIsModerator(false);
-          setIsMarketing(false);
-          setIsTenantStaff(false);
-          setDiscordLinked(false);
-          setRoleLoading(false);
-          setSubscriptionStatus('inactive');
+          resetRoles();
         }
       }
     );
@@ -154,6 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fetchRoleAndDiscord(session.user.id);
       } else {
         setRoleLoading(false);
+        rolesLoadedRef.current = false;
       }
     });
 
