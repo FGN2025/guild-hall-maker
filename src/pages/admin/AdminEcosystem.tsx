@@ -453,10 +453,14 @@ const AdminEcosystem = () => {
       <DiscordChannelRouteManager />
 
 
+      {/* Discord Link Lookup */}
+      <DiscordLinkLookup />
+
       {/* Discord Role Mappings */}
       <div className="glass-panel rounded-xl border border-border/50 p-6">
         <DiscordRoleManager />
       </div>
+
     </div>
   );
 };
