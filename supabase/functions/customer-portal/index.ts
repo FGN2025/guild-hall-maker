@@ -40,6 +40,26 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Authorization: when a tenant_id is supplied, the caller must be a
+    // platform admin or an admin/manager of that tenant before we resolve any
+    // billing surface tied to it.
+    const body = await req.json().catch(() => ({}));
+    const tenantId = typeof body?.tenant_id === "string" && body.tenant_id ? body.tenant_id : null;
+    if (tenantId) {
+      const [{ data: isPlatformAdmin }, { data: isTenantManager }] = await Promise.all([
+        supabaseClient.rpc("has_role", { _user_id: user.id, _role: "admin" }),
+        supabaseClient.rpc("is_tenant_admin_or_manager", { _tenant_id: tenantId, _user_id: user.id }),
+      ]);
+      if (!isPlatformAdmin && !isTenantManager) {
+        logStep("Forbidden: caller not authorized for tenant", { userId: user.id, tenantId });
+        return new Response(JSON.stringify({ error: "Not authorized for this tenant" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        });
+      }
+      logStep("Caller authorized", { userId: user.id, isPlatformAdmin, isTenantManager });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {

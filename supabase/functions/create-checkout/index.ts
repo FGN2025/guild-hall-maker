@@ -41,7 +41,35 @@ serve(async (req) => {
 
     const { price_id, tenant_id, success_url, cancel_url, mode } = await req.json();
     if (!price_id) throw new Error("price_id is required");
+    if (!tenant_id || typeof tenant_id !== "string") {
+      return new Response(JSON.stringify({ error: "tenant_id is required" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
     logStep("Request params", { price_id, tenant_id, mode });
+
+    // Authorization: the caller must be a platform admin or an admin/manager of
+    // the tenant being billed. The Stripe webhook trusts the tenant_id this
+    // function writes into session metadata, so it must never be attacker-
+    // controlled.
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+    const [{ data: isPlatformAdmin }, { data: isTenantManager }] = await Promise.all([
+      supabaseAdmin.rpc("has_role", { _user_id: user.id, _role: "admin" }),
+      supabaseAdmin.rpc("is_tenant_admin_or_manager", { _tenant_id: tenant_id, _user_id: user.id }),
+    ]);
+    if (!isPlatformAdmin && !isTenantManager) {
+      logStep("Forbidden: caller not authorized for tenant", { userId: user.id, tenant_id });
+      return new Response(JSON.stringify({ error: "Not authorized for this tenant" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+    logStep("Caller authorized", { userId: user.id, isPlatformAdmin, isTenantManager });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 

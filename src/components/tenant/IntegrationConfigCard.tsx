@@ -19,7 +19,6 @@ interface IntegrationCardProps {
   name: string;
   providerType: string;
   description: string;
-  comingSoon?: boolean;
   isConfigured?: boolean;
   lastSyncAt?: string | null;
   lastSyncStatus?: string | null;
@@ -34,7 +33,6 @@ interface IntegrationCardProps {
 const IntegrationConfigCard = ({
   name,
   description,
-  comingSoon,
   isConfigured,
   lastSyncAt,
   lastSyncStatus,
@@ -46,13 +44,12 @@ const IntegrationConfigCard = ({
   isDisconnecting,
 }: IntegrationCardProps) => {
   return (
-    <Card className={comingSoon ? "opacity-70" : ""}>
+    <Card>
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
         <div>
           <CardTitle className="text-lg flex items-center gap-2">
             {name}
-            {comingSoon && <Badge variant="secondary">Coming Soon</Badge>}
-            {isConfigured && !comingSoon && <Badge variant="outline" className="text-green-600 border-green-600">Connected</Badge>}
+            {isConfigured && <Badge variant="outline" className="text-green-600 border-green-600">Connected</Badge>}
           </CardTitle>
           <CardDescription className="mt-1">{description}</CardDescription>
         </div>
@@ -95,18 +92,17 @@ const IntegrationConfigCard = ({
           </div>
         )}
         <div className="flex items-center gap-2 flex-wrap">
-          {(onConfigure || comingSoon) && (
+          {onConfigure && (
             <Button
-              variant={comingSoon ? "secondary" : "outline"}
+              variant="outline"
               size="sm"
-              disabled={comingSoon}
               onClick={onConfigure}
             >
               <Settings className="h-4 w-4 mr-2" />
-              {comingSoon ? "API Endpoints Pending" : isConfigured ? "Edit Settings" : "Configure"}
+              {isConfigured ? "Edit Settings" : "Configure"}
             </Button>
           )}
-          {isConfigured && !comingSoon && onSync && (
+          {isConfigured && onSync && (
             <Button
               variant="default"
               size="sm"
@@ -118,7 +114,7 @@ const IntegrationConfigCard = ({
               {isSyncing ? "Syncing…" : "Sync Now"}
             </Button>
           )}
-          {isConfigured && !comingSoon && onDisconnect && (
+          {isConfigured && onDisconnect && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive gap-2">

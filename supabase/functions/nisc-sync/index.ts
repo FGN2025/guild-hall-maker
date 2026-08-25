@@ -137,64 +137,14 @@ Deno.serve(async (req) => {
     }
 
     // --- Full sync ---
-    let syncMessage = "";
-    let syncStatus = "success";
+    // DISABLED: the NISC subscriber endpoint and response schema below were a
+    // best-guess placeholder that was never validated against the real NISC
+    // API. Rather than silently "succeeding" with unverified field mapping,
+    // full sync fails closed until the real integration is implemented.
+    // The dry-run connectivity check above remains available.
+    let syncMessage = "NISC integration is not configured: the subscriber API mapping has not been validated against the real NISC API. Full sync is disabled until the integration is implemented.";
+    let syncStatus = "error";
     let syncedCount = 0;
-
-    try {
-      // Placeholder: call NISC API to fetch subscribers
-      // Replace this URL path with the actual NISC subscriber endpoint when available
-      const niscResp = await fetch(`${integration.api_url}/subscribers`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${integration.api_key_encrypted}`,
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(30000),
-      });
-
-      if (!niscResp.ok) {
-        throw new Error(`NISC API returned HTTP ${niscResp.status}`);
-      }
-
-      const niscData = await niscResp.json();
-
-      // Map NISC response to subscriber rows
-      // Adjust field mapping when real NISC API schema is known
-      const subscribers = (Array.isArray(niscData) ? niscData : niscData.subscribers || []).map(
-        (record: Record<string, unknown>) => ({
-          tenant_id: integration.tenant_id,
-          external_id: String(record.id || record.account_id || ""),
-          account_number: String(record.account_number || record.accountNumber || ""),
-          first_name: String(record.first_name || record.firstName || ""),
-          last_name: String(record.last_name || record.lastName || ""),
-          email: String(record.email || ""),
-          phone: String(record.phone || ""),
-          address: String(record.address || ""),
-          zip_code: String(record.zip_code || record.zipCode || record.zip || ""),
-          plan_name: String(record.plan_name || record.planName || record.service_plan || ""),
-          service_status: String(record.status || record.service_status || "active"),
-          source: "nisc",
-          synced_at: new Date().toISOString(),
-        })
-      );
-
-      // Upsert in batches of 500
-      const batchSize = 500;
-      for (let i = 0; i < subscribers.length; i += batchSize) {
-        const batch = subscribers.slice(i, i + batchSize);
-        const { error: upsertErr } = await serviceClient
-          .from("tenant_subscribers")
-          .upsert(batch, { onConflict: "tenant_id,source,external_id" });
-        if (upsertErr) throw upsertErr;
-        syncedCount += batch.length;
-      }
-
-      syncMessage = `Synced ${syncedCount} subscriber(s)`;
-    } catch (e) {
-      syncStatus = "error";
-      syncMessage = e.message || "Sync failed";
-    }
 
     // Update integration status
     await serviceClient
