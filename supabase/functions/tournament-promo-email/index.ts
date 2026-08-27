@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // Find open tournaments starting within 3 days
     const { data: tournaments, error: tErr } = await supabase
       .from("tournaments")
-      .select("id, name, start_date, game_id")
+      .select("id, name, start_date, game")
       .eq("status", "open")
       .gte("start_date", now.toISOString())
       .lte("start_date", in3Days.toISOString());
