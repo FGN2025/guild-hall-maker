@@ -269,6 +269,12 @@ export function useTenantAdmins(tenantId: string | null) {
       });
       if (error) throw error;
 
+      const { data: tenantRow } = await supabase
+        .from("tenants")
+        .select("slug")
+        .eq("id", tenantId)
+        .maybeSingle();
+
       // Send invitation email
       try {
         const { data, error: fnErr } = await supabase.functions.invoke("send-tenant-invite", {
@@ -276,6 +282,7 @@ export function useTenantAdmins(tenantId: string | null) {
             email: email.toLowerCase().trim(),
             tenantName: tenantName || "a provider",
             role,
+            tenantSlug: tenantRow?.slug ?? undefined,
             invitedBy: user.email,
           },
         });
