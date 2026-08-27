@@ -324,11 +324,15 @@ export function useTenantAdmins(tenantId: string | null) {
   const resendInvitation = useMutation({
     mutationFn: async ({ email, role, tenantName }: { email: string; role: string; tenantName?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
+      const { data: tenantRow } = tenantId
+        ? await supabase.from("tenants").select("slug").eq("id", tenantId).maybeSingle()
+        : { data: null as { slug: string } | null };
       const { data, error } = await supabase.functions.invoke("send-tenant-invite", {
         body: {
           email: email.toLowerCase().trim(),
           tenantName: tenantName || "a provider",
           role,
+          tenantSlug: tenantRow?.slug ?? undefined,
           invitedBy: user?.email,
         },
       });
