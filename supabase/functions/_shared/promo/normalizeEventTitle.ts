@@ -135,11 +135,37 @@ export function normalizeEventTitle(args: {
   const rules: string[] = [];
   let out = squash(before);
 
+  // 0. Leading date prefix ("(Sep 8) Mario Kart World Tournament").
+  //    Same discipline as the trailing rule: display side only, only when the
+  //    date is already rendered in the metadata line, and never when what
+  //    remains is a bare descriptor. A month name alone is NOT enough — a day
+  //    number or a numeric date is required, so titles like "May Madness"
+  //    are untouched.
+  if (args.dateShown) {
+    const datePrefix = new RegExp(
+      `^[\\s(\\[]*((${MONTHS})\\.?\\s*\\d{1,2}(st|nd|rd|th)?(,?\\s*\\d{4})?` +
+      `|\\d{1,2}[\\/.\\-]\\d{1,2}([\\/.\\-]\\d{2,4})?)[)\\]]?[\\s\\-–—:|,·•]*`,
+      "i",
+    );
+    const next = squash(out.replace(datePrefix, ""));
+    if (next && next !== out) {
+      if (isBare(next)) {
+        // e.g. "(Sep 8) Finals" -> "Finals": refuse, keep the prefix rather
+        // than emit an anonymous headline.
+        rules.push("strip_leading_date_rejected_bare");
+      } else {
+        out = next;
+        rules.push("strip_leading_date");
+      }
+    }
+  }
+
   // 1. Leading tenant name ("Acme Fiber Autumn Invitational" -> "Autumn Invitational")
   if (args.tenantName) {
     const stripped = stripLeading(out, args.tenantName);
     if (stripped) { out = stripped; rules.push("strip_leading_tenant"); }
   }
+
 
   // 2. Trailing date suffix, only when the date is already in the metadata.
   if (args.dateShown) {

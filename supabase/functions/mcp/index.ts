@@ -1207,6 +1207,21 @@ function normalizeEventTitle(args) {
   const before = args.name ?? "";
   const rules = [];
   let out = squash(before);
+  if (args.dateShown) {
+    const datePrefix = new RegExp(
+      `^[\\s(\\[]*((${MONTHS})\\.?\\s*\\d{1,2}(st|nd|rd|th)?(,?\\s*\\d{4})?|\\d{1,2}[\\/.\\-]\\d{1,2}([\\/.\\-]\\d{2,4})?)[)\\]]?[\\s\\-\u2013\u2014:|,\xB7\u2022]*`,
+      "i"
+    );
+    const next = squash(out.replace(datePrefix, ""));
+    if (next && next !== out) {
+      if (isBare(next)) {
+        rules.push("strip_leading_date_rejected_bare");
+      } else {
+        out = next;
+        rules.push("strip_leading_date");
+      }
+    }
+  }
   if (args.tenantName) {
     const stripped = stripLeading(out, args.tenantName);
     if (stripped) {
