@@ -1907,7 +1907,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-08-24T00:20Z-mobile-review-lap1";
+var BUILD_ID = "2026-08-28T22:15Z-leading-date-render-retry";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
