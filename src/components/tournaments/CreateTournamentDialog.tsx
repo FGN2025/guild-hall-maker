@@ -98,6 +98,14 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
     setImagePreview(URL.createObjectURL(file));
   };
 
+  // Warn (never block) when the operator types a date into the name: the start
+  // date is a column, and on multi-date creation the dialog appends the date
+  // again, which is the code-side half of the double-date pollution.
+  const nameHasDate = /(\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s*\d{1,2}(st|nd|rd|th)?\b|\b\d{1,2}[\/.-]\d{1,2}([\/.-]\d{2,4})?\b)/i
+    .test(name.trim());
+
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     let image_url: string | undefined;
