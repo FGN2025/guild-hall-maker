@@ -1841,7 +1841,7 @@ var compose_event_promo_default = defineTool21({
               code: err.code,
               message: err.message,
               detail: err.detail,
-              hint: "The event's image_url or the game's cover_image_url is too large to compose. Replace it with art no larger than 4 MB, or clear it so the composer falls back to the generated plate."
+              hint: err.code === "WORKER_RESOURCE_LIMIT" ? "The render worker ran out of memory after several retries. This is worker-instance exhaustion (resvg WASM memory grows per render and never shrinks), not a defect in this event's art. Retry the beat; if it fails repeatedly, clear the event image_url so the composer falls back to the generated plate." : "The event's image_url or the game's cover_image_url is too large to compose. Replace it with art no larger than 4 MB, or clear it so the composer falls back to the generated plate."
             }, null, 2)
           }],
           isError: true
