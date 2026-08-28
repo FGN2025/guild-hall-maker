@@ -21,26 +21,51 @@ async function renderViaWorker(scene: PromoScene, includeText: boolean, includeS
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!base || !key) throw new PromoRenderError("render_worker_unconfigured", "promo-render worker is not reachable from this function.");
 
-  const res = await fetch(`${base}/functions/v1/promo-render`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ scene, includeText, includeScrim }),
-  });
+  // WORKER_RESOURCE_LIMIT (HTTP 546) is NOT an input defect. resvg's WASM
+  // linear memory grows a few MB per render and never shrinks, and Supabase
+  // reuses one worker instance across requests, so a render fails purely
+  // because of how many renders that particular instance already served.
+  // Measured locally: RSS 276.8 MB -> 307.1 MB over 8 identical renders, with
+  // identical inputs and identical 768x1024 / ~1 MB cover art. Retrying lands
+  // on a fresh instance, which is exactly why 5 of 7 abandoned beats succeeded
+  // when the agent retried by hand — at the cost of a continuation each.
+  // Retrying HERE keeps that cost inside one tool call instead of burning the
+  // run's continuation budget, which is what killed the September seed.
+  const RETRYABLE = new Set([546, 502, 503, 504]);
+  const MAX_ATTEMPTS = 4;
+  let last: PromoRenderError | null = null;
 
-  if (!res.ok) {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(`${base}/functions/v1/promo-render`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ scene, includeText, includeScrim }),
+    });
+
+    if (res.ok) {
+      console.log(
+        `[compose_event_promo] render includeText=${includeText} attempt=${attempt} ms=${res.headers.get("x-promo-ms")} bg=${res.headers.get("x-promo-background")}`,
+      );
+      return new Uint8Array(await res.arrayBuffer());
+    }
+
     let payload: Record<string, unknown> = {};
     try { payload = await res.json(); } catch { payload = { message: await res.text().catch(() => "") }; }
-    throw new PromoRenderError(
+    last = new PromoRenderError(
       String(payload.code ?? `render_worker_http_${res.status}`),
       String(payload.message ?? `promo-render returned ${res.status}`),
-      { includeText, status: res.status, ...(payload.detail as Record<string, unknown> ?? {}) },
+      { includeText, status: res.status, attempts: attempt, ...(payload.detail as Record<string, unknown> ?? {}) },
     );
+
+    if (!RETRYABLE.has(res.status) || attempt === MAX_ATTEMPTS) throw last;
+    // Backoff gives the platform time to retire the exhausted instance.
+    const waitMs = 400 * attempt;
+    console.warn(`[compose_event_promo] render retry ${attempt}/${MAX_ATTEMPTS - 1} after HTTP ${res.status}, waiting ${waitMs}ms`);
+    await new Promise((r) => setTimeout(r, waitMs));
   }
-  console.log(
-    `[compose_event_promo] render includeText=${includeText} ms=${res.headers.get("x-promo-ms")} bg=${res.headers.get("x-promo-background")}`,
-  );
-  return new Uint8Array(await res.arrayBuffer());
+  throw last ?? new PromoRenderError("render_worker_unknown", "promo-render failed with no classified cause.");
 }
+
 
 import { resolveEventArt } from "../promo/resolveEventArt.ts";
 

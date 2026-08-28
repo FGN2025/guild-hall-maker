@@ -1653,28 +1653,38 @@ async function renderViaWorker(scene, includeText, includeScrim = true) {
   const base = Deno.env.get("SUPABASE_URL");
   const key2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!base || !key2) throw new PromoRenderError("render_worker_unconfigured", "promo-render worker is not reachable from this function.");
-  const res = await fetch(`${base}/functions/v1/promo-render`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key2}` },
-    body: JSON.stringify({ scene, includeText, includeScrim })
-  });
-  if (!res.ok) {
+  const RETRYABLE = /* @__PURE__ */ new Set([546, 502, 503, 504]);
+  const MAX_ATTEMPTS = 4;
+  let last = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(`${base}/functions/v1/promo-render`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key2}` },
+      body: JSON.stringify({ scene, includeText, includeScrim })
+    });
+    if (res.ok) {
+      console.log(
+        `[compose_event_promo] render includeText=${includeText} attempt=${attempt} ms=${res.headers.get("x-promo-ms")} bg=${res.headers.get("x-promo-background")}`
+      );
+      return new Uint8Array(await res.arrayBuffer());
+    }
     let payload = {};
     try {
       payload = await res.json();
     } catch {
       payload = { message: await res.text().catch(() => "") };
     }
-    throw new PromoRenderError(
+    last = new PromoRenderError(
       String(payload.code ?? `render_worker_http_${res.status}`),
       String(payload.message ?? `promo-render returned ${res.status}`),
-      { includeText, status: res.status, ...payload.detail ?? {} }
+      { includeText, status: res.status, attempts: attempt, ...payload.detail ?? {} }
     );
+    if (!RETRYABLE.has(res.status) || attempt === MAX_ATTEMPTS) throw last;
+    const waitMs = 400 * attempt;
+    console.warn(`[compose_event_promo] render retry ${attempt}/${MAX_ATTEMPTS - 1} after HTTP ${res.status}, waiting ${waitMs}ms`);
+    await new Promise((r) => setTimeout(r, waitMs));
   }
-  console.log(
-    `[compose_event_promo] render includeText=${includeText} ms=${res.headers.get("x-promo-ms")} bg=${res.headers.get("x-promo-background")}`
-  );
-  return new Uint8Array(await res.arrayBuffer());
+  throw last ?? new PromoRenderError("render_worker_unknown", "promo-render failed with no classified cause.");
 }
 var BUCKET2 = "tenant-marketing";
 var compose_event_promo_default = defineTool21({
