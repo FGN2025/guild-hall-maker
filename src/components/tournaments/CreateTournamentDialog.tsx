@@ -192,7 +192,27 @@ const CreateTournamentDialog = ({ onCreate, isCreating }: Props) => {
             <Label className="font-heading text-sm">Tournament Name *</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} required maxLength={100}
               className="bg-card border-border font-body" placeholder="e.g. Apex Legends Showdown" />
+            {nameHasDate && startDates.length > 1 && (
+              <p className="text-xs font-body text-amber-400 flex items-start gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  This name already contains a date. Because you selected multiple dates, the date is appended
+                  automatically — the name will carry it twice (e.g. “{name.trim()} - {formatDate(startDates[0], "MMM d")}”).
+                  You can continue if that is intentional.
+                </span>
+              </p>
+            )}
+            {nameHasDate && startDates.length <= 1 && (
+              <p className="text-xs font-body text-amber-400 flex items-start gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  This name already contains a date. The start date is stored separately, so the date in the name is
+                  redundant — and if you add more dates it will be appended again.
+                </span>
+              </p>
+            )}
           </div>
+
           <div className="space-y-2">
             <Label className="font-heading text-sm">Game *</Label>
             <Select value={game} onValueChange={setGame} required>
