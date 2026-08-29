@@ -395,7 +395,6 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
   const pending = rows.filter((r) => r.status === "pending_review");
-  const rejected = rows.filter((r) => r.status === "rejected");
 
   return (
     <div className="space-y-6">
@@ -403,7 +402,6 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         <Bot className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-heading">Review queue</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
-        {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
       </div>
 
       {/* Bulk actions live on their own row, full width on a phone, and every
