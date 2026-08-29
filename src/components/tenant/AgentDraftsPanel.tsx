@@ -438,7 +438,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
       <p className="text-sm text-muted-foreground">
         {canDecide
           ? "Nothing here publishes automatically. Approve to make a draft live; reject with a note so the creator (or agent) can revise it."
-          : "Your drafts stay private until a tenant Admin or Manager approves them. Rejection notes appear here."}
+          : "Your drafts stay private until a tenant Admin or Manager approves them."}
 
       </p>
 
