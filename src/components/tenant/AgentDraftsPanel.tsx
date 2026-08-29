@@ -126,10 +126,20 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           .order("updated_at", { ascending: false }),
 
       ]);
+      // Assets already attached to a scheduled post are reviewed with that
+      // post — don't list them again as standalone queue items.
+      const { data: linkedIds } = await supabase
+        .from("scheduled_posts" as any)
+        .select("asset_id")
+        .eq("tenant_id", tenantId!)
+        .not("asset_id", "is", null);
+      const linkedAssetIds = new Set((linkedIds ?? []).map((r: any) => r.asset_id));
       const rows: DraftRow[] = [
         ...((campaigns.data ?? []) as any[]).map((r) => ({ ...r, kind: "campaign" as const })),
         ...((posts.data ?? []) as any[]).map((r) => ({ ...r, kind: "scheduled_post" as const })),
-        ...((assets.data ?? []) as any[]).map((r) => ({ ...r, kind: "asset" as const, status: "pending_review" })),
+        ...((assets.data ?? []) as any[])
+          .filter((r) => !linkedAssetIds.has(r.id))
+          .map((r) => ({ ...r, kind: "asset" as const, status: "pending_review" })),
       ];
       return rows;
     },
