@@ -1361,9 +1361,13 @@ function fitTitle(text, baseFontSize, maxWidth, maxLines = 3) {
     if (stranded) {
       const segments = splitQualifierSegments(text);
       if (segments.length > 1) {
-        for (let sfs = baseFontSize; sfs >= min; sfs -= 2) {
-          const segLines = wrapSegments(segments, sfs, maxWidth, maxLines, true);
-          if (segLines) return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE, plainLines: lines2 };
+        for (const tidy of [true, false]) {
+          for (let sfs = baseFontSize; sfs >= min; sfs -= 2) {
+            const segLines = wrapSegments(segments, sfs, maxWidth, maxLines, true);
+            if (!segLines) continue;
+            if (tidy && segLines.length !== segments.length) continue;
+            return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE, plainLines: lines2 };
+          }
         }
       }
     }
