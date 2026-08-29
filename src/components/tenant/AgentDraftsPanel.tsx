@@ -100,22 +100,20 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     queryKey: ["agent_drafts", tenantId],
     enabled: !!tenantId,
     queryFn: async (): Promise<DraftRow[]> => {
-      const thirtyDays = new Date(Date.now() - 30 * 86400_000).toISOString();
       const [campaigns, posts, assets] = await Promise.all([
         supabase
           .from("marketing_campaigns" as any)
           .select("id, title, description, social_copy, status, feedback_note, source_event_id, source_tournament_id, agent_source, created_at, updated_at")
           .eq("tenant_id", tenantId!)
-          .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays})`)
+          // Decision queue only: items awaiting approval/rejection. Decided
+          // history lives in the calendar/campaign views, not here.
+          .eq("status", "pending_review")
           .order("updated_at", { ascending: false }),
         supabase
           .from("scheduled_posts" as any)
           .select("id, campaign_id, platform, caption, image_url, image_path, scheduled_at, status, feedback_note, agent_source, created_at, updated_at, conflict_flagged_at, conflict_details, undeliverable_reason")
           .eq("tenant_id", tenantId!)
-          // Stale-window failures surface here too, so an approved post the
-          // dispatcher refused (too old) is visible with its reason instead of
-          // silently disappearing from the queue.
-          .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays}),and(status.eq.failed,undeliverable_reason.eq.stale_window)`)
+          .eq("status", "pending_review")
           .order("updated_at", { ascending: false }),
         supabase
           .from("tenant_marketing_assets" as any)
