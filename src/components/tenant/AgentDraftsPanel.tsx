@@ -489,9 +489,19 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="outline" className="capitalize text-xs">{row.kind.replace("_", " ")}</Badge>
-                    <Badge variant={row.status === "rejected" ? "destructive" : "secondary"} className="text-xs">
-                      {row.status.replace("_", " ")}
+                    <Badge
+                      variant={
+                        decidedById[row.id] === "approved"
+                          ? "default"
+                          : decidedById[row.id] === "rejected" || row.status === "rejected"
+                          ? "destructive"
+                          : "secondary"
+                      }
+                      className="text-xs"
+                    >
+                      {decidedById[row.id] ?? row.status.replace("_", " ")}
                     </Badge>
+
                     {(row as any).conflict_flagged_at && (
                       <Badge variant="destructive" className="text-xs">Schedule conflict</Badge>
                     )}
