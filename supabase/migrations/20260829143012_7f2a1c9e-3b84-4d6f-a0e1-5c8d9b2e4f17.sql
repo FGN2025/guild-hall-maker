@@ -111,7 +111,8 @@ BEGIN
   IF NEW.tenant_id IS NULL THEN
     RETURN NEW;
   END IF;
-  IF NULLIF(btrim(NEW.agent_source), '') IS NOT NULL THEN
+  -- Any non-null agent_source is an agent/Claude draft (e.g. claude-mcp).
+  IF NEW.agent_source IS NOT NULL THEN
     RETURN NEW;
   END IF;
 
@@ -143,7 +144,8 @@ BEGIN
   IF NEW.tenant_id IS NULL THEN
     RETURN NEW;
   END IF;
-  IF NULLIF(btrim(NEW.agent_source), '') IS NOT NULL THEN
+  -- Any non-null agent_source is an agent/Claude draft (e.g. claude-mcp).
+  IF NEW.agent_source IS NOT NULL THEN
     RETURN NEW;
   END IF;
 
@@ -177,7 +179,8 @@ BEGIN
   IF NEW.tenant_id IS NULL THEN
     RETURN NEW;
   END IF;
-  IF NULLIF(btrim(NEW.agent_source), '') IS NOT NULL THEN
+  -- Any non-null agent_source is an agent/Claude draft (e.g. claude-mcp).
+  IF NEW.agent_source IS NOT NULL THEN
     RETURN NEW;
   END IF;
 
