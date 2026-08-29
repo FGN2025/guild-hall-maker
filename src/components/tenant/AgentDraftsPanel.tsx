@@ -705,6 +705,19 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                 )}
 
                 {canDecide ? (
+                  decidedById[row.id] ? (
+                    <div className="flex items-center justify-end gap-2 min-h-[44px] text-sm">
+                      {decidedById[row.id] === "approved" ? (
+                        <span className="flex items-center gap-1 text-primary font-medium">
+                          <Check className="h-4 w-4" /> Approved
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-destructive font-medium">
+                          <X className="h-4 w-4" /> Rejected
+                        </span>
+                      )}
+                    </div>
+                  ) : (
                   /* 44px targets, pushed to opposite ends of the card. Reject
                      and Approve were 36px tall and 8px apart in the bottom-right
                      corner — the exact spot a right thumb lands. */
@@ -712,20 +725,32 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                     <Button
                       variant="outline"
                       className="min-h-[44px] min-w-[44px] flex-1 max-w-[45%]"
-                      disabled={decide.isPending}
+                      disabled={decidingId === row.id}
                       onClick={() => onDecide(row, false)}
                     >
-                      <X className="h-4 w-4 mr-1" /> Reject
+                      {decidingId === row.id ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <X className="h-4 w-4 mr-1" />
+                      )}{" "}
+                      Reject
                     </Button>
                     <Button
                       className="min-h-[44px] min-w-[44px] flex-1 max-w-[45%]"
-                      disabled={decide.isPending}
+                      disabled={decidingId === row.id}
                       onClick={() => onDecide(row, true)}
                     >
-                      <Check className="h-4 w-4 mr-1" /> Approve
+                      {decidingId === row.id ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4 mr-1" />
+                      )}{" "}
+                      Approve
                     </Button>
                   </div>
+                  )
                 ) : (
+
 
                   <p className="text-xs text-muted-foreground text-right">
                     Awaiting review by a tenant Admin or Manager.
