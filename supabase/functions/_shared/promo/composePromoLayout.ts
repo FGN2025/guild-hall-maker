@@ -4,7 +4,13 @@
 //     (MCP compose_event_promo tool)
 // No DOM, no canvas, no Deno imports — pure data in / declarative scene out.
 
-import { normalizeEventTitle, type TitleNormalization } from "./normalizeEventTitle.ts";
+import {
+  normalizeEventTitle,
+  splitQualifierSegments,
+  lineEndsWithSeparator,
+  WRAP_SEPARATOR_RULE,
+  type TitleNormalization,
+} from "./normalizeEventTitle.ts";
 
 export type PromoFormat = "portrait" | "square" | "landscape" | "story";
 

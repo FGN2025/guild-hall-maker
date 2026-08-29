@@ -1272,6 +1272,14 @@ function normalizeEventTitle(args) {
   const log = `title=${guarded ? "guarded" : rules.length ? "normalized" : "unchanged"} ${parts.join(" ")}`;
   return { before, after, rules, guarded, log };
 }
+var QUALIFIER_SEPARATOR = /\s*[-–—:]\s*/;
+function splitQualifierSegments(text) {
+  return text.split(QUALIFIER_SEPARATOR).map((s) => squash(s)).filter((s) => s.length > 0);
+}
+function lineEndsWithSeparator(line) {
+  return /[-–—:]$/.test(line.trim());
+}
+var WRAP_SEPARATOR_RULE = "drop_separator_at_wrap";
 
 // supabase/functions/_shared/promo/composePromoLayout.ts
 var PROMO_DIMENSIONS = {
