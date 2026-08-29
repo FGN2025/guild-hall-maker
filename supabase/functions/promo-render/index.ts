@@ -35,16 +35,31 @@ Deno.serve(async (req) => {
     return Response.json({ error: "forbidden" }, { status: 403, headers: corsHeaders });
   }
 
-  let body: { scene?: PromoScene; includeText?: boolean; includeScrim?: boolean };
+  let body: {
+    scene?: PromoScene;
+    /** Compose the scene here, with the DEPLOYED composer, instead of trusting
+     *  a client-built scene. Used to prove live layout behaviour by probe. */
+    compose?: ComposePromoArgs;
+    includeText?: boolean;
+    includeScrim?: boolean;
+  };
   try {
     body = await req.json();
   } catch {
     return Response.json({ error: "invalid_json" }, { status: 400, headers: corsHeaders });
   }
-  const scene = body.scene;
+  let scene = body.scene;
+  let composedLog: string | null = null;
+  if (!scene && body.compose) {
+    const composed = composePromoLayout(body.compose);
+    if (body.compose.backgroundUrl) composed.backgroundUrl = body.compose.backgroundUrl;
+    composedLog = composed.titleNormalization.log;
+    scene = composed;
+  }
   if (!scene || typeof scene.width !== "number" || typeof scene.height !== "number") {
     return Response.json({ error: "scene_required" }, { status: 400, headers: corsHeaders });
   }
+
 
   const started = Date.now();
   try {
