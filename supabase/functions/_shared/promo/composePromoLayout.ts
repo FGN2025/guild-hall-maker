@@ -217,17 +217,49 @@ function wrapText(text: string, fontSize: number, maxWidth: number, maxLines: nu
   return lines;
 }
 
+/** Wrap segments so each qualifier segment starts on its own line. */
+function wrapSegments(
+  segments: string[],
+  fontSize: number,
+  maxWidth: number,
+  maxLines: number,
+  bold: boolean,
+): string[] | null {
+  const out: string[] = [];
+  for (const seg of segments) {
+    const lines = wrapText(seg, fontSize, maxWidth, maxLines, bold);
+    if (!lines) return null;
+    out.push(...lines);
+    if (out.length > maxLines) return null;
+  }
+  return out.length ? out : null;
+}
+
 /** Wrap onto at most `maxLines` lines, shrinking the font until it fits. */
 export function fitTitle(
   text: string,
   baseFontSize: number,
   maxWidth: number,
   maxLines = 3,
-): { lines: string[]; fontSize: number } {
+): { lines: string[]; fontSize: number; wrapRule: string | null } {
   const min = Math.round(baseFontSize * 0.42);
   for (let fs = baseFontSize; fs >= min; fs -= 2) {
     const lines = wrapText(text, fs, maxWidth, maxLines, true);
-    if (lines) return { lines, fontSize: fs };
+    if (!lines) continue;
+    // A separator stranded at a line end reads as a typo. When the greedy wrap
+    // breaks at (or just after) a qualifier separator, re-layout so the
+    // qualifier owns its own line and the separator disappears at the break.
+    const stranded = lines.slice(0, -1).some(lineEndsWithSeparator);
+    if (stranded) {
+      const segments = splitQualifierSegments(text);
+      if (segments.length > 1) {
+        for (let sfs = baseFontSize; sfs >= min; sfs -= 2) {
+          const segLines = wrapSegments(segments, sfs, maxWidth, maxLines, true);
+          if (segLines) return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE };
+        }
+      }
+    }
+    return { lines, fontSize: fs, wrapRule: null };
   }
   // Hard fallback: character-chop at the minimum size, ellipsis the overflow.
   const fs = min;
@@ -240,8 +272,9 @@ export function fitTitle(
     rest = rest.slice(take).trim();
   }
   if (rest.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].slice(0, -1)}…`;
-  return { lines, fontSize: fs };
+  return { lines, fontSize: fs, wrapRule: null };
 }
+
 
 // ---------------------------------------------------------------------------
 

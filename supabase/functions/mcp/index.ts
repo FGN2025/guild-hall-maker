@@ -1334,11 +1334,32 @@ function wrapText(text, fontSize, maxWidth, maxLines, bold) {
   if (lines.length === 0 || lines.length > maxLines) return null;
   return lines;
 }
+function wrapSegments(segments, fontSize, maxWidth, maxLines, bold) {
+  const out = [];
+  for (const seg of segments) {
+    const lines = wrapText(seg, fontSize, maxWidth, maxLines, bold);
+    if (!lines) return null;
+    out.push(...lines);
+    if (out.length > maxLines) return null;
+  }
+  return out.length ? out : null;
+}
 function fitTitle(text, baseFontSize, maxWidth, maxLines = 3) {
   const min = Math.round(baseFontSize * 0.42);
   for (let fs2 = baseFontSize; fs2 >= min; fs2 -= 2) {
     const lines2 = wrapText(text, fs2, maxWidth, maxLines, true);
-    if (lines2) return { lines: lines2, fontSize: fs2 };
+    if (!lines2) continue;
+    const stranded = lines2.slice(0, -1).some(lineEndsWithSeparator);
+    if (stranded) {
+      const segments = splitQualifierSegments(text);
+      if (segments.length > 1) {
+        for (let sfs = baseFontSize; sfs >= min; sfs -= 2) {
+          const segLines = wrapSegments(segments, sfs, maxWidth, maxLines, true);
+          if (segLines) return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE };
+        }
+      }
+    }
+    return { lines: lines2, fontSize: fs2, wrapRule: null };
   }
   const fs = min;
   const lines = [];
@@ -1350,7 +1371,7 @@ function fitTitle(text, baseFontSize, maxWidth, maxLines = 3) {
     rest = rest.slice(take).trim();
   }
   if (rest.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].slice(0, -1)}\u2026`;
-  return { lines, fontSize: fs };
+  return { lines, fontSize: fs, wrapRule: null };
 }
 function clampHex(h, fallback) {
   return h && /^#[0-9a-fA-F]{6}$/.test(h) ? h : fallback;
