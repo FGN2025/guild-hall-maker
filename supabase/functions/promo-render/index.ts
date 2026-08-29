@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
     /** Compose the scene here, with the DEPLOYED composer, instead of trusting
      *  a client-built scene. Used to prove live layout behaviour by probe. */
     compose?: ComposePromoArgs;
+    background_url?: string | null;
     includeText?: boolean;
     includeScrim?: boolean;
   };
@@ -53,7 +54,7 @@ Deno.serve(async (req) => {
   let composedLog: string | null = null;
   if (!scene && body.compose) {
     const composed = composePromoLayout(body.compose);
-    if (body.compose.backgroundUrl) composed.backgroundUrl = body.compose.backgroundUrl;
+    if (body.background_url) composed.backgroundUrl = body.background_url;
     composedLog = composed.titleNormalization.log;
     scene = composed;
   }
