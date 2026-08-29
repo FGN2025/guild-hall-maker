@@ -100,22 +100,20 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     queryKey: ["agent_drafts", tenantId],
     enabled: !!tenantId,
     queryFn: async (): Promise<DraftRow[]> => {
-      const thirtyDays = new Date(Date.now() - 30 * 86400_000).toISOString();
       const [campaigns, posts, assets] = await Promise.all([
         supabase
           .from("marketing_campaigns" as any)
           .select("id, title, description, social_copy, status, feedback_note, source_event_id, source_tournament_id, agent_source, created_at, updated_at")
           .eq("tenant_id", tenantId!)
-          .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays})`)
+          // Decision queue only: items awaiting approval/rejection. Decided
+          // history lives in the calendar/campaign views, not here.
+          .eq("status", "pending_review")
           .order("updated_at", { ascending: false }),
         supabase
           .from("scheduled_posts" as any)
           .select("id, campaign_id, platform, caption, image_url, image_path, scheduled_at, status, feedback_note, agent_source, created_at, updated_at, conflict_flagged_at, conflict_details, undeliverable_reason")
           .eq("tenant_id", tenantId!)
-          // Stale-window failures surface here too, so an approved post the
-          // dispatcher refused (too old) is visible with its reason instead of
-          // silently disappearing from the queue.
-          .or(`status.eq.pending_review,and(status.eq.rejected,updated_at.gte.${thirtyDays}),and(status.eq.failed,undeliverable_reason.eq.stale_window)`)
+          .eq("status", "pending_review")
           .order("updated_at", { ascending: false }),
         supabase
           .from("tenant_marketing_assets" as any)
@@ -128,10 +126,20 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
           .order("updated_at", { ascending: false }),
 
       ]);
+      // Assets already attached to a scheduled post are reviewed with that
+      // post — don't list them again as standalone queue items.
+      const { data: linkedIds } = await supabase
+        .from("scheduled_posts" as any)
+        .select("asset_id")
+        .eq("tenant_id", tenantId!)
+        .not("asset_id", "is", null);
+      const linkedAssetIds = new Set((linkedIds ?? []).map((r: any) => r.asset_id));
       const rows: DraftRow[] = [
         ...((campaigns.data ?? []) as any[]).map((r) => ({ ...r, kind: "campaign" as const })),
         ...((posts.data ?? []) as any[]).map((r) => ({ ...r, kind: "scheduled_post" as const })),
-        ...((assets.data ?? []) as any[]).map((r) => ({ ...r, kind: "asset" as const, status: "pending_review" })),
+        ...((assets.data ?? []) as any[])
+          .filter((r) => !linkedAssetIds.has(r.id))
+          .map((r) => ({ ...r, kind: "asset" as const, status: "pending_review" })),
       ];
       return rows;
     },
@@ -387,7 +395,6 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
   const pending = rows.filter((r) => r.status === "pending_review");
-  const rejected = rows.filter((r) => r.status === "rejected");
 
   return (
     <div className="space-y-6">
@@ -395,7 +402,6 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
         <Bot className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-heading">Review queue</h2>
         <Badge variant="secondary">{pending.length} pending</Badge>
-        {rejected.length > 0 && <Badge variant="outline">{rejected.length} rejected (30d)</Badge>}
       </div>
 
       {/* Bulk actions live on their own row, full width on a phone, and every
@@ -432,7 +438,7 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
       <p className="text-sm text-muted-foreground">
         {canDecide
           ? "Nothing here publishes automatically. Approve to make a draft live; reject with a note so the creator (or agent) can revise it."
-          : "Your drafts stay private until a tenant Admin or Manager approves them. Rejection notes appear here."}
+          : "Your drafts stay private until a tenant Admin or Manager approves them."}
 
       </p>
 
