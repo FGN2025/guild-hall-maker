@@ -16,7 +16,8 @@
 // never exposed to a browser or to the agent.
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { BUILD_ID } from "../_shared/build-id.ts";
-import type { PromoScene } from "../_shared/promo/composePromoLayout.ts";
+import { composePromoLayout } from "../_shared/promo/composePromoLayout.ts";
+import type { PromoScene, ComposePromoArgs } from "../_shared/promo/composePromoLayout.ts";
 import {
   renderPromoSceneToPng,
   preparePromoBackground,
@@ -35,16 +36,32 @@ Deno.serve(async (req) => {
     return Response.json({ error: "forbidden" }, { status: 403, headers: corsHeaders });
   }
 
-  let body: { scene?: PromoScene; includeText?: boolean; includeScrim?: boolean };
+  let body: {
+    scene?: PromoScene;
+    /** Compose the scene here, with the DEPLOYED composer, instead of trusting
+     *  a client-built scene. Used to prove live layout behaviour by probe. */
+    compose?: ComposePromoArgs;
+    background_url?: string | null;
+    includeText?: boolean;
+    includeScrim?: boolean;
+  };
   try {
     body = await req.json();
   } catch {
     return Response.json({ error: "invalid_json" }, { status: 400, headers: corsHeaders });
   }
-  const scene = body.scene;
+  let scene = body.scene;
+  let composedLog: string | null = null;
+  if (!scene && body.compose) {
+    const composed = composePromoLayout(body.compose);
+    if (body.background_url) composed.backgroundUrl = body.background_url;
+    composedLog = composed.titleNormalization.log;
+    scene = composed;
+  }
   if (!scene || typeof scene.width !== "number" || typeof scene.height !== "number") {
     return Response.json({ error: "scene_required" }, { status: 400, headers: corsHeaders });
   }
+
 
   const started = Date.now();
   try {
@@ -61,6 +78,7 @@ Deno.serve(async (req) => {
         "X-Promo-Build": BUILD_ID,
         "X-Promo-Ms": String(Date.now() - started),
         "X-Promo-Background": bg ? bg.log : "none",
+        ...(composedLog ? { "X-Promo-Title": composedLog } : {}),
       },
     });
   } catch (err) {
