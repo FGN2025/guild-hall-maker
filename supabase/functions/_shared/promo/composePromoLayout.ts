@@ -247,7 +247,7 @@ export function fitTitle(
   baseFontSize: number,
   maxWidth: number,
   maxLines = 3,
-): { lines: string[]; fontSize: number; wrapRule: string | null } {
+): { lines: string[]; fontSize: number; wrapRule: string | null; plainLines: string[] } {
   const min = Math.round(baseFontSize * 0.42);
   for (let fs = baseFontSize; fs >= min; fs -= 2) {
     const lines = wrapText(text, fs, maxWidth, maxLines, true);
@@ -261,11 +261,11 @@ export function fitTitle(
       if (segments.length > 1) {
         for (let sfs = baseFontSize; sfs >= min; sfs -= 2) {
           const segLines = wrapSegments(segments, sfs, maxWidth, maxLines, true);
-          if (segLines) return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE };
+          if (segLines) return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE, plainLines: lines };
         }
       }
     }
-    return { lines, fontSize: fs, wrapRule: null };
+    return { lines, fontSize: fs, wrapRule: null, plainLines: lines };
   }
   // Hard fallback: character-chop at the minimum size, ellipsis the overflow.
   const fs = min;
@@ -278,7 +278,7 @@ export function fitTitle(
     rest = rest.slice(take).trim();
   }
   if (rest.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].slice(0, -1)}…`;
-  return { lines, fontSize: fs, wrapRule: null };
+  return { lines, fontSize: fs, wrapRule: null, plainLines: lines };
 }
 
 
@@ -337,7 +337,7 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
     tenantName: args.tenantName ?? null,
   });
 
-  const { lines: titleLines, fontSize: titleFs, wrapRule } = fitTitle(
+  const { lines: titleLines, fontSize: titleFs, wrapRule, plainLines } = fitTitle(
     titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
@@ -349,7 +349,7 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
   if (wrapRule) {
     titleNorm.rules.push(wrapRule);
     titleNorm.log +=
-      ` wrap=${wrapRule} lines_before="${(wrapText(titleNorm.after.toUpperCase(), titleFs, safeWidth, 3, true) ?? []).join(" | ")}"` +
+      ` wrap=${wrapRule} lines_before="${plainLines.join(" | ")}"` +
       ` lines_after="${titleLines.join(" | ")}"`;
   }
 

@@ -1363,11 +1363,11 @@ function fitTitle(text, baseFontSize, maxWidth, maxLines = 3) {
       if (segments.length > 1) {
         for (let sfs = baseFontSize; sfs >= min; sfs -= 2) {
           const segLines = wrapSegments(segments, sfs, maxWidth, maxLines, true);
-          if (segLines) return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE };
+          if (segLines) return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE, plainLines: lines2 };
         }
       }
     }
-    return { lines: lines2, fontSize: fs2, wrapRule: null };
+    return { lines: lines2, fontSize: fs2, wrapRule: null, plainLines: lines2 };
   }
   const fs = min;
   const lines = [];
@@ -1379,7 +1379,7 @@ function fitTitle(text, baseFontSize, maxWidth, maxLines = 3) {
     rest = rest.slice(take).trim();
   }
   if (rest.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].slice(0, -1)}\u2026`;
-  return { lines, fontSize: fs, wrapRule: null };
+  return { lines, fontSize: fs, wrapRule: null, plainLines: lines };
 }
 function clampHex(h, fallback) {
   return h && /^#[0-9a-fA-F]{6}$/.test(h) ? h : fallback;
@@ -1414,7 +1414,7 @@ function composePromoLayout(args) {
     dateShown: !!dateStr,
     tenantName: args.tenantName ?? null
   });
-  const { lines: titleLines, fontSize: titleFs, wrapRule } = fitTitle(
+  const { lines: titleLines, fontSize: titleFs, wrapRule, plainLines } = fitTitle(
     titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
@@ -1422,7 +1422,7 @@ function composePromoLayout(args) {
   );
   if (wrapRule) {
     titleNorm.rules.push(wrapRule);
-    titleNorm.log += ` wrap=${wrapRule} lines_before="${(wrapText(titleNorm.after.toUpperCase(), titleFs, safeWidth, 3, true) ?? []).join(" | ")}" lines_after="${titleLines.join(" | ")}"`;
+    titleNorm.log += ` wrap=${wrapRule} lines_before="${plainLines.join(" | ")}" lines_after="${titleLines.join(" | ")}"`;
   }
   const prizeY = 0.9 * H;
   const dateY = 0.83 * H;
