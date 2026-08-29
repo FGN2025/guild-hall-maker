@@ -1414,12 +1414,16 @@ function composePromoLayout(args) {
     dateShown: !!dateStr,
     tenantName: args.tenantName ?? null
   });
-  const { lines: titleLines, fontSize: titleFs } = fitTitle(
+  const { lines: titleLines, fontSize: titleFs, wrapRule } = fitTitle(
     titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
     3
   );
+  if (wrapRule) {
+    titleNorm.rules.push(wrapRule);
+    titleNorm.log += ` wrap=${wrapRule} lines_before="${(wrapText(titleNorm.after.toUpperCase(), titleFs, safeWidth, 3, true) ?? []).join(" | ")}" lines_after="${titleLines.join(" | ")}"`;
+  }
   const prizeY = 0.9 * H;
   const dateY = 0.83 * H;
   const gameY = 0.76 * H;

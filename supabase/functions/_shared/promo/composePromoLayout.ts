@@ -337,12 +337,22 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
     tenantName: args.tenantName ?? null,
   });
 
-  const { lines: titleLines, fontSize: titleFs } = fitTitle(
+  const { lines: titleLines, fontSize: titleFs, wrapRule } = fitTitle(
     titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
     3,
   );
+
+  // Audit the wrap-time typographic rule exactly like the string rules above,
+  // so a silent typographic change can never ship.
+  if (wrapRule) {
+    titleNorm.rules.push(wrapRule);
+    titleNorm.log +=
+      ` wrap=${wrapRule} lines_before="${(wrapText(titleNorm.after.toUpperCase(), titleFs, safeWidth, 3, true) ?? []).join(" | ")}"` +
+      ` lines_after="${titleLines.join(" | ")}"`;
+  }
+
 
   // Tail block keeps its historical anchors; the title block grows upward from
   // just above it so extra lines never push copy off the canvas.
