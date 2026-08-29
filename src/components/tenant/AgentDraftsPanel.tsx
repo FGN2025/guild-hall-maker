@@ -358,8 +358,26 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   };
 
 
-  const onDecide = (row: DraftRow, approve: boolean) =>
-    decide.mutate({ row, approve, note: feedbackById[row.id] });
+  /* Per-row decision feedback: the shared mutation only exposes one global
+     isPending, so a reviewer clicking Approve on card 7 saw every card freeze
+     and no card change. Track the row being decided and the outcome locally so
+     the decided card reads "Approved"/"Rejected" immediately, until the
+     refetch removes or re-badges it. */
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [decidedById, setDecidedById] = useState<Record<string, "approved" | "rejected">>({});
+
+  const onDecide = (row: DraftRow, approve: boolean) => {
+    setDecidingId(row.id);
+    decide.mutate(
+      { row, approve, note: feedbackById[row.id] },
+      {
+        onSuccess: () =>
+          setDecidedById((m) => ({ ...m, [row.id]: approve ? "approved" : "rejected" })),
+        onSettled: () => setDecidingId((cur) => (cur === row.id ? null : cur)),
+      },
+    );
+  };
+
 
 
   if (!tenantId) {
@@ -471,9 +489,19 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="outline" className="capitalize text-xs">{row.kind.replace("_", " ")}</Badge>
-                    <Badge variant={row.status === "rejected" ? "destructive" : "secondary"} className="text-xs">
-                      {row.status.replace("_", " ")}
+                    <Badge
+                      variant={
+                        decidedById[row.id] === "approved"
+                          ? "default"
+                          : decidedById[row.id] === "rejected" || row.status === "rejected"
+                          ? "destructive"
+                          : "secondary"
+                      }
+                      className="text-xs"
+                    >
+                      {decidedById[row.id] ?? row.status.replace("_", " ")}
                     </Badge>
+
                     {(row as any).conflict_flagged_at && (
                       <Badge variant="destructive" className="text-xs">Schedule conflict</Badge>
                     )}
@@ -677,6 +705,19 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                 )}
 
                 {canDecide ? (
+                  decidedById[row.id] ? (
+                    <div className="flex items-center justify-end gap-2 min-h-[44px] text-sm">
+                      {decidedById[row.id] === "approved" ? (
+                        <span className="flex items-center gap-1 text-primary font-medium">
+                          <Check className="h-4 w-4" /> Approved
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-destructive font-medium">
+                          <X className="h-4 w-4" /> Rejected
+                        </span>
+                      )}
+                    </div>
+                  ) : (
                   /* 44px targets, pushed to opposite ends of the card. Reject
                      and Approve were 36px tall and 8px apart in the bottom-right
                      corner — the exact spot a right thumb lands. */
@@ -684,20 +725,32 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
                     <Button
                       variant="outline"
                       className="min-h-[44px] min-w-[44px] flex-1 max-w-[45%]"
-                      disabled={decide.isPending}
+                      disabled={decidingId === row.id}
                       onClick={() => onDecide(row, false)}
                     >
-                      <X className="h-4 w-4 mr-1" /> Reject
+                      {decidingId === row.id ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <X className="h-4 w-4 mr-1" />
+                      )}{" "}
+                      Reject
                     </Button>
                     <Button
                       className="min-h-[44px] min-w-[44px] flex-1 max-w-[45%]"
-                      disabled={decide.isPending}
+                      disabled={decidingId === row.id}
                       onClick={() => onDecide(row, true)}
                     >
-                      <Check className="h-4 w-4 mr-1" /> Approve
+                      {decidingId === row.id ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4 mr-1" />
+                      )}{" "}
+                      Approve
                     </Button>
                   </div>
+                  )
                 ) : (
+
 
                   <p className="text-xs text-muted-foreground text-right">
                     Awaiting review by a tenant Admin or Manager.
