@@ -16,7 +16,8 @@
 // never exposed to a browser or to the agent.
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { BUILD_ID } from "../_shared/build-id.ts";
-import type { PromoScene } from "../_shared/promo/composePromoLayout.ts";
+import { composePromoLayout } from "../_shared/promo/composePromoLayout.ts";
+import type { PromoScene, ComposePromoArgs } from "../_shared/promo/composePromoLayout.ts";
 import {
   renderPromoSceneToPng,
   preparePromoBackground,
@@ -76,6 +77,7 @@ Deno.serve(async (req) => {
         "X-Promo-Build": BUILD_ID,
         "X-Promo-Ms": String(Date.now() - started),
         "X-Promo-Background": bg ? bg.log : "none",
+        ...(composedLog ? { "X-Promo-Title": composedLog } : {}),
       },
     });
   } catch (err) {
