@@ -358,8 +358,26 @@ export default function AgentDraftsPanel({ tenantId }: { tenantId: string | null
   };
 
 
-  const onDecide = (row: DraftRow, approve: boolean) =>
-    decide.mutate({ row, approve, note: feedbackById[row.id] });
+  /* Per-row decision feedback: the shared mutation only exposes one global
+     isPending, so a reviewer clicking Approve on card 7 saw every card freeze
+     and no card change. Track the row being decided and the outcome locally so
+     the decided card reads "Approved"/"Rejected" immediately, until the
+     refetch removes or re-badges it. */
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [decidedById, setDecidedById] = useState<Record<string, "approved" | "rejected">>({});
+
+  const onDecide = (row: DraftRow, approve: boolean) => {
+    setDecidingId(row.id);
+    decide.mutate(
+      { row, approve, note: feedbackById[row.id] },
+      {
+        onSuccess: () =>
+          setDecidedById((m) => ({ ...m, [row.id]: approve ? "approved" : "rejected" })),
+        onSettled: () => setDecidingId((cur) => (cur === row.id ? null : cur)),
+      },
+    );
+  };
+
 
 
   if (!tenantId) {
