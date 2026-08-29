@@ -214,3 +214,37 @@ export function normalizeEventTitle(args: {
 
   return { before, after, rules, guarded, log };
 }
+
+// ---------------------------------------------------------------------------
+// Wrap-time typography. Display side only, same discipline as the rules above:
+// it never mutates a source row, and every transformation is reported so the
+// composer stays auditable.
+
+/** Separators that introduce a qualifier: hyphen, en dash, em dash, colon. */
+const QUALIFIER_SEPARATOR = /\s*[-–—:]\s*/;
+
+/**
+ * Split a title into qualifier segments ("Fortnite Tournament - Solo / No
+ * Build" -> ["Fortnite Tournament", "Solo / No Build"]). A trailing separator
+ * with nothing after it yields no empty segment, so it can never produce a
+ * blank line.
+ */
+export function splitQualifierSegments(text: string): string[] {
+  return text
+    .split(QUALIFIER_SEPARATOR)
+    .map((s) => squash(s))
+    .filter((s) => s.length > 0);
+}
+
+/** True when a wrapped line ends on a dangling qualifier separator. */
+export function lineEndsWithSeparator(line: string): boolean {
+  return /[-–—:]$/.test(line.trim());
+}
+
+/**
+ * Name of the wrap rule as it appears in the composer log. Applied when a
+ * greedy wrap strands the separator at a line end; the qualifier then takes
+ * its own line and the separator is dropped at the break.
+ */
+export const WRAP_SEPARATOR_RULE = "drop_separator_at_wrap";
+

@@ -4,7 +4,13 @@
 //     (MCP compose_event_promo tool)
 // No DOM, no canvas, no Deno imports — pure data in / declarative scene out.
 
-import { normalizeEventTitle, type TitleNormalization } from "./normalizeEventTitle.ts";
+import {
+  normalizeEventTitle,
+  splitQualifierSegments,
+  lineEndsWithSeparator,
+  WRAP_SEPARATOR_RULE,
+  type TitleNormalization,
+} from "./normalizeEventTitle.ts";
 
 export type PromoFormat = "portrait" | "square" | "landscape" | "story";
 
@@ -217,17 +223,57 @@ function wrapText(text: string, fontSize: number, maxWidth: number, maxLines: nu
   return lines;
 }
 
+/** Wrap segments so each qualifier segment starts on its own line. */
+function wrapSegments(
+  segments: string[],
+  fontSize: number,
+  maxWidth: number,
+  maxLines: number,
+  bold: boolean,
+): string[] | null {
+  const out: string[] = [];
+  for (const seg of segments) {
+    const lines = wrapText(seg, fontSize, maxWidth, maxLines, bold);
+    if (!lines) return null;
+    out.push(...lines);
+    if (out.length > maxLines) return null;
+  }
+  return out.length ? out : null;
+}
+
 /** Wrap onto at most `maxLines` lines, shrinking the font until it fits. */
 export function fitTitle(
   text: string,
   baseFontSize: number,
   maxWidth: number,
   maxLines = 3,
-): { lines: string[]; fontSize: number } {
+): { lines: string[]; fontSize: number; wrapRule: string | null; plainLines: string[] } {
   const min = Math.round(baseFontSize * 0.42);
   for (let fs = baseFontSize; fs >= min; fs -= 2) {
     const lines = wrapText(text, fs, maxWidth, maxLines, true);
-    if (lines) return { lines, fontSize: fs };
+    if (!lines) continue;
+    // A separator stranded at a line end reads as a typo. When the greedy wrap
+    // breaks at (or just after) a qualifier separator, re-layout so the
+    // qualifier owns its own line and the separator disappears at the break.
+    const stranded = lines.slice(0, -1).some(lineEndsWithSeparator);
+    if (stranded) {
+      const segments = splitQualifierSegments(text);
+      if (segments.length > 1) {
+        // Prefer the largest size at which every segment owns exactly one
+        // line — that is the shape Darcy approved ("FORTNITE TOURNAMENT" /
+        // "SOLO / NO BUILD"). Only if no size achieves it do we accept a
+        // segmented layout that wraps within a segment.
+        for (const tidy of [true, false]) {
+          for (let sfs = baseFontSize; sfs >= min; sfs -= 2) {
+            const segLines = wrapSegments(segments, sfs, maxWidth, maxLines, true);
+            if (!segLines) continue;
+            if (tidy && segLines.length !== segments.length) continue;
+            return { lines: segLines, fontSize: sfs, wrapRule: WRAP_SEPARATOR_RULE, plainLines: lines };
+          }
+        }
+      }
+    }
+    return { lines, fontSize: fs, wrapRule: null, plainLines: lines };
   }
   // Hard fallback: character-chop at the minimum size, ellipsis the overflow.
   const fs = min;
@@ -240,8 +286,9 @@ export function fitTitle(
     rest = rest.slice(take).trim();
   }
   if (rest.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].slice(0, -1)}…`;
-  return { lines, fontSize: fs };
+  return { lines, fontSize: fs, wrapRule: null, plainLines: lines };
 }
+
 
 // ---------------------------------------------------------------------------
 
@@ -298,12 +345,22 @@ export function composePromoLayout(args: ComposePromoArgs): PromoScene {
     tenantName: args.tenantName ?? null,
   });
 
-  const { lines: titleLines, fontSize: titleFs } = fitTitle(
+  const { lines: titleLines, fontSize: titleFs, wrapRule, plainLines } = fitTitle(
     titleNorm.after.toUpperCase(),
     Math.round(64 * scale),
     safeWidth,
     3,
   );
+
+  // Audit the wrap-time typographic rule exactly like the string rules above,
+  // so a silent typographic change can never ship.
+  if (wrapRule) {
+    titleNorm.rules.push(wrapRule);
+    titleNorm.log +=
+      ` wrap=${wrapRule} lines_before="${plainLines.join(" | ")}"` +
+      ` lines_after="${titleLines.join(" | ")}"`;
+  }
+
 
   // Tail block keeps its historical anchors; the title block grows upward from
   // just above it so extra lines never push copy off the canvas.
