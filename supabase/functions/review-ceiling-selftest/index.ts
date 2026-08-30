@@ -221,9 +221,9 @@ Deno.serve(async (req) => {
 
       // 2 dispatcher cases (already past the gate, must still move)
       { id: "D1", group: "dispatcher", path: "publisher (service_role)", role: "service_role", claims: null, expect: "allow",
-        desc: "carry an approved post forward: pending -> published", sql: `UPDATE public.scheduled_posts SET status='published', published_at=now() WHERE id='${pDPub}'` },
+        desc: "carry an approved post forward: approved -> published", sql: `UPDATE public.scheduled_posts SET status='published', published_at=now() WHERE id='${pDPub}'` },
       { id: "D2", group: "dispatcher", path: "publisher (service_role)", role: "service_role", claims: null, expect: "allow",
-        desc: "mark an approved post failed: pending -> failed", sql: `UPDATE public.scheduled_posts SET status='failed', error_message='selftest' WHERE id='${pDFail}'` },
+        desc: "mark an approved post failed: approved -> failed", sql: `UPDATE public.scheduled_posts SET status='failed', error_message='selftest' WHERE id='${pDFail}'` },
 
       // adjacent guarantees fixed earlier this week (cheap to co-locate)
       { id: "X1", group: "adjacent", path: "anon", role: "anon", claims: null, expect: "deny", pattern: "permission denied",

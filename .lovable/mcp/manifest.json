@@ -5,7 +5,7 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://yrhwzmkenjgiujhofucx.supabase.co/auth/v1",
-    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-08-29T21%3A45Z-wrap-separator",
+    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-08-30T01%3A10Z-approved-state",
     "accepted_audiences": [
       "authenticated"
     ]
