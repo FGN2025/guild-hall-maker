@@ -164,8 +164,7 @@ Deno.serve(async (req) => {
     const { data: stalePosts } = await supabase
       .from("scheduled_posts")
       .select("id, tenant_id, platform, scheduled_at, agent_source")
-      .eq("status", "pending")
-      .not("approved_at", "is", null)
+      .eq("is_dispatch_approved", true)
       .lt("scheduled_at", staleCutoffIso)
       .limit(100);
 
@@ -180,7 +179,7 @@ Deno.serve(async (req) => {
             `Not published. Reschedule it forward and re-approve to send.`,
         })
         .eq("id", p.id)
-        .eq("status", "pending");
+        .eq("status", "approved");
       await supabase.rpc("enqueue_marketing_notification", {
         _tenant_id: p.tenant_id,
         _category: "dispatch_error",
@@ -197,14 +196,17 @@ Deno.serve(async (req) => {
 
     // 2. Undeliverable check: approved posts due but no active social_connection for their platform.
     //    Gate: status must be the explicit approved value AND the row must carry
-    //    an approval stamp. A row that reached 'pending' without provenance is
-    //    refused rather than improvised on. The scheduled_at range is bounded on
+    //    an approval stamp. Both live in ONE generated column,
+    //    scheduled_posts.is_dispatch_approved =
+    //      (status = 'approved' AND approved_at IS NOT NULL),
+    //    which is the only definition of "approved" in the system. Every UI
+    //    badge, count and tool response reads the same column, so nothing can
+    //    render a row as approved that this dispatcher would refuse. The scheduled_at range is bounded on
     //    BOTH sides: due (<= now) and not stale (>= now - staleWindowHours).
     const { data: duePosts, error } = await supabase
       .from("scheduled_posts")
       .select("*")
-      .eq("status", "pending")
-      .not("approved_at", "is", null)
+      .eq("is_dispatch_approved", true)
       .lte("scheduled_at", nowIso)
       .gte("scheduled_at", staleCutoffIso)
       .limit(50);

@@ -3580,6 +3580,7 @@ export type Database = {
           idempotency_key: string | null
           image_path: string | null
           image_url: string
+          is_dispatch_approved: boolean | null
           overdue_notified_at: string | null
           platform: string
           post_url: string | null
@@ -3612,6 +3613,7 @@ export type Database = {
           idempotency_key?: string | null
           image_path?: string | null
           image_url: string
+          is_dispatch_approved?: boolean | null
           overdue_notified_at?: string | null
           platform: string
           post_url?: string | null
@@ -3644,6 +3646,7 @@ export type Database = {
           idempotency_key?: string | null
           image_path?: string | null
           image_url?: string
+          is_dispatch_approved?: boolean | null
           overdue_notified_at?: string | null
           platform?: string
           post_url?: string | null
@@ -6206,7 +6209,7 @@ export type Database = {
       }
       check_schedule_conflict: {
         Args: {
-          _exclude_id: string
+          _exclude_id?: string
           _platform: string
           _scheduled_at: string
           _tenant_id: string

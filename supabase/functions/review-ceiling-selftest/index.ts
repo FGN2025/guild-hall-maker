@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         END; $f$;`);
     } else if (fault === "drop_insert_guard") {
       // Restores the pre-fix shape where only UPDATEs were gated, so an INSERT
-      // that merely omits status lands on the publishable 'pending' default.
+      // that merely omits status lands on the publishable 'approved' default.
       await client.queryArray(
         `DROP TRIGGER IF EXISTS trg_review_ceiling_scheduled_posts ON public.scheduled_posts;
          CREATE TRIGGER trg_review_ceiling_scheduled_posts
@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Promote the two dispatcher fixtures to 'pending' the only legal way:
+    // Promote the two dispatcher fixtures to 'approved' the only legal way:
     // an UPDATE performed by a human-shaped actor (JWT claims carrying a sub).
     await client.queryArray("SAVEPOINT seed_approve");
     await client.queryArray(
@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
       [JSON.stringify({ sub: uid, role: "authenticated" })],
     );
     await client.queryArray(
-      `UPDATE public.scheduled_posts SET status='pending', approved_at=now(), approved_by=$2
+      `UPDATE public.scheduled_posts SET status='approved', approved_at=now(), approved_by=$2
        WHERE id = ANY($1::uuid[])`,
       [`{${pDPub},${pDFail}}`, uid],
     );
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
     // ---------------- the 16-case matrix (+4 adjacent) ----------------
     const insertPost = (withStatus: boolean) =>
       `INSERT INTO public.scheduled_posts (tenant_id,user_id,platform,image_url,scheduled_at,${withStatus ? "status," : ""}agent_source)
-       VALUES ('${tenant}','${uid}','facebook','https://example.invalid/x.png', now()+interval '30 days',${withStatus ? "'pending'," : ""}'selftest')`;
+       VALUES ('${tenant}','${uid}','facebook','https://example.invalid/x.png', now()+interval '30 days',${withStatus ? "'approved'," : ""}'selftest')`;
 
     const cases: Case[] = [
       // 8 agent refusals: 4 shapes x 2 agent paths
@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
       { id: "A2-runner", group: "agent_allowed", path: "runner (service_role)", role: "service_role", claims: null, expect: "allow",
         desc: "insert scheduled_post OMITTING status lands on the safe 'draft' default", sql: insertPost(false) },
       { id: "A3-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
-        desc: "approve itself: pending_review -> pending", sql: `UPDATE public.scheduled_posts SET status='pending' WHERE id='${pRAppr}'` },
+        desc: "approve itself: pending_review -> approved", sql: `UPDATE public.scheduled_posts SET status='approved' WHERE id='${pRAppr}'` },
       { id: "A4-runner", group: "agent_refusal", path: "runner (service_role)", role: "service_role", claims: null, expect: "deny",
         desc: "publish an asset: is_published false -> true", sql: `UPDATE public.tenant_marketing_assets SET is_published=true WHERE id='${aRunner}'` },
       { id: "A1-oauth", group: "agent_refusal", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "deny",
@@ -199,13 +199,13 @@ Deno.serve(async (req) => {
       { id: "A2-oauth", group: "agent_allowed", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "allow",
         desc: "insert scheduled_post OMITTING status lands on the safe 'draft' default", sql: insertPost(false) },
       { id: "A3-oauth", group: "agent_refusal", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "deny",
-        desc: "approve itself: pending_review -> pending", sql: `UPDATE public.scheduled_posts SET status='pending' WHERE id='${pOAppr}'` },
+        desc: "approve itself: pending_review -> approved", sql: `UPDATE public.scheduled_posts SET status='approved' WHERE id='${pOAppr}'` },
       { id: "A4-oauth", group: "agent_refusal", path: "oauth mcp (authenticated + client_id)", role: "authenticated", claims: agentClaims, expect: "deny",
         desc: "publish a campaign: is_published false -> true", sql: `UPDATE public.marketing_campaigns SET is_published=true, status='published' WHERE id='${cPending}'` },
 
       // 4 human successes (must NOT be blocked - over-tightening check)
       { id: "H1", group: "human_success", path: "dashboard (authenticated, no client_id)", role: "authenticated", claims: humanClaims, expect: "allow",
-        desc: "tenant admin approves a post: pending_review -> pending", sql: `UPDATE public.scheduled_posts SET status='pending' WHERE id='${pHAppr}'` },
+        desc: "tenant admin approves a post: pending_review -> approved", sql: `UPDATE public.scheduled_posts SET status='approved' WHERE id='${pHAppr}'` },
       { id: "H2", group: "human_success", path: "dashboard (authenticated, no client_id)", role: "authenticated", claims: humanClaims, expect: "allow",
         desc: "tenant admin rejects a post with feedback", sql: `UPDATE public.scheduled_posts SET status='rejected', feedback_note='selftest' WHERE id='${pHRej}'` },
       { id: "H3", group: "human_success", path: "dashboard (authenticated, no client_id)", role: "authenticated", claims: humanClaims, expect: "allow",
@@ -221,9 +221,9 @@ Deno.serve(async (req) => {
 
       // 2 dispatcher cases (already past the gate, must still move)
       { id: "D1", group: "dispatcher", path: "publisher (service_role)", role: "service_role", claims: null, expect: "allow",
-        desc: "carry an approved post forward: pending -> published", sql: `UPDATE public.scheduled_posts SET status='published', published_at=now() WHERE id='${pDPub}'` },
+        desc: "carry an approved post forward: approved -> published", sql: `UPDATE public.scheduled_posts SET status='published', published_at=now() WHERE id='${pDPub}'` },
       { id: "D2", group: "dispatcher", path: "publisher (service_role)", role: "service_role", claims: null, expect: "allow",
-        desc: "mark an approved post failed: pending -> failed", sql: `UPDATE public.scheduled_posts SET status='failed', error_message='selftest' WHERE id='${pDFail}'` },
+        desc: "mark an approved post failed: approved -> failed", sql: `UPDATE public.scheduled_posts SET status='failed', error_message='selftest' WHERE id='${pDFail}'` },
 
       // adjacent guarantees fixed earlier this week (cheap to co-locate)
       { id: "X1", group: "adjacent", path: "anon", role: "anon", claims: null, expect: "deny", pattern: "permission denied",

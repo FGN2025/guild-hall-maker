@@ -17,6 +17,9 @@ export type ScheduledPost = {
   caption: string;
   scheduled_at: string;
   status: string;
+  /** Canonical approval signal (generated column): status='approved' AND approved_at IS NOT NULL. */
+  is_dispatch_approved?: boolean;
+  approved_at?: string | null;
   published_at: string | null;
   post_url: string | null;
   error_message: string | null;
@@ -74,7 +77,7 @@ export function useScheduledPosts(tenantId?: string | null) {
         .from("scheduled_posts" as any)
         .update({ status: "cancelled" } as any)
         .eq("id", id)
-        .eq("status", "pending");
+        .eq("status", "approved");
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey }); toast.success("Post cancelled"); },
@@ -87,7 +90,7 @@ export function useScheduledPosts(tenantId?: string | null) {
         .from("scheduled_posts" as any)
         .update({ scheduled_at } as any)
         .eq("id", id)
-        .eq("status", "pending");
+        .eq("status", "approved");
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey }); toast.success("Post rescheduled"); },

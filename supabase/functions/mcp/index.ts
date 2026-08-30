@@ -747,7 +747,7 @@ import { z as z13 } from "npm:zod@^3.25.76";
 var propose_scheduled_post_default = defineTool15({
   name: "propose_scheduled_post",
   title: "Propose a scheduled social post",
-  description: "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or \xB1HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
+  description: "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows whose generated column is_dispatch_approved is true (status='approved' AND approved_at set, stamped by the DB on human approval), so agent proposals never publish without tenant-admin approval. Agent writes are capped at 'pending_review' by DB trigger. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or \xB1HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
   inputSchema: {
     tenant_id: z13.string().uuid(),
     platform: z13.string().describe("One of the tenant's connected_platforms values."),
@@ -1944,7 +1944,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-08-29T21:45Z-wrap-separator";
+var BUILD_ID = "2026-08-30T01:10Z-approved-state";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
