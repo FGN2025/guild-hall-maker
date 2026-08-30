@@ -28,7 +28,7 @@ const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secon
     variant: "outline",
     className: "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-300",
   },
-  pending: { label: "Scheduled", variant: "secondary" },
+  approved: { label: "Approved, scheduled", variant: "secondary" },
   published: { label: "Published", variant: "default" },
   failed: { label: "Failed", variant: "destructive" },
   rejected: {
@@ -62,7 +62,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
     : [];
 
   const pendingDates = posts
-    .filter((p) => p.status === "pending" || p.status === "pending_review")
+    .filter((p) => p.status === "approved" || p.status === "pending_review")
     .map((p) => parseISO(p.scheduled_at));
 
   const handleCancel = async (id: string) => {
@@ -85,7 +85,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
       { row: { id: detailPost.id, kind: "scheduled_post" }, approve: true, note: null },
       {
         onSuccess: () => {
-          setDetailPost((p) => (p ? { ...p, status: "pending" } : p));
+          setDetailPost((p) => (p ? { ...p, status: "approved" } : p));
         },
       },
     );
@@ -271,7 +271,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                 </Button>
               </>
             )}
-            {detailPost?.status === "pending" && (
+            {detailPost?.status === "approved" && (
               <>
                 <Button variant="outline" onClick={() => { setNewDate(parseISO(detailPost.scheduled_at)); setRescheduleOpen(true); }}>
                   <CalendarIcon className="h-4 w-4 mr-1" /> Reschedule
