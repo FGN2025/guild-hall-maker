@@ -36,8 +36,13 @@ const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secon
     variant: "outline",
     className: "border-destructive/60 bg-destructive/10 text-destructive",
   },
+  draft: { label: "Draft", variant: "outline" },
   cancelled: { label: "Cancelled", variant: "outline" },
 };
+
+/** Never return undefined: an unknown status must not crash the calendar. */
+const statusStyle = (s: string) =>
+  STATUS_STYLES[s] ?? { label: s ? s.replace(/_/g, " ") : "Unknown", variant: "outline" as const };
 
 interface Props {
   tenantId?: string | null;
