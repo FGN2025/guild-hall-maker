@@ -30,7 +30,7 @@ const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 const STATUS_FILTERS: ("all" | CampaignStatusKey)[] = ["all", "pending_review", "approved", "published", "rejected", "draft"];
 
 
-const VALID_TABS = ["campaigns", "assets", "universal", "codes", "webpages", "social", "scheduled", "agent"] as const;
+const VALID_TABS = ["campaigns", "assets", "universal", "codes", "webpages", "social", "scheduled", "agent", "runs"] as const;
 
 const TenantMarketing = () => {
   // Not published-only: tenant staff must see their own drafts / pending-review
