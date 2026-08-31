@@ -123,11 +123,13 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
     queryFn: async () => {
       const now = new Date().toISOString();
       const [ev, tr] = await Promise.all([
-        supabase.from("tenant_events" as any).select("id, title, event_date").eq("tenant_id", tenantId).gte("event_date", now).order("event_date").limit(30),
-        supabase.from("tournaments" as any).select("id, name, start_date").eq("tenant_id", tenantId).gte("start_date", now).order("start_date").limit(30),
+        // tenant_events stores the label in `name`; tournaments are platform-wide
+        // and carry no tenant_id column, so they are not tenant-filtered here.
+        supabase.from("tenant_events" as any).select("id, name, event_date").eq("tenant_id", tenantId).gte("event_date", now).order("event_date").limit(30),
+        supabase.from("tournaments" as any).select("id, name, start_date").gte("start_date", now).order("start_date").limit(30),
       ]);
       const list: { key: string; label: string; kind: "event" | "tournament"; id: string }[] = [];
-      for (const e of (ev.data ?? []) as any[]) list.push({ key: `event:${e.id}`, label: `Event · ${e.title}`, kind: "event", id: e.id });
+      for (const e of (ev.data ?? []) as any[]) list.push({ key: `event:${e.id}`, label: `Event · ${e.name}`, kind: "event", id: e.id });
       for (const t of (tr.data ?? []) as any[]) list.push({ key: `tournament:${t.id}`, label: `Tournament · ${t.name}`, kind: "tournament", id: t.id });
       return list;
     },

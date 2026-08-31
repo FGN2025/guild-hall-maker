@@ -36,8 +36,13 @@ const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secon
     variant: "outline",
     className: "border-destructive/60 bg-destructive/10 text-destructive",
   },
+  draft: { label: "Draft", variant: "outline" },
   cancelled: { label: "Cancelled", variant: "outline" },
 };
+
+/** Never return undefined: an unknown status must not crash the calendar. */
+const statusStyle = (s: string) =>
+  STATUS_STYLES[s] ?? { label: s ? s.replace(/_/g, " ") : "Unknown", variant: "outline" as const };
 
 interface Props {
   tenantId?: string | null;
@@ -153,7 +158,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
             <p className="text-sm text-muted-foreground py-8 text-center">No posts scheduled for this date.</p>
           ) : (
             postsForDate.map((post) => {
-              const status = STATUS_STYLES[post.status] || STATUS_STYLES.pending;
+              const status = statusStyle(post.status);
               return (
                 <Card
                   key={post.id}
