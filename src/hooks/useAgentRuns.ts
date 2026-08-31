@@ -79,6 +79,8 @@ export function useAgentRunsPaged(
       return { rows: (data ?? []) as unknown as AgentRun[], total: count ?? 0 };
     },
     enabled: !!tenantId,
+    refetchInterval: (q: any) =>
+      (q?.state?.data?.rows ?? []).some((r: AgentRun) => r.status === "running") ? 3000 : false,
   });
 
   const hasRunning = (query.data?.rows ?? []).some((r) => r.status === "running");
