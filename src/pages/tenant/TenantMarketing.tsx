@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock, Bot, Globe } from "lucide-react";
+import { Search, Megaphone, Image as ImageIcon, KeyRound, FileText, Share2, CalendarClock, Bot, Globe, Rocket } from "lucide-react";
 import AgentDraftsPanel from "@/components/tenant/AgentDraftsPanel";
 import AgentLaunchCard from "@/components/marketing/AgentLaunchCard";
 import RecentAgentRuns from "@/components/marketing/RecentAgentRuns";
+import SeedRunDashboard from "@/components/marketing/SeedRunDashboard";
 import SocialAccountsManager from "@/components/marketing/SocialAccountsManager";
 import ScheduledPostsCalendar from "@/components/marketing/ScheduledPostsCalendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -29,7 +30,7 @@ const CATEGORY_TABS = ["all", "social_media", "print", "email", "event"];
 const STATUS_FILTERS: ("all" | CampaignStatusKey)[] = ["all", "pending_review", "approved", "published", "rejected", "draft"];
 
 
-const VALID_TABS = ["campaigns", "assets", "universal", "codes", "webpages", "social", "scheduled", "agent"] as const;
+const VALID_TABS = ["campaigns", "assets", "universal", "codes", "webpages", "social", "scheduled", "agent", "runs"] as const;
 
 const TenantMarketing = () => {
   // Not published-only: tenant staff must see their own drafts / pending-review
@@ -202,6 +203,9 @@ const TenantMarketing = () => {
               {pendingReviewCount > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs">{pendingReviewCount}</Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="runs" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <Rocket className="h-4 w-4" /> Runs
             </TabsTrigger>
             <TabsTrigger value="campaigns" className="gap-2 font-heading shrink-0 min-h-[44px]">
               <Megaphone className="h-4 w-4" /> Campaigns
@@ -380,6 +384,10 @@ const TenantMarketing = () => {
             </>
           )}
           <AgentDraftsPanel tenantId={tenantAdmin} />
+        </TabsContent>
+
+        <TabsContent value="runs" className="space-y-4">
+          <SeedRunDashboard tenantId={tenantAdmin} />
         </TabsContent>
       </Tabs>
     </div>
