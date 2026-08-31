@@ -158,7 +158,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
             <p className="text-sm text-muted-foreground py-8 text-center">No posts scheduled for this date.</p>
           ) : (
             postsForDate.map((post) => {
-              const status = STATUS_STYLES[post.status] || STATUS_STYLES.pending;
+              const status = statusStyle(post.status);
               return (
                 <Card
                   key={post.id}
