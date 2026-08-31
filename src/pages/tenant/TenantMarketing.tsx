@@ -385,6 +385,10 @@ const TenantMarketing = () => {
           )}
           <AgentDraftsPanel tenantId={tenantAdmin} />
         </TabsContent>
+
+        <TabsContent value="runs" className="space-y-4">
+          <SeedRunDashboard tenantId={tenantAdmin} />
+        </TabsContent>
       </Tabs>
     </div>
   );
