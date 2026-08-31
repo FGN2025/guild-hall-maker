@@ -204,6 +204,9 @@ const TenantMarketing = () => {
                 <Badge variant="secondary" className="ml-1 text-xs">{pendingReviewCount}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="runs" className="gap-2 font-heading shrink-0 min-h-[44px]">
+              <Rocket className="h-4 w-4" /> Runs
+            </TabsTrigger>
             <TabsTrigger value="campaigns" className="gap-2 font-heading shrink-0 min-h-[44px]">
               <Megaphone className="h-4 w-4" /> Campaigns
             </TabsTrigger>
