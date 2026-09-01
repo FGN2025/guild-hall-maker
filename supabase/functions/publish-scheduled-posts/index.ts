@@ -57,12 +57,44 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
-    const nowIso = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    // --- Runtime dispatch controls ---------------------------------------
+    // Kill switch + per-tenant publish quota, both from app_settings so either
+    // can be thrown without a deploy. Absent keys == today's behavior.
+    const controls = await loadDispatchControls(supabase, now);
+
+    if (controls.killSwitchOn) {
+      // Clean stop BEFORE the stale sweep and before any dispatch. Approved
+      // rows stay approved, nothing fails, nothing publishes. The pause length
+      // is banked and converted into a stale-window grace on resume, so the
+      // guard cannot mow the queue down the moment the switch is cleared.
+      const { count: heldCount } = await supabase
+        .from("scheduled_posts")
+        .select("id", { count: "exact", head: true })
+        .eq("is_dispatch_approved", true);
+      console.warn(
+        `[publish-scheduled-posts] KILL SWITCH ON since ${controls.pauseStartedAt}; holding ${heldCount ?? 0} approved posts`,
+      );
+      return new Response(
+        JSON.stringify({
+          processed: 0,
+          paused: true,
+          kill_switch: "on",
+          paused_since: controls.pauseStartedAt,
+          held_approved: heldCount ?? 0,
+          build_id: BUILD_ID,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // --- Staleness guard -------------------------------------------------
     // An approved post whose window passed long ago must never publish: a bulk
     // approve of backdated rows would otherwise fire them all in one minute.
-    // The window is configurable at tick time (no deploy) via app_settings.
+    // The window is configurable at tick time (no deploy) via app_settings,
+    // and is widened by any banked pause grace (see dispatch-controls.ts).
     let staleWindowHours = 6;
     {
       const { data: setting } = await supabase
@@ -73,7 +105,10 @@ Deno.serve(async (req) => {
       const parsed = Number(setting?.value);
       if (Number.isFinite(parsed) && parsed > 0) staleWindowHours = parsed;
     }
-    const staleCutoffIso = new Date(Date.now() - staleWindowHours * 3600_000).toISOString();
+    const staleCutoffIso = new Date(
+      now.getTime() - staleWindowHours * 3600_000 - controls.staleGraceSeconds * 1000,
+    ).toISOString();
+
 
     // 0. Flush marketing draft digests whose window has elapsed.
     let digestsSent = 0;
