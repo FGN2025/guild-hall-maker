@@ -193,7 +193,10 @@ const TenantMarketing = () => {
         </div>
       )}
 
+      <DispatchStatusBanner tenantId={tenantAdmin} />
+
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+
         {/* Horizontally scrollable on narrow screens — an eight-item row cannot
             fit at 390px, and the Review tab must never be the one clipped off. */}
         <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">
