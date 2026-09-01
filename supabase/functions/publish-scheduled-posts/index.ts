@@ -196,10 +196,59 @@ Deno.serve(async (req) => {
         .eq("id", p.id);
     }
 
+    // --- Per-tenant publish quota ----------------------------------------
+    // A daily and monthly cap on ACTUAL dispatches. Entirely separate from
+    // agent_run_limits, which caps seed runs. A post over quota DEFERS: it is
+    // skipped this tick, stays approved, and is not failed. Absent keys ==
+    // unlimited, i.e. exactly today's behavior.
+    const quotaCache = new Map<string, { daily: number; monthly: number }>();
+    const quotaNotified = new Set<string>();
+    let deferredByQuota = 0;
+
+    async function quotaState(tenantId: string | null) {
+      const dailyLimit = quotaFor(controls.quotaDaily, tenantId);
+      const monthlyLimit = quotaFor(controls.quotaMonthly, tenantId);
+      if (!tenantId || (dailyLimit === null && monthlyLimit === null)) {
+        return { exhausted: false, reason: "", dailyLimit, monthlyLimit, used: null as any };
+      }
+      let used = quotaCache.get(tenantId);
+      if (!used) {
+        used = await countDispatches(supabase, tenantId, now);
+        quotaCache.set(tenantId, used);
+      }
+      if (dailyLimit !== null && used.daily >= dailyLimit) {
+        return { exhausted: true, reason: `daily publish quota reached (${used.daily}/${dailyLimit})`, dailyLimit, monthlyLimit, used };
+      }
+      if (monthlyLimit !== null && used.monthly >= monthlyLimit) {
+        return { exhausted: true, reason: `monthly publish quota reached (${used.monthly}/${monthlyLimit})`, dailyLimit, monthlyLimit, used };
+      }
+      return { exhausted: false, reason: "", dailyLimit, monthlyLimit, used };
+    }
+
+    async function noteQuotaDeferral(post: any, reason: string) {
+      deferredByQuota++;
+      console.warn(`[publish-scheduled-posts] deferred ${post.id}: ${reason}`);
+      if (quotaNotified.has(post.tenant_id)) return;
+      quotaNotified.add(post.tenant_id);
+      await supabase.rpc("enqueue_marketing_notification", {
+        _tenant_id: post.tenant_id,
+        _category: "dispatch_error",
+        _related_kind: "scheduled_post",
+        _related_id: post.id,
+        _title: "Publishing paused by quota",
+        _message: `Scheduled posts are waiting because the ${reason}. They stay approved and will publish once the quota resets or is raised.`,
+        _link: "/tenant/marketing?tab=scheduled",
+        _agent_source: post.agent_source,
+        _payload: { id: post.id, reason: "publish_quota", detail: reason },
+      });
+    }
+
     // 1b. Stale sweep: approved posts whose window closed more than
     //     staleWindowHours ago are failed with a distinct reason instead of
     //     being published late. A human can reschedule them forward (which
     //     makes them eligible again) or cancel them; they never sit silently.
+    //     Rows held back by quota are exempt: a deferral must not become a
+    //     failure just because the cap outlasted the stale window.
     let staleSkipped = 0;
     const { data: stalePosts } = await supabase
       .from("scheduled_posts")
@@ -209,6 +258,12 @@ Deno.serve(async (req) => {
       .limit(100);
 
     for (const p of stalePosts ?? []) {
+      const q = await quotaState(p.tenant_id);
+      if (q.exhausted) {
+        await noteQuotaDeferral(p, q.reason);
+        continue;
+      }
+
       await supabase
         .from("scheduled_posts")
         .update({
@@ -259,11 +314,15 @@ Deno.serve(async (req) => {
           overdue_notified: overduePending?.length ?? 0,
           stale_skipped: staleSkipped,
           stale_window_hours: staleWindowHours,
+          stale_grace_seconds: controls.staleGraceSeconds,
+          deferred_by_quota: deferredByQuota,
+          kill_switch: "off",
           build_id: BUILD_ID,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     let processed = 0;
     let failed = 0;
@@ -362,6 +421,13 @@ Deno.serve(async (req) => {
 
     for (const post of duePosts) {
       try {
+        // Quota gate: defer (skip), never fail.
+        const q = await quotaState(post.tenant_id);
+        if (q.exhausted) {
+          await noteQuotaDeferral(post, q.reason);
+          continue;
+        }
+
         // Resolve active connection for non-discord posts. If the row has a
         // connection_id, validate it; otherwise fall back to the single active
         // (tenant_id, platform) connection. Backfill the row so the linkage
@@ -443,6 +509,9 @@ Deno.serve(async (req) => {
               .eq("id", post.id);
           }
           processed++;
+          const used = quotaCache.get(post.tenant_id);
+          if (used) { used.daily++; used.monthly++; }
+
         } else {
           const errText = await publishRes.text().catch(() => "");
           const errMessage = `HTTP ${publishRes.status}: ${errText.slice(0, 500)}`;
@@ -532,6 +601,10 @@ Deno.serve(async (req) => {
         overdue_notified: overduePending?.length ?? 0,
         stale_skipped: staleSkipped,
         stale_window_hours: staleWindowHours,
+        stale_grace_seconds: controls.staleGraceSeconds,
+        deferred_by_quota: deferredByQuota,
+        kill_switch: "off",
+
         total: duePosts.length,
         build_id: BUILD_ID,
       }),
