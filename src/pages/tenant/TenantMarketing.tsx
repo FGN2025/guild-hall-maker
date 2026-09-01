@@ -9,6 +9,8 @@ import AgentDraftsPanel from "@/components/tenant/AgentDraftsPanel";
 import AgentLaunchCard from "@/components/marketing/AgentLaunchCard";
 import RecentAgentRuns from "@/components/marketing/RecentAgentRuns";
 import SeedRunDashboard from "@/components/marketing/SeedRunDashboard";
+import DispatchStatusBanner from "@/components/marketing/DispatchStatusBanner";
+
 import SocialAccountsManager from "@/components/marketing/SocialAccountsManager";
 import ScheduledPostsCalendar from "@/components/marketing/ScheduledPostsCalendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -193,7 +195,10 @@ const TenantMarketing = () => {
         </div>
       )}
 
+      <DispatchStatusBanner tenantId={tenantAdmin} />
+
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+
         {/* Horizontally scrollable on narrow screens — an eight-item row cannot
             fit at 390px, and the Review tab must never be the one clipped off. */}
         <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">

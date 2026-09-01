@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { BUILD_ID } from "../_shared/build-id.ts";
+import {
+  loadDispatchControls,
+  quotaFor,
+  countDispatches,
+} from "../_shared/dispatch-controls.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,12 +62,44 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
-    const nowIso = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    // --- Runtime dispatch controls ---------------------------------------
+    // Kill switch + per-tenant publish quota, both from app_settings so either
+    // can be thrown without a deploy. Absent keys == today's behavior.
+    const controls = await loadDispatchControls(supabase, now);
+
+    if (controls.killSwitchOn) {
+      // Clean stop BEFORE the stale sweep and before any dispatch. Approved
+      // rows stay approved, nothing fails, nothing publishes. The pause length
+      // is banked and converted into a stale-window grace on resume, so the
+      // guard cannot mow the queue down the moment the switch is cleared.
+      const { count: heldCount } = await supabase
+        .from("scheduled_posts")
+        .select("id", { count: "exact", head: true })
+        .eq("is_dispatch_approved", true);
+      console.warn(
+        `[publish-scheduled-posts] KILL SWITCH ON since ${controls.pauseStartedAt}; holding ${heldCount ?? 0} approved posts`,
+      );
+      return new Response(
+        JSON.stringify({
+          processed: 0,
+          paused: true,
+          kill_switch: "on",
+          paused_since: controls.pauseStartedAt,
+          held_approved: heldCount ?? 0,
+          build_id: BUILD_ID,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // --- Staleness guard -------------------------------------------------
     // An approved post whose window passed long ago must never publish: a bulk
     // approve of backdated rows would otherwise fire them all in one minute.
-    // The window is configurable at tick time (no deploy) via app_settings.
+    // The window is configurable at tick time (no deploy) via app_settings,
+    // and is widened by any banked pause grace (see dispatch-controls.ts).
     let staleWindowHours = 6;
     {
       const { data: setting } = await supabase
@@ -73,7 +110,10 @@ Deno.serve(async (req) => {
       const parsed = Number(setting?.value);
       if (Number.isFinite(parsed) && parsed > 0) staleWindowHours = parsed;
     }
-    const staleCutoffIso = new Date(Date.now() - staleWindowHours * 3600_000).toISOString();
+    const staleCutoffIso = new Date(
+      now.getTime() - staleWindowHours * 3600_000 - controls.staleGraceSeconds * 1000,
+    ).toISOString();
+
 
     // 0. Flush marketing draft digests whose window has elapsed.
     let digestsSent = 0;
@@ -156,10 +196,59 @@ Deno.serve(async (req) => {
         .eq("id", p.id);
     }
 
+    // --- Per-tenant publish quota ----------------------------------------
+    // A daily and monthly cap on ACTUAL dispatches. Entirely separate from
+    // agent_run_limits, which caps seed runs. A post over quota DEFERS: it is
+    // skipped this tick, stays approved, and is not failed. Absent keys ==
+    // unlimited, i.e. exactly today's behavior.
+    const quotaCache = new Map<string, { daily: number; monthly: number }>();
+    const quotaNotified = new Set<string>();
+    let deferredByQuota = 0;
+
+    async function quotaState(tenantId: string | null) {
+      const dailyLimit = quotaFor(controls.quotaDaily, tenantId);
+      const monthlyLimit = quotaFor(controls.quotaMonthly, tenantId);
+      if (!tenantId || (dailyLimit === null && monthlyLimit === null)) {
+        return { exhausted: false, reason: "", dailyLimit, monthlyLimit, used: null as any };
+      }
+      let used = quotaCache.get(tenantId);
+      if (!used) {
+        used = await countDispatches(supabase, tenantId, now);
+        quotaCache.set(tenantId, used);
+      }
+      if (dailyLimit !== null && used.daily >= dailyLimit) {
+        return { exhausted: true, reason: `daily publish quota reached (${used.daily}/${dailyLimit})`, dailyLimit, monthlyLimit, used };
+      }
+      if (monthlyLimit !== null && used.monthly >= monthlyLimit) {
+        return { exhausted: true, reason: `monthly publish quota reached (${used.monthly}/${monthlyLimit})`, dailyLimit, monthlyLimit, used };
+      }
+      return { exhausted: false, reason: "", dailyLimit, monthlyLimit, used };
+    }
+
+    async function noteQuotaDeferral(post: any, reason: string) {
+      deferredByQuota++;
+      console.warn(`[publish-scheduled-posts] deferred ${post.id}: ${reason}`);
+      if (quotaNotified.has(post.tenant_id)) return;
+      quotaNotified.add(post.tenant_id);
+      await supabase.rpc("enqueue_marketing_notification", {
+        _tenant_id: post.tenant_id,
+        _category: "dispatch_error",
+        _related_kind: "scheduled_post",
+        _related_id: post.id,
+        _title: "Publishing paused by quota",
+        _message: `Scheduled posts are waiting because the ${reason}. They stay approved and will publish once the quota resets or is raised.`,
+        _link: "/tenant/marketing?tab=scheduled",
+        _agent_source: post.agent_source,
+        _payload: { id: post.id, reason: "publish_quota", detail: reason },
+      });
+    }
+
     // 1b. Stale sweep: approved posts whose window closed more than
     //     staleWindowHours ago are failed with a distinct reason instead of
     //     being published late. A human can reschedule them forward (which
     //     makes them eligible again) or cancel them; they never sit silently.
+    //     Rows held back by quota are exempt: a deferral must not become a
+    //     failure just because the cap outlasted the stale window.
     let staleSkipped = 0;
     const { data: stalePosts } = await supabase
       .from("scheduled_posts")
@@ -169,6 +258,12 @@ Deno.serve(async (req) => {
       .limit(100);
 
     for (const p of stalePosts ?? []) {
+      const q = await quotaState(p.tenant_id);
+      if (q.exhausted) {
+        await noteQuotaDeferral(p, q.reason);
+        continue;
+      }
+
       await supabase
         .from("scheduled_posts")
         .update({
@@ -219,11 +314,15 @@ Deno.serve(async (req) => {
           overdue_notified: overduePending?.length ?? 0,
           stale_skipped: staleSkipped,
           stale_window_hours: staleWindowHours,
+          stale_grace_seconds: controls.staleGraceSeconds,
+          deferred_by_quota: deferredByQuota,
+          kill_switch: "off",
           build_id: BUILD_ID,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     let processed = 0;
     let failed = 0;
@@ -322,6 +421,13 @@ Deno.serve(async (req) => {
 
     for (const post of duePosts) {
       try {
+        // Quota gate: defer (skip), never fail.
+        const q = await quotaState(post.tenant_id);
+        if (q.exhausted) {
+          await noteQuotaDeferral(post, q.reason);
+          continue;
+        }
+
         // Resolve active connection for non-discord posts. If the row has a
         // connection_id, validate it; otherwise fall back to the single active
         // (tenant_id, platform) connection. Backfill the row so the linkage
@@ -403,6 +509,9 @@ Deno.serve(async (req) => {
               .eq("id", post.id);
           }
           processed++;
+          const used = quotaCache.get(post.tenant_id);
+          if (used) { used.daily++; used.monthly++; }
+
         } else {
           const errText = await publishRes.text().catch(() => "");
           const errMessage = `HTTP ${publishRes.status}: ${errText.slice(0, 500)}`;
@@ -492,6 +601,10 @@ Deno.serve(async (req) => {
         overdue_notified: overduePending?.length ?? 0,
         stale_skipped: staleSkipped,
         stale_window_hours: staleWindowHours,
+        stale_grace_seconds: controls.staleGraceSeconds,
+        deferred_by_quota: deferredByQuota,
+        kill_switch: "off",
+
         total: duePosts.length,
         build_id: BUILD_ID,
       }),
