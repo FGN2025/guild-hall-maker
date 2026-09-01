@@ -14,6 +14,8 @@ import HeroLogoSettings from "@/components/admin/HeroLogoSettings";
 import AIImageConfigCard from "@/components/admin/AIImageConfigCard";
 import CalendarPublishManager from "@/components/admin/CalendarPublishManager";
 import GuideMediaManager from "@/components/admin/GuideMediaManager";
+import DispatchControlsCard from "@/components/admin/DispatchControlsCard";
+
 
 interface LimitEntry {
   enabled: boolean;
@@ -357,6 +359,10 @@ const AdminSettings = () => {
 
       {/* AI Image Generation */}
       <AIImageConfigCard loading={loading} />
+
+      {/* Publishing Controls: kill switch + per-tenant publish quota */}
+      <DispatchControlsCard />
+
 
       {/* Image Upload Limits */}
       <div className="rounded-lg border border-border bg-card p-6 space-y-4">
