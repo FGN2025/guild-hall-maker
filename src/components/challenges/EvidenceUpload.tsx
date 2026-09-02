@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Upload, Loader2, Image as ImageIcon, Link, ExternalLink, Gamepad2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { EVIDENCE_BUCKET, EVIDENCE_PREFIX } from "@/lib/evidenceUrl";
 
 interface EvidenceUploadProps {
   open: boolean;
@@ -105,14 +106,17 @@ const EvidenceUpload = ({
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!user) {
+      toast.error("You must be signed in to upload evidence");
+      return;
+    }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `challenge-evidence/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("app-media").upload(path, file);
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from(EVIDENCE_BUCKET).upload(path, file);
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("app-media").getPublicUrl(path);
-      setUploadedUrl(urlData.publicUrl);
+      setUploadedUrl(`${EVIDENCE_PREFIX}${path}`);
       setFileType(file.type.startsWith("image") ? "image" : file.type.startsWith("video") ? "video" : "file");
       if (file.type.startsWith("image")) setPreviewUrl(URL.createObjectURL(file));
     } catch (err: any) {
