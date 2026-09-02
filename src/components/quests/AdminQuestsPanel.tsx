@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useSignedEvidenceUrls } from "@/hooks/useSignedEvidenceUrls";
 import { format } from "date-fns";
 import CreateQuestDialog from "@/components/quests/CreateQuestDialog";
 import EditQuestDialog from "@/components/quests/EditQuestDialog";
@@ -345,6 +346,10 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
     },
   });
 
+  const evidenceUrl = useSignedEvidenceUrls(
+    reviewEnrollments.flatMap((en: any) => en.quest_evidence ?? [])
+  );
+
   const handleDelete = (id: string, name: string) => {
     setDeleteTarget({ id, name });
     setDetailQuest(null);
@@ -576,13 +581,13 @@ const AdminQuestsPanel = ({ queryKeyPrefix, showEnrollmentCounts = true }: Admin
 
                             <div className="rounded border border-border overflow-hidden aspect-video max-w-xs bg-muted">
                               {e.file_type === "image" ? (
-                                <a href={e.file_url} target="_blank" rel="noopener noreferrer">
-                                  <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
+                                <a href={evidenceUrl(e) ?? undefined} target="_blank" rel="noopener noreferrer">
+                                  <img src={evidenceUrl(e) ?? undefined} alt="Evidence" className="w-full h-full object-cover" />
                                 </a>
                               ) : e.file_type === "video" ? (
-                                <video src={e.file_url} controls className="w-full h-full object-cover" />
+                                <video src={evidenceUrl(e) ?? undefined} controls className="w-full h-full object-cover" />
                               ) : (
-                                <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
+                                <a href={evidenceUrl(e) ?? undefined} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
                                   <ImageIcon className="h-6 w-6 text-muted-foreground" />
                                 </a>
                               )}
