@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import PointsWalletCard from "@/components/shared/PointsWalletCard";
 import { useAcademyPassport } from "@/lib/academyPassport";
+import { AcademyLinkDialog } from "@/components/academy/AcademyLinkDialog";
 
 const ActivityPanel = ({
   title,
@@ -101,7 +102,12 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [, setOnboardingChecked] = useState(false);
-  const { openPassport } = useAcademyPassport({ email: user?.email });
+  const {
+    openPassport,
+    notLinkedOpen,
+    setNotLinkedOpen,
+    academyUrl,
+  } = useAcademyPassport({ email: user?.email });
 
   useEffect(() => {
     if (!user) return;
