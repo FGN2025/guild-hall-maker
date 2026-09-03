@@ -1,60 +1,28 @@
-# Close the event-registration visibility finding, and rewrite the briefing against September state
+# Plan: "Connect your Academy account" instructions for unlinked Skill Passport
 
-## Part A — `tenant_event_registrations_broad_visibility`
+## Problem
+When a player clicks "Open Skill Passport" on the dashboard and their Play account isn't linked to an FGN Academy profile, the Academy service returns `user_not_linked`. The app currently shows only a terse toast ("Complete an Academy challenge to link it"), which doesn't explain how linking actually works.
 
-### What is actually there right now (verified)
+The established linking flow (already documented in PlayerGuide and used on the Challenge Detail page) is: register at fgn.academy with the **same email** as the Play account — past completions auto-claim onto the Skill Passport within minutes, and future approvals sync automatically. The unlinked state should surface these instructions.
 
-Live policies on `public.tenant_event_registrations`:
+## Changes
 
-- `Users can view own registrations` — SELECT, `auth.uid() = user_id`
-- `Users can register for events` — INSERT, self only
-- `Users can cancel own registrations` — UPDATE, self only
-- `Tenant admins can view event registrations` — SELECT, any user whose `tenant_admins` row for the event's tenant is `admin` **or** `manager`
-- `Platform admins can manage all registrations` — ALL, `has_role(admin)`
+### 1. `src/lib/academyPassport.ts` — connect dialog instead of a bare toast
+- When `openPassport()` hits the `user_not_linked` state, show a small dialog (or an action toast) titled **"Connect your Academy account"** with numbered steps:
+  1. Go to fgn.academy (opens in a new tab via a button/link).
+  2. Sign up using the **same email address** as this Play account.
+  3. Your past challenge/quest completions are claimed onto your Skill Passport automatically within a few minutes.
+  4. Come back and click "Open Skill Passport" again.
+- Include a "Go to FGN Academy" button using the configured passport base URL (falling back to `https://fgn.academy`).
+- Implementation: expose the unlinked state from the hook (e.g. `notLinkedOpen` + setter) so consumers can render a shadcn `Dialog`, keeping the hook logic in one place. Update `src/pages/Dashboard.tsx` (the card's "Open Skill Passport" button) to render the dialog. The dialog uses existing design tokens (bg-card, border-accent/40, font-display) to match the dashboard card.
 
-The table stores `event_id`, `user_id`, `registered_at`, `status`. The registrant identity is the `user_id`, joinable to `profiles`.
+### 2. Copy alignment
+- Reuse the same wording pattern as the existing "Join FGN Academy" banner on `ChallengeDetail.tsx` and the PlayerGuide entry, so the instructions are consistent wherever the unlinked state appears.
 
-Code search shows **no UI reads that staff SELECT path**. `useTenantEvents.registrationsQuery` is defined but never called from any page or component; the only live reads are the player's own row in `TenantEventDetail`. So the policy grants an identity list that nothing in the product actually consumes.
+## Out of scope
+- No changes to the `academy-passport-link` edge function (the 200/`user_not_linked` response contract stays as-is).
+- No backend, migration, or publish changes. Dispatcher kill switch and all queue state untouched.
 
-### The call
-
-Drop the tenant-staff SELECT policy. Registrant identities become visible to the registrant and to platform admins only — the same read model already enforced for `tournament_registrations`, and consistent with the August decision that registered counts belong to platform roles.
-
-Tenant staff do not lose a working feature, because they never had a screen for it. If Darcy later wants tenant admins to see who signed up for their own event, that comes back as a deliberate, narrower build (an admin-only attendee screen behind a security-definer function that returns display names, not raw auth ids) rather than as a blanket table read.
-
-Capacity behaviour is unaffected: `tenant_events.max_participants` is a column on the event row, not derived from the registration table, and the public event page shows "Max N".
-
-### Change
-
-One migration:
-
-- `DROP POLICY "Tenant admins can view event registrations" ON public.tenant_event_registrations;`
-
-No column changes, no data writes, no grants changed, no other table touched. Then re-run the security scan and mark the finding resolved with the reasoning above.
-
-### Verification
-
-- Re-list `pg_policies` for the table and show the four remaining policies.
-- Confirm a tenant-manager-shaped read returns zero rows while the registrant's own read still returns their row.
-- Confirm the public event page and register button still work.
-
-## Part B — Rewrite the continuity briefing against real September state
-
-There is no continuity briefing file in the repo today; it has been living in chat. This makes it a real document at `docs/continuity-briefing.md`, rebuilt entirely from queried state rather than carried forward from August narration.
-
-Every claim in it gets sourced from a read taken while writing it. Sections:
-
-1. **Ground truth header** — production project ref, `now()` from the database, live `BUILD_ID` from the deployed functions, and the date the briefing was compiled. Stated up front so a stale copy is obvious on sight.
-2. **Acme queue state** — scheduled post counts by month and status, the armed September slate, next fire time, and the six `stale_window` failures with their standing disposition (dead, deliberately).
-3. **Dispatcher and controls** — cron job id and last run, `dispatch_kill_switch` absent/off, `publish_quota_daily` 6 / `publish_quota_monthly` 60 with their exact stored JSON shape and calendar-window counting semantics, and the separate `agent_run_limits` 2/10 seed-run caps that must not be conflated with them.
-4. **Agent and review pipeline** — active prompt version, the `pending_review` ceiling enforced by database triggers, what the Agent Drafts queue shows, and the canonical `approved` status.
-5. **What was rolled back** — `enforce_scheduled_post_asset_link` never existed on this database; `asset_id` and `image_path` predate the session (migrations `20260806170435`, `20260806170600`).
-6. **Open items** — registration-count/visibility work (closed by Part A), social-token exposure finding still open, orphaned storage objects, Resend delivery visibility.
-7. **Known-bad framing to distrust** — a short list of the August-dated claims that turned out to be narration rather than row-derived, so nobody re-imports them.
-
-Superseded plan files under `.lovable/plan/` stay as history; the briefing links to nothing that has not been re-verified.
-
-## Technical notes
-
-- Files: one new migration; `docs/continuity-briefing.md` (new).
-- No edge function deploys, no publish, no changes to any `scheduled_posts` row, no changes to `app_settings`.
+## Verification
+- Typecheck/build passes.
+- Confirm in the preview that clicking "Open Skill Passport" while unlinked shows the instructions dialog with the working fgn.academy link instead of only a toast.
