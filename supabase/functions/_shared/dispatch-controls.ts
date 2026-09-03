@@ -185,3 +185,24 @@ export async function countDispatches(supabase: Sb, tenantId: string, now: Date)
   ]);
   return { daily: daily ?? 0, monthly: monthly ?? 0 };
 }
+
+/**
+ * Persisted dedupe for quota-hold alerts.
+ *
+ * The in-memory Set only dedupes within a single invocation, so a cron tick
+ * every minute would re-notify for as long as the cap stays exhausted. This
+ * records the last notified UTC day per tenant in `app_settings` and returns
+ * true at most once per tenant per UTC day.
+ */
+export async function claimQuotaNotice(
+  supabase: Sb,
+  tenantId: string,
+  now: Date,
+): Promise<boolean> {
+  const key = `dispatch_quota_notified:${tenantId}`;
+  const today = now.toISOString().slice(0, 10);
+  const last = await readSetting(supabase, key);
+  if (last === today) return false;
+  await writeSetting(supabase, key, today);
+  return true;
+}
