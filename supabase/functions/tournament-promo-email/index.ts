@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
                   Don't miss your chance to compete!
                 </p>
                 <div style="text-align:center;margin-bottom:24px;">
-                  <a href="https://guild-hall-maker.lovable.app/tournaments/${t.id}" style="display:inline-block;background:#a855f7;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Register Now</a>
+                  <a href="https://play.fgn.gg/tournaments/${t.id}" style="display:inline-block;background:#a855f7;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Register Now</a>
                 </div>
                 <p style="color:#6b7280;font-size:12px;text-align:center;">You're receiving this because you have tournament promotion emails enabled. Manage preferences in your profile settings.</p>
               </div>

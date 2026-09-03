@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
                 ${highlights.map(h => `<p style="color:#d1d5db;margin:4px 0;">${h}</p>`).join("")}
               </div>
               <div style="text-align:center;margin-bottom:24px;">
-                <a href="https://guild-hall-maker.lovable.app/dashboard" style="display:inline-block;background:#a855f7;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Jump Back In</a>
+                <a href="https://play.fgn.gg/dashboard" style="display:inline-block;background:#a855f7;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Jump Back In</a>
               </div>
               <p style="color:#6b7280;font-size:12px;text-align:center;">You're receiving this because you have re-engagement emails enabled. Manage preferences in your profile settings.</p>
             </div>

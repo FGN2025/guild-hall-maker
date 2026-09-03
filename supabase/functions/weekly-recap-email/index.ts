@@ -108,8 +108,8 @@ Deno.serve(async (req) => {
                 ${achievements > 0 ? `<tr><td style="padding:8px 0;color:#d1d5db;">🏅 Achievements Earned</td><td style="padding:8px 0;text-align:right;color:#a855f7;font-weight:bold;">${achievements}</td></tr>` : ""}
               </table>
               <div style="text-align:center;">
-                <a href="https://guild-hall-maker.lovable.app/leaderboard" style="display:inline-block;background:#a855f7;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin-right:8px;">View Leaderboard</a>
-                <a href="https://guild-hall-maker.lovable.app/challenges" style="display:inline-block;background:#6b21a8;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Browse Challenges</a>
+                <a href="https://play.fgn.gg/leaderboard" style="display:inline-block;background:#a855f7;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin-right:8px;">View Leaderboard</a>
+                <a href="https://play.fgn.gg/challenges" style="display:inline-block;background:#6b21a8;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Browse Challenges</a>
               </div>
               <p style="color:#6b7280;font-size:12px;margin-top:32px;text-align:center;">You're receiving this because you have email notifications enabled. Manage preferences in your profile settings.</p>
             </div>
