@@ -1,28 +1,34 @@
-# Plan: "Connect your Academy account" instructions for unlinked Skill Passport
+# Plan: Fix Skill Passport "not linked" for accounts that do exist on Academy
 
-## Problem
-When a player clicks "Open Skill Passport" on the dashboard and their Play account isn't linked to an FGN Academy profile, the Academy service returns `user_not_linked`. The app currently shows only a terse toast ("Complete an Academy challenge to link it"), which doesn't explain how linking actually works.
+## What the reads show
 
-The established linking flow (already documented in PlayerGuide and used on the Challenge Detail page) is: register at fgn.academy with the **same email** as the Play account — past completions auto-claim onto the Skill Passport within minutes, and future approvals sync automatically. The unlinked state should surface these instructions.
+- The Academy integration runs in `magic_link` mode against `.../credential-api/passport-link` (confirmed in `tenant_integrations.additional_config`).
+- `darcy@fgn.gg` exists in Play as user `84d2999e-0eae-4a52-b508-a0aafc6c84d7`, and Darcy says the same address is an active FGN.Academy account.
+- Every **sync** function (`sync-to-academy`, quest/achievement/task variants) sends **both** `user_email` and `external_user_id` to Academy, so Academy can resolve a member by email.
+- `academy-passport-link` sends **only** `external_user_id` (the Play UUID). It never sends the email.
 
-## Changes
+Most likely cause (not yet proven end to end): Academy has the member on file by email, but has no record of that Play UUID as an external id, so the passport-link endpoint answers 404 `user_not_linked`. This is unconfirmed until we test a request that includes the email, so that test is step 1.
 
-### 1. `src/lib/academyPassport.ts` — connect dialog instead of a bare toast
-- When `openPassport()` hits the `user_not_linked` state, show a small dialog (or an action toast) titled **"Connect your Academy account"** with numbered steps:
-  1. Go to fgn.academy (opens in a new tab via a button/link).
-  2. Sign up using the **same email address** as this Play account.
-  3. Your past challenge/quest completions are claimed onto your Skill Passport automatically within a few minutes.
-  4. Come back and click "Open Skill Passport" again.
-- Include a "Go to FGN Academy" button using the configured passport base URL (falling back to `https://fgn.academy`).
-- Implementation: expose the unlinked state from the hook (e.g. `notLinkedOpen` + setter) so consumers can render a shadcn `Dialog`, keeping the hook logic in one place. Update `src/pages/Dashboard.tsx` (the card's "Open Skill Passport" button) to render the dialog. The dialog uses existing design tokens (bg-card, border-accent/40, font-display) to match the dashboard card.
+## Step 1 — Confirm the cause
 
-### 2. Copy alignment
-- Reuse the same wording pattern as the existing "Join FGN Academy" banner on `ChallengeDetail.tsx` and the PlayerGuide entry, so the instructions are consistent wherever the unlinked state appears.
+Call `academy-passport-link` for Darcy's account and read the edge-function logs (signature prefix, response body). Then call Academy's passport-link endpoint again with `user_email` added to the signed payload and compare: if the email-bearing request resolves and the UUID-only one 404s, the identity mismatch is confirmed.
 
-## Out of scope
-- No changes to the `academy-passport-link` edge function (the 200/`user_not_linked` response contract stays as-is).
-- No backend, migration, or publish changes. Dispatcher kill switch and all queue state untouched.
+## Step 2 — Send the email (identity parity with the sync path)
 
-## Verification
-- Typecheck/build passes.
-- Confirm in the preview that clicking "Open Skill Passport" while unlinked shows the instructions dialog with the working fgn.academy link instead of only a toast.
+In `supabase/functions/academy-passport-link/index.ts`, include `user_email: user.email` in the signed canonical payload alongside `external_user_id`, matching what the sync functions already send. The HMAC is computed over the final JSON body, so signing stays correct. If Academy resolves by email, existing accounts stop reporting as unlinked without any user action.
+
+## Step 3 — Real "not linked" state gets real instructions
+
+Only for accounts genuinely absent on Academy (still 404 after step 2), replace the terse toast in `src/lib/academyPassport.ts` with a dialog titled **"Connect your Academy account"**:
+
+1. Open fgn.academy (button, new tab, using the configured `passport_base_url`).
+2. Sign up with the **same email you use here** — that address is the link key.
+3. Past completions are claimed onto the Skill Passport within a few minutes.
+4. Return and click "Open Skill Passport" again.
+
+Rendered from `src/pages/Dashboard.tsx` with existing tokens (bg-card, accent border, font-display) so it matches the card. Wording matches the existing "Join FGN Academy" banner on `ChallengeDetail.tsx`.
+
+## Out of scope / safety
+
+- No migrations, no row edits, no publishing. The dispatcher kill switch and all marketing queue state stay untouched.
+- The only backend change is the added `user_email` field in the passport-link payload plus a redeploy of that one function.
