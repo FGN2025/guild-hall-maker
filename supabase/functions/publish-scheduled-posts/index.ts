@@ -4,6 +4,7 @@ import {
   loadDispatchControls,
   quotaFor,
   countDispatches,
+  claimQuotaNotice,
 } from "../_shared/dispatch-controls.ts";
 
 const corsHeaders = {
@@ -228,8 +229,12 @@ Deno.serve(async (req) => {
     async function noteQuotaDeferral(post: any, reason: string) {
       deferredByQuota++;
       console.warn(`[publish-scheduled-posts] deferred ${post.id}: ${reason}`);
+      if (!post.tenant_id) return;
       if (quotaNotified.has(post.tenant_id)) return;
       quotaNotified.add(post.tenant_id);
+      // Persisted dedupe: at most one quota alert per tenant per UTC day,
+      // otherwise every cron tick would re-notify while the cap holds.
+      if (!(await claimQuotaNotice(supabase, post.tenant_id, now))) return;
       await supabase.rpc("enqueue_marketing_notification", {
         _tenant_id: post.tenant_id,
         _category: "dispatch_error",
