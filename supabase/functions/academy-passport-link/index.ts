@@ -96,6 +96,10 @@ Deno.serve(async (req) => {
     const payload: Record<string, unknown> = {
       external_user_id: reqBody.external_user_id ?? user.id,
     };
+    // Identity parity with the sync functions: Academy can fall back to email
+    // when no play_identity mapping exists for this Play user id yet.
+    if (user.email) payload.user_email = user.email;
+
     if (typeof reqBody.intent === "string") payload.intent = reqBody.intent;
     if (typeof reqBody.ttl_seconds === "number") payload.ttl_seconds = reqBody.ttl_seconds;
 
