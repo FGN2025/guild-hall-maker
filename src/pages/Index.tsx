@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import HeroSection from "@/components/HeroSection";
 import Navbar from "@/components/Navbar";
+import TickerEmbed from "@/components/TickerEmbed";
 import usePageTitle from "@/hooks/usePageTitle";
 
 // Below-the-fold sections — lazy load so they don't block FCP/LCP.
@@ -13,6 +14,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
+      <TickerEmbed />
       <Suspense fallback={null}>
         <FeaturedVideo />
         <FeaturedEvents />
