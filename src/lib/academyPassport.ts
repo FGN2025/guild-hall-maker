@@ -105,7 +105,10 @@ export const useAcademyPassport = (params: {
             },
           },
         );
-        if (data?.error === "user_not_linked") {
+        const notLinked =
+          data?.error === "user_not_linked" ||
+          (error && /user_not_linked/.test(error.message ?? ""));
+        if (notLinked) {
           toast({
             title: "Connect your Academy account",
             description:
