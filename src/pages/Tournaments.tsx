@@ -116,6 +116,7 @@ const Tournaments = () => {
       />
       <PageBackground pageSlug="tournaments" />
       <div className="relative z-10">
+        <TickerEmbed />
         <div className="sticky top-[-1rem] md:top-[-1.5rem] z-20 bg-background -mx-4 px-4 md:-mx-6 md:px-6 -mt-4 pt-4 md:-mt-6 md:pt-6 pb-4">
           {user && (
             <div className="flex items-center gap-2 mb-2">
