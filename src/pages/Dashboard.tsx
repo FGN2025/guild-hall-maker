@@ -223,6 +223,14 @@ const Dashboard = () => {
               </div>
             )}
 
+            <AcademyLinkDialog
+              open={notLinkedOpen}
+              onOpenChange={setNotLinkedOpen}
+              academyUrl={academyUrl}
+              email={user?.email}
+            />
+
+
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="font-display text-lg font-bold text-foreground mb-5 flex items-center gap-2">
