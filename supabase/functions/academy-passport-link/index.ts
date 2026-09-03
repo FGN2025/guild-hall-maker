@@ -126,7 +126,9 @@ Deno.serve(async (req) => {
 
     if (academyRes.status === 404) {
       const detail = await academyRes.json().catch(() => ({}));
-      return json(404, {
+      // Return 200 so the client SDK surfaces this as data (not a thrown
+      // FunctionsHttpError) — it's an expected "not linked yet" state.
+      return json(200, {
         error: "user_not_linked",
         detail,
       });
