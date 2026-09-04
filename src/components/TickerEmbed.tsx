@@ -43,12 +43,14 @@ const TickerEmbed = () => {
       .eq("key", "homepage_ticker_embed")
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.value) {
-          setEmbedHtml(data.value);
-          ensureSdk();
-        }
+        if (data?.value) setEmbedHtml(data.value);
       });
   }, []);
+
+  // Run after the embed HTML is actually in the DOM, so the SDK finds the div.
+  useEffect(() => {
+    if (embedHtml) ensureSdk();
+  }, [embedHtml]);
 
   if (!embedHtml) return null;
 
