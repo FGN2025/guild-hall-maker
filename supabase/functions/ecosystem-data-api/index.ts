@@ -202,11 +202,19 @@ Deno.serve(async (req) => {
       case "games": {
         const { data, error } = await adminClient
           .from("games")
-          .select("id, key, name, short_name, is_active")
+          .select("id, slug, name, is_active, steam_app_id")
           .eq("is_active", true)
           .order("name");
         if (error) throw error;
-        result = data ?? [];
+        // Expose `key`/`short_name` aliases for Academy compatibility
+        result = (data ?? []).map((g: any) => ({
+          id: g.id,
+          key: g.slug,
+          name: g.name,
+          short_name: g.name,
+          is_active: g.is_active,
+          steam_app_id: g.steam_app_id,
+        }));
         // Log + return with both `games` and `data` keys for Academy compatibility
         const targetApp = req.headers.get("x-ecosystem-app") || "unknown";
         await adminClient.from("ecosystem_sync_log").insert({
