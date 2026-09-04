@@ -21,7 +21,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTournaments } from "@/hooks/useTournaments";
 import TournamentCard from "@/components/tournaments/TournamentCard";
 import PageHero from "@/components/PageHero";
-import PageBackground from "@/components/PageBackground";
 import TickerEmbed from "@/components/TickerEmbed";
 
 const Tournaments = () => {
