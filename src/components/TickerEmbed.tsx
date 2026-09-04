@@ -4,14 +4,27 @@ import { supabase } from "@/integrations/supabase/client";
 const SDK_URL = "https://cdn.commoninja.com/sdk/latest/commonninja.js";
 const SDK_ID = "commonninja-sdk";
 
+declare global {
+  interface Window {
+    CommonNinja?: { init?: () => void };
+  }
+}
+
 /** Load the Common Ninja SDK once per page load (scripts injected via
- *  dangerouslySetInnerHTML do not execute, so the SDK must be added to <head>). */
+ *  dangerouslySetInnerHTML do not execute, so the SDK must be added to <head>).
+ *  When the SDK is already present (client-side navigation from another page),
+ *  call CommonNinja.init() so it re-scans the DOM for newly mounted components. */
 const ensureSdk = () => {
+  if (window.CommonNinja?.init) {
+    window.CommonNinja.init();
+    return;
+  }
   if (document.getElementById(SDK_ID)) return;
   const script = document.createElement("script");
   script.id = SDK_ID;
   script.src = SDK_URL;
   script.defer = true;
+  script.onload = () => window.CommonNinja?.init?.();
   document.head.appendChild(script);
 };
 
