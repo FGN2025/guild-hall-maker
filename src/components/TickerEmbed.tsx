@@ -41,7 +41,7 @@ const TickerEmbed = () => {
 
   return (
     <div
-      className="ticker-embed"
+      className="ticker-embed w-full rounded-xl border border-white/60 bg-white/90 p-3 shadow-lg backdrop-blur-sm my-4"
       // Setting is admin-write-only; safe to render raw.
       dangerouslySetInnerHTML={{ __html: embedHtml }}
     />
