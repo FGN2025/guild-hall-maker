@@ -28,6 +28,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import usePageTitle from "@/hooks/usePageTitle";
+import Seo from "@/components/Seo";
 
 const sectionData: { id: string; icon: typeof Trophy; title: string; content: string[] }[] = [
   {
