@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import usePageTitle from "@/hooks/usePageTitle";
 import Seo from "@/components/Seo";
+import PoweredByFgn from "@/components/PoweredByFgn";
 import { buildEventJsonLd, eventHeadline, toMetaDescription } from "@/lib/seo/eventJsonLd";
 import { usePublicTenantBySlug, usePublicTenantEvent, usePublicEventAssets } from "@/hooks/usePublicTenantEvents";
 import { useAuth } from "@/contexts/AuthContext";
@@ -195,6 +196,8 @@ const TenantEventDetail = () => {
           </div>
         )}
       </main>
+
+      <PoweredByFgn />
     </div>
   );
 };
