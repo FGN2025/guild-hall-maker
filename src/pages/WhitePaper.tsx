@@ -317,6 +317,12 @@ ${sectionBlocks}
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
+      <Seo
+        title="White Paper — Bring Competitive Gaming to Your Community"
+        description="The FGN white paper: how broadband providers use a turnkey competitive gaming platform to engage subscribers, reduce churn, and build community."
+        path="/white-paper"
+        type="article"
+      />
       {/* Hero */}
       <div className="text-center space-y-3">
         <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-foreground">
