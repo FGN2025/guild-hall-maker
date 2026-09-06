@@ -105,6 +105,8 @@ const WebPageView = () => {
           <div className="py-24 text-center text-muted-foreground">This page has no content yet.</div>
         )}
       </main>
+
+      <PoweredByFgn tenantSlug={tenantSlug} />
     </div>
   );
 };
