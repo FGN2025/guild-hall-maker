@@ -180,7 +180,7 @@ const usePartnerTenants = () =>
   });
 
 const PartnerNetworks = () => {
-  const { data } = usePublicTenantPages();
+  const { data } = usePartnerTenants();
   if (!data || data.length === 0) return null;
 
   return (
