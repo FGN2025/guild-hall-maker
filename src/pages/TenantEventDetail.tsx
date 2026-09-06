@@ -197,7 +197,7 @@ const TenantEventDetail = () => {
         )}
       </main>
 
-      <PoweredByFgn />
+      <PoweredByFgn tenantSlug={tenantSlug} />
     </div>
   );
 };
