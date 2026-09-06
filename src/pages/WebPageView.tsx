@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import SectionPreview from "@/components/webpages/SectionPreview";
+import PoweredByFgn from "@/components/PoweredByFgn";
 import type { WebPage, WebPageSection } from "@/hooks/useWebPages";
 
 const WebPageView = () => {

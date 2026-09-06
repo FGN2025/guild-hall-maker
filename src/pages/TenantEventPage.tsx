@@ -132,7 +132,7 @@ const TenantEventPage = () => {
         )}
       </main>
 
-      <PoweredByFgn />
+      <PoweredByFgn tenantSlug={tenantSlug} />
     </div>
   );
 };
