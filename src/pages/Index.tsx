@@ -2,20 +2,35 @@ import { lazy, Suspense } from "react";
 import HeroSection from "@/components/HeroSection";
 import Navbar from "@/components/Navbar";
 import TickerEmbed from "@/components/TickerEmbed";
+import Seo from "@/components/Seo";
 import usePageTitle from "@/hooks/usePageTitle";
 
 // Below-the-fold sections — lazy load so they don't block FCP/LCP.
 const FeaturedVideo = lazy(() => import("@/components/FeaturedVideo"));
 const FeaturedEvents = lazy(() => import("@/components/FeaturedEvents"));
+const GuestMarketingSections = lazy(() => import("@/components/GuestMarketingSections"));
 
 const Index = () => {
   usePageTitle("Home");
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="FGN Esports — Tournaments, Challenges & Prizes for Fiber Gamers"
+        description="Play tournaments, clear challenges, earn points, and redeem real prizes. The competitive gaming platform built for players on fiber broadband networks."
+        path="/"
+        titleTemplate={false}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "FGN Esports",
+          url: "https://play.fgn.gg",
+        }}
+      />
       <Navbar />
       <HeroSection />
       <TickerEmbed />
       <Suspense fallback={null}>
+        <GuestMarketingSections />
         <FeaturedVideo />
         <FeaturedEvents />
       </Suspense>
