@@ -131,6 +131,8 @@ const TenantEventPage = () => {
           </div>
         )}
       </main>
+
+      <PoweredByFgn />
     </div>
   );
 };
