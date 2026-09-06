@@ -147,45 +147,40 @@ const ProviderCallout = () => (
  * tenants rather than mockups. Anon-safe: only active tenants and published
  * web pages within their schedule window, no tenant internals.
  */
-const usePublicTenantPages = () =>
+const usePartnerTenants = () =>
   useQuery({
-    queryKey: ["public-tenant-pages"],
+    queryKey: ["public-partner-tenants"],
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const [{ data: tenants }, { data: pages }] = await Promise.all([
+      const [{ data: tenants }, { data: pages }, { data: events }] = await Promise.all([
         supabase.from("tenants").select("id, slug, name").eq("status", "active"),
         supabase
           .from("web_pages")
-          .select("id, tenant_id, slug, title, publish_at, unpublish_at")
-          .eq("is_published", true),
+          .select("id, tenant_id, publish_at, unpublish_at")
+          .eq("is_published", true)
+          .eq("is_tenant_banner", false),
+        supabase.from("tenant_events").select("id, tenant_id").eq("is_public", true),
       ]);
-      const tenantById = new Map((tenants ?? []).map((t) => [t.id, t]));
       const now = Date.now();
-      const live = (pages ?? []).filter((p: any) => {
-        if (!p.tenant_id || !tenantById.has(p.tenant_id)) return false;
-        if (p.publish_at && new Date(p.publish_at).getTime() > now) return false;
-        if (p.unpublish_at && new Date(p.unpublish_at).getTime() <= now) return false;
-        return true;
-      });
-      // One card per tenant for a clean grid
-      const seen = new Set<string>();
-      return live
-        .filter((p: any) => {
-          if (seen.has(p.tenant_id)) return false;
-          seen.add(p.tenant_id);
-          return true;
-        })
-        .slice(0, 6)
-        .map((p: any) => ({
-          pageSlug: p.slug,
-          pageTitle: p.title,
-          tenant: tenantById.get(p.tenant_id)!,
-        }));
+      const hasLivePage = new Set(
+        (pages ?? [])
+          .filter((p: any) => {
+            if (p.publish_at && new Date(p.publish_at).getTime() > now) return false;
+            if (p.unpublish_at && new Date(p.unpublish_at).getTime() <= now) return false;
+            return true;
+          })
+          .map((p: any) => p.tenant_id)
+      );
+      const hasPublicEvent = new Set((events ?? []).map((e: any) => e.tenant_id));
+      // Real partner tenants only: at least one live public page or public event
+      return (tenants ?? [])
+        .filter((t) => hasLivePage.has(t.id) || hasPublicEvent.has(t.id))
+        .slice(0, 6);
     },
   });
 
 const PartnerNetworks = () => {
-  const { data } = usePublicTenantPages();
+  const { data } = usePartnerTenants();
   if (!data || data.length === 0) return null;
 
   return (
@@ -201,10 +196,10 @@ const PartnerNetworks = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-          {data.map(({ tenant, pageSlug, pageTitle }) => (
+          {data.map((tenant) => (
             <Link
               key={tenant.slug}
-              to={`/pages/${tenant.slug}/${pageSlug}`}
+              to={`/events/${tenant.slug}`}
               className="group rounded-xl border border-border bg-card/90 backdrop-blur-sm p-5 hover:border-primary/50 transition-colors"
             >
               <div className="flex items-center gap-3 mb-2">
@@ -214,7 +209,7 @@ const PartnerNetworks = () => {
                 <h3 className="font-display font-bold leading-tight">{tenant.name}</h3>
               </div>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                {pageTitle}
+                Visit their gaming community
                 <ArrowRight className="h-3 w-3 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               </p>
             </Link>
