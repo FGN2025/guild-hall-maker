@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import PoweredByFgn from "@/components/PoweredByFgn";
 import usePageTitle from "@/hooks/usePageTitle";
 import Seo, { SITE_URL } from "@/components/Seo";
 import { usePublicTenantBySlug, usePublicTenantEvents } from "@/hooks/usePublicTenantEvents";
@@ -82,10 +83,17 @@ const TenantEventPage = () => {
       {/* Events List */}
       <main className="max-w-5xl mx-auto px-6 py-8">
         {!events || events.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <div className="text-center py-16 text-muted-foreground space-y-3">
+            <Calendar className="h-12 w-12 mx-auto opacity-50" />
             <p className="text-lg">No upcoming events</p>
             <p className="text-sm">Check back soon for new events and tournaments.</p>
+            <p className="text-sm">
+              In the meantime,{" "}
+              <Link to="/tournaments" className="text-primary hover:underline">
+                browse open tournaments on FGN
+              </Link>
+              .
+            </p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
