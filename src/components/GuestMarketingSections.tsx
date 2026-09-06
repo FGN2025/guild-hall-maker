@@ -196,10 +196,10 @@ const PartnerNetworks = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-          {data.map(({ tenant, pageSlug, pageTitle }) => (
+          {data.map((tenant) => (
             <Link
               key={tenant.slug}
-              to={`/pages/${tenant.slug}/${pageSlug}`}
+              to={`/events/${tenant.slug}`}
               className="group rounded-xl border border-border bg-card/90 backdrop-blur-sm p-5 hover:border-primary/50 transition-colors"
             >
               <div className="flex items-center gap-3 mb-2">
@@ -209,7 +209,7 @@ const PartnerNetworks = () => {
                 <h3 className="font-display font-bold leading-tight">{tenant.name}</h3>
               </div>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                {pageTitle}
+                Visit their gaming community
                 <ArrowRight className="h-3 w-3 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               </p>
             </Link>
