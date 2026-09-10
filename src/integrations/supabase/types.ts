@@ -273,6 +273,7 @@ export type Database = {
           prompt_version: number | null
           range_end: string | null
           range_start: string | null
+          runner_generation: string | null
           scope: Json | null
           seed_density: string | null
           started_at: string
@@ -312,6 +313,7 @@ export type Database = {
           prompt_version?: number | null
           range_end?: string | null
           range_start?: string | null
+          runner_generation?: string | null
           scope?: Json | null
           seed_density?: string | null
           started_at?: string
@@ -351,6 +353,7 @@ export type Database = {
           prompt_version?: number | null
           range_end?: string | null
           range_start?: string | null
+          runner_generation?: string | null
           scope?: Json | null
           seed_density?: string | null
           started_at?: string
