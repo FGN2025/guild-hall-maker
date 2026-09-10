@@ -187,6 +187,24 @@ async function collectCreatedRowIds(tenantId: string, userId: string, startedAtI
   };
 }
 
+/** Total committed rows across every agent-writable table for a run. */
+function countCreated(created: Record<string, string[]> | null | undefined): number {
+  if (!created) return 0;
+  return Object.values(created).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
+}
+
+/** Provider-billing failures, detected from the raw provider message. The raw
+ *  text never reaches tenant UI — see BLOCKED_MESSAGE. */
+function isCreditError(msg: string) {
+  return /insufficient[_ ]?(credit|balance|funds)|credit balance|billing|payment required|\b402\b|quota exceeded/i.test(
+    String(msg ?? ""),
+  );
+}
+
+/** The only credit-failure text a tenant admin ever sees. */
+const BLOCKED_MESSAGE =
+  "The marketing agent could not run because the platform AI account is out of credit. No drafts were created. Ask your Fiber Gaming Network platform administrator to top up the AI credit balance, then launch the run again.";
+
 // ---- Anthropic loop -------------------------------------------------------
 
 type AnthropicTool = { name: string; description?: string; input_schema: any };
@@ -392,20 +410,22 @@ async function runAgentLoop(opts: {
   const sliceBudget = opts.sliceBudgetMs ?? SLICE_BUDGET_MS;
   // Never reserve more than the slice itself, or a shrunken test slice would
   // hand off forever without ever taking a turn.
-  const turnReserve = Math.min(TURN_RESERVE_MS, Math.floor(sliceBudget / 2));
+  const turnReserve = Math.min(opts.turnReserveMs ?? TURN_RESERVE_MS, Math.floor(sliceBudget / 2));
   let turnsThisSlice = 0;
+  /* STEP 1 INSTRUMENTATION (2026-09-10): per-turn wall clock, accumulated
+   * across slices so p95 is computed over a whole run, not one invocation. */
+  const turnMetrics: any[] = Array.isArray(opts.turnMetricsSoFar) ? [...opts.turnMetricsSoFar] : [];
 
   while (turns < turnCap) {
     // Hand off BEFORE a turn we cannot certainly finish inside this worker's
-    // wall-clock life. Reserving a full turn is what keeps the platform from
-    // killing us mid-turn (which loses the finalize path entirely).
-    // Guarantee forward progress: always take at least one turn per slice.
+    // wall-clock life. Guarantee forward progress: at least one turn per slice.
     if (turnsThisSlice > 0 && Date.now() - sliceStart + turnReserve > sliceBudget) {
-      return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages };
+      return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages, turnMetrics };
     }
     turnsThisSlice += 1;
 
     turns += 1;
+    const turnStartedAt = Date.now();
     let resp: any;
     try {
       resp = await callAnthropicWithRetry({
@@ -422,7 +442,10 @@ async function runAgentLoop(opts: {
       if (isTransientModelError(msg)) {
         console.warn("[agent-run] model call failed after retry, ending slice for resume:", msg);
         turns -= 1;
-        return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages };
+        return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages, turnMetrics };
+      }
+      if (isCreditError(msg)) {
+        return { status: "blocked" as const, turns, inputTokens, outputTokens, finalText: "", messages, turnMetrics };
       }
       throw e;
     }
@@ -433,6 +456,14 @@ async function runAgentLoop(opts: {
     const content = resp.content ?? [];
     messages.push({ role: "assistant", content });
 
+    const toolUses = content.filter((c: any) => c.type === "tool_use");
+    turnMetrics.push({
+      turn: turns,
+      ms: Date.now() - turnStartedAt,
+      tools: toolUses.length,
+      at: new Date().toISOString(),
+    });
+
     // Persist the transcript every turn: an abrupt worker kill then loses at
     // most the current turn, and the watchdog/resume path has real state.
     await updateRun(runId, {
@@ -440,6 +471,7 @@ async function runAgentLoop(opts: {
       input_tokens: inputTokens,
       output_tokens: outputTokens,
       transcript: messages,
+      turn_metrics: turnMetrics,
       heartbeat_at: new Date().toISOString(),
     });
 
@@ -447,14 +479,14 @@ async function runAgentLoop(opts: {
     // running so the UI can show rows-created instead of a bare spinner.
     if (opts.startedAtIso && turns % 3 === 0) {
       try {
-        await updateRun(runId, { created_row_ids: await collectCreatedRowIds(tenantId, userId, opts.startedAtIso) });
+        const created = await collectCreatedRowIds(tenantId, userId, opts.startedAtIso);
+        await updateRun(runId, { created_row_ids: created, committed_rows: countCreated(created) });
       } catch { /* progress is best-effort, never fail a run over it */ }
     }
 
-    const toolUses = content.filter((c: any) => c.type === "tool_use");
     if (toolUses.length === 0) {
       finalText = content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n\n");
-      return { status: "completed" as const, turns, inputTokens, outputTokens, finalText, messages };
+      return { status: "completed" as const, turns, inputTokens, outputTokens, finalText, messages, turnMetrics };
     }
 
     const toolResults: any[] = [];
