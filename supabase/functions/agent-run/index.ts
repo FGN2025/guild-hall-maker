@@ -394,6 +394,10 @@ async function runAgentLoop(opts: {
   startedAtIso?: string;
   /** Test override: shrink the slice so the continuation path is exercised. */
   sliceBudgetMs?: number;
+  /** Per-turn durations accumulated by earlier slices of this same run. */
+  turnMetricsSoFar?: any[];
+  /** Test override for the handoff reserve. */
+  turnReserveMs?: number;
 }) {
   const { runId, tenantId, userId, systemPrompt, userMessage, turnCap } = opts;
   const runnerToken = await mintRunnerToken(userId, tenantId, runId, 1800);
@@ -443,9 +447,6 @@ async function runAgentLoop(opts: {
         console.warn("[agent-run] model call failed after retry, ending slice for resume:", msg);
         turns -= 1;
         return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages, turnMetrics };
-      }
-      if (isCreditError(msg)) {
-        return { status: "blocked" as const, turns, inputTokens, outputTokens, finalText: "", messages, turnMetrics };
       }
       throw e;
     }
