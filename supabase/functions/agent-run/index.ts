@@ -550,11 +550,27 @@ async function driveRun(params: {
       outputTokensSoFar: run.output_tokens ?? 0,
       startedAtIso: run.started_at,
       sliceBudgetMs: params.sliceBudgetMs,
+      turnMetricsSoFar: Array.isArray(run.turn_metrics) ? run.turn_metrics : [],
     });
 
+    const turnMetrics = (result as any).turnMetrics ?? [];
 
     if (result.status === "continue") {
       const nextCount = (run.continuation_count ?? 0) + 1;
+      const createdNow = await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => null);
+      const committed = countCreated(createdNow);
+      const prevMetrics: any[] = Array.isArray(run.continuation_metrics) ? run.continuation_metrics : [];
+      const prevCommitted = prevMetrics.length ? (prevMetrics[prevMetrics.length - 1].committed ?? 0) : 0;
+      const contMetrics = [
+        ...prevMetrics,
+        {
+          continuation: nextCount,
+          turns_used: result.turns,
+          committed,
+          delta: committed - prevCommitted,
+          at: new Date().toISOString(),
+        },
+      ];
       if (nextCount > MAX_CONTINUATIONS) {
         await updateRun(run.id, {
           status: "failed",
@@ -564,7 +580,10 @@ async function driveRun(params: {
           turns_used: result.turns,
           input_tokens: result.inputTokens,
           output_tokens: result.outputTokens,
-          created_row_ids: await collectCreatedRowIds(tenantId, userId, run.started_at),
+          created_row_ids: createdNow ?? undefined,
+          committed_rows: committed,
+          turn_metrics: turnMetrics,
+          continuation_metrics: contMetrics,
         });
         await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: "continuation_limit_exceeded" });
         return;
@@ -575,7 +594,10 @@ async function driveRun(params: {
         turns_used: result.turns,
         input_tokens: result.inputTokens,
         output_tokens: result.outputTokens,
-        created_row_ids: await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => undefined),
+        created_row_ids: createdNow ?? undefined,
+        committed_rows: committed,
+        turn_metrics: turnMetrics,
+        continuation_metrics: contMetrics,
         heartbeat_at: new Date().toISOString(),
       });
       await handOff(run.id, params.sliceBudgetMs);
@@ -588,6 +610,8 @@ async function driveRun(params: {
       input_tokens: result.inputTokens,
       output_tokens: result.outputTokens,
       created_row_ids: created,
+      committed_rows: countCreated(created),
+      turn_metrics: turnMetrics,
       finished_at: new Date().toISOString(),
       transcript: result.messages,
       heartbeat_at: new Date().toISOString(),
