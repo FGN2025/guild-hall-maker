@@ -111,9 +111,17 @@ Deno.serve(async (req) => {
       const parsed = Number(setting?.value);
       if (Number.isFinite(parsed) && parsed > 0) staleWindowHours = parsed;
     }
+    // Banked pause grace is CAPPED at the stale window itself. Uncapped, a long
+    // pause retroactively un-stales the whole backlog, which inverts the point
+    // of a safety window: the longer publishing was down, the more stale copy
+    // it would fire on resume. A short pause (the legitimate case) is unchanged
+    // because its duration is below the cap.
+    const graceCapSeconds = staleWindowHours * 3600;
+    const effectiveGraceSeconds = Math.min(controls.staleGraceSeconds, graceCapSeconds);
     const staleCutoffIso = new Date(
-      now.getTime() - staleWindowHours * 3600_000 - controls.staleGraceSeconds * 1000,
+      now.getTime() - staleWindowHours * 3600_000 - effectiveGraceSeconds * 1000,
     ).toISOString();
+
 
 
     // 0. Flush marketing draft digests whose window has elapsed.

@@ -124,14 +124,20 @@ export async function loadDispatchControls(supabase: Sb, now: Date): Promise<Dis
       : 0;
     await writeSetting(supabase, KEY_PAUSE_STARTED_AT, null);
     if (pausedSeconds > 0) {
-      await writeSetting(supabase, KEY_GRACE_SECONDS, String(pausedSeconds));
+      // Bank the pause, but never more than MAX_GRACE_SECONDS. An uncapped bank
+      // means a week-long pause moves the stale cutoff a week backwards and the
+      // safety window stops being a safety window. The consumer caps again
+      // against its own configured stale window; this is the outer bound.
+      const banked = Math.min(pausedSeconds, MAX_GRACE_SECONDS);
+      await writeSetting(supabase, KEY_GRACE_SECONDS, String(banked));
       await writeSetting(
         supabase,
         KEY_GRACE_UNTIL,
-        new Date(now.getTime() + pausedSeconds * 1000).toISOString(),
+        new Date(now.getTime() + banked * 1000).toISOString(),
       );
-      staleGraceSeconds = pausedSeconds;
+      staleGraceSeconds = banked;
     }
+
   }
 
   if (!killSwitchOn && staleGraceSeconds === 0 && graceUntil) {
