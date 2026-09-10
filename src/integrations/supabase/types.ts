@@ -250,7 +250,10 @@ export type Database = {
           agent_name: string
           anchor: string | null
           archetype: string | null
+          build_id: string | null
+          committed_rows: number
           continuation_count: number
+          continuation_metrics: Json
           cost_usd: number
           created_at: string
           created_row_ids: Json
@@ -266,6 +269,7 @@ export type Database = {
           mode: string | null
           output_tokens: number
           preflight: Json | null
+          prompt_name: string | null
           prompt_version: number | null
           range_end: string | null
           range_start: string | null
@@ -277,6 +281,7 @@ export type Database = {
           tenant_id: string
           transcript: Json | null
           turn_cap: number
+          turn_metrics: Json
           turns_used: number
           updated_at: string
         }
@@ -284,7 +289,10 @@ export type Database = {
           agent_name?: string
           anchor?: string | null
           archetype?: string | null
+          build_id?: string | null
+          committed_rows?: number
           continuation_count?: number
+          continuation_metrics?: Json
           cost_usd?: number
           created_at?: string
           created_row_ids?: Json
@@ -300,6 +308,7 @@ export type Database = {
           mode?: string | null
           output_tokens?: number
           preflight?: Json | null
+          prompt_name?: string | null
           prompt_version?: number | null
           range_end?: string | null
           range_start?: string | null
@@ -311,6 +320,7 @@ export type Database = {
           tenant_id: string
           transcript?: Json | null
           turn_cap?: number
+          turn_metrics?: Json
           turns_used?: number
           updated_at?: string
         }
@@ -318,7 +328,10 @@ export type Database = {
           agent_name?: string
           anchor?: string | null
           archetype?: string | null
+          build_id?: string | null
+          committed_rows?: number
           continuation_count?: number
+          continuation_metrics?: Json
           cost_usd?: number
           created_at?: string
           created_row_ids?: Json
@@ -334,6 +347,7 @@ export type Database = {
           mode?: string | null
           output_tokens?: number
           preflight?: Json | null
+          prompt_name?: string | null
           prompt_version?: number | null
           range_end?: string | null
           range_start?: string | null
@@ -345,6 +359,7 @@ export type Database = {
           tenant_id?: string
           transcript?: Json | null
           turn_cap?: number
+          turn_metrics?: Json
           turns_used?: number
           updated_at?: string
         }
