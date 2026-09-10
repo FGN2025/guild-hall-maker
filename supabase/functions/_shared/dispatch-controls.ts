@@ -27,6 +27,15 @@ export const KEY_PAUSE_STARTED_AT = "dispatch_pause_started_at";
 export const KEY_GRACE_UNTIL = "dispatch_stale_grace_until";
 export const KEY_GRACE_SECONDS = "dispatch_stale_grace_seconds";
 
+/**
+ * Hard ceiling on banked pause grace: 6 hours, matching the default stale
+ * window. The grace exists so a SHORT pause does not mow down a small backlog
+ * that was legitimately due. It must never grow with the length of the outage,
+ * or a long pause silently re-arms month-old copy on resume.
+ */
+export const MAX_GRACE_SECONDS = 6 * 3600;
+
+
 type Sb = any;
 
 async function readSetting(supabase: Sb, key: string): Promise<string | null> {
