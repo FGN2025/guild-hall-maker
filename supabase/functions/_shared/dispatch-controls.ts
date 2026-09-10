@@ -153,7 +153,10 @@ export async function loadDispatchControls(supabase: Sb, now: Date): Promise<Dis
     const untilMs = Date.parse(graceUntil);
     if (Number.isFinite(untilMs) && untilMs > now.getTime()) {
       const secs = Number(graceSecondsRaw);
-      if (Number.isFinite(secs) && secs > 0) staleGraceSeconds = secs;
+      // Cap again on read: an old oversized value written before the cap
+      // existed, or hand-edited, must not reopen the window.
+      if (Number.isFinite(secs) && secs > 0) staleGraceSeconds = Math.min(secs, MAX_GRACE_SECONDS);
+
     } else {
       // Grace elapsed; clean up so the window returns to its configured value.
       await writeSetting(supabase, KEY_GRACE_UNTIL, null);
