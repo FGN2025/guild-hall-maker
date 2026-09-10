@@ -27,6 +27,15 @@ export const KEY_PAUSE_STARTED_AT = "dispatch_pause_started_at";
 export const KEY_GRACE_UNTIL = "dispatch_stale_grace_until";
 export const KEY_GRACE_SECONDS = "dispatch_stale_grace_seconds";
 
+/**
+ * Hard ceiling on banked pause grace: 6 hours, matching the default stale
+ * window. The grace exists so a SHORT pause does not mow down a small backlog
+ * that was legitimately due. It must never grow with the length of the outage,
+ * or a long pause silently re-arms month-old copy on resume.
+ */
+export const MAX_GRACE_SECONDS = 6 * 3600;
+
+
 type Sb = any;
 
 async function readSetting(supabase: Sb, key: string): Promise<string | null> {
@@ -124,21 +133,30 @@ export async function loadDispatchControls(supabase: Sb, now: Date): Promise<Dis
       : 0;
     await writeSetting(supabase, KEY_PAUSE_STARTED_AT, null);
     if (pausedSeconds > 0) {
-      await writeSetting(supabase, KEY_GRACE_SECONDS, String(pausedSeconds));
+      // Bank the pause, but never more than MAX_GRACE_SECONDS. An uncapped bank
+      // means a week-long pause moves the stale cutoff a week backwards and the
+      // safety window stops being a safety window. The consumer caps again
+      // against its own configured stale window; this is the outer bound.
+      const banked = Math.min(pausedSeconds, MAX_GRACE_SECONDS);
+      await writeSetting(supabase, KEY_GRACE_SECONDS, String(banked));
       await writeSetting(
         supabase,
         KEY_GRACE_UNTIL,
-        new Date(now.getTime() + pausedSeconds * 1000).toISOString(),
+        new Date(now.getTime() + banked * 1000).toISOString(),
       );
-      staleGraceSeconds = pausedSeconds;
+      staleGraceSeconds = banked;
     }
+
   }
 
   if (!killSwitchOn && staleGraceSeconds === 0 && graceUntil) {
     const untilMs = Date.parse(graceUntil);
     if (Number.isFinite(untilMs) && untilMs > now.getTime()) {
       const secs = Number(graceSecondsRaw);
-      if (Number.isFinite(secs) && secs > 0) staleGraceSeconds = secs;
+      // Cap again on read: an old oversized value written before the cap
+      // existed, or hand-edited, must not reopen the window.
+      if (Number.isFinite(secs) && secs > 0) staleGraceSeconds = Math.min(secs, MAX_GRACE_SECONDS);
+
     } else {
       // Grace elapsed; clean up so the window returns to its configured value.
       await writeSetting(supabase, KEY_GRACE_UNTIL, null);

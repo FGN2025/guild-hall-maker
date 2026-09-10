@@ -1944,7 +1944,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-09-01T00:55Z-dispatch-controls";
+var BUILD_ID = "2026-09-10T01:30Z-grace-cap";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
