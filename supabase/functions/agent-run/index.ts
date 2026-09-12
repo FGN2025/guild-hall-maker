@@ -687,24 +687,31 @@ async function driveRun(params: {
       await updateRun(run.id, patch);
       await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
     } else {
+      const raw = (result as any).error ?? "unknown";
+      const kind = classifyFailure(raw);
       patch.status = "failed";
-      patch.error_message = (result as any).error ?? "unknown";
-      patch.failure_kind = classifyFailure(patch.error_message);
+      // Tenant-facing text is ours; the provider's body stays in error_detail.
+      patch.error_message = FAILURE_MESSAGE[kind] ?? tenantSafeFailure(kind);
+      patch.error_detail = String(raw);
+      patch.failure_kind = kind;
       await updateRun(run.id, patch);
       await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
     }
   } catch (e) {
     const msg = (e as Error).message ?? "unknown error";
     console.error("[agent-run] loop crashed", msg);
+    const kind = classifyFailure(msg);
     const created = await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => ({}));
+    const safe = FAILURE_MESSAGE[kind] ?? tenantSafeFailure(kind);
     await updateRun(run.id, {
       status: "failed",
-      error_message: msg,
-      failure_kind: classifyFailure(msg),
+      error_message: safe,
+      error_detail: msg,
+      failure_kind: kind,
       finished_at: new Date().toISOString(),
       created_row_ids: created,
     });
-    await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: msg });
+    await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: safe });
   }
 }
 
