@@ -426,14 +426,20 @@ async function fetchPlayerGameplay(
     sections.push(`**Quests completed:** ${qs.length}. Recent: ${names}`);
   }
 
-  const s = ((season?.data ?? []) as any[])[0];
+  // Season standings are only cited when the season belongs to the game being discussed.
+  // A platform-wide or other-game season row is misleading in a game-specific assessment.
+  const seasonRows = (season?.data ?? []) as any[];
+  const s = gameId
+    ? seasonRows.find((r) => r.seasons?.game_id === gameId)
+    : null;
   if (s) {
     sections.push(
-      `**Current season:** ${s.points ?? 0} pts, ${s.wins ?? 0}W-${s.losses ?? 0}L across ${
-        s.tournaments_played ?? 0
-      } tournaments`
+      `**${s.seasons?.name ?? "Current season"} (${game?.name ?? "this game"}):** ${
+        s.points ?? 0
+      } pts, ${s.wins ?? 0}W-${s.losses ?? 0}L across ${s.tournaments_played ?? 0} tournaments`
     );
   }
+
 
   if (sections.length === 0) {
     return "\n\n## This Player's Record:\nNo recorded gameplay for this player yet (no Steam link, matches, challenges or quests). Say so plainly if they ask for an assessment of their own play, and offer to guide them through linking Steam or entering a challenge.";
