@@ -313,11 +313,13 @@ async function fetchPlayerGameplay(
       : Promise.resolve({ data: [] } as any),
     supabase
       .from("match_results")
-      .select("player1_id, player2_id, player1_score, player2_score, winner_id, completed_at, status")
+      .select(
+        "player1_id, player2_id, player1_score, player2_score, winner_id, completed_at, status, tournaments(name, game)"
+      )
       .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
       .eq("status", "completed")
       .order("completed_at", { ascending: false })
-      .limit(10),
+      .limit(50),
     supabase
       .from("challenge_completions")
       .select("awarded_points, completed_at, challenges(name, game_id, difficulty, skill_tags)")
@@ -332,10 +334,11 @@ async function fetchPlayerGameplay(
       .limit(25),
     supabase
       .from("season_scores")
-      .select("points, wins, losses, tournaments_played, updated_at")
+      .select("points, wins, losses, tournaments_played, updated_at, seasons(name, game_id, status)")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false })
-      .limit(1),
+      .limit(10),
+
   ]);
 
   if (playtime?.data?.minutes_played != null) {
@@ -370,7 +373,14 @@ async function fetchPlayerGameplay(
     }
   }
 
-  const m = (matches?.data ?? []) as any[];
+  const gameName = typeof game?.name === "string" ? game.name.trim().toLowerCase() : null;
+  const allMatches = (matches?.data ?? []) as any[];
+  const gameMatches = gameName
+    ? allMatches.filter(
+        (r) => String(r.tournaments?.game ?? "").trim().toLowerCase() === gameName
+      )
+    : allMatches;
+  const m = gameMatches.slice(0, 10);
   if (m.length > 0) {
     const wins = m.filter((r) => r.winner_id === userId).length;
     const recent = m
@@ -384,9 +394,16 @@ async function fetchPlayerGameplay(
       })
       .join(", ");
     sections.push(
-      `**Recent matches:** ${wins}W-${m.length - wins}L over last ${m.length} completed (most recent first: ${recent})`
+      `**Recent matches${gameName ? ` (${game.name})` : ""}:** ${wins}W-${
+        m.length - wins
+      }L over last ${m.length} completed (most recent first: ${recent})`
+    );
+  } else if (gameName) {
+    sections.push(
+      `**Recent matches (${game.name}):** none recorded — this player has no completed matches in this game.`
     );
   }
+
 
   const chall = ((challengeRows?.data ?? []) as any[]).filter(
     (c) => !gameId || c.challenges?.game_id === gameId
@@ -409,14 +426,20 @@ async function fetchPlayerGameplay(
     sections.push(`**Quests completed:** ${qs.length}. Recent: ${names}`);
   }
 
-  const s = ((season?.data ?? []) as any[])[0];
+  // Season standings are only cited when the season belongs to the game being discussed.
+  // A platform-wide or other-game season row is misleading in a game-specific assessment.
+  const seasonRows = (season?.data ?? []) as any[];
+  const s = gameId
+    ? seasonRows.find((r) => r.seasons?.game_id === gameId)
+    : null;
   if (s) {
     sections.push(
-      `**Current season:** ${s.points ?? 0} pts, ${s.wins ?? 0}W-${s.losses ?? 0}L across ${
-        s.tournaments_played ?? 0
-      } tournaments`
+      `**${s.seasons?.name ?? "Current season"} (${game?.name ?? "this game"}):** ${
+        s.points ?? 0
+      } pts, ${s.wins ?? 0}W-${s.losses ?? 0}L across ${s.tournaments_played ?? 0} tournaments`
     );
   }
+
 
   if (sections.length === 0) {
     return "\n\n## This Player's Record:\nNo recorded gameplay for this player yet (no Steam link, matches, challenges or quests). Say so plainly if they ask for an assessment of their own play, and offer to guide them through linking Steam or entering a challenge.";
@@ -598,6 +621,7 @@ ${activeGame ? `\nYou are currently coaching the user specifically on **${active
 When answering questions:
 - Ground every assessment of the player in the "This Player's Record" numbers below — hours played, achievement completion, match record, challenges and quests. Cite the specific figures you are reasoning from.
 - If that section says there is no recorded gameplay, say so plainly instead of inventing an assessment, and suggest linking Steam or entering a challenge.
+- Never attribute a record, win/loss total or season standing to a game unless the record explicitly names that game. If no game-specific record is shown, say the player has no recorded results in that game yet.
 - Use the "Live Game Data" section as the current truth about the game (genres, achievements, recent updates); prefer it over your own recollection where they conflict.
 - Turn missing achievements into concrete next goals when the player asks how to improve or what to do next.
 - Be specific and actionable — include drills, practice routines, and measurable goals when appropriate
