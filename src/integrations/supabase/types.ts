@@ -3611,6 +3611,11 @@ export type Database = {
           image_path: string | null
           image_url: string
           is_dispatch_approved: boolean | null
+          lapsed: boolean
+          lapsed_at: string | null
+          notified_t24_at: string | null
+          notified_t4_at: string | null
+          notified_t72_at: string | null
           overdue_notified_at: string | null
           platform: string
           post_url: string | null
@@ -3644,6 +3649,11 @@ export type Database = {
           image_path?: string | null
           image_url: string
           is_dispatch_approved?: boolean | null
+          lapsed?: boolean
+          lapsed_at?: string | null
+          notified_t24_at?: string | null
+          notified_t4_at?: string | null
+          notified_t72_at?: string | null
           overdue_notified_at?: string | null
           platform: string
           post_url?: string | null
@@ -3677,6 +3687,11 @@ export type Database = {
           image_path?: string | null
           image_url?: string
           is_dispatch_approved?: boolean | null
+          lapsed?: boolean
+          lapsed_at?: string | null
+          notified_t24_at?: string | null
+          notified_t4_at?: string | null
+          notified_t72_at?: string | null
           overdue_notified_at?: string | null
           platform?: string
           post_url?: string | null
@@ -5181,6 +5196,7 @@ export type Database = {
           plan_tier: string | null
           primary_color: string | null
           require_subscriber_validation: boolean
+          review_alert_hours: number[]
           slug: string
           status: string
           timezone: string
@@ -5199,6 +5215,7 @@ export type Database = {
           plan_tier?: string | null
           primary_color?: string | null
           require_subscriber_validation?: boolean
+          review_alert_hours?: number[]
           slug: string
           status?: string
           timezone?: string
@@ -5217,6 +5234,7 @@ export type Database = {
           plan_tier?: string | null
           primary_color?: string | null
           require_subscriber_validation?: boolean
+          review_alert_hours?: number[]
           slug?: string
           status?: string
           timezone?: string
