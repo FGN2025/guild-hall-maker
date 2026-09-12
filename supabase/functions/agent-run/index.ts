@@ -750,8 +750,8 @@ async function driveRun(params: {
       patch.is_complete = ratio === null ? true : ratio >= 1 - COMPLETENESS_TOLERANCE;
       patch.status = "completed";
       patch.failure_kind = null;
-      await updateRun(run.id, patch);
-      await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
+      const owned = await updateRunIfRunning(run.id, patch);
+      if (owned) await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
     } else {
       const raw = (result as any).error ?? "unknown";
       const kind = classifyFailure(raw);
@@ -760,8 +760,8 @@ async function driveRun(params: {
       patch.error_message = FAILURE_MESSAGE[kind] ?? tenantSafeFailure(kind);
       patch.error_detail = String(raw);
       patch.failure_kind = kind;
-      await updateRun(run.id, patch);
-      await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
+      const owned = await updateRunIfRunning(run.id, patch);
+      if (owned) await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
     }
   } catch (e) {
     const msg = (e as Error).message ?? "unknown error";
@@ -769,7 +769,7 @@ async function driveRun(params: {
     const kind = classifyFailure(msg);
     const created = await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => ({}));
     const safe = FAILURE_MESSAGE[kind] ?? tenantSafeFailure(kind);
-    await updateRun(run.id, {
+    const owned = await updateRunIfRunning(run.id, {
       status: "failed",
       error_message: safe,
       error_detail: msg,
@@ -777,7 +777,7 @@ async function driveRun(params: {
       finished_at: new Date().toISOString(),
       created_row_ids: created,
     });
-    await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: safe });
+    if (owned) await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: safe });
   }
 }
 
