@@ -253,9 +253,17 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                     <ExternalLink className="h-3.5 w-3.5" /> View Post
                   </a>
                 )}
+                {detailPost.status === "pending_review" && (
+                  <ReviewDeadlineClock scheduledAt={detailPost.scheduled_at} />
+                )}
+                {detailPost.lapsed && (
+                  <div className="rounded border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-600 dark:text-amber-300">
+                    <span className="font-semibold">Lapsed:</span> this post missed its review deadline and was auto-rejected. Revise and reschedule it to publish.
+                  </div>
+                )}
                 {detailIsDecidable && !canDecide && (
                   <p className="text-xs text-muted-foreground italic">
-                    Read-only: only tenant admins and managers can approve or reject drafts.
+                    Read-only: only tenant admins, managers, and marketing staff can approve or reject drafts.
                   </p>
                 )}
               </div>
