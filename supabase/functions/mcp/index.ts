@@ -1964,7 +1964,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-09-10T03:05Z-run-instrumentation";
+var BUILD_ID = "2026-09-12T00:00Z-work-derived-budget";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
