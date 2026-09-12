@@ -27,6 +27,10 @@ export type ScheduledPost = {
   /** Set when the lapse guard auto-rejected the row after its deadline passed unreviewed. */
   lapsed?: boolean;
   lapsed_at?: string | null;
+  /** Transient-failure retry bookkeeping: the post stays approved between attempts. */
+  retry_count?: number | null;
+  next_retry_at?: string | null;
+  last_retry_error?: string | null;
   created_at: string;
 };
 

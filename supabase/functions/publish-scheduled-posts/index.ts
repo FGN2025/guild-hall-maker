@@ -429,17 +429,20 @@ Deno.serve(async (req) => {
     let staleSkipped = 0;
     const { data: stalePosts } = await supabase
       .from("scheduled_posts")
-      .select("id, tenant_id, platform, scheduled_at, agent_source")
+      .select("id, tenant_id, platform, scheduled_at, agent_source, next_retry_at")
       .eq("is_dispatch_approved", true)
       .lt("scheduled_at", staleCutoffIso)
       .limit(100);
 
     for (const p of stalePosts ?? []) {
+      // A row waiting on a transient-failure backoff is mid-flight, not stale.
+      if (p.next_retry_at && new Date(p.next_retry_at).getTime() > now.getTime()) continue;
       const q = await quotaState(p.tenant_id);
       if (q.exhausted) {
         await noteQuotaDeferral(p, q.reason);
         continue;
       }
+
 
       await supabase
         .from("scheduled_posts")
@@ -481,6 +484,8 @@ Deno.serve(async (req) => {
       .eq("is_dispatch_approved", true)
       .lte("scheduled_at", nowIso)
       .gte("scheduled_at", staleCutoffIso)
+      // Rows in transient-failure backoff wait for their next attempt window.
+      .or(`next_retry_at.is.null,next_retry_at.lte.${nowIso}`)
       .limit(50);
 
     if (error) throw error;
@@ -493,7 +498,6 @@ Deno.serve(async (req) => {
           lapsed: lapsedCount,
           tokens_checked: tokensChecked,
           tokens_failed: tokensFailed,
-          lapsed: lapsedCount,
           stale_skipped: staleSkipped,
           stale_window_hours: staleWindowHours,
           stale_grace_seconds: controls.staleGraceSeconds,
@@ -509,6 +513,51 @@ Deno.serve(async (req) => {
     let processed = 0;
     let failed = 0;
     let undeliverable = 0;
+    let retried = 0;
+
+    // --- Transient-failure retry -------------------------------------------
+    // A platform outage, rate limit or network blip is not a reason to burn a
+    // post permanently. Such failures keep the row APPROVED and schedule the
+    // next attempt with exponential backoff; only after MAX_RETRIES (or on a
+    // permanent error like a bad token or missing graphic) does it fail.
+    const MAX_RETRIES = 5;
+    const BACKOFF_MINUTES = [2, 5, 15, 45, 90]; // ~2.6h total, inside the stale window
+
+    /** Transient = worth trying again unchanged. Rate limits, 5xx, timeouts,
+     *  network errors, and the Graph API's own "try again" codes. */
+    function isTransient(status: number | null, errText: string): boolean {
+      if (status === 429 || (status !== null && status >= 500)) return true;
+      try {
+        const g = JSON.parse(errText)?.error ?? JSON.parse(errText)?.graph_error;
+        if (g && typeof g === "object" && [1, 2, 4, 17, 32, 341, 613].includes(g.code)) return true;
+      } catch (_) { /* not JSON */ }
+      return /rate limit|please try again|temporarily unavailable|timeout|timed out|network|ECONNRESET|fetch failed/i
+        .test(errText);
+    }
+
+    /** Keeps the post approved and books the next attempt. Returns false when
+     *  the retry budget is spent, so the caller fails the row permanently. */
+    async function scheduleRetry(post: any, message: string): Promise<boolean> {
+      const attempt = (post.retry_count ?? 0) + 1;
+      if (attempt > MAX_RETRIES) return false;
+      const waitMin = BACKOFF_MINUTES[Math.min(attempt - 1, BACKOFF_MINUTES.length - 1)];
+      const nextAt = new Date(now.getTime() + waitMin * 60_000).toISOString();
+      await supabase
+        .from("scheduled_posts")
+        .update({
+          retry_count: attempt,
+          next_retry_at: nextAt,
+          last_retry_error: message.slice(0, 500),
+        })
+        .eq("id", post.id)
+        .eq("status", "approved");
+      retried++;
+      console.warn(
+        `[retry] ${post.id} attempt ${attempt}/${MAX_RETRIES}, next at ${nextAt}: ${message.slice(0, 200)}`,
+      );
+      return true;
+    }
+
 
     /** Durable image resolution.
      *  A signed URL is a cache, never the source of truth. We mint a fresh one
@@ -690,6 +739,13 @@ Deno.serve(async (req) => {
               .update({ status: "published", published_at: new Date().toISOString() })
               .eq("id", post.id);
           }
+          // A successful attempt clears any pending backoff bookkeeping.
+          if (post.retry_count) {
+            await supabase
+              .from("scheduled_posts")
+              .update({ next_retry_at: null, last_retry_error: null })
+              .eq("id", post.id);
+          }
           processed++;
           const used = quotaCache.get(post.tenant_id);
           if (used) { used.daily++; used.monthly++; }
@@ -739,17 +795,34 @@ Deno.serve(async (req) => {
               _agent_source: post.agent_source,
               _payload: { id: post.id, platform: post.platform, reason: "token_expired" },
             });
+            failed++;
+          } else if (
+            isTransient(publishRes.status, errText) &&
+            (await scheduleRetry(post, errMessage))
+          ) {
+            // Stays approved; the next tick after the backoff tries again.
+            continue;
           } else {
             await supabase
               .from("scheduled_posts")
-              .update({ status: "failed", error_message: errMessage })
+              .update({
+                status: "failed",
+                error_message:
+                  (post.retry_count ?? 0) > 0
+                    ? `${errMessage} (after ${post.retry_count} retries)`
+                    : errMessage,
+              })
               .eq("id", post.id);
+            failed++;
           }
-          failed++;
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         const isImage = msg.startsWith("image_unresolvable");
+        // A network-level throw against the platform is transient too.
+        if (!isImage && isTransient(null, msg) && (await scheduleRetry(post, msg))) {
+          continue;
+        }
         await supabase
           .from("scheduled_posts")
           .update({
@@ -779,6 +852,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         processed,
         failed,
+        retried,
         undeliverable,
         overdue_notified: overduePending?.length ?? 0,
         review_alerts_sent: alertsSent,

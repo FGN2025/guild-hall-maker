@@ -3613,6 +3613,8 @@ export type Database = {
           is_dispatch_approved: boolean | null
           lapsed: boolean
           lapsed_at: string | null
+          last_retry_error: string | null
+          next_retry_at: string | null
           notified_t24_at: string | null
           notified_t4_at: string | null
           notified_t72_at: string | null
@@ -3621,6 +3623,7 @@ export type Database = {
           post_url: string | null
           proposed_by: string | null
           published_at: string | null
+          retry_count: number
           scheduled_at: string
           status: string
           tenant_id: string | null
@@ -3651,6 +3654,8 @@ export type Database = {
           is_dispatch_approved?: boolean | null
           lapsed?: boolean
           lapsed_at?: string | null
+          last_retry_error?: string | null
+          next_retry_at?: string | null
           notified_t24_at?: string | null
           notified_t4_at?: string | null
           notified_t72_at?: string | null
@@ -3659,6 +3664,7 @@ export type Database = {
           post_url?: string | null
           proposed_by?: string | null
           published_at?: string | null
+          retry_count?: number
           scheduled_at: string
           status?: string
           tenant_id?: string | null
@@ -3689,6 +3695,8 @@ export type Database = {
           is_dispatch_approved?: boolean | null
           lapsed?: boolean
           lapsed_at?: string | null
+          last_retry_error?: string | null
+          next_retry_at?: string | null
           notified_t24_at?: string | null
           notified_t4_at?: string | null
           notified_t72_at?: string | null
@@ -3697,6 +3705,7 @@ export type Database = {
           post_url?: string | null
           proposed_by?: string | null
           published_at?: string | null
+          retry_count?: number
           scheduled_at?: string
           status?: string
           tenant_id?: string | null
