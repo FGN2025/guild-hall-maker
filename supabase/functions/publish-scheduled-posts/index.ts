@@ -795,17 +795,33 @@ Deno.serve(async (req) => {
               _agent_source: post.agent_source,
               _payload: { id: post.id, platform: post.platform, reason: "token_expired" },
             });
+          } else if (
+            isTransient(publishRes.status, errText) &&
+            (await scheduleRetry(post, errMessage))
+          ) {
+            // Stays approved; the next tick after the backoff tries again.
+            continue;
           } else {
             await supabase
               .from("scheduled_posts")
-              .update({ status: "failed", error_message: errMessage })
+              .update({
+                status: "failed",
+                error_message:
+                  (post.retry_count ?? 0) > 0
+                    ? `${errMessage} (after ${post.retry_count} retries)`
+                    : errMessage,
+              })
               .eq("id", post.id);
+            failed++;
           }
-          failed++;
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         const isImage = msg.startsWith("image_unresolvable");
+        // A network-level throw against the platform is transient too.
+        if (!isImage && isTransient(null, msg) && (await scheduleRetry(post, msg))) {
+          continue;
+        }
         await supabase
           .from("scheduled_posts")
           .update({
