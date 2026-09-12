@@ -216,6 +216,14 @@ export default function AgentLaunchCard({ tenantId, role }: Props) {
       const body = await res.json();
       if (!res.ok) {
         toast({ title: "Launch failed", description: body.error ?? `HTTP ${res.status}`, variant: "destructive" });
+      } else if (body.status === "blocked") {
+        toast({
+          title: "Run blocked",
+          description: body.message ?? "This run could not start. Please try again later.",
+          variant: "destructive",
+        });
+      } else if (!body.run_id) {
+        toast({ title: "Launch failed", description: "The runner did not return a run.", variant: "destructive" });
       } else {
         toast({ title: "Agent run launched", description: `Run ${body.run_id.slice(0, 8)}…` });
         setActiveRunId(body.run_id);
