@@ -1749,7 +1749,10 @@ var compose_event_promo_default = defineTool21({
       "The beat this render is for: 'Announce', 'Countdown', 'Day-Of', or 'Recap'. Baked into the image, so compose separately for every beat you schedule."
     ),
     campaign_id: z19.string().uuid().optional(),
-    file_name: z19.string().optional()
+    file_name: z19.string().optional(),
+    idempotency_key: z19.string().min(1).describe(
+      "REQUIRED. Stable key identifying this composed beat within the tenant, e.g. 'seed:2026-10:<event_id>:announce:art'. Re-sending the same key returns the existing asset instead of rendering and uploading a second copy."
+    )
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1761,6 +1764,10 @@ var compose_event_promo_default = defineTool21({
       }
       const userSupabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
+      {
+        const { data: existing } = await userSupabase.from("tenant_marketing_assets").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
+        if (existing) return okJson({ ...existing, _idempotent: true }, "asset");
+      }
       let evt;
       if (input.tournament_id) {
         const { data, error } = await userSupabase.from("tournaments").select("id, name, game, start_date, prize_pool, prize_type, image_url").eq("id", input.tournament_id).maybeSingle();
@@ -1869,6 +1876,7 @@ var compose_event_promo_default = defineTool21({
         label,
         campaign_id: input.campaign_id ?? null,
         is_published: false,
+        idempotency_key: input.idempotency_key,
         agent_source: "claude-mcp",
         proposed_by: uid,
         created_by: uid,
