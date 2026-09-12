@@ -795,6 +795,7 @@ Deno.serve(async (req) => {
               _agent_source: post.agent_source,
               _payload: { id: post.id, platform: post.platform, reason: "token_expired" },
             });
+            failed++;
           } else if (
             isTransient(publishRes.status, errText) &&
             (await scheduleRetry(post, errMessage))
