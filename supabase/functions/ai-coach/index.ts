@@ -146,6 +146,287 @@ async function fetchPlayerProfile(userId: string): Promise<string> {
   return "\n\n## Player Profile (self-reported by the player — reference naturally, don't repeat verbatim):\n" + sections.join("\n\n");
 }
 
+// ---------------------------------------------------------------------------
+// Live game research (Steam) — replaces Open Notebook as the primary source of
+// game knowledge. Every call is time-boxed and degrades silently.
+// ---------------------------------------------------------------------------
+
+type ResearchCacheEntry = { text: string; expires: number };
+const researchCache = new Map<string, ResearchCacheEntry>();
+const RESEARCH_TTL_MS = 30 * 60 * 1000;
+
+async function fetchJson(url: string, timeoutMs = 6000): Promise<any | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function stripHtml(s: string): string {
+  return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+interface SteamResearch {
+  text: string;
+  achievements: { api_name: string; display_name: string; description: string | null }[];
+  globalPct: Record<string, number>;
+}
+
+async function fetchGameResearch(game: any): Promise<SteamResearch> {
+  const empty: SteamResearch = { text: "", achievements: [], globalPct: {} };
+  const appId = game?.steam_app_id ? String(game.steam_app_id).trim() : "";
+  if (!appId) return empty;
+
+  const cacheKey = `research:${appId}`;
+  const cached = researchCache.get(cacheKey);
+
+  const key = Deno.env.get("STEAM_API_KEY");
+  const [details, schema, globals, news] = await Promise.all([
+    fetchJson(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=en`),
+    key
+      ? fetchJson(
+          `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${key}&appid=${appId}`
+        )
+      : Promise.resolve(null),
+    fetchJson(
+      `https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid=${appId}&format=json`
+    ),
+    fetchJson(
+      `https://api.steampowered.com/ISteamNews/GetNewsForApp/v0002/?appid=${appId}&count=3&maxlength=400&format=json`
+    ),
+  ]);
+
+  const achievements = ((schema?.game?.availableGameStats?.achievements ?? []) as any[]).map(
+    (a: any) => ({
+      api_name: a.name as string,
+      display_name: (a.displayName as string) || (a.name as string),
+      description: (a.description as string) || null,
+    })
+  );
+
+  const globalPct: Record<string, number> = {};
+  for (const g of globals?.achievementpercentages?.achievements ?? []) {
+    if (g?.name) globalPct[g.name] = Number(g.percent) || 0;
+  }
+
+  const parts: string[] = [];
+  const d = details?.[appId]?.success ? details[appId].data : null;
+  if (d) {
+    const genres = (d.genres ?? []).map((g: any) => g.description).join(", ");
+    const cats = (d.categories ?? []).map((c: any) => c.description).slice(0, 8).join(", ");
+    parts.push(
+      `**${d.name}** (Steam app ${appId})` +
+        (genres ? `\nGenres: ${genres}` : "") +
+        (cats ? `\nModes/Features: ${cats}` : "") +
+        (d.short_description ? `\nAbout: ${stripHtml(d.short_description)}` : "") +
+        (d.release_date?.date ? `\nReleased: ${d.release_date.date}` : "")
+    );
+  }
+
+  if (achievements.length > 0) {
+    const ranked = achievements
+      .map((a) => ({ ...a, pct: globalPct[a.api_name] ?? null }))
+      .sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101));
+    const rarest = ranked
+      .slice(0, 10)
+      .map(
+        (a) =>
+          `- ${a.display_name}${a.pct !== null ? ` (${a.pct.toFixed(1)}% of players)` : ""}${
+            a.description ? ` — ${a.description}` : ""
+          }`
+      )
+      .join("\n");
+    parts.push(
+      `Achievements in this game: ${achievements.length} total. Rarest / hardest:\n${rarest}`
+    );
+  }
+
+  const items = ((news?.appnews?.newsitems ?? []) as any[]).slice(0, 3);
+  if (items.length > 0) {
+    parts.push(
+      "Recent official updates/news:\n" +
+        items
+          .map(
+            (n: any) =>
+              `- ${n.title} (${new Date((n.date ?? 0) * 1000).toISOString().slice(0, 10)}): ${stripHtml(
+                String(n.contents ?? "")
+              ).slice(0, 240)}`
+          )
+          .join("\n")
+    );
+  }
+
+  if (parts.length === 0) {
+    if (cached && cached.expires > Date.now()) {
+      return { text: cached.text, achievements, globalPct };
+    }
+    return { ...empty, achievements, globalPct };
+  }
+
+  const text = "\n\n## Live Game Data (from Steam, current):\n" + parts.join("\n\n");
+  researchCache.set(cacheKey, { text, expires: Date.now() + RESEARCH_TTL_MS });
+  return { text, achievements, globalPct };
+}
+
+// ---------------------------------------------------------------------------
+// This player's actual record on the platform (read-only)
+// ---------------------------------------------------------------------------
+
+async function fetchPlayerGameplay(
+  userId: string,
+  game: any,
+  research: SteamResearch
+): Promise<string> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  const appId = game?.steam_app_id ? String(game.steam_app_id).trim() : null;
+  const gameId = game?.id ?? null;
+  const sections: string[] = [];
+
+  const [playtime, steamAch, matches, challengeRows, questRows, season] = await Promise.all([
+    appId
+      ? supabase
+          .from("steam_player_playtime")
+          .select("minutes_played, synced_at")
+          .eq("user_id", userId)
+          .eq("steam_app_id", appId)
+          .maybeSingle()
+      : Promise.resolve({ data: null } as any),
+    appId
+      ? supabase
+          .from("steam_player_achievements")
+          .select("achievement_api_name, achieved, unlock_time")
+          .eq("user_id", userId)
+          .eq("steam_app_id", appId)
+      : Promise.resolve({ data: [] } as any),
+    supabase
+      .from("match_results")
+      .select("player1_id, player2_id, player1_score, player2_score, winner_id, completed_at, status")
+      .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("challenge_completions")
+      .select("awarded_points, completed_at, challenges(name, game_id, difficulty, skill_tags)")
+      .eq("user_id", userId)
+      .order("completed_at", { ascending: false })
+      .limit(25),
+    supabase
+      .from("quest_completions")
+      .select("awarded_points, completed_at, quests(name, game_id, difficulty)")
+      .eq("user_id", userId)
+      .order("completed_at", { ascending: false })
+      .limit(25),
+    supabase
+      .from("season_scores")
+      .select("points, wins, losses, tournaments_played, updated_at")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .limit(1),
+  ]);
+
+  if (playtime?.data?.minutes_played != null) {
+    const hrs = Math.round((playtime.data.minutes_played / 60) * 10) / 10;
+    sections.push(`**Hours played (${game?.name ?? "this game"}):** ${hrs}h on Steam`);
+  }
+
+  const owned = (steamAch?.data ?? []) as { achievement_api_name: string; achieved: boolean }[];
+  if (owned.length > 0) {
+    const earned = new Set(owned.filter((a) => a.achieved).map((a) => a.achievement_api_name));
+    const total = research.achievements.length || owned.length;
+    const pct = total > 0 ? Math.round((earned.size / total) * 100) : 0;
+    sections.push(`**Achievements:** ${earned.size} of ${total} unlocked (${pct}%)`);
+
+    const missing = research.achievements
+      .filter((a) => !earned.has(a.api_name))
+      .map((a) => ({ ...a, pct: research.globalPct[a.api_name] ?? null }))
+      .sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1))
+      .slice(0, 8);
+    if (missing.length > 0) {
+      sections.push(
+        "**Closest achievements still missing (most players already have these):**\n" +
+          missing
+            .map(
+              (a) =>
+                `- ${a.display_name}${a.pct !== null ? ` (${a.pct.toFixed(1)}% of players)` : ""}${
+                  a.description ? ` — ${a.description}` : ""
+                }`
+            )
+            .join("\n")
+      );
+    }
+  }
+
+  const m = (matches?.data ?? []) as any[];
+  if (m.length > 0) {
+    const wins = m.filter((r) => r.winner_id === userId).length;
+    const recent = m
+      .slice(0, 5)
+      .map((r) => {
+        const isP1 = r.player1_id === userId;
+        const mine = isP1 ? r.player1_score : r.player2_score;
+        const theirs = isP1 ? r.player2_score : r.player1_score;
+        const res = r.winner_id === userId ? "W" : r.winner_id ? "L" : "-";
+        return `${res} ${mine ?? "?"}-${theirs ?? "?"}`;
+      })
+      .join(", ");
+    sections.push(
+      `**Recent matches:** ${wins}W-${m.length - wins}L over last ${m.length} completed (most recent first: ${recent})`
+    );
+  }
+
+  const chall = ((challengeRows?.data ?? []) as any[]).filter(
+    (c) => !gameId || c.challenges?.game_id === gameId
+  );
+  if (chall.length > 0) {
+    const names = chall.slice(0, 6).map((c) => c.challenges?.name).filter(Boolean).join("; ");
+    const pts = chall.reduce((s, c) => s + (c.awarded_points ?? 0), 0);
+    sections.push(`**Challenges completed:** ${chall.length} (${pts} pts). Recent: ${names}`);
+    const tags = [
+      ...new Set(chall.flatMap((c) => (c.challenges?.skill_tags ?? []) as string[])),
+    ].slice(0, 10);
+    if (tags.length > 0) sections.push(`**Demonstrated skills:** ${tags.join(", ")}`);
+  }
+
+  const qs = ((questRows?.data ?? []) as any[]).filter(
+    (q) => !gameId || q.quests?.game_id === gameId
+  );
+  if (qs.length > 0) {
+    const names = qs.slice(0, 6).map((q) => q.quests?.name).filter(Boolean).join("; ");
+    sections.push(`**Quests completed:** ${qs.length}. Recent: ${names}`);
+  }
+
+  const s = ((season?.data ?? []) as any[])[0];
+  if (s) {
+    sections.push(
+      `**Current season:** ${s.points ?? 0} pts, ${s.wins ?? 0}W-${s.losses ?? 0}L across ${
+        s.tournaments_played ?? 0
+      } tournaments`
+    );
+  }
+
+  if (sections.length === 0) {
+    return "\n\n## This Player's Record:\nNo recorded gameplay for this player yet (no Steam link, matches, challenges or quests). Say so plainly if they ask for an assessment of their own play, and offer to guide them through linking Steam or entering a challenge.";
+  }
+
+  return (
+    "\n\n## This Player's Record (actual platform + Steam data — ground any assessment in these numbers):\n" +
+    sections.join("\n\n")
+  );
+}
+
 // Category-specific coaching frameworks
 const categoryCoaching: Record<string, string> = {
   "Shooter": `### Shooter Coaching Framework
