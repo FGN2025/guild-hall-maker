@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSignedEvidenceUrls } from "@/hooks/useSignedEvidenceUrls";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -107,6 +108,10 @@ export default function EvidenceReviewInbox({ mode }: Props) {
     );
   }, [enrollments, search]);
 
+  const evidenceUrl = useSignedEvidenceUrls(
+    enrollments.flatMap((en: any) => en.challenge_evidence ?? [])
+  );
+
   const updateEvidenceStatusMutation = useMutation({
     mutationFn: async ({ evidenceId, status, reviewer_notes }: { evidenceId: string; status: "approved" | "rejected"; reviewer_notes?: string }) => {
       const { error } = await supabase
@@ -177,11 +182,11 @@ export default function EvidenceReviewInbox({ mode }: Props) {
         </div>
         <div className="rounded border border-border overflow-hidden aspect-video max-w-xs bg-muted">
           {e.file_type === "image" ? (
-            <a href={e.file_url} target="_blank" rel="noopener noreferrer">
-              <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover" />
+            <a href={evidenceUrl(e) ?? undefined} target="_blank" rel="noopener noreferrer">
+              <img src={evidenceUrl(e) ?? undefined} alt="Evidence" className="w-full h-full object-cover" />
             </a>
           ) : e.file_type === "video" ? (
-            <video src={e.file_url} controls preload="metadata" className="w-full h-full object-cover" />
+            <video src={evidenceUrl(e) ?? undefined} controls preload="metadata" className="w-full h-full object-cover" />
           ) : e.file_type === "video_link" && ytMatch ? (
             <iframe src={`https://www.youtube.com/embed/${ytMatch[1]}`} title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full" />
           ) : e.file_type === "video_link" && twitchClipMatch ? (
@@ -189,7 +194,7 @@ export default function EvidenceReviewInbox({ mode }: Props) {
           ) : e.file_type === "video_link" && twitchVideoMatch ? (
             <iframe src={`https://player.twitch.tv/?video=${twitchVideoMatch[1]}&parent=${window.location.hostname}`} title="Twitch video" allowFullScreen className="w-full h-full" />
           ) : (
-            <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
+            <a href={evidenceUrl(e) ?? undefined} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
               <ImageIcon className="h-6 w-6 text-muted-foreground" />
             </a>
           )}

@@ -16,7 +16,9 @@ export default defineTool({
     target_platforms: z.array(z.string()).optional(),
     source_event_id: z.string().uuid().optional().describe("tenant_events.id when the campaign promotes a tenant event."),
     source_tournament_id: z.string().uuid().optional().describe("tournaments.id when the campaign promotes a tournament."),
-    idempotency_key: z.string().optional(),
+    idempotency_key: z.string().min(1).describe(
+      "REQUIRED. Stable key identifying this campaign within the tenant, e.g. 'seed:2026-10:<event_id>'. Re-sending the same key returns the existing row instead of inserting a duplicate.",
+    ),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -28,7 +30,7 @@ export default defineTool({
       const supabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
 
-      if (input.idempotency_key) {
+      {
         const { data: existing } = await supabase
           .from("marketing_campaigns")
           .select("*")
@@ -54,7 +56,7 @@ export default defineTool({
           created_by: uid,
           source_event_id: input.source_event_id ?? null,
           source_tournament_id: input.source_tournament_id ?? null,
-          idempotency_key: input.idempotency_key ?? null,
+          idempotency_key: input.idempotency_key,
         })
         .select()
         .single();

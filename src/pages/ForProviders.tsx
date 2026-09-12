@@ -15,6 +15,7 @@ import { PasswordStrengthIndicator } from "@/components/ui/password-strength-ind
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import usePageTitle from "@/hooks/usePageTitle";
+import Seo from "@/components/Seo";
 
 const formSchema = z.object({
   orgName: z.string().trim().min(2, "Organization name must be at least 2 characters").max(100),
@@ -128,6 +129,11 @@ const ForProviders = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="For Broadband Providers — White-Label Esports Platform"
+        description="Turn subscribers into gamers. FGN gives ISPs branded tournaments, subscriber engagement, cloud gaming add-ons, and analytics — all under your brand."
+        path="/for-providers"
+      />
       <Navbar />
 
       {/* Hero */}

@@ -5,7 +5,7 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://yrhwzmkenjgiujhofucx.supabase.co/auth/v1",
-    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-08-29T21%3A45Z-wrap-separator",
+    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-09-12T20%3A10Z-lapse-guard",
     "accepted_audiences": [
       "authenticated"
     ]
@@ -351,12 +351,15 @@
               "description": "tournaments.id when the campaign promotes a tournament."
             },
             "idempotency_key": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable key identifying this campaign within the tenant, e.g. 'seed:2026-10:<event_id>'. Re-sending the same key returns the existing row instead of inserting a duplicate."
             }
           },
           "required": [
             "tenant_id",
-            "title"
+            "title",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -485,12 +488,18 @@
               "type": "string",
               "format": "uri",
               "description": "Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url."
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable key identifying this asset within the tenant, e.g. 'seed:2026-10:<event_id>:announce:art'. Re-sending the same key returns the existing asset instead of uploading a second copy."
             }
           },
           "required": [
             "tenant_id",
             "source_url",
-            "file_name"
+            "file_name",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -500,7 +509,7 @@
       {
         "name": "propose_scheduled_post",
         "title": "Propose a scheduled social post",
-        "description": "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or ±HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
+        "description": "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows whose generated column is_dispatch_approved is true (status='approved' AND approved_at set, stamped by the DB on human approval), so agent proposals never publish without tenant-admin approval. Agent writes are capped at 'pending_review' by DB trigger. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or ±HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -543,13 +552,16 @@
               "format": "uuid"
             },
             "idempotency_key": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable key identifying this post within the tenant, e.g. 'seed:2026-10:<event_id>:announce'. Re-sending the same key returns the existing row instead of inserting a duplicate."
             }
           },
           "required": [
             "tenant_id",
             "platform",
-            "scheduled_at"
+            "scheduled_at",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -861,10 +873,16 @@
             },
             "file_name": {
               "type": "string"
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable key identifying this composed beat within the tenant, e.g. 'seed:2026-10:<event_id>:announce:art'. Re-sending the same key returns the existing asset instead of rendering and uploading a second copy."
             }
           },
           "required": [
-            "tenant_id"
+            "tenant_id",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"

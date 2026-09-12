@@ -1,5 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { BUILD_ID } from "../_shared/build-id.ts";
+import {
+  loadDispatchControls,
+  quotaFor,
+  countDispatches,
+  claimQuotaNotice,
+} from "../_shared/dispatch-controls.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,12 +63,44 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
-    const nowIso = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    // --- Runtime dispatch controls ---------------------------------------
+    // Kill switch + per-tenant publish quota, both from app_settings so either
+    // can be thrown without a deploy. Absent keys == today's behavior.
+    const controls = await loadDispatchControls(supabase, now);
+
+    if (controls.killSwitchOn) {
+      // Clean stop BEFORE the stale sweep and before any dispatch. Approved
+      // rows stay approved, nothing fails, nothing publishes. The pause length
+      // is banked and converted into a stale-window grace on resume, so the
+      // guard cannot mow the queue down the moment the switch is cleared.
+      const { count: heldCount } = await supabase
+        .from("scheduled_posts")
+        .select("id", { count: "exact", head: true })
+        .eq("is_dispatch_approved", true);
+      console.warn(
+        `[publish-scheduled-posts] KILL SWITCH ON since ${controls.pauseStartedAt}; holding ${heldCount ?? 0} approved posts`,
+      );
+      return new Response(
+        JSON.stringify({
+          processed: 0,
+          paused: true,
+          kill_switch: "on",
+          paused_since: controls.pauseStartedAt,
+          held_approved: heldCount ?? 0,
+          build_id: BUILD_ID,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // --- Staleness guard -------------------------------------------------
     // An approved post whose window passed long ago must never publish: a bulk
     // approve of backdated rows would otherwise fire them all in one minute.
-    // The window is configurable at tick time (no deploy) via app_settings.
+    // The window is configurable at tick time (no deploy) via app_settings,
+    // and is widened by any banked pause grace (see dispatch-controls.ts).
     let staleWindowHours = 6;
     {
       const { data: setting } = await supabase
@@ -73,7 +111,18 @@ Deno.serve(async (req) => {
       const parsed = Number(setting?.value);
       if (Number.isFinite(parsed) && parsed > 0) staleWindowHours = parsed;
     }
-    const staleCutoffIso = new Date(Date.now() - staleWindowHours * 3600_000).toISOString();
+    // Banked pause grace is CAPPED at the stale window itself. Uncapped, a long
+    // pause retroactively un-stales the whole backlog, which inverts the point
+    // of a safety window: the longer publishing was down, the more stale copy
+    // it would fire on resume. A short pause (the legitimate case) is unchanged
+    // because its duration is below the cap.
+    const graceCapSeconds = staleWindowHours * 3600;
+    const effectiveGraceSeconds = Math.min(controls.staleGraceSeconds, graceCapSeconds);
+    const staleCutoffIso = new Date(
+      now.getTime() - staleWindowHours * 3600_000 - effectiveGraceSeconds * 1000,
+    ).toISOString();
+
+
 
     // 0. Flush marketing draft digests whose window has elapsed.
     let digestsSent = 0;
@@ -129,7 +178,79 @@ Deno.serve(async (req) => {
     }
 
 
-    // 1. Overdue pending_review — approved late or never; notify humans.
+    // 1. Review-funnel lapse guard. Pending-review posts are alerted at each
+    //    tenant's offsets before their deadline, notified at the deadline, and
+    //    LAPSED to rejected once they fall outside the dispatcher's stale
+    //    window — from that point the dispatcher would never pick them up
+    //    anyway, so the row leaves pending_review instead of dying silently.
+    //    Independent of the kill switch: this is review hygiene, not publishing.
+    const LAPSE_NOTE =
+      "This post lapsed automatically because its scheduled time passed without review. Revise and reschedule it to publish.";
+    // Lapse at the SAME cutoff the dispatch window uses (stale window plus
+    // banked pause grace) so nothing lapses that a reviewer could still
+    // legitimately approve-and-dispatch right after a pause ends. The sweep
+    // also sits after the kill-switch stop, so a pause never mows the backlog.
+    const lapseCutoffIso = staleCutoffIso;
+    const tenantAlertCache = new Map<string, number[]>();
+    async function alertHoursFor(tenantId: string | null): Promise<number[]> {
+      if (!tenantId) return [72, 24, 4];
+      let hours = tenantAlertCache.get(tenantId);
+      if (!hours) {
+        const { data: t } = await supabase.from("tenants").select("review_alert_hours").eq("id", tenantId).maybeSingle();
+        hours = Array.isArray(t?.review_alert_hours) && t.review_alert_hours.length > 0
+          ? t.review_alert_hours.filter((h: any) => Number.isFinite(h) && h > 0)
+          : [72, 24, 4];
+        tenantAlertCache.set(tenantId, hours);
+      }
+      return hours!;
+    }
+    function alertStampFor(hours: number): string {
+      if (hours >= 48) return "notified_t72_at";
+      if (hours >= 12) return "notified_t24_at";
+      return "notified_t4_at";
+    }
+
+    let alertsSent = 0;
+    let lapsedCount = 0;
+
+    // 1a. Pre-deadline alerts at each tenant offset (T-72h, T-24h, T-4h default).
+    const maxAlertHorizonIso = new Date(now.getTime() + 168 * 3600 * 1000).toISOString();
+    const { data: upcomingPending } = await supabase
+      .from("scheduled_posts")
+      .select("id, tenant_id, platform, scheduled_at, agent_source, notified_t72_at, notified_t24_at, notified_t4_at")
+      .eq("status", "pending_review")
+      .gt("scheduled_at", nowIso)
+      .lte("scheduled_at", maxAlertHorizonIso)
+      .limit(200);
+
+    for (const p of upcomingPending ?? []) {
+      const hours = await alertHoursFor(p.tenant_id);
+      const msUntil = new Date(p.scheduled_at).getTime() - now.getTime();
+      const updates: Record<string, string> = {};
+      for (const h of hours) {
+        const stampCol = alertStampFor(h);
+        if ((p as any)[stampCol]) continue;
+        if (msUntil > h * 3600 * 1000) continue;
+        await supabase.rpc("enqueue_marketing_notification", {
+          _tenant_id: p.tenant_id,
+          _category: "review_deadline",
+          _related_kind: "scheduled_post",
+          _related_id: p.id,
+          _title: `Review deadline in ${h}h`,
+          _message: `A ${p.platform} post scheduled for ${p.scheduled_at} still needs review. If it is not approved in time it will lapse automatically.`,
+          _link: "/tenant/marketing?tab=agent",
+          _agent_source: p.agent_source,
+          _payload: { id: p.id, offset_hours: h },
+        });
+        updates[stampCol] = nowIso;
+        alertsSent++;
+      }
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("scheduled_posts").update(updates).eq("id", p.id);
+      }
+    }
+
+    // 1b. At-deadline notification (existing behavior).
     const { data: overduePending } = await supabase
       .from("scheduled_posts")
       .select("id, tenant_id, platform, scheduled_at, agent_source, overdue_notified_at")
@@ -156,20 +277,170 @@ Deno.serve(async (req) => {
         .eq("id", p.id);
     }
 
+    // 1c. Lapse: past the stale window, the dispatcher would never dispatch the
+    //     row even if approved now, so it leaves pending_review as rejected.
+    const { data: lapsable } = await supabase
+      .from("scheduled_posts")
+      .select("id, tenant_id, platform, scheduled_at, agent_source, rejection_history")
+      .eq("status", "pending_review")
+      .lt("scheduled_at", lapseCutoffIso)
+      .limit(100);
+
+    for (const p of lapsable ?? []) {
+      const { error: lapseErr } = await supabase
+        .from("scheduled_posts")
+        .update({
+          status: "rejected",
+          rejection_reason: LAPSE_NOTE,
+          rejection_feedback: LAPSE_NOTE,
+          is_dispatch_approved: false,
+          lapsed: true,
+          lapsed_at: nowIso,
+        })
+        .eq("id", p.id)
+        .eq("status", "pending_review");
+      if (lapseErr) {
+        console.error("[lapse] failed to lapse", { id: p.id, error: lapseErr.message });
+        continue;
+      }
+      lapsedCount++;
+      await supabase.rpc("enqueue_marketing_notification", {
+        _tenant_id: p.tenant_id,
+        _category: "lapsed",
+        _related_kind: "scheduled_post",
+        _related_id: p.id,
+        _title: "Scheduled post lapsed",
+        _message: LAPSE_NOTE,
+        _link: "/tenant/marketing?tab=agent",
+        _agent_source: p.agent_source,
+        _payload: { id: p.id, scheduled_at: p.scheduled_at },
+      });
+    }
+
+    // 1d. Social token liveness. A pasted token that has quietly died turns
+    //     every approved post into a failed dispatch, so active connections
+    //     are re-validated against the platform hourly and the tenant is
+    //     notified on the first failure. Success stamps token_checked_at.
+    let tokensChecked = 0;
+    let tokensFailed = 0;
+    {
+      const fiftyMinAgoIso = new Date(now.getTime() - 50 * 60 * 1000).toISOString();
+      const { data: conns } = await supabase
+        .from("social_connections")
+        .select("id, tenant_id, platform, account_name, page_id, access_token, token_checked_at")
+        .eq("is_active", true)
+        .eq("platform", "facebook")
+        .or(`token_checked_at.is.null,token_checked_at.lt.${fiftyMinAgoIso}`)
+        .limit(10);
+      for (const c of conns ?? []) {
+        tokensChecked++;
+        try {
+          const target = c.page_id ? c.page_id : "me";
+          const res = await fetch(
+            `https://graph.facebook.com/v19.0/${encodeURIComponent(target)}?fields=id,name&access_token=${encodeURIComponent(c.access_token)}`,
+            { signal: AbortSignal.timeout(10_000) },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body?.error) {
+            tokensFailed++;
+            const msg = body?.error?.message ?? `HTTP ${res.status}`;
+            await supabase.from("social_connections")
+              .update({ token_checked_at: nowIso, token_check_error: msg })
+              .eq("id", c.id);
+            await supabase.rpc("enqueue_marketing_notification", {
+              _tenant_id: c.tenant_id,
+              _category: "token_invalid",
+              _related_kind: "social_connection",
+              _related_id: c.id,
+              _title: `${c.platform} connection "${c.account_name}" is failing`,
+              _message: `The access token for "${c.account_name}" was rejected by ${c.platform} (${msg}). Scheduled posts cannot publish until a fresh token is connected.`,
+              _link: "/tenant/marketing?tab=settings",
+              _agent_source: null,
+              _payload: { id: c.id },
+            });
+          } else {
+            await supabase.from("social_connections")
+              .update({ token_checked_at: nowIso, token_check_error: null })
+              .eq("id", c.id);
+          }
+        } catch (e) {
+          console.error("[token-check] fetch failed", { id: c.id, error: (e as Error).message });
+        }
+      }
+    }
+
+    // --- Per-tenant publish quota ----------------------------------------
+    // A daily and monthly cap on ACTUAL dispatches. Entirely separate from
+    // agent_run_limits, which caps seed runs. A post over quota DEFERS: it is
+    // skipped this tick, stays approved, and is not failed. Absent keys ==
+    // unlimited, i.e. exactly today's behavior.
+    const quotaCache = new Map<string, { daily: number; monthly: number }>();
+    const quotaNotified = new Set<string>();
+    let deferredByQuota = 0;
+
+    async function quotaState(tenantId: string | null) {
+      const dailyLimit = quotaFor(controls.quotaDaily, tenantId);
+      const monthlyLimit = quotaFor(controls.quotaMonthly, tenantId);
+      if (!tenantId || (dailyLimit === null && monthlyLimit === null)) {
+        return { exhausted: false, reason: "", dailyLimit, monthlyLimit, used: null as any };
+      }
+      let used = quotaCache.get(tenantId);
+      if (!used) {
+        used = await countDispatches(supabase, tenantId, now);
+        quotaCache.set(tenantId, used);
+      }
+      if (dailyLimit !== null && used.daily >= dailyLimit) {
+        return { exhausted: true, reason: `daily publish quota reached (${used.daily}/${dailyLimit})`, dailyLimit, monthlyLimit, used };
+      }
+      if (monthlyLimit !== null && used.monthly >= monthlyLimit) {
+        return { exhausted: true, reason: `monthly publish quota reached (${used.monthly}/${monthlyLimit})`, dailyLimit, monthlyLimit, used };
+      }
+      return { exhausted: false, reason: "", dailyLimit, monthlyLimit, used };
+    }
+
+    async function noteQuotaDeferral(post: any, reason: string) {
+      deferredByQuota++;
+      console.warn(`[publish-scheduled-posts] deferred ${post.id}: ${reason}`);
+      if (!post.tenant_id) return;
+      if (quotaNotified.has(post.tenant_id)) return;
+      quotaNotified.add(post.tenant_id);
+      // Persisted dedupe: at most one quota alert per tenant per UTC day,
+      // otherwise every cron tick would re-notify while the cap holds.
+      if (!(await claimQuotaNotice(supabase, post.tenant_id, now))) return;
+      await supabase.rpc("enqueue_marketing_notification", {
+        _tenant_id: post.tenant_id,
+        _category: "dispatch_error",
+        _related_kind: "scheduled_post",
+        _related_id: post.id,
+        _title: "Publishing paused by quota",
+        _message: `Scheduled posts are waiting because the ${reason}. They stay approved and will publish once the quota resets or is raised.`,
+        _link: "/tenant/marketing?tab=scheduled",
+        _agent_source: post.agent_source,
+        _payload: { id: post.id, reason: "publish_quota", detail: reason },
+      });
+    }
+
     // 1b. Stale sweep: approved posts whose window closed more than
     //     staleWindowHours ago are failed with a distinct reason instead of
     //     being published late. A human can reschedule them forward (which
     //     makes them eligible again) or cancel them; they never sit silently.
+    //     Rows held back by quota are exempt: a deferral must not become a
+    //     failure just because the cap outlasted the stale window.
     let staleSkipped = 0;
     const { data: stalePosts } = await supabase
       .from("scheduled_posts")
       .select("id, tenant_id, platform, scheduled_at, agent_source")
-      .eq("status", "pending")
-      .not("approved_at", "is", null)
+      .eq("is_dispatch_approved", true)
       .lt("scheduled_at", staleCutoffIso)
       .limit(100);
 
     for (const p of stalePosts ?? []) {
+      const q = await quotaState(p.tenant_id);
+      if (q.exhausted) {
+        await noteQuotaDeferral(p, q.reason);
+        continue;
+      }
+
       await supabase
         .from("scheduled_posts")
         .update({
@@ -180,7 +451,7 @@ Deno.serve(async (req) => {
             `Not published. Reschedule it forward and re-approve to send.`,
         })
         .eq("id", p.id)
-        .eq("status", "pending");
+        .eq("status", "approved");
       await supabase.rpc("enqueue_marketing_notification", {
         _tenant_id: p.tenant_id,
         _category: "dispatch_error",
@@ -197,14 +468,17 @@ Deno.serve(async (req) => {
 
     // 2. Undeliverable check: approved posts due but no active social_connection for their platform.
     //    Gate: status must be the explicit approved value AND the row must carry
-    //    an approval stamp. A row that reached 'pending' without provenance is
-    //    refused rather than improvised on. The scheduled_at range is bounded on
+    //    an approval stamp. Both live in ONE generated column,
+    //    scheduled_posts.is_dispatch_approved =
+    //      (status = 'approved' AND approved_at IS NOT NULL),
+    //    which is the only definition of "approved" in the system. Every UI
+    //    badge, count and tool response reads the same column, so nothing can
+    //    render a row as approved that this dispatcher would refuse. The scheduled_at range is bounded on
     //    BOTH sides: due (<= now) and not stale (>= now - staleWindowHours).
     const { data: duePosts, error } = await supabase
       .from("scheduled_posts")
       .select("*")
-      .eq("status", "pending")
-      .not("approved_at", "is", null)
+      .eq("is_dispatch_approved", true)
       .lte("scheduled_at", nowIso)
       .gte("scheduled_at", staleCutoffIso)
       .limit(50);
@@ -215,13 +489,22 @@ Deno.serve(async (req) => {
         JSON.stringify({
           processed: 0,
           overdue_notified: overduePending?.length ?? 0,
+          review_alerts_sent: alertsSent,
+          lapsed: lapsedCount,
+          tokens_checked: tokensChecked,
+          tokens_failed: tokensFailed,
+          lapsed: lapsedCount,
           stale_skipped: staleSkipped,
           stale_window_hours: staleWindowHours,
+          stale_grace_seconds: controls.staleGraceSeconds,
+          deferred_by_quota: deferredByQuota,
+          kill_switch: "off",
           build_id: BUILD_ID,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     let processed = 0;
     let failed = 0;
@@ -320,6 +603,13 @@ Deno.serve(async (req) => {
 
     for (const post of duePosts) {
       try {
+        // Quota gate: defer (skip), never fail.
+        const q = await quotaState(post.tenant_id);
+        if (q.exhausted) {
+          await noteQuotaDeferral(post, q.reason);
+          continue;
+        }
+
         // Resolve active connection for non-discord posts. If the row has a
         // connection_id, validate it; otherwise fall back to the single active
         // (tenant_id, platform) connection. Backfill the row so the linkage
@@ -401,6 +691,9 @@ Deno.serve(async (req) => {
               .eq("id", post.id);
           }
           processed++;
+          const used = quotaCache.get(post.tenant_id);
+          if (used) { used.daily++; used.monthly++; }
+
         } else {
           const errText = await publishRes.text().catch(() => "");
           const errMessage = `HTTP ${publishRes.status}: ${errText.slice(0, 500)}`;
@@ -488,8 +781,16 @@ Deno.serve(async (req) => {
         failed,
         undeliverable,
         overdue_notified: overduePending?.length ?? 0,
+        review_alerts_sent: alertsSent,
+        lapsed: lapsedCount,
+        tokens_checked: tokensChecked,
+        tokens_failed: tokensFailed,
         stale_skipped: staleSkipped,
         stale_window_hours: staleWindowHours,
+        stale_grace_seconds: controls.staleGraceSeconds,
+        deferred_by_quota: deferredByQuota,
+        kill_switch: "off",
+
         total: duePosts.length,
         build_id: BUILD_ID,
       }),

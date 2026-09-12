@@ -6,6 +6,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChallengeDetail } from "@/hooks/useChallengeDetail";
 import { useChallengeEnrollment } from "@/hooks/useChallengeEnrollment";
+import { useSignedEvidenceUrls } from "@/hooks/useSignedEvidenceUrls";
 import { useChallengeWindow } from "@/hooks/useChallengeWindow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ const ChallengeDetail = () => {
     deleteEvidence, deletingEvidence,
     unenroll, unenrolling,
   } = useChallengeEnrollment(id);
+  const evidenceUrl = useSignedEvidenceUrls(evidence);
   const challengeWindow = useChallengeWindow(id);
 
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -268,11 +270,11 @@ const ChallengeDetail = () => {
                         <div key={e.id} className="relative group space-y-1">
                           <div className="rounded-lg border border-border overflow-hidden aspect-video bg-muted">
                             {e.file_type === "image" ? (
-                              <a href={e.file_url} target="_blank" rel="noopener noreferrer">
-                                <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                              <a href={evidenceUrl(e) ?? undefined} target="_blank" rel="noopener noreferrer">
+                                <img src={evidenceUrl(e) ?? undefined} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                               </a>
                             ) : e.file_type === "video" ? (
-                              <video src={e.file_url} controls className="w-full h-full object-cover" />
+                              <video src={evidenceUrl(e) ?? undefined} controls className="w-full h-full object-cover" />
                             ) : e.file_type === "video_link" && ytMatch ? (
                               <iframe
                                 src={`https://www.youtube.com/embed/${ytMatch[1]}`}
@@ -301,7 +303,7 @@ const ChallengeDetail = () => {
                                 <span className="text-xs text-muted-foreground">Open video link</span>
                               </a>
                             ) : (
-                              <a href={e.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
+                              <a href={evidenceUrl(e) ?? undefined} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-full">
                                 <ImageIcon className="h-8 w-8 text-muted-foreground" />
                               </a>
                             )}

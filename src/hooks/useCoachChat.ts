@@ -54,6 +54,7 @@ export function useCoachChat(
       const body: Record<string, unknown> = { messages: updatedMessages };
       if (selectedGame) {
         body.game = {
+          id: selectedGame.id,
           name: selectedGame.name,
           category: selectedGame.category,
           description: selectedGame.description,

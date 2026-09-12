@@ -63,11 +63,18 @@ export const useAdminUsers = (search: string, tenantId?: string) => {
       const { data: roles, error: rolesError } = await supabase.from("user_roles").select("user_id, role");
       if (rolesError) throw rolesError;
 
-      // Fetch user_service_interests for tenant association
-      const { data: interests, error: intError } = await supabase
-        .from("user_service_interests")
-        .select("user_id, tenant_id");
-      if (intError) throw intError;
+      // Fetch user_service_interests for tenant association (paged — can exceed the 1000-row API cap)
+      const interests: { user_id: string; tenant_id: string }[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data: page, error: intError } = await supabase
+          .from("user_service_interests")
+          .select("user_id, tenant_id")
+          .order("created_at", { ascending: true })
+          .range(from, from + 999);
+        if (intError) throw intError;
+        interests.push(...((page ?? []) as any[]));
+        if (!page || page.length < 1000) break;
+      }
 
       // Fetch tenant_admins for tenant role
       const { data: tenantAdmins, error: taError } = await supabase

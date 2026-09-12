@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useScheduledPosts, ScheduledPost } from "@/hooks/useScheduledPosts";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
@@ -28,7 +28,7 @@ const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secon
     variant: "outline",
     className: "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-300",
   },
-  pending: { label: "Scheduled", variant: "secondary" },
+  approved: { label: "Approved, scheduled", variant: "secondary" },
   published: { label: "Published", variant: "default" },
   failed: { label: "Failed", variant: "destructive" },
   rejected: {
@@ -36,7 +36,39 @@ const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secon
     variant: "outline",
     className: "border-destructive/60 bg-destructive/10 text-destructive",
   },
+  draft: { label: "Draft", variant: "outline" },
   cancelled: { label: "Cancelled", variant: "outline" },
+};
+
+/** Never return undefined: an unknown status must not crash the calendar. */
+const statusStyle = (s: string) =>
+  STATUS_STYLES[s] ?? { label: s ? s.replace(/_/g, " ") : "Unknown", variant: "outline" as const };
+
+/** Ticking countdown to a pending-review post's deadline. Turns urgent under 24h. */
+const ReviewDeadlineClock = ({ scheduledAt }: { scheduledAt: string }) => {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const msLeft = parseISO(scheduledAt).getTime() - nowMs;
+  if (msLeft <= 0) {
+    return (
+      <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
+        <AlertTriangle className="h-3.5 w-3.5" />
+        Past its review deadline — it will lapse automatically shortly.
+      </p>
+    );
+  }
+  const hours = Math.floor(msLeft / 3_600_000);
+  const minutes = Math.floor((msLeft % 3_600_000) / 60_000);
+  const urgent = msLeft < 24 * 3_600_000;
+  return (
+    <p className={cn("text-xs flex items-center gap-1.5", urgent ? "font-medium text-amber-600 dark:text-amber-300" : "text-muted-foreground")}>
+      <Clock className="h-3.5 w-3.5" />
+      Review deadline in {hours > 0 ? `${hours}h ` : ""}{minutes}m — approve before then or this post lapses automatically.
+    </p>
+  );
 };
 
 interface Props {
@@ -48,7 +80,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
   const { tenantInfo } = useTenantAdmin();
   const decide = useDraftDecision(tenantId);
   const role = tenantInfo?.tenantRole;
-  const canDecide = role === "admin" || role === "manager";
+  const canDecide = role === "admin" || role === "manager" || role === "marketing";
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [detailPost, setDetailPost] = useState<ScheduledPost | null>(null);
@@ -62,7 +94,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
     : [];
 
   const pendingDates = posts
-    .filter((p) => p.status === "pending" || p.status === "pending_review")
+    .filter((p) => p.status === "approved" || p.status === "pending_review")
     .map((p) => parseISO(p.scheduled_at));
 
   const handleCancel = async (id: string) => {
@@ -85,7 +117,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
       { row: { id: detailPost.id, kind: "scheduled_post" }, approve: true, note: null },
       {
         onSuccess: () => {
-          setDetailPost((p) => (p ? { ...p, status: "pending" } : p));
+          setDetailPost((p) => (p ? { ...p, status: "approved" } : p));
         },
       },
     );
@@ -153,7 +185,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
             <p className="text-sm text-muted-foreground py-8 text-center">No posts scheduled for this date.</p>
           ) : (
             postsForDate.map((post) => {
-              const status = STATUS_STYLES[post.status] || STATUS_STYLES.pending;
+              const status = statusStyle(post.status);
               return (
                 <Card
                   key={post.id}
@@ -248,9 +280,17 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                     <ExternalLink className="h-3.5 w-3.5" /> View Post
                   </a>
                 )}
+                {detailPost.status === "pending_review" && (
+                  <ReviewDeadlineClock scheduledAt={detailPost.scheduled_at} />
+                )}
+                {detailPost.lapsed && (
+                  <div className="rounded border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-600 dark:text-amber-300">
+                    <span className="font-semibold">Lapsed:</span> this post missed its review deadline and was auto-rejected. Revise and reschedule it to publish.
+                  </div>
+                )}
                 {detailIsDecidable && !canDecide && (
                   <p className="text-xs text-muted-foreground italic">
-                    Read-only: only tenant admins and managers can approve or reject drafts.
+                    Read-only: only tenant admins, managers, and marketing staff can approve or reject drafts.
                   </p>
                 )}
               </div>
@@ -271,7 +311,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
                 </Button>
               </>
             )}
-            {detailPost?.status === "pending" && (
+            {detailPost?.status === "approved" && (
               <>
                 <Button variant="outline" onClick={() => { setNewDate(parseISO(detailPost.scheduled_at)); setRescheduleOpen(true); }}>
                   <CalendarIcon className="h-4 w-4 mr-1" /> Reschedule

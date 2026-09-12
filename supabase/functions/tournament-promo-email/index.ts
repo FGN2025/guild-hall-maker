@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // Find open tournaments starting within 3 days
     const { data: tournaments, error: tErr } = await supabase
       .from("tournaments")
-      .select("id, name, start_date, game")
+      .select("id, name, start_date, game, created_by")
       .eq("status", "open")
       .gte("start_date", now.toISOString())
       .lte("start_date", in3Days.toISOString());
@@ -44,10 +44,41 @@ Deno.serve(async (req) => {
 
       const registeredIds = new Set((regs || []).map((r: any) => r.user_id));
 
-      // Get all active users
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, display_name");
+      // Determine the tournament's owning tenant from its creator.
+      // Creator with no tenant => platform-wide tournament => all users.
+      let tenantId: string | null = null;
+      if (t.created_by) {
+        const { data: ownerTenant } = await supabase.rpc("get_user_tenant", { _user_id: t.created_by });
+        tenantId = (ownerTenant as string | null) ?? null;
+      }
+
+      // Build the audience
+      let profiles: { user_id: string; display_name: string | null }[] | null = null;
+
+      if (tenantId) {
+        const [{ data: admins }, { data: subs }] = await Promise.all([
+          supabase.from("tenant_admins").select("user_id").eq("tenant_id", tenantId),
+          supabase.from("tenant_subscribers").select("user_id").eq("tenant_id", tenantId).not("user_id", "is", null),
+        ]);
+        const memberIds = Array.from(new Set([
+          ...(admins || []).map((r: any) => r.user_id),
+          ...(subs || []).map((r: any) => r.user_id),
+        ].filter(Boolean)));
+
+        if (memberIds.length === 0) {
+          console.log(`Tournament ${t.id} scoped to tenant ${tenantId} with no members; skipping`);
+          continue;
+        }
+
+        const { data } = await supabase
+          .from("profiles")
+          .select("user_id, display_name")
+          .in("user_id", memberIds);
+        profiles = data as any;
+      } else {
+        const { data } = await supabase.from("profiles").select("user_id, display_name");
+        profiles = data as any;
+      }
 
       if (!profiles) continue;
 
@@ -80,6 +111,14 @@ Deno.serve(async (req) => {
         const email = userData?.user?.email;
         if (!email) continue;
 
+        // Skip suppressed addresses (bounces, complaints, unsubscribes)
+        const { data: suppressed } = await supabase
+          .from("suppressed_emails")
+          .select("email")
+          .eq("email", email.toLowerCase())
+          .limit(1);
+        if (suppressed && suppressed.length > 0) continue;
+
         const hoursUntil = Math.round((new Date(t.start_date).getTime() - now.getTime()) / (60 * 60 * 1000));
         const daysUntil = Math.ceil(hoursUntil / 24);
         const displayName = p.display_name || "Player";
@@ -100,7 +139,7 @@ Deno.serve(async (req) => {
                   Don't miss your chance to compete!
                 </p>
                 <div style="text-align:center;margin-bottom:24px;">
-                  <a href="https://guild-hall-maker.lovable.app/tournaments/${t.id}" style="display:inline-block;background:#a855f7;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Register Now</a>
+                  <a href="https://play.fgn.gg/tournaments/${t.id}" style="display:inline-block;background:#a855f7;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Register Now</a>
                 </div>
                 <p style="color:#6b7280;font-size:12px;text-align:center;">You're receiving this because you have tournament promotion emails enabled. Manage preferences in your profile settings.</p>
               </div>

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -88,6 +88,9 @@ export const useAcademyPassport = (params: {
 }) => {
   const { data: cfg, isLoading: cfgLoading } = useAcademyPassportConfig();
   const { toast } = useToast();
+  const [notLinkedOpen, setNotLinkedOpen] = useState(false);
+
+  const academyUrl = cfg?.base ?? FALLBACK_BASE;
 
   const openPassport = useCallback(async () => {
     const base = cfg?.base ?? FALLBACK_BASE;
@@ -105,12 +108,11 @@ export const useAcademyPassport = (params: {
             },
           },
         );
-        if (data?.error === "user_not_linked") {
-          toast({
-            title: "Connect your Academy account",
-            description:
-              "We couldn't find a linked FGN Academy profile. Complete an Academy challenge to link it.",
-          });
+        const notLinked =
+          data?.error === "user_not_linked" ||
+          (error && /user_not_linked/.test(error.message ?? ""));
+        if (notLinked) {
+          setNotLinkedOpen(true);
           return;
         }
         if (error || !data?.url) {
@@ -137,5 +139,14 @@ export const useAcademyPassport = (params: {
     window.open(`${base}${path}`, "_blank", "noopener,noreferrer");
   }, [cfg, params.email, params.externalUserId, params.slug, toast]);
 
-  return { openPassport, isLoading: cfgLoading, mode: cfg?.mode ?? "direct" };
+  return {
+    openPassport,
+    isLoading: cfgLoading,
+    mode: cfg?.mode ?? "direct",
+    notLinkedOpen,
+    setNotLinkedOpen,
+    academyUrl,
+    email: params.email ?? null,
+  };
 };
+

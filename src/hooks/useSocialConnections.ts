@@ -12,6 +12,10 @@ export type SocialConnection = {
   page_id: string | null;
   is_active: boolean;
   token_expires_at: string | null;
+  /** Last time the dispatcher verified this token against the platform. */
+  token_checked_at?: string | null;
+  /** Last verification error, null when the token is healthy. */
+  token_check_error?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -27,7 +31,7 @@ export function useSocialConnections(tenantId?: string | null) {
     queryFn: async () => {
       let q = supabase
         .from("social_connections_safe" as any)
-        .select("id, tenant_id, user_id, platform, account_name, page_id, is_active, token_expires_at, created_at, updated_at")
+        .select("id, tenant_id, user_id, platform, account_name, page_id, is_active, token_expires_at, token_checked_at, token_check_error, created_at, updated_at")
         .eq("user_id", user!.id)
         .eq("is_active", true);
       if (tenantId) q = q.eq("tenant_id", tenantId);

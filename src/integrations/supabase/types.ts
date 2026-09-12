@@ -250,10 +250,16 @@ export type Database = {
           agent_name: string
           anchor: string | null
           archetype: string | null
+          build_id: string | null
+          committed_rows: number
+          completeness_ratio: number | null
+          continuation_budget: number | null
           continuation_count: number
+          continuation_metrics: Json
           cost_usd: number
           created_at: string
           created_row_ids: Json
+          error_detail: string | null
           error_message: string | null
           failure_kind: string | null
           finished_at: string | null
@@ -262,13 +268,16 @@ export type Database = {
           include_kickoff: boolean | null
           input_tokens: number
           instruction: string | null
+          is_complete: boolean | null
           launched_by: string
           mode: string | null
           output_tokens: number
           preflight: Json | null
+          prompt_name: string | null
           prompt_version: number | null
           range_end: string | null
           range_start: string | null
+          runner_generation: string | null
           scope: Json | null
           seed_density: string | null
           started_at: string
@@ -277,6 +286,7 @@ export type Database = {
           tenant_id: string
           transcript: Json | null
           turn_cap: number
+          turn_metrics: Json
           turns_used: number
           updated_at: string
         }
@@ -284,10 +294,16 @@ export type Database = {
           agent_name?: string
           anchor?: string | null
           archetype?: string | null
+          build_id?: string | null
+          committed_rows?: number
+          completeness_ratio?: number | null
+          continuation_budget?: number | null
           continuation_count?: number
+          continuation_metrics?: Json
           cost_usd?: number
           created_at?: string
           created_row_ids?: Json
+          error_detail?: string | null
           error_message?: string | null
           failure_kind?: string | null
           finished_at?: string | null
@@ -296,13 +312,16 @@ export type Database = {
           include_kickoff?: boolean | null
           input_tokens?: number
           instruction?: string | null
+          is_complete?: boolean | null
           launched_by: string
           mode?: string | null
           output_tokens?: number
           preflight?: Json | null
+          prompt_name?: string | null
           prompt_version?: number | null
           range_end?: string | null
           range_start?: string | null
+          runner_generation?: string | null
           scope?: Json | null
           seed_density?: string | null
           started_at?: string
@@ -311,6 +330,7 @@ export type Database = {
           tenant_id: string
           transcript?: Json | null
           turn_cap?: number
+          turn_metrics?: Json
           turns_used?: number
           updated_at?: string
         }
@@ -318,10 +338,16 @@ export type Database = {
           agent_name?: string
           anchor?: string | null
           archetype?: string | null
+          build_id?: string | null
+          committed_rows?: number
+          completeness_ratio?: number | null
+          continuation_budget?: number | null
           continuation_count?: number
+          continuation_metrics?: Json
           cost_usd?: number
           created_at?: string
           created_row_ids?: Json
+          error_detail?: string | null
           error_message?: string | null
           failure_kind?: string | null
           finished_at?: string | null
@@ -330,13 +356,16 @@ export type Database = {
           include_kickoff?: boolean | null
           input_tokens?: number
           instruction?: string | null
+          is_complete?: boolean | null
           launched_by?: string
           mode?: string | null
           output_tokens?: number
           preflight?: Json | null
+          prompt_name?: string | null
           prompt_version?: number | null
           range_end?: string | null
           range_start?: string | null
+          runner_generation?: string | null
           scope?: Json | null
           seed_density?: string | null
           started_at?: string
@@ -345,6 +374,7 @@ export type Database = {
           tenant_id?: string
           transcript?: Json | null
           turn_cap?: number
+          turn_metrics?: Json
           turns_used?: number
           updated_at?: string
         }
@@ -3580,6 +3610,12 @@ export type Database = {
           idempotency_key: string | null
           image_path: string | null
           image_url: string
+          is_dispatch_approved: boolean | null
+          lapsed: boolean
+          lapsed_at: string | null
+          notified_t24_at: string | null
+          notified_t4_at: string | null
+          notified_t72_at: string | null
           overdue_notified_at: string | null
           platform: string
           post_url: string | null
@@ -3612,6 +3648,12 @@ export type Database = {
           idempotency_key?: string | null
           image_path?: string | null
           image_url: string
+          is_dispatch_approved?: boolean | null
+          lapsed?: boolean
+          lapsed_at?: string | null
+          notified_t24_at?: string | null
+          notified_t4_at?: string | null
+          notified_t72_at?: string | null
           overdue_notified_at?: string | null
           platform: string
           post_url?: string | null
@@ -3644,6 +3686,12 @@ export type Database = {
           idempotency_key?: string | null
           image_path?: string | null
           image_url?: string
+          is_dispatch_approved?: boolean | null
+          lapsed?: boolean
+          lapsed_at?: string | null
+          notified_t24_at?: string | null
+          notified_t4_at?: string | null
+          notified_t72_at?: string | null
           overdue_notified_at?: string | null
           platform?: string
           post_url?: string | null
@@ -3877,6 +3925,8 @@ export type Database = {
           platform: string
           refresh_token: string | null
           tenant_id: string
+          token_check_error: string | null
+          token_checked_at: string | null
           token_expires_at: string | null
           updated_at: string | null
           user_id: string
@@ -3891,6 +3941,8 @@ export type Database = {
           platform: string
           refresh_token?: string | null
           tenant_id: string
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id: string
@@ -3905,6 +3957,8 @@ export type Database = {
           platform?: string
           refresh_token?: string | null
           tenant_id?: string
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string
@@ -4705,6 +4759,7 @@ export type Database = {
           file_name: string
           file_path: string
           id: string
+          idempotency_key: string | null
           is_published: boolean
           label: string
           notes: string | null
@@ -4726,6 +4781,7 @@ export type Database = {
           file_name: string
           file_path: string
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
           label?: string
           notes?: string | null
@@ -4747,6 +4803,7 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
           label?: string
           notes?: string | null
@@ -5145,6 +5202,7 @@ export type Database = {
           plan_tier: string | null
           primary_color: string | null
           require_subscriber_validation: boolean
+          review_alert_hours: number[]
           slug: string
           status: string
           timezone: string
@@ -5163,6 +5221,7 @@ export type Database = {
           plan_tier?: string | null
           primary_color?: string | null
           require_subscriber_validation?: boolean
+          review_alert_hours?: number[]
           slug: string
           status?: string
           timezone?: string
@@ -5181,6 +5240,7 @@ export type Database = {
           plan_tier?: string | null
           primary_color?: string | null
           require_subscriber_validation?: boolean
+          review_alert_hours?: number[]
           slug?: string
           status?: string
           timezone?: string
@@ -5860,6 +5920,8 @@ export type Database = {
           page_id: string | null
           platform: string | null
           tenant_id: string | null
+          token_check_error: string | null
+          token_checked_at: string | null
           token_expires_at: string | null
           updated_at: string | null
           user_id: string | null
@@ -5872,6 +5934,8 @@ export type Database = {
           page_id?: string | null
           platform?: string | null
           tenant_id?: string | null
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -5884,6 +5948,8 @@ export type Database = {
           page_id?: string | null
           platform?: string | null
           tenant_id?: string | null
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -6206,7 +6272,7 @@ export type Database = {
       }
       check_schedule_conflict: {
         Args: {
-          _exclude_id: string
+          _exclude_id?: string
           _platform: string
           _scheduled_at: string
           _tenant_id: string
@@ -6522,12 +6588,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6551,11 +6617,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6576,11 +6642,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6601,11 +6667,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6618,11 +6684,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

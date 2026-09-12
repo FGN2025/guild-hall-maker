@@ -6,7 +6,7 @@ export default defineTool({
   name: "propose_scheduled_post",
   title: "Propose a scheduled social post",
   description:
-    "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows with status='pending' (exact match), so agent proposals never publish without tenant-admin approval. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or ±HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
+    "Create a scheduled_posts row with status='pending_review'. The cron dispatcher only publishes rows whose generated column is_dispatch_approved is true (status='approved' AND approved_at set, stamped by the DB on human approval), so agent proposals never publish without tenant-admin approval. Agent writes are capped at 'pending_review' by DB trigger. scheduled_at MUST be ISO 8601 with an explicit timezone offset (Z or ±HH:MM); stored as UTC. Restrict `platform` to values returned by list_tenants.connected_platforms. EVERY post must carry the id of the tenant_marketing_assets row its graphic came from: pass `asset_id` (from compose_event_promo or attach_tenant_asset_draft). The post's image and storage path are taken from that asset, so a post can never silently carry another beat's graphic. If `asset_id` is omitted the tool resolves it from `image_url` and fails when no asset matches.",
   inputSchema: {
     tenant_id: z.string().uuid(),
     platform: z.string().describe("One of the tenant's connected_platforms values."),
@@ -18,7 +18,9 @@ export default defineTool({
     scheduled_at: z.string().describe("ISO 8601 with explicit offset, e.g. 2026-07-24T14:00:00-05:00 or ...Z."),
     campaign_id: z.string().uuid().optional(),
     connection_id: z.string().uuid().optional(),
-    idempotency_key: z.string().optional(),
+    idempotency_key: z.string().min(1).describe(
+      "REQUIRED. Stable key identifying this post within the tenant, e.g. 'seed:2026-10:<event_id>:announce'. Re-sending the same key returns the existing row instead of inserting a duplicate.",
+    ),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -31,7 +33,7 @@ export default defineTool({
       try { when = parseIsoWithOffset(input.scheduled_at); }
       catch (e: any) { return { content: [{ type: "text", text: e.message }], isError: true }; }
 
-      if (input.idempotency_key) {
+      {
         const { data: existing } = await supabase
           .from("scheduled_posts")
           .select("*")
@@ -111,7 +113,7 @@ export default defineTool({
           proposed_by: uid,
           campaign_id: input.campaign_id ?? null,
           connection_id: resolvedConnectionId,
-          idempotency_key: input.idempotency_key ?? null,
+          idempotency_key: input.idempotency_key,
         })
         .select()
         .single();

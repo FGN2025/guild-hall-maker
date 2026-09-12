@@ -49,12 +49,13 @@ export function useDraftDecision(tenantId: string | null | undefined) {
             };
       } else if (row.kind === "scheduled_post") {
         // DISPATCHER CONTRACT: publish-scheduled-posts selects
-        //   .eq("status", "pending")  (supabase/functions/publish-scheduled-posts/index.ts:130)
-        // so a human approval MUST write exactly "pending". Do not write
-        // "approved" here — that value belongs to marketing_campaigns only and
-        // would silently strand the post. See docs/tech-debt.md (status naming).
+        //   .eq("is_dispatch_approved", true)
+        // which is the generated column
+        //   (status = 'approved' AND approved_at IS NOT NULL).
+        // A human approval writes "approved"; the DB trigger stamps approved_at
+        // and a CHECK constraint makes an unstamped "approved" row impossible.
         patch = approve
-          ? { status: "pending", feedback_note: trimmed }
+          ? { status: "approved", feedback_note: trimmed }
           : { status: "rejected", feedback_note: trimmed };
       } else {
         patch = approve

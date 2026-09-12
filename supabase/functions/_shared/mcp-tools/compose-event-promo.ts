@@ -87,6 +87,9 @@ export default defineTool({
     ),
     campaign_id: z.string().uuid().optional(),
     file_name: z.string().optional(),
+    idempotency_key: z.string().min(1).describe(
+      "REQUIRED. Stable key identifying this composed beat within the tenant, e.g. 'seed:2026-10:<event_id>:announce:art'. Re-sending the same key returns the existing asset instead of rendering and uploading a second copy.",
+    ),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -98,6 +101,18 @@ export default defineTool({
 
       const userSupabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
+
+      // Idempotency BEFORE render/upload, so a replay never renders twice or
+      // leaves an orphan object in storage.
+      {
+        const { data: existing } = await userSupabase
+          .from("tenant_marketing_assets")
+          .select("*")
+          .eq("tenant_id", input.tenant_id)
+          .eq("idempotency_key", input.idempotency_key)
+          .maybeSingle();
+        if (existing) return okJson({ ...existing, _idempotent: true }, "asset");
+      }
 
       // Fetch event
       let evt: { id: string; name: string; game?: string | null; start_date?: string | null; prize_pool?: string | null; prize_type?: string | null; image_url?: string | null };
@@ -256,6 +271,7 @@ export default defineTool({
           label,
           campaign_id: input.campaign_id ?? null,
           is_published: false,
+          idempotency_key: input.idempotency_key,
           agent_source: "claude-mcp",
           proposed_by: uid,
           created_by: uid,

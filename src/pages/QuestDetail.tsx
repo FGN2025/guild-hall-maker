@@ -5,6 +5,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuestDetail } from "@/hooks/useQuestDetail";
 import { useQuestEnrollment } from "@/hooks/useQuestEnrollment";
+import { useSignedEvidenceUrls } from "@/hooks/useSignedEvidenceUrls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,6 +55,7 @@ const QuestDetail = () => {
     submitForReview, submittingForReview,
     deleteEvidence, deletingEvidence,
   } = useQuestEnrollment(id);
+  const evidenceUrl = useSignedEvidenceUrls(evidence);
 
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
@@ -226,12 +228,12 @@ const QuestDetail = () => {
 
                       return (
                         <div key={e.id} className="relative group space-y-1">
-                          <a href={e.file_url} target="_blank" rel="noopener noreferrer">
+                          <a href={evidenceUrl(e) ?? undefined} target="_blank" rel="noopener noreferrer">
                             <div className="rounded-lg border border-border overflow-hidden aspect-video bg-muted">
                               {e.file_type === "image" ? (
-                                <img src={e.file_url} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                <img src={evidenceUrl(e) ?? undefined} alt="Evidence" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                               ) : e.file_type === "video" ? (
-                                <video src={e.file_url} controls className="w-full h-full object-cover" onClick={(ev) => ev.preventDefault()} />
+                                <video src={evidenceUrl(e) ?? undefined} controls className="w-full h-full object-cover" onClick={(ev) => ev.preventDefault()} />
                               ) : (
                                 <div className="flex items-center justify-center h-full">
                                   <ImageIcon className="h-8 w-8 text-muted-foreground" />
