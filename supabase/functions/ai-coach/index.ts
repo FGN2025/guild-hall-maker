@@ -313,11 +313,13 @@ async function fetchPlayerGameplay(
       : Promise.resolve({ data: [] } as any),
     supabase
       .from("match_results")
-      .select("player1_id, player2_id, player1_score, player2_score, winner_id, completed_at, status")
+      .select(
+        "player1_id, player2_id, player1_score, player2_score, winner_id, completed_at, status, tournaments(name, game)"
+      )
       .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
       .eq("status", "completed")
       .order("completed_at", { ascending: false })
-      .limit(10),
+      .limit(50),
     supabase
       .from("challenge_completions")
       .select("awarded_points, completed_at, challenges(name, game_id, difficulty, skill_tags)")
@@ -332,10 +334,11 @@ async function fetchPlayerGameplay(
       .limit(25),
     supabase
       .from("season_scores")
-      .select("points, wins, losses, tournaments_played, updated_at")
+      .select("points, wins, losses, tournaments_played, updated_at, seasons(name, game_id, status)")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false })
-      .limit(1),
+      .limit(10),
+
   ]);
 
   if (playtime?.data?.minutes_played != null) {
