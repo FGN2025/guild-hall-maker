@@ -739,6 +739,13 @@ Deno.serve(async (req) => {
               .update({ status: "published", published_at: new Date().toISOString() })
               .eq("id", post.id);
           }
+          // A successful attempt clears any pending backoff bookkeeping.
+          if (post.retry_count) {
+            await supabase
+              .from("scheduled_posts")
+              .update({ next_retry_at: null, last_retry_error: null })
+              .eq("id", post.id);
+          }
           processed++;
           const used = quotaCache.get(post.tenant_id);
           if (used) { used.daily++; used.monthly++; }
