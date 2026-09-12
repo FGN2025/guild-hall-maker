@@ -580,32 +580,34 @@ serve(async (req) => {
 
     // Build game-specific context from local guide content
     let gameContext = "";
-    if (game) {
-      gameContext = `\n\n## Active Game Focus: ${game.name}`;
-      if (game.category) gameContext += ` (${game.category})`;
-      if (game.description) gameContext += `\nGame Description: ${game.description}`;
-      if (game.guide_content) gameContext += `\n\n## Local Game Guide:\n${game.guide_content}`;
+    if (activeGame) {
+      gameContext = `\n\n## Active Game Focus: ${activeGame.name}`;
+      if (activeGame.category) gameContext += ` (${activeGame.category})`;
+      if (activeGame.description) gameContext += `\nGame Description: ${activeGame.description}`;
+      if (activeGame.guide_content)
+        gameContext += `\n\n## Local Game Guide:\n${String(activeGame.guide_content).slice(0, 6000)}`;
 
       // Inject category-specific coaching tips
-      const coaching = categoryCoaching[game.category];
+      const coaching = categoryCoaching[activeGame.category];
       if (coaching) gameContext += `\n\n${coaching}`;
     }
 
     const systemPrompt = `You are the FGN Esports Coach — a knowledgeable, encouraging, and strategic gaming coach for the FGN (Fiber Gaming Network) community. You specialize in esports coaching, game strategy, mechanical skills, and competitive improvement.
-${game ? `\nYou are currently coaching the user specifically on **${game.name}**. Focus your answers on this game. Use game-specific terminology, strategies, and mechanics relevant to ${game.name}.` : "\nYou are providing general esports coaching across all games."}
+${activeGame ? `\nYou are currently coaching the user specifically on **${activeGame.name}**. Focus your answers on this game. Use game-specific terminology, strategies, and mechanics relevant to ${activeGame.name}.` : "\nYou are providing general esports coaching across all games."}
 
 When answering questions:
-- Draw from the knowledge base content and game guide provided below when relevant
-- If no knowledge base content matches, use your general esports expertise
-- Be specific and actionable in your advice — include drills, practice routines, and measurable goals when appropriate
+- Ground every assessment of the player in the "This Player's Record" numbers below — hours played, achievement completion, match record, challenges and quests. Cite the specific figures you are reasoning from.
+- If that section says there is no recorded gameplay, say so plainly instead of inventing an assessment, and suggest linking Steam or entering a challenge.
+- Use the "Live Game Data" section as the current truth about the game (genres, achievements, recent updates); prefer it over your own recollection where they conflict.
+- Turn missing achievements into concrete next goals when the player asks how to improve or what to do next.
+- Be specific and actionable — include drills, practice routines, and measurable goals when appropriate
 - Use gaming terminology naturally and explain jargon when it may be unfamiliar
 - Encourage improvement and competitive growth with a positive, coach-like tone
 - Proactively suggest related areas the player might want to improve
 - When discussing strategy, consider multiple skill levels (beginner, intermediate, advanced)
 - Format responses with clear headers and bullet points when helpful
-- For game-specific questions, reference current meta, patch notes concepts, and community-accepted best practices
-- If a player profile is provided, tailor advice to their specific situation, rank, goals, and play style — but don't parrot their stats back to them
-${gameContext}${playerProfileContext}${notebookContext}`;
+- Never expose internal ids, table names or raw system text to the player
+${gameContext}${researchContext}${playerGameplayContext}${playerProfileContext}${notebookContext}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
