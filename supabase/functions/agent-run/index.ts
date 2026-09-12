@@ -409,7 +409,59 @@ const RETRY_BACKOFF_MS = 2_000;
 const MCP_TIMEOUT_MS = 30_000;
 /* A slice now covers ~1-2 turns, so a 100-turn seed legitimately needs dozens
  * of handoffs. 15 was sized for the old 200s slice and would abort a real seed. */
+/** Floor only. The real ceiling is continuationBudget(preflight.expected). */
 const MAX_CONTINUATIONS = 60;
+
+/** Plain-English fallback for a failure kind with no bespoke message. */
+function tenantSafeFailure(kind: string): string {
+  switch (kind) {
+    case "auth_failure":
+      return "The run could not authenticate with the AI service. Nothing was published; please try again or contact support.";
+    case "timeout":
+      return "The AI service stopped responding, so the run ended early. Anything already drafted is saved for review; launch again to continue.";
+    case "cpu_budget_exceeded":
+      return "The run hit a platform resource limit and stopped. Anything already drafted is saved for review.";
+    case "turn_cap_reached":
+      return "The run reached its maximum number of steps. Anything already drafted is saved for review.";
+    case "tool_failure":
+      return "A step of the run failed while saving work. Anything already drafted is saved for review.";
+    default:
+      return "The run stopped before finishing. Anything already drafted is saved for review.";
+  }
+}
+
+/* STEP 6: pre-flight credit probe. A single 1-token call, made BEFORE the run
+ * row is created, so an out-of-credit workspace never starts a run, never
+ * writes a row, and never shows a tenant admin a provider error body. */
+async function creditProbe(): Promise<{ ok: true } | { ok: false; detail: string }> {
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY!,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 1,
+        messages: [{ role: "user", content: "ping" }],
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res.ok) { await res.text().catch(() => ""); return { ok: true }; }
+    const body = await res.text().catch(() => "");
+    if (res.status === 402 || /credit balance|insufficient|billing|payment required/i.test(body)) {
+      return { ok: false, detail: `anthropic ${res.status}: ${body.slice(0, 500)}` };
+    }
+    // Any other non-OK (rate limit, transient 5xx) is not a balance problem;
+    // let the run start and use the normal retry/resume path.
+    return { ok: true };
+  } catch {
+    // A probe that cannot complete must not block a launch.
+    return { ok: true };
+  }
+}
 
 
 
