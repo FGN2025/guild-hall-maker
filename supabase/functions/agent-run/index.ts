@@ -692,7 +692,7 @@ async function driveRun(params: {
 
       if (halt) {
         const kind = classifyFailure(halt.reason);
-        await updateRun(run.id, {
+        const owned = await updateRunIfRunning(run.id, {
           status: "failed",
           error_message: `${halt.reason}: ${halt.detail}`,
           failure_kind: kind,
@@ -706,7 +706,7 @@ async function driveRun(params: {
           continuation_metrics: contMetrics,
           continuation_budget: budget,
         });
-        await enqueueNotify(tenantId, "agent_run_failed", {
+        if (owned) await enqueueNotify(tenantId, "agent_run_failed", {
           ...run,
           error_message: FAILURE_MESSAGE[kind] ?? halt.reason,
         });
