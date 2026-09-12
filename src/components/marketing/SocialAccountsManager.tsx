@@ -42,6 +42,23 @@ const SocialAccountsManager = ({ tenantId }: Props) => {
       toast.error("Page ID is required for Facebook — the publisher cannot post without it");
       return;
     }
+    // Validate a Facebook token against Graph before saving, so a bad token
+    // is rejected here instead of failing the first scheduled post.
+    if (connectDialog === "facebook") {
+      try {
+        const res = await fetch(
+          `https://graph.facebook.com/v19.0/${encodeURIComponent(form.page_id.trim())}?fields=id,name&access_token=${encodeURIComponent(form.access_token.trim())}`,
+        );
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body?.error) {
+          toast.error(`Facebook rejected this token: ${body?.error?.message ?? `HTTP ${res.status}`}`);
+          return;
+        }
+      } catch {
+        toast.error("Could not reach Facebook to verify the token. Check your connection and try again.");
+        return;
+      }
+    }
     try {
       await addConnection.mutateAsync({
         platform: connectDialog!,
@@ -94,7 +111,18 @@ const SocialAccountsManager = ({ tenantId }: Props) => {
                       <div key={conn.id} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                          <span className="text-sm truncate">{conn.account_name}</span>
+                          <div className="min-w-0">
+                            <span className="text-sm truncate block">{conn.account_name}</span>
+                            {conn.token_check_error ? (
+                              <span className="text-xs text-destructive flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3 shrink-0" /> Token failing — reconnect
+                              </span>
+                            ) : conn.token_checked_at ? (
+                              <span className="text-xs text-muted-foreground">
+                                Token verified {new Date(conn.token_checked_at).toLocaleDateString()}
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                         <Button
                           size="icon"

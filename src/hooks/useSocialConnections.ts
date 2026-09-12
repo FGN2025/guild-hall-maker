@@ -31,7 +31,7 @@ export function useSocialConnections(tenantId?: string | null) {
     queryFn: async () => {
       let q = supabase
         .from("social_connections_safe" as any)
-        .select("id, tenant_id, user_id, platform, account_name, page_id, is_active, token_expires_at, created_at, updated_at")
+        .select("id, tenant_id, user_id, platform, account_name, page_id, is_active, token_expires_at, token_checked_at, token_check_error, created_at, updated_at")
         .eq("user_id", user!.id)
         .eq("is_active", true);
       if (tenantId) q = q.eq("tenant_id", tenantId);
