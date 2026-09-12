@@ -449,7 +449,10 @@ async function runAgentLoop(opts: {
   const sliceBudget = opts.sliceBudgetMs ?? SLICE_BUDGET_MS;
   // Never reserve more than the slice itself, or a shrunken test slice would
   // hand off forever without ever taking a turn.
-  const turnReserve = Math.min(opts.turnReserveMs ?? TURN_RESERVE_MS, Math.floor(sliceBudget / 2));
+  const maxReserve = Math.floor(sliceBudget / 2);
+  /** Recomputed every iteration so the reserve tracks this run's real turns. */
+  const currentReserve = () =>
+    Math.min(opts.turnReserveMs ?? adaptiveTurnReserve(turnMetrics), maxReserve);
   let turnsThisSlice = 0;
   /* STEP 1 INSTRUMENTATION (2026-09-10): per-turn wall clock, accumulated
    * across slices so p95 is computed over a whole run, not one invocation. */
@@ -458,7 +461,7 @@ async function runAgentLoop(opts: {
   while (turns < turnCap) {
     // Hand off BEFORE a turn we cannot certainly finish inside this worker's
     // wall-clock life. Guarantee forward progress: at least one turn per slice.
-    if (turnsThisSlice > 0 && Date.now() - sliceStart + turnReserve > sliceBudget) {
+    if (turnsThisSlice > 0 && Date.now() - sliceStart + currentReserve() > sliceBudget) {
       return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages, turnMetrics };
     }
     turnsThisSlice += 1;
