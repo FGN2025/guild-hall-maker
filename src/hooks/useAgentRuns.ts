@@ -9,7 +9,7 @@ export type AgentRun = {
   archetype: string | null;
   anchor: string | null;
   instruction: string | null;
-  status: "running" | "succeeded" | "completed" | "failed";
+  status: "running" | "succeeded" | "completed" | "failed" | "blocked";
   /** Structured scope recorded at launch (seed lane). */
   scope: any | null;
   /** Server-computed pre-flight snapshot recorded at launch (seed lane). */
