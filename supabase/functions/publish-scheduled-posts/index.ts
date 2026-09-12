@@ -317,6 +317,58 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 1d. Social token liveness. A pasted token that has quietly died turns
+    //     every approved post into a failed dispatch, so active connections
+    //     are re-validated against the platform hourly and the tenant is
+    //     notified on the first failure. Success stamps token_checked_at.
+    let tokensChecked = 0;
+    let tokensFailed = 0;
+    {
+      const fiftyMinAgoIso = new Date(now.getTime() - 50 * 60 * 1000).toISOString();
+      const { data: conns } = await supabase
+        .from("social_connections")
+        .select("id, tenant_id, platform, account_name, page_id, access_token, token_checked_at")
+        .eq("is_active", true)
+        .eq("platform", "facebook")
+        .or(`token_checked_at.is.null,token_checked_at.lt.${fiftyMinAgoIso}`)
+        .limit(10);
+      for (const c of conns ?? []) {
+        tokensChecked++;
+        try {
+          const target = c.page_id ? c.page_id : "me";
+          const res = await fetch(
+            `https://graph.facebook.com/v19.0/${encodeURIComponent(target)}?fields=id,name&access_token=${encodeURIComponent(c.access_token)}`,
+            { signal: AbortSignal.timeout(10_000) },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body?.error) {
+            tokensFailed++;
+            const msg = body?.error?.message ?? `HTTP ${res.status}`;
+            await supabase.from("social_connections")
+              .update({ token_checked_at: nowIso, token_check_error: msg })
+              .eq("id", c.id);
+            await supabase.rpc("enqueue_marketing_notification", {
+              _tenant_id: c.tenant_id,
+              _category: "token_invalid",
+              _related_kind: "social_connection",
+              _related_id: c.id,
+              _title: `${c.platform} connection "${c.account_name}" is failing`,
+              _message: `The access token for "${c.account_name}" was rejected by ${c.platform} (${msg}). Scheduled posts cannot publish until a fresh token is connected.`,
+              _link: "/tenant/marketing?tab=settings",
+              _agent_source: null,
+              _payload: { id: c.id },
+            });
+          } else {
+            await supabase.from("social_connections")
+              .update({ token_checked_at: nowIso, token_check_error: null })
+              .eq("id", c.id);
+          }
+        } catch (e) {
+          console.error("[token-check] fetch failed", { id: c.id, error: (e as Error).message });
+        }
+      }
+    }
+
     // --- Per-tenant publish quota ----------------------------------------
     // A daily and monthly cap on ACTUAL dispatches. Entirely separate from
     // agent_run_limits, which caps seed runs. A post over quota DEFERS: it is
