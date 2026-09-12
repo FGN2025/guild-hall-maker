@@ -498,7 +498,6 @@ Deno.serve(async (req) => {
           lapsed: lapsedCount,
           tokens_checked: tokensChecked,
           tokens_failed: tokensFailed,
-          lapsed: lapsedCount,
           stale_skipped: staleSkipped,
           stale_window_hours: staleWindowHours,
           stale_grace_seconds: controls.staleGraceSeconds,
