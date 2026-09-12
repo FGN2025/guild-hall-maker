@@ -887,15 +887,15 @@ Deno.serve(async (req) => {
 
   const svc = service();
 
-  // Authorize: platform admin OR tenant admin/manager on the target tenant
+  // Authorize: platform admin OR tenant admin/manager/marketing on the target tenant
   const { data: platformAdmin } = await svc.rpc("has_role", { _user_id: userId, _role: "admin" });
   let allowed = !!platformAdmin;
   if (!allowed) {
     const { data: ta } = await svc.from("tenant_admins")
       .select("role").eq("tenant_id", tenant_id).eq("user_id", userId).maybeSingle();
-    if (ta && (ta.role === "admin" || ta.role === "manager")) allowed = true;
+    if (ta && (ta.role === "admin" || ta.role === "manager" || ta.role === "marketing")) allowed = true;
   }
-  if (!allowed) return json({ error: "forbidden: admin or manager role required on target tenant" }, 403);
+  if (!allowed) return json({ error: "forbidden: admin, manager or marketing role required on target tenant" }, 403);
 
   // Kill switch + limits
   const gate = await checkLimits(tenant_id);

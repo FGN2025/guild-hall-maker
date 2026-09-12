@@ -66,7 +66,7 @@ type Preflight = {
 };
 
 export default function AgentLaunchCard({ tenantId, role }: Props) {
-  const canLaunch = role === "admin" || role === "manager";
+  const canLaunch = role === "admin" || role === "manager" || role === "marketing";
   const gate = useAgentLaunchGate();
   const qc = useQueryClient();
   const navigate = useNavigate();

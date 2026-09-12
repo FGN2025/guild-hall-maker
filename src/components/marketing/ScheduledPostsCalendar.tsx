@@ -53,7 +53,7 @@ const ScheduledPostsCalendar = ({ tenantId }: Props) => {
   const { tenantInfo } = useTenantAdmin();
   const decide = useDraftDecision(tenantId);
   const role = tenantInfo?.tenantRole;
-  const canDecide = role === "admin" || role === "manager";
+  const canDecide = role === "admin" || role === "manager" || role === "marketing";
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [detailPost, setDetailPost] = useState<ScheduledPost | null>(null);
