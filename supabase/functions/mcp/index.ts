@@ -544,7 +544,9 @@ var create_campaign_draft_default = defineTool12({
     target_platforms: z10.array(z10.string()).optional(),
     source_event_id: z10.string().uuid().optional().describe("tenant_events.id when the campaign promotes a tenant event."),
     source_tournament_id: z10.string().uuid().optional().describe("tournaments.id when the campaign promotes a tournament."),
-    idempotency_key: z10.string().optional()
+    idempotency_key: z10.string().min(1).describe(
+      "REQUIRED. Stable key identifying this campaign within the tenant, e.g. 'seed:2026-10:<event_id>'. Re-sending the same key returns the existing row instead of inserting a duplicate."
+    )
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -556,7 +558,7 @@ var create_campaign_draft_default = defineTool12({
       }
       const supabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
-      if (input.idempotency_key) {
+      {
         const { data: existing } = await supabase.from("marketing_campaigns").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
         if (existing) return okJson({ ...existing, _idempotent: true }, "campaign");
       }
@@ -574,7 +576,7 @@ var create_campaign_draft_default = defineTool12({
         created_by: uid,
         source_event_id: input.source_event_id ?? null,
         source_tournament_id: input.source_tournament_id ?? null,
-        idempotency_key: input.idempotency_key ?? null
+        idempotency_key: input.idempotency_key
       }).select().single();
       if (error) throw error;
       return okJson(data, "campaign");
@@ -665,7 +667,10 @@ var attach_tenant_asset_draft_default = defineTool14({
     source_asset_id: z12.string().uuid().optional().describe("Platform template id if this was cloned from marketing_assets."),
     notes: z12.string().optional(),
     overlay_config: z12.record(z12.any()).optional().describe("Optional editor overlay config { canvas, overlays } so the draft reopens as editable layers."),
-    background_url: z12.string().url().optional().describe("Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url.")
+    background_url: z12.string().url().optional().describe("Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url."),
+    idempotency_key: z12.string().min(1).describe(
+      "REQUIRED. Stable key identifying this asset within the tenant, e.g. 'seed:2026-10:<event_id>:announce:art'. Re-sending the same key returns the existing asset instead of uploading a second copy."
+    )
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {
@@ -674,6 +679,10 @@ var attach_tenant_asset_draft_default = defineTool14({
     try {
       const userSupabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
+      {
+        const { data: existing } = await userSupabase.from("tenant_marketing_assets").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
+        if (existing) return okJson({ ...existing, _idempotent: true }, "asset");
+      }
       const resp = await fetch(input.source_url, { redirect: "follow" });
       if (!resp.ok) {
         return { content: [{ type: "text", text: `Failed to fetch source_url: HTTP ${resp.status}` }], isError: true };
@@ -729,6 +738,7 @@ var attach_tenant_asset_draft_default = defineTool14({
         overlay_config: input.overlay_config ?? null,
         background_url: input.background_url ?? null,
         is_published: false,
+        idempotency_key: input.idempotency_key,
         agent_source: "claude-mcp",
         proposed_by: uid,
         created_by: uid
@@ -759,7 +769,9 @@ var propose_scheduled_post_default = defineTool15({
     scheduled_at: z13.string().describe("ISO 8601 with explicit offset, e.g. 2026-07-24T14:00:00-05:00 or ...Z."),
     campaign_id: z13.string().uuid().optional(),
     connection_id: z13.string().uuid().optional(),
-    idempotency_key: z13.string().optional()
+    idempotency_key: z13.string().min(1).describe(
+      "REQUIRED. Stable key identifying this post within the tenant, e.g. 'seed:2026-10:<event_id>:announce'. Re-sending the same key returns the existing row instead of inserting a duplicate."
+    )
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -774,7 +786,7 @@ var propose_scheduled_post_default = defineTool15({
       } catch (e) {
         return { content: [{ type: "text", text: e.message }], isError: true };
       }
-      if (input.idempotency_key) {
+      {
         const { data: existing } = await supabase.from("scheduled_posts").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
         if (existing) return okJson({ ...existing, _idempotent: true }, "scheduled_post");
       }
@@ -822,7 +834,7 @@ var propose_scheduled_post_default = defineTool15({
         proposed_by: uid,
         campaign_id: input.campaign_id ?? null,
         connection_id: resolvedConnectionId,
-        idempotency_key: input.idempotency_key ?? null
+        idempotency_key: input.idempotency_key
       }).select().single();
       if (error) throw error;
       const { data: conflict } = await supabase.rpc("check_schedule_conflict", {
@@ -1737,7 +1749,10 @@ var compose_event_promo_default = defineTool21({
       "The beat this render is for: 'Announce', 'Countdown', 'Day-Of', or 'Recap'. Baked into the image, so compose separately for every beat you schedule."
     ),
     campaign_id: z19.string().uuid().optional(),
-    file_name: z19.string().optional()
+    file_name: z19.string().optional(),
+    idempotency_key: z19.string().min(1).describe(
+      "REQUIRED. Stable key identifying this composed beat within the tenant, e.g. 'seed:2026-10:<event_id>:announce:art'. Re-sending the same key returns the existing asset instead of rendering and uploading a second copy."
+    )
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1749,6 +1764,10 @@ var compose_event_promo_default = defineTool21({
       }
       const userSupabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
+      {
+        const { data: existing } = await userSupabase.from("tenant_marketing_assets").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
+        if (existing) return okJson({ ...existing, _idempotent: true }, "asset");
+      }
       let evt;
       if (input.tournament_id) {
         const { data, error } = await userSupabase.from("tournaments").select("id, name, game, start_date, prize_pool, prize_type, image_url").eq("id", input.tournament_id).maybeSingle();
@@ -1857,6 +1876,7 @@ var compose_event_promo_default = defineTool21({
         label,
         campaign_id: input.campaign_id ?? null,
         is_published: false,
+        idempotency_key: input.idempotency_key,
         agent_source: "claude-mcp",
         proposed_by: uid,
         created_by: uid,
@@ -1944,7 +1964,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-09-10T03:05Z-run-instrumentation";
+var BUILD_ID = "2026-09-12T00:00Z-work-derived-budget";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";

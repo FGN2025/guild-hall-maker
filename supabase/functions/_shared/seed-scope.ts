@@ -386,9 +386,12 @@ export function scopeSummary(pf: Preflight): string {
 
 export type FailureKind =
   | "credit_exhausted"
+  | "insufficient_credits"
   | "cpu_budget_exceeded"
   | "auth_failure"
   | "timeout"
+  | "continuation_budget_exhausted"
+  | "no_forward_progress"
   | "turn_cap_reached"
   | "tool_failure"
   | "unknown";
@@ -396,10 +399,17 @@ export type FailureKind =
 export function classifyFailure(msg: string | null | undefined): FailureKind {
   const m = String(msg ?? "").toLowerCase();
   if (!m) return "unknown";
+  if (/insufficient_credits/.test(m)) return "insufficient_credits";
+  if (/no_forward_progress/.test(m)) return "no_forward_progress";
+  // Budget exhaustion is NOT a timeout: the run was alive and progressing when
+  // it hit a ceiling. Mislabelling it as a timeout is what hid the real cause.
+  if (/continuation_(limit|budget)_exceeded|continuation_budget_exhausted/.test(m)) {
+    return "continuation_budget_exhausted";
+  }
   if (/credit|billing|insufficient[_ ]funds|quota|payment required|402/.test(m)) return "credit_exhausted";
   if (/cpu (time )?(limit|budget)|wall clock|worker (boot|limit)|memory limit|oom|resource limit/.test(m)) return "cpu_budget_exceeded";
   if (/unauthorized|forbidden|invalid (api )?key|401|403|authentication/.test(m)) return "auth_failure";
-  if (/timeout|timed out|stream_idle|continuation_limit_exceeded|deadline/.test(m)) return "timeout";
+  if (/timeout|timed out|stream_idle|deadline/.test(m)) return "timeout";
   if (/turn_cap/.test(m)) return "turn_cap_reached";
   if (/agent-mcp .* failed|tool .* failed/.test(m)) return "tool_failure";
   return "unknown";
@@ -407,10 +417,54 @@ export function classifyFailure(msg: string | null | undefined): FailureKind {
 
 export const FAILURE_LABEL: Record<FailureKind, string> = {
   credit_exhausted: "Credit exhausted",
+  insufficient_credits: "Not enough AI credit to start",
   cpu_budget_exceeded: "CPU budget exceeded",
   auth_failure: "Auth failure",
   timeout: "Timed out",
+  continuation_budget_exhausted: "Ran out of continuation budget",
+  no_forward_progress: "Stopped making progress",
   turn_cap_reached: "Turn cap reached",
   tool_failure: "Tool failure",
   unknown: "Failed",
 };
+
+/** Plain-English, tenant-safe text. Never contains a provider error body. */
+export const FAILURE_MESSAGE: Partial<Record<FailureKind, string>> = {
+  insufficient_credits:
+    "This run did not start because the workspace AI balance is too low. Top up the AI credit in workspace settings and launch again — nothing was created and nothing was changed.",
+  credit_exhausted:
+    "The run stopped part-way because the workspace AI balance ran out. Everything it had already drafted is saved and waiting for review. Top up the AI credit and launch again to finish the rest.",
+  continuation_budget_exhausted:
+    "The run used its whole working budget before finishing. Everything drafted so far is saved for review; launch again to continue from where it stopped.",
+  no_forward_progress:
+    "The run kept working but stopped producing anything new, so it was halted to avoid spinning. Everything drafted before that point is saved for review.",
+};
+
+/**
+ * Continuation budget derived from the work the preflight expects, rather than
+ * a constant unrelated to the job. Floored at the historical 60 so no run gets
+ * a smaller allowance than it had before, and capped so a runaway preflight
+ * cannot buy unlimited invocations.
+ */
+export function continuationBudget(expected: { campaigns?: number; assets?: number; posts?: number } | null | undefined): number {
+  const units = (expected?.campaigns ?? 0) + (expected?.assets ?? 0) + (expected?.posts ?? 0);
+  if (!units) return 60;
+  return Math.min(400, Math.max(60, Math.ceil(units * 1.5)));
+}
+
+/**
+ * Completeness: a run is only "complete" when what it committed matches what
+ * the preflight expected, within tolerance. 10% covers legitimate divergence
+ * (an event cancelled mid-run, a platform dropping out) without letting a run
+ * that quietly produced half its work pass as a success.
+ */
+export const COMPLETENESS_TOLERANCE = 0.1;
+
+export function completenessRatio(
+  expected: { campaigns?: number; assets?: number; posts?: number } | null | undefined,
+  committed: number,
+): number | null {
+  const units = (expected?.campaigns ?? 0) + (expected?.assets ?? 0) + (expected?.posts ?? 0);
+  if (!units) return null;
+  return committed / units;
+}

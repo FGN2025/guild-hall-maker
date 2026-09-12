@@ -70,4 +70,7 @@ export const WRITE_TOOL_NAMES = new Set([
   "update_scheduled_post",
   "propose_branded_page",
   "propose_portal_banner_update",
+  // Writes a tenant_marketing_assets row, so it belongs in the write set even
+  // though its primary job is rendering.
+  "compose_event_promo",
 ]);

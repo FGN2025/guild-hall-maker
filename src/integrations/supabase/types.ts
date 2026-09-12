@@ -252,11 +252,14 @@ export type Database = {
           archetype: string | null
           build_id: string | null
           committed_rows: number
+          completeness_ratio: number | null
+          continuation_budget: number | null
           continuation_count: number
           continuation_metrics: Json
           cost_usd: number
           created_at: string
           created_row_ids: Json
+          error_detail: string | null
           error_message: string | null
           failure_kind: string | null
           finished_at: string | null
@@ -265,6 +268,7 @@ export type Database = {
           include_kickoff: boolean | null
           input_tokens: number
           instruction: string | null
+          is_complete: boolean | null
           launched_by: string
           mode: string | null
           output_tokens: number
@@ -292,11 +296,14 @@ export type Database = {
           archetype?: string | null
           build_id?: string | null
           committed_rows?: number
+          completeness_ratio?: number | null
+          continuation_budget?: number | null
           continuation_count?: number
           continuation_metrics?: Json
           cost_usd?: number
           created_at?: string
           created_row_ids?: Json
+          error_detail?: string | null
           error_message?: string | null
           failure_kind?: string | null
           finished_at?: string | null
@@ -305,6 +312,7 @@ export type Database = {
           include_kickoff?: boolean | null
           input_tokens?: number
           instruction?: string | null
+          is_complete?: boolean | null
           launched_by: string
           mode?: string | null
           output_tokens?: number
@@ -332,11 +340,14 @@ export type Database = {
           archetype?: string | null
           build_id?: string | null
           committed_rows?: number
+          completeness_ratio?: number | null
+          continuation_budget?: number | null
           continuation_count?: number
           continuation_metrics?: Json
           cost_usd?: number
           created_at?: string
           created_row_ids?: Json
+          error_detail?: string | null
           error_message?: string | null
           failure_kind?: string | null
           finished_at?: string | null
@@ -345,6 +356,7 @@ export type Database = {
           include_kickoff?: boolean | null
           input_tokens?: number
           instruction?: string | null
+          is_complete?: boolean | null
           launched_by?: string
           mode?: string | null
           output_tokens?: number
@@ -4726,6 +4738,7 @@ export type Database = {
           file_name: string
           file_path: string
           id: string
+          idempotency_key: string | null
           is_published: boolean
           label: string
           notes: string | null
@@ -4747,6 +4760,7 @@ export type Database = {
           file_name: string
           file_path: string
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
           label?: string
           notes?: string | null
@@ -4768,6 +4782,7 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
           label?: string
           notes?: string | null

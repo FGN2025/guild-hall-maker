@@ -35,6 +35,10 @@ import {
   renderConstraintBlock,
   scopeSummary,
   classifyFailure,
+  continuationBudget,
+  completenessRatio,
+  COMPLETENESS_TOLERANCE,
+  FAILURE_MESSAGE,
 } from "../_shared/seed-scope.ts";
 
 
@@ -364,8 +368,39 @@ async function callAnthropicWithRetry(body: any) {
  * 2026-08-05: reserve raised to 60s so a large turn effectively starts a FRESH
  * slice — we never begin a plan-sized turn with the worker already half spent. */
 const SLICE_BUDGET_MS = 70_000;
-/** Pessimistic cost of one more model turn plus its tool round-trips. */
-const TURN_RESERVE_MS = 60_000;
+/* STEP 3 (2026-09-12). The reserve used to be a flat 60s against a 70s slice,
+ * so any first turn over ten seconds handed off immediately and the runner was
+ * pinned near one turn per invocation. The reserve is now MEASURED: it comes
+ * from this run's own recorded turn durations (p95 x 1.25), which step 1's
+ * instrumentation records from the first turn onward. The constant below is
+ * only the cold-start value used until three turns have been observed. */
+const DEFAULT_TURN_RESERVE_MS = 30_000;
+const MIN_TURN_RESERVE_MS = 20_000;
+const MAX_TURN_RESERVE_MS = 45_000;
+/** Legacy name kept for the test override path. */
+const TURN_RESERVE_MS = DEFAULT_TURN_RESERVE_MS;
+
+function p95(values: number[]): number {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
+  return sorted[Math.max(0, idx)];
+}
+
+/** Reserve enough room for one more turn, sized from observed turns. */
+function adaptiveTurnReserve(metrics: any[]): number {
+  const durations = metrics.map((m) => Number(m?.ms)).filter((n) => Number.isFinite(n) && n > 0);
+  if (durations.length < 3) return DEFAULT_TURN_RESERVE_MS;
+  const target = Math.ceil(p95(durations) * 1.25);
+  return Math.min(MAX_TURN_RESERVE_MS, Math.max(MIN_TURN_RESERVE_MS, target));
+}
+
+/* STEP 5: how many consecutive continuations may commit zero new rows before
+ * the run is halted. Five, because a legitimately slow stretch (a long research
+ * turn, a retry after a transient model error, a compose that renders before it
+ * inserts) can span two or three invocations without committing, but five in a
+ * row has never happened on a productive run — the observed worst case was two. */
+const NO_PROGRESS_LIMIT = 5;
 /** Primary liveness mechanism: abort only when the stream itself stalls. */
 const ANTHROPIC_IDLE_MS = 45_000;
 /** Defense in depth only — must exceed the largest legitimate turn with margin. */
@@ -374,7 +409,59 @@ const RETRY_BACKOFF_MS = 2_000;
 const MCP_TIMEOUT_MS = 30_000;
 /* A slice now covers ~1-2 turns, so a 100-turn seed legitimately needs dozens
  * of handoffs. 15 was sized for the old 200s slice and would abort a real seed. */
+/** Floor only. The real ceiling is continuationBudget(preflight.expected). */
 const MAX_CONTINUATIONS = 60;
+
+/** Plain-English fallback for a failure kind with no bespoke message. */
+function tenantSafeFailure(kind: string): string {
+  switch (kind) {
+    case "auth_failure":
+      return "The run could not authenticate with the AI service. Nothing was published; please try again or contact support.";
+    case "timeout":
+      return "The AI service stopped responding, so the run ended early. Anything already drafted is saved for review; launch again to continue.";
+    case "cpu_budget_exceeded":
+      return "The run hit a platform resource limit and stopped. Anything already drafted is saved for review.";
+    case "turn_cap_reached":
+      return "The run reached its maximum number of steps. Anything already drafted is saved for review.";
+    case "tool_failure":
+      return "A step of the run failed while saving work. Anything already drafted is saved for review.";
+    default:
+      return "The run stopped before finishing. Anything already drafted is saved for review.";
+  }
+}
+
+/* STEP 6: pre-flight credit probe. A single 1-token call, made BEFORE the run
+ * row is created, so an out-of-credit workspace never starts a run, never
+ * writes a row, and never shows a tenant admin a provider error body. */
+async function creditProbe(): Promise<{ ok: true } | { ok: false; detail: string }> {
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY!,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 1,
+        messages: [{ role: "user", content: "ping" }],
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res.ok) { await res.text().catch(() => ""); return { ok: true }; }
+    const body = await res.text().catch(() => "");
+    if (res.status === 402 || /credit balance|insufficient|billing|payment required/i.test(body)) {
+      return { ok: false, detail: `anthropic ${res.status}: ${body.slice(0, 500)}` };
+    }
+    // Any other non-OK (rate limit, transient 5xx) is not a balance problem;
+    // let the run start and use the normal retry/resume path.
+    return { ok: true };
+  } catch {
+    // A probe that cannot complete must not block a launch.
+    return { ok: true };
+  }
+}
 
 
 
@@ -414,7 +501,10 @@ async function runAgentLoop(opts: {
   const sliceBudget = opts.sliceBudgetMs ?? SLICE_BUDGET_MS;
   // Never reserve more than the slice itself, or a shrunken test slice would
   // hand off forever without ever taking a turn.
-  const turnReserve = Math.min(opts.turnReserveMs ?? TURN_RESERVE_MS, Math.floor(sliceBudget / 2));
+  const maxReserve = Math.floor(sliceBudget / 2);
+  /** Recomputed every iteration so the reserve tracks this run's real turns. */
+  const currentReserve = () =>
+    Math.min(opts.turnReserveMs ?? adaptiveTurnReserve(turnMetrics), maxReserve);
   let turnsThisSlice = 0;
   /* STEP 1 INSTRUMENTATION (2026-09-10): per-turn wall clock, accumulated
    * across slices so p95 is computed over a whole run, not one invocation. */
@@ -423,7 +513,7 @@ async function runAgentLoop(opts: {
   while (turns < turnCap) {
     // Hand off BEFORE a turn we cannot certainly finish inside this worker's
     // wall-clock life. Guarantee forward progress: at least one turn per slice.
-    if (turnsThisSlice > 0 && Date.now() - sliceStart + turnReserve > sliceBudget) {
+    if (turnsThisSlice > 0 && Date.now() - sliceStart + currentReserve() > sliceBudget) {
       return { status: "continue" as const, turns, inputTokens, outputTokens, finalText: "", messages, turnMetrics };
     }
     turnsThisSlice += 1;
@@ -571,11 +661,27 @@ async function driveRun(params: {
           at: new Date().toISOString(),
         },
       ];
-      if (nextCount > MAX_CONTINUATIONS) {
+      /* STEPS 4 + 5, shipped together on purpose. The ceiling is now derived
+       * from the work the preflight expects (floored at the historical 60), and
+       * the no-progress guard is what makes a raised ceiling safe: without it a
+       * run that dies at 60 would simply spin instead. */
+      const budget = continuationBudget(run?.preflight?.expected ?? null);
+      const trailing = contMetrics.slice(-NO_PROGRESS_LIMIT);
+      const stalled = trailing.length >= NO_PROGRESS_LIMIT &&
+        trailing.every((m: any) => (m?.delta ?? 0) <= 0);
+
+      const halt = stalled
+        ? { reason: "no_forward_progress", detail: `no rows committed across ${NO_PROGRESS_LIMIT} consecutive continuations` }
+        : nextCount > budget
+        ? { reason: "continuation_budget_exhausted", detail: `used ${nextCount} of ${budget} continuations` }
+        : null;
+
+      if (halt) {
+        const kind = classifyFailure(halt.reason);
         await updateRun(run.id, {
           status: "failed",
-          error_message: "continuation_limit_exceeded",
-          failure_kind: classifyFailure("continuation_limit_exceeded"),
+          error_message: `${halt.reason}: ${halt.detail}`,
+          failure_kind: kind,
           finished_at: new Date().toISOString(),
           turns_used: result.turns,
           input_tokens: result.inputTokens,
@@ -584,8 +690,12 @@ async function driveRun(params: {
           committed_rows: committed,
           turn_metrics: turnMetrics,
           continuation_metrics: contMetrics,
+          continuation_budget: budget,
         });
-        await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: "continuation_limit_exceeded" });
+        await enqueueNotify(tenantId, "agent_run_failed", {
+          ...run,
+          error_message: FAILURE_MESSAGE[kind] ?? halt.reason,
+        });
         return;
       }
       await updateRun(run.id, {
@@ -617,29 +727,43 @@ async function driveRun(params: {
       heartbeat_at: new Date().toISOString(),
     };
     if (result.status === "completed") {
+      /* STEP 8 completeness: a clean exit is not the same as a finished job.
+       * A run counts complete only when what it committed is within tolerance
+       * of what the preflight expected. Under-production is recorded, not
+       * silently passed. */
+      const ratio = completenessRatio(run?.preflight?.expected ?? null, countCreated(created));
+      patch.completeness_ratio = ratio;
+      patch.is_complete = ratio === null ? true : ratio >= 1 - COMPLETENESS_TOLERANCE;
       patch.status = "completed";
       patch.failure_kind = null;
       await updateRun(run.id, patch);
       await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
     } else {
+      const raw = (result as any).error ?? "unknown";
+      const kind = classifyFailure(raw);
       patch.status = "failed";
-      patch.error_message = (result as any).error ?? "unknown";
-      patch.failure_kind = classifyFailure(patch.error_message);
+      // Tenant-facing text is ours; the provider's body stays in error_detail.
+      patch.error_message = FAILURE_MESSAGE[kind] ?? tenantSafeFailure(kind);
+      patch.error_detail = String(raw);
+      patch.failure_kind = kind;
       await updateRun(run.id, patch);
       await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
     }
   } catch (e) {
     const msg = (e as Error).message ?? "unknown error";
     console.error("[agent-run] loop crashed", msg);
+    const kind = classifyFailure(msg);
     const created = await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => ({}));
+    const safe = FAILURE_MESSAGE[kind] ?? tenantSafeFailure(kind);
     await updateRun(run.id, {
       status: "failed",
-      error_message: msg,
-      failure_kind: classifyFailure(msg),
+      error_message: safe,
+      error_detail: msg,
+      failure_kind: kind,
       finished_at: new Date().toISOString(),
       created_row_ids: created,
     });
-    await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: msg });
+    await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: safe });
   }
 }
 
@@ -822,6 +946,34 @@ Deno.serve(async (req) => {
     } catch (e) {
       return json({ error: `preflight failed: ${(e as Error).message}` }, 500);
     }
+  }
+
+  // STEP 6: balance gate. Terminal `blocked` row, zero work, no provider text.
+  const probe = await creditProbe();
+  if (!probe.ok) {
+    const { data: blocked } = await svc.from("agent_runs").insert({
+      tenant_id,
+      launched_by: userId,
+      agent_name: prompt.name,
+      prompt_name: prompt.name,
+      prompt_version: prompt.version,
+      build_id: BUILD_ID,
+      mode,
+      status: "blocked",
+      failure_kind: "insufficient_credits",
+      error_message: FAILURE_MESSAGE.insufficient_credits,
+      error_detail: probe.detail,
+      turn_cap: effectiveTurnCap,
+      target_month: seedMonth,
+      finished_at: new Date().toISOString(),
+      committed_rows: 0,
+    }).select().single();
+    return json({
+      run_id: blocked?.id ?? null,
+      status: "blocked",
+      failure_kind: "insufficient_credits",
+      message: FAILURE_MESSAGE.insufficient_credits,
+    }, 200);
   }
 
   const { data: run, error: runErr } = await svc.from("agent_runs").insert({
