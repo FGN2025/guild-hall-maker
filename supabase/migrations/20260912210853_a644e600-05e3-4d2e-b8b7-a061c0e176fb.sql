@@ -1,0 +1,2 @@
+ALTER TABLE public.agent_runs DROP CONSTRAINT agent_runs_status_check;
+ALTER TABLE public.agent_runs ADD CONSTRAINT agent_runs_status_check CHECK (status IN ('running','completed','failed','killed','timed_out','blocked'));
