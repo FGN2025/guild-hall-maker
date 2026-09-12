@@ -521,7 +521,7 @@ Deno.serve(async (req) => {
     // next attempt with exponential backoff; only after MAX_RETRIES (or on a
     // permanent error like a bad token or missing graphic) does it fail.
     const MAX_RETRIES = 5;
-    const BACKOFF_MINUTES = [5, 15, 45, 120, 360];
+    const BACKOFF_MINUTES = [2, 5, 15, 45, 90]; // ~2.6h total, inside the stale window
 
     /** Transient = worth trying again unchanged. Rate limits, 5xx, timeouts,
      *  network errors, and the Graph API's own "try again" codes. */
