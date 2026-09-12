@@ -60,6 +60,10 @@ async function searchNotebooks(query: string, gameId?: string | null): Promise<s
   const MAX_PER_NOTEBOOK = 3;
 
   // Process sequentially to respect priority ordering (game-specific first)
+  if (!NOTEBOOK_PASS) {
+    console.warn("OPEN_NOTEBOOK_PASSWORD is not set in this function's environment; notebook lookups will be rejected with 401");
+  }
+
   for (const conn of connections) {
     if (allPassages.length >= MAX_TOTAL) break;
     try {
@@ -73,8 +77,15 @@ async function searchNotebooks(query: string, gameId?: string | null): Promise<s
       });
 
       if (!res.ok) {
-        console.warn(`Notebook search failed for "${conn.name}":`, res.status);
-        await res.text();
+        // Log the failure body so "Missing authorization header" (credential not
+        // reaching the function) is distinguishable from "Invalid password"
+        // (credential stale/wrong on the notebook server). Never log the password.
+        const body = await res.text().catch(() => "");
+        console.warn(
+          `Notebook search failed for "${conn.name}": ${res.status}`,
+          body.slice(0, 200),
+          NOTEBOOK_PASS ? "(auth header sent)" : "(no auth header — OPEN_NOTEBOOK_PASSWORD missing)"
+        );
         continue;
       }
 
