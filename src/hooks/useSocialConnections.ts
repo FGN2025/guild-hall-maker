@@ -12,6 +12,10 @@ export type SocialConnection = {
   page_id: string | null;
   is_active: boolean;
   token_expires_at: string | null;
+  /** Last time the dispatcher verified this token against the platform. */
+  token_checked_at?: string | null;
+  /** Last verification error, null when the token is healthy. */
+  token_check_error?: string | null;
   created_at: string;
   updated_at: string;
 };
