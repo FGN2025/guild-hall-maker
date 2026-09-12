@@ -52,6 +52,6 @@ Live state confirmed just now:
 - Lapse work touches `publish-scheduled-posts` (current post-mortem alert), `pending-review-digest`, `useTenantReviewQueue.ts` and the Agent Drafts UI; the sweep should be its own scheduled function, not the dispatcher.
 - `social_connections` already has `token_expires_at` and `refresh_token`; no code reads or writes either.
 
-## First question before building
+## Decided
 
-Should step 1 give the marketing role the *same* powers as a tenant admin (launch runs and approve drafts), or should marketing launch and compose while approval stays with tenant admins?
+Marketing role has the same powers as a tenant admin across the marketing automation: launch, compose, review, approve, reject. It stays confined to its own tenant and to marketing surfaces.
