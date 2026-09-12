@@ -513,6 +513,51 @@ Deno.serve(async (req) => {
     let processed = 0;
     let failed = 0;
     let undeliverable = 0;
+    let retried = 0;
+
+    // --- Transient-failure retry -------------------------------------------
+    // A platform outage, rate limit or network blip is not a reason to burn a
+    // post permanently. Such failures keep the row APPROVED and schedule the
+    // next attempt with exponential backoff; only after MAX_RETRIES (or on a
+    // permanent error like a bad token or missing graphic) does it fail.
+    const MAX_RETRIES = 5;
+    const BACKOFF_MINUTES = [5, 15, 45, 120, 360];
+
+    /** Transient = worth trying again unchanged. Rate limits, 5xx, timeouts,
+     *  network errors, and the Graph API's own "try again" codes. */
+    function isTransient(status: number | null, errText: string): boolean {
+      if (status === 429 || (status !== null && status >= 500)) return true;
+      try {
+        const g = JSON.parse(errText)?.error ?? JSON.parse(errText)?.graph_error;
+        if (g && typeof g === "object" && [1, 2, 4, 17, 32, 341, 613].includes(g.code)) return true;
+      } catch (_) { /* not JSON */ }
+      return /rate limit|please try again|temporarily unavailable|timeout|timed out|network|ECONNRESET|fetch failed/i
+        .test(errText);
+    }
+
+    /** Keeps the post approved and books the next attempt. Returns false when
+     *  the retry budget is spent, so the caller fails the row permanently. */
+    async function scheduleRetry(post: any, message: string): Promise<boolean> {
+      const attempt = (post.retry_count ?? 0) + 1;
+      if (attempt > MAX_RETRIES) return false;
+      const waitMin = BACKOFF_MINUTES[Math.min(attempt - 1, BACKOFF_MINUTES.length - 1)];
+      const nextAt = new Date(now.getTime() + waitMin * 60_000).toISOString();
+      await supabase
+        .from("scheduled_posts")
+        .update({
+          retry_count: attempt,
+          next_retry_at: nextAt,
+          last_retry_error: message.slice(0, 500),
+        })
+        .eq("id", post.id)
+        .eq("status", "approved");
+      retried++;
+      console.warn(
+        `[retry] ${post.id} attempt ${attempt}/${MAX_RETRIES}, next at ${nextAt}: ${message.slice(0, 200)}`,
+      );
+      return true;
+    }
+
 
     /** Durable image resolution.
      *  A signed URL is a cache, never the source of truth. We mint a fresh one
