@@ -667,7 +667,10 @@ var attach_tenant_asset_draft_default = defineTool14({
     source_asset_id: z12.string().uuid().optional().describe("Platform template id if this was cloned from marketing_assets."),
     notes: z12.string().optional(),
     overlay_config: z12.record(z12.any()).optional().describe("Optional editor overlay config { canvas, overlays } so the draft reopens as editable layers."),
-    background_url: z12.string().url().optional().describe("Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url.")
+    background_url: z12.string().url().optional().describe("Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url."),
+    idempotency_key: z12.string().min(1).describe(
+      "REQUIRED. Stable key identifying this asset within the tenant, e.g. 'seed:2026-10:<event_id>:announce:art'. Re-sending the same key returns the existing asset instead of uploading a second copy."
+    )
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {
@@ -676,6 +679,10 @@ var attach_tenant_asset_draft_default = defineTool14({
     try {
       const userSupabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
+      {
+        const { data: existing } = await userSupabase.from("tenant_marketing_assets").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
+        if (existing) return okJson({ ...existing, _idempotent: true }, "asset");
+      }
       const resp = await fetch(input.source_url, { redirect: "follow" });
       if (!resp.ok) {
         return { content: [{ type: "text", text: `Failed to fetch source_url: HTTP ${resp.status}` }], isError: true };
@@ -731,6 +738,7 @@ var attach_tenant_asset_draft_default = defineTool14({
         overlay_config: input.overlay_config ?? null,
         background_url: input.background_url ?? null,
         is_published: false,
+        idempotency_key: input.idempotency_key,
         agent_source: "claude-mcp",
         proposed_by: uid,
         created_by: uid

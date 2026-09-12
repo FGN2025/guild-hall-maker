@@ -488,12 +488,18 @@
               "type": "string",
               "format": "uri",
               "description": "Optional clean base image URL (no baked-in overlays). Editor uses this instead of the flattened url."
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable key identifying this asset within the tenant, e.g. 'seed:2026-10:<event_id>:announce:art'. Re-sending the same key returns the existing asset instead of uploading a second copy."
             }
           },
           "required": [
             "tenant_id",
             "source_url",
-            "file_name"
+            "file_name",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
