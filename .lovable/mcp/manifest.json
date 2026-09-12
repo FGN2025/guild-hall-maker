@@ -5,7 +5,7 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://yrhwzmkenjgiujhofucx.supabase.co/auth/v1",
-    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-09-12T19%3A55Z-marketing-parity",
+    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-09-12T20%3A10Z-lapse-guard",
     "accepted_audiences": [
       "authenticated"
     ]

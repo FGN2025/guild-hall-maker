@@ -1964,7 +1964,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-09-12T19:55Z-marketing-parity";
+var BUILD_ID = "2026-09-12T20:10Z-lapse-guard";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";
