@@ -302,7 +302,7 @@ const AdminEcosystem = () => {
         <p className="text-xs text-muted-foreground">Push real-time events to external apps. Each webhook receives HMAC-signed payloads.</p>
 
         {/* Add form */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <Select value={newWH.target_app} onValueChange={(v) => setNewWH((p) => ({ ...p, target_app: v }))}>
             <SelectTrigger className="bg-background"><SelectValue placeholder="Target App" /></SelectTrigger>
             <SelectContent>
@@ -316,6 +316,15 @@ const AdminEcosystem = () => {
             </SelectContent>
           </Select>
           <Input placeholder="https://..." value={newWH.webhook_url} onChange={(e) => setNewWH((p) => ({ ...p, webhook_url: e.target.value }))} className="bg-background" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-2">
+          <Input
+            type="password"
+            placeholder="Webhook key (leave blank to auto-generate)"
+            value={newWH.secret_key}
+            onChange={(e) => setNewWH((p) => ({ ...p, secret_key: e.target.value }))}
+            className="bg-background sm:col-span-3"
+          />
           <Button onClick={addWebhook} disabled={addingWH} className="font-heading">
             {addingWH ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Add
           </Button>
