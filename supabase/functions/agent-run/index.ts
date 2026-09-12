@@ -100,6 +100,20 @@ async function updateRun(id: string, patch: Record<string, unknown>) {
   await service().from("agent_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
 }
 
+/** Terminal status writes must not resurrect a run the watchdog already
+ *  reaped. When the watchdog marks a slice-stalled run failed while its
+ *  function instance is still executing, the instance's final write would
+ *  otherwise flip the row back to completed. Terminal updates are therefore
+ *  conditional on the row still being 'running'; a no-op means this instance
+ *  lost ownership and must stop without notifying. */
+async function updateRunIfRunning(id: string, patch: Record<string, unknown>): Promise<boolean> {
+  const { data } = await service().from("agent_runs")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", id).eq("status", "running")
+    .select("id");
+  return (data?.length ?? 0) > 0;
+}
+
 async function enqueueNotify(tenantId: string, category: string, runRow: any) {
   try {
     await service().rpc("enqueue_marketing_notification", {
