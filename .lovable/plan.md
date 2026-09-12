@@ -29,7 +29,7 @@ Live state confirmed just now:
 
 ## Proposed order of work
 
-1. **Marketing role can run the agent.** Extend launch authorisation and the marketing surfaces so a tenant marketing user can launch runs, see drafts and approve, scoped strictly to their own tenant. Nothing changes about the draft-only ceiling.
+1. **Marketing role gets full parity with a tenant admin for marketing automation.** A tenant marketing user can launch runs, compose, review, approve and reject, scoped strictly to their own tenant. Parity covers marketing only — it grants nothing over billing, team, subscribers or other tenant settings. Nothing changes about the draft-only ceiling.
 2. **Redeploy `mcp`**, confirm the stamp, and state whether composer output changed.
 3. **Explain the three unexplained changes**, with evidence, and confirm the calendar-seed totals fix survived into v6.
 4. **Build the lapse guard.** Terminal `lapsed` state set by its own job, escalation ladder with per-rung stamps, deadline framing in the drafts queue, 48-hour minimum runway. No path in it may write `approved`.
@@ -52,6 +52,6 @@ Live state confirmed just now:
 - Lapse work touches `publish-scheduled-posts` (current post-mortem alert), `pending-review-digest`, `useTenantReviewQueue.ts` and the Agent Drafts UI; the sweep should be its own scheduled function, not the dispatcher.
 - `social_connections` already has `token_expires_at` and `refresh_token`; no code reads or writes either.
 
-## First question before building
+## Decided
 
-Should step 1 give the marketing role the *same* powers as a tenant admin (launch runs and approve drafts), or should marketing launch and compose while approval stays with tenant admins?
+Marketing role has the same powers as a tenant admin across the marketing automation: launch, compose, review, approve, reject. It stays confined to its own tenant and to marketing surfaces.
