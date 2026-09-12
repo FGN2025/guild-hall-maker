@@ -62,7 +62,7 @@ const EVENT_TYPES = [
   "tenant.marketing.created",
 ];
 
-const TARGET_APPS = ["academy", "manage", "hub", "broadband"];
+const TARGET_APPS = ["academy", "manage", "hub", "broadband", "grok_cos"];
 
 /* ───────── component ───────── */
 const ecosystemApps = [
@@ -88,7 +88,7 @@ const AdminEcosystem = () => {
   const [challenges, setChallenges] = useState<{ id: string; name: string }[]>([]);
 
   // New webhook form
-  const [newWH, setNewWH] = useState({ target_app: "", event_type: "", webhook_url: "" });
+  const [newWH, setNewWH] = useState({ target_app: "", event_type: "", webhook_url: "", secret_key: "" });
   const [addingWH, setAddingWH] = useState(false);
 
   // New mapping form
@@ -146,7 +146,7 @@ const AdminEcosystem = () => {
       return;
     }
     setAddingWH(true);
-    const secret = crypto.randomUUID();
+    const secret = newWH.secret_key.trim() || crypto.randomUUID();
     const { error } = await supabase.from("ecosystem_webhooks").insert({
       target_app: newWH.target_app,
       event_type: newWH.event_type,
@@ -157,7 +157,7 @@ const AdminEcosystem = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Webhook added", description: `HMAC secret: ${secret}` });
-      setNewWH({ target_app: "", event_type: "", webhook_url: "" });
+      setNewWH({ target_app: "", event_type: "", webhook_url: "", secret_key: "" });
       fetchWebhooks();
     }
     setAddingWH(false);
@@ -302,7 +302,7 @@ const AdminEcosystem = () => {
         <p className="text-xs text-muted-foreground">Push real-time events to external apps. Each webhook receives HMAC-signed payloads.</p>
 
         {/* Add form */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <Select value={newWH.target_app} onValueChange={(v) => setNewWH((p) => ({ ...p, target_app: v }))}>
             <SelectTrigger className="bg-background"><SelectValue placeholder="Target App" /></SelectTrigger>
             <SelectContent>
@@ -316,6 +316,15 @@ const AdminEcosystem = () => {
             </SelectContent>
           </Select>
           <Input placeholder="https://..." value={newWH.webhook_url} onChange={(e) => setNewWH((p) => ({ ...p, webhook_url: e.target.value }))} className="bg-background" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-2">
+          <Input
+            type="password"
+            placeholder="Webhook key (leave blank to auto-generate)"
+            value={newWH.secret_key}
+            onChange={(e) => setNewWH((p) => ({ ...p, secret_key: e.target.value }))}
+            className="bg-background sm:col-span-3"
+          />
           <Button onClick={addWebhook} disabled={addingWH} className="font-heading">
             {addingWH ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Add
           </Button>
