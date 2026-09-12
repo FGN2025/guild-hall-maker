@@ -186,8 +186,11 @@ Deno.serve(async (req) => {
     //    Independent of the kill switch: this is review hygiene, not publishing.
     const LAPSE_NOTE =
       "This post lapsed automatically because its scheduled time passed without review. Revise and reschedule it to publish.";
-    const staleWindowMs = staleWindowHours * 3600 * 1000;
-    const lapseCutoffIso = new Date(now.getTime() - staleWindowMs).toISOString();
+    // Lapse at the SAME cutoff the dispatch window uses (stale window plus
+    // banked pause grace) so nothing lapses that a reviewer could still
+    // legitimately approve-and-dispatch right after a pause ends. The sweep
+    // also sits after the kill-switch stop, so a pause never mows the backlog.
+    const lapseCutoffIso = staleCutoffIso;
     const tenantAlertCache = new Map<string, number[]>();
     async function alertHoursFor(tenantId: string | null): Promise<number[]> {
       if (!tenantId) return [72, 24, 4];
