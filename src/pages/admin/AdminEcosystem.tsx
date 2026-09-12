@@ -88,7 +88,7 @@ const AdminEcosystem = () => {
   const [challenges, setChallenges] = useState<{ id: string; name: string }[]>([]);
 
   // New webhook form
-  const [newWH, setNewWH] = useState({ target_app: "", event_type: "", webhook_url: "" });
+  const [newWH, setNewWH] = useState({ target_app: "", event_type: "", webhook_url: "", secret_key: "" });
   const [addingWH, setAddingWH] = useState(false);
 
   // New mapping form
