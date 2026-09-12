@@ -173,3 +173,48 @@ Play challenges carry a curated `skill_tags` array (admin-editable) that is forw
 Format: `<namespace>:<skill>` (lowercase). Namespaces: `cdl:`, `osha:`, `fiber:`, `gaming:`. A `difficulty:<level>` tag is always appended.
 
 If a challenge has no curated tags, the legacy heuristic (`game:<name>`, `gaming-proficiency`, `difficulty:<level>`) is sent so untagged challenges keep flowing.
+
+---
+
+## Outbound Webhooks — Receiver Contract (any target app)
+
+Play pushes real-time events to external apps registered in `ecosystem_webhooks` (admin UI: Admin → Ecosystem → Outbound Webhooks). Dispatched by the `ecosystem-webhook-dispatch` edge function.
+
+### Events
+
+| Event | Fires when |
+|---|---|
+| `tenant.marketing.created` | An agent-created campaign is inserted, or an agent-created asset is attached |
+| `tenant.marketing.status_changed` | A campaign's status changes (e.g. `pending_review` → `approved` → `published`) |
+| `challenge_completion` | A player completes a challenge (Academy) |
+| `evidence.approved` | Challenge evidence is approved (Academy) |
+
+### Request
+
+- `POST` with `Content-Type: application/json`
+- Body envelope: `{ "event_type", "payload", "delivery_id", "timestamp" }`
+- Marketing `payload`: `{ "kind": "campaign"|"asset", "id", "tenant_id", "title"|"label", "status"?, "agent_source", "created_at" }`
+- Headers: `X-FGN-Event` (event type), `X-Delivery-Id` + `X-Play-Delivery-Id` (same UUID; use as your idempotency key)
+
+### Signature verification (non-Academy targets)
+
+`X-FGN-Signature` is the lowercase-hex HMAC-SHA256 of the **raw request body**, keyed by the webhook's `secret_key` (the value entered when the webhook was registered). Verify against raw bytes — never a re-serialized body.
+
+```ts
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verify(rawBody: Buffer, headerSig: string, secret: string): boolean {
+  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const a = Buffer.from(expected, "hex");
+  const b = Buffer.from(headerSig, "hex");
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+```
+
+(Academy targets use `X-Play-Signature` keyed by `PLAY_WEBHOOK_SECRET` instead — see `docs/play-to-academy-hmac-contract-ping.md`.)
+
+### Caveats
+
+- **No retries.** A failed delivery (non-2xx or network error) is logged to `ecosystem_sync_log` (`data_type = 'webhook:<event_type>'`) and not re-attempted. Receivers should return 2xx quickly and process asynchronously.
+- **Idempotency.** Dedupe on `X-Delivery-Id`; replays are possible during testing.
+- New event types only deliver to webhooks whose `event_type` matches exactly and `is_active = true`.
