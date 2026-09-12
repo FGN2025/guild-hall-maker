@@ -373,7 +373,14 @@ async function fetchPlayerGameplay(
     }
   }
 
-  const m = (matches?.data ?? []) as any[];
+  const gameName = typeof game?.name === "string" ? game.name.trim().toLowerCase() : null;
+  const allMatches = (matches?.data ?? []) as any[];
+  const gameMatches = gameName
+    ? allMatches.filter(
+        (r) => String(r.tournaments?.game ?? "").trim().toLowerCase() === gameName
+      )
+    : allMatches;
+  const m = gameMatches.slice(0, 10);
   if (m.length > 0) {
     const wins = m.filter((r) => r.winner_id === userId).length;
     const recent = m
@@ -387,9 +394,16 @@ async function fetchPlayerGameplay(
       })
       .join(", ");
     sections.push(
-      `**Recent matches:** ${wins}W-${m.length - wins}L over last ${m.length} completed (most recent first: ${recent})`
+      `**Recent matches${gameName ? ` (${game.name})` : ""}:** ${wins}W-${
+        m.length - wins
+      }L over last ${m.length} completed (most recent first: ${recent})`
+    );
+  } else if (gameName) {
+    sections.push(
+      `**Recent matches (${game.name}):** none recorded — this player has no completed matches in this game.`
     );
   }
+
 
   const chall = ((challengeRows?.data ?? []) as any[]).filter(
     (c) => !gameId || c.challenges?.game_id === gameId
