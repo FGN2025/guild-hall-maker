@@ -50,19 +50,20 @@ async function fetchActiveConnections(gameId?: string | null): Promise<NotebookC
   return (data ?? []) as NotebookConnection[];
 }
 
+// Open Notebook is now an OPTIONAL supplement, not the primary knowledge
+// source. If the credential is missing or rejected we skip it silently so a
+// stale password can never degrade an answer.
 async function searchNotebooks(query: string, gameId?: string | null): Promise<string> {
+  const NOTEBOOK_PASS = Deno.env.get("OPEN_NOTEBOOK_PASSWORD");
+  if (!NOTEBOOK_PASS) return "";
+
   const connections = await fetchActiveConnections(gameId);
   if (connections.length === 0) return "";
 
-  const NOTEBOOK_PASS = Deno.env.get("OPEN_NOTEBOOK_PASSWORD");
   const allPassages: string[] = [];
   const MAX_TOTAL = 8;
   const MAX_PER_NOTEBOOK = 3;
 
-  // Process sequentially to respect priority ordering (game-specific first)
-  if (!NOTEBOOK_PASS) {
-    console.warn("OPEN_NOTEBOOK_PASSWORD is not set in this function's environment; notebook lookups will be rejected with 401");
-  }
 
   for (const conn of connections) {
     if (allPassages.length >= MAX_TOTAL) break;
