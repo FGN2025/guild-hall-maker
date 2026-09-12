@@ -675,6 +675,13 @@ async function driveRun(params: {
       heartbeat_at: new Date().toISOString(),
     };
     if (result.status === "completed") {
+      /* STEP 8 completeness: a clean exit is not the same as a finished job.
+       * A run counts complete only when what it committed is within tolerance
+       * of what the preflight expected. Under-production is recorded, not
+       * silently passed. */
+      const ratio = completenessRatio(run?.preflight?.expected ?? null, countCreated(created));
+      patch.completeness_ratio = ratio;
+      patch.is_complete = ratio === null ? true : ratio >= 1 - COMPLETENESS_TOLERANCE;
       patch.status = "completed";
       patch.failure_kind = null;
       await updateRun(run.id, patch);
