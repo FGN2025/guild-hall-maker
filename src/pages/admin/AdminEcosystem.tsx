@@ -62,7 +62,7 @@ const EVENT_TYPES = [
   "tenant.marketing.created",
 ];
 
-const TARGET_APPS = ["academy", "manage", "hub", "broadband"];
+const TARGET_APPS = ["academy", "manage", "hub", "broadband", "grok_cos"];
 
 /* ───────── component ───────── */
 const ecosystemApps = [
