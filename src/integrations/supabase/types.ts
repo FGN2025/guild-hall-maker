@@ -5920,6 +5920,8 @@ export type Database = {
           page_id: string | null
           platform: string | null
           tenant_id: string | null
+          token_check_error: string | null
+          token_checked_at: string | null
           token_expires_at: string | null
           updated_at: string | null
           user_id: string | null
@@ -5932,6 +5934,8 @@ export type Database = {
           page_id?: string | null
           platform?: string | null
           tenant_id?: string | null
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -5944,6 +5948,8 @@ export type Database = {
           page_id?: string | null
           platform?: string | null
           tenant_id?: string | null
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string | null
