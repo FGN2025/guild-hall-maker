@@ -44,6 +44,7 @@ Live state confirmed just now:
 - Acme publishes to the real public page. Anything experimental runs on the scratch tenant.
 - One shared layout module for human and agent composition; no forks.
 - Grace on resume stays capped at six hours.
+- **Each tenant connects its own social credentials.** `social_connections` is per-tenant; Acme is the prototype. Only 1 of 80 tenants has a connection, so the path from a new tenant to its first social link is untested.
 
 ## Technical notes
 
