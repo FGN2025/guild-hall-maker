@@ -852,6 +852,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         processed,
         failed,
+        retried,
         undeliverable,
         overdue_notified: overduePending?.length ?? 0,
         review_alerts_sent: alertsSent,
