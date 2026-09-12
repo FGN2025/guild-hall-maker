@@ -434,6 +434,8 @@ Deno.serve(async (req) => {
         JSON.stringify({
           processed: 0,
           overdue_notified: overduePending?.length ?? 0,
+          review_alerts_sent: alertsSent,
+          lapsed: lapsedCount,
           stale_skipped: staleSkipped,
           stale_window_hours: staleWindowHours,
           stale_grace_seconds: controls.staleGraceSeconds,
@@ -721,6 +723,8 @@ Deno.serve(async (req) => {
         failed,
         undeliverable,
         overdue_notified: overduePending?.length ?? 0,
+        review_alerts_sent: alertsSent,
+        lapsed: lapsedCount,
         stale_skipped: staleSkipped,
         stale_window_hours: staleWindowHours,
         stale_grace_seconds: controls.staleGraceSeconds,
