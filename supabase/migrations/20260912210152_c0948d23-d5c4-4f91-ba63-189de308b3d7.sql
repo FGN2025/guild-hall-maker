@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.dispatch_marketing_webhook() FROM anon, authenticated, public;
