@@ -609,11 +609,27 @@ async function driveRun(params: {
           at: new Date().toISOString(),
         },
       ];
-      if (nextCount > MAX_CONTINUATIONS) {
+      /* STEPS 4 + 5, shipped together on purpose. The ceiling is now derived
+       * from the work the preflight expects (floored at the historical 60), and
+       * the no-progress guard is what makes a raised ceiling safe: without it a
+       * run that dies at 60 would simply spin instead. */
+      const budget = continuationBudget(run?.preflight?.expected ?? null);
+      const trailing = contMetrics.slice(-NO_PROGRESS_LIMIT);
+      const stalled = trailing.length >= NO_PROGRESS_LIMIT &&
+        trailing.every((m: any) => (m?.delta ?? 0) <= 0);
+
+      const halt = stalled
+        ? { reason: "no_forward_progress", detail: `no rows committed across ${NO_PROGRESS_LIMIT} consecutive continuations` }
+        : nextCount > budget
+        ? { reason: "continuation_budget_exhausted", detail: `used ${nextCount} of ${budget} continuations` }
+        : null;
+
+      if (halt) {
+        const kind = classifyFailure(halt.reason);
         await updateRun(run.id, {
           status: "failed",
-          error_message: "continuation_limit_exceeded",
-          failure_kind: classifyFailure("continuation_limit_exceeded"),
+          error_message: `${halt.reason}: ${halt.detail}`,
+          failure_kind: kind,
           finished_at: new Date().toISOString(),
           turns_used: result.turns,
           input_tokens: result.inputTokens,
@@ -622,8 +638,12 @@ async function driveRun(params: {
           committed_rows: committed,
           turn_metrics: turnMetrics,
           continuation_metrics: contMetrics,
+          continuation_budget: budget,
         });
-        await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: "continuation_limit_exceeded" });
+        await enqueueNotify(tenantId, "agent_run_failed", {
+          ...run,
+          error_message: FAILURE_MESSAGE[kind] ?? halt.reason,
+        });
         return;
       }
       await updateRun(run.id, {
