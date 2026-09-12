@@ -783,6 +783,8 @@ Deno.serve(async (req) => {
         overdue_notified: overduePending?.length ?? 0,
         review_alerts_sent: alertsSent,
         lapsed: lapsedCount,
+        tokens_checked: tokensChecked,
+        tokens_failed: tokensFailed,
         stale_skipped: staleSkipped,
         stale_window_hours: staleWindowHours,
         stale_grace_seconds: controls.staleGraceSeconds,
