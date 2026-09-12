@@ -35,6 +35,10 @@ import {
   renderConstraintBlock,
   scopeSummary,
   classifyFailure,
+  continuationBudget,
+  completenessRatio,
+  COMPLETENESS_TOLERANCE,
+  FAILURE_MESSAGE,
 } from "../_shared/seed-scope.ts";
 
 
