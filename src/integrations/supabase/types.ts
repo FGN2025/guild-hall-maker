@@ -3925,6 +3925,8 @@ export type Database = {
           platform: string
           refresh_token: string | null
           tenant_id: string
+          token_check_error: string | null
+          token_checked_at: string | null
           token_expires_at: string | null
           updated_at: string | null
           user_id: string
@@ -3939,6 +3941,8 @@ export type Database = {
           platform: string
           refresh_token?: string | null
           tenant_id: string
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id: string
@@ -3953,6 +3957,8 @@ export type Database = {
           platform?: string
           refresh_token?: string | null
           tenant_id?: string
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string
