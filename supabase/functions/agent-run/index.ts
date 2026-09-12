@@ -368,8 +368,39 @@ async function callAnthropicWithRetry(body: any) {
  * 2026-08-05: reserve raised to 60s so a large turn effectively starts a FRESH
  * slice — we never begin a plan-sized turn with the worker already half spent. */
 const SLICE_BUDGET_MS = 70_000;
-/** Pessimistic cost of one more model turn plus its tool round-trips. */
-const TURN_RESERVE_MS = 60_000;
+/* STEP 3 (2026-09-12). The reserve used to be a flat 60s against a 70s slice,
+ * so any first turn over ten seconds handed off immediately and the runner was
+ * pinned near one turn per invocation. The reserve is now MEASURED: it comes
+ * from this run's own recorded turn durations (p95 x 1.25), which step 1's
+ * instrumentation records from the first turn onward. The constant below is
+ * only the cold-start value used until three turns have been observed. */
+const DEFAULT_TURN_RESERVE_MS = 30_000;
+const MIN_TURN_RESERVE_MS = 20_000;
+const MAX_TURN_RESERVE_MS = 45_000;
+/** Legacy name kept for the test override path. */
+const TURN_RESERVE_MS = DEFAULT_TURN_RESERVE_MS;
+
+function p95(values: number[]): number {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
+  return sorted[Math.max(0, idx)];
+}
+
+/** Reserve enough room for one more turn, sized from observed turns. */
+function adaptiveTurnReserve(metrics: any[]): number {
+  const durations = metrics.map((m) => Number(m?.ms)).filter((n) => Number.isFinite(n) && n > 0);
+  if (durations.length < 3) return DEFAULT_TURN_RESERVE_MS;
+  const target = Math.ceil(p95(durations) * 1.25);
+  return Math.min(MAX_TURN_RESERVE_MS, Math.max(MIN_TURN_RESERVE_MS, target));
+}
+
+/* STEP 5: how many consecutive continuations may commit zero new rows before
+ * the run is halted. Five, because a legitimately slow stretch (a long research
+ * turn, a retry after a transient model error, a compose that renders before it
+ * inserts) can span two or three invocations without committing, but five in a
+ * row has never happened on a productive run — the observed worst case was two. */
+const NO_PROGRESS_LIMIT = 5;
 /** Primary liveness mechanism: abort only when the stream itself stalls. */
 const ANTHROPIC_IDLE_MS = 45_000;
 /** Defense in depth only — must exceed the largest legitimate turn with margin. */
