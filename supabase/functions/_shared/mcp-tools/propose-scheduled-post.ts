@@ -18,7 +18,9 @@ export default defineTool({
     scheduled_at: z.string().describe("ISO 8601 with explicit offset, e.g. 2026-07-24T14:00:00-05:00 or ...Z."),
     campaign_id: z.string().uuid().optional(),
     connection_id: z.string().uuid().optional(),
-    idempotency_key: z.string().optional(),
+    idempotency_key: z.string().min(1).describe(
+      "REQUIRED. Stable key identifying this post within the tenant, e.g. 'seed:2026-10:<event_id>:announce'. Re-sending the same key returns the existing row instead of inserting a duplicate.",
+    ),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -31,7 +33,7 @@ export default defineTool({
       try { when = parseIsoWithOffset(input.scheduled_at); }
       catch (e: any) { return { content: [{ type: "text", text: e.message }], isError: true }; }
 
-      if (input.idempotency_key) {
+      {
         const { data: existing } = await supabase
           .from("scheduled_posts")
           .select("*")
@@ -111,7 +113,7 @@ export default defineTool({
           proposed_by: uid,
           campaign_id: input.campaign_id ?? null,
           connection_id: resolvedConnectionId,
-          idempotency_key: input.idempotency_key ?? null,
+          idempotency_key: input.idempotency_key,
         })
         .select()
         .single();

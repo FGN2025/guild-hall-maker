@@ -544,7 +544,9 @@ var create_campaign_draft_default = defineTool12({
     target_platforms: z10.array(z10.string()).optional(),
     source_event_id: z10.string().uuid().optional().describe("tenant_events.id when the campaign promotes a tenant event."),
     source_tournament_id: z10.string().uuid().optional().describe("tournaments.id when the campaign promotes a tournament."),
-    idempotency_key: z10.string().optional()
+    idempotency_key: z10.string().min(1).describe(
+      "REQUIRED. Stable key identifying this campaign within the tenant, e.g. 'seed:2026-10:<event_id>'. Re-sending the same key returns the existing row instead of inserting a duplicate."
+    )
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -556,7 +558,7 @@ var create_campaign_draft_default = defineTool12({
       }
       const supabase = supabaseForUser(ctx);
       const uid = ctx.getUserId();
-      if (input.idempotency_key) {
+      {
         const { data: existing } = await supabase.from("marketing_campaigns").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
         if (existing) return okJson({ ...existing, _idempotent: true }, "campaign");
       }
@@ -574,7 +576,7 @@ var create_campaign_draft_default = defineTool12({
         created_by: uid,
         source_event_id: input.source_event_id ?? null,
         source_tournament_id: input.source_tournament_id ?? null,
-        idempotency_key: input.idempotency_key ?? null
+        idempotency_key: input.idempotency_key
       }).select().single();
       if (error) throw error;
       return okJson(data, "campaign");
@@ -759,7 +761,9 @@ var propose_scheduled_post_default = defineTool15({
     scheduled_at: z13.string().describe("ISO 8601 with explicit offset, e.g. 2026-07-24T14:00:00-05:00 or ...Z."),
     campaign_id: z13.string().uuid().optional(),
     connection_id: z13.string().uuid().optional(),
-    idempotency_key: z13.string().optional()
+    idempotency_key: z13.string().min(1).describe(
+      "REQUIRED. Stable key identifying this post within the tenant, e.g. 'seed:2026-10:<event_id>:announce'. Re-sending the same key returns the existing row instead of inserting a duplicate."
+    )
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -774,7 +778,7 @@ var propose_scheduled_post_default = defineTool15({
       } catch (e) {
         return { content: [{ type: "text", text: e.message }], isError: true };
       }
-      if (input.idempotency_key) {
+      {
         const { data: existing } = await supabase.from("scheduled_posts").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
         if (existing) return okJson({ ...existing, _idempotent: true }, "scheduled_post");
       }
@@ -822,7 +826,7 @@ var propose_scheduled_post_default = defineTool15({
         proposed_by: uid,
         campaign_id: input.campaign_id ?? null,
         connection_id: resolvedConnectionId,
-        idempotency_key: input.idempotency_key ?? null
+        idempotency_key: input.idempotency_key
       }).select().single();
       if (error) throw error;
       const { data: conflict } = await supabase.rpc("check_schedule_conflict", {

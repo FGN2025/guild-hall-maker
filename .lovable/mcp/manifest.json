@@ -351,12 +351,15 @@
               "description": "tournaments.id when the campaign promotes a tournament."
             },
             "idempotency_key": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable key identifying this campaign within the tenant, e.g. 'seed:2026-10:<event_id>'. Re-sending the same key returns the existing row instead of inserting a duplicate."
             }
           },
           "required": [
             "tenant_id",
-            "title"
+            "title",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -543,13 +546,16 @@
               "format": "uuid"
             },
             "idempotency_key": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable key identifying this post within the tenant, e.g. 'seed:2026-10:<event_id>:announce'. Re-sending the same key returns the existing row instead of inserting a duplicate."
             }
           },
           "required": [
             "tenant_id",
             "platform",
-            "scheduled_at"
+            "scheduled_at",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
