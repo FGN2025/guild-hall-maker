@@ -429,17 +429,20 @@ Deno.serve(async (req) => {
     let staleSkipped = 0;
     const { data: stalePosts } = await supabase
       .from("scheduled_posts")
-      .select("id, tenant_id, platform, scheduled_at, agent_source")
+      .select("id, tenant_id, platform, scheduled_at, agent_source, next_retry_at")
       .eq("is_dispatch_approved", true)
       .lt("scheduled_at", staleCutoffIso)
       .limit(100);
 
     for (const p of stalePosts ?? []) {
+      // A row waiting on a transient-failure backoff is mid-flight, not stale.
+      if (p.next_retry_at && new Date(p.next_retry_at).getTime() > now.getTime()) continue;
       const q = await quotaState(p.tenant_id);
       if (q.exhausted) {
         await noteQuotaDeferral(p, q.reason);
         continue;
       }
+
 
       await supabase
         .from("scheduled_posts")
