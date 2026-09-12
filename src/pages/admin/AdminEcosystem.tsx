@@ -59,6 +59,7 @@ const EVENT_TYPES = [
   "tournament.published",
   "achievement.earned",
   "season.points_awarded",
+  "tenant.marketing.created",
 ];
 
 const TARGET_APPS = ["academy", "manage", "hub", "broadband"];
