@@ -24,6 +24,9 @@ export type ScheduledPost = {
   post_url: string | null;
   error_message: string | null;
   feedback_note?: string | null;
+  /** Set when the lapse guard auto-rejected the row after its deadline passed unreviewed. */
+  lapsed?: boolean;
+  lapsed_at?: string | null;
   created_at: string;
 };
 

@@ -3611,6 +3611,11 @@ export type Database = {
           image_path: string | null
           image_url: string
           is_dispatch_approved: boolean | null
+          lapsed: boolean
+          lapsed_at: string | null
+          notified_t24_at: string | null
+          notified_t4_at: string | null
+          notified_t72_at: string | null
           overdue_notified_at: string | null
           platform: string
           post_url: string | null
@@ -3644,6 +3649,11 @@ export type Database = {
           image_path?: string | null
           image_url: string
           is_dispatch_approved?: boolean | null
+          lapsed?: boolean
+          lapsed_at?: string | null
+          notified_t24_at?: string | null
+          notified_t4_at?: string | null
+          notified_t72_at?: string | null
           overdue_notified_at?: string | null
           platform: string
           post_url?: string | null
@@ -3677,6 +3687,11 @@ export type Database = {
           image_path?: string | null
           image_url?: string
           is_dispatch_approved?: boolean | null
+          lapsed?: boolean
+          lapsed_at?: string | null
+          notified_t24_at?: string | null
+          notified_t4_at?: string | null
+          notified_t72_at?: string | null
           overdue_notified_at?: string | null
           platform?: string
           post_url?: string | null
@@ -3910,6 +3925,8 @@ export type Database = {
           platform: string
           refresh_token: string | null
           tenant_id: string
+          token_check_error: string | null
+          token_checked_at: string | null
           token_expires_at: string | null
           updated_at: string | null
           user_id: string
@@ -3924,6 +3941,8 @@ export type Database = {
           platform: string
           refresh_token?: string | null
           tenant_id: string
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id: string
@@ -3938,6 +3957,8 @@ export type Database = {
           platform?: string
           refresh_token?: string | null
           tenant_id?: string
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string
@@ -5181,6 +5202,7 @@ export type Database = {
           plan_tier: string | null
           primary_color: string | null
           require_subscriber_validation: boolean
+          review_alert_hours: number[]
           slug: string
           status: string
           timezone: string
@@ -5199,6 +5221,7 @@ export type Database = {
           plan_tier?: string | null
           primary_color?: string | null
           require_subscriber_validation?: boolean
+          review_alert_hours?: number[]
           slug: string
           status?: string
           timezone?: string
@@ -5217,6 +5240,7 @@ export type Database = {
           plan_tier?: string | null
           primary_color?: string | null
           require_subscriber_validation?: boolean
+          review_alert_hours?: number[]
           slug?: string
           status?: string
           timezone?: string
@@ -5896,6 +5920,8 @@ export type Database = {
           page_id: string | null
           platform: string | null
           tenant_id: string | null
+          token_check_error: string | null
+          token_checked_at: string | null
           token_expires_at: string | null
           updated_at: string | null
           user_id: string | null
@@ -5908,6 +5934,8 @@ export type Database = {
           page_id?: string | null
           platform?: string | null
           tenant_id?: string | null
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -5920,6 +5948,8 @@ export type Database = {
           page_id?: string | null
           platform?: string | null
           tenant_id?: string | null
+          token_check_error?: string | null
+          token_checked_at?: string | null
           token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string | null

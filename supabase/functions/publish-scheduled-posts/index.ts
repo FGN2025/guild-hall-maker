@@ -178,7 +178,79 @@ Deno.serve(async (req) => {
     }
 
 
-    // 1. Overdue pending_review — approved late or never; notify humans.
+    // 1. Review-funnel lapse guard. Pending-review posts are alerted at each
+    //    tenant's offsets before their deadline, notified at the deadline, and
+    //    LAPSED to rejected once they fall outside the dispatcher's stale
+    //    window — from that point the dispatcher would never pick them up
+    //    anyway, so the row leaves pending_review instead of dying silently.
+    //    Independent of the kill switch: this is review hygiene, not publishing.
+    const LAPSE_NOTE =
+      "This post lapsed automatically because its scheduled time passed without review. Revise and reschedule it to publish.";
+    // Lapse at the SAME cutoff the dispatch window uses (stale window plus
+    // banked pause grace) so nothing lapses that a reviewer could still
+    // legitimately approve-and-dispatch right after a pause ends. The sweep
+    // also sits after the kill-switch stop, so a pause never mows the backlog.
+    const lapseCutoffIso = staleCutoffIso;
+    const tenantAlertCache = new Map<string, number[]>();
+    async function alertHoursFor(tenantId: string | null): Promise<number[]> {
+      if (!tenantId) return [72, 24, 4];
+      let hours = tenantAlertCache.get(tenantId);
+      if (!hours) {
+        const { data: t } = await supabase.from("tenants").select("review_alert_hours").eq("id", tenantId).maybeSingle();
+        hours = Array.isArray(t?.review_alert_hours) && t.review_alert_hours.length > 0
+          ? t.review_alert_hours.filter((h: any) => Number.isFinite(h) && h > 0)
+          : [72, 24, 4];
+        tenantAlertCache.set(tenantId, hours);
+      }
+      return hours!;
+    }
+    function alertStampFor(hours: number): string {
+      if (hours >= 48) return "notified_t72_at";
+      if (hours >= 12) return "notified_t24_at";
+      return "notified_t4_at";
+    }
+
+    let alertsSent = 0;
+    let lapsedCount = 0;
+
+    // 1a. Pre-deadline alerts at each tenant offset (T-72h, T-24h, T-4h default).
+    const maxAlertHorizonIso = new Date(now.getTime() + 168 * 3600 * 1000).toISOString();
+    const { data: upcomingPending } = await supabase
+      .from("scheduled_posts")
+      .select("id, tenant_id, platform, scheduled_at, agent_source, notified_t72_at, notified_t24_at, notified_t4_at")
+      .eq("status", "pending_review")
+      .gt("scheduled_at", nowIso)
+      .lte("scheduled_at", maxAlertHorizonIso)
+      .limit(200);
+
+    for (const p of upcomingPending ?? []) {
+      const hours = await alertHoursFor(p.tenant_id);
+      const msUntil = new Date(p.scheduled_at).getTime() - now.getTime();
+      const updates: Record<string, string> = {};
+      for (const h of hours) {
+        const stampCol = alertStampFor(h);
+        if ((p as any)[stampCol]) continue;
+        if (msUntil > h * 3600 * 1000) continue;
+        await supabase.rpc("enqueue_marketing_notification", {
+          _tenant_id: p.tenant_id,
+          _category: "review_deadline",
+          _related_kind: "scheduled_post",
+          _related_id: p.id,
+          _title: `Review deadline in ${h}h`,
+          _message: `A ${p.platform} post scheduled for ${p.scheduled_at} still needs review. If it is not approved in time it will lapse automatically.`,
+          _link: "/tenant/marketing?tab=agent",
+          _agent_source: p.agent_source,
+          _payload: { id: p.id, offset_hours: h },
+        });
+        updates[stampCol] = nowIso;
+        alertsSent++;
+      }
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("scheduled_posts").update(updates).eq("id", p.id);
+      }
+    }
+
+    // 1b. At-deadline notification (existing behavior).
     const { data: overduePending } = await supabase
       .from("scheduled_posts")
       .select("id, tenant_id, platform, scheduled_at, agent_source, overdue_notified_at")
@@ -203,6 +275,98 @@ Deno.serve(async (req) => {
         .from("scheduled_posts")
         .update({ overdue_notified_at: nowIso })
         .eq("id", p.id);
+    }
+
+    // 1c. Lapse: past the stale window, the dispatcher would never dispatch the
+    //     row even if approved now, so it leaves pending_review as rejected.
+    const { data: lapsable } = await supabase
+      .from("scheduled_posts")
+      .select("id, tenant_id, platform, scheduled_at, agent_source, rejection_history")
+      .eq("status", "pending_review")
+      .lt("scheduled_at", lapseCutoffIso)
+      .limit(100);
+
+    for (const p of lapsable ?? []) {
+      const { error: lapseErr } = await supabase
+        .from("scheduled_posts")
+        .update({
+          status: "rejected",
+          rejection_reason: LAPSE_NOTE,
+          rejection_feedback: LAPSE_NOTE,
+          is_dispatch_approved: false,
+          lapsed: true,
+          lapsed_at: nowIso,
+        })
+        .eq("id", p.id)
+        .eq("status", "pending_review");
+      if (lapseErr) {
+        console.error("[lapse] failed to lapse", { id: p.id, error: lapseErr.message });
+        continue;
+      }
+      lapsedCount++;
+      await supabase.rpc("enqueue_marketing_notification", {
+        _tenant_id: p.tenant_id,
+        _category: "lapsed",
+        _related_kind: "scheduled_post",
+        _related_id: p.id,
+        _title: "Scheduled post lapsed",
+        _message: LAPSE_NOTE,
+        _link: "/tenant/marketing?tab=agent",
+        _agent_source: p.agent_source,
+        _payload: { id: p.id, scheduled_at: p.scheduled_at },
+      });
+    }
+
+    // 1d. Social token liveness. A pasted token that has quietly died turns
+    //     every approved post into a failed dispatch, so active connections
+    //     are re-validated against the platform hourly and the tenant is
+    //     notified on the first failure. Success stamps token_checked_at.
+    let tokensChecked = 0;
+    let tokensFailed = 0;
+    {
+      const fiftyMinAgoIso = new Date(now.getTime() - 50 * 60 * 1000).toISOString();
+      const { data: conns } = await supabase
+        .from("social_connections")
+        .select("id, tenant_id, platform, account_name, page_id, access_token, token_checked_at")
+        .eq("is_active", true)
+        .eq("platform", "facebook")
+        .or(`token_checked_at.is.null,token_checked_at.lt.${fiftyMinAgoIso}`)
+        .limit(10);
+      for (const c of conns ?? []) {
+        tokensChecked++;
+        try {
+          const target = c.page_id ? c.page_id : "me";
+          const res = await fetch(
+            `https://graph.facebook.com/v19.0/${encodeURIComponent(target)}?fields=id,name&access_token=${encodeURIComponent(c.access_token)}`,
+            { signal: AbortSignal.timeout(10_000) },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body?.error) {
+            tokensFailed++;
+            const msg = body?.error?.message ?? `HTTP ${res.status}`;
+            await supabase.from("social_connections")
+              .update({ token_checked_at: nowIso, token_check_error: msg })
+              .eq("id", c.id);
+            await supabase.rpc("enqueue_marketing_notification", {
+              _tenant_id: c.tenant_id,
+              _category: "token_invalid",
+              _related_kind: "social_connection",
+              _related_id: c.id,
+              _title: `${c.platform} connection "${c.account_name}" is failing`,
+              _message: `The access token for "${c.account_name}" was rejected by ${c.platform} (${msg}). Scheduled posts cannot publish until a fresh token is connected.`,
+              _link: "/tenant/marketing?tab=settings",
+              _agent_source: null,
+              _payload: { id: c.id },
+            });
+          } else {
+            await supabase.from("social_connections")
+              .update({ token_checked_at: nowIso, token_check_error: null })
+              .eq("id", c.id);
+          }
+        } catch (e) {
+          console.error("[token-check] fetch failed", { id: c.id, error: (e as Error).message });
+        }
+      }
     }
 
     // --- Per-tenant publish quota ----------------------------------------
@@ -325,6 +489,11 @@ Deno.serve(async (req) => {
         JSON.stringify({
           processed: 0,
           overdue_notified: overduePending?.length ?? 0,
+          review_alerts_sent: alertsSent,
+          lapsed: lapsedCount,
+          tokens_checked: tokensChecked,
+          tokens_failed: tokensFailed,
+          lapsed: lapsedCount,
           stale_skipped: staleSkipped,
           stale_window_hours: staleWindowHours,
           stale_grace_seconds: controls.staleGraceSeconds,
@@ -612,6 +781,10 @@ Deno.serve(async (req) => {
         failed,
         undeliverable,
         overdue_notified: overduePending?.length ?? 0,
+        review_alerts_sent: alertsSent,
+        lapsed: lapsedCount,
+        tokens_checked: tokensChecked,
+        tokens_failed: tokensFailed,
         stale_skipped: staleSkipped,
         stale_window_hours: staleWindowHours,
         stale_grace_seconds: controls.staleGraceSeconds,

@@ -100,6 +100,20 @@ async function updateRun(id: string, patch: Record<string, unknown>) {
   await service().from("agent_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
 }
 
+/** Terminal status writes must not resurrect a run the watchdog already
+ *  reaped. When the watchdog marks a slice-stalled run failed while its
+ *  function instance is still executing, the instance's final write would
+ *  otherwise flip the row back to completed. Terminal updates are therefore
+ *  conditional on the row still being 'running'; a no-op means this instance
+ *  lost ownership and must stop without notifying. */
+async function updateRunIfRunning(id: string, patch: Record<string, unknown>): Promise<boolean> {
+  const { data } = await service().from("agent_runs")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", id).eq("status", "running")
+    .select("id");
+  return (data?.length ?? 0) > 0;
+}
+
 async function enqueueNotify(tenantId: string, category: string, runRow: any) {
   try {
     await service().rpc("enqueue_marketing_notification", {
@@ -678,7 +692,7 @@ async function driveRun(params: {
 
       if (halt) {
         const kind = classifyFailure(halt.reason);
-        await updateRun(run.id, {
+        const owned = await updateRunIfRunning(run.id, {
           status: "failed",
           error_message: `${halt.reason}: ${halt.detail}`,
           failure_kind: kind,
@@ -692,7 +706,7 @@ async function driveRun(params: {
           continuation_metrics: contMetrics,
           continuation_budget: budget,
         });
-        await enqueueNotify(tenantId, "agent_run_failed", {
+        if (owned) await enqueueNotify(tenantId, "agent_run_failed", {
           ...run,
           error_message: FAILURE_MESSAGE[kind] ?? halt.reason,
         });
@@ -736,8 +750,8 @@ async function driveRun(params: {
       patch.is_complete = ratio === null ? true : ratio >= 1 - COMPLETENESS_TOLERANCE;
       patch.status = "completed";
       patch.failure_kind = null;
-      await updateRun(run.id, patch);
-      await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
+      const owned = await updateRunIfRunning(run.id, patch);
+      if (owned) await enqueueNotify(tenantId, "agent_run_complete", { ...run, ...patch });
     } else {
       const raw = (result as any).error ?? "unknown";
       const kind = classifyFailure(raw);
@@ -746,8 +760,8 @@ async function driveRun(params: {
       patch.error_message = FAILURE_MESSAGE[kind] ?? tenantSafeFailure(kind);
       patch.error_detail = String(raw);
       patch.failure_kind = kind;
-      await updateRun(run.id, patch);
-      await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
+      const owned = await updateRunIfRunning(run.id, patch);
+      if (owned) await enqueueNotify(tenantId, "agent_run_failed", { ...run, ...patch });
     }
   } catch (e) {
     const msg = (e as Error).message ?? "unknown error";
@@ -755,7 +769,7 @@ async function driveRun(params: {
     const kind = classifyFailure(msg);
     const created = await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => ({}));
     const safe = FAILURE_MESSAGE[kind] ?? tenantSafeFailure(kind);
-    await updateRun(run.id, {
+    const owned = await updateRunIfRunning(run.id, {
       status: "failed",
       error_message: safe,
       error_detail: msg,
@@ -763,7 +777,7 @@ async function driveRun(params: {
       finished_at: new Date().toISOString(),
       created_row_ids: created,
     });
-    await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: safe });
+    if (owned) await enqueueNotify(tenantId, "agent_run_failed", { ...run, error_message: safe });
   }
 }
 
@@ -887,15 +901,15 @@ Deno.serve(async (req) => {
 
   const svc = service();
 
-  // Authorize: platform admin OR tenant admin/manager on the target tenant
+  // Authorize: platform admin OR tenant admin/manager/marketing on the target tenant
   const { data: platformAdmin } = await svc.rpc("has_role", { _user_id: userId, _role: "admin" });
   let allowed = !!platformAdmin;
   if (!allowed) {
     const { data: ta } = await svc.from("tenant_admins")
       .select("role").eq("tenant_id", tenant_id).eq("user_id", userId).maybeSingle();
-    if (ta && (ta.role === "admin" || ta.role === "manager")) allowed = true;
+    if (ta && (ta.role === "admin" || ta.role === "manager" || ta.role === "marketing")) allowed = true;
   }
-  if (!allowed) return json({ error: "forbidden: admin or manager role required on target tenant" }, 403);
+  if (!allowed) return json({ error: "forbidden: admin, manager or marketing role required on target tenant" }, 403);
 
   // Kill switch + limits
   const gate = await checkLimits(tenant_id);
