@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useScheduledPosts, ScheduledPost } from "@/hooks/useScheduledPosts";
 import { useDraftDecision } from "@/hooks/useDraftDecision";
 import { useTenantAdmin } from "@/hooks/useTenantAdmin";
@@ -43,6 +43,33 @@ const STATUS_STYLES: Record<string, { label: string; variant: "default" | "secon
 /** Never return undefined: an unknown status must not crash the calendar. */
 const statusStyle = (s: string) =>
   STATUS_STYLES[s] ?? { label: s ? s.replace(/_/g, " ") : "Unknown", variant: "outline" as const };
+
+/** Ticking countdown to a pending-review post's deadline. Turns urgent under 24h. */
+const ReviewDeadlineClock = ({ scheduledAt }: { scheduledAt: string }) => {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const msLeft = parseISO(scheduledAt).getTime() - nowMs;
+  if (msLeft <= 0) {
+    return (
+      <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
+        <AlertTriangle className="h-3.5 w-3.5" />
+        Past its review deadline — it will lapse automatically shortly.
+      </p>
+    );
+  }
+  const hours = Math.floor(msLeft / 3_600_000);
+  const minutes = Math.floor((msLeft % 3_600_000) / 60_000);
+  const urgent = msLeft < 24 * 3_600_000;
+  return (
+    <p className={cn("text-xs flex items-center gap-1.5", urgent ? "font-medium text-amber-600 dark:text-amber-300" : "text-muted-foreground")}>
+      <Clock className="h-3.5 w-3.5" />
+      Review deadline in {hours > 0 ? `${hours}h ` : ""}{minutes}m — approve before then or this post lapses automatically.
+    </p>
+  );
+};
 
 interface Props {
   tenantId?: string | null;
