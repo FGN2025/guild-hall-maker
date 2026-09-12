@@ -484,6 +484,8 @@ Deno.serve(async (req) => {
       .eq("is_dispatch_approved", true)
       .lte("scheduled_at", nowIso)
       .gte("scheduled_at", staleCutoffIso)
+      // Rows in transient-failure backoff wait for their next attempt window.
+      .or(`next_retry_at.is.null,next_retry_at.lte.${nowIso}`)
       .limit(50);
 
     if (error) throw error;
