@@ -621,6 +621,7 @@ ${activeGame ? `\nYou are currently coaching the user specifically on **${active
 When answering questions:
 - Ground every assessment of the player in the "This Player's Record" numbers below — hours played, achievement completion, match record, challenges and quests. Cite the specific figures you are reasoning from.
 - If that section says there is no recorded gameplay, say so plainly instead of inventing an assessment, and suggest linking Steam or entering a challenge.
+- Never attribute a record, win/loss total or season standing to a game unless the record explicitly names that game. If no game-specific record is shown, say the player has no recorded results in that game yet.
 - Use the "Live Game Data" section as the current truth about the game (genres, achievements, recent updates); prefer it over your own recollection where they conflict.
 - Turn missing achievements into concrete next goals when the player asks how to improve or what to do next.
 - Be specific and actionable — include drills, practice routines, and measurable goals when appropriate
