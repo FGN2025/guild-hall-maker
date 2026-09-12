@@ -948,6 +948,34 @@ Deno.serve(async (req) => {
     }
   }
 
+  // STEP 6: balance gate. Terminal `blocked` row, zero work, no provider text.
+  const probe = await creditProbe();
+  if (!probe.ok) {
+    const { data: blocked } = await svc.from("agent_runs").insert({
+      tenant_id,
+      launched_by: userId,
+      agent_name: prompt.name,
+      prompt_name: prompt.name,
+      prompt_version: prompt.version,
+      build_id: BUILD_ID,
+      mode,
+      status: "blocked",
+      failure_kind: "insufficient_credits",
+      error_message: FAILURE_MESSAGE.insufficient_credits,
+      error_detail: probe.detail,
+      turn_cap: effectiveTurnCap,
+      target_month: seedMonth,
+      finished_at: new Date().toISOString(),
+      committed_rows: 0,
+    }).select().single();
+    return json({
+      run_id: blocked?.id ?? null,
+      status: "blocked",
+      failure_kind: "insufficient_credits",
+      message: FAILURE_MESSAGE.insufficient_credits,
+    }, 200);
+  }
+
   const { data: run, error: runErr } = await svc.from("agent_runs").insert({
     tenant_id,
     launched_by: userId,
