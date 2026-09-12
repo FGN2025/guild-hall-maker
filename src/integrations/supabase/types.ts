@@ -4726,6 +4726,7 @@ export type Database = {
           file_name: string
           file_path: string
           id: string
+          idempotency_key: string | null
           is_published: boolean
           label: string
           notes: string | null
@@ -4747,6 +4748,7 @@ export type Database = {
           file_name: string
           file_path: string
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
           label?: string
           notes?: string | null
@@ -4768,6 +4770,7 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
           label?: string
           notes?: string | null
