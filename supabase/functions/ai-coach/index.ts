@@ -545,18 +545,38 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    // Extract latest user question for notebook search
+    // Extract latest user question for research/notebook search
     const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user");
     const query = lastUserMsg?.content || "";
 
     // Build search query with game context
     const searchQuery = game ? `${game.name}: ${query}` : query;
 
-    // Fetch notebook context and player profile in parallel
-    const [notebookContext, playerProfileContext] = await Promise.all([
-      searchQuery ? searchNotebooks(searchQuery, game?.id || null) : Promise.resolve(""),
+    // Resolve the authoritative game row (steam_app_id lives server-side)
+    let activeGame: any = game ?? null;
+    if (game?.id) {
+      const admin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      );
+      const { data: gameRow } = await admin
+        .from("games")
+        .select("id, name, category, description, guide_content, steam_app_id")
+        .eq("id", game.id)
+        .maybeSingle();
+      if (gameRow) activeGame = { ...game, ...gameRow };
+    }
+
+    // Live game research first — the player record uses its achievement schema
+    const research = await fetchGameResearch(activeGame);
+
+    const [playerGameplayContext, playerProfileContext, notebookContext] = await Promise.all([
+      fetchPlayerGameplay(userId, activeGame, research),
       fetchPlayerProfile(userId),
+      searchQuery ? searchNotebooks(searchQuery, activeGame?.id || null) : Promise.resolve(""),
     ]);
+    const researchContext = research.text;
 
     // Build game-specific context from local guide content
     let gameContext = "";
