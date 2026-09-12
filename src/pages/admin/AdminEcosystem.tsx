@@ -146,7 +146,7 @@ const AdminEcosystem = () => {
       return;
     }
     setAddingWH(true);
-    const secret = crypto.randomUUID();
+    const secret = newWH.secret_key.trim() || crypto.randomUUID();
     const { error } = await supabase.from("ecosystem_webhooks").insert({
       target_app: newWH.target_app,
       event_type: newWH.event_type,
@@ -157,7 +157,7 @@ const AdminEcosystem = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Webhook added", description: `HMAC secret: ${secret}` });
-      setNewWH({ target_app: "", event_type: "", webhook_url: "" });
+      setNewWH({ target_app: "", event_type: "", webhook_url: "", secret_key: "" });
       fetchWebhooks();
     }
     setAddingWH(false);
