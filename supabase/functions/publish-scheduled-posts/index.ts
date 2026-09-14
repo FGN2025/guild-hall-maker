@@ -279,21 +279,23 @@ Deno.serve(async (req) => {
 
     // 1c. Lapse: past the stale window, the dispatcher would never dispatch the
     //     row even if approved now, so it leaves pending_review as rejected.
-    const { data: lapsable } = await supabase
+    const { data: lapsable, error: lapsableErr } = await supabase
       .from("scheduled_posts")
-      .select("id, tenant_id, platform, scheduled_at, agent_source, rejection_history")
+      .select("id, tenant_id, platform, scheduled_at, agent_source")
       .eq("status", "pending_review")
       .lt("scheduled_at", lapseCutoffIso)
       .limit(100);
+
+    if (lapsableErr) {
+      console.error("[lapse] failed to load lapsable posts", { error: lapsableErr.message });
+    }
 
     for (const p of lapsable ?? []) {
       const { error: lapseErr } = await supabase
         .from("scheduled_posts")
         .update({
           status: "rejected",
-          rejection_reason: LAPSE_NOTE,
-          rejection_feedback: LAPSE_NOTE,
-          is_dispatch_approved: false,
+          feedback_note: LAPSE_NOTE,
           lapsed: true,
           lapsed_at: nowIso,
         })
