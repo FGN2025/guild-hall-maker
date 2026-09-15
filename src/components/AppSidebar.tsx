@@ -21,6 +21,7 @@ import {
   Gamepad2,
   CalendarDays,
   Compass,
+  Medal,
   Joystick,
   Settings,
   LogOut,
