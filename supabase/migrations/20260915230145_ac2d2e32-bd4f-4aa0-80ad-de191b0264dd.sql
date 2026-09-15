@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.dispatch_merit_challenge_webhook() FROM anon, authenticated;
