@@ -142,6 +142,83 @@ export type Database = {
           },
         ]
       }
+      advancement_records: {
+        Row: {
+          badge_eligible_at: string | null
+          badge_id: string
+          created_at: string
+          digital_completed_at: string | null
+          id: string
+          notes: string | null
+          physical_issued_at: string | null
+          physical_issued_by: string | null
+          recorded_externally_at: string | null
+          recorded_externally_by: string | null
+          scout_user_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          badge_eligible_at?: string | null
+          badge_id: string
+          created_at?: string
+          digital_completed_at?: string | null
+          id?: string
+          notes?: string | null
+          physical_issued_at?: string | null
+          physical_issued_by?: string | null
+          recorded_externally_at?: string | null
+          recorded_externally_by?: string | null
+          scout_user_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          badge_eligible_at?: string | null
+          badge_id?: string
+          created_at?: string
+          digital_completed_at?: string | null
+          id?: string
+          notes?: string | null
+          physical_issued_at?: string | null
+          physical_issued_by?: string | null
+          recorded_externally_at?: string | null
+          recorded_externally_by?: string | null
+          scout_user_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advancement_records_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "official_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advancement_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advancement_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advancement_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       agent_mode_config: {
         Row: {
           created_at: string
@@ -425,6 +502,66 @@ export type Database = {
           value?: string
         }
         Relationships: []
+      }
+      badge_requirements: {
+        Row: {
+          action_verbs: string[]
+          badge_id: string
+          created_at: string
+          id: string
+          is_retired: boolean
+          parent_requirement_id: string | null
+          requirement_number: string
+          requirement_text: string
+          requires_in_person: boolean
+          safety_note: string | null
+          source_url: string | null
+          version_year: number
+        }
+        Insert: {
+          action_verbs?: string[]
+          badge_id: string
+          created_at?: string
+          id?: string
+          is_retired?: boolean
+          parent_requirement_id?: string | null
+          requirement_number: string
+          requirement_text: string
+          requires_in_person?: boolean
+          safety_note?: string | null
+          source_url?: string | null
+          version_year: number
+        }
+        Update: {
+          action_verbs?: string[]
+          badge_id?: string
+          created_at?: string
+          id?: string
+          is_retired?: boolean
+          parent_requirement_id?: string | null
+          requirement_number?: string
+          requirement_text?: string
+          requires_in_person?: boolean
+          safety_note?: string | null
+          source_url?: string | null
+          version_year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_requirements_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "official_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "badge_requirements_parent_requirement_id_fkey"
+            columns: ["parent_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "badge_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       banned_users: {
         Row: {
@@ -1222,6 +1359,201 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      counseling_sessions: {
+        Row: {
+          additional_adult_name: string
+          additional_adult_role: string | null
+          badge_id: string
+          counselor_user_id: string
+          created_at: string
+          id: string
+          modality: string
+          notes: string | null
+          scout_user_id: string
+          session_at: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          additional_adult_name: string
+          additional_adult_role?: string | null
+          badge_id: string
+          counselor_user_id: string
+          created_at?: string
+          id?: string
+          modality?: string
+          notes?: string | null
+          scout_user_id: string
+          session_at: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          additional_adult_name?: string
+          additional_adult_role?: string | null
+          badge_id?: string
+          counselor_user_id?: string
+          created_at?: string
+          id?: string
+          modality?: string
+          notes?: string | null
+          scout_user_id?: string
+          session_at?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counseling_sessions_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "official_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "counseling_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "counseling_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "counseling_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
+      counselor_badge_assignments: {
+        Row: {
+          approved_by: string | null
+          badge_id: string
+          certifications: string | null
+          created_at: string
+          effective_from: string
+          expires_on: string | null
+          id: string
+          is_active: boolean
+          registration_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          badge_id: string
+          certifications?: string | null
+          created_at?: string
+          effective_from?: string
+          expires_on?: string | null
+          id?: string
+          is_active?: boolean
+          registration_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          badge_id?: string
+          certifications?: string | null
+          created_at?: string
+          effective_from?: string
+          expires_on?: string | null
+          id?: string
+          is_active?: boolean
+          registration_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counselor_badge_assignments_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "official_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "counselor_badge_assignments_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "counselor_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      counselor_registrations: {
+        Row: {
+          annual_approval_expires_on: string | null
+          approved_by: string | null
+          council_name: string | null
+          created_at: string
+          id: string
+          qualifications: string | null
+          registered_on: string | null
+          status: Database["public"]["Enums"]["counselor_status"]
+          tenant_id: string
+          updated_at: string
+          user_id: string
+          youth_protection_expires_on: string | null
+        }
+        Insert: {
+          annual_approval_expires_on?: string | null
+          approved_by?: string | null
+          council_name?: string | null
+          created_at?: string
+          id?: string
+          qualifications?: string | null
+          registered_on?: string | null
+          status?: Database["public"]["Enums"]["counselor_status"]
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+          youth_protection_expires_on?: string | null
+        }
+        Update: {
+          annual_approval_expires_on?: string | null
+          approved_by?: string | null
+          council_name?: string | null
+          created_at?: string
+          id?: string
+          qualifications?: string | null
+          registered_on?: string | null
+          status?: Database["public"]["Enums"]["counselor_status"]
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+          youth_protection_expires_on?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counselor_registrations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "counselor_registrations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "counselor_registrations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
           },
         ]
       }
@@ -2472,6 +2804,157 @@ export type Database = {
         }
         Relationships: []
       }
+      merit_challenges: {
+        Row: {
+          challenge_id: string
+          contribution_weight: number
+          created_at: string
+          id: string
+          is_required: boolean
+          merit_id: string
+          sequence_order: number
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          contribution_weight?: number
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          merit_id: string
+          sequence_order?: number
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          contribution_weight?: number
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          merit_id?: string
+          sequence_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merit_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merit_challenges_merit_id_fkey"
+            columns: ["merit_id"]
+            isOneToOne: false
+            referencedRelation: "merits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merit_pathways: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          is_published: boolean
+          name: string
+          primary_game_id: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_published?: boolean
+          name: string
+          primary_game_id?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_published?: boolean
+          name?: string
+          primary_game_id?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merit_pathways_primary_game_id_fkey"
+            columns: ["primary_game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merits: {
+        Row: {
+          academy_next_step: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          is_published: boolean
+          level: Database["public"]["Enums"]["merit_level"]
+          name: string
+          pathway_id: string
+          skills: string[]
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          academy_next_step?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_published?: boolean
+          level?: Database["public"]["Enums"]["merit_level"]
+          name: string
+          pathway_id: string
+          skills?: string[]
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          academy_next_step?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_published?: boolean
+          level?: Database["public"]["Enums"]["merit_level"]
+          name?: string
+          pathway_id?: string
+          skills?: string[]
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merits_pathway_id_fkey"
+            columns: ["pathway_id"]
+            isOneToOne: false
+            referencedRelation: "merit_pathways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       national_zip_codes: {
         Row: {
           city: string | null
@@ -2598,6 +3081,48 @@ export type Database = {
             referencedColumns: ["tenant_id"]
           },
         ]
+      }
+      official_badges: {
+        Row: {
+          created_at: string
+          has_special_conditions: boolean
+          id: string
+          is_eagle_required: boolean
+          is_retired: boolean
+          name: string
+          organization_kind: string
+          slug: string
+          source_url: string | null
+          special_conditions_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          has_special_conditions?: boolean
+          id?: string
+          is_eagle_required?: boolean
+          is_retired?: boolean
+          name: string
+          organization_kind?: string
+          slug: string
+          source_url?: string | null
+          special_conditions_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          has_special_conditions?: boolean
+          id?: string
+          is_eagle_required?: boolean
+          is_retired?: boolean
+          name?: string
+          organization_kind?: string
+          slug?: string
+          source_url?: string | null
+          special_conditions_note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       orphaned_notifications: {
         Row: {
@@ -2787,6 +3312,50 @@ export type Database = {
             columns: ["achievement_id"]
             isOneToOne: false
             referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_merit_progress: {
+        Row: {
+          created_at: string
+          earned_at: string | null
+          id: string
+          merit_id: string
+          status: Database["public"]["Enums"]["merit_progress_status"]
+          total_challenges: number
+          updated_at: string
+          user_id: string
+          verified_challenges: number
+        }
+        Insert: {
+          created_at?: string
+          earned_at?: string | null
+          id?: string
+          merit_id: string
+          status?: Database["public"]["Enums"]["merit_progress_status"]
+          total_challenges?: number
+          updated_at?: string
+          user_id: string
+          verified_challenges?: number
+        }
+        Update: {
+          created_at?: string
+          earned_at?: string | null
+          id?: string
+          merit_id?: string
+          status?: Database["public"]["Enums"]["merit_progress_status"]
+          total_challenges?: number
+          updated_at?: string
+          user_id?: string
+          verified_challenges?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_merit_progress_merit_id_fkey"
+            columns: ["merit_id"]
+            isOneToOne: false
+            referencedRelation: "merits"
             referencedColumns: ["id"]
           },
         ]
@@ -3590,6 +4159,142 @@ export type Database = {
           },
         ]
       }
+      requirement_decisions: {
+        Row: {
+          attested_personally_completed: boolean
+          counselor_user_id: string
+          decided_at: string
+          decision: Database["public"]["Enums"]["requirement_decision_type"]
+          id: string
+          notes: string | null
+          registration_id: string | null
+          requirement_version_year: number
+          submission_id: string
+        }
+        Insert: {
+          attested_personally_completed?: boolean
+          counselor_user_id: string
+          decided_at?: string
+          decision: Database["public"]["Enums"]["requirement_decision_type"]
+          id?: string
+          notes?: string | null
+          registration_id?: string | null
+          requirement_version_year: number
+          submission_id: string
+        }
+        Update: {
+          attested_personally_completed?: boolean
+          counselor_user_id?: string
+          decided_at?: string
+          decision?: Database["public"]["Enums"]["requirement_decision_type"]
+          id?: string
+          notes?: string | null
+          registration_id?: string | null
+          requirement_version_year?: number
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_decisions_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "counselor_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_decisions_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "requirement_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requirement_submissions: {
+        Row: {
+          badge_id: string
+          challenge_evidence_id: string | null
+          created_at: string
+          id: string
+          requirement_id: string
+          scout_note: string | null
+          scout_user_id: string
+          status: Database["public"]["Enums"]["requirement_submission_status"]
+          submitted_at: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          badge_id: string
+          challenge_evidence_id?: string | null
+          created_at?: string
+          id?: string
+          requirement_id: string
+          scout_note?: string | null
+          scout_user_id: string
+          status?: Database["public"]["Enums"]["requirement_submission_status"]
+          submitted_at?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          badge_id?: string
+          challenge_evidence_id?: string | null
+          created_at?: string
+          id?: string
+          requirement_id?: string
+          scout_note?: string | null
+          scout_user_id?: string
+          status?: Database["public"]["Enums"]["requirement_submission_status"]
+          submitted_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_submissions_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "official_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_submissions_challenge_evidence_id_fkey"
+            columns: ["challenge_evidence_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_submissions_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "badge_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_submissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_submissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_submissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       scheduled_posts: {
         Row: {
           agent_source: string | null
@@ -4206,6 +4911,63 @@ export type Database = {
         }
         Relationships: []
       }
+      task_requirement_mappings: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          challenge_task_id: string
+          created_at: string
+          id: string
+          rationale: string | null
+          requirement_id: string
+          source_reference: string | null
+          strength: Database["public"]["Enums"]["mapping_strength"]
+          updated_at: string
+          verification_source: Database["public"]["Enums"]["verification_source"]
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          challenge_task_id: string
+          created_at?: string
+          id?: string
+          rationale?: string | null
+          requirement_id: string
+          source_reference?: string | null
+          strength: Database["public"]["Enums"]["mapping_strength"]
+          updated_at?: string
+          verification_source?: Database["public"]["Enums"]["verification_source"]
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          challenge_task_id?: string
+          created_at?: string
+          id?: string
+          rationale?: string | null
+          requirement_id?: string
+          source_reference?: string | null
+          strength?: Database["public"]["Enums"]["mapping_strength"]
+          updated_at?: string
+          verification_source?: Database["public"]["Enums"]["verification_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_requirement_mappings_challenge_task_id_fkey"
+            columns: ["challenge_task_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_requirement_mappings_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "badge_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_admins: {
         Row: {
           created_at: string
@@ -4248,6 +5010,64 @@ export type Database = {
           },
           {
             foreignKeyName: "tenant_admins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
+      tenant_advancement_programs: {
+        Row: {
+          council_name: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_kind: string
+          settings: Json
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          council_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_kind?: string
+          settings?: Json
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          council_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_kind?: string
+          settings?: Json
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_advancement_programs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_advancement_programs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_advancement_programs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "v_universal_asset_adoption_matrix"
@@ -5516,6 +6336,81 @@ export type Database = {
           },
         ]
       }
+      unit_leader_authorizations: {
+        Row: {
+          badge_id: string
+          created_at: string
+          discussed_on: string
+          id: string
+          leader_user_id: string
+          notes: string | null
+          referred_registration_id: string | null
+          scout_user_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          badge_id: string
+          created_at?: string
+          discussed_on?: string
+          id?: string
+          leader_user_id: string
+          notes?: string | null
+          referred_registration_id?: string | null
+          scout_user_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          badge_id?: string
+          created_at?: string
+          discussed_on?: string
+          id?: string
+          leader_user_id?: string
+          notes?: string | null
+          referred_registration_id?: string | null
+          scout_user_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_leader_authorizations_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "official_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_leader_authorizations_referred_registration_id_fkey"
+            columns: ["referred_registration_id"]
+            isOneToOne: false
+            referencedRelation: "counselor_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_leader_authorizations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_leader_authorizations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_leader_authorizations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -6488,10 +7383,13 @@ export type Database = {
         Returns: boolean
       }
       is_agent_actor: { Args: never; Returns: boolean }
-      is_tenant_admin: {
-        Args: { _tenant_id: string; _user_id: string }
+      is_approved_counselor: {
+        Args: { _badge_id: string; _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      is_tenant_admin:
+        | { Args: { _tenant_id: string }; Returns: boolean }
+        | { Args: { _tenant_id: string; _user_id: string }; Returns: boolean }
       is_tenant_admin_or_manager: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
@@ -6508,10 +7406,9 @@ export type Database = {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
-      is_tenant_member: {
-        Args: { _tenant_id: string; _user_id: string }
-        Returns: boolean
-      }
+      is_tenant_member:
+        | { Args: { _tenant_id: string }; Returns: boolean }
+        | { Args: { _tenant_id: string; _user_id: string }; Returns: boolean }
       is_tournament_participant: {
         Args: { _tournament_id: string; _user_id: string }
         Returns: boolean
@@ -6572,19 +7469,43 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "marketing"
+      counselor_status: "pending" | "active" | "expired" | "revoked"
       discord_role_trigger:
         | "on_link"
         | "on_achievement"
         | "on_rank"
         | "on_tournament_win"
         | "manual"
+      mapping_strength:
+        | "practice"
+        | "supporting_evidence"
+        | "potentially_satisfies"
       match_status: "scheduled" | "in_progress" | "completed" | "cancelled"
+      merit_level: "discover" | "develop" | "deploy"
+      merit_progress_status:
+        | "not_started"
+        | "in_progress"
+        | "awaiting_review"
+        | "earned"
+      requirement_decision_type: "credited" | "partial" | "returned"
+      requirement_submission_status:
+        | "draft"
+        | "submitted"
+        | "in_review"
+        | "partial"
+        | "credited"
+        | "returned"
       tournament_status:
         | "upcoming"
         | "open"
         | "in_progress"
         | "completed"
         | "cancelled"
+      verification_source:
+        | "steam_achievement"
+        | "steam_playtime"
+        | "uploaded_evidence"
+        | "counselor_only"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6713,6 +7634,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user", "marketing"],
+      counselor_status: ["pending", "active", "expired", "revoked"],
       discord_role_trigger: [
         "on_link",
         "on_achievement",
@@ -6720,13 +7642,40 @@ export const Constants = {
         "on_tournament_win",
         "manual",
       ],
+      mapping_strength: [
+        "practice",
+        "supporting_evidence",
+        "potentially_satisfies",
+      ],
       match_status: ["scheduled", "in_progress", "completed", "cancelled"],
+      merit_level: ["discover", "develop", "deploy"],
+      merit_progress_status: [
+        "not_started",
+        "in_progress",
+        "awaiting_review",
+        "earned",
+      ],
+      requirement_decision_type: ["credited", "partial", "returned"],
+      requirement_submission_status: [
+        "draft",
+        "submitted",
+        "in_review",
+        "partial",
+        "credited",
+        "returned",
+      ],
       tournament_status: [
         "upcoming",
         "open",
         "in_progress",
         "completed",
         "cancelled",
+      ],
+      verification_source: [
+        "steam_achievement",
+        "steam_playtime",
+        "uploaded_evidence",
+        "counselor_only",
       ],
     },
   },
