@@ -1020,7 +1020,7 @@ var propose_branded_page_default = defineTool19({
     description: z17.string().max(500).optional(),
     template_id: z17.string().uuid().optional(),
     sections: z17.array(SectionSchema).max(30).optional(),
-    idempotency_key: z17.string().optional()
+    idempotency_key: z17.string().min(1).describe("REQUIRED. Stable retry key; the tenant slug is reused instead of creating a duplicate draft.")
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1029,10 +1029,8 @@ var propose_branded_page_default = defineTool19({
     try {
       const sb = supabaseForUser(ctx);
       const uid = ctx.getUserId();
-      if (input.idempotency_key) {
-        const { data: existing } = await sb.from("web_pages").select("*").eq("tenant_id", input.tenant_id).eq("slug", input.slug).maybeSingle();
-        if (existing) return okJson({ ...existing, _idempotent: true }, "page");
-      }
+      const { data: existing } = await sb.from("web_pages").select("*").eq("tenant_id", input.tenant_id).eq("slug", input.slug).maybeSingle();
+      if (existing) return okJson({ ...existing, _idempotent: true }, "page");
       let sections = input.sections ?? [];
       if (input.template_id && sections.length === 0) {
         const { data: tpl, error: tplErr } = await sb.from("web_page_templates").select("sections").eq("id", input.template_id).single();
@@ -1092,7 +1090,8 @@ var propose_portal_banner_update_default = defineTool20({
   inputSchema: {
     tenant_id: z18.string().uuid(),
     sections: z18.array(SectionSchema2).min(1).max(10),
-    proposal_reason: z18.string().min(1).max(500)
+    proposal_reason: z18.string().min(1).max(500),
+    idempotency_key: z18.string().min(1).describe("REQUIRED. Stable retry key for this banner proposal.")
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1101,7 +1100,10 @@ var propose_portal_banner_update_default = defineTool20({
     try {
       const sb = supabaseForUser(ctx);
       const uid = ctx.getUserId();
-      const slug = `portal-banner-proposal-${Date.now()}`;
+      const slugKey = Array.from(new TextEncoder().encode(input.idempotency_key)).map((byte) => byte.toString(16).padStart(2, "0")).join("").slice(0, 48);
+      const slug = `portal-banner-proposal-${slugKey}`;
+      const { data: existing } = await sb.from("web_pages").select("*").eq("tenant_id", input.tenant_id).eq("slug", slug).maybeSingle();
+      if (existing) return okJson({ ...existing, _idempotent: true }, "proposal");
       const { data: page, error: pErr } = await sb.from("web_pages").insert({
         tenant_id: input.tenant_id,
         title: "Portal Banner Proposal",

@@ -752,13 +752,16 @@
               "maxItems": 30
             },
             "idempotency_key": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable retry key; the tenant slug is reused instead of creating a duplicate draft."
             }
           },
           "required": [
             "tenant_id",
             "title",
-            "slug"
+            "slug",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -817,12 +820,18 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 500
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "description": "REQUIRED. Stable retry key for this banner proposal."
             }
           },
           "required": [
             "tenant_id",
             "sections",
-            "proposal_reason"
+            "proposal_reason",
+            "idempotency_key"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"

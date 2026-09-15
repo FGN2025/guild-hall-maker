@@ -26,6 +26,7 @@ export default defineTool({
     tenant_id: z.string().uuid(),
     sections: z.array(SectionSchema).min(1).max(10),
     proposal_reason: z.string().min(1).max(500),
+    idempotency_key: z.string().min(1).describe("REQUIRED. Stable retry key for this banner proposal."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -34,7 +35,16 @@ export default defineTool({
       const sb = supabaseForUser(ctx);
       const uid = ctx.getUserId();
 
-      const slug = `portal-banner-proposal-${Date.now()}`;
+      const slugKey = Array.from(new TextEncoder().encode(input.idempotency_key))
+        .map((byte) => byte.toString(16).padStart(2, "0")).join("").slice(0, 48);
+      const slug = `portal-banner-proposal-${slugKey}`;
+      const { data: existing } = await sb
+        .from("web_pages")
+        .select("*")
+        .eq("tenant_id", input.tenant_id)
+        .eq("slug", slug)
+        .maybeSingle();
+      if (existing) return okJson({ ...existing, _idempotent: true }, "proposal");
       const { data: page, error: pErr } = await sb
         .from("web_pages")
         .insert({

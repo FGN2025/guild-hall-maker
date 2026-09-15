@@ -22,7 +22,7 @@ export default defineTool({
     description: z.string().max(500).optional(),
     template_id: z.string().uuid().optional(),
     sections: z.array(SectionSchema).max(30).optional(),
-    idempotency_key: z.string().optional(),
+    idempotency_key: z.string().min(1).describe("REQUIRED. Stable retry key; the tenant slug is reused instead of creating a duplicate draft."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -32,15 +32,13 @@ export default defineTool({
       const uid = ctx.getUserId();
 
       // Idempotency: reuse a matching draft with the same slug for this tenant.
-      if (input.idempotency_key) {
-        const { data: existing } = await sb
-          .from("web_pages")
-          .select("*")
-          .eq("tenant_id", input.tenant_id)
-          .eq("slug", input.slug)
-          .maybeSingle();
-        if (existing) return okJson({ ...existing, _idempotent: true }, "page");
-      }
+      const { data: existing } = await sb
+        .from("web_pages")
+        .select("*")
+        .eq("tenant_id", input.tenant_id)
+        .eq("slug", input.slug)
+        .maybeSingle();
+      if (existing) return okJson({ ...existing, _idempotent: true }, "page");
 
       let sections = input.sections ?? [];
       if (input.template_id && sections.length === 0) {

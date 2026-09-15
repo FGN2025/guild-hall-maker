@@ -9,9 +9,12 @@ import { formatDistanceToNow, format } from "date-fns";
 /** Human labels for the classified failure states. */
 export const FAILURE_LABELS: Record<string, string> = {
   credit_exhausted: "Credits exhausted",
+  insufficient_credits: "Not enough AI credit",
   cpu_budget_exceeded: "CPU budget exceeded",
   auth_failure: "Authentication failed",
   timeout: "Timed out",
+  continuation_budget_exhausted: "Working budget exhausted",
+  no_forward_progress: "Stopped making progress",
   turn_cap_reached: "Turn cap reached",
   rate_limited: "Rate limited",
   unknown: "Failed",
@@ -20,9 +23,12 @@ export const FAILURE_LABELS: Record<string, string> = {
 /** What the operator should do about each failure state. */
 export const FAILURE_HINTS: Record<string, string> = {
   credit_exhausted: "Top up the AI credit balance, then re-launch. Nothing was published.",
+  insufficient_credits: "Top up the AI credit balance, then re-launch. Nothing was created.",
   cpu_budget_exceeded: "The run exceeded its compute slice. Narrow the date range and re-launch.",
   auth_failure: "The runner token was rejected. Re-launch; if it repeats, contact platform support.",
   timeout: "A tool call stalled. Re-launch — completed drafts are kept and idempotency prevents duplicates.",
+  continuation_budget_exhausted: "Re-launch to continue. Drafts already created remain available for review.",
+  no_forward_progress: "Review the saved drafts and run scope before re-launching.",
   turn_cap_reached: "The run hit its turn cap before finishing. Narrow the range or raise the cap.",
   rate_limited: "The tenant hit its agent rate cap. Try again later.",
   unknown: "See the error detail below.",
@@ -76,16 +82,17 @@ export default function AgentRunRow({ run: r, showStartTime = false }: { run: Ag
   const pct = r.turn_cap ? Math.min(100, Math.round(((r.turns_used ?? 0) / r.turn_cap) * 100)) : 0;
   const kind = (r as any).failure_kind as string | null | undefined;
   const pf: any = (r as any).preflight;
+  const incomplete = (r.status === "succeeded" || r.status === "completed") && r.is_complete === false;
 
   return (
     <Collapsible className="border rounded p-2 text-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={r.status === "succeeded" || r.status === "completed" ? "default" : r.status === "failed" ? "destructive" : "secondary"}>
+            <Badge variant={incomplete || r.status === "failed" ? "destructive" : r.status === "succeeded" || r.status === "completed" ? "default" : "secondary"}>
               <span className="flex items-center gap-1.5">
                 {running && <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />}
-                {r.status === "failed" && kind ? FAILURE_LABELS[kind] ?? "Failed" : r.status}
+                {incomplete ? "Incomplete" : r.status === "failed" && kind ? FAILURE_LABELS[kind] ?? "Failed" : r.status}
               </span>
             </Badge>
             <span className="font-medium">{r.mode ?? "run"}</span>
@@ -130,6 +137,11 @@ export default function AgentRunRow({ run: r, showStartTime = false }: { run: Ag
             <div className="text-xs text-destructive mt-1">
               {FAILURE_HINTS[kind ?? "unknown"]}
               {r.error_message && <div className="text-muted-foreground break-all mt-0.5">{r.error_message}</div>}
+            </div>
+          )}
+          {incomplete && (
+            <div className="text-xs text-destructive mt-1">
+              The run ended normally but fulfilled {Math.round((r.completeness_ratio ?? 0) * 100)}% of its planned work.
             </div>
           )}
         </div>
