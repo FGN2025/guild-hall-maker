@@ -14,7 +14,7 @@ declare global {
  *  dangerouslySetInnerHTML do not execute, so the SDK must be added to <head>).
  *  When the SDK is already present (client-side navigation from another page),
  *  call CommonNinja.init() so it re-scans the DOM for newly mounted components. */
-const ensureSdk = () => {
+export const ensureSdk = () => {
   if (window.CommonNinja?.init) {
     window.CommonNinja.init();
     return;

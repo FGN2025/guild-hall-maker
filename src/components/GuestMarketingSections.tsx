@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Trophy, Target, Compass, Gamepad2, UserPlus, Swords, Award, Building2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSdk as ensureCommonNinja } from "@/components/TickerEmbed";
 
 /**
  * Below-the-fold marketing sections for guests landing on the homepage.
@@ -172,16 +174,33 @@ const usePartnerTenants = () =>
           .map((p: any) => p.tenant_id)
       );
       const hasPublicEvent = new Set((events ?? []).map((e: any) => e.tenant_id));
-      // Real partner tenants only: at least one live public page or public event
+      // Real partner tenants only: at least one live public page or public event.
+      // Acme Broadband's slot is replaced by the live ticker feed card.
       return (tenants ?? [])
+        .filter((t) => t.slug !== "acme-broadband")
         .filter((t) => hasLivePage.has(t.id) || hasPublicEvent.has(t.id))
         .slice(0, 6);
     },
   });
 
+/** Live ticker feed (Common Ninja), shown in place of the Acme Broadband card. */
+const TickerFeedCard = () => {
+  useEffect(() => {
+    ensureCommonNinja();
+  }, []);
+
+  return (
+    <div className="rounded-xl border border-border bg-card/90 backdrop-blur-sm p-4 sm:col-span-2 lg:col-span-3 min-h-[120px] overflow-hidden">
+      {/* Static Common Ninja widget markup; the SDK scans for this div. */}
+      <div className="commonninja_component pid-6e74b5bd-a1b9-4f62-8d35-9e8b8e402271" />
+    </div>
+  );
+};
+
 const PartnerNetworks = () => {
   const { data } = usePartnerTenants();
-  if (!data || data.length === 0) return null;
+  // Always render: the ticker feed card stands in for Acme Broadband even
+  // while no other tenant has a live page or public event yet.
 
   return (
     <section className="py-16 border-t border-border">
@@ -196,7 +215,8 @@ const PartnerNetworks = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-          {data.map((tenant) => (
+          <TickerFeedCard />
+          {(data ?? []).map((tenant) => (
             <Link
               key={tenant.slug}
               to={`/events/${tenant.slug}`}
