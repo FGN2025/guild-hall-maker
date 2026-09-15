@@ -23,12 +23,12 @@ const Pathways = () => {
     <>
       <PageBackground pageSlug="pathways" />
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3 page-heading">
+        <div className="rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 p-5">
+          <h1 className="font-display text-3xl font-bold text-white flex items-center gap-3">
             <Compass className="h-8 w-8 text-primary" />
             Merit Pathways
           </h1>
-          <p className="text-muted-foreground font-body mt-1 page-heading">
+          <p className="text-white/75 font-body mt-1">
             Career-aligned skill tracks. Finish the challenges in a merit to build a verified record you can take to a
             counselor — game work never awards an official badge on its own.
           </p>
