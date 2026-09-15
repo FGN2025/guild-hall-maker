@@ -205,6 +205,8 @@ const App = () => (
                 <Route path="/challenges/:id" element={<ChallengeDetail />} />
                 <Route path="/quests" element={<Quests />} />
                 <Route path="/quests/:id" element={<QuestDetail />} />
+                <Route path="/pathways" element={<Pathways />} />
+                <Route path="/pathways/:slug" element={<MeritDetail />} />
                 <Route path="/servers" element={<GameServers />} />
                 <Route path="/game-servers" element={<GameServers />} />
                 <Route path="/white-paper" element={<WhitePaper />} />
