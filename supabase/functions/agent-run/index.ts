@@ -37,6 +37,10 @@ import {
   classifyFailure,
   continuationBudget,
   completenessRatio,
+  fulfilledRowIdsFromTranscript,
+  mergeRowIds,
+  adaptiveTurnReserveMs,
+  hasNoForwardProgress,
   COMPLETENESS_TOLERANCE,
   FAILURE_MESSAGE,
 } from "../_shared/seed-scope.ts";
@@ -389,25 +393,8 @@ const SLICE_BUDGET_MS = 70_000;
  * instrumentation records from the first turn onward. The constant below is
  * only the cold-start value used until three turns have been observed. */
 const DEFAULT_TURN_RESERVE_MS = 30_000;
-const MIN_TURN_RESERVE_MS = 20_000;
-const MAX_TURN_RESERVE_MS = 45_000;
 /** Legacy name kept for the test override path. */
 const TURN_RESERVE_MS = DEFAULT_TURN_RESERVE_MS;
-
-function p95(values: number[]): number {
-  if (!values.length) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const idx = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
-  return sorted[Math.max(0, idx)];
-}
-
-/** Reserve enough room for one more turn, sized from observed turns. */
-function adaptiveTurnReserve(metrics: any[]): number {
-  const durations = metrics.map((m) => Number(m?.ms)).filter((n) => Number.isFinite(n) && n > 0);
-  if (durations.length < 3) return DEFAULT_TURN_RESERVE_MS;
-  const target = Math.ceil(p95(durations) * 1.25);
-  return Math.min(MAX_TURN_RESERVE_MS, Math.max(MIN_TURN_RESERVE_MS, target));
-}
 
 /* STEP 5: how many consecutive continuations may commit zero new rows before
  * the run is halted. Five, because a legitimately slow stretch (a long research
@@ -518,7 +505,7 @@ async function runAgentLoop(opts: {
   const maxReserve = Math.floor(sliceBudget / 2);
   /** Recomputed every iteration so the reserve tracks this run's real turns. */
   const currentReserve = () =>
-    Math.min(opts.turnReserveMs ?? adaptiveTurnReserve(turnMetrics), maxReserve);
+    Math.min(opts.turnReserveMs ?? adaptiveTurnReserveMs(turnMetrics), maxReserve);
   let turnsThisSlice = 0;
   /* STEP 1 INSTRUMENTATION (2026-09-10): per-turn wall clock, accumulated
    * across slices so p95 is computed over a whole run, not one invocation. */
@@ -661,7 +648,9 @@ async function driveRun(params: {
 
     if (result.status === "continue") {
       const nextCount = (run.continuation_count ?? 0) + 1;
-      const createdNow = await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => null);
+      const newlyCreated = await collectCreatedRowIds(tenantId, userId, run.started_at).catch(() => null);
+      const fulfilledNow = fulfilledRowIdsFromTranscript(result.messages);
+      const createdNow = mergeRowIds(newlyCreated, fulfilledNow);
       const committed = countCreated(createdNow);
       const prevMetrics: any[] = Array.isArray(run.continuation_metrics) ? run.continuation_metrics : [];
       const prevCommitted = prevMetrics.length ? (prevMetrics[prevMetrics.length - 1].committed ?? 0) : 0;
@@ -680,9 +669,7 @@ async function driveRun(params: {
        * the no-progress guard is what makes a raised ceiling safe: without it a
        * run that dies at 60 would simply spin instead. */
       const budget = continuationBudget(run?.preflight?.expected ?? null);
-      const trailing = contMetrics.slice(-NO_PROGRESS_LIMIT);
-      const stalled = trailing.length >= NO_PROGRESS_LIMIT &&
-        trailing.every((m: any) => (m?.delta ?? 0) <= 0);
+      const stalled = hasNoForwardProgress(contMetrics, NO_PROGRESS_LIMIT);
 
       const halt = stalled
         ? { reason: "no_forward_progress", detail: `no rows committed across ${NO_PROGRESS_LIMIT} consecutive continuations` }
@@ -728,7 +715,9 @@ async function driveRun(params: {
       return;
     }
 
-    const created = await collectCreatedRowIds(tenantId, userId, run.started_at);
+    const newlyCreated = await collectCreatedRowIds(tenantId, userId, run.started_at);
+    const fulfilled = fulfilledRowIdsFromTranscript(result.messages);
+    const created = mergeRowIds(newlyCreated, fulfilled);
     const patch: any = {
       turns_used: result.turns,
       input_tokens: result.inputTokens,

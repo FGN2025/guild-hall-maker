@@ -17,6 +17,8 @@ const TOOLS = [
   "propose-scheduled-post.ts",
   "attach-tenant-asset-draft.ts",
   "compose-event-promo.ts",
+  "propose-branded-page.ts",
+  "propose-portal-banner-update.ts",
 ];
 
 const dir = join(process.cwd(), "supabase/functions/_shared/mcp-tools");
@@ -50,6 +52,13 @@ describe("agent create tools are idempotent by construction", () => {
       "attach_tenant_asset_draft",
       "compose_event_promo",
     ]) {
+      expect(registry).toContain(name);
+    }
+  });
+
+  it("keeps every create tool in the write-tool registry", () => {
+    const registry = read("_registry.ts");
+    for (const name of ["propose_branded_page", "propose_portal_banner_update"]) {
       expect(registry).toContain(name);
     }
   });

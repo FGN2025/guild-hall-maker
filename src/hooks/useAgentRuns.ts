@@ -28,6 +28,9 @@ export type AgentRun = {
   created_row_ids: any;
   started_at: string;
   finished_at: string | null;
+  completeness_ratio: number | null;
+  is_complete: boolean | null;
+  continuation_count: number;
 };
 
 export function useAgentRuns(tenantId?: string, opts?: { pollActive?: boolean }) {
@@ -49,7 +52,24 @@ export function useAgentRuns(tenantId?: string, opts?: { pollActive?: boolean })
   });
 }
 
-export type RunStatusFilter = "all" | "running" | "succeeded" | "failed";
+export type RunStatusFilter = "all" | "running" | "succeeded" | "failed" | "blocked";
+
+export function trailingTenReliability(rows: AgentRun[]) {
+  const sample = rows
+    .filter((r) => r.mode === "monthly_calendar_seed" && r.status !== "running" && r.status !== "blocked")
+    .slice(0, 10);
+  const successful = sample.filter((r) => r.status === "succeeded" || r.status === "completed").length;
+  const complete = sample.filter((r) =>
+    (r.status === "succeeded" || r.status === "completed") && r.is_complete === true
+  ).length;
+  const ratios = sample.map((r) => r.completeness_ratio).filter((v): v is number => typeof v === "number");
+  return {
+    sampleSize: sample.length,
+    successful,
+    complete,
+    averageCompleteness: ratios.length ? ratios.reduce((sum, value) => sum + value, 0) / ratios.length : null,
+  };
+}
 
 /**
  * Paged run feed for the seed-run dashboard. Polls only while a run is
@@ -89,7 +109,7 @@ export function useAgentRunsPaged(
   const summary = useQuery({
     queryKey: ["agent_runs_summary", tenantId],
     queryFn: async () => {
-      if (!tenantId) return { total: 0, succeeded: 0, failed: 0, running: 0 };
+      if (!tenantId) return { total: 0, succeeded: 0, failed: 0, running: 0, blocked: 0 };
       const { data, error } = await supabase
         .from("agent_runs" as any)
         .select("status")
@@ -101,13 +121,33 @@ export function useAgentRunsPaged(
         succeeded: rows.filter((r) => r.status === "succeeded" || r.status === "completed").length,
         failed: rows.filter((r) => r.status === "failed").length,
         running: rows.filter((r) => r.status === "running").length,
+        blocked: rows.filter((r) => r.status === "blocked").length,
       };
     },
     enabled: !!tenantId,
     refetchInterval: hasRunning ? 3000 : false,
   });
 
-  return { ...query, summary: summary.data, hasRunning };
+  const reliability = useQuery({
+    queryKey: ["agent_runs_trailing_ten", tenantId],
+    queryFn: async () => {
+      if (!tenantId) return trailingTenReliability([]);
+      const { data, error } = await supabase
+        .from("agent_runs" as any)
+        .select("mode,status,is_complete,completeness_ratio,started_at")
+        .eq("tenant_id", tenantId)
+        .eq("mode", "monthly_calendar_seed")
+        .in("status", ["succeeded", "completed", "failed"])
+        .order("started_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return trailingTenReliability((data ?? []) as unknown as AgentRun[]);
+    },
+    enabled: !!tenantId,
+    refetchInterval: hasRunning ? 3000 : false,
+  });
+
+  return { ...query, summary: summary.data, reliability: reliability.data, hasRunning };
 }
 
 export function useAgentLaunchGate() {

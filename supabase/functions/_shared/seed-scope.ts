@@ -468,3 +468,73 @@ export function completenessRatio(
   if (!units) return null;
   return committed / units;
 }
+
+/** IDs fulfilled by create tools, including rows safely reused on replay. */
+export function fulfilledRowIdsFromTranscript(messages: any[] | null | undefined) {
+  const toolNames = new Map<string, string>();
+  const fulfilled = {
+    campaigns: new Set<string>(),
+    scheduled_posts: new Set<string>(),
+    tenant_marketing_assets: new Set<string>(),
+  };
+  const targets: Record<string, { payload: string; bucket: keyof typeof fulfilled }> = {
+    create_campaign_draft: { payload: "campaign", bucket: "campaigns" },
+    propose_scheduled_post: { payload: "scheduled_post", bucket: "scheduled_posts" },
+    attach_tenant_asset_draft: { payload: "asset", bucket: "tenant_marketing_assets" },
+    compose_event_promo: { payload: "asset", bucket: "tenant_marketing_assets" },
+  };
+
+  for (const message of Array.isArray(messages) ? messages : []) {
+    const content = Array.isArray(message?.content) ? message.content : [];
+    if (message?.role === "assistant") {
+      for (const block of content) {
+        if (block?.type === "tool_use" && targets[block?.name] && block?.id) {
+          toolNames.set(String(block.id), String(block.name));
+        }
+      }
+      continue;
+    }
+    if (message?.role !== "user") continue;
+    for (const block of content) {
+      if (block?.type !== "tool_result" || block?.is_error) continue;
+      const name = toolNames.get(String(block?.tool_use_id ?? ""));
+      const target = name ? targets[name] : null;
+      if (!target) continue;
+      try {
+        const parsed = typeof block.content === "string" ? JSON.parse(block.content) : block.content;
+        const row = parsed?.[target.payload] ?? parsed;
+        if (row?.id) fulfilled[target.bucket].add(String(row.id));
+      } catch { /* malformed tool output is not fulfilled work */ }
+    }
+  }
+
+  return {
+    campaigns: [...fulfilled.campaigns],
+    scheduled_posts: [...fulfilled.scheduled_posts],
+    tenant_marketing_assets: [...fulfilled.tenant_marketing_assets],
+  };
+}
+
+export function mergeRowIds(
+  created: Record<string, string[]> | null | undefined,
+  fulfilled: Record<string, string[]> | null | undefined,
+) {
+  return {
+    campaigns: [...new Set([...(created?.campaigns ?? []), ...(fulfilled?.campaigns ?? [])])],
+    scheduled_posts: [...new Set([...(created?.scheduled_posts ?? []), ...(fulfilled?.scheduled_posts ?? [])])],
+    tenant_marketing_assets: [...new Set([...(created?.tenant_marketing_assets ?? []), ...(fulfilled?.tenant_marketing_assets ?? [])])],
+  };
+}
+
+export function adaptiveTurnReserveMs(metrics: any[]): number {
+  const durations = metrics.map((m) => Number(m?.ms)).filter((n) => Number.isFinite(n) && n > 0);
+  if (durations.length < 3) return 30_000;
+  const sorted = [...durations].sort((a, b) => a - b);
+  const idx = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
+  return Math.min(45_000, Math.max(20_000, Math.ceil(sorted[Math.max(0, idx)] * 1.25)));
+}
+
+export function hasNoForwardProgress(metrics: any[], limit = 5): boolean {
+  const trailing = metrics.slice(-limit);
+  return trailing.length >= limit && trailing.every((m) => Number(m?.delta ?? 0) <= 0);
+}

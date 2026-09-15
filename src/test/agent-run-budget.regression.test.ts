@@ -5,7 +5,12 @@ import {
   completenessRatio,
   COMPLETENESS_TOLERANCE,
   FAILURE_MESSAGE,
+  adaptiveTurnReserveMs,
+  hasNoForwardProgress,
+  fulfilledRowIdsFromTranscript,
+  mergeRowIds,
 } from "../../supabase/functions/_shared/seed-scope.ts";
+import { trailingTenReliability, type AgentRun } from "../hooks/useAgentRuns";
 
 /**
  * Regression cover for the run-reliability checkpoint (2026-09-12).
@@ -68,6 +73,67 @@ describe("continuation budget is derived from the work", () => {
 
   it("is capped so a runaway preflight cannot buy unlimited invocations", () => {
     expect(continuationBudget({ campaigns: 9999, assets: 9999, posts: 9999 })).toBe(400);
+  });
+});
+
+describe("measured reserve and no-progress boundary", () => {
+  it("uses the cold-start reserve until three turns are measured", () => {
+    expect(adaptiveTurnReserveMs([{ ms: 5000 }, { ms: 9000 }])).toBe(30000);
+  });
+
+  it("uses p95 with safety margin and clamps the result", () => {
+    expect(adaptiveTurnReserveMs([{ ms: 5000 }, { ms: 9000 }, { ms: 15000 }])).toBe(20000);
+    expect(adaptiveTurnReserveMs([{ ms: 5000 }, { ms: 9000 }, { ms: 50000 }])).toBe(45000);
+  });
+
+  it("halts only after five consecutive non-progress handoffs", () => {
+    expect(hasNoForwardProgress([{ delta: 0 }, { delta: 0 }, { delta: 0 }, { delta: 0 }])).toBe(false);
+    expect(hasNoForwardProgress([{ delta: 1 }, { delta: 0 }, { delta: 0 }, { delta: 0 }, { delta: 0 }])).toBe(false);
+    expect(hasNoForwardProgress([{ delta: 0 }, { delta: 0 }, { delta: 0 }, { delta: 0 }, { delta: 0 }])).toBe(true);
+  });
+});
+
+describe("replay-aware fulfillment", () => {
+  it("counts idempotently reused create results without double counting", () => {
+    const transcript = [
+      { role: "assistant", content: [
+        { type: "tool_use", id: "c1", name: "create_campaign_draft" },
+        { type: "tool_use", id: "a1", name: "compose_event_promo" },
+      ] },
+      { role: "user", content: [
+        { type: "tool_result", tool_use_id: "c1", content: JSON.stringify({ campaign: { id: "campaign-1", _idempotent: true } }) },
+        { type: "tool_result", tool_use_id: "a1", content: JSON.stringify({ asset: { id: "asset-1", _idempotent: true } }) },
+      ] },
+    ];
+    const fulfilled = fulfilledRowIdsFromTranscript(transcript);
+    expect(mergeRowIds({ campaigns: ["campaign-1"], scheduled_posts: [], tenant_marketing_assets: [] }, fulfilled)).toEqual({
+      campaigns: ["campaign-1"], scheduled_posts: [], tenant_marketing_assets: ["asset-1"],
+    });
+  });
+
+  it("ignores read results and failed create results", () => {
+    const transcript = [
+      { role: "assistant", content: [{ type: "tool_use", id: "r1", name: "list_pending_agent_drafts" }, { type: "tool_use", id: "p1", name: "propose_scheduled_post" }] },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "r1", content: JSON.stringify({ campaigns: [{ id: "not-counted" }] }) }, { type: "tool_result", tool_use_id: "p1", is_error: true, content: "failed" }] },
+    ];
+    expect(fulfilledRowIdsFromTranscript(transcript)).toEqual({ campaigns: [], scheduled_posts: [], tenant_marketing_assets: [] });
+  });
+});
+
+describe("trailing-ten reliability", () => {
+  const run = (status: AgentRun["status"], complete: boolean | null, ratio: number | null) => ({
+    mode: "monthly_calendar_seed", status, is_complete: complete, completeness_ratio: ratio,
+  }) as AgentRun;
+
+  it("reports successful exits separately from reliable complete runs", () => {
+    const result = trailingTenReliability([
+      run("completed", true, 1),
+      run("completed", false, 0.5),
+      run("failed", false, 0.2),
+      run("blocked", false, 0),
+      run("running", null, null),
+    ]);
+    expect(result).toEqual({ sampleSize: 3, successful: 2, complete: 1, averageCompleteness: (1 + 0.5 + 0.2) / 3 });
   });
 });
 
