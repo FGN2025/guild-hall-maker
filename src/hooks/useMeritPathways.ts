@@ -7,6 +7,7 @@ export interface MeritChallengeLink {
   challenge_id: string;
   sequence_order: number;
   is_required: boolean;
+  completed: boolean;
   challenge: {
     id: string;
     name: string;
@@ -109,6 +110,7 @@ export const useMeritPathways = () => {
         id: l.id,
         challenge_id: l.challenge_id,
         sequence_order: l.sequence_order,
+        completed: completedIds.has(l.challenge_id),
         is_required: l.is_required,
         challenge: l.challenges ?? null,
       }));
