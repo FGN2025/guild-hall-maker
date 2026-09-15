@@ -1,0 +1,251 @@
+openapi: 3.1.0
+info:
+  title: FGN Merit Connector
+  version: 1.0.0
+  description: >
+    Stop 7 contract between fgn.gg (play.fgn.gg) and the Scout Merit Builder
+    companion app. Two directions:
+
+    1. Inbound challenge webhooks: fgn.gg pushes challenge.created / challenge.updated /
+       challenge.deactivated to the companion's receiver.
+
+    2. Outbound passport entries: the companion pushes counselor-decided merit
+       completions to fgn.gg, which upserts advancement records and refreshes the
+       fgn.academy Skill Passport.
+
+    Base URL for direction 2: https://play.fgn.gg (paths below are appended as
+    /functions/v1/...). Authentication for direction 2 is the shared ecosystem key
+    sent as `X-Ecosystem-Key` with `X-Ecosystem-App: merit`. Direction 1 uses an
+    HMAC-SHA256 shared signing secret.
+
+servers:
+  - url: https://play.fgn.gg/functions/v1
+    description: FGN Play edge functions
+
+paths:
+  /merit-connector-api:
+    post:
+      operationId: meritConnector
+      summary: Merit connector actions (health, passport_entries)
+      security:
+        - EcosystemKey: []
+      parameters:
+        - $ref: '#/components/parameters/EcosystemApp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/HealthRequest'
+                - $ref: '#/components/schemas/PassportEntriesRequest'
+      responses:
+        '200':
+          description: Action result
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/HealthResponse'
+                  - $ref: '#/components/schemas/PassportEntriesResponse'
+        '400':
+          description: Validation failure (see error details)
+        '401':
+          description: Missing/invalid ecosystem key or app header
+        '409':
+          description: Duplicate delivery_id (already processed)
+        '500':
+          description: Unexpected server error
+
+  /webhooks/fgn-challenges:
+    post:
+      operationId: fgnChallengeWebhook
+      summary: Inbound challenge events from fgn.gg (companion implements this)
+      description: >
+        Implemented by the Scout Merit Builder companion app. fgn.gg's
+        ecosystem-webhook-dispatch delivers this envelope once per event with an
+        HMAC signature over the exact raw request body. Receivers MUST respond 2xx
+        to acknowledge and MUST dedupe on X-Delivery-Id (redeliveries are possible).
+      parameters:
+        - $ref: '#/components/parameters/FgnSignature'
+        - $ref: '#/components/parameters/DeliveryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeEnvelope'
+      responses:
+        '200':
+          description: Acknowledged
+        '4XX'/'5XX':
+          description: fgn.gg will retry with backoff; dedupe on delivery_id
+
+components:
+  securitySchemes:
+    EcosystemKey:
+      type: apiKey
+      in: header
+      name: X-Ecosystem-Key
+
+  parameters:
+    EcosystemApp:
+      name: X-Ecosystem-App
+      in: header
+      required: true
+      schema:
+        type: string
+        const: merit
+    FgnSignature:
+      name: X-FGN-Signature
+      in: header
+      required: true
+      description: HMAC-SHA256 lowercase hex digest over the raw request body, keyed with the shared signing secret for this webhook row.
+      schema:
+        type: string
+    DeliveryId:
+      name: X-Delivery-Id
+      in: header
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    HealthRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          const: health
+
+    HealthResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+          const: merit-connector-api
+        time:
+          type: string
+          format: date-time
+
+    PassportEntriesRequest:
+      type: object
+      required: [action, delivery_id, entries]
+      properties:
+        action:
+          type: string
+          const: passport_entries
+        delivery_id:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Idempotency key. Replaying the same delivery_id returns 409 duplicate.
+        validate_only:
+          type: boolean
+          default: false
+          description: Validate the payload and return per-entry verdicts without writing anything.
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/PassportEntry'
+
+    PassportEntry:
+      type: object
+      description: One counselor-decided merit completion. Provide exactly one of external_user_id or user_email.
+      required: [badge_slug, completed_at]
+      properties:
+        external_user_id:
+          type: string
+          format: uuid
+          description: fgn.gg auth user id.
+        user_email:
+          type: string
+          format: email
+          description: fgn.gg account email, resolved server-side when external_user_id is absent.
+        badge_slug:
+          type: string
+          examples: [aviation, truck-transportation, automotive-maintenance, electricity, home-repairs, safety]
+        completed_at:
+          type: string
+          format: date-time
+          description: When the counselor decided the merit was completed.
+        decided_by_email:
+          type: string
+          format: email
+          description: Optional counselor email recorded in the notes.
+        note:
+          type: string
+          maxLength: 2000
+        source:
+          type: string
+          maxLength: 100
+          default: scout_merit_builder
+
+    PassportEntriesResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, duplicate, validated]
+        delivery_id:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+            required: [index, badge_slug, outcome]
+            properties:
+              index:
+                type: integer
+              badge_slug:
+                type: string
+              outcome:
+                type: string
+                enum: [accepted, failed]
+              reason:
+                type: string
+              advancement_record_id:
+                type: string
+                format: uuid
+
+    ChallengeEnvelope:
+      type: object
+      description: Same envelope shape emitted by fgn.gg ecosystem-webhook-dispatch for all ecosystem events.
+      required: [event_type, payload, delivery_id, timestamp]
+      properties:
+        event_type:
+          type: string
+          enum: [challenge.created, challenge.updated, challenge.deactivated]
+        payload:
+          type: object
+          required: [id, name, is_active]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: fgn.gg challenge id — store this for catalogue mappings.
+            name:
+              type: string
+            game_id:
+              type: string
+              format: uuid
+              nullable: true
+            difficulty:
+              type: string
+              nullable: true
+            is_active:
+              type: boolean
+            updated_at:
+              type: string
+              format: date-time
+        delivery_id:
+          type: string
+          description: Matches the X-Delivery-Id header; dedupe key.
+        timestamp:
+          type: string
+          format: date-time
