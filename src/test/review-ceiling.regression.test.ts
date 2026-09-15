@@ -16,8 +16,12 @@ import { describe, it, expect } from "vitest";
 const URL_BASE = import.meta.env.VITE_SUPABASE_URL;
 const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Requires live backend credentials; skipped in environments (e.g. the
+// production build runner) where they are not injected.
+const maybeIt = URL_BASE && KEY ? it : it.skip;
+
 describe("marketing approval ceiling — live database regression matrix", () => {
-  it("refuses every agent write past pending_review while leaving humans, the revision loop and the dispatcher working", async () => {
+  maybeIt("refuses every agent write past pending_review while leaving humans, the revision loop and the dispatcher working", async () => {
     const res = await fetch(`${URL_BASE}/functions/v1/review-ceiling-selftest`, {
       method: "POST",
       headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
