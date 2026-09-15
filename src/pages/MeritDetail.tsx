@@ -55,9 +55,6 @@ const MeritDetail = () => {
 
   const Icon = getMeritIcon(merit.icon);
   const pct = merit.totalCount > 0 ? (merit.completedCount / merit.totalCount) * 100 : 0;
-  const completedSet = new Set(
-    merit.challenges.filter((_, i) => i < 0).map(() => "")
-  );
 
   return (
     <>
@@ -114,7 +111,7 @@ const MeritDetail = () => {
               </p>
             ) : (
               merit.challenges.map((link) => {
-                const done = user && merit.completedCount > 0 && completedSet.has(link.challenge_id);
+                const done = !!user && link.completed;
                 return (
                   <Link
                     key={link.id}
