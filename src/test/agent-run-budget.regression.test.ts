@@ -10,6 +10,7 @@ import {
   fulfilledRowIdsFromTranscript,
   mergeRowIds,
 } from "../../supabase/functions/_shared/seed-scope.ts";
+import { trailingTenReliability, type AgentRun } from "../hooks/useAgentRuns";
 
 /**
  * Regression cover for the run-reliability checkpoint (2026-09-12).
@@ -116,6 +117,23 @@ describe("replay-aware fulfillment", () => {
       { role: "user", content: [{ type: "tool_result", tool_use_id: "r1", content: JSON.stringify({ campaigns: [{ id: "not-counted" }] }) }, { type: "tool_result", tool_use_id: "p1", is_error: true, content: "failed" }] },
     ];
     expect(fulfilledRowIdsFromTranscript(transcript)).toEqual({ campaigns: [], scheduled_posts: [], tenant_marketing_assets: [] });
+  });
+});
+
+describe("trailing-ten reliability", () => {
+  const run = (status: AgentRun["status"], complete: boolean | null, ratio: number | null) => ({
+    mode: "monthly_calendar_seed", status, is_complete: complete, completeness_ratio: ratio,
+  }) as AgentRun;
+
+  it("reports successful exits separately from reliable complete runs", () => {
+    const result = trailingTenReliability([
+      run("completed", true, 1),
+      run("completed", false, 0.5),
+      run("failed", false, 0.2),
+      run("blocked", false, 0),
+      run("running", null, null),
+    ]);
+    expect(result).toEqual({ sampleSize: 3, successful: 2, complete: 1, averageCompleteness: (1 + 0.5 + 0.2) / 3 });
   });
 });
 
