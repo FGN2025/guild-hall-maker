@@ -174,8 +174,10 @@ const usePartnerTenants = () =>
           .map((p: any) => p.tenant_id)
       );
       const hasPublicEvent = new Set((events ?? []).map((e: any) => e.tenant_id));
-      // Real partner tenants only: at least one live public page or public event
+      // Real partner tenants only: at least one live public page or public event.
+      // Acme Broadband's slot is replaced by the live ticker feed card.
       return (tenants ?? [])
+        .filter((t) => t.slug !== "acme-broadband")
         .filter((t) => hasLivePage.has(t.id) || hasPublicEvent.has(t.id))
         .slice(0, 6);
     },
