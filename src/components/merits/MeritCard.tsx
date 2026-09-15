@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Award, ChevronRight } from "lucide-react";
-import { getAchievementIcon } from "@/lib/achievementIcons";
+import { ChevronRight } from "lucide-react";
+import { getMeritIcon } from "@/components/merits/meritIcons";
 import type { MeritWithProgress } from "@/hooks/useMeritPathways";
 
 const levelStyles: Record<string, string> = {
@@ -13,7 +13,7 @@ const levelStyles: Record<string, string> = {
 };
 
 const MeritCard = ({ merit }: { merit: MeritWithProgress }) => {
-  const Icon = getAchievementIcon(merit.icon ?? "Award") ?? Award;
+  const Icon = getMeritIcon(merit.icon);
   const pct = merit.totalCount > 0 ? (merit.completedCount / merit.totalCount) * 100 : 0;
 
   return (
