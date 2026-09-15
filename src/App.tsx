@@ -56,6 +56,8 @@ const Achievements = lazy(() => import("./pages/Achievements"));
 const Challenges = lazy(() => import("./pages/Challenges"));
 const ChallengeDetail = lazy(() => import("./pages/ChallengeDetail"));
 const Quests = lazy(() => import("./pages/Quests"));
+const Pathways = lazy(() => import("./pages/Pathways"));
+const MeritDetail = lazy(() => import("./pages/MeritDetail"));
 const QuestDetail = lazy(() => import("./pages/QuestDetail"));
 const PrizeShop = lazy(() => import("./pages/PrizeShop"));
 const PlayerGuide = lazy(() => import("./pages/PlayerGuide"));
@@ -203,6 +205,8 @@ const App = () => (
                 <Route path="/challenges/:id" element={<ChallengeDetail />} />
                 <Route path="/quests" element={<Quests />} />
                 <Route path="/quests/:id" element={<QuestDetail />} />
+                <Route path="/pathways" element={<Pathways />} />
+                <Route path="/pathways/:slug" element={<MeritDetail />} />
                 <Route path="/servers" element={<GameServers />} />
                 <Route path="/game-servers" element={<GameServers />} />
                 <Route path="/white-paper" element={<WhitePaper />} />
