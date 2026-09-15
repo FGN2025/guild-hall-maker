@@ -274,3 +274,12 @@
     display: none;
   }
 }
+
+/* Force the Common Ninja ticker widget (and any iframe it injects) to span
+   the full width of its container instead of the widget's own fixed size. */
+.ticker-embed .commonninja_component,
+.ticker-embed .commonninja_component iframe,
+.ticker-embed .commonninja_component > div {
+  width: 100% !important;
+  max-width: 100% !important;
+}
