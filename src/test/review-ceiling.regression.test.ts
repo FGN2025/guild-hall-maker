@@ -18,7 +18,8 @@ const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Requires live backend credentials; skipped in environments (e.g. the
 // production build runner) where they are not injected.
-const maybeIt = URL_BASE && KEY ? it : it.skip;
+const hasLiveBackend = !!URL_BASE && !!KEY && !URL_BASE.includes("placeholder");
+const maybeIt = hasLiveBackend ? it : it.skip;
 
 describe("marketing approval ceiling — live database regression matrix", () => {
   maybeIt("refuses every agent write past pending_review while leaving humans, the revision loop and the dispatcher working", async () => {
