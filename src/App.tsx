@@ -56,6 +56,8 @@ const Achievements = lazy(() => import("./pages/Achievements"));
 const Challenges = lazy(() => import("./pages/Challenges"));
 const ChallengeDetail = lazy(() => import("./pages/ChallengeDetail"));
 const Quests = lazy(() => import("./pages/Quests"));
+const Pathways = lazy(() => import("./pages/Pathways"));
+const MeritDetail = lazy(() => import("./pages/MeritDetail"));
 const QuestDetail = lazy(() => import("./pages/QuestDetail"));
 const PrizeShop = lazy(() => import("./pages/PrizeShop"));
 const PlayerGuide = lazy(() => import("./pages/PlayerGuide"));
