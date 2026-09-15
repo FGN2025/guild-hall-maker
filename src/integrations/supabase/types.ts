@@ -2852,6 +2852,30 @@ export type Database = {
           },
         ]
       }
+      merit_connector_deliveries: {
+        Row: {
+          created_at: string
+          delivery_id: string
+          entries_count: number
+          id: string
+          source_app: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_id: string
+          entries_count?: number
+          id?: string
+          source_app?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_id?: string
+          entries_count?: number
+          id?: string
+          source_app?: string
+        }
+        Relationships: []
+      }
       merit_pathways: {
         Row: {
           created_at: string
