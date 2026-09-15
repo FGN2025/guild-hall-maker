@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Trophy, Target, Compass, Gamepad2, UserPlus, Swords, Award, Building2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSdk as ensureCommonNinja } from "@/components/TickerEmbed";
 
 /**
  * Below-the-fold marketing sections for guests landing on the homepage.
