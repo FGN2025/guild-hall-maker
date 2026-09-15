@@ -50,13 +50,19 @@ Create tenant-scoped advancement programs that can map FGN work to the current o
 - Store the official merit badge, requirement number, requirement text, source URL, effective version/year, and retirement status.
 - Map a challenge task to a requirement as **practice**, **supporting evidence**, or **potentially satisfies**. Only the last category may enter formal counselor review.
 - Preserve the exact requirement version used when work was completed; later requirement changes must not rewrite historical credit.
-- Support partial completion at the individual requirement/sub-requirement level.
+- Support partial completion at the individual requirement/sub-requirement level. Partials do not expire before the Scout turns 18, and a subsequent approved counselor may accept or reassess them.
 - Keep the player’s original evidence, verification source, timestamps, reviewer, decision, notes, and decision history.
-- Restrict official requirement approval to an authorized, tenant-scoped merit badge counselor/advancement role. Tenant admins can configure the program but do not automatically become counselors.
+- Record the Scout’s unit-leader discussion and authorization before the formal counselor workflow begins.
+- Restrict official requirement approval to an adult registered as a merit badge counselor, approved by the council for that specific badge, current on required youth-protection training, and within their annual approval period. Tenant admins and unit leaders do not automatically become counselors.
+- Represent counselor assignments separately from public profiles. Counselor rosters and contact details are available only to authorized unit/council staff, not as a Scout-browsable directory.
+- Preserve the required adult interactions and signatures when the platform serves as an alternative to the blue card; a digital checklist alone is not sufficient.
+- Treat “show,” “demonstrate,” “discuss,” “make,” and similar requirement verbs literally. Uploaded evidence or a Steam signal can support review but cannot substitute for an individually required conversation or demonstration.
+- Mark badges with special supervision, certification, facility, or safety requirements and block unsupported digital-only completion paths.
+- Apply youth-protection controls to communication and virtual sessions: no one-to-one adult/youth messaging or meetings, required parent/guardian or authorized-adult participation, and an auditable participant record.
 - Separate **digital completion record**, **badge eligible**, **recorded with Scouts**, and **physical badge issued** states.
 - Do not represent the platform as an official Scouts system of record or automatically update an external Scouts record unless a later authorized integration is supplied.
 
-The source of truth for requirement language and procedure will be the current Guide to Advancement, official Merit Badge pages, and official Digital Resource Guides. Every imported mapping will carry provenance and require human approval.
+The uploaded 2025 *Scouts BSA Requirements*, Guide to Advancement Section 7, Merit Badge Counselor Information form, and counselor approval best practices are now part of the governing reference set. The current requirements on scouting.org remain authoritative when they differ from a yearly book or pamphlet. Digital Resource Guides are supporting learning materials, not requirement replacements. Every imported mapping will carry provenance and require human approval.
 
 ## First pilot pathways
 
@@ -145,10 +151,12 @@ Reorganize the detail page around the player’s job to be done:
 
 - Configure which approved FGN pathways participate in the Scouts program.
 - Maintain tenant branding and local program settings.
-- Assign authorized counselors to specific badges or badge groups.
+- Record council approval of counselors in two stages: registered counselor status and badge-specific authorization, including effective/expiration dates, qualifications, training currency, and any required safety credentials.
+- Record the unit-leader conversation and provide at least one approved counselor contact while preserving the Scout’s choice among approved counselors.
 - Review evidence, grant requirement credit, return work with guidance, and record partials.
-- Mark external recording and physical badge issuance separately.
-- Export auditable advancement records.
+- Keep guest experts and instructors distinct from approved counselors; they may assist but cannot sign requirements.
+- Mark counselor completion, unit-leader acknowledgement, external advancement recording, and physical badge issuance as separate steps.
+- Export an auditable digital equivalent of the blue-card record for the Scout, counselor, and authorized advancement staff.
 
 ### Access boundaries
 
@@ -156,6 +164,7 @@ Reorganize the detail page around the player’s job to be done:
 - Keep Scouts advancement decisions tenant-scoped.
 - Store advancement permissions in a dedicated tenant role/assignment structure, not profiles, browser storage, or the general user profile.
 - Players may see only their own detailed advancement record; counselors see only authorized Scouts and badges; platform administrators retain oversight without silently becoming the approving counselor.
+- Unit/council staff can access the counselor roster needed to make assignments; Scouts cannot browse the roster or counselor contact database directly.
 - Use row-level access rules and immutable decision history for youth data and advancement records.
 
 ## Data and technical work
@@ -171,7 +180,10 @@ Introduce normalized records for:
 - official badge definitions and versioned requirements;
 - task-to-requirement mappings with evidence strength;
 - counselor badge assignments;
+- counselor registration, annual approval, qualifications, training, and special-certification records;
+- unit-leader authorizations and counselor referrals;
 - requirement submissions, decisions, partials, and audit history;
+- counseling-session participant and safeguarding records without storing unnecessary private conversation content;
 - external recording and physical-award status.
 
 Every new public table will include explicit grants, row-level access policies, tenant isolation, and service-role access only where a server function requires it.
@@ -188,6 +200,8 @@ Every new public table will include explicit grants, row-level access policies, 
 - Connect eligible tasks to real Steam achievements or playtime only after the research sheet is approved.
 - Keep manual evidence for requirements Steam cannot prove.
 - Never let an automatic Steam match grant official Scout requirement credit without the configured counselor decision.
+- Require a counselor to attest that the Scout actually and personally completed each official requirement exactly as written; automatic checks can only supply supporting evidence.
+- Do not auto-expire partial Scout credit before age 18. Preserve its original counselor and completion date when another counselor continues the badge.
 - Add validation that a published challenge has a pathway, outcome, task criteria, skill mapping, and valid verification configuration.
 
 ## Delivery sequence
@@ -196,6 +210,7 @@ Every new public table will include explicit grants, row-level access policies, 
 
 - Finish the open run-reliability checkpoint and remove its remaining scratch fixtures before challenge catalog writes begin.
 - Confirm the Scouts partnership authority, approved naming/branding, counselor workflow, and whether external advancement-system integration is permitted.
+- Confirm which council or advancement committee owns counselor approval for the pilot and how annual registration/training status will be supplied and refreshed.
 
 ### Phase 1 — Information architecture and research package
 
@@ -233,6 +248,9 @@ Every new public table will include explicit grants, row-level access policies, 
 - Existing enrollments, completions, points, and evidence remain intact after classification.
 - Steam verification cannot produce official Scout credit by itself.
 - Unauthorized tenant staff cannot view or approve Scout advancement records.
+- A counselor whose annual approval, youth-protection training, badge authorization, or required certification is not current cannot sign new requirement credit.
+- No adult/youth communication or virtual-session feature permits an unrecorded one-to-one interaction.
+- Partials remain available through the Scout’s eligibility period and retain requirement, version, counselor, and completion-date provenance.
 - Requirement versions and all counselor decisions remain auditable.
 - Guest users see the challenge opportunity but no private progress, evidence, counselor, or tenant records.
 - No changes touch marketing automation, scheduled posting, approvals, dispatch, or the kill switch.
