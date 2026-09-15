@@ -51,6 +51,7 @@ const mainNav = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/challenges", label: "Challenges", icon: Target },
   { to: "/quests", label: "Quests", icon: Compass },
+  { to: "/pathways", label: "Merit Pathways", icon: Medal },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
