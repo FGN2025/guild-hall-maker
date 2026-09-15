@@ -183,6 +183,26 @@ const usePartnerTenants = () =>
     },
   });
 
+/** Live ticker feed (Common Ninja), shown in place of the Acme Broadband card. */
+const TickerFeedCard = () => {
+  useEffect(() => {
+    ensureCommonNinja();
+  }, []);
+
+  return (
+    <div className="rounded-xl border border-border bg-card/90 backdrop-blur-sm p-4 sm:col-span-2 lg:col-span-3 min-h-[120px] overflow-hidden">
+      {/* Static admin-provided Common Ninja embed */}
+      <div
+        className="commonninja_component pid-6e74b5bd-a1b9-4f62-8d35-9e8b8e402271"
+        // Widget markup is fixed, not user input.
+        dangerouslySetInnerHTML={{
+          __html: '<div class="commonninja_component pid-6e74b5bd-a1b9-4f62-8d35-9e8b8e402271"></div>',
+        }}
+      />
+    </div>
+  );
+};
+
 const PartnerNetworks = () => {
   const { data } = usePartnerTenants();
   if (!data || data.length === 0) return null;
@@ -200,6 +220,7 @@ const PartnerNetworks = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+          <TickerFeedCard />
           {data.map((tenant) => (
             <Link
               key={tenant.slug}
