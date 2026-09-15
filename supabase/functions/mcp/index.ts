@@ -1968,7 +1968,7 @@ var tools = [
 ];
 
 // supabase/functions/_shared/build-id.ts
-var BUILD_ID = "2026-09-12T20:35Z-retry-backoff";
+var BUILD_ID = "2026-09-15T00:35Z-reliability-closeout";
 
 // src/lib/mcp/index.ts
 var projectRef = "yrhwzmkenjgiujhofucx";

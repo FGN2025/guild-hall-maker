@@ -5,7 +5,7 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://yrhwzmkenjgiujhofucx.supabase.co/auth/v1",
-    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-09-12T20%3A35Z-retry-backoff",
+    "resource_documentation": "https://fgn.gg/docs/mcp/build/2026-09-15T00%3A35Z-reliability-closeout",
     "accepted_audiences": [
       "authenticated"
     ]

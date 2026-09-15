@@ -16,7 +16,7 @@ export const FAILURE_LABELS: Record<string, string> = {
   continuation_budget_exhausted: "Working budget exhausted",
   no_forward_progress: "Stopped making progress",
   turn_cap_reached: "Turn cap reached",
-  rate_limited: "Rate limited",
+  tool_failure: "Tool failure",
   unknown: "Failed",
 };
 
@@ -30,7 +30,7 @@ export const FAILURE_HINTS: Record<string, string> = {
   continuation_budget_exhausted: "Re-launch to continue. Drafts already created remain available for review.",
   no_forward_progress: "Review the saved drafts and run scope before re-launching.",
   turn_cap_reached: "The run hit its turn cap before finishing. Narrow the range or raise the cap.",
-  rate_limited: "The tenant hit its agent rate cap. Try again later.",
+  tool_failure: "A step failed while saving work. Review the detail below before re-launching.",
   unknown: "See the error detail below.",
 };
 
@@ -133,7 +133,7 @@ export default function AgentRunRow({ run: r, showStartTime = false }: { run: Ag
             </div>
           )}
 
-          {r.status === "failed" && (
+           {(r.status === "failed" || r.status === "blocked") && (
             <div className="text-xs text-destructive mt-1">
               {FAILURE_HINTS[kind ?? "unknown"]}
               {r.error_message && <div className="text-muted-foreground break-all mt-0.5">{r.error_message}</div>}
