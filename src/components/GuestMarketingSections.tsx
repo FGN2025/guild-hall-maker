@@ -199,7 +199,8 @@ const TickerFeedCard = () => {
 
 const PartnerNetworks = () => {
   const { data } = usePartnerTenants();
-  if (!data || data.length === 0) return null;
+  // Always render: the ticker feed card stands in for Acme Broadband even
+  // while no other tenant has a live page or public event yet.
 
   return (
     <section className="py-16 border-t border-border">
