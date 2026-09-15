@@ -5672,6 +5672,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          idempotency_key: string | null
           is_published: boolean
           is_tenant_banner: boolean
           publish_at: string | null
@@ -5686,6 +5687,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
           is_tenant_banner?: boolean
           publish_at?: string | null
@@ -5700,6 +5702,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           is_published?: boolean
           is_tenant_banner?: boolean
           publish_at?: string | null
