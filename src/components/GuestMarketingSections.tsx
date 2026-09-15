@@ -43,8 +43,8 @@ const StatsStrip = () => {
     { icon: Trophy, label: "Live Tournaments", value: data?.tournaments },
     { icon: Target, label: "Active Challenges", value: data?.challenges },
     { icon: Compass, label: "Quests Running", value: data?.quests },
-    { icon: Gamepad2, label: "Supported Games", value: data?.games },
-  ].filter((s) => s.value != null && s.value > 0);
+    { icon: Gamepad2, label: "Supported Games", value: "100's" },
+  ].filter((s) => s.value != null && (typeof s.value === "string" || s.value > 0));
 
   if (stats.length === 0) return null;
 
