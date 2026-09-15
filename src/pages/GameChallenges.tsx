@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, CheckCircle2, Target } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
@@ -83,12 +84,16 @@ const GameChallenges = () => {
     <div style={{ ["--game-accent" as any]: identity.accent }}>
       <PageBackground pageSlug="challenges" />
       <div className="space-y-6">
-        <Link
-          to="/challenges"
-          className="inline-flex items-center gap-2 font-body text-sm text-muted-foreground transition-colors hover:text-foreground"
+        <Button
+          asChild
+          variant="outline"
+          className="group w-fit gap-2 border-border bg-card/80 font-body text-muted-foreground backdrop-blur-sm transition-colors hover:border-[hsl(var(--game-accent))] hover:bg-card hover:text-[hsl(var(--game-accent))]"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to Games
-        </Link>
+          <Link to="/challenges">
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            All Game Communities
+          </Link>
+        </Button>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
           <GameChallengeHero
