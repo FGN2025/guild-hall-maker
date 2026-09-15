@@ -393,8 +393,6 @@ const SLICE_BUDGET_MS = 70_000;
  * instrumentation records from the first turn onward. The constant below is
  * only the cold-start value used until three turns have been observed. */
 const DEFAULT_TURN_RESERVE_MS = 30_000;
-const MIN_TURN_RESERVE_MS = 20_000;
-const MAX_TURN_RESERVE_MS = 45_000;
 /** Legacy name kept for the test override path. */
 const TURN_RESERVE_MS = DEFAULT_TURN_RESERVE_MS;
 

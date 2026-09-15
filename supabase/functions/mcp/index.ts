@@ -1029,7 +1029,7 @@ var propose_branded_page_default = defineTool19({
     try {
       const sb = supabaseForUser(ctx);
       const uid = ctx.getUserId();
-      const { data: existing } = await sb.from("web_pages").select("*").eq("tenant_id", input.tenant_id).eq("slug", input.slug).maybeSingle();
+      const { data: existing } = await sb.from("web_pages").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
       if (existing) return okJson({ ...existing, _idempotent: true }, "page");
       let sections = input.sections ?? [];
       if (input.template_id && sections.length === 0) {
@@ -1043,7 +1043,8 @@ var propose_branded_page_default = defineTool19({
         slug: input.slug,
         description: input.description ?? null,
         is_published: false,
-        created_by: uid
+        created_by: uid,
+        idempotency_key: input.idempotency_key
       }).select().single();
       if (pErr) throw pErr;
       if (sections.length) {
@@ -1102,7 +1103,7 @@ var propose_portal_banner_update_default = defineTool20({
       const uid = ctx.getUserId();
       const slugKey = Array.from(new TextEncoder().encode(input.idempotency_key)).map((byte) => byte.toString(16).padStart(2, "0")).join("").slice(0, 48);
       const slug = `portal-banner-proposal-${slugKey}`;
-      const { data: existing } = await sb.from("web_pages").select("*").eq("tenant_id", input.tenant_id).eq("slug", slug).maybeSingle();
+      const { data: existing } = await sb.from("web_pages").select("*").eq("tenant_id", input.tenant_id).eq("idempotency_key", input.idempotency_key).maybeSingle();
       if (existing) return okJson({ ...existing, _idempotent: true }, "proposal");
       const { data: page, error: pErr } = await sb.from("web_pages").insert({
         tenant_id: input.tenant_id,
@@ -1110,7 +1111,8 @@ var propose_portal_banner_update_default = defineTool20({
         slug,
         description: input.proposal_reason,
         is_published: false,
-        created_by: uid
+        created_by: uid,
+        idempotency_key: input.idempotency_key
       }).select().single();
       if (pErr) throw pErr;
       const rows = input.sections.map((s, i) => ({

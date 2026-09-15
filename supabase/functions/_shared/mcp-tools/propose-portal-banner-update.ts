@@ -42,7 +42,7 @@ export default defineTool({
         .from("web_pages")
         .select("*")
         .eq("tenant_id", input.tenant_id)
-        .eq("slug", slug)
+        .eq("idempotency_key", input.idempotency_key)
         .maybeSingle();
       if (existing) return okJson({ ...existing, _idempotent: true }, "proposal");
       const { data: page, error: pErr } = await sb
@@ -54,6 +54,7 @@ export default defineTool({
           description: input.proposal_reason,
           is_published: false,
           created_by: uid,
+          idempotency_key: input.idempotency_key,
         } as any)
         .select()
         .single();

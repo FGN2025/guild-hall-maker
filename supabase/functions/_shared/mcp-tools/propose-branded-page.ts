@@ -31,12 +31,12 @@ export default defineTool({
       const sb = supabaseForUser(ctx);
       const uid = ctx.getUserId();
 
-      // Idempotency: reuse a matching draft with the same slug for this tenant.
+      // Idempotency: reuse a matching draft for this tenant.
       const { data: existing } = await sb
         .from("web_pages")
         .select("*")
         .eq("tenant_id", input.tenant_id)
-        .eq("slug", input.slug)
+        .eq("idempotency_key", input.idempotency_key)
         .maybeSingle();
       if (existing) return okJson({ ...existing, _idempotent: true }, "page");
 
@@ -57,6 +57,7 @@ export default defineTool({
           description: input.description ?? null,
           is_published: false,
           created_by: uid,
+          idempotency_key: input.idempotency_key,
         } as any)
         .select()
         .single();
