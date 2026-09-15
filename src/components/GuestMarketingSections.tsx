@@ -191,14 +191,8 @@ const TickerFeedCard = () => {
 
   return (
     <div className="rounded-xl border border-border bg-card/90 backdrop-blur-sm p-4 sm:col-span-2 lg:col-span-3 min-h-[120px] overflow-hidden">
-      {/* Static admin-provided Common Ninja embed */}
-      <div
-        className="commonninja_component pid-6e74b5bd-a1b9-4f62-8d35-9e8b8e402271"
-        // Widget markup is fixed, not user input.
-        dangerouslySetInnerHTML={{
-          __html: '<div class="commonninja_component pid-6e74b5bd-a1b9-4f62-8d35-9e8b8e402271"></div>',
-        }}
-      />
+      {/* Static Common Ninja widget markup; the SDK scans for this div. */}
+      <div className="commonninja_component pid-6e74b5bd-a1b9-4f62-8d35-9e8b8e402271" />
     </div>
   );
 };
