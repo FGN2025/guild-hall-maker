@@ -137,7 +137,7 @@ const ModeratorCDLGenerate = () => {
     setPageState("publishing");
 
     try {
-      const config = CDL_DOMAINS[domain];
+      const config = domains[domain];
       const seasonId = challengeType === "monthly" ? "a4c1209d-0bff-4fce-8437-dbbde3a67db2" : null;
       const points = computePointsBreakdown(editChallenge.points_reward || pointsReward);
 
