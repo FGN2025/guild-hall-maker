@@ -38,6 +38,34 @@ const statusColor: Record<string, string> = {
 
 const ALL_STATUSES = ["all", "open", "upcoming", "in_progress", "completed", "cancelled"];
 
+const TIMEFRAMES = [
+  { value: "all", label: "All time" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "live", label: "Happening now" },
+  { value: "archive", label: "Archive (past)" },
+] as const;
+
+type Timeframe = (typeof TIMEFRAMES)[number]["value"];
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const matchesTimeframe = (t: any, timeframe: Timeframe, now: number) => {
+  if (timeframe === "all") return true;
+  const start = t.start_date ? new Date(t.start_date).getTime() : NaN;
+  const end = t.end_date ? new Date(t.end_date).getTime() : (Number.isNaN(start) ? NaN : start + DAY_MS);
+  const finishedStatus = t.status === "completed" || t.status === "cancelled";
+
+  if (timeframe === "archive") {
+    if (finishedStatus) return true;
+    return !Number.isNaN(end) && end < now;
+  }
+  if (finishedStatus) return false;
+  if (Number.isNaN(start)) return timeframe === "upcoming";
+  if (timeframe === "upcoming") return start > now;
+  // live
+  return start <= now && (Number.isNaN(end) ? false : end >= now);
+};
+
 const AdminTournaments = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
