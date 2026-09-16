@@ -460,6 +460,8 @@ const AdminChallenges = () => {
     }
   };
 
+  if (questsRedirect) return <Navigate to="/admin/quests" replace />;
+
   return (
     <div>
       {/* Header */}
