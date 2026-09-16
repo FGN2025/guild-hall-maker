@@ -36,6 +36,8 @@ const ModeratorCDLGenerate = () => {
   const backPath = isAdminContext ? "/admin/challenges" : "/moderator/challenges";
 
   // Input form state
+  const [areaId, setAreaId] = useState(TRADE_AREAS[0].id);
+  const [gameId, setGameId] = useState(TRADE_AREAS[0].games[0].id);
   const [domain, setDomain] = useState("");
   const [cfrReference, setCfrReference] = useState("");
   const [referenceType, setReferenceType] = useState<ReferenceType>("federal_cfr");
