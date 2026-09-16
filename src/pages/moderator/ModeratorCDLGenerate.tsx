@@ -208,10 +208,10 @@ const ModeratorCDLGenerate = () => {
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
               <Cpu className="h-6 w-6 text-primary" />
-              Generate CDL Trade Skills Challenge
+              Generate Trade Skills Challenge
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Powered by FGN Trucking Coach + CDL Skills Development notebooks
+              Grounded in each game's knowledge notebook, with AI fallback when no notebook covers the topic
             </p>
           </div>
         </div>
@@ -223,19 +223,57 @@ const ModeratorCDLGenerate = () => {
               <CardTitle className="text-lg">Challenge Parameters</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
+              {/* Trade area + game */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Trade Area *</Label>
+                  <Select value={areaId} onValueChange={handleAreaChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TRADE_AREAS.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Game *</Label>
+                  <Select value={gameId} onValueChange={setGameId}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {area.games.map((g) => (
+                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedGame?.hasNotebook
+                      ? "Knowledge notebook connected — used as the primary source."
+                      : "No knowledge notebook — the built-in AI will draft this challenge."}
+                  </p>
+                </div>
+              </div>
+
               {/* Domain */}
               <div className="space-y-2">
-                <Label>CDL Domain *</Label>
+                <Label>Skill Domain *</Label>
                 <Select value={domain} onValueChange={handleDomainChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select CDL domain" />
+                    <SelectValue placeholder="Select skill domain" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.keys(CDL_DOMAINS).map((d) => (
+                    {Object.keys(domains).map((d) => (
                       <SelectItem key={d} value={d}>{d}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Titles will start with <strong>{area.titlePrefix}</strong>
+                </p>
               </div>
 
               {/* Regulatory Reference */}
