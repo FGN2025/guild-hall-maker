@@ -57,9 +57,21 @@ const ModeratorCDLGenerate = () => {
   // Published result
   const [publishedId, setPublishedId] = useState<string | null>(null);
 
+  const area = getTradeArea(areaId) ?? TRADE_AREAS[0];
+  const domains = area.domains;
+  const selectedGame = area.games.find((g) => g.id === gameId) ?? area.games[0];
+
+  const handleAreaChange = (value: string) => {
+    const next = getTradeArea(value) ?? TRADE_AREAS[0];
+    setAreaId(next.id);
+    setGameId(next.games[0].id);
+    setDomain("");
+    setCfrReference("");
+  };
+
   const handleDomainChange = (value: string) => {
     setDomain(value);
-    const config = CDL_DOMAINS[value];
+    const config = domains[value];
     if (config) {
       setCfrReference(config.cfrReference);
       setReferenceType(config.referenceType);
@@ -71,7 +83,7 @@ const ModeratorCDLGenerate = () => {
 
   // Auto-populate academy next step from domain config into generated challenge
   const getAcademyDefaults = () => {
-    const config = CDL_DOMAINS[domain];
+    const config = domains[domain];
     if (!config) return {};
     const defaults: Record<string, string> = {};
     if (config.academyNextStepUrl) defaults.academy_next_step_url = config.academyNextStepUrl;
