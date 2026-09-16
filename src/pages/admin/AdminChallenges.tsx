@@ -19,7 +19,7 @@ import {
   Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, RefreshCw, Cpu, Copy, GripVertical, Share2,
   AlertCircle, Send, FileQuestion,
 } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
@@ -120,6 +120,7 @@ const AdminChallenges = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const questsRedirect = searchParams.get("tab") === "quests";
   const innerTab = searchParams.get("tab") === "review" ? "review" : "oversight";
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
