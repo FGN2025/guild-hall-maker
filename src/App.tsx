@@ -85,6 +85,7 @@ const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminTournaments = lazy(() => import("./pages/admin/AdminTournaments"));
 const AdminChallenges = lazy(() => import("./pages/admin/AdminChallenges"));
+const AdminQuests = lazy(() => import("./pages/admin/AdminQuests"));
 const AdminRedemptions = lazy(() => import("./pages/admin/AdminRedemptions"));
 const AdminBypassCodes = lazy(() => import("./pages/admin/AdminBypassCodes"));
 const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
@@ -244,6 +245,7 @@ const App = () => (
               <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
               <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
               <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
+              <Route path="/admin/quests" element={<AdminRoute><AdminQuests /></AdminRoute>} />
               <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
               <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
