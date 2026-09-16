@@ -96,17 +96,21 @@ const ModeratorCDLGenerate = () => {
     setPageState("generating");
 
     try {
-      const config = CDL_DOMAINS[domain];
+      const config = domains[domain];
       const seasonId = challengeType === "monthly" ? "a4c1209d-0bff-4fce-8437-dbbde3a67db2" : null;
 
       const { data, error } = await supabase.functions.invoke("generate-cdl-challenge", {
         body: {
           cdl_domain: domain,
+          trade_area: area.label,
+          title_prefix: area.titlePrefix,
+          game_name: selectedGame?.name,
           cfr_reference: cfrReference,
+          standard_reference: cfrReference,
           reference_type: referenceType,
           difficulty,
           challenge_type: challengeType,
-          game_id: ATS_GAME_ID,
+          game_id: gameId,
           season_id: seasonId,
           estimated_minutes: estimatedMinutes,
           points_reward: pointsReward,
