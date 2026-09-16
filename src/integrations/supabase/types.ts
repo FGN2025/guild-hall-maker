@@ -7485,6 +7485,10 @@ export type Database = {
         Args: { _channel: string; _type: string; _user_id: string }
         Returns: boolean
       }
+      sync_dispatch_signing_secret: {
+        Args: { p_apply?: boolean; p_secret: string }
+        Returns: boolean
+      }
       validate_bypass_code: { Args: { _code: string }; Returns: boolean }
       validate_tenant_code: {
         Args: { _code: string; _tenant_id?: string }
