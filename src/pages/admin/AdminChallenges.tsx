@@ -465,18 +465,10 @@ const AdminChallenges = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
           <Target className="h-8 w-8 text-primary" />
-          Challenge & Quest Management
+          Challenge Management
         </h1>
       </div>
 
-      {/* Outer Tabs: Challenges | Quests */}
-      <Tabs defaultValue="challenges" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="challenges" className="gap-1.5"><Target className="h-4 w-4" /> Challenges</TabsTrigger>
-          <TabsTrigger value="quests" className="gap-1.5"><Compass className="h-4 w-4" /> Quests</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="challenges">
           <div className="flex items-center justify-end gap-3 mb-4">
             <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/challenges/generate")}>
               <Cpu className="h-4 w-4" /> Generate with Agent
