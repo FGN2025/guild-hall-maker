@@ -16,6 +16,7 @@ import DiscordWebhookManager from "@/components/admin/DiscordWebhookManager";
 import DiscordChannelRouteManager from "@/components/admin/DiscordChannelRouteManager";
 import EcosystemSyncHealth from "@/components/admin/EcosystemSyncHealth";
 import AcademyIntegrationHealth from "@/components/admin/AcademyIntegrationHealth";
+import EcosystemConnectionTest from "@/components/admin/EcosystemConnectionTest";
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -420,6 +421,9 @@ const AdminEcosystem = () => {
           </div>
         )}
       </div>
+
+      {/* Connection Test */}
+      <EcosystemConnectionTest />
 
       {/* Academy Integration Health */}
       <AcademyIntegrationHealth />
