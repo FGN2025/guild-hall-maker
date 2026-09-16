@@ -145,7 +145,7 @@ const ModeratorCDLGenerate = () => {
         ...editChallenge,
         ...points,
         ...getAcademyDefaults(),
-        game_id: ATS_GAME_ID,
+        game_id: gameId,
         season_id: seasonId,
         requires_evidence: true,
         cdl_domain: domain,
