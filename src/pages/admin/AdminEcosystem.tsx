@@ -422,6 +422,9 @@ const AdminEcosystem = () => {
         )}
       </div>
 
+      {/* Connection Test */}
+      <EcosystemConnectionTest />
+
       {/* Academy Integration Health */}
       <AcademyIntegrationHealth />
 
