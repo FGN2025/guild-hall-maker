@@ -15,7 +15,8 @@ import {
   Cpu, CheckCircle2, XCircle, Loader2, Copy, ChevronDown,
   ArrowLeft, ExternalLink, Sparkles,
 } from "lucide-react";
-import { CDL_DOMAINS, ATS_GAME_ID, computePointsBreakdown, buildCoverImagePrompt, REFERENCE_TYPE_LABELS, type ReferenceType } from "@/lib/cdlDomainMaps";
+import { computePointsBreakdown, REFERENCE_TYPE_LABELS, type ReferenceType } from "@/lib/cdlDomainMaps";
+import { TRADE_AREAS, getTradeArea } from "@/lib/tradeDomainMaps";
 
 type ValidationResult = { passed: number; total: number; failures: string[] };
 
@@ -35,6 +36,8 @@ const ModeratorCDLGenerate = () => {
   const backPath = isAdminContext ? "/admin/challenges" : "/moderator/challenges";
 
   // Input form state
+  const [areaId, setAreaId] = useState(TRADE_AREAS[0].id);
+  const [gameId, setGameId] = useState(TRADE_AREAS[0].games[0].id);
   const [domain, setDomain] = useState("");
   const [cfrReference, setCfrReference] = useState("");
   const [referenceType, setReferenceType] = useState<ReferenceType>("federal_cfr");
@@ -54,9 +57,21 @@ const ModeratorCDLGenerate = () => {
   // Published result
   const [publishedId, setPublishedId] = useState<string | null>(null);
 
+  const area = getTradeArea(areaId) ?? TRADE_AREAS[0];
+  const domains = area.domains;
+  const selectedGame = area.games.find((g) => g.id === gameId) ?? area.games[0];
+
+  const handleAreaChange = (value: string) => {
+    const next = getTradeArea(value) ?? TRADE_AREAS[0];
+    setAreaId(next.id);
+    setGameId(next.games[0].id);
+    setDomain("");
+    setCfrReference("");
+  };
+
   const handleDomainChange = (value: string) => {
     setDomain(value);
-    const config = CDL_DOMAINS[value];
+    const config = domains[value];
     if (config) {
       setCfrReference(config.cfrReference);
       setReferenceType(config.referenceType);
@@ -68,7 +83,7 @@ const ModeratorCDLGenerate = () => {
 
   // Auto-populate academy next step from domain config into generated challenge
   const getAcademyDefaults = () => {
-    const config = CDL_DOMAINS[domain];
+    const config = domains[domain];
     if (!config) return {};
     const defaults: Record<string, string> = {};
     if (config.academyNextStepUrl) defaults.academy_next_step_url = config.academyNextStepUrl;
@@ -81,17 +96,21 @@ const ModeratorCDLGenerate = () => {
     setPageState("generating");
 
     try {
-      const config = CDL_DOMAINS[domain];
+      const config = domains[domain];
       const seasonId = challengeType === "monthly" ? "a4c1209d-0bff-4fce-8437-dbbde3a67db2" : null;
 
       const { data, error } = await supabase.functions.invoke("generate-cdl-challenge", {
         body: {
           cdl_domain: domain,
+          trade_area: area.label,
+          title_prefix: area.titlePrefix,
+          game_name: selectedGame?.name,
           cfr_reference: cfrReference,
+          standard_reference: cfrReference,
           reference_type: referenceType,
           difficulty,
           challenge_type: challengeType,
-          game_id: ATS_GAME_ID,
+          game_id: gameId,
           season_id: seasonId,
           estimated_minutes: estimatedMinutes,
           points_reward: pointsReward,
@@ -118,7 +137,7 @@ const ModeratorCDLGenerate = () => {
     setPageState("publishing");
 
     try {
-      const config = CDL_DOMAINS[domain];
+      const config = domains[domain];
       const seasonId = challengeType === "monthly" ? "a4c1209d-0bff-4fce-8437-dbbde3a67db2" : null;
       const points = computePointsBreakdown(editChallenge.points_reward || pointsReward);
 
@@ -126,7 +145,7 @@ const ModeratorCDLGenerate = () => {
         ...editChallenge,
         ...points,
         ...getAcademyDefaults(),
-        game_id: ATS_GAME_ID,
+        game_id: gameId,
         season_id: seasonId,
         requires_evidence: true,
         cdl_domain: domain,
@@ -189,10 +208,10 @@ const ModeratorCDLGenerate = () => {
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
               <Cpu className="h-6 w-6 text-primary" />
-              Generate CDL Trade Skills Challenge
+              Generate Trade Skills Challenge
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Powered by FGN Trucking Coach + CDL Skills Development notebooks
+              Grounded in each game's knowledge notebook, with AI fallback when no notebook covers the topic
             </p>
           </div>
         </div>
@@ -204,19 +223,57 @@ const ModeratorCDLGenerate = () => {
               <CardTitle className="text-lg">Challenge Parameters</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
+              {/* Trade area + game */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Trade Area *</Label>
+                  <Select value={areaId} onValueChange={handleAreaChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TRADE_AREAS.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Game *</Label>
+                  <Select value={gameId} onValueChange={setGameId}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {area.games.map((g) => (
+                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedGame?.hasNotebook
+                      ? "Knowledge notebook connected — used as the primary source."
+                      : "No knowledge notebook — the built-in AI will draft this challenge."}
+                  </p>
+                </div>
+              </div>
+
               {/* Domain */}
               <div className="space-y-2">
-                <Label>CDL Domain *</Label>
+                <Label>Skill Domain *</Label>
                 <Select value={domain} onValueChange={handleDomainChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select CDL domain" />
+                    <SelectValue placeholder="Select skill domain" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.keys(CDL_DOMAINS).map((d) => (
+                    {Object.keys(domains).map((d) => (
                       <SelectItem key={d} value={d}>{d}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Titles will start with <strong>{area.titlePrefix}</strong>
+                </p>
               </div>
 
               {/* Regulatory Reference */}
@@ -296,7 +353,7 @@ const ModeratorCDLGenerate = () => {
                 {pageState === "generating" ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Querying CDL Skills Development notebook...
+                    Generating from {selectedGame?.hasNotebook ? "knowledge notebook" : "AI"}...
                   </>
                 ) : (
                   <>
@@ -328,6 +385,9 @@ const ModeratorCDLGenerate = () => {
                     </Badge>
                   )}
                   <span className="text-sm text-muted-foreground">18-Point Validation Benchmark</span>
+                  <Badge variant="outline" className="text-xs">
+                    Source: {(result as any)?.source === "ai" ? "AI (no notebook coverage)" : "Knowledge notebook"}
+                  </Badge>
                 </div>
                 {!allPassed && validation!.failures.length > 0 && (
                   <ul className="mt-3 space-y-1">
@@ -337,6 +397,12 @@ const ModeratorCDLGenerate = () => {
                       </li>
                     ))}
                   </ul>
+                )}
+                {(result as any)?.source === "ai" && (
+                  <p className="mt-3 text-sm text-amber-500">
+                    Drafted by AI because no knowledge notebook covered this topic. Check the standards
+                    references and task wording before publishing.
+                  </p>
                 )}
               </CardContent>
             </Card>

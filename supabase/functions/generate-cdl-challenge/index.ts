@@ -7,11 +7,11 @@ const corsHeaders = {
 };
 
 /** 18-point validation benchmark — from spec Section 5 */
-function validateChallenge(c: any): { passed: number; total: number; failures: string[] } {
+function validateChallenge(c: any, titlePrefix: string): { passed: number; total: number; failures: string[] } {
   const failures: string[] = [];
   const checks: [string, boolean][] = [
     ["1. name is non-empty string", typeof c.name === "string" && c.name.trim().length > 0],
-    ["2. name starts with 'ATS Skills:'", typeof c.name === "string" && c.name.startsWith("ATS Skills:")],
+    [`2. name starts with '${titlePrefix}'`, typeof c.name === "string" && c.name.startsWith(titlePrefix)],
     ["3. description is non-empty string", typeof c.description === "string" && c.description.trim().length > 0],
     ["4. description is markdown (contains formatting)", typeof c.description === "string" && /[#*\-\n]/.test(c.description)],
     ["5. difficulty is valid enum", ["beginner", "intermediate", "advanced"].includes(c.difficulty)],
@@ -35,6 +35,75 @@ function validateChallenge(c: any): { passed: number; total: number; failures: s
   }
 
   return { passed: checks.length - failures.length, total: checks.length, failures };
+}
+
+function extractJson(raw: string): any | null {
+  try {
+    const firstBrace = raw.indexOf("{");
+    const lastBrace = raw.lastIndexOf("}");
+    if (firstBrace === -1 || lastBrace === -1) return null;
+    return JSON.parse(raw.substring(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+}
+
+/** Lovable AI fallback — streamed and consumed server-side (reasoning runs can be long). */
+async function generateWithLovableAI(prompt: string): Promise<{ text: string } | { error: string; status: number }> {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!apiKey) return { error: "LOVABLE_API_KEY is not configured", status: 500 };
+
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": apiKey,
+      "X-Lovable-AIG-SDK": "fetch",
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-6-astra",
+      input: prompt,
+      stream: true,
+      reasoning: { effort: "low" },
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    const detail = await res.text().catch(() => "");
+    return { error: `AI generation failed (${res.status}): ${detail.slice(0, 500)}`, status: res.status };
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        const evt = JSON.parse(payload);
+        if (evt.type === "response.output_text.delta" && typeof evt.delta === "string") {
+          text += evt.delta;
+        } else if (evt.type === "response.completed" && !text && evt.response?.output_text) {
+          text = Array.isArray(evt.response.output_text)
+            ? evt.response.output_text.join("")
+            : String(evt.response.output_text);
+        }
+      } catch {
+        // ignore keepalive / partial frames
+      }
+    }
+  }
+
+  return { text };
 }
 
 Deno.serve(async (req) => {
@@ -72,13 +141,17 @@ Deno.serve(async (req) => {
     // Parse input
     const body = await req.json();
     const {
-      cdl_domain, cfr_reference, reference_type, difficulty, challenge_type,
-      game_id, season_id, estimated_minutes, points_reward, created_by,
+      cdl_domain, cfr_reference, standard_reference, reference_type, difficulty, challenge_type,
+      game_id, game_name, season_id, estimated_minutes, points_reward, trade_area, title_prefix,
     } = body;
 
     if (!cdl_domain) {
       return new Response(JSON.stringify({ error: "cdl_domain is required" }), { status: 400, headers: corsHeaders });
     }
+
+    const titlePrefix: string = (title_prefix && String(title_prefix).trim()) || "ATS Skills:";
+    const tradeArea: string = trade_area || "Transportation & trucking (CDL)";
+    const reference: string = standard_reference || cfr_reference || "";
 
     // Fetch scoring config from app_settings
     const { data: scoringRow } = await supabase
@@ -95,11 +168,12 @@ Deno.serve(async (req) => {
     const pointsParticipation = Math.max(1, Math.round((points_reward ?? 10) * 0.2));
     const taskCount = challenge_type === "one_time" ? 5 : 4;
 
-    const prompt = `Generate a CDL Trade Skills challenge for the Fiber Gaming Network platform.
+    const prompt = `Generate a Trade Skills challenge for the Fiber Gaming Network platform.
 
-CDL Domain: ${cdl_domain}
+Trade Area: ${tradeArea}
+Skill Domain: ${cdl_domain}
 Reference Type: ${reference_type || "federal_cfr"}
-Regulatory Reference: ${cfr_reference || ""}
+Standards / Regulatory Reference: ${reference}
 Difficulty: ${difficulty || "beginner"}
 Challenge Type: ${challenge_type || "monthly"}
 Points Reward: ${points_reward || 10}
@@ -108,7 +182,7 @@ Points Third: ${pointsThird}
 Points Participation: ${pointsParticipation}
 Estimated Minutes: ${estimated_minutes || 50}
 Number of Tasks: ${taskCount}
-Game: American Truck Simulator (Trucking Simulator)
+Game: ${game_name || "American Truck Simulator"}
 Season ID: ${season_id || "null"}
 Alignment Strength: ${body.alignment_strength || "STRONG"}
 
@@ -117,9 +191,9 @@ ${scoringConfig}
 
 Return a SINGLE JSON object with these exact fields:
 {
-  "name": "ATS Skills: [descriptive title]",
+  "name": "${titlePrefix} [descriptive title]",
   "description": "[markdown formatted description with ## headers, bullet points, and clear structure]",
-  "certification_description": "[one paragraph explaining the real-world CDL skill this challenge develops]",
+  "certification_description": "[one paragraph explaining the real-world trade skill this challenge develops]",
   "difficulty": "${difficulty || "beginner"}",
   "challenge_type": "${challenge_type || "monthly"}",
   "points_reward": ${points_reward || 10},
@@ -130,7 +204,7 @@ Return a SINGLE JSON object with these exact fields:
   "estimated_minutes": ${estimated_minutes || 50},
   "requires_evidence": true,
   "cdl_domain": "${cdl_domain}",
-  "cfr_reference": "${cfr_reference || ""}",
+  "cfr_reference": "${reference}",
   "coach_context": "[system prompt for the AI Coach — 2-3 sentences explaining what this challenge covers and how the coach should help]",
   "suggested_coach_prompts": ["prompt 1", "prompt 2", "prompt 3"],
   "cover_image_prompt": "[detailed image generation prompt for the challenge cover art]",
@@ -141,7 +215,8 @@ Return a SINGLE JSON object with these exact fields:
 }
 
 IMPORTANT:
-- The name MUST start with "ATS Skills:"
+- The name MUST start with "${titlePrefix}"
+- All tasks must be achievable inside ${game_name || "the selected simulator"}
 - Description MUST be markdown formatted
 - Include exactly 3 suggested_coach_prompts
 - Include exactly ${taskCount} tasks
@@ -149,68 +224,85 @@ IMPORTANT:
 - The cover_image_prompt should describe a photorealistic cinematic image suitable for a gaming challenge card
 - Return ONLY the JSON object, no additional text`;
 
-    // Dynamic notebook lookup — check admin_notebook_connections for ATS game
-    const atsGameId = game_id || "f316a9ab-8b32-46e1-b871-7defc9dcb5e5";
-    const { data: nbConn } = await supabase
-      .from("admin_notebook_connections")
-      .select("api_url, notebook_id")
-      .eq("game_id", atsGameId)
-      .eq("is_active", true)
-      .limit(1)
-      .single();
+    let challengeJson: any = null;
+    let rawResponse = "";
+    let source: "notebook" | "ai" = "notebook";
+    let notebookNote: string | null = null;
 
-    const notebookUrl = nbConn?.api_url || Deno.env.get("OPEN_NOTEBOOK_URL") || "http://72.62.168.228:8502";
-    const notebookPassword = Deno.env.get("OPEN_NOTEBOOK_PASSWORD") || "";
-    const notebookId = nbConn?.notebook_id || "notebook:w6l0wjpi39u5nlpaj0k3";
-
-    const chatUrl = `${notebookUrl}/api/notebooks/${notebookId}/chat`;
-
-    console.log(`Querying notebook at ${chatUrl}`);
-
-    const notebookResponse = await fetch(chatUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${notebookPassword}`,
-      },
-      body: JSON.stringify({ message: prompt, session_id: null }),
-    });
-
-    if (!notebookResponse.ok) {
-      const errText = await notebookResponse.text();
-      console.error("Notebook error:", notebookResponse.status, errText);
-      return new Response(
-        JSON.stringify({ error: `Notebook query failed: ${notebookResponse.status}`, details: errText }),
-        { status: 502, headers: corsHeaders }
-      );
+    // Notebook lookup for the selected game (no cross-game default)
+    let nbConn: any = null;
+    if (game_id) {
+      const { data } = await supabase
+        .from("admin_notebook_connections")
+        .select("api_url, notebook_id")
+        .eq("game_id", game_id)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      nbConn = data;
     }
 
-    const notebookData = await notebookResponse.json();
-    const rawResponse = notebookData.response || notebookData.message || JSON.stringify(notebookData);
+    if (nbConn?.notebook_id) {
+      const notebookUrl = nbConn.api_url || Deno.env.get("OPEN_NOTEBOOK_URL") || "http://72.62.168.228:8502";
+      const notebookPassword = Deno.env.get("OPEN_NOTEBOOK_PASSWORD") || "";
+      const chatUrl = `${notebookUrl}/api/notebooks/${nbConn.notebook_id}/chat`;
 
-    // Extract JSON from response
-    let challengeJson: any;
-    try {
-      const firstBrace = rawResponse.indexOf("{");
-      const lastBrace = rawResponse.lastIndexOf("}");
-      if (firstBrace === -1 || lastBrace === -1) {
-        throw new Error("No JSON object found in notebook response");
+      console.log(`Querying notebook at ${chatUrl}`);
+
+      try {
+        const notebookResponse = await fetch(chatUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${notebookPassword}` },
+          body: JSON.stringify({ message: prompt, session_id: null }),
+        });
+
+        if (notebookResponse.ok) {
+          const notebookData = await notebookResponse.json();
+          rawResponse = notebookData.response || notebookData.message || JSON.stringify(notebookData);
+          challengeJson = extractJson(rawResponse);
+          if (!challengeJson) notebookNote = "Notebook returned no usable challenge JSON — fell back to AI.";
+        } else {
+          const errText = await notebookResponse.text();
+          console.error("Notebook error:", notebookResponse.status, errText);
+          notebookNote = `Notebook query failed (${notebookResponse.status}) — fell back to AI.`;
+        }
+      } catch (nbErr: any) {
+        console.error("Notebook request error:", nbErr?.message);
+        notebookNote = `Notebook unreachable — fell back to AI.`;
       }
-      const jsonStr = rawResponse.substring(firstBrace, lastBrace + 1);
-      challengeJson = JSON.parse(jsonStr);
-    } catch (parseErr: any) {
+    } else {
+      notebookNote = "No knowledge notebook connected for this game — generated with AI.";
+    }
+
+    // AI fallback
+    if (!challengeJson) {
+      source = "ai";
+      const aiResult = await generateWithLovableAI(
+        `You are a vocational trade-skills curriculum designer. Ground the challenge in the named standard and in what is actually possible in the named simulator.\n\n${prompt}`
+      );
+      if ("error" in aiResult) {
+        return new Response(
+          JSON.stringify({ error: aiResult.error, notebook_note: notebookNote }),
+          { status: aiResult.status >= 400 && aiResult.status < 600 ? aiResult.status : 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      rawResponse = aiResult.text;
+      challengeJson = extractJson(rawResponse);
+    }
+
+    if (!challengeJson) {
       return new Response(
         JSON.stringify({
-          error: "Failed to parse challenge JSON from notebook response",
-          details: parseErr.message,
+          error: "Failed to parse challenge JSON from the generated response",
           raw_response: rawResponse,
+          notebook_note: notebookNote,
         }),
-        { status: 422, headers: corsHeaders }
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Run 18-point validation
-    const validation = validateChallenge(challengeJson);
+    const validation = validateChallenge(challengeJson, titlePrefix);
 
     // Separate tasks from challenge fields
     const tasks = challengeJson.tasks || [];
@@ -222,6 +314,8 @@ IMPORTANT:
         challenge: challengeFields,
         tasks,
         validation,
+        source,
+        notebook_note: notebookNote,
         raw_response: rawResponse,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
