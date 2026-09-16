@@ -110,15 +110,19 @@ const AdminTournaments = () => {
   });
 
   const filtered = useMemo(() => {
+    const now = Date.now();
+    const q = search.trim().toLowerCase();
     return tournaments.filter((t) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return t.name.toLowerCase().includes(q) || t.game.toLowerCase().includes(q);
+      if (!matchesTimeframe(t, timeframe, now)) return false;
+      if (q) {
+        const name = (t.name ?? "").toLowerCase();
+        const game = (t.game ?? "").toLowerCase();
+        if (!name.includes(q) && !game.includes(q)) return false;
       }
       return true;
     });
-  }, [tournaments, search, statusFilter]);
+  }, [tournaments, search, statusFilter, timeframe]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
