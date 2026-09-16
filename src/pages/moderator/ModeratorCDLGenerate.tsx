@@ -398,6 +398,12 @@ const ModeratorCDLGenerate = () => {
                     ))}
                   </ul>
                 )}
+                {(result as any)?.source === "ai" && (
+                  <p className="mt-3 text-sm text-amber-500">
+                    Drafted by AI because no knowledge notebook covered this topic. Check the standards
+                    references and task wording before publishing.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
