@@ -32,12 +32,12 @@ function buildCsvContent(stats: SeasonStatsData, seasonName: string): string {
     lines.push(`${i + 1},${name},${p.points},${p.wins},${p.losses},${wr}%,${p.tournaments_played}`);
   });
 
-  return lines.join("\n");
+  return lines.join("\r\n");
 }
 
 export function exportCsv(stats: SeasonStatsData, seasonName: string) {
   const csv = buildCsvContent(stats, seasonName);
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
   downloadBlob(blob, `${sanitize(seasonName)}_stats.csv`);
 }
 

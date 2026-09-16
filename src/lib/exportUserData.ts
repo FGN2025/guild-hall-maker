@@ -30,8 +30,9 @@ export function exportTableCSV(
   const body = rows
     .map((r) => columns.map((c) => escCsv(getValue(r, c.key))).join(","))
     .join("\n");
-  const csv = `${header}\n${body}`;
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const csv = `${header}\r\n${body.split("\n").join("\r\n")}`;
+  // Leading BOM so Excel opens UTF-8 correctly
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
