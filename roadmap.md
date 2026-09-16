@@ -21,6 +21,8 @@
 
 # Merit connector (Scout Merit Builder Stop 7)
 
+Companion app: https://lovable.dev/projects/703a58c3-1f5d-41ea-b155-4b574979e185 — public URL https://merits.fgn.academy (not scouts.fgn.academy)
+
 - [x] Contract: docs/merit-connector.openapi.yaml (+ copy in Files) covering inbound challenge webhooks and outbound passport entries
 - [x] Receiver edge function merit-connector-api (ecosystem-key auth, batched passport entries, validate_only, per-entry verdicts, Skill Passport refresh enqueue, sync logging)
 - [x] merit_connector_deliveries idempotency ledger (migration; service-role only)
