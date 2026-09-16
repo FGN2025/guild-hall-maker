@@ -112,16 +112,25 @@ const AdminTournaments = () => {
   const filtered = useMemo(() => {
     const now = Date.now();
     const q = search.trim().toLowerCase();
-    return tournaments.filter((t) => {
-      if (statusFilter !== "all" && t.status !== statusFilter) return false;
-      if (!matchesTimeframe(t, timeframe, now)) return false;
-      if (q) {
-        const name = (t.name ?? "").toLowerCase();
-        const game = (t.game ?? "").toLowerCase();
-        if (!name.includes(q) && !game.includes(q)) return false;
-      }
-      return true;
-    });
+    return tournaments
+      .filter((t) => {
+        if (statusFilter !== "all" && t.status !== statusFilter) return false;
+        if (!matchesTimeframe(t, timeframe, now)) return false;
+        if (q) {
+          const name = (t.name ?? "").toLowerCase();
+          const game = (t.game ?? "").toLowerCase();
+          if (!name.includes(q) && !game.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const toTs = (v: any) => {
+          if (!v) return Number.POSITIVE_INFINITY;
+          const ts = new Date(v).getTime();
+          return Number.isNaN(ts) ? Number.POSITIVE_INFINITY : ts;
+        };
+        return toTs(a.start_date) - toTs(b.start_date);
+      });
   }, [tournaments, search, statusFilter, timeframe]);
 
   const deleteMutation = useMutation({
