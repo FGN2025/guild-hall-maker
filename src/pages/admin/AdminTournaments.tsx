@@ -229,7 +229,22 @@ const AdminTournaments = () => {
             ))}
           </SelectContent>
         </Select>
+        <Select value={timeframe} onValueChange={(v) => setTimeframe(v as Timeframe)}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Timeframe" />
+          </SelectTrigger>
+          <SelectContent>
+            {TIMEFRAMES.map((tf) => (
+              <SelectItem key={tf.value} value={tf.value}>{tf.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      <p className="text-sm text-muted-foreground mb-4">
+        Showing {filtered.length} of {tournaments.length} tournaments
+      </p>
+
 
       {isLoading ? (
         <div className="flex justify-center py-16">
