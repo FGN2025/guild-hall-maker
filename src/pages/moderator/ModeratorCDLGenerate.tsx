@@ -385,6 +385,9 @@ const ModeratorCDLGenerate = () => {
                     </Badge>
                   )}
                   <span className="text-sm text-muted-foreground">18-Point Validation Benchmark</span>
+                  <Badge variant="outline" className="text-xs">
+                    Source: {(result as any)?.source === "ai" ? "AI (no notebook coverage)" : "Knowledge notebook"}
+                  </Badge>
                 </div>
                 {!allPassed && validation!.failures.length > 0 && (
                   <ul className="mt-3 space-y-1">
