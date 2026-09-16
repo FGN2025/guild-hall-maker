@@ -34,8 +34,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const auth = req.headers.get("Authorization") ?? "";
-  if (auth !== `Bearer ${serviceKey}`) {
+  const auth = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  let isServiceRole = auth.length > 0 && auth === serviceKey;
+  if (!isServiceRole && auth.split(".").length === 3) {
+    try {
+      const claims = JSON.parse(atob(auth.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      isServiceRole = claims?.role === "service_role";
+    } catch { /* ignore */ }
+  }
+  if (!isServiceRole) {
     return json(401, { error: "service role required" });
   }
 
