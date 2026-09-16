@@ -38,6 +38,34 @@ const statusColor: Record<string, string> = {
 
 const ALL_STATUSES = ["all", "open", "upcoming", "in_progress", "completed", "cancelled"];
 
+const TIMEFRAMES = [
+  { value: "all", label: "All time" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "live", label: "Happening now" },
+  { value: "archive", label: "Archive (past)" },
+] as const;
+
+type Timeframe = (typeof TIMEFRAMES)[number]["value"];
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const matchesTimeframe = (t: any, timeframe: Timeframe, now: number) => {
+  if (timeframe === "all") return true;
+  const start = t.start_date ? new Date(t.start_date).getTime() : NaN;
+  const end = t.end_date ? new Date(t.end_date).getTime() : (Number.isNaN(start) ? NaN : start + DAY_MS);
+  const finishedStatus = t.status === "completed" || t.status === "cancelled";
+
+  if (timeframe === "archive") {
+    if (finishedStatus) return true;
+    return !Number.isNaN(end) && end < now;
+  }
+  if (finishedStatus) return false;
+  if (Number.isNaN(start)) return timeframe === "upcoming";
+  if (timeframe === "upcoming") return start > now;
+  // live
+  return start <= now && (Number.isNaN(end) ? false : end >= now);
+};
+
 const AdminTournaments = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -46,6 +74,7 @@ const AdminTournaments = () => {
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [timeframe, setTimeframe] = useState<Timeframe>("upcoming");
   const [detailTournament, setDetailTournament] = useState<any | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
 
@@ -81,15 +110,19 @@ const AdminTournaments = () => {
   });
 
   const filtered = useMemo(() => {
+    const now = Date.now();
+    const q = search.trim().toLowerCase();
     return tournaments.filter((t) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return t.name.toLowerCase().includes(q) || t.game.toLowerCase().includes(q);
+      if (!matchesTimeframe(t, timeframe, now)) return false;
+      if (q) {
+        const name = (t.name ?? "").toLowerCase();
+        const game = (t.game ?? "").toLowerCase();
+        if (!name.includes(q) && !game.includes(q)) return false;
       }
       return true;
     });
-  }, [tournaments, search, statusFilter]);
+  }, [tournaments, search, statusFilter, timeframe]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -196,7 +229,22 @@ const AdminTournaments = () => {
             ))}
           </SelectContent>
         </Select>
+        <Select value={timeframe} onValueChange={(v) => setTimeframe(v as Timeframe)}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Timeframe" />
+          </SelectTrigger>
+          <SelectContent>
+            {TIMEFRAMES.map((tf) => (
+              <SelectItem key={tf.value} value={tf.value}>{tf.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      <p className="text-sm text-muted-foreground mb-4">
+        Showing {filtered.length} of {tournaments.length} tournaments
+      </p>
+
 
       {isLoading ? (
         <div className="flex justify-center py-16">
