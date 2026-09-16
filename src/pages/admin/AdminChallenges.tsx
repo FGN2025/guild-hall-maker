@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy, GripVertical, Share2,
+  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, RefreshCw, Cpu, Copy, GripVertical, Share2,
   AlertCircle, Send, FileQuestion,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -56,7 +56,6 @@ const typeLabels: Record<string, string> = {
 const ALL_DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"];
 const ALL_STATUSES = ["all", "active", "inactive"];
 
-import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
 import EvidenceReviewInbox from "@/components/challenges/EvidenceReviewInbox";
 // ── Sortable row for DnD ──
 const SortableChallengeRow = ({ challenge: c, dragEnabled, onDetail, onEdit, onDelete, onToggle, onToggleFeatured, onCopy, copying, deleting, navigate }: any) => {
@@ -788,12 +787,6 @@ const AdminChallenges = () => {
         />
       )}
 
-        </TabsContent>
-
-        <TabsContent value="quests">
-          <AdminQuestsPanel queryKeyPrefix="admin" showEnrollmentCounts />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
