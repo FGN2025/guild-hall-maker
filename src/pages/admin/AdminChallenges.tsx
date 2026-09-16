@@ -16,10 +16,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Target, Trash2, LayoutGrid, List, Search, Calendar, Users, Clock, Star,
-  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, Compass, RefreshCw, Cpu, Copy, GripVertical, Share2,
+  Gamepad2, FileText, Eye, Shield, Plus, Pencil, ClipboardList, CheckCircle2, XCircle, Image as ImageIcon, Megaphone, RefreshCw, Cpu, Copy, GripVertical, Share2,
   AlertCircle, Send, FileQuestion,
 } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import CreateChallengeDialog from "@/components/challenges/CreateChallengeDialog";
@@ -56,7 +56,6 @@ const typeLabels: Record<string, string> = {
 const ALL_DIFFICULTIES = ["all", "beginner", "intermediate", "advanced"];
 const ALL_STATUSES = ["all", "active", "inactive"];
 
-import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
 import EvidenceReviewInbox from "@/components/challenges/EvidenceReviewInbox";
 // ── Sortable row for DnD ──
 const SortableChallengeRow = ({ challenge: c, dragEnabled, onDetail, onEdit, onDelete, onToggle, onToggleFeatured, onCopy, copying, deleting, navigate }: any) => {
@@ -116,11 +115,12 @@ const SortableChallengeRow = ({ challenge: c, dragEnabled, onDetail, onEdit, onD
 };
 
 const AdminChallenges = () => {
-  usePageTitle("Challenge & Quest Management");
+  usePageTitle("Challenge Management");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const questsRedirect = searchParams.get("tab") === "quests";
   const innerTab = searchParams.get("tab") === "review" ? "review" : "oversight";
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
@@ -460,24 +460,18 @@ const AdminChallenges = () => {
     }
   };
 
+  if (questsRedirect) return <Navigate to="/admin/quests" replace />;
+
   return (
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
           <Target className="h-8 w-8 text-primary" />
-          Challenge & Quest Management
+          Challenge Management
         </h1>
       </div>
 
-      {/* Outer Tabs: Challenges | Quests */}
-      <Tabs defaultValue="challenges" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="challenges" className="gap-1.5"><Target className="h-4 w-4" /> Challenges</TabsTrigger>
-          <TabsTrigger value="quests" className="gap-1.5"><Compass className="h-4 w-4" /> Quests</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="challenges">
           <div className="flex items-center justify-end gap-3 mb-4">
             <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/challenges/generate")}>
               <Cpu className="h-4 w-4" /> Generate with Agent
@@ -788,12 +782,6 @@ const AdminChallenges = () => {
         />
       )}
 
-        </TabsContent>
-
-        <TabsContent value="quests">
-          <AdminQuestsPanel queryKeyPrefix="admin" showEnrollmentCounts />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
