@@ -17,7 +17,8 @@ const ChallengesHub = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const { games, challenges, completedIds, enrolledIds, isLoading } = useChallengeHub();
+  const { games, challenges, competitive, competitiveCompleted, completedIds, enrolledIds, isLoading } =
+    useChallengeHub();
 
   // Legacy ?game=Name links land on that game's community page.
   const legacyGame = searchParams.get("game");
