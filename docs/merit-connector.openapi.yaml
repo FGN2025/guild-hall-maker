@@ -18,6 +18,14 @@ info:
     sent as `X-Ecosystem-Key` with `X-Ecosystem-App: merit`. Direction 1 uses an
     HMAC-SHA256 shared signing secret.
 
+    Standing Play <-> Academy contract: the shared data endpoint
+    (ecosystem-data-api) must keep serving the `challenges`, `achievements`,
+    `player-progress`, `games`, `tournaments`, `tenant-events`, `season-stats`,
+    and legacy `quests` actions, and the event dispatcher must keep pushing
+    challenge.created / challenge.updated / challenge.deactivated. Do not remove
+    or rename any of these without coordinating with the Academy and Merits
+    projects.
+
 servers:
   - url: https://play.fgn.gg/functions/v1
     description: FGN Play edge functions
