@@ -77,15 +77,18 @@ const GameBadgePanel = ({ gameName, completed, total }: GameBadgePanelProps) => 
             Every tier unlocked for {gameName}. Nice work.
           </p>
         )}
-        {pathway && (
-          <Link
-            to={`/pathways`}
-            className="mt-2 inline-block font-body text-xs underline"
+        <p className="mt-2 font-body text-xs text-white/60">
+          These challenges can also count toward merits.{" "}
+          <a
+            href="https://merits.fgn.academy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
             style={{ color: "hsl(var(--game-accent))" }}
           >
-            View the {pathway.name} pathway
-          </Link>
-        )}
+            See merits.fgn.academy
+          </a>
+        </p>
       </div>
     </div>
   );
