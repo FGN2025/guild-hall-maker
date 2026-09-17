@@ -205,7 +205,7 @@ const AdminPointsImport = () => {
         </h1>
         <p className="text-muted-foreground font-body">
           Bulk-credit season points from a spreadsheet, matched on Discord username. Imported points land in the
-          same wallet as tournament, challenge, and quest earnings.
+          same wallet as tournament and challenge earnings.
         </p>
       </div>
 

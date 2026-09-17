@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface FeaturedEvent {
   id: string;
-  type: "tournament" | "challenge" | "quest";
+  type: "tournament" | "challenge";
   title: string;
   game: string;
   status: string;
@@ -28,7 +28,6 @@ interface FeaturedEvent {
 const typeBadgeStyle: Record<string, string> = {
   tournament: "bg-primary/15 text-primary border-primary/30",
   challenge: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-  quest: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
 };
 
 const FeaturedEvents = () => {
@@ -109,33 +108,6 @@ const FeaturedEvents = () => {
         });
       });
 
-      // Fetch featured quests
-      const { data: quests } = await (supabase
-        .from("quests")
-        .select("id, name, difficulty, points_first, xp_reward, estimated_minutes, cover_image_url, game_id, featured_start_at, featured_end_at, games(name, cover_image_url)") as any)
-        .eq("is_featured", true)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-
-      (quests ?? []).filter((q: any) => isInFeaturedWindow(q.featured_start_at, q.featured_end_at, now)).forEach((q: any) => {
-        results.push({
-          id: q.id,
-          type: "quest",
-          title: q.name,
-          game: q.games?.name ?? "",
-          status: q.difficulty?.charAt(0).toUpperCase() + q.difficulty?.slice(1) || "Active",
-          date: null,
-          stat1Label: "Points",
-          stat1Value: `${q.points_first} pts`,
-          stat1Icon: Star,
-          stat2Label: "XP",
-          stat2Value: q.xp_reward ? `${q.xp_reward} XP` : "—",
-          stat2Icon: Compass,
-          link: `/quests/${q.id}`,
-          imageUrl: q.cover_image_url || q.games?.cover_image_url || undefined,
-        });
-      });
-
       return results;
     },
     staleTime: 60_000,
@@ -144,7 +116,6 @@ const FeaturedEvents = () => {
   const typeIcon: Record<string, any> = {
     tournament: Trophy,
     challenge: Target,
-    quest: Compass,
   };
 
   return (

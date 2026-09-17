@@ -50,10 +50,10 @@ type Capability = {
 };
 
 const ROLE_CAPABILITIES: Capability[] = [
-  { capability: "Compete in tournaments / challenges / quests", player: "y", moderator: "y", marketing: "y", admin: "y", tenantAdmin: "y", tenantManager: "y", tenantMarketing: "y" },
+  { capability: "Compete in tournaments and challenges", player: "y", moderator: "y", marketing: "y", admin: "y", tenantAdmin: "y", tenantManager: "y", tenantMarketing: "y" },
   { capability: "Create / edit tournaments", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Score matches / advance brackets", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
-  { capability: "Approve challenge / quest evidence", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
+  { capability: "Approve challenge evidence", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Adjust player points", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Manage prize redemptions", player: "n", moderator: "n", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
   { capability: "Award / revoke achievements", player: "n", moderator: "y", marketing: "n", admin: "y", tenantAdmin: "n", tenantManager: "n", tenantMarketing: "n" },
@@ -89,8 +89,8 @@ const QUEST_RANKS = [
 const POINTS_ECONOMY = [
   { source: "Tournament placement", awarded: "On tournament completion", payout: "Per-tier (1st / 2nd / 3rd / participation)" },
   { source: "Challenge completion", awarded: "On moderator approval", payout: "Lump sum + optional placement bonus" },
-  { source: "Quest tasks", awarded: "Per task on approval", payout: "Points-per-task × approved tasks" },
-  { source: "Quest chain bonus", awarded: "On final quest approval", payout: "Chain bonus + optional achievement" },
+  { source: "Challenge tasks", awarded: "Per task on approval", payout: "Points-per-task × approved tasks" },
+  { source: "Challenge series bonus", awarded: "On final challenge approval", payout: "Series bonus + optional achievement" },
   { source: "Manual moderator/admin adjustment", awarded: "Immediate", payout: "Configurable, audited with reason" },
   { source: "Prize Shop redemption", awarded: "On approval", payout: "Deducts only from points_available" },
 ];
@@ -197,7 +197,7 @@ function TierTables() {
 
       <div>
         <h4 className="font-display font-semibold text-sm uppercase tracking-widest text-primary mb-2">
-          Quest XP ranks
+          Challenge XP ranks
         </h4>
         <Table>
           <TableHeader>
@@ -324,7 +324,7 @@ export default function QuickReferenceCard({ audience, intro }: QuickReferenceCa
               <FlowTable rows={TOURNAMENT_FLOW} title="Tournament status flow" />
             )}
             {showChallengeFlow && (
-              <FlowTable rows={CHALLENGE_FLOW} title="Challenge / Quest enrollment flow" />
+              <FlowTable rows={CHALLENGE_FLOW} title="Challenge enrollment flow" />
             )}
           </TabsContent>
         )}

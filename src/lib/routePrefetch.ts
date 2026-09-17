@@ -7,7 +7,7 @@ const loaders: Record<string, () => Promise<unknown>> = {
   "/tournaments": () => import("@/pages/Tournaments"),
   "/leaderboard": () => import("@/pages/Leaderboard"),
   "/challenges": () => import("@/pages/Challenges"),
-  "/quests": () => import("@/pages/Quests"),
+  "/challenges/competitive-gaming": () => import("@/pages/CompetitiveGaming"),
   "/prize-shop": () => import("@/pages/PrizeShop"),
   "/calendar": () => import("@/pages/TournamentCalendar"),
   "/games": () => import("@/pages/Games"),

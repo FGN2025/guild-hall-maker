@@ -8,7 +8,7 @@ import { isInFeaturedWindow } from "@/lib/featuredWindow";
 
 interface FeaturedEvent {
   id: string;
-  type: "tournament" | "challenge" | "quest";
+  type: "tournament" | "challenge";
   title: string;
   game: string;
   stat1Label: string;
@@ -27,11 +27,10 @@ interface Props {
 const typeBadgeStyle: Record<string, string> = {
   tournament: "bg-primary/15 text-primary border-primary/30",
   challenge: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-  quest: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
 };
 
 const FeaturedEventsPreview = ({ maxItems, types, showStats = true }: Props) => {
-  const enabledTypes = types && types.length > 0 ? types : ["tournament", "challenge", "quest"];
+  const enabledTypes = types && types.length > 0 ? types : ["tournament", "challenge"];
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["featured-events-preview", enabledTypes.join(","), maxItems],
@@ -79,30 +78,14 @@ const FeaturedEventsPreview = ({ maxItems, types, showStats = true }: Props) => 
         });
       }
 
-      if (enabledTypes.includes("quest")) {
-        const { data: quests } = await (supabase
-          .from("quests")
-          .select("id, name, points_first, xp_reward, cover_image_url, featured_start_at, featured_end_at, games(name, cover_image_url)") as any)
-          .eq("is_featured", true).eq("is_active", true);
-
-        (quests ?? []).filter((q: any) => isInFeaturedWindow(q.featured_start_at, q.featured_end_at, now)).forEach((q: any) => {
-          results.push({
-            id: q.id, type: "quest", title: q.name, game: q.games?.name ?? "",
-            stat1Label: "Points", stat1Value: `${q.points_first} pts`,
-            stat2Label: "XP", stat2Value: q.xp_reward ? `${q.xp_reward} XP` : "—",
-            imageUrl: q.cover_image_url || q.games?.cover_image_url || undefined,
-          });
-        });
-      }
-
       return maxItems ? results.slice(0, maxItems) : results;
     },
     staleTime: 60_000,
   });
 
-  const typeIcon: Record<string, any> = { tournament: Trophy, challenge: Target, quest: Compass };
-  const stat1Icons: Record<string, any> = { tournament: Calendar, challenge: Star, quest: Star };
-  const stat2Icons: Record<string, any> = { tournament: Trophy, challenge: Clock, quest: Compass };
+  const typeIcon: Record<string, any> = { tournament: Trophy, challenge: Target };
+  const stat1Icons: Record<string, any> = { tournament: Calendar, challenge: Star };
+  const stat2Icons: Record<string, any> = { tournament: Trophy, challenge: Clock };
 
   if (isLoading) return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4">

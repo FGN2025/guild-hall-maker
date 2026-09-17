@@ -27,7 +27,7 @@ export const AcademyLinkDialog = ({
     email
       ? `Sign up (or sign in) with the same email you use here — ${email}. That address is what links the two accounts.`
       : "Sign up (or sign in) with the same email address you use here. That address is what links the two accounts.",
-    "Your past challenge and quest completions are claimed onto your Skill Passport within a few minutes.",
+    "Your past challenge completions are claimed onto your Skill Passport within a few minutes.",
     "Come back to your dashboard and click Open Skill Passport again.",
   ];
 

@@ -19,7 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { featuredWindowStatus, toLocalInputValue, type FeaturedWindowStatus } from "@/lib/featuredWindow";
 
-type EventType = "tournament" | "challenge" | "quest";
+type EventType = "tournament" | "challenge";
 
 interface FeaturedRow {
   id: string;
@@ -34,10 +34,9 @@ interface FeaturedRow {
   featuredEnd: string | null;
 }
 
-const typeMeta: Record<EventType, { label: string; icon: any; table: "tournaments" | "challenges" | "quests"; route: string; color: string }> = {
+const typeMeta: Record<EventType, { label: string; icon: any; table: "tournaments" | "challenges"; route: string; color: string }> = {
   tournament: { label: "Tournaments", icon: Trophy, table: "tournaments", route: "/tournaments", color: "text-primary" },
   challenge: { label: "Challenges", icon: Target, table: "challenges", route: "/challenges", color: "text-yellow-400" },
-  quest: { label: "Quests", icon: Compass, table: "quests", route: "/quests", color: "text-emerald-400" },
 };
 
 const windowStatusStyle: Record<FeaturedWindowStatus, string> = {
@@ -58,14 +57,11 @@ const ModeratorFeaturedEvents = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["featured-events-admin"],
     queryFn: async () => {
-      const [tRes, cRes, qRes, gRes] = await Promise.all([
+      const [tRes, cRes, gRes] = await Promise.all([
         (supabase.from("tournaments") as any)
           .select("id, name, game, start_date, status, image_url, is_featured, archived_at, featured_start_at, featured_end_at")
           .order("start_date", { ascending: true }),
         (supabase.from("challenges") as any)
-          .select("id, name, difficulty, cover_image_url, is_featured, is_active, game_id, featured_start_at, featured_end_at, games(name, cover_image_url)")
-          .order("created_at", { ascending: false }),
-        (supabase.from("quests") as any)
           .select("id, name, difficulty, cover_image_url, is_featured, is_active, game_id, featured_start_at, featured_end_at, games(name, cover_image_url)")
           .order("created_at", { ascending: false }),
         supabase.from("games").select("name, cover_image_url"),
@@ -103,22 +99,7 @@ const ModeratorFeaturedEvents = () => {
         featuredEnd: c.featured_end_at ?? null,
       }));
 
-      const quests: (FeaturedRow & { is_featured: boolean; archived: boolean })[] = (qRes.data ?? []).map((q: any) => ({
-        id: q.id,
-        type: "quest" as const,
-        title: q.name,
-        game: q.games?.name ?? null,
-        status: q.difficulty ?? null,
-        date: null,
-        imageUrl: q.cover_image_url || q.games?.cover_image_url || null,
-        link: `/quests/${q.id}`,
-        is_featured: !!q.is_featured,
-        archived: !q.is_active,
-        featuredStart: q.featured_start_at ?? null,
-        featuredEnd: q.featured_end_at ?? null,
-      }));
-
-      return { tournaments, challenges, quests };
+      return { tournaments, challenges };
     },
     staleTime: 30_000,
   });
@@ -165,16 +146,15 @@ const ModeratorFeaturedEvents = () => {
   });
 
   const featuredByType = useMemo(() => {
-    if (!data) return { tournament: [], challenge: [], quest: [] } as Record<EventType, FeaturedRow[]>;
+    if (!data) return { tournament: [], challenge: [] } as Record<EventType, FeaturedRow[]>;
     return {
       tournament: data.tournaments.filter((t) => t.is_featured && !t.archived),
       challenge: data.challenges.filter((c) => c.is_featured && !c.archived),
-      quest: data.quests.filter((q) => q.is_featured && !q.archived),
     };
   }, [data]);
 
   const windowCounts = useMemo(() => {
-    const all = [...featuredByType.tournament, ...featuredByType.challenge, ...featuredByType.quest];
+    const all = [...featuredByType.tournament, ...featuredByType.challenge];
     const now = new Date();
     const counts: Record<FeaturedWindowStatus, number> = { live: 0, scheduled: 0, expired: 0 };
     all.forEach((r) => { counts[featuredWindowStatus(r.featuredStart, r.featuredEnd, now)] += 1; });
@@ -183,7 +163,7 @@ const ModeratorFeaturedEvents = () => {
 
   const pickerCandidates = useMemo(() => {
     if (!data || !pickerType) return [] as FeaturedRow[];
-    const source = pickerType === "tournament" ? data.tournaments : pickerType === "challenge" ? data.challenges : data.quests;
+    const source = pickerType === "tournament" ? data.tournaments : data.challenges;
     const q = pickerSearch.trim().toLowerCase();
     return source
       .filter((r) => !r.is_featured && !r.archived)
@@ -244,7 +224,7 @@ const ModeratorFeaturedEvents = () => {
       </div>
 
       {/* Sections */}
-      {(["tournament", "challenge", "quest"] as EventType[]).map((type) => {
+      {(["tournament", "challenge"] as EventType[]).map((type) => {
         const meta = typeMeta[type];
         const Icon = meta.icon;
         const items = featuredByType[type];

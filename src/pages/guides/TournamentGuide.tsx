@@ -32,8 +32,8 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; bullets: st
     icon: Clock,
     title: "What's New — July 24, 2026",
     bullets: [
-      "Game Format Tagging — Every game in the FGN catalog is now tagged for the formats it supports: Tournaments (T), Quests (Q), and/or Challenges (C). The Tournaments page and the tenant Events picker only show games flagged as Tournament-supporting, so you won't see a game listed here that can't actually run a bracket.",
-      "Featured Carousel Updates — The homepage Featured strip continues to pin tournaments, challenges, and quests, and now respects the same T/Q/C tags so pinned items land on the right catalog page.",
+      "Game Format Tagging — Every game in the FGN catalog is now tagged for the formats it supports: Tournaments (T) and/or Challenges (C). The Tournaments page and the tenant Events picker only show games flagged as Tournament-supporting, so you won't see a game listed here that can't actually run a bracket.",
+      "Featured Carousel Updates — The homepage Featured strip continues to pin tournaments and challenges, and now respects the same format tags so pinned items land on the right catalog page.",
     ],
   },
   {

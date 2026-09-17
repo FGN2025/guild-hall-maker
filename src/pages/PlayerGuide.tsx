@@ -51,7 +51,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Game Night Prizes — For Game Nights, the prize value shown is the Long Session point award, since Game Nights pay for attendance rather than placement.",
       "Prize Pool Breakdown — Tournament detail pages now list both Long Session and Short Session participation points under Prize Pool, so you know what each attendance tier is worth before you show up.",
       "Faster Game Night Credit — Event staff now award your session points with a single tap (purple = Short session, 5 points; cyan = Long session, 10 points), so attendance points post to your wallet sooner.",
-      "Provider Challenge Windows — If your internet provider is on FGN, they can open a challenge for a set date range. Challenge cards and detail pages show your window ('Opens Aug 12', 'Open until Aug 20', 'Closed Aug 20'), and Enroll is disabled outside it with the reason shown. Challenges your provider hasn't scheduled stay open as normal. See: Challenges & Quests.",
+      "Provider Challenge Windows — If your internet provider is on FGN, they can open a challenge for a set date range. Challenge cards and detail pages show your window ('Opens Aug 12', 'Open until Aug 20', 'Closed Aug 20'), and Enroll is disabled outside it with the reason shown. Challenges your provider hasn't scheduled stay open as normal. See: Challenges.",
     ],
   },
 
@@ -61,13 +61,13 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "What's New — June 18, 2026",
     bullets: [
       "This changelog tracks the most recent additions across the player experience. Each item links to the deeper section where it lives.",
-      "Steam Auto-Verify Tasks — Challenges tied to a Steam game can now auto-approve specific tasks by verifying your Steam achievements or playtime — no screenshot required. Link your Steam account in Profile Settings → Steam first. See: Challenges & Quests.",
-      "Challenge Skill Tags — Challenges now display skill tags (e.g., 'Reaction Time,' 'Teamwork,' 'Strategy') on cards and detail pages. These tags also flow to your FGN Academy Skill Passport. See: Challenges & Quests.",
+      "Steam Auto-Verify Tasks — Challenges tied to a Steam game can now auto-approve specific tasks by verifying your Steam achievements or playtime — no screenshot required. Link your Steam account in Profile Settings → Steam first. See: Challenges.",
+      "Challenge Skill Tags — Challenges now display skill tags (e.g., 'Reaction Time,' 'Teamwork,' 'Strategy') on cards and detail pages. These tags also flow to your FGN Academy Skill Passport. See: Challenges.",
       "Monthly Prize Caps — Some prizes now enforce a per-player-per-month redemption ceiling in addition to total stock limits. The Prize Shop shows your remaining monthly allowance at checkout. See: Prize Shop.",
       "Calendar Monthly Banners — The Tournament Calendar (/calendar) now displays a seasonal hero image for each month, set by platform admins.",
       "Per-Match Tournament Awards — Tournaments now record win, loss, and participation point awards per match in addition to the final placement bonus. Participation still pays once per event; win/loss bonuses can accrue across rounds. See: Tournaments.",
       "Attendance Auto-Tracking — Your tournament 'attended' status is now stamped automatically the moment your first match result is recorded — no manual check-in required for most events.",
-      "Weekly Friday Digest (Staff) — Platform staff receive an automated Friday afternoon digest of all new tournament, quest, and challenge registrations. If you're staff, you'll see this in your inbox at 4 PM Pacific.",
+      "Weekly Friday Digest (Staff) — Platform staff receive an automated Friday afternoon digest of all new tournament and challenge registrations. If you're staff, you'll see this in your inbox at 4 PM Pacific.",
     ],
   },
   {
@@ -249,7 +249,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
   {
     id: "challenges",
     icon: Target,
-    title: "Challenges & Quests",
+    title: "Challenges",
     bullets: [
       "Challenges are task-based work-order objectives that earn you bonus season points.",
       "Types — Daily, Weekly, Monthly, and One-Time challenges rotate regularly to keep things fresh.",
@@ -265,20 +265,14 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Filtered Links — You may receive a link that takes you directly to challenges for a specific game (e.g. /challenges?game=Farm+Simulator+2025). The page will pre-select that game's tab and show only its challenges, stats, and progress.",
       "Max Completions — Certain challenges limit how many players can complete them, so act fast!",
       "Notifications — Get notified when a new challenge drops so you never miss an opportunity.",
-      "Quests — Quests work like challenges with their own separate catalog, enrollment, evidence upload, and completion flow. Browse active quests at /quests.",
-      "Quest Chains — Quests can be organized into sequential chains. You must complete Quest A before Quest B unlocks, creating a guided progression path through related content.",
-      "Chain Progress — Each chain shows a progress bar and quest-by-quest navigation. Locked quests display a lock icon until the prerequisite is completed.",
-      "Chain Completion Bonus — Finishing every quest in a chain awards bonus points and may unlock a special achievement badge.",
-      "XP & Rank System — Completing quests earns XP that feeds into a separate ranking system with five tiers: Novice (0–99 XP), Apprentice (100–299 XP), Journeyman (300–599 XP), Expert (600–999 XP), and Master (1000+ XP).",
-      "Rank Display — Your current quest rank and XP progress bar are shown at the top of the Quests page and on your player profile.",
-      "Story Narratives — Some quests and chains feature story intro and outro text that adds flavor and context to your journey, displayed when you enroll and upon completion.",
-      "Quest Notifications — Opt in to 'New Quests' notifications from your Profile Settings to be alerted when a quest is published.",
+      "Competitive Gaming — Standard game challenges that sit outside the tournament format live in the Competitive Gaming card on the Challenges page. Same enrollment, evidence upload and review flow as every other challenge.",
+      "Series — Challenges can be grouped into a sequence. You complete them in order, and finishing the whole series can award bonus points and an achievement badge.",
+      "Story Narratives — Some challenges and series feature story intro and outro text, displayed when you enroll and upon completion.",
       "Approval Notification — When a moderator approves your challenge submission, you'll receive an instant notification confirming approval and the points you earned.",
       "FGN Academy Sync — When you complete a challenge, your progress is automatically synced to FGN Academy's Skill Passport. Your score, task-level progress, and skill tags are sent so you can earn credentials and XP on the academy side.",
-      "Join FGN Academy Prompt — If you haven't registered on FGN Academy yet, you'll see a 'Join FGN Academy' banner on your completed challenge, quest, or tournament page with a one-click sign-up link. Use the same email address you use here on FGN. After you register, your past completions and results are auto-claimed onto your Skill Passport within a few minutes, and future approvals sync automatically — no extra steps.",
-      "Tip: Challenges and quests with clear task checklists and evidence uploads are the fastest way to earn season points!",
+      "Join FGN Academy Prompt — If you haven't registered on FGN Academy yet, you'll see a 'Join FGN Academy' banner on your completed challenge or tournament page with a one-click sign-up link. Use the same email address you use here on FGN. After you register, your past completions and results are auto-claimed onto your Skill Passport within a few minutes, and future approvals sync automatically — no extra steps.",
+      "Tip: Challenges with clear task checklists and evidence uploads are the fastest way to earn season points!",
       "📖 Read the full Challenge Guide → /guide/challenges",
-      "📖 Read the full Quest Guide → /guide/quests",
     ],
   },
   {
@@ -580,7 +574,7 @@ ${sectionBlocks}
 
       <QuickReferenceCard
         audience="player"
-        intro="What you can do on FGN at a glance — plus the achievement tiers and quest XP ranks you can earn."
+        intro="What you can do on FGN at a glance — plus the achievement tiers and challenge XP ranks you can earn."
       />
 
       {filteredSections.length > 0 && (

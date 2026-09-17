@@ -265,7 +265,7 @@ const AdminNotebooks = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1">Link this notebook to a game for AI quest narrative context</p>
+              <p className="text-xs text-muted-foreground mt-1">Link this notebook to a game for AI narrative context</p>
             </div>
           </div>
           <DialogFooter>

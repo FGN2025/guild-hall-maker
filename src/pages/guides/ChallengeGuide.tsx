@@ -31,7 +31,7 @@ const sectionData: { id: string; icon: typeof Target; title: string; bullets: st
     icon: Bell,
     title: "What's New — July 24, 2026",
     bullets: [
-      "Game Format Tagging — Games are now tagged for the formats they support (Tournaments, Quests, Challenges). The Challenges catalog and the create/edit picker only surface games flagged as Challenge-supporting, so listings stay clean and enrollments always match a real game entry.",
+      "Game Format Tagging — Games are now tagged for the formats they support (Tournaments, Challenges). The Challenges catalog and the create/edit picker only surface games flagged as Challenge-supporting, so listings stay clean and enrollments always match a real game entry.",
       "Grandfathered Selections — Challenges authored before this change keep their game even if the tag is later removed; you'll see a '(no longer supported)' hint next to legacy picks in the editor.",
     ],
   },
@@ -43,7 +43,7 @@ const sectionData: { id: string; icon: typeof Target; title: string; bullets: st
       "Steam Auto-Verify Tasks — For challenges linked to a Steam game, individual tasks can be set up to auto-approve by checking your Steam achievements or total playtime. No screenshot needed. Link your Steam account in Profile Settings → Steam first. The Evidence Upload section below covers the manual flow; tasks with Steam verification will say so on the task card and resolve automatically.",
       "Skill Tags — Challenges now display skill tags (e.g., 'Communication,' 'Reaction Time,' 'Strategy') on cards and detail pages. These tags also push to your FGN Academy Skill Passport when your tenant has Academy sync enabled.",
       "Monthly Prize Caps — Some prizes in the Prize Shop now enforce a per-player-per-month redemption ceiling in addition to total stock. The shop shows your remaining monthly allowance at checkout, so plan accordingly.",
-      "Featured Challenges — Moderators and admins can pin tournaments, challenges, and quests to a Featured list that surfaces on the homepage carousel. Look for the featured badge on challenge cards.",
+      "Featured Challenges — Moderators and admins can pin tournaments and challenges to a Featured list that surfaces on the homepage carousel. Look for the featured badge on challenge cards.",
     ],
   },
   {

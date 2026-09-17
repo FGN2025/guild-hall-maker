@@ -13,11 +13,10 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [profiles, tournaments, challenges, quests, media, seasons, inquiries] = await Promise.all([
+      const [profiles, tournaments, challenges, media, seasons, inquiries] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("tournaments").select("id", { count: "exact", head: true }),
         supabase.from("challenges").select("id", { count: "exact", head: true }),
-        supabase.from("quests").select("id", { count: "exact", head: true }),
         supabase.from("media_library").select("id", { count: "exact", head: true }),
         supabase.from("seasons").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("provider_inquiries").select("id", { count: "exact", head: true }),
@@ -26,7 +25,6 @@ const AdminDashboard = () => {
         users: profiles.count ?? 0,
         tournaments: tournaments.count ?? 0,
         challenges: challenges.count ?? 0,
-        quests: quests.count ?? 0,
         media: media.count ?? 0,
         seasons: seasons.count ?? 0,
         inquiries: inquiries.count ?? 0,
@@ -38,7 +36,6 @@ const AdminDashboard = () => {
     { label: "Total Users", value: stats?.users ?? 0, icon: Users, to: "/admin/users", color: "text-blue-400" },
     { label: "Tournaments", value: stats?.tournaments ?? 0, icon: Trophy, to: "/admin/tournaments", color: "text-yellow-400" },
     { label: "Challenges", value: stats?.challenges ?? 0, icon: Target, to: "/admin/challenges", color: "text-orange-400" },
-    { label: "Quests", value: stats?.quests ?? 0, icon: Compass, to: "/admin/challenges", color: "text-cyan-400" },
     { label: "Media Assets", value: stats?.media ?? 0, icon: Image, to: "/admin/media", color: "text-green-400" },
     { label: "Active Seasons", value: stats?.seasons ?? 0, icon: BarChart3, to: "/admin/seasons", color: "text-purple-400" },
     { label: "Provider Inquiries", value: stats?.inquiries ?? 0, icon: MessageSquare, to: "/admin/inquiries", color: "text-pink-400" },

@@ -30,7 +30,7 @@ interface RoleMapping {
 const TRIGGER_LABELS: Record<string, string> = {
   on_link: "On Discord Link",
   on_achievement: "On Achievement Earned",
-  on_rank: "On Quest Rank Change",
+  on_rank: "On Rank Change",
   on_tournament_win: "On Tournament Win",
   manual: "Manual Assignment",
 };

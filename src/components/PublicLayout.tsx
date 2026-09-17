@@ -5,7 +5,7 @@ import { Sparkles } from "lucide-react";
 
 /**
  * Layout for guests browsing the Compete surfaces (tournaments, challenges,
- * quests). Adds a persistent signup banner — guests can browse everything,
+ * challenges). Adds a persistent signup banner — guests can browse everything,
  * but participating requires a free account.
  */
 const PublicLayout = () => {

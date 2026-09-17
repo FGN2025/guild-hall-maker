@@ -163,7 +163,7 @@ const EcosystemSyncHealth = () => {
             oldestSec={queueStats.achievement_oldest_age_seconds ?? null}
           />
           <QueueRow
-            label="Quest completions"
+            label="Competitive Gaming completions"
             pending={queueStats.quest_pending ?? 0}
             dlq={queueStats.quest_dlq ?? 0}
             oldestSec={queueStats.quest_oldest_age_seconds ?? null}
@@ -175,7 +175,7 @@ const EcosystemSyncHealth = () => {
             oldestSec={queueStats.task_oldest_age_seconds ?? null}
           />
           <QueueRow
-            label="Quest chains"
+            label="Challenge series"
             pending={queueStats.chain_pending ?? 0}
             dlq={queueStats.chain_dlq ?? 0}
             oldestSec={queueStats.chain_oldest_age_seconds ?? null}

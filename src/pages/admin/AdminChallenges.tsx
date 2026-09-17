@@ -120,7 +120,6 @@ const AdminChallenges = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const questsRedirect = searchParams.get("tab") === "quests";
   const innerTab = searchParams.get("tab") === "review" ? "review" : "oversight";
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
@@ -135,7 +134,7 @@ const AdminChallenges = () => {
   const [evidenceReason, setEvidenceReason] = useState<Record<string, string | null>>({});
   const [resyncing, setResyncing] = useState<string | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
-  const { copying, copyToQuest } = useCopyContent();
+  const { copying, duplicateChallenge } = useCopyContent();
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ["admin-challenges"],
     queryFn: async () => {
@@ -460,8 +459,6 @@ const AdminChallenges = () => {
     }
   };
 
-  if (questsRedirect) return <Navigate to="/admin/quests" replace />;
-
   return (
     <div>
       {/* Header */}
@@ -575,7 +572,7 @@ const AdminChallenges = () => {
                       onDelete={handleDelete}
                       onToggle={(id, checked) => toggleMutation.mutate({ id, is_active: checked })}
                       onToggleFeatured={(id, current) => toggleFeaturedMutation.mutate({ id, current })}
-                      onCopy={copyToQuest}
+                      onCopy={duplicateChallenge}
                       copying={copying}
                       deleting={deleteMutation.isPending}
                       navigate={navigate}
@@ -660,8 +657,8 @@ const AdminChallenges = () => {
                       <Button variant="outline" size="sm" onClick={() => setPromoData(buildChallengePromo(c))}>
                         <Megaphone className="h-3.5 w-3.5 mr-1" /> Promo
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => copyToQuest(c.id)} disabled={copying}>
-                        <Copy className="h-3.5 w-3.5 mr-1" /> {copying ? "…" : "→ Quest"}
+                      <Button variant="outline" size="sm" onClick={() => duplicateChallenge(c.id)} disabled={copying}>
+                        <Copy className="h-3.5 w-3.5 mr-1" /> {copying ? "…" : "Duplicate"}
                       </Button>
                       <Button
                         variant="ghost" size="sm"

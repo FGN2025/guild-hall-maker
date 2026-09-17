@@ -37,7 +37,7 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
     title: "Executive Summary",
     content: [
       "The FGN Esports Platform is a turnkey competitive gaming solution designed for schools, community centers, libraries, and youth-serving organizations.",
-      "It provides a complete toolkit for organizing tournaments, challenges, and story-driven quests — all within a supervised, moderated environment.",
+      "It provides a complete toolkit for organizing tournaments and challenges, including story-driven series — all within a supervised, moderated environment.",
       "Institutions gain access to automated bracket management, seasonal leaderboards, achievement badges, a prize shop, dedicated game servers, an AI coaching assistant, and a moderated community forum.",
       "The platform is fully web-based with no software installation required. Participants access everything through a browser.",
       "Tenant onboarding allows each organization to operate a branded sub-portal with its own events, ZIP-based enrollment, marketing tools, and subscriber integrations.",
@@ -65,7 +65,7 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
       "FGN transforms recreational gaming into an organized, goal-oriented activity program with clear progression paths.",
       "Tournaments provide the competitive backbone — automated brackets, seeded matchups, and seasonal rankings give participants a professional-grade competitive experience.",
       "Challenges offer task-based objectives with evidence submission, teaching accountability and follow-through. Moderators review evidence and provide feedback.",
-      "Quests introduce story-driven multi-step progressions with XP ranks (Novice → Apprentice → Journeyman → Expert → Master), creating long-term engagement hooks.",
+      "Challenge series introduce story-driven multi-step progressions with XP ranks (Novice → Apprentice → Journeyman → Expert → Master), creating long-term engagement hooks.",
       "The Achievement Badge system rewards milestones across all activity types, providing visible recognition that motivates continued participation.",
       "Every interaction is logged, scored, and reportable — giving administrators the data they need to demonstrate program value to stakeholders.",
     ],
@@ -103,17 +103,17 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
     ],
   },
   {
-    id: "feature-quests",
+    id: "feature-competitive-gaming",
     icon: Sparkles,
-    title: "Feature: Quests & Quest Chains",
+    title: "Feature: Competitive Gaming Challenges",
     content: [
-      "Story-driven multi-step progressions that create narrative engagement beyond simple task completion.",
-      "XP Rewards — quests award experience points feeding into a five-tier rank system: Novice (0–99), Apprentice (100–299), Journeyman (300–599), Expert (600–999), Master (1000+).",
-      "Quest Chains — sequential quest progressions with story intro/outro text, cover images, and bonus point rewards upon chain completion.",
-      "Achievement Integration — completing a quest chain can automatically award a linked achievement badge.",
+      "Standard head-to-head game challenges that run outside the tournament format, grouped into their own Competitive Gaming category.",
+      "XP Rewards — challenges can award experience points feeding into a five-tier rank system: Novice (0–99), Apprentice (100–299), Journeyman (300–599), Expert (600–999), Master (1000+).",
+      "Series — sequential challenge progressions with story intro/outro text, cover images, and bonus point rewards upon completion.",
+      "Achievement Integration — completing a series can automatically award a linked achievement badge.",
       "AI-Enhanced Narratives — auto-generate rich story text using the platform's AI, with optional RAG-powered game-specific context from connected knowledge bases.",
-      "Same evidence-based workflow as challenges: enrollment, task completion, evidence upload, moderator review.",
-      "Chain completion triggers are handled automatically by database triggers — no manual moderator action required.",
+      "The same evidence-based workflow throughout: enrollment, task completion, evidence upload, moderator review.",
+      "Series completion is handled automatically by database triggers — no manual moderator action required.",
     ],
   },
   {
@@ -136,7 +136,7 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
     icon: BarChart3,
     title: "Feature: Leaderboards & Stats",
     content: [
-      "Seasonal and all-time leaderboards ranked by points earned across tournaments, challenges, and quests.",
+      "Seasonal and all-time leaderboards ranked by points earned across tournaments and challenges.",
       "Player profiles with comprehensive stats: total wins, losses, win rate, tournaments played, challenges completed, and achievement badges.",
       "Season Stats page with per-game breakdowns and historical performance tracking.",
       "Player Comparison tool for head-to-head stat analysis between any two players.",
@@ -223,7 +223,7 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
     title: "Safety & Moderation",
     content: [
       "Acceptable Use Policy (AUP) — All users agree to the AUP upon registration, establishing clear behavioral expectations.",
-      "Evidence Review — Every challenge and quest submission goes through moderator review before points are awarded, ensuring accountability.",
+      "Evidence Review — Every challenge submission goes through moderator review before points are awarded, ensuring accountability.",
       "Content Moderation — Forum posts are monitored by moderators who can pin, remove, or flag inappropriate content.",
       "Discord Identity Verification — Players link their Discord accounts for identity verification and community integration.",
       "Ban System — Administrators can ban users by email, preventing re-registration and access.",
@@ -240,7 +240,7 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
     title: "Success Metrics & Reporting",
     content: [
       "Participation Rates — Track total registrations, active players per season, and tournament/challenge enrollment trends.",
-      "Engagement Depth — Measure challenges completed, quests progressed, forum posts, and average session frequency.",
+      "Engagement Depth — Measure challenges completed, series progressed, forum posts, and average session frequency.",
       "Skill Growth — Monitor individual player improvement via season stats, ELO progression, and rank advancement.",
       "Program Reach — Use the lead pipeline and ZIP-code coverage reports to measure community penetration.",
       "Retention — Compare seasonal leaderboard participation across consecutive seasons to track long-term engagement.",
@@ -258,7 +258,7 @@ const sectionData: { id: string; icon: typeof Trophy; title: string; content: st
       "Step 3 — Log in to your Tenant portal, upload your logo, set brand colors, and configure your service area ZIP codes.",
       "Step 4 — Invite your staff and assign roles (Admin, Manager, Marketing, Moderator).",
       "Step 5 — Define your game catalog — select which games your program will feature for tournaments and challenges.",
-      "Step 6 — Create your first tournament, challenge, or quest and publish it to your community.",
+      "Step 6 — Create your first tournament or challenge and publish it to your community.",
       "Step 7 — Share your public event page and registration link with participants.",
       "Step 8 — Monitor your dashboard, review submissions, and watch your competitive gaming community grow.",
       "For inquiries, contact us through the platform or reach out to your FGN representative.",
@@ -330,7 +330,7 @@ ${sectionBlocks}
           Bring Competitive Gaming to Your Community
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          A turnkey esports platform for schools, libraries, and community centers to run tournaments, challenges, and quests — safely and at scale.
+          A turnkey esports platform for schools, libraries, and community centers to run tournaments and challenges — safely and at scale.
         </p>
         <Button variant="outline" size="sm" onClick={handlePrint} className="mt-4 gap-2">
           <Printer className="h-4 w-4" />

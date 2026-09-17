@@ -9,6 +9,7 @@ import { Target, Search, ListFilter } from "lucide-react";
 import PageBackground from "@/components/PageBackground";
 import PointsWalletCard from "@/components/shared/PointsWalletCard";
 import GameTile from "@/components/challenges/GameTile";
+import CompetitiveGamingTile from "@/components/challenges/CompetitiveGamingTile";
 import { useChallengeHub } from "@/hooks/useChallengeHub";
 
 const ChallengesHub = () => {
@@ -17,7 +18,8 @@ const ChallengesHub = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const { games, challenges, completedIds, enrolledIds, isLoading } = useChallengeHub();
+  const { games, challenges, competitive, competitiveCompleted, completedIds, enrolledIds, isLoading } =
+    useChallengeHub();
 
   // Legacy ?game=Name links land on that game's community page.
   const legacyGame = searchParams.get("game");
@@ -137,6 +139,18 @@ const ChallengesHub = () => {
           </Card>
         ) : (
           <div className="space-y-10">
+            {competitive.length > 0 && !search.trim() && (
+              <section className="space-y-3">
+                <h2 className="neon-text font-display text-xl font-bold text-white">Competitive Gaming</h2>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <CompetitiveGamingTile
+                    total={competitive.length}
+                    completed={competitiveCompleted}
+                    showProgress={!!user}
+                  />
+                </div>
+              </section>
+            )}
             {grouped.map(([category, list]) => (
               <section key={category} className="space-y-3">
                 <h2 className="neon-text font-display text-xl font-bold text-white">{category}</h2>

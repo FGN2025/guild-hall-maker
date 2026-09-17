@@ -27,13 +27,12 @@ const usePublicStats = () =>
           return null;
         }
       };
-      const [tournaments, challenges, quests, games] = await Promise.all([
+      const [tournaments, challenges, games] = await Promise.all([
         count("tournaments", (q) => q.in("status", ["open", "upcoming", "in_progress"])),
         count("challenges", (q) => q.eq("is_active", true)),
-        count("quests", (q) => q.eq("is_active", true)),
         count("games", (q) => q.eq("is_active", true)),
       ]);
-      return { tournaments, challenges, quests, games };
+      return { tournaments, challenges, games };
     },
   });
 
@@ -42,7 +41,6 @@ const StatsStrip = () => {
   const stats = [
     { icon: Trophy, label: "Live Tournaments", value: data?.tournaments },
     { icon: Target, label: "Active Challenges", value: data?.challenges },
-    { icon: Compass, label: "Quests Running", value: data?.quests },
     { icon: Gamepad2, label: "Supported Games", value: "100's" },
   ].filter((s) => s.value != null && (typeof s.value === "string" || s.value > 0));
 
@@ -74,7 +72,7 @@ const steps = [
   {
     icon: Swords,
     title: "Compete & Complete",
-    desc: "Enter tournaments, clear challenges, and finish quests. Every result earns points toward your lifetime and seasonal rank.",
+    desc: "Enter tournaments and clear challenges. Every result earns points toward your lifetime and seasonal rank.",
   },
   {
     icon: Award,

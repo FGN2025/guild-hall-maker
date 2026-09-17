@@ -148,7 +148,7 @@ const AdminPointsRubric = () => {
         <div>
           <h1 className="font-display text-3xl font-bold text-primary tracking-wider">Points Rubric</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Central source of truth for points across challenges, quests, tournaments, and prizes.
+            Central source of truth for points across challenges, tournaments, and prizes.
           </p>
         </div>
         <div className="flex gap-2">
@@ -188,7 +188,7 @@ const AdminPointsRubric = () => {
           </Card>
 
           <RubricMatrix title="Challenges (points by difficulty × type)" matrix={draft.challenges} onChange={setMatrix("challenges")} />
-          <RubricMatrix title="Quests (points by difficulty × type)" matrix={draft.quests} onChange={setMatrix("quests")} />
+          <RubricMatrix title="Competitive Gaming (points by difficulty × type)" matrix={draft.quests} onChange={setMatrix("quests")} />
 
           <Card>
             <CardHeader>
@@ -267,7 +267,7 @@ const AdminPointsRubric = () => {
               {audit ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <Stat label="Challenges" value={audit.challenges} />
-                  <Stat label="Quests" value={audit.quests} />
+                  <Stat label="Competitive Gaming" value={audit.quests} />
                   <Stat label="Tournaments" value={audit.tournaments} />
                   <Stat label="Total" value={audit.total} highlight />
                 </div>

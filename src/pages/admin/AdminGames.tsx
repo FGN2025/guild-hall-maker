@@ -81,7 +81,6 @@ const SortableGameRow = ({
       <TableCell>
         <div className="flex gap-1">
           {game.supports_tournaments && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Tournaments">T</Badge>}
-          {game.supports_quests && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Quests">Q</Badge>}
           {game.supports_challenges && <Badge variant="outline" className="text-[10px] px-1.5 py-0" title="Challenges">C</Badge>}
         </div>
       </TableCell>
@@ -151,7 +150,6 @@ const GameGridCard = ({ game, selected, onSelect, onEdit, onDelete, onToggleActi
         <Badge variant="secondary" className="text-xs font-heading">{game.category}</Badge>
         <div className="flex gap-0.5">
           {game.supports_tournaments && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Tournaments">T</Badge>}
-          {game.supports_quests && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Quests">Q</Badge>}
           {game.supports_challenges && <Badge variant="outline" className="text-[9px] px-1 py-0" title="Challenges">C</Badge>}
         </div>
       </div>

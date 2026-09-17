@@ -16,7 +16,6 @@ import { prefetchRoute } from "@/lib/routePrefetch";
 const competeItems = [
   { to: "/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/challenges", label: "Challenges", icon: Target },
-  { to: "/quests", label: "Quests", icon: Compass },
 ];
 
 const navItems = [

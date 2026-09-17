@@ -271,7 +271,7 @@ const SectionEditor = ({ section, onUpdate }: Props) => {
           <div className="space-y-1.5">
             <Label className="text-xs font-heading">Event Types</Label>
             <div className="flex gap-2 flex-wrap">
-              {["tournament", "challenge", "quest"].map((t) => (
+              {["tournament", "challenge"].map((t) => (
                 <Button
                   key={t}
                   type="button"

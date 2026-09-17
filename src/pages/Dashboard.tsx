@@ -97,7 +97,7 @@ const ActivityPanel = ({
 
 const Dashboard = () => {
   usePageTitle("Dashboard");
-  const { stats, registeredTournaments, recentMatches, challenges, quests, isLoading } = useDashboard();
+  const { stats, registeredTournaments, recentMatches, challenges, isLoading } = useDashboard();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -134,7 +134,7 @@ const Dashboard = () => {
   const statCards = [
     { label: "Registered Tournaments", value: stats.tournamentsRegistered, icon: Trophy },
     { label: "Challenges Completed", value: stats.challengesCompleted, icon: Target },
-    { label: "Quests Completed", value: stats.questsCompleted, icon: Compass },
+    
     { label: "Win Rate", value: stats.matchesPlayed > 0 ? `${stats.winRate}%` : "—", icon: TrendingUp },
     { label: "Matches Played", value: stats.matchesPlayed, icon: Swords },
     { label: "Matches Won", value: stats.matchesWon, icon: Target },
@@ -362,17 +362,6 @@ const Dashboard = () => {
                 navigate={navigate}
               />
 
-              <ActivityPanel
-                title="My Quests"
-                icon={Compass}
-                emptyIcon={Compass}
-                emptyText="No active quests yet — pick one to start your storyline."
-                browseLabel="Browse Quests"
-                browseTo="/quests"
-                detailBase="/quests"
-                data={quests}
-                navigate={navigate}
-              />
             </div>
           </>
         )}
