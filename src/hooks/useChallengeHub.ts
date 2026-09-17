@@ -93,16 +93,12 @@ export const useChallengeHub = () => {
         challenges: [],
         total: 0,
         completed: 0,
-        pathway: null,
       });
     }
     const entry = byGame.get(slug)!;
     entry.challenges.push(c);
     entry.total += 1;
     if (completedIds.has(c.id)) entry.completed += 1;
-    if (!entry.pathway && (challengePathways as any)[c.id]) {
-      entry.pathway = (challengePathways as any)[c.id];
-    }
   });
 
   const games = [...byGame.values()].sort((a, b) => b.total - a.total);
