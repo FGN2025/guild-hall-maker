@@ -74,7 +74,15 @@ const AdminTournaments = () => {
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [timeframe, setTimeframe] = useState<Timeframe>("upcoming");
+  const [timeframe, setTimeframe] = useState<Timeframe>("all");
+
+  // Keep Status and Timeframe coherent: finished statuses only exist in the
+  // archive, so auto-switch rather than showing an impossible empty result.
+  const handleStatusChange = (s: string) => {
+    setStatusFilter(s);
+    if (s === "completed" || s === "cancelled") setTimeframe("archive");
+    else if (s === "in_progress" && timeframe !== "live") setTimeframe("all");
+  };
   const [detailTournament, setDetailTournament] = useState<any | null>(null);
   const [promoData, setPromoData] = useState<PromoData | null>(null);
 
@@ -226,7 +234,7 @@ const AdminTournaments = () => {
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
