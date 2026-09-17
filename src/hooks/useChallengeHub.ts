@@ -90,8 +90,13 @@ export const useChallengeHub = () => {
   );
   const enrolledIds = new Set((myEnrollments as any[]).map((e) => e.challenge_id));
 
+  /** Competitive gaming challenges live in their own card, not per-game. */
+  const competitive = challenges.filter((c: any) => c.track === "competitive_gaming");
+  const competitiveCompleted = competitive.filter((c) => completedIds.has(c.id)).length;
+
   const byGame = new Map<string, HubGame>();
-  challenges.forEach((c) => {
+  challenges.forEach((c: any) => {
+    if (c.track === "competitive_gaming") return;
     const g = c.games;
     const slug = g?.slug;
     if (!slug) return;
@@ -120,5 +125,13 @@ export const useChallengeHub = () => {
 
   const games = [...byGame.values()].sort((a, b) => b.total - a.total);
 
-  return { games, challenges, completedIds, enrolledIds, isLoading };
+  return {
+    games,
+    challenges,
+    competitive,
+    competitiveCompleted,
+    completedIds,
+    enrolledIds,
+    isLoading,
+  };
 };
