@@ -47,6 +47,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("beginner");
   const [challengeType, setChallengeType] = useState("one_time");
+  const [track, setTrack] = useState("standard");
+
   const [gameId, setGameId] = useState<string | null>(null);
   const [points, setPoints] = useState(10);
   const [startDate, setStartDate] = useState("");
