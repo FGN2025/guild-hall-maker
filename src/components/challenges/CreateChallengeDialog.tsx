@@ -233,8 +233,20 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
             </Button>
           </div>
 
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select value={form.track} onValueChange={(v) => setForm({ ...form, track: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Game Community</SelectItem>
+                <SelectItem value="competitive_gaming">Competitive Gaming</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-2">
+
               <Label>Difficulty</Label>
               <Select value={form.difficulty} onValueChange={(v) => setForm({ ...form, difficulty: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
