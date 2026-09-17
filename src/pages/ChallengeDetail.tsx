@@ -66,7 +66,7 @@ const ChallengeDetail = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [unenrollConfirmOpen, setUnenrollConfirmOpen] = useState(false);
-  const { copying, copyToQuest } = useCopyContent();
+  const { copying, duplicateChallenge } = useCopyContent();
 
   // Fetch completion record to check academy sync status
   const { data: completion } = useQuery({
@@ -174,8 +174,8 @@ const ChallengeDetail = () => {
             <Button variant="outline" size="sm" className="gap-1.5 text-white border-white/40 hover:bg-white/10" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Edit Challenge
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 text-white border-white/40 hover:bg-white/10" onClick={() => copyToQuest(id!)} disabled={copying}>
-              <Copy className="h-4 w-4" /> {copying ? "Copying..." : "Copy to Quest"}
+            <Button variant="outline" size="sm" className="gap-1.5 text-white border-white/40 hover:bg-white/10" onClick={() => duplicateChallenge(id!)} disabled={copying}>
+              <Copy className="h-4 w-4" /> {copying ? "Copying..." : "Duplicate"}
             </Button>
             <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setDeleteConfirmOpen(true)}>
               <Trash2 className="h-4 w-4" /> Delete
