@@ -103,12 +103,7 @@ const GameChallenges = () => {
             description={game.description}
             platformTags={game.platformTags}
           />
-          <GameBadgePanel
-            gameName={game.name}
-            completed={game.completed}
-            total={game.total}
-            pathway={game.pathway}
-          />
+          <GameBadgePanel gameName={game.name} completed={game.completed} total={game.total} />
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

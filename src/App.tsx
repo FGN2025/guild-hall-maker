@@ -58,8 +58,6 @@ const ChallengesHub = lazy(() => import("./pages/ChallengesHub"));
 const GameChallenges = lazy(() => import("./pages/GameChallenges"));
 const ChallengeDetail = lazy(() => import("./pages/ChallengeDetail"));
 const CompetitiveGaming = lazy(() => import("./pages/CompetitiveGaming"));
-const Pathways = lazy(() => import("./pages/Pathways"));
-const MeritDetail = lazy(() => import("./pages/MeritDetail"));
 
 const PrizeShop = lazy(() => import("./pages/PrizeShop"));
 const PlayerGuide = lazy(() => import("./pages/PlayerGuide"));
