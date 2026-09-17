@@ -651,10 +651,6 @@ const ModeratorChallenges = () => {
       <EventPromoEditorDialog open={!!promoData} onOpenChange={(open) => !open && setPromoData(null)} imageUrl={promoData?.imageUrl ?? ""} initialTexts={promoData?.texts ?? []} />
 
         </TabsContent>
-
-        <TabsContent value="quests">
-          <AdminQuestsPanel queryKeyPrefix="mod" showEnrollmentCounts={isAdmin} />
-        </TabsContent>
       </Tabs>
     </div>
   );
