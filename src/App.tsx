@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import CookieConsent from "./components/CookieConsent";
 
@@ -150,6 +150,12 @@ const TenantWebPages = lazy(() => import("./pages/tenant/TenantWebPages"));
 const TenantBranding = lazy(() => import("./pages/tenant/TenantBranding"));
 const TenantBanner = lazy(() => import("./pages/tenant/TenantBanner"));
 const TenantLandingPages = lazy(() => import("./pages/tenant/TenantLandingPages"));
+
+/** Old quest links now resolve to the matching challenge. */
+const LegacyQuestRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={id ? `/challenges/${id}` : "/challenges/competitive-gaming"} replace />;
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {
