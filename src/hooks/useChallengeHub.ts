@@ -33,7 +33,6 @@ export interface HubGame {
   challenges: HubChallenge[];
   total: number;
   completed: number;
-  pathway: { slug: string; name: string } | null;
 }
 
 /** All active challenges with their game, grouped into per-game "communities". */
