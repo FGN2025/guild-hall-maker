@@ -47,6 +47,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("beginner");
   const [challengeType, setChallengeType] = useState("one_time");
+  const [track, setTrack] = useState("standard");
+
   const [gameId, setGameId] = useState<string | null>(null);
   const [points, setPoints] = useState(10);
   const [startDate, setStartDate] = useState("");
@@ -99,6 +101,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setDescription(challenge.description || "");
       setDifficulty(challenge.difficulty || "beginner");
       setChallengeType(challenge.challenge_type || "one_time");
+      setTrack((challenge as any).track || "standard");
+
       setGameId(challenge.game_id || null);
       setPoints(challenge.points_first ?? 10);
       setStartDate(challenge.start_date ? challenge.start_date.slice(0, 10) : "");
@@ -213,6 +217,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         description: description || null,
         difficulty,
         challenge_type: challengeType,
+        track,
+
         game_id: gameId || null,
         points_first: points,
         points_second: 0,
@@ -367,6 +373,17 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
               </Select>
             </div>
           </div>
+          <div>
+            <Label>Category</Label>
+            <Select value={track} onValueChange={setTrack}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Game Community</SelectItem>
+                <SelectItem value="competitive_gaming">Competitive Gaming</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Type</Label>

@@ -73,35 +73,29 @@ Deno.serve(async (req) => {
     const batchId = crypto.randomUUID();
     const changes: Array<{ item_type: string; item_id: string; field_name: string; old_value: number; new_value: number }> = [];
 
-    // CHALLENGES
+    // CHALLENGES (standard + competitive gaming track)
     const { data: challenges } = await admin
       .from("challenges")
-      .select("id, points_reward, difficulty, challenge_type, points_override_reason");
+      .select("id, points_reward, difficulty, challenge_type, track, points_override_reason");
     for (const c of challenges ?? []) {
       if (c.points_override_reason) continue;
-      const rec = rubric.challenges[normD(c.difficulty)][normT(c.challenge_type)];
+      const isCompetitive = (c as any).track === "competitive_gaming";
+      const matrix = isCompetitive ? rubric.quests : rubric.challenges;
+      const rec = matrix[normD(c.difficulty)][normT(c.challenge_type)];
       if (c.points_reward !== rec) {
-        changes.push({ item_type: "challenge", item_id: c.id, field_name: "points_reward", old_value: c.points_reward, new_value: rec });
+        changes.push({
+          item_type: isCompetitive ? "competitive_gaming" : "challenge",
+          item_id: c.id,
+          field_name: "points_reward",
+          old_value: c.points_reward,
+          new_value: rec,
+        });
         if (!dryRun) {
           await admin.from("challenges").update({ points_reward: rec, points_first: rec }).eq("id", c.id);
         }
       }
     }
 
-    // QUESTS
-    const { data: quests } = await admin
-      .from("quests")
-      .select("id, points_reward, difficulty, quest_type, points_override_reason");
-    for (const q of quests ?? []) {
-      if (q.points_override_reason) continue;
-      const rec = rubric.quests[normD(q.difficulty)][normT((q as any).quest_type)];
-      if (q.points_reward !== rec) {
-        changes.push({ item_type: "quest", item_id: q.id, field_name: "points_reward", old_value: q.points_reward, new_value: rec });
-        if (!dryRun) {
-          await admin.from("quests").update({ points_reward: rec }).eq("id", q.id);
-        }
-      }
-    }
 
     // TOURNAMENTS
     const { data: tournaments } = await admin
