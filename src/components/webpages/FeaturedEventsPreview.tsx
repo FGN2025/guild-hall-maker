@@ -79,22 +79,6 @@ const FeaturedEventsPreview = ({ maxItems, types, showStats = true }: Props) => 
         });
       }
 
-      if (enabledTypes.includes("quest")) {
-        const { data: quests } = await (supabase
-          .from("quests")
-          .select("id, name, points_first, xp_reward, cover_image_url, featured_start_at, featured_end_at, games(name, cover_image_url)") as any)
-          .eq("is_featured", true).eq("is_active", true);
-
-        (quests ?? []).filter((q: any) => isInFeaturedWindow(q.featured_start_at, q.featured_end_at, now)).forEach((q: any) => {
-          results.push({
-            id: q.id, type: "quest", title: q.name, game: q.games?.name ?? "",
-            stat1Label: "Points", stat1Value: `${q.points_first} pts`,
-            stat2Label: "XP", stat2Value: q.xp_reward ? `${q.xp_reward} XP` : "—",
-            imageUrl: q.cover_image_url || q.games?.cover_image_url || undefined,
-          });
-        });
-      }
-
       return maxItems ? results.slice(0, maxItems) : results;
     },
     staleTime: 60_000,
