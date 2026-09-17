@@ -10,7 +10,6 @@ export interface DashboardStats {
   matchesWon: number;
   winRate: number;
   challengesCompleted: number;
-  questsCompleted: number;
 }
 
 export interface RegisteredTournament {
@@ -63,7 +62,7 @@ const buildSummary = (
   enrollments: any[],
   catalog: Map<string, { name: string; points_reward: number | null; cover_image_url: string | null }>,
   completions: any[],
-  refKey: "challenge_id" | "quest_id",
+  refKey: "challenge_id",
   academyLinked: boolean
 ): ActivitySummary => {
   const completionMap = new Map<string, any>();
@@ -249,49 +248,6 @@ export const useDashboard = () => {
     },
   });
 
-  const questsQuery = useQuery({
-    queryKey: ["dashboard-quests", user?.id],
-    enabled: !!user,
-    staleTime: 60_000,
-    queryFn: async (): Promise<ActivitySummary> => {
-      const [enrollRes, completeRes] = await Promise.all([
-        supabase
-          .from("quest_enrollments")
-          .select("id, quest_id, status, enrolled_at")
-          .eq("user_id", user!.id),
-        supabase
-          .from("quest_completions")
-          .select("quest_id, awarded_points, completed_at")
-          .eq("user_id", user!.id),
-      ]);
-
-      if (enrollRes.error) throw enrollRes.error;
-      if (completeRes.error) throw completeRes.error;
-
-      const enrollments = enrollRes.data ?? [];
-      const completions = completeRes.data ?? [];
-      const ids = [
-        ...new Set([
-          ...enrollments.map((e: any) => e.quest_id),
-          ...completions.map((c: any) => c.quest_id),
-        ]),
-      ];
-
-      const catalog = new Map<string, { name: string; points_reward: number | null; cover_image_url: string | null }>();
-      if (ids.length > 0) {
-        const { data: rows } = await supabase
-          .from("quests")
-          .select("id, name, points_reward, cover_image_url")
-          .in("id", ids);
-        (rows ?? []).forEach((r: any) =>
-          catalog.set(r.id, { name: r.name, points_reward: r.points_reward, cover_image_url: r.cover_image_url })
-        );
-      }
-
-      return buildSummary(enrollments, catalog, completions, "quest_id", false);
-    },
-  });
-
   const completedMatches = matchesQuery.data?.filter((m) => m.result !== "pending") ?? [];
   const wonMatches = matchesQuery.data?.filter((m) => m.result === "W") ?? [];
 
@@ -301,7 +257,6 @@ export const useDashboard = () => {
     matchesWon: wonMatches.length,
     winRate: completedMatches.length > 0 ? Math.round((wonMatches.length / completedMatches.length) * 100) : 0,
     challengesCompleted: challengesQuery.data?.totalCompleted ?? 0,
-    questsCompleted: questsQuery.data?.totalCompleted ?? 0,
   };
 
   const emptyActivity: ActivitySummary = {
@@ -317,11 +272,9 @@ export const useDashboard = () => {
     registeredTournaments: registeredTournamentsQuery.data ?? [],
     recentMatches: matchesQuery.data ?? [],
     challenges: challengesQuery.data ?? emptyActivity,
-    quests: questsQuery.data ?? emptyActivity,
     isLoading:
       registeredTournamentsQuery.isLoading ||
       matchesQuery.isLoading ||
-      challengesQuery.isLoading ||
-      questsQuery.isLoading,
+      challengesQuery.isLoading,
   };
 };
