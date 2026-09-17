@@ -38,7 +38,6 @@ const AdminDashboard = () => {
     { label: "Total Users", value: stats?.users ?? 0, icon: Users, to: "/admin/users", color: "text-blue-400" },
     { label: "Tournaments", value: stats?.tournaments ?? 0, icon: Trophy, to: "/admin/tournaments", color: "text-yellow-400" },
     { label: "Challenges", value: stats?.challenges ?? 0, icon: Target, to: "/admin/challenges", color: "text-orange-400" },
-    { label: "Quests", value: stats?.quests ?? 0, icon: Compass, to: "/admin/challenges", color: "text-cyan-400" },
     { label: "Media Assets", value: stats?.media ?? 0, icon: Image, to: "/admin/media", color: "text-green-400" },
     { label: "Active Seasons", value: stats?.seasons ?? 0, icon: BarChart3, to: "/admin/seasons", color: "text-purple-400" },
     { label: "Provider Inquiries", value: stats?.inquiries ?? 0, icon: MessageSquare, to: "/admin/inquiries", color: "text-pink-400" },

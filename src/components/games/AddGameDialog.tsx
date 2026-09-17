@@ -331,7 +331,7 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
           <div className="space-y-2 rounded-md border border-border p-3">
             <Label className="text-sm font-heading">Supported Formats</Label>
             <p className="text-xs text-muted-foreground">
-              Controls which activity types this game can be used for across tournaments, quests, and challenges.
+              Controls which activity types this game can be used for across tournaments and challenges.
             </p>
             <div className="flex flex-col gap-2 pt-1">
               <div className="flex items-center gap-2">
