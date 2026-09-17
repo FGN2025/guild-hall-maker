@@ -330,7 +330,7 @@ ${sectionBlocks}
           Bring Competitive Gaming to Your Community
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          A turnkey esports platform for schools, libraries, and community centers to run tournaments, challenges, and quests — safely and at scale.
+          A turnkey esports platform for schools, libraries, and community centers to run tournaments and challenges — safely and at scale.
         </p>
         <Button variant="outline" size="sm" onClick={handlePrint} className="mt-4 gap-2">
           <Printer className="h-4 w-4" />

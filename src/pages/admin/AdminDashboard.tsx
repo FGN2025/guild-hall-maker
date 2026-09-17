@@ -13,11 +13,10 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [profiles, tournaments, challenges, quests, media, seasons, inquiries] = await Promise.all([
+      const [profiles, tournaments, challenges, media, seasons, inquiries] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("tournaments").select("id", { count: "exact", head: true }),
         supabase.from("challenges").select("id", { count: "exact", head: true }),
-        supabase.from("quests").select("id", { count: "exact", head: true }),
         supabase.from("media_library").select("id", { count: "exact", head: true }),
         supabase.from("seasons").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("provider_inquiries").select("id", { count: "exact", head: true }),
@@ -26,7 +25,6 @@ const AdminDashboard = () => {
         users: profiles.count ?? 0,
         tournaments: tournaments.count ?? 0,
         challenges: challenges.count ?? 0,
-        quests: quests.count ?? 0,
         media: media.count ?? 0,
         seasons: seasons.count ?? 0,
         inquiries: inquiries.count ?? 0,
