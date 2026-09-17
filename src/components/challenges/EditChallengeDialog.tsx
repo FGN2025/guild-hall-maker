@@ -217,6 +217,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         description: description || null,
         difficulty,
         challenge_type: challengeType,
+        track,
+
         game_id: gameId || null,
         points_first: points,
         points_second: 0,
