@@ -339,10 +339,6 @@ const AddGameDialog = ({ open, onOpenChange, onSubmit, loading, editGame }: Prop
                 <Label className="font-body text-sm">Tournaments</Label>
               </div>
               <div className="flex items-center gap-2">
-                <Switch checked={supportsQuests} onCheckedChange={setSupportsQuests} />
-                <Label className="font-body text-sm">Quests</Label>
-              </div>
-              <div className="flex items-center gap-2">
                 <Switch checked={supportsChallenges} onCheckedChange={setSupportsChallenges} />
                 <Label className="font-body text-sm">Challenges</Label>
               </div>

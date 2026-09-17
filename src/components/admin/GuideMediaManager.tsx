@@ -40,20 +40,6 @@ const GUIDE_CONFIGS: { slug: string; label: string; sections: { id: string; labe
       { id: "tips-faq", label: "Tips & FAQ" },
     ],
   },
-  {
-    slug: "quests",
-    label: "Quest Guide",
-    sections: [
-      { id: "what-are-quests", label: "What Are Quests?" },
-      { id: "enrolling", label: "Enrolling" },
-      { id: "tasks-evidence", label: "Tasks & Evidence" },
-      { id: "per-task-points", label: "Per-Task Point Payouts" },
-      { id: "quest-chains", label: "Quest Chains" },
-      { id: "xp-ranks", label: "XP & Rank System" },
-      { id: "story-narratives", label: "Story Narratives" },
-      { id: "tips-faq", label: "Tips & FAQ" },
-    ],
-  },
 ];
 
 function GuideMediaTab({ config }: { config: typeof GUIDE_CONFIGS[number] }) {
