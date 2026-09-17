@@ -23,13 +23,9 @@ const GameBadgePanel = ({ gameName, completed, total }: GameBadgePanelProps) => 
           <Trophy className="h-8 w-8" style={{ color: "hsl(var(--game-accent))" }} />
         </div>
         <div className="min-w-0">
-          <h2 className="font-display text-lg font-bold text-white">
-            {pathway ? pathway.name : `${gameName} Progress`}
-          </h2>
+          <h2 className="font-display text-lg font-bold text-white">{gameName} Progress</h2>
           <p className="font-body text-sm text-white/70">
-            {pathway
-              ? "Complete these challenges to work toward your merit badge."
-              : "Complete challenges to climb this game's tiers."}
+            Complete challenges to climb this game's tiers.
           </p>
         </div>
       </div>
