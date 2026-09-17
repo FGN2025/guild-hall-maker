@@ -86,26 +86,25 @@ const AdminPointsRubric = () => {
   const { data: audit } = useQuery({
     queryKey: ["points-audit", draft.version, JSON.stringify(draft)],
     queryFn: async () => {
-      const [chRes, qRes, tRes] = await Promise.all([
-        supabase.from("challenges").select("id, points_reward, difficulty, challenge_type, points_override_reason"),
-        supabase.from("quests").select("id, points_reward, difficulty, quest_type, points_override_reason"),
+      const [chRes, tRes] = await Promise.all([
+        supabase.from("challenges").select("id, points_reward, difficulty, challenge_type, track, points_override_reason"),
         supabase.from("tournaments").select("id, points_first, points_second, points_third, points_participation, difficulty, points_override_reason"),
       ]);
-      const challenges = (chRes.data ?? []).filter((c: any) => {
-        if (c.points_override_reason) return false;
-        const rec = getRecommendedPoints(draft, "challenge", c.difficulty, c.challenge_type);
-        return c.points_reward !== rec;
-      });
-      const quests = (qRes.data ?? []).filter((q: any) => {
-        if (q.points_override_reason) return false;
-        const rec = getRecommendedPoints(draft, "quest", q.difficulty, q.quest_type);
-        return q.points_reward !== rec;
-      });
+      const allChallenges = (chRes.data ?? []) as any[];
+      const offRubric = (rows: any[], kind: "challenge" | "quest") =>
+        rows.filter((c: any) => {
+          if (c.points_override_reason) return false;
+          const rec = getRecommendedPoints(draft, kind, c.difficulty, c.challenge_type);
+          return c.points_reward !== rec;
+        });
+      const challenges = offRubric(allChallenges.filter((c) => c.track !== "competitive_gaming"), "challenge");
+      const quests = offRubric(allChallenges.filter((c) => c.track === "competitive_gaming"), "quest");
       const tournaments = (tRes.data ?? []).filter((t: any) => {
         if (t.points_override_reason) return false;
         const rec = getRecommendedPoints(draft, "tournament", t.difficulty, null, "participation");
         return t.points_participation !== rec;
       });
+
       return {
         challenges: challenges.length,
         quests: quests.length,
