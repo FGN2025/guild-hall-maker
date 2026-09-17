@@ -931,6 +931,113 @@ export type Database = {
           },
         ]
       }
+      challenge_series: {
+        Row: {
+          bonus_achievement_id: string | null
+          bonus_points: number
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          story_intro: string | null
+          story_outro: string | null
+          updated_at: string
+        }
+        Insert: {
+          bonus_achievement_id?: string | null
+          bonus_points?: number
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          story_intro?: string | null
+          story_outro?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bonus_achievement_id?: string | null
+          bonus_points?: number
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          story_intro?: string | null
+          story_outro?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      challenge_series_completions: {
+        Row: {
+          bonus_points_awarded: number
+          completed_at: string
+          id: string
+          series_id: string
+          user_id: string
+        }
+        Insert: {
+          bonus_points_awarded?: number
+          completed_at?: string
+          id?: string
+          series_id: string
+          user_id: string
+        }
+        Update: {
+          bonus_points_awarded?: number
+          completed_at?: string
+          id?: string
+          series_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_series_completions_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_task_point_awards: {
+        Row: {
+          awarded_at: string
+          enrollment_id: string
+          id: string
+          points_awarded: number
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          enrollment_id: string
+          id?: string
+          points_awarded?: number
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          enrollment_id?: string
+          id?: string
+          points_awarded?: number
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_tasks: {
         Row: {
           challenge_id: string
@@ -1012,10 +1119,16 @@ export type Database = {
           points_third: number
           requires_evidence: boolean
           season_id: string | null
+          series_id: string | null
+          series_order: number | null
           skill_tags: string[]
           start_date: string | null
+          story_intro: string | null
+          story_outro: string | null
           suggested_coach_prompts: Json | null
+          track: string | null
           updated_at: string
+          xp_reward: number
         }
         Insert: {
           academy_next_step_label?: string | null
@@ -1053,10 +1166,16 @@ export type Database = {
           points_third?: number
           requires_evidence?: boolean
           season_id?: string | null
+          series_id?: string | null
+          series_order?: number | null
           skill_tags?: string[]
           start_date?: string | null
+          story_intro?: string | null
+          story_outro?: string | null
           suggested_coach_prompts?: Json | null
+          track?: string | null
           updated_at?: string
+          xp_reward?: number
         }
         Update: {
           academy_next_step_label?: string | null
@@ -1094,10 +1213,16 @@ export type Database = {
           points_third?: number
           requires_evidence?: boolean
           season_id?: string | null
+          series_id?: string | null
+          series_order?: number | null
           skill_tags?: string[]
           start_date?: string | null
+          story_intro?: string | null
+          story_outro?: string | null
           suggested_coach_prompts?: Json | null
+          track?: string | null
           updated_at?: string
+          xp_reward?: number
         }
         Relationships: [
           {
@@ -3339,6 +3464,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      player_challenge_xp: {
+        Row: {
+          id: string
+          rank_name: string | null
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          rank_name?: string | null
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          rank_name?: string | null
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       player_merit_progress: {
         Row: {
