@@ -7,7 +7,7 @@ const sidebarItems = [
   { to: "/moderator/featured", label: "Featured Events", icon: Sparkles },
   { to: "/moderator/matches", label: "Matches", icon: Swords },
   { to: "/moderator/points", label: "Points", icon: Star },
-  { to: "/moderator/challenges", label: "Challenges & Quests", icon: Target },
+  { to: "/moderator/challenges", label: "Challenges", icon: Target },
   { to: "/moderator/achievements", label: "Achievements", icon: Award },
   { to: "/moderator/ladders", label: "Ladders", icon: TrendingUp },
   { to: "/moderator/guide", label: "Mod Guide", icon: BookOpen },
