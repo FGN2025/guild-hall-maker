@@ -112,6 +112,8 @@ Deno.serve(async (req) => {
     checks.push(await probe("bad_key", "Data API rejects an invalid key", 401, dataApi, { "x-ecosystem-key": "invalid-test-key" }, { action: "health" }));
     checks.push(await probe("health", "Data API health check with the shared key", 200, dataApi, { "x-ecosystem-key": ecosystemKey }, { action: "health" }));
     checks.push(await probe("data_read", "Data API returns catalogue data", 200, dataApi, { "x-ecosystem-key": ecosystemKey }, { action: "tournaments", limit: 1 }));
+    checks.push(await probe("challenges_read", "Data API returns challenges", 200, dataApi, { "x-ecosystem-key": ecosystemKey }, { action: "challenges", limit: 1 }));
+    checks.push(await probe("achievements_read", "Data API returns achievements", 200, dataApi, { "x-ecosystem-key": ecosystemKey }, { action: "achievements", limit: 1 }));
     checks.push(await probe("merit_health", "Merit connector health check", 200, meritApi, { "x-ecosystem-key": ecosystemKey, "x-ecosystem-app": "merit" }, { action: "health" }));
     checks.push(await probe("merit_app", "Merit connector rejects an unknown app", 401, meritApi, { "x-ecosystem-key": ecosystemKey, "x-ecosystem-app": "nope" }, { action: "health" }));
 
