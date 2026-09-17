@@ -113,6 +113,8 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         description: form.description || null,
         points_reward: parseInt(form.points) || 10,
         challenge_type: form.challenge_type,
+        track: form.track,
+
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         created_by: user.id,
