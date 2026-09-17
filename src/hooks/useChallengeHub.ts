@@ -67,23 +67,6 @@ export const useChallengeHub = () => {
     },
   });
 
-  /** challenge_id -> pathway for the merit it belongs to. */
-  const { data: challengePathways = {} } = useQuery({
-    queryKey: ["challenge-pathway-map"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("merit_challenges")
-        .select("challenge_id, merits(pathway_id, merit_pathways(slug, name))");
-      if (error) throw error;
-      const map: Record<string, { slug: string; name: string }> = {};
-      (data ?? []).forEach((row: any) => {
-        const p = row.merits?.merit_pathways;
-        if (p && row.challenge_id) map[row.challenge_id] = { slug: p.slug, name: p.name };
-      });
-      return map;
-    },
-  });
-
   const completedIds = new Set(
     (myEnrollments as any[]).filter((e) => e.status === "completed").map((e) => e.challenge_id)
   );
