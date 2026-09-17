@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Award, Lock, Trophy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -6,12 +5,11 @@ interface GameBadgePanelProps {
   gameName: string;
   completed: number;
   total: number;
-  pathway?: { slug: string; name: string } | null;
 }
 
 const TIERS = [1, 3, 5, 10];
 
-const GameBadgePanel = ({ gameName, completed, total, pathway }: GameBadgePanelProps) => {
+const GameBadgePanel = ({ gameName, completed, total }: GameBadgePanelProps) => {
   const pct = total > 0 ? (completed / total) * 100 : 0;
   const nextTier = TIERS.find((t) => completed < t && t <= total) ?? null;
 
