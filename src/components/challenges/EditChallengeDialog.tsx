@@ -373,6 +373,17 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
               </Select>
             </div>
           </div>
+          <div>
+            <Label>Category</Label>
+            <Select value={track} onValueChange={setTrack}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Game Community</SelectItem>
+                <SelectItem value="competitive_gaming">Competitive Gaming</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Type</Label>
