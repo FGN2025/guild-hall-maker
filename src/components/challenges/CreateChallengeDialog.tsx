@@ -33,7 +33,7 @@ interface CreateChallengeDialogProps {
 }
 
 const defaultForm = {
-  name: "", description: "", challenge_type: "one_time",
+  name: "", description: "", challenge_type: "one_time", track: "standard",
   start_date: "", end_date: "",
   points: "10",
   difficulty: "beginner", estimated_minutes: "", requires_evidence: true,
