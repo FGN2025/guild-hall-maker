@@ -71,7 +71,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: Sparkles,
     title: "What's New — July 24, 2026",
     bullets: [
-      "Game Format Tagging — Games now carry three boolean flags: supports_tournaments, supports_quests, supports_challenges. Set them from Admin → Games (Add/Edit Game dialog → Supported Formats switches). List and grid views show T / Q / C badges at a glance. Tournament, challenge, and quest creation pickers filter accordingly; legacy items are grandfathered with a '(no longer supported)' hint. Backfilled from existing usage on rollout.",
+      "Game Format Tagging — Games now carry three boolean flags: supports_tournaments, supports_challenges. Set them from Admin → Games (Add/Edit Game dialog → Supported Formats switches). List and grid views show T / C badges at a glance. Tournament, challenge, and challenge creation pickers filter accordingly; legacy items are grandfathered with a '(no longer supported)' hint. Backfilled from existing usage on rollout.",
       "Tenant Billing — Two Plans — Tenants can now be tagged plan_tier = 'basic' ($600/mo) or 'pro' ($850/mo). Set the plan from Admin → Tenants → the Billing plan selector on each tenant card. Tenants see upgrade/downgrade options in their portal; Stripe wiring lands later.",
       "Tenant Settings Consolidation — In the tenant portal, Brand Guide (logo, colors, company info), Platform (cloud gaming), Account (billing), and Integrations (NISC / GLDS / FGN Academy) are now tabs under a single Settings page. Branded Assets, Account, and Integrations sidebar entries were removed. Old routes redirect to /tenant/settings?tab=…",
       "Tenant Web Pages Consolidation — The tenant Web Pages surface now lives inside Marketing → Web Pages with two sub-tabs: Banner (Portal Banner editor, banner-only sections) and Landing Pages (full block-based page builder). The standalone Tenant Landing Pages and Tenant Banner sidebar entries were removed.",
@@ -92,7 +92,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "CDL Challenge Generator — Multi-step AI wizard at /admin/challenges/generate (and /moderator/challenges/generate) generates 18-point CDL/ATS compliant challenges, lets you review/edit inline, and one-click publishes via the publish-cdl-challenge edge function. See the CDL Challenge Generator section below.",
       "Points Rubric — Configurable matrix of point awards by difficulty × challenge type, with audit log, realignment log, and an 'Align Existing Challenges' run button at /admin/points-rubric. Run after edits to keep historical challenges in sync. See the Points Rubric section below.",
       "Steam Integration Dashboard — New page at /admin/steam shows all players with linked Steam accounts, games with a steam_app_id, Steam-auto-verified evidence, and tasks using steam_achievement or steam_playtime verification. See the Steam Integration section below.",
-      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, designated staff receive an automated email enumerating all new tournament, quest, and challenge sign-ups from the previous 7 days, with grouping by event and Pacific timestamps. Delivered by the send-weekly-registrations-digest edge function via pg_cron. No admin UI — delivery-only.",
+      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, designated staff receive an automated email enumerating all new tournament and challenge sign-ups from the previous 7 days, with grouping by event and Pacific timestamps. Delivered by the send-weekly-registrations-digest edge function via pg_cron. No admin UI — delivery-only.",
       "Daily Discord Backlog Reminder (Email) — At 8 AM Eastern each weekday, darcy@fgn.gg receives a digest of outstanding Discord integration work pulled from the .lovable/backlog/discord.md backlog file. Delivered by send-discord-backlog-reminder. Delivery-only.",
       "Email Unsubscribe & Suppression — RFC 8058 one-click unsubscribe is now supported across all app emails via handle-email-unsubscribe. Bounces and complaints are tracked in suppressed_emails. The send pipeline checks suppression before each send.",
       "Bulk Register Legacy Users — A new admin-only edge function bulk-register-legacy-users creates auth accounts for legacy records that have an email but no auth user. Supports dry_run and batch_size for safe rollout.",
@@ -130,15 +130,15 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     ],
   },
   {
-    id: "access-requests",
+    id: "access-rechallenges",
     icon: ClipboardList,
-    title: "Access Requests",
+    title: "Access Rechallenges",
     bullets: [
-      "Navigate to Admin → Access Requests to review registration requests from users whose ZIP codes did not match any tenant service area.",
-      "Review Queue — Each request shows the user's email, display name, ZIP code, submission date, and current status (Pending, Approved, Denied).",
-      "Approve — Approve a request to grant the user platform access. Add optional admin notes explaining the decision.",
-      "Deny — Deny a request if the user is outside your coverage area. Admin notes are preserved for audit.",
-      "Filtering — Filter requests by status to focus on pending reviews or audit past decisions.",
+      "Navigate to Admin → Access Rechallenges to review registration rechallenges from users whose ZIP codes did not match any tenant service area.",
+      "Review Queue — Each rechallenge shows the user's email, display name, ZIP code, submission date, and current status (Pending, Approved, Denied).",
+      "Approve — Approve a rechallenge to grant the user platform access. Add optional admin notes explaining the decision.",
+      "Deny — Deny a rechallenge if the user is outside your coverage area. Admin notes are preserved for audit.",
+      "Filtering — Filter rechallenges by status to focus on pending reviews or audit past decisions.",
     ],
   },
   {
@@ -491,12 +491,12 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "Manage external knowledge bases from Admin → Notebooks.",
       "Adding Connections — Set a display name, the API URL of your Open Notebook instance, and the target Notebook ID.",
-      "Game Mapping — Optionally link a notebook connection to a specific game using the Game selector. Game-linked notebooks provide RAG context for AI-enhanced quest narratives.",
+      "Game Mapping — Optionally link a notebook connection to a specific game using the Game selector. Game-linked notebooks provide RAG context for AI-enhanced challenge narratives.",
       "Shared Credentials — The API password is stored as a backend secret (OPEN_NOTEBOOK_PASSWORD), shared across all connections pointing to the same host.",
       "Health Checks — Use the built-in health check to verify VPS connectivity and credential validity before relying on a connection.",
       "How It Works — The notebook-proxy backend function handles all communication with the external VPS, bypassing CORS and keeping credentials secure.",
-      "AI Quest Narratives — When a quest is linked to a game that has a notebook connection, the AI narrative enhancement pulls context from that notebook to generate richer, game-specific story text.",
-      "Tip: You can connect multiple notebooks (e.g., one per game or topic) to broaden the AI Coach's knowledge base and improve quest narrative generation.",
+      "AI Challenge Narratives — When a challenge is linked to a game that has a notebook connection, the AI narrative enhancement pulls context from that notebook to generate richer, game-specific story text.",
+      "Tip: You can connect multiple notebooks (e.g., one per game or topic) to broaden the AI Coach's knowledge base and improve challenge narrative generation.",
     ],
   },
   {
@@ -549,22 +549,22 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
   {
     id: "challenges",
     icon: Target,
-    title: "Challenges & Quests",
+    title: "Challenges",
     bullets: [
       "Challenges are task-based work-order objectives that reward players with season points upon completion.",
-      "Moderators create and manage challenges from the Moderator Dashboard → Challenges & Quests.",
+      "Moderators create and manage challenges from the Moderator Dashboard → Challenges.",
       "Each challenge has a name, description, point reward, optional game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (Daily, Weekly, Monthly, or One-Time), and optional start/end dates.",
       "Cover Images — Upload a cover image or select one from the Media Library to make challenges visually distinct.",
       "AI-Enhanced Descriptions — Use the AI enhance button to automatically improve challenge descriptions for clarity and engagement.",
       "Task Checklists — Build multi-step task checklists within a challenge. Players must complete each task and upload evidence per step.",
       "Evidence Review — Moderators review evidence per-item with approve/reject actions and feedback notes. Bulk actions include 'Approve All & Complete' and 'Reject Enrollment'.",
-      "Quests — Admins can also create and manage quests from the 'Quests' tab on the same page. Quests use an identical workflow but are tracked in separate tables.",
-      "Quest Chains — The 'Chains' tab lets you create sequential quest progressions. Each chain has a name, description, story intro/outro text, cover image, bonus points for chain completion, and an optional linked achievement.",
-      "Chain Ordering — Quests within a chain are ordered by their chain_order field. Players must complete quests sequentially — earlier quests unlock later ones.",
-      "AI-Enhanced Narratives — Use the Sparkles (✨) button on story_intro and story_outro fields in the Create/Edit Quest and Chain dialogs to auto-generate rich narrative text. If the quest's game has a linked notebook connection, the AI uses RAG to pull game-specific context.",
-      "XP Rewards — Quests award XP in addition to season points. The XP feeds into a five-tier rank system (Novice → Apprentice → Journeyman → Expert → Master) tracked per player.",
-      "Chain Completion — When a player finishes all quests in a chain, bonus points are awarded automatically via a database trigger, and an optional achievement badge is granted.",
-      "Players view active challenges at /challenges and quests at /quests, and can see which ones they've already completed.",
+      "Challenges — Admins can also create and manage challenges from the 'Challenges' tab on the same page. Challenges use an identical workflow but are tracked in separate tables.",
+      "Challenge Series — The 'Chains' tab lets you create sequential challenge progressions. Each chain has a name, description, story intro/outro text, cover image, bonus points for chain completion, and an optional linked achievement.",
+      "Chain Ordering — Challenges within a chain are ordered by their chain_order field. Players must complete challenges sequentially — earlier challenges unlock later ones.",
+      "AI-Enhanced Narratives — Use the Sparkles (✨) button on story_intro and story_outro fields in the Create/Edit Challenge and Chain dialogs to auto-generate rich narrative text. If the challenge's game has a linked notebook connection, the AI uses RAG to pull game-specific context.",
+      "XP Rewards — Challenges award XP in addition to season points. The XP feeds into a five-tier rank system (Novice → Apprentice → Journeyman → Expert → Master) tracked per player.",
+      "Chain Completion — When a player finishes all challenges in a chain, bonus points are awarded automatically via a database trigger, and an optional achievement badge is granted.",
+      "Players view active challenges at /challenges at /challenges, and can see which ones they've already completed.",
       "Game Filter & Share Links — Use the Game filter dropdown on the Admin Challenges page to select a specific game, then click 'Copy Share Link' to generate a public URL (e.g. /challenges?game=American+Truck+Simulator). Share this link in emails or invitations so recipients land on a pre-filtered view showing only that game's challenges.",
       "Filtered Stats — When a user opens a filtered link, the stats bar (Available, Enrolled, Completed, Progress) reflects only the filtered game's challenges, not the full catalog.",
       "Post-Publication Task Editing — Admins and Moderators can add, edit, reorder, and remove tasks on published challenges directly from the Edit dialog on the challenge detail page.",
@@ -584,11 +584,11 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     bullets: [
       "The Prize Shop (/prize-shop) lets players spend earned season points on rewards.",
       "Moderators create prizes with name, description, point cost, optional image, and available quantity.",
-      "Players browse active prizes, see their current point balance, and submit redemption requests.",
+      "Players browse active prizes, see their current point balance, and submit redemption rechallenges.",
       "A confirmation dialog shows point cost and remaining balance before submitting.",
       "Redemptions go into a pending queue reviewed by Admins at Admin → Redemptions.",
-      "Admins can approve, fulfill, or deny redemption requests with optional notes.",
-      "Players can track their redemption history and status from the 'My Requests' tab.",
+      "Admins can approve, fulfill, or deny redemption rechallenges with optional notes.",
+      "Players can track their redemption history and status from the 'My Rechallenges' tab.",
     ],
   },
   {
@@ -627,7 +627,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Deep Links — Each notification includes a link to the relevant page (Prize Shop, Challenges, Tournament, Achievements, Leaderboard) for one-click navigation.",
       "Tip: The notification system works automatically — just manage tournaments, approve redemptions, adjust points, and create challenges as usual, and players will be notified.",
       "Automated Engagement Emails — Three scheduled email campaigns run automatically to boost retention:",
-      "Weekly Recap (Mondays 10:00 AM UTC) — Sends personalized weekly stats summaries (matches, challenges, quests, achievements) to active players.",
+      "Weekly Recap (Mondays 10:00 AM UTC) — Sends personalized weekly stats summaries (matches, challenges, challenges, achievements) to active players.",
       "Tournament Promotions (Daily 2:00 PM UTC) — Notifies active players about open tournaments starting within 3 days that they haven't registered for yet.",
       "Re-engagement (Wednesdays 12:00 PM UTC) — Sends 'we miss you' emails with new content highlights to players inactive for 14–90 days.",
       "All engagement emails respect user notification preferences (weekly_recap, tournament_promo, reengagement toggles) and use deduplication to prevent duplicate sends.",
@@ -684,7 +684,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Prize Modes — Choose between 'None', 'Physical Prize' (linked to a Prize Shop item), or 'Value' (configurable percentage split for top finishers, default 50/30/20, must sum to 100%).",
       "Participation Points — Configure points awarded to all participants regardless of placement.",
       "Discord Role Assignment — Optionally assign a specific Discord role to players upon event registration.",
-      "Request Moderator — Tenant Admins and Marketing staff can request a platform moderator for their event. This sends an automated email to support@fgn.gg with event details and the requester's contact information.",
+      "Rechallenge Moderator — Tenant Admins and Marketing staff can rechallenge a platform moderator for their event. This sends an automated email to support@fgn.gg with event details and the rechallengeer's contact information.",
       "Public Events — Toggle events as public to make them visible on a shareable public page at /events/:tenantSlug.",
       "Registration — Players can register for public tenant events directly from the public event page.",
       "Event Assets — Upload supporting images and files to events for promotional use.",
@@ -742,7 +742,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Staff Exemption — Admins, Moderators, and Marketing roles are globally exempt from the Discord linking gate, ZIP code gates, and the Onboarding Wizard modal. Promoting a user to staff causes these gates to disappear on their next visit.",
       "Tenant Staff Exemption — Tenant Admins, Managers, and Marketing are similarly exempt from the player onboarding wizard.",
       "Bypass Codes — Platform-level (Admin → Bypass Codes) and tenant-level (Tenant → Codes) codes can grant immediate access. 'Access' codes are immediate; 'Override' / 'Verification' codes flag the user for manual review.",
-      "Discord Bypass Requests — Players who cannot link Discord submit a request reviewed in Admin → Discord Bypass. Approving the request marks the gate satisfied without a Discord linkage.",
+      "Discord Bypass Rechallenges — Players who cannot link Discord submit a rechallenge reviewed in Admin → Discord Bypass. Approving the rechallenge marks the gate satisfied without a Discord linkage.",
       "Auto-claim — Tenant invitations sent by email are auto-claimed when the invited user registers, via a database trigger and a 5-second client-side session poll.",
     ],
   },
@@ -751,7 +751,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: Shield,
     title: "Role Visibility & Data Shielding",
     bullets: [
-      "Registration counts (tournaments, challenges, quests, events) are visible only to Platform Admins. Players, Moderators, and Tenant staff see participation status but never raw counts.",
+      "Registration counts (tournaments, challenges, challenges, events) are visible only to Platform Admins. Players, Moderators, and Tenant staff see participation status but never raw counts.",
       "Tenant subscriber records are strictly isolated by RLS. A Platform Admin must use the tenant-switching dropdown to view another tenant's data.",
       "All admin-side database clients disable session persistence to prevent token leakage in shared admin contexts.",
       "All public read-only views run with `security_invoker=true` so RLS still applies to anon visitors.",
@@ -793,10 +793,10 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Points Rubric",
     bullets: [
       "Where — /admin/points-rubric.",
-      "Purpose — Centralize point values across challenges and quests in a single rubric matrix so award amounts stay consistent over time.",
+      "Purpose — Centralize point values across challenges in a single rubric matrix so award amounts stay consistent over time.",
       "Matrix — Configure point awards by difficulty (Beginner / Intermediate / Advanced) × type (Daily / Weekly / Monthly / One-Time). The matrix becomes the source of truth.",
       "Audit Log — Every edit to the rubric is recorded in points_rubric_audit with the editor, prior values, and timestamp. Use this to investigate why a value changed.",
-      "Align Existing Challenges — Click 'Align Existing Challenges' to run the align-points-to-rubric edge function, which updates active challenges/quests to match the current rubric. Affected items are recorded in points_realignment_log with old/new values.",
+      "Align Existing Challenges — Click 'Align Existing Challenges' to run the align-points-to-rubric edge function, which updates active challenges/challenges to match the current rubric. Affected items are recorded in points_realignment_log with old/new values.",
       "Override Reasons — Individual challenges can still override the rubric via points_override_reason. Overrides are surfaced in the realignment dry-run so you don't accidentally crush an intentional one-off.",
       "Workflow — Edit rubric → review the audit entry → run Align Existing Challenges → review the realignment log → notify mods if any active challenges shifted.",
       "Tip: Run alignment quarterly at minimum to catch drift between rubric and live challenge values.",
@@ -866,7 +866,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Automated Staff Emails",
     bullets: [
       "Two scheduled emails are sent automatically. Neither has an admin UI — they are delivery-only.",
-      "Weekly Registrations Digest — Every Friday at 4 PM Pacific (23:00 UTC), darcy@fgn.gg receives an email enumerating new tournament, quest, and challenge sign-ups from the previous 7 days, grouped by event with Pacific-time timestamps. Delivered by the send-weekly-registrations-digest edge function via pg_cron. Idempotency key: weekly-registrations-${'{YYYY-MM-DD}'}.",
+      "Weekly Registrations Digest — Every Friday at 4 PM Pacific (23:00 UTC), darcy@fgn.gg receives an email enumerating new tournament and challenge sign-ups from the previous 7 days, grouped by event with Pacific-time timestamps. Delivered by the send-weekly-registrations-digest edge function via pg_cron. Idempotency key: weekly-registrations-${'{YYYY-MM-DD}'}.",
       "Daily Discord Backlog Reminder — At 8 AM Eastern each weekday, darcy@fgn.gg receives a digest of outstanding Discord integration work pulled from .lovable/backlog/discord.md. Delivered by send-discord-backlog-reminder. Idempotency key: discord-backlog-${'{YYYY-MM-DD}'}.",
       "Templates — Both emails are React Email templates under supabase/functions/_shared/transactional-email-templates/. The send pipeline routes through send-transactional-email and is queued via pgmq for reliable delivery.",
       "Unsubscribe — Both emails include a one-click unsubscribe link handled by handle-email-unsubscribe. If the recipient unsubscribes, the address is added to suppressed_emails and future sends are blocked.",
@@ -980,7 +980,7 @@ ${sectionBlocks}
         />
       </div>
 
-      <QuickReferenceCard audience="admin" intro="Role × capability matrix, achievement tiers, quest XP ranks, and tournament/challenge status flows." />
+      <QuickReferenceCard audience="admin" intro="Role × capability matrix, achievement tiers, challenge XP ranks, and tournament/challenge status flows." />
 
       {filteredSections.length > 0 && (
         <nav className="border border-border rounded-lg bg-card/50 px-4 py-3">

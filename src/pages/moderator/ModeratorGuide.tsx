@@ -47,8 +47,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: Star,
     title: "What's New — July 24, 2026",
     bullets: [
-      "Game Format Tagging — Every game now carries Tournament / Quest / Challenge support flags (T / Q / C). The create/edit pickers for tournaments, challenges, and quests filter to games flagged for that format. Legacy items keep their game with a '(no longer supported)' hint so historical records stay editable.",
-      "Impact on Your Workflow — If a game you expect to use for a new challenge or quest is missing from the picker, ping a platform admin to flip the correct support flag on the game record.",
+      "Game Format Tagging — Every game now carries Tournament / Challenge support flags (T / C). The create/edit pickers for tournaments and challenges filter to games flagged for that format. Legacy items keep their game with a '(no longer supported)' hint so historical records stay editable.",
+      "Impact on Your Workflow — If a game you expect to use for a new challenge is missing from the picker, ping a platform admin to flip the correct support flag on the game record.",
     ],
   },
   {
@@ -57,9 +57,9 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "What's New — June 18, 2026",
     bullets: [
       "CDL Challenge Generator — A new multi-step AI wizard at /moderator/challenges/generate creates compliant CDL/ATS challenges to the 18-point benchmark. Pick a domain and CFR reference, generate, review/edit inline, and one-click publish. See the new CDL Challenge Generator section below.",
-      "Featured Events Manager — Pin tournaments, challenges, and quests to the homepage Featured carousel from /moderator/featured. See the Featured Events section below.",
+      "Featured Events Manager — Pin tournaments and challenges to the homepage Featured carousel from /moderator/featured. See the Featured Events section below.",
       "Steam Auto-Verified Tasks — Challenge tasks with verification_type set to steam_achievement or steam_playtime are verified automatically by querying the player's linked Steam account. These enrollments are self-resolving — no evidence review required from you. They will not appear in your Evidence Review queue.",
-      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, staff receive an automated email enumerating all new tournament, quest, and challenge sign-ups from the previous 7 days. There is no admin UI for this — it is delivery-only.",
+      "Weekly Registrations Digest (Email) — Every Friday at 4 PM Pacific, staff receive an automated email enumerating all new tournament and challenge sign-ups from the previous 7 days. There is no admin UI for this — it is delivery-only.",
       "Daily Discord Backlog Reminder (Email) — At 8 AM Eastern each weekday, designated staff receive a digest of outstanding Discord integration work. Delivery-only; no configuration UI.",
       "Per-Match Point Awards — Tournament points now record per match (win, loss, participation) in addition to placement. Participation remains idempotent per tournament. Affects how the wallet ledger reads in audits.",
       "Attendance Auto-Tracking — A player's registration is auto-marked 'attended' the moment you record their first match result. Manual check-in is still available for events that need it.",
@@ -133,16 +133,16 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Season Scope — Points are tied to the currently active season.",
       "Audit Trail — All manual adjustments are logged with the moderator who made them and a timestamp.",
       "Automatic Awards — Tournament placement points are awarded automatically and don't need manual entry.",
-      "Spending — Points are only deducted from 'Points Available' when an admin approves a prize redemption; pending or denied requests leave the balance unchanged.",
+      "Spending — Points are only deducted from 'Points Available' when an admin approves a prize redemption; pending or denied rechallenges leave the balance unchanged.",
       "Leaderboard Export — Moderators (and Admins) can export Seasonal or All-Time player rankings as CSV or PDF from the Leaderboard page using the export buttons next to the search filter.",
     ],
   },
   {
     id: "challenges",
     icon: Target,
-    title: "Challenges & Quests",
+    title: "Challenges",
     bullets: [
-      "Navigate to Moderator → Challenges & Quests to create and manage work-order style challenges and quests.",
+      "Navigate to Moderator → Challenges to create and manage work-order style challenges.",
       "Creating — Set name, description, point reward, game link, difficulty level (Beginner / Intermediate / Advanced), estimated completion time, type (Daily, Weekly, Monthly, or One-Time), and start/end dates.",
       "Cover Images — Upload a cover image or select one from the Media Library to make each challenge visually distinct on the player-facing cards.",
       "AI-Enhanced Descriptions — Click the AI enhance button to automatically improve challenge descriptions for clarity and engagement using the platform's AI capabilities.",
@@ -161,14 +161,14 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Notifications — When a new active challenge is created, all registered players are automatically notified with the challenge name and point reward.",
       "Max Enrollments — Optionally limit how many players can enroll in a challenge.",
       "Active/Inactive — Toggle challenges on or off without deleting them.",
-      "Quests Tab — Switch to the 'Quests' tab on the same page to create and manage quests. Quests follow the identical workflow (enrollment, evidence, review, completion) but are tracked separately.",
-      "Quest Chains — The 'Chains' tab lets you build sequential quest progressions. Create a chain with a name, description, story intro/outro text, cover image, bonus points, and an optional achievement link. Assign quests to chains and set their order.",
-      "AI-Enhanced Narratives — Use the Sparkles (✨) button on story_intro and story_outro fields to auto-generate rich narrative text. If the quest's game has a linked notebook connection (Admin → Notebooks), the AI uses RAG to pull game-specific context for higher quality output.",
-      "XP Rewards — Quests award XP in addition to season points. XP feeds into a five-tier rank system: Novice (0–99), Apprentice (100–299), Journeyman (300–599), Expert (600–999), Master (1000+).",
-      "Chain Completion — When a player finishes all quests in a chain, bonus points and an optional achievement badge are awarded automatically via database triggers — no manual action required.",
+      "Challenges Tab — Switch to the 'Challenges' tab on the same page to create and manage challenges. Challenges follow the identical workflow (enrollment, evidence, review, completion) but are tracked separately.",
+      "Challenge Series — The 'Chains' tab lets you build sequential challenge progressions. Create a chain with a name, description, story intro/outro text, cover image, bonus points, and an optional achievement link. Assign challenges to chains and set their order.",
+      "AI-Enhanced Narratives — Use the Sparkles (✨) button on story_intro and story_outro fields to auto-generate rich narrative text. If the challenge's game has a linked notebook connection (Admin → Notebooks), the AI uses RAG to pull game-specific context for higher quality output.",
+      "XP Rewards — Challenges award XP in addition to season points. XP feeds into a five-tier rank system: Novice (0–99), Apprentice (100–299), Journeyman (300–599), Expert (600–999), Master (1000+).",
+      "Chain Completion — When a player finishes all challenges in a chain, bonus points and an optional achievement badge are awarded automatically via database triggers — no manual action required.",
       "Post-Publication Task Editing — Admins and Moderators can add, edit, reorder, and remove tasks on existing challenges via the Edit dialog accessible from the challenge detail page.",
       "Approval Notifications — When you approve a challenge submission, the player automatically receives an in-app notification confirming approval and the points earned.",
-      "Tip: Challenges and quests with clear task checklists and evidence requirements drive the most meaningful engagement!",
+      "Tip: Challenges and challenges with clear task checklists and evidence requirements drive the most meaningful engagement!",
     ],
   },
   {
@@ -209,7 +209,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Prize Redemptions (Admin-only)",
     bullets: [
       "Prize redemption review and prize catalog management are restricted to Admins.",
-      "If a player asks about a redemption status, direct them to the 'My Requests' tab in the Prize Shop or escalate to an Admin.",
+      "If a player asks about a redemption status, direct them to the 'My Rechallenges' tab in the Prize Shop or escalate to an Admin.",
     ],
   },
   {
@@ -267,15 +267,15 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     ],
   },
   {
-    id: "ai-quest-narratives",
+    id: "ai-challenge-narratives",
     icon: BookOpen,
-    title: "AI Quest Narratives",
+    title: "AI Challenge Narratives",
     bullets: [
-      "Where — In the Quests editor (Moderator → Challenges & Quests → Quests tab), the story_intro and story_outro fields each have a Sparkles (✨) button.",
-      "What It Does — Generates rich, on-theme narrative text for the quest opener and closer using the platform's AI gateway. No API key required from you.",
-      "RAG Boost — If the quest's linked game has a Notebook Connection configured (Admin → Notebooks), the generator pulls game-specific lore and mechanics for higher-quality output.",
+      "Where — In the Challenges editor (Moderator → Challenges → Challenges tab), the story_intro and story_outro fields each have a Sparkles (✨) button.",
+      "What It Does — Generates rich, on-theme narrative text for the challenge opener and closer using the platform's AI gateway. No API key required from you.",
+      "RAG Boost — If the challenge's linked game has a Notebook Connection configured (Admin → Notebooks), the generator pulls game-specific lore and mechanics for higher-quality output.",
       "Iterating — Re-click Sparkles to generate alternates. Edit the result freely — what you save is what players see.",
-      "Chains — The same Sparkles affordance is available on quest chain story_intro and story_outro fields so an entire chain can have a coherent arc.",
+      "Chains — The same Sparkles affordance is available on challenge series story_intro and story_outro fields so an entire chain can have a coherent arc.",
       "Tip: Write a short prompt-style hint in the field first (e.g., 'cyberpunk heist tone'), then click Sparkles — it uses your seed text as steering.",
     ],
   },
@@ -284,8 +284,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: Settings,
     title: "Post-Publication Editing",
     bullets: [
-      "Live Edits — You can edit a published challenge or quest at any time from its detail page or the management list. Changes apply immediately to all enrolled players.",
-      "Task Edits — Add, rename, reorder, or remove tasks on existing challenges and quests via the Edit dialog.",
+      "Live Edits — You can edit a published challenge at any time from its detail page or the management list. Changes apply immediately to all enrolled players.",
+      "Task Edits — Add, rename, reorder, or remove tasks on existing challenges via the Edit dialog.",
       "Impact on In-Flight Enrollments — Existing approved evidence stays attached to its task. If you remove a task, prior approved evidence for it is preserved in the audit log but no longer counted toward completion.",
       "Player Notification — Players are not automatically notified of mid-flight edits. For material changes (point value, task list), post in the relevant Discord channel so participants aren't surprised.",
       "Safe Edits — Cosmetic changes (description, cover image, tags) are always safe. Structural changes (task list, points-per-task) should be made before significant evidence has been submitted when possible.",
@@ -296,8 +296,8 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     icon: LayoutDashboard,
     title: "Unified Competition Oversight",
     bullets: [
-      "One Dashboard — The Moderator dashboard surfaces tournaments, challenges, and quests through unified action buttons so you can triage everything from one place.",
-      "Bidirectional Copying — Use the duplicate action on any tournament, challenge, or quest to spin up a near-identical copy with '(Copy)' appended to the title. Edit the copy in place — the original is untouched.",
+      "One Dashboard — The Moderator dashboard surfaces tournaments and challenges through unified action buttons so you can triage everything from one place.",
+      "Bidirectional Copying — Use the duplicate action on any tournament, challenge, or challenge to spin up a near-identical copy with '(Copy)' appended to the title. Edit the copy in place — the original is untouched.",
       "Bracket Resets — On any in-progress tournament with no completed matches, the Reset Bracket action returns the event to Open status for re-seeding.",
       "Tip: Duplicate is the fastest way to run a recurring event with the same task list, prize structure, and rules.",
     ],
@@ -324,10 +324,10 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Featured Events Manager",
     bullets: [
       "Where — /moderator/featured.",
-      "Purpose — Curate which tournaments, challenges, and quests appear in the homepage Featured Events carousel.",
-      "Search Picker — Search for any tournament, challenge, or quest by name; click to pin it. Pinned items appear immediately on the player-facing homepage.",
-      "Mixed Types — The carousel can hold a mix of tournaments, challenges, and quests. Each card auto-renders with the appropriate type-specific styling.",
-      "Unpin — Click the unpin action on any item to remove it from the featured list. The underlying tournament/challenge/quest is not deleted.",
+      "Purpose — Curate which tournaments and challenges appear in the homepage Featured Events carousel.",
+      "Search Picker — Search for any tournament, challenge, or challenge by name; click to pin it. Pinned items appear immediately on the player-facing homepage.",
+      "Mixed Types — The carousel can hold a mix of tournaments and challenges. Each card auto-renders with the appropriate type-specific styling.",
+      "Unpin — Click the unpin action on any item to remove it from the featured list. The underlying tournament/challenge/challenge is not deleted.",
       "Mobile-Friendly — The carousel uses iOS-Safari-safe minimum heights so it renders correctly on mobile.",
       "Tip: Refresh the featured set weekly — stale featured items reduce homepage engagement.",
     ],
@@ -338,7 +338,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "Automated Staff Emails",
     bullets: [
       "Two scheduled emails are sent to platform staff automatically. Neither has an admin UI — they are delivery-only.",
-      "Weekly Registrations Digest — Every Friday at 4 PM Pacific (23:00 UTC), a digest of all new tournament, quest, and challenge sign-ups from the previous 7 days is emailed to designated staff. Groups by event, includes Pacific-time timestamps, and shows totals per category.",
+      "Weekly Registrations Digest — Every Friday at 4 PM Pacific (23:00 UTC), a digest of all new tournament and challenge sign-ups from the previous 7 days is emailed to designated staff. Groups by event, includes Pacific-time timestamps, and shows totals per category.",
       "Daily Discord Backlog Reminder — At 8 AM Eastern each weekday, a digest of outstanding Discord integration work is emailed to darcy@fgn.gg, sourced from the backlog file. Use it as your daily reminder to chip away at the Discord setup queue.",
       "Idempotency — Both emails use a date-based idempotency key, so a same-day retry won't double-send.",
       "If You Stop Receiving Them — Check your spam folder first, then your suppression status (one-click unsubscribe links may have been clicked). Ask an admin to verify the recipient list is correct.",
@@ -422,7 +422,7 @@ ${sectionBlocks}
         />
       </div>
 
-      <QuickReferenceCard audience="moderator" intro="What moderators can do, achievement tiers, quest XP ranks, and the challenge/quest enrollment flow." />
+      <QuickReferenceCard audience="moderator" intro="What moderators can do, achievement tiers, challenge XP ranks, and the challenge/challenge enrollment flow." />
 
       {filteredSections.length > 0 && (
         <nav className="border border-border rounded-lg bg-card/50 px-4 py-3">
