@@ -196,7 +196,7 @@ const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
               </p>
               <div className="grid gap-2 text-left max-w-xs mx-auto">
                 {[
-                  { icon: ScrollText, label: "Browse Quests", desc: "Complete tasks, earn XP, rank up", path: "/quests" },
+                  { icon: ScrollText, label: "Competitive Gaming", desc: "Standard game challenges, any time", path: "/challenges/competitive-gaming" },
                   { icon: Gamepad2, label: "Join a Tournament", desc: "Compete and climb the leaderboard", path: "/tournaments" },
                 ].map((item) => (
                   <button

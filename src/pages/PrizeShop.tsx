@@ -179,7 +179,7 @@ const PrizeShop = () => {
                       Browsing only — redemptions are for players with a participating internet provider.
                     </p>
                     <p className="text-muted-foreground mt-1">
-                      You can keep earning points from tournaments, challenges, and quests.{" "}
+                      You can keep earning points from tournaments and challenges.{" "}
                       <Link to="/for-providers" className="text-primary hover:underline">
                         Check whether your provider is part of the network
                       </Link>{" "}

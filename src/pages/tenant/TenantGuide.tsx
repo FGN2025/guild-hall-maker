@@ -59,7 +59,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Configure Banner — The banner editor is scoped to Hero, Banner, and CTA sections only. Other section types (Video, Gallery, Text, Embed) are pruned automatically and are only offered inside Landing Pages.",
       "Billing — Two Plans — Tenant Basic ($600/mo) and Tenant Pro ($850/mo) are now selectable, with upgrade/downgrade paths shown on the Billing card. A platform admin tags your tenant's current plan_tier; the billing card reflects it. Stripe wiring lands next.",
       "Access Codes — The sidebar entry 'Codes' was renamed to 'Access Codes' (route unchanged at /tenant/codes).",
-      "Game Format Tagging Affects the Events Picker — Every game now carries Tournament / Quest / Challenge support flags. The game dropdown on Events only shows games flagged as Tournament-supporting. Legacy events whose game is no longer flagged keep their selection with a '(no longer supported)' hint so you can still edit the row.",
+      "Game Format Tagging Affects the Events Picker — Every game now carries Tournament / Challenge support flags. The game dropdown on Events only shows games flagged as Tournament-supporting. Legacy events whose game is no longer flagged keep their selection with a '(no longer supported)' hint so you can still edit the row.",
       "Marketing Agent — The Agent Launch card on the tenant dashboard runs the marketing_agent server-side with tenant-scoped tool access, 2/day and 10/month guardrails, and a Recent Runs history. Agent-authored drafts arrive in Marketing with review badges.",
       "Universal Marketing Assets — Platform-published assets flagged 'universal' arrive in your library with an Adopt button (Marketing → Universal Assets tab). Adopting clones the asset into your tenant library — idempotent, so re-adopting is a no-op.",
       "Marketing Notifications & Preferences — In-app notifications now cover new drafts, revisions, dispatcher errors, overdue posts, and schedule conflicts. Route recipients: Tenant Admin and Manager get email + in-app; Marketing gets in-app only. Toggle email categories in Profile Settings → Notifications; in-app cannot be disabled.",
@@ -75,7 +75,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
       "Discord Auto-Announce on Event Publish — When you publish a tenant event, an announcement is automatically posted to the configured Discord channel (if your tenant has a webhook registered). No manual posting needed.",
       "Registration Counts Are Platform-Only — Tenant staff (Admin, Manager, Marketing) see a tournament's player capacity (for example \"16 max\") but never how many players have registered. Live registered counts are reserved for platform Admins and Moderators.",
       "Manager Role Clarified — The Manager role permissions bullet in the Roles section has been corrected. Managers see the Dashboard, Player Directory, Leads, Events, and Marketing campaigns only. ZIP Codes, Subscribers, Integrations, Tenant Codes, Web Pages, Team, and Settings remain Admin-only.",
-      "Skill Tag Sync — Skill tags on challenges and quests now propagate to player Skill Passports when your tenant has FGN Academy sync enabled.",
+      "Skill Tag Sync — Skill tags on challenges now propagate to player Skill Passports when your tenant has FGN Academy sync enabled.",
     ],
   },
   {
@@ -384,7 +384,7 @@ const sectionData: { id: string; icon: typeof Shield; title: string; bullets: st
     title: "FGN Academy Opt-In Toggle",
     bullets: [
       "Where — Subscribers → Integrations tab. Look for the FGN Academy card.",
-      "What It Does — When enabled, every challenge or quest your players complete is automatically pushed to the FGN Academy Skill Passport with score, task progress, and skill tags. Players can earn external credentials and XP on the academy side.",
+      "What It Does — When enabled, every challenge your players complete is automatically pushed to the FGN Academy Skill Passport with score, task progress, and skill tags. Players can earn external credentials and XP on the academy side.",
       "Per-Tenant — The toggle is scoped to your tenant only. Other tenants on the platform decide independently.",
       "Player Sync Status — If a player isn't yet registered on FGN Academy, the sync logs that fact and prompts the player to sign up using the same email address. Already-registered players sync silently.",
       "Retry — Failed syncs can be re-triggered from the moderator approval flow ('Retry Academy Sync' button) or by re-approving the enrollment.",
