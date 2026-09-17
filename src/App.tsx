@@ -57,10 +57,10 @@ const Challenges = lazy(() => import("./pages/Challenges"));
 const ChallengesHub = lazy(() => import("./pages/ChallengesHub"));
 const GameChallenges = lazy(() => import("./pages/GameChallenges"));
 const ChallengeDetail = lazy(() => import("./pages/ChallengeDetail"));
-const Quests = lazy(() => import("./pages/Quests"));
+const CompetitiveGaming = lazy(() => import("./pages/CompetitiveGaming"));
 const Pathways = lazy(() => import("./pages/Pathways"));
 const MeritDetail = lazy(() => import("./pages/MeritDetail"));
-const QuestDetail = lazy(() => import("./pages/QuestDetail"));
+
 const PrizeShop = lazy(() => import("./pages/PrizeShop"));
 const PlayerGuide = lazy(() => import("./pages/PlayerGuide"));
 const Games = lazy(() => import("./pages/Games"));
@@ -85,7 +85,7 @@ const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminTournaments = lazy(() => import("./pages/admin/AdminTournaments"));
 const AdminChallenges = lazy(() => import("./pages/admin/AdminChallenges"));
-const AdminQuests = lazy(() => import("./pages/admin/AdminQuests"));
+
 const AdminRedemptions = lazy(() => import("./pages/admin/AdminRedemptions"));
 const AdminBypassCodes = lazy(() => import("./pages/admin/AdminBypassCodes"));
 const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
@@ -115,7 +115,7 @@ const WhitePaper = lazy(() => import("./pages/WhitePaper"));
 const ForProviders = lazy(() => import("./pages/ForProviders"));
 const TournamentGuide = lazy(() => import("./pages/guides/TournamentGuide"));
 const ChallengeGuide = lazy(() => import("./pages/guides/ChallengeGuide"));
-const QuestGuide = lazy(() => import("./pages/guides/QuestGuide"));
+
 
 // Moderator pages
 const ModeratorDashboard = lazy(() => import("./pages/moderator/ModeratorDashboard"));
@@ -206,10 +206,11 @@ const App = () => (
                 <Route path="/tournaments/:id/bracket" element={<TournamentBracket />} />
                 <Route path="/challenges" element={<ChallengesHub />} />
                 <Route path="/challenges/all" element={<Challenges />} />
+                <Route path="/challenges/competitive-gaming" element={<CompetitiveGaming />} />
                 <Route path="/challenges/game/:slug" element={<GameChallenges />} />
                 <Route path="/challenges/:id" element={<ChallengeDetail />} />
-                <Route path="/quests" element={<Quests />} />
-                <Route path="/quests/:id" element={<QuestDetail />} />
+                <Route path="/quests" element={<Navigate to="/challenges/competitive-gaming" replace />} />
+                <Route path="/quests/:id" element={<LegacyQuestRedirect />} />
                 <Route path="/pathways" element={<Pathways />} />
                 <Route path="/pathways/:slug" element={<MeritDetail />} />
                 <Route path="/servers" element={<GameServers />} />
@@ -236,7 +237,7 @@ const App = () => (
                 <Route path="/profile" element={<ProfileSettings />} />
                 <Route path="/guide/tournaments" element={<TournamentGuide />} />
                 <Route path="/guide/challenges" element={<ChallengeGuide />} />
-                <Route path="/guide/quests" element={<QuestGuide />} />
+                <Route path="/guide/quests" element={<Navigate to="/guide/challenges" replace />} />
               </Route>
 
               {/* Admin routes */}
@@ -245,7 +246,7 @@ const App = () => (
               <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
               <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
               <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
-              <Route path="/admin/quests" element={<AdminRoute><AdminQuests /></AdminRoute>} />
+              <Route path="/admin/quests" element={<Navigate to="/admin/challenges" replace />} />
               <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
               <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
