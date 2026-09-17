@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronRight, Swords } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import competitiveGamingBanner from "@/assets/challenges/competitive-gaming-banner.jpg";
 
 interface CompetitiveGamingTileProps {
   total: number;
@@ -17,9 +18,16 @@ const CompetitiveGamingTile = ({ total, completed, showProgress = false }: Compe
       to="/challenges/competitive-gaming"
       className="group relative block overflow-hidden rounded-2xl border border-primary/30 bg-card/80 backdrop-blur-sm transition-all hover:border-primary hover:shadow-[0_0_30px_-8px_hsl(var(--primary)/0.6)]"
     >
-      <div className="relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/25 via-background to-accent/20 md:h-44">
-        <Swords className="h-16 w-16 text-primary transition-transform duration-500 group-hover:scale-110" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+      <div className="relative h-40 overflow-hidden md:h-44">
+        <img
+          src={competitiveGamingBanner}
+          alt="Competitive Gaming challenges"
+          loading="lazy"
+          width={1536}
+          height={640}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute left-4 top-4">
           <Badge className="border-0">{total} challenge{total === 1 ? "" : "s"}</Badge>
         </div>

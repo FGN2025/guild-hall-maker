@@ -15,6 +15,7 @@ import ChallengeCard from "@/components/challenges/ChallengeCard";
 import DifficultyFilter, { type DifficultyValue } from "@/components/challenges/DifficultyFilter";
 import { useMyChallengeWindows } from "@/hooks/useChallengeWindow";
 import { useChallengeHub } from "@/hooks/useChallengeHub";
+import competitiveGamingBanner from "@/assets/challenges/competitive-gaming-banner.jpg";
 
 const CompetitiveGaming = () => {
   usePageTitle("Competitive Gaming Challenges");
@@ -87,15 +88,25 @@ const CompetitiveGaming = () => {
           </Link>
         </Button>
 
-        <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/80 to-accent/10 p-6 backdrop-blur-sm">
-          <h1 className="flex items-center gap-3 font-display text-3xl font-bold text-foreground">
-            <Swords className="h-8 w-8 text-primary" />
-            Competitive Gaming
-          </h1>
-          <p className="mt-1 max-w-2xl font-body text-muted-foreground">
-            Standard game challenges outside the tournament format. Complete the tasks, submit your
-            evidence and earn points.
-          </p>
+        <div className="relative min-h-56 overflow-hidden rounded-2xl border border-primary/30 md:min-h-64">
+          <img
+            src={competitiveGamingBanner}
+            alt="Competitive Gaming challenge arena"
+            width={1536}
+            height={640}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/20" />
+          <div className="relative flex min-h-56 flex-col justify-end p-6 md:min-h-64 md:p-8">
+            <h1 className="flex items-center gap-3 font-display text-3xl font-bold text-foreground md:text-4xl">
+              <Swords className="h-8 w-8 text-primary" />
+              Competitive Gaming
+            </h1>
+            <p className="mt-2 max-w-2xl font-body text-muted-foreground md:text-base">
+              Standard game challenges outside the tournament format. Complete the tasks, submit your
+              evidence and earn points.
+            </p>
+          </div>
         </div>
 
         {!user && (
