@@ -149,6 +149,17 @@ const TenantBranding = lazy(() => import("./pages/tenant/TenantBranding"));
 const TenantBanner = lazy(() => import("./pages/tenant/TenantBanner"));
 const TenantLandingPages = lazy(() => import("./pages/tenant/TenantLandingPages"));
 
+/** Merit pathways now live on the Merits site. */
+const MeritsRedirect = () => {
+  const { slug } = useParams();
+  useEffect(() => {
+    window.location.replace(
+      slug ? `https://merits.fgn.academy/pathways/${slug}` : "https://merits.fgn.academy"
+    );
+  }, [slug]);
+  return <PageLoader />;
+};
+
 /** Old quest links now resolve to the matching challenge. */
 const LegacyQuestRedirect = () => {
   const { id } = useParams();
@@ -215,8 +226,8 @@ const App = () => (
                 <Route path="/challenges/:id" element={<ChallengeDetail />} />
                 <Route path="/quests" element={<Navigate to="/challenges/competitive-gaming" replace />} />
                 <Route path="/quests/:id" element={<LegacyQuestRedirect />} />
-                <Route path="/pathways" element={<Pathways />} />
-                <Route path="/pathways/:slug" element={<MeritDetail />} />
+                <Route path="/pathways" element={<MeritsRedirect />} />
+                <Route path="/pathways/:slug" element={<MeritsRedirect />} />
                 <Route path="/servers" element={<GameServers />} />
                 <Route path="/game-servers" element={<GameServers />} />
                 <Route path="/white-paper" element={<WhitePaper />} />
