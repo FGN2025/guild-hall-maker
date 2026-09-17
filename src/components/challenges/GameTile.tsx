@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Award, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { getGameIdentity } from "@/lib/gameIdentity";
 import type { HubGame } from "@/hooks/useChallengeHub";
 
@@ -38,11 +38,6 @@ const GameTile = ({ game, showProgress = false, basePath = "/challenges/game" }:
           >
             {game.total} challenge{game.total === 1 ? "" : "s"}
           </Badge>
-          {game.pathway && (
-            <Badge variant="outline" className="gap-1 border-white/40 bg-black/50 text-white">
-              <Award className="h-3 w-3" /> {game.pathway.name}
-            </Badge>
-          )}
         </div>
       </div>
 

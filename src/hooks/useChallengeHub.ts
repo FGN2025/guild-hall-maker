@@ -33,7 +33,6 @@ export interface HubGame {
   challenges: HubChallenge[];
   total: number;
   completed: number;
-  pathway: { slug: string; name: string } | null;
 }
 
 /** All active challenges with their game, grouped into per-game "communities". */
@@ -68,23 +67,6 @@ export const useChallengeHub = () => {
     },
   });
 
-  /** challenge_id -> pathway for the merit it belongs to. */
-  const { data: challengePathways = {} } = useQuery({
-    queryKey: ["challenge-pathway-map"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("merit_challenges")
-        .select("challenge_id, merits(pathway_id, merit_pathways(slug, name))");
-      if (error) throw error;
-      const map: Record<string, { slug: string; name: string }> = {};
-      (data ?? []).forEach((row: any) => {
-        const p = row.merits?.merit_pathways;
-        if (p && row.challenge_id) map[row.challenge_id] = { slug: p.slug, name: p.name };
-      });
-      return map;
-    },
-  });
-
   const completedIds = new Set(
     (myEnrollments as any[]).filter((e) => e.status === "completed").map((e) => e.challenge_id)
   );
@@ -111,16 +93,12 @@ export const useChallengeHub = () => {
         challenges: [],
         total: 0,
         completed: 0,
-        pathway: null,
       });
     }
     const entry = byGame.get(slug)!;
     entry.challenges.push(c);
     entry.total += 1;
     if (completedIds.has(c.id)) entry.completed += 1;
-    if (!entry.pathway && (challengePathways as any)[c.id]) {
-      entry.pathway = (challengePathways as any)[c.id];
-    }
   });
 
   const games = [...byGame.values()].sort((a, b) => b.total - a.total);

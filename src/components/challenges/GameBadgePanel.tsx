@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Award, Lock, Trophy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -6,12 +5,11 @@ interface GameBadgePanelProps {
   gameName: string;
   completed: number;
   total: number;
-  pathway?: { slug: string; name: string } | null;
 }
 
 const TIERS = [1, 3, 5, 10];
 
-const GameBadgePanel = ({ gameName, completed, total, pathway }: GameBadgePanelProps) => {
+const GameBadgePanel = ({ gameName, completed, total }: GameBadgePanelProps) => {
   const pct = total > 0 ? (completed / total) * 100 : 0;
   const nextTier = TIERS.find((t) => completed < t && t <= total) ?? null;
 
@@ -25,13 +23,9 @@ const GameBadgePanel = ({ gameName, completed, total, pathway }: GameBadgePanelP
           <Trophy className="h-8 w-8" style={{ color: "hsl(var(--game-accent))" }} />
         </div>
         <div className="min-w-0">
-          <h2 className="font-display text-lg font-bold text-white">
-            {pathway ? pathway.name : `${gameName} Progress`}
-          </h2>
+          <h2 className="font-display text-lg font-bold text-white">{gameName} Progress</h2>
           <p className="font-body text-sm text-white/70">
-            {pathway
-              ? "Complete these challenges to work toward your merit badge."
-              : "Complete challenges to climb this game's tiers."}
+            Complete challenges to climb this game's tiers.
           </p>
         </div>
       </div>
@@ -83,15 +77,18 @@ const GameBadgePanel = ({ gameName, completed, total, pathway }: GameBadgePanelP
             Every tier unlocked for {gameName}. Nice work.
           </p>
         )}
-        {pathway && (
-          <Link
-            to={`/pathways`}
-            className="mt-2 inline-block font-body text-xs underline"
+        <p className="mt-2 font-body text-xs text-white/60">
+          These challenges can also count toward merits.{" "}
+          <a
+            href="https://merits.fgn.academy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
             style={{ color: "hsl(var(--game-accent))" }}
           >
-            View the {pathway.name} pathway
-          </Link>
-        )}
+            See merits.fgn.academy
+          </a>
+        </p>
       </div>
     </div>
   );
