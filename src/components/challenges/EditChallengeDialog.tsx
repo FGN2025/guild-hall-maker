@@ -101,6 +101,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setDescription(challenge.description || "");
       setDifficulty(challenge.difficulty || "beginner");
       setChallengeType(challenge.challenge_type || "one_time");
+      setTrack((challenge as any).track || "standard");
+
       setGameId(challenge.game_id || null);
       setPoints(challenge.points_first ?? 10);
       setStartDate(challenge.start_date ? challenge.start_date.slice(0, 10) : "");
