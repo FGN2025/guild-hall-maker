@@ -30,7 +30,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import AdminQuestsPanel from "@/components/quests/AdminQuestsPanel";
+
 import EvidenceReviewInbox from "@/components/challenges/EvidenceReviewInbox";
 
 const difficultyColor: Record<string, string> = {
@@ -338,14 +338,14 @@ const ModeratorChallenges = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
           <Target className="h-8 w-8 text-primary" />
-          Challenges & Quests
+          Challenges
         </h1>
       </div>
 
       <Tabs defaultValue="challenges" className="space-y-4">
         <TabsList>
           <TabsTrigger value="challenges" className="gap-1.5"><Target className="h-4 w-4" /> Challenges</TabsTrigger>
-          <TabsTrigger value="quests" className="gap-1.5"><Compass className="h-4 w-4" /> Quests</TabsTrigger>
+          
         </TabsList>
 
         <TabsContent value="challenges">
