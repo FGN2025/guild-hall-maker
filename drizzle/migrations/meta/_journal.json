@@ -8,6 +8,13 @@
       "when": 1789659483633,
       "tag": "0000_quests_to_competitive_gaming_challenges",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789694330131,
+      "tag": "0001_tighten_permissive_select_policies",
+      "breakpoints": true
     }
   ]
 }
