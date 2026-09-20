@@ -6,10 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ADMIN_NOTIFY_EMAILS = ["darcy@fgn.gg", "mj@fgn.gg"];
+const ADMIN_NOTIFY_EMAILS = ["admin@fgn.gg", "darcy@fgn.gg", "mj@fgn.gg"];
 
 interface Payload {
-  type: "redemption_update" | "new_challenge" | "new_quest" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed" | "access_request_approved" | "access_request_new" | "moderator_request" | "new_provider_inquiry";
+  type: "redemption_update" | "redemption_new" | "new_challenge" | "new_quest" | "tournament_starting" | "match_completed" | "achievement_earned" | "registration_confirmed" | "access_request_approved" | "access_request_new" | "moderator_request" | "new_provider_inquiry";
   record?: Record<string, unknown>;
   old_record?: Record<string, unknown>;
   target_email?: string;
@@ -286,6 +286,34 @@ Deno.serve(async (req) => {
                 <li><strong>ZIP Code:</strong> ${rec.zip_code || "Unknown"}</li>
               </ul>
               <p>Review this request in the <a href="https://play.fgn.gg/admin/access-requests" style="color: #00f0ff;">Admin Panel</a>.</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
+      }
+    } else if (type === "redemption_new") {
+      const rec = record || {};
+      const { data: prize } = await supabase.from("prizes").select("name").eq("id", rec.prize_id).maybeSingle();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("user_id", rec.user_id)
+        .maybeSingle();
+      const { data: userData } = await supabase.auth.admin.getUserById(rec.user_id);
+      for (const adminEmail of ADMIN_NOTIFY_EMAILS) {
+        emails.push({
+          to: adminEmail,
+          subject: `🎁 New Prize Redemption Request — FGN`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">New Prize Redemption Request</h1>
+              <p>A player has requested a prize and is waiting for review:</p>
+              <ul>
+                <li><strong>Player:</strong> ${profile?.display_name || "Unknown"}</li>
+                <li><strong>Email:</strong> ${userData?.user?.email || "Unknown"}</li>
+                <li><strong>Prize:</strong> ${prize?.name || "Unknown"}</li>
+                <li><strong>Points:</strong> ${rec.points_spent ?? "—"}</li>
+              </ul>
+              <p>Review it in the <a href="https://play.fgn.gg/admin/redemptions" style="color: #00f0ff;">Admin Panel</a>.</p>
               <p style="color: #888; font-size: 12px;">— FGN Platform</p>
             </div>`,
         });
