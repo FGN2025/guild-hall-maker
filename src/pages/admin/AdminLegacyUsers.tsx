@@ -7,6 +7,7 @@ import { Upload, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 function parseCSV(text: string): Record<string, string>[] {
   const lines = text.split("\n").filter((l) => l.trim());
@@ -127,9 +128,17 @@ const AdminLegacyUsers = () => {
             <p className="text-sm text-muted-foreground">
               Create auth accounts for all unmatched legacy users with emails. They will be pre-confirmed and can log in using "Forgot Password" to set their new password.
             </p>
-            <Button onClick={handleBulkMigrate} disabled={migrating} variant="default">
+            <Button onClick={() => setConfirmMigrate(true)} disabled={migrating} variant="default">
               {migrating ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Migrating...</> : "Migrate All Legacy Users"}
             </Button>
+            <ConfirmDialog
+              open={confirmMigrate}
+              onOpenChange={setConfirmMigrate}
+              title="Create accounts for all legacy users?"
+              description="This creates real sign-in accounts for every unmatched legacy user with an email address, in chunks of 200. It cannot be undone in bulk."
+              confirmLabel="Create accounts"
+              onConfirm={handleBulkMigrate}
+            />
             {migrationLog.length > 0 && (
               <div className="mt-4 rounded-md border bg-muted/30 p-3 max-h-48 overflow-auto text-xs font-mono space-y-1">
                 {migrationLog.map((line, i) => <div key={i}>{line}</div>)}
