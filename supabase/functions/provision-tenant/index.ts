@@ -160,6 +160,14 @@ serve(async (req) => {
       }
       userId = newUser.user.id;
       logStep("Created auth user", { userId });
+
+      // Send the confirmation email — the account stays unusable until the
+      // address is verified.
+      const { error: confirmErr } = await supabaseAdmin.auth.resend({
+        type: "signup",
+        email: normalizedEmail,
+      });
+      if (confirmErr) logStep("Confirmation email failed", { error: confirmErr.message });
     }
 
     // Create tenant
