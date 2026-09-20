@@ -21,6 +21,21 @@ const Games = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [hasTournaments, setHasTournaments] = useState(false);
+  const [hasChallenges, setHasChallenges] = useState(false);
+
+  const { data: challengeGameNames } = useQuery({
+    queryKey: ["live-challenge-game-names"],
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const { data } = await supabase
+        .from("challenges")
+        .select("game_id, games(name)")
+        .eq("is_active", true)
+        .or(`start_date.is.null,start_date.lte.${now}`)
+        .or(`end_date.is.null,end_date.gte.${now}`);
+      return [...new Set((data ?? []).map((c: any) => c.games?.name).filter(Boolean))];
+    },
+  });
 
   const { data: tournamentGameNames } = useQuery({
     queryKey: ["tournament-game-names"],
