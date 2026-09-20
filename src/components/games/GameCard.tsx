@@ -3,7 +3,7 @@ import type { Game } from "@/hooks/useGames";
 import { Badge } from "@/components/ui/badge";
 import { Gamepad2 } from "lucide-react";
 
-const GameCard = ({ game }: { game: Game }) => {
+const GameCard = ({ game, hasLiveChallenge = false }: { game: Game; hasLiveChallenge?: boolean }) => {
   return (
     <Link
       to={`/games/${game.slug}`}
@@ -23,6 +23,11 @@ const GameCard = ({ game }: { game: Game }) => {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+        {hasLiveChallenge && (
+          <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-heading shadow-lg">
+            Live Challenge
+          </Badge>
+        )}
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <h3 className="font-display text-lg font-bold text-foreground tracking-wide truncate">
             {game.name}

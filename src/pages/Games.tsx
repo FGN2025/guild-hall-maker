@@ -21,6 +21,21 @@ const Games = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [hasTournaments, setHasTournaments] = useState(false);
+  const [hasChallenges, setHasChallenges] = useState(false);
+
+  const { data: challengeGameNames } = useQuery({
+    queryKey: ["live-challenge-game-names"],
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const { data } = await supabase
+        .from("challenges")
+        .select("game_id, games(name)")
+        .eq("is_active", true)
+        .or(`start_date.is.null,start_date.lte.${now}`)
+        .or(`end_date.is.null,end_date.gte.${now}`);
+      return [...new Set((data ?? []).map((c: any) => c.games?.name).filter(Boolean))];
+    },
+  });
 
   const { data: tournamentGameNames } = useQuery({
     queryKey: ["tournament-game-names"],
@@ -36,9 +51,10 @@ const Games = () => {
       if (search && !g.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (category !== "All" && g.category !== category) return false;
       if (hasTournaments && !(tournamentGameNames ?? []).includes(g.name)) return false;
+      if (hasChallenges && !(challengeGameNames ?? []).includes(g.name)) return false;
       return true;
     });
-  }, [games, search, category, hasTournaments, tournamentGameNames]);
+  }, [games, search, category, hasTournaments, tournamentGameNames, hasChallenges, challengeGameNames]);
 
   return (
     <>
@@ -85,6 +101,16 @@ const Games = () => {
                 Has Tournaments
               </Label>
             </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-card border border-border">
+              <Checkbox
+                id="has-challenges"
+                checked={hasChallenges}
+                onCheckedChange={(v) => setHasChallenges(!!v)}
+              />
+              <Label htmlFor="has-challenges" className="text-sm font-heading cursor-pointer whitespace-nowrap">
+                Has Challenges
+              </Label>
+            </div>
           </div>
 
           {/* Results count */}
@@ -115,7 +141,7 @@ const Games = () => {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
             {filtered.map(game => (
-              <GameCard key={game.id} game={game} />
+              <GameCard key={game.id} game={game} hasLiveChallenge={(challengeGameNames ?? []).includes(game.name)} />
             ))}
           </div>
         )}
