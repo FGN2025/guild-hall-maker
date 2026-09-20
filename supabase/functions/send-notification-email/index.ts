@@ -290,6 +290,34 @@ Deno.serve(async (req) => {
             </div>`,
         });
       }
+    } else if (type === "redemption_new") {
+      const rec = record || {};
+      const { data: prize } = await supabase.from("prizes").select("name").eq("id", rec.prize_id).maybeSingle();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("user_id", rec.user_id)
+        .maybeSingle();
+      const { data: userData } = await supabase.auth.admin.getUserById(rec.user_id);
+      for (const adminEmail of ADMIN_NOTIFY_EMAILS) {
+        emails.push({
+          to: adminEmail,
+          subject: `🎁 New Prize Redemption Request — FGN`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff;">
+              <h1 style="color: #00f0ff;">New Prize Redemption Request</h1>
+              <p>A player has requested a prize and is waiting for review:</p>
+              <ul>
+                <li><strong>Player:</strong> ${profile?.display_name || "Unknown"}</li>
+                <li><strong>Email:</strong> ${userData?.user?.email || "Unknown"}</li>
+                <li><strong>Prize:</strong> ${prize?.name || "Unknown"}</li>
+                <li><strong>Points:</strong> ${rec.points_spent ?? "—"}</li>
+              </ul>
+              <p>Review it in the <a href="https://play.fgn.gg/admin/redemptions" style="color: #00f0ff;">Admin Panel</a>.</p>
+              <p style="color: #888; font-size: 12px;">— FGN Platform</p>
+            </div>`,
+        });
+      }
     } else if (type === "new_provider_inquiry") {
       const rec = record || {};
       for (const adminEmail of ADMIN_NOTIFY_EMAILS) {
