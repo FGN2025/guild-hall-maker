@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Plus, RotateCcw, Loader2, Gamepad2 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const AdminSeasons = () => {
   const queryClient = useQueryClient();
@@ -79,6 +80,7 @@ const AdminSeasons = () => {
   });
 
   const [rotating, setRotating] = useState(false);
+  const [confirmRotate, setConfirmRotate] = useState(false);
   const handleRotate = async () => {
     setRotating(true);
     try {
@@ -100,10 +102,19 @@ const AdminSeasons = () => {
           <p className="text-sm text-muted-foreground mt-1">Manage competitive seasons per game.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRotate} disabled={rotating}>
+          <Button variant="outline" onClick={() => setConfirmRotate(true)} disabled={rotating}>
             {rotating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
             Rotate Seasons
           </Button>
+          <ConfirmDialog
+            open={confirmRotate}
+            onOpenChange={setConfirmRotate}
+            title="Rotate all seasons?"
+            description="This closes the current season for every game and starts a new one. Standings are snapshotted and cannot be un-rotated."
+            confirmLabel="Rotate seasons"
+            variant="destructive"
+            onConfirm={handleRotate}
+          />
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button>
