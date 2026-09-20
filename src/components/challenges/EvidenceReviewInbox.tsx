@@ -306,30 +306,53 @@ export default function EvidenceReviewInbox({ mode }: Props) {
                 open={isOpen}
                 onOpenChange={(o) => setOpenIds((p) => ({ ...p, [enrollment.id]: o }))}
               >
-                <CollapsibleTrigger className="w-full text-left hover:bg-accent/40 transition-colors">
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-foreground truncate">{enrollment.challenges?.name || "Challenge"}</p>
-                        <span className="text-xs text-muted-foreground">·</span>
-                        <p className="text-sm text-muted-foreground truncate">{enrollment.display_name}</p>
-                        {enrollment.challenges?.games?.name && (
-                          <Badge variant="outline" className="text-[10px] h-5">{enrollment.challenges.games.name}</Badge>
-                        )}
+                <div className="flex items-stretch hover:bg-accent/40 transition-colors">
+                  <CollapsibleTrigger className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium text-foreground truncate">{enrollment.challenges?.name || "Challenge"}</p>
+                          <span className="text-xs text-muted-foreground">·</span>
+                          <p className="text-sm text-muted-foreground truncate">{enrollment.display_name}</p>
+                          {enrollment.challenges?.games?.name && (
+                            <Badge variant="outline" className="text-[10px] h-5">{enrollment.challenges.games.name}</Badge>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {enrollment.status === "submitted"
+                            ? `Submitted ${format(new Date(enrollment.updated_at || enrollment.enrolled_at), "MMM d, h:mm a")}`
+                            : enrollment.status === "completed" || enrollment.status === "rejected"
+                              ? `${enrollment.status === "completed" ? "Approved" : "Rejected"} ${format(new Date(enrollment.updated_at || enrollment.enrolled_at), "MMM d, h:mm a")}`
+                              : `Enrolled ${format(new Date(enrollment.enrolled_at), "MMM d")}`}
+                          {totalEvidence > 0 && ` · ${approvedCount}/${totalEvidence} evidence approved`}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {enrollment.status === "submitted"
-                          ? `Submitted ${format(new Date(enrollment.updated_at || enrollment.enrolled_at), "MMM d, h:mm a")}`
-                          : enrollment.status === "completed" || enrollment.status === "rejected"
-                            ? `${enrollment.status === "completed" ? "Approved" : "Rejected"} ${format(new Date(enrollment.updated_at || enrollment.enrolled_at), "MMM d, h:mm a")}`
-                            : `Enrolled ${format(new Date(enrollment.enrolled_at), "MMM d")}`}
-                        {totalEvidence > 0 && ` · ${approvedCount}/${totalEvidence} evidence approved`}
-                      </p>
                     </div>
-                    <Badge variant="outline" className={`capitalize shrink-0 ${statusBadge[enrollment.status] || ""}`}>{enrollment.status}</Badge>
+                  </CollapsibleTrigger>
+                  <div className="flex items-center gap-2 pr-4 py-3 shrink-0">
+                    {isSubmitted ? (
+                      <>
+                        <Button
+                          size="sm" className="gap-1 h-8 text-xs"
+                          onClick={(ev) => { ev.stopPropagation(); updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "completed" }); }}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                        </Button>
+                        <Button
+                          size="sm" variant="destructive" className="gap-1 h-8 text-xs"
+                          onClick={(ev) => { ev.stopPropagation(); updateStatusMutation.mutate({ enrollmentId: enrollment.id, status: "rejected" }); }}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          <XCircle className="h-3.5 w-3.5" /> Decline
+                        </Button>
+                      </>
+                    ) : (
+                      <Badge variant="outline" className={`capitalize shrink-0 ${statusBadge[enrollment.status] || ""}`}>{enrollment.status}</Badge>
+                    )}
                   </div>
-                </CollapsibleTrigger>
+                </div>
 
                 <CollapsibleContent>
                   <div className="px-4 pb-4 space-y-4 border-t border-border/60 bg-background/40">
