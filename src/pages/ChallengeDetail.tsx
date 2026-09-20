@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useQuery } from "@tanstack/react-query";
 import usePageTitle from "@/hooks/usePageTitle";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -66,6 +67,7 @@ const ChallengeDetail = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [unenrollConfirmOpen, setUnenrollConfirmOpen] = useState(false);
+  const [evidenceToDelete, setEvidenceToDelete] = useState<string | null>(null);
   const { copying, duplicateChallenge } = useCopyContent();
 
   // Fetch completion record to check academy sync status
@@ -309,15 +311,29 @@ const ChallengeDetail = () => {
                             )}
                           </div>
                           {canUpload && (
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-1.5 right-1.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => deleteEvidence(e.id)}
-                              disabled={deletingEvidence}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-1.5 right-1.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => setEvidenceToDelete(e.id)}
+                                disabled={deletingEvidence}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <ConfirmDialog
+                                open={evidenceToDelete === e.id}
+                                onOpenChange={(open) => !open && setEvidenceToDelete(null)}
+                                title="Delete this evidence?"
+                                description="This permanently removes the uploaded file from your submission. You'll need to upload it again if you change your mind."
+                                confirmLabel="Delete"
+                                variant="destructive"
+                                onConfirm={() => {
+                                  deleteEvidence(e.id);
+                                  setEvidenceToDelete(null);
+                                }}
+                              />
+                            </>
                           )}
                           <div className="flex items-center gap-1.5">
                             <Badge className={`text-[10px] px-1.5 py-0 ${statusColor}`}>{evidenceStatus}</Badge>
