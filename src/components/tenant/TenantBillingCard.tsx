@@ -117,20 +117,26 @@ const TenantBillingCard = () => {
                   <span className="text-sm font-normal text-muted-foreground">/{plan.interval}</span>
                 </p>
                 <p className="text-xs text-muted-foreground min-h-[2.5rem]">{plan.description}</p>
-                <Button
-                  onClick={() => subscribe(plan.price_id)}
-                  disabled={!!actionLoading || isCurrent || isPlaceholder}
-                  variant={isCurrent ? "outline" : canUpgrade ? "default" : "secondary"}
-                  className="w-full gap-2"
-                  size="sm"
-                >
-                  {actionLoading === "subscribe" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Icon className="h-4 w-4" />
-                  )}
-                  {label}
-                </Button>
+                {isPlaceholder ? (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    Not available yet — contact us to get on this plan.
+                  </p>
+                ) : (
+                  <Button
+                    onClick={() => subscribe(plan.price_id)}
+                    disabled={!!actionLoading || isCurrent}
+                    variant={isCurrent ? "outline" : canUpgrade ? "default" : "secondary"}
+                    className="w-full gap-2"
+                    size="sm"
+                  >
+                    {actionLoading === "subscribe" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Icon className="h-4 w-4" />
+                    )}
+                    {label}
+                  </Button>
+                )}
               </div>
             );
           })}

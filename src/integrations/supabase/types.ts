@@ -3876,6 +3876,27 @@ export type Database = {
         }
         Relationships: []
       }
+      provision_attempts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip?: string | null
+        }
+        Relationships: []
+      }
       quest_chain_completions: {
         Row: {
           academy_sync_attempts: number

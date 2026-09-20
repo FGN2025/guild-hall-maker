@@ -50,7 +50,48 @@ serve(async (req) => {
       );
     }
 
-    logStep("Starting provision", { orgName, email });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]{2,}$/.test(normalizedEmail)) {
+      return new Response(
+        JSON.stringify({ error: "Please enter a valid email address" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      null;
+    const sinceIso = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+    const { count: emailAttempts } = await supabaseAdmin
+      .from("provision_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("email", normalizedEmail)
+      .gte("created_at", sinceIso);
+
+    let ipAttempts = 0;
+    if (ip) {
+      const { count } = await supabaseAdmin
+        .from("provision_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("ip", ip)
+        .gte("created_at", sinceIso);
+      ipAttempts = count ?? 0;
+    }
+
+    if ((emailAttempts ?? 0) >= 3 || ipAttempts >= 5) {
+      logStep("Rate limited", { email: normalizedEmail, emailAttempts, ipAttempts });
+      return new Response(
+        JSON.stringify({ error: "Too many sign-up attempts. Please try again in an hour." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    await supabaseAdmin.from("provision_attempts").insert({ email: normalizedEmail, ip });
+
+    logStep("Starting provision", { orgName, email: normalizedEmail });
 
     // Check if email is banned
     const { data: banned } = await supabaseAdmin
@@ -119,6 +160,14 @@ serve(async (req) => {
       }
       userId = newUser.user.id;
       logStep("Created auth user", { userId });
+
+      // Send the confirmation email — the account stays unusable until the
+      // address is verified.
+      const { error: confirmErr } = await supabaseAdmin.auth.resend({
+        type: "signup",
+        email: normalizedEmail,
+      });
+      if (confirmErr) logStep("Confirmation email failed", { error: confirmErr.message });
     }
 
     // Create tenant
