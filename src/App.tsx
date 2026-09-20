@@ -74,7 +74,6 @@ const TenantEventPage = lazy(() => import("./pages/TenantEventPage"));
 const TenantEventDetail = lazy(() => import("./pages/TenantEventDetail"));
 const EmbedCalendar = lazy(() => import("./pages/EmbedCalendar"));
 const WebPageView = lazy(() => import("./pages/WebPageView"));
-const MediaLibrary = lazy(() => import("./pages/MediaLibrary"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 // Admin pages
