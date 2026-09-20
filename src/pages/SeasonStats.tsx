@@ -106,7 +106,7 @@ const SeasonStats = () => {
         <div className="flex flex-wrap items-center gap-3 mb-8 p-4 rounded-xl border border-border bg-card">
           <Gamepad2 className="h-4 w-4 text-muted-foreground shrink-0" />
           <Select value={filterGameId} onValueChange={(v) => { setFilterGameId(v); setSelectedSeasonId(null); }}>
-            <SelectTrigger className="w-[180px] h-9 text-sm bg-background border-border">
+            <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm bg-background border-border">
               <SelectValue placeholder="All Games" />
             </SelectTrigger>
             <SelectContent>
@@ -122,7 +122,7 @@ const SeasonStats = () => {
             value={effectiveSeasonId ?? ""}
             onValueChange={(v) => setSelectedSeasonId(v)}
           >
-            <SelectTrigger className="w-[220px] h-9 text-sm bg-background border-border">
+            <SelectTrigger className="w-full sm:w-[220px] h-9 text-sm bg-background border-border">
               <SelectValue placeholder="Select season" />
             </SelectTrigger>
             <SelectContent>

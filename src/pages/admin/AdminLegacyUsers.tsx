@@ -33,6 +33,7 @@ const AdminLegacyUsers = () => {
   const [migrating, setMigrating] = useState(false);
   const [migrationLog, setMigrationLog] = useState<string[]>([]);
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
+  const [confirmMigrate, setConfirmMigrate] = useState(false);
   const queryClient = useQueryClient();
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +71,7 @@ const AdminLegacyUsers = () => {
   };
 
   const handleBulkMigrate = async () => {
-    if (!confirm("This will create auth accounts for unmatched legacy users in chunks of 200. Continue?")) return;
+    setConfirmMigrate(false);
     setMigrating(true);
     setMigrationLog([]);
     const chunkSize = 200;
