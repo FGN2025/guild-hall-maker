@@ -1,5 +1,7 @@
 # Auto-assign a Discord role on registration
 
+**Status: PARKED by the user on 2026-09-20. Revisit no earlier than 2026-09-21 (24-hour reminder requested).** The full assessment below is preserved so the work can resume without re-investigation.
+
 ## Assessment — what the current integration can do
 
 Yes, this is achievable with what already exists, with one important caveat about *when* the role can be given.
