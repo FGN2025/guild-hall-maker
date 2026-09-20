@@ -15,6 +15,7 @@ const sidebarItems = [
   { to: "/admin/redemptions", label: "Redemptions", icon: Gift },
   { to: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { to: "/admin/media", label: "Media Library", icon: Image },
+  { to: "/admin/calendar-images", label: "Calendar Images", icon: Calendar },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/access-requests", label: "Access Requests", icon: UserCheck },
   { to: "/admin/discord-bypass", label: "Discord Bypass", icon: ShieldCheck },

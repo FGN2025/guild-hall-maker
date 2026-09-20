@@ -158,6 +158,7 @@ const Tournaments = () => {
                 <SelectItem value="open">Open</SelectItem>
                 <SelectItem value="registered">Registered</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="past">Completed / Past</SelectItem>
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={setSortBy}>
