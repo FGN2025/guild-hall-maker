@@ -24,6 +24,8 @@ const AdminUsers = () => {
 
   // Delete / ban confirm dialog state
   const [confirmAction, setConfirmAction] = useState<{ userId: string; ban: boolean } | null>(null);
+  const [pendingTenant, setPendingTenant] = useState<{ userId: string; userName: string; tenantId: string | null; tenantName: string } | null>(null);
+  const [pendingRole, setPendingRole] = useState<{ userId: string; userName: string; tenantId: string; role: string; roleLabel: string } | null>(null);
   const { data: tenants = [] } = useTenantsList();
 
   // Legacy tab state
@@ -201,7 +203,12 @@ const AdminUsers = () => {
                           <Select
                             value={u.tenant_id ?? "none"}
                             onValueChange={(v) =>
-                              setUserTenant.mutate({ userId: u.user_id, tenantId: v === "none" ? null : v })
+                              setPendingTenant({
+                                userId: u.user_id,
+                                userName: u.display_name ?? u.email ?? "This user",
+                                tenantId: v === "none" ? null : v,
+                                tenantName: v === "none" ? "no provider" : (tenants.find((t) => t.id === v)?.name ?? "the selected provider"),
+                              })
                             }
                             disabled={setUserTenant.isPending}
                           >
@@ -225,7 +232,15 @@ const AdminUsers = () => {
                         ) : (
                           <Select
                             value={u.tenant_role ?? "none"}
-                            onValueChange={(val) => setTenantRole.mutate({ userId: u.user_id, tenantId: u.tenant_id!, role: val })}
+                            onValueChange={(val) =>
+                              setPendingRole({
+                                userId: u.user_id,
+                                userName: u.display_name ?? u.email ?? "This user",
+                                tenantId: u.tenant_id!,
+                                role: val,
+                                roleLabel: val === "none" ? "None" : val === "admin" ? "Tenant Admin" : val === "manager" ? "Manager" : "Marketing",
+                              })
+                            }
                             disabled={setTenantRole.isPending}
                           >
                             <SelectTrigger className="w-[130px] text-xs">
@@ -461,6 +476,45 @@ const AdminUsers = () => {
             const action = { ...confirmAction };
             setConfirmAction(null);
             deleteUser.mutate({ userId: action.userId, ban: action.ban });
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!pendingTenant}
+        onOpenChange={(open) => { if (!open) setPendingTenant(null); }}
+        title="Change this person's provider?"
+        description={
+          pendingTenant
+            ? `${pendingTenant.userName} will be moved to ${pendingTenant.tenantName}. This changes what they can see and any provider role they hold.`
+            : ""
+        }
+        confirmLabel="Change provider"
+        onConfirm={() => {
+          if (pendingTenant) {
+            const p = { ...pendingTenant };
+            setPendingTenant(null);
+            setUserTenant.mutate({ userId: p.userId, tenantId: p.tenantId });
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!pendingRole}
+        onOpenChange={(open) => { if (!open) setPendingRole(null); }}
+        title="Change this person's provider role?"
+        description={
+          pendingRole
+            ? `${pendingRole.userName} will be set to "${pendingRole.roleLabel}" for their provider. Admin and Manager roles grant access to provider data and settings.`
+            : ""
+        }
+        confirmLabel="Change role"
+        variant="destructive"
+        onConfirm={() => {
+          if (pendingRole) {
+            const p = { ...pendingRole };
+            setPendingRole(null);
+            setTenantRole.mutate({ userId: p.userId, tenantId: p.tenantId, role: p.role });
           }
         }}
       />

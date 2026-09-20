@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +38,7 @@ const TournamentDetail = () => {
   const { register, unregister, isRegistering } = useTournaments();
   const [inviteCode, setInviteCode] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
 
 
   const { data: tournament, isLoading } = useQuery({
@@ -259,14 +261,26 @@ const TournamentDetail = () => {
 
               {user ? (
                 t.is_registered ? (
-                  <Button
-                    variant="secondary"
-                    className="w-full font-heading tracking-wide py-5"
-                    onClick={() => unregister(t.id)}
-                    disabled={isRegistering}
-                  >
-                    Cancel Registration
-                  </Button>
+                  <>
+                    <Button
+                      variant="secondary"
+                      className="w-full font-heading tracking-wide py-5"
+                      onClick={() => setConfirmCancelOpen(true)}
+                      disabled={isRegistering}
+                    >
+                      Cancel Registration
+                    </Button>
+                    <ConfirmDialog
+                      open={confirmCancelOpen}
+                      onOpenChange={setConfirmCancelOpen}
+                      title="Cancel your registration?"
+                      description={`You'll be removed from "${t.name}". If it fills up, you may not be able to get back in.`}
+                      confirmLabel="Yes, cancel it"
+                      cancelLabel="Keep my spot"
+                      variant="destructive"
+                      onConfirm={() => unregister(t.id)}
+                    />
+                  </>
                 ) : (
                   <div className="space-y-2">
                     {(t as any).requires_invite_code && (

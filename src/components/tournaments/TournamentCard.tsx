@@ -1,4 +1,5 @@
-import { memo } from "react";
+import { memo, useState } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Calendar, Users, GitBranch, Settings, Trophy } from "lucide-react";
 import PrizeDisplay from "@/components/tournaments/PrizeDisplay";
 import AchievementBadgeDisplay from "@/components/shared/AchievementBadgeDisplay";
@@ -33,6 +34,7 @@ const TournamentCard = ({
   isRegistering,
 }: TournamentCardProps) => {
   const navigate = useNavigate();
+  const [confirmUnregister, setConfirmUnregister] = useState(false);
   const { user } = useAuth();
   const canSeeRegCount = useCanSeeRegistrationCounts();
   const isFull = t.is_full;
@@ -134,7 +136,7 @@ const TournamentCard = ({
             <Button
               variant="secondary"
               className="flex-1 font-heading tracking-wide"
-              onClick={() => onUnregister(t.id)}
+              onClick={() => setConfirmUnregister(true)}
               disabled={isRegistering}
             >
               Unregister
@@ -158,6 +160,16 @@ const TournamentCard = ({
         )}
       </div>
       </div>
+      <ConfirmDialog
+        open={confirmUnregister}
+        onOpenChange={setConfirmUnregister}
+        title="Cancel your registration?"
+        description={`You'll be removed from "${t.name}". If it fills up, you may not be able to get back in.`}
+        confirmLabel="Yes, unregister"
+        cancelLabel="Keep my spot"
+        variant="destructive"
+        onConfirm={() => onUnregister?.(t.id)}
+      />
     </div>
   );
 };

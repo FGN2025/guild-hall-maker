@@ -74,7 +74,6 @@ const TenantEventPage = lazy(() => import("./pages/TenantEventPage"));
 const TenantEventDetail = lazy(() => import("./pages/TenantEventDetail"));
 const EmbedCalendar = lazy(() => import("./pages/EmbedCalendar"));
 const WebPageView = lazy(() => import("./pages/WebPageView"));
-const MediaLibrary = lazy(() => import("./pages/MediaLibrary"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 // Admin pages
@@ -145,9 +144,6 @@ const TenantGuide = lazy(() => import("./pages/tenant/TenantGuide"));
 const TenantCodes = lazy(() => import("./pages/tenant/TenantCodes"));
 const TenantMarketingAssets = lazy(() => import("./pages/tenant/TenantMarketingAssets"));
 const TenantWebPages = lazy(() => import("./pages/tenant/TenantWebPages"));
-const TenantBranding = lazy(() => import("./pages/tenant/TenantBranding"));
-const TenantBanner = lazy(() => import("./pages/tenant/TenantBanner"));
-const TenantLandingPages = lazy(() => import("./pages/tenant/TenantLandingPages"));
 
 /** Merit pathways now live on the Merits site. */
 const MeritsRedirect = () => {
