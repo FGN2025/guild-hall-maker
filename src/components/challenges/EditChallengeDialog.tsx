@@ -133,6 +133,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setAcademyNextStepUrl(challenge.academy_next_step_url || "");
       setAcademyNextStepLabel(challenge.academy_next_step_label || "");
       setPointsOverrideReason(challenge.points_override_reason || "");
+      setContentClassification((challenge as any).content_classification || "");
+      setSimulationActivityId((challenge as any).simulation_activity_id || "");
       setSkillTags(Array.isArray(challenge.skill_tags) ? challenge.skill_tags : []);
     }
   }, [challenge, open]);
