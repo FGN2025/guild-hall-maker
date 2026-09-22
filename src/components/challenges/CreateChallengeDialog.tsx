@@ -135,6 +135,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         points_override_reason: form.points_override_reason?.trim() || null,
         points_overridden_by: form.points_override_reason?.trim() ? user.id : null,
         skill_tags: form.skill_tags,
+        content_classification: form.content_classification || null,
       } as any).select().single();
       if (error) throw error;
 
