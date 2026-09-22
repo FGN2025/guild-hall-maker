@@ -85,9 +85,28 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
     e.target.value = "";
   };
 
+  const { data: simActivities = [] } = useQuery({
+    queryKey: ["simulation-activities-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("simulation_activities")
+        .select("id, canonical_name, game_id, status")
+        .neq("status", "retired")
+        .order("canonical_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
+      if (!form.content_classification) {
+        throw new Error("Choose a content classification (Simulation or Entertainment only)");
+      }
+      if (form.content_classification === "simulation" && !form.simulation_activity_id) {
+        throw new Error("Simulation challenges need a canonical simulation activity before publishing");
+      }
 
       let coverUrl = form.cover_image_url || null;
 
