@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       case "challenges": {
         let q = adminClient
           .from("challenges")
-          .select("id, name, description, game_id, challenge_type, difficulty, points_reward, estimated_minutes, start_date, end_date, requires_evidence, cover_image_url, is_active, is_featured, created_at, updated_at, games(name)")
+          .select("id, name, description, game_id, challenge_type, difficulty, points_reward, estimated_minutes, start_date, end_date, requires_evidence, cover_image_url, is_active, is_featured, created_at, updated_at, simulation_activity_id, content_classification, games(name)")
           .order("created_at", { ascending: false })
           .limit(rowLimit);
         if (!include_inactive) q = q.eq("is_active", true);
@@ -112,18 +112,119 @@ Deno.serve(async (req) => {
         if (challengeIds.length > 0) {
           const { data: taskData } = await adminClient
             .from("challenge_tasks")
-            .select("challenge_id, title, description, display_order")
+            .select("id, challenge_id, title, description, display_order")
             .in("challenge_id", challengeIds)
             .order("display_order", { ascending: true });
           tasks = taskData || [];
+        }
+
+        const activityIds = [...new Set((data || []).map((c: any) => c.simulation_activity_id).filter(Boolean))];
+        let activities: any[] = [];
+        if (activityIds.length > 0) {
+          const { data: actData } = await adminClient
+            .from("simulation_activities")
+            .select("id, canonical_name, canonical_slug, canonical_description, game_id, game_version, activity_category, industry_domain, status, schema_version, updated_at")
+            .in("id", activityIds);
+          activities = actData || [];
         }
 
         result = (data || []).map((c: any) => ({
           ...c,
           game_name: c.games?.name || null,
           games: undefined,
+          simulation_activity: activities.find((a: any) => a.id === c.simulation_activity_id) || null,
           tasks: tasks.filter((t: any) => t.challenge_id === c.id),
         }));
+        break;
+      }
+
+      case "simulation-activities": {
+        let q = adminClient
+          .from("simulation_activities")
+          .select("id, canonical_name, canonical_slug, canonical_description, game_id, game_version, platform_applicability, activity_category, industry_domain, status, provenance, schema_version, created_at, updated_at, games(name, slug)")
+          .order("canonical_name")
+          .limit(rowLimit);
+        if (!include_inactive) q = q.neq("status", "retired");
+        if (since) q = q.gte("updated_at", since);
+        const { data, error } = await q;
+        if (error) throw error;
+
+        const ids = (data || []).map((a: any) => a.id);
+        let links: any[] = [];
+        if (ids.length > 0) {
+          const { data: linkData } = await adminClient
+            .from("simulation_activity_challenges")
+            .select("simulation_activity_id, challenge_id, challenge_task_id, mapping_status, is_primary")
+            .in("simulation_activity_id", ids);
+          links = linkData || [];
+        }
+
+        result = (data || []).map((a: any) => ({
+          ...a,
+          simulation_activity_id: a.id,
+          game_name: a.games?.name || null,
+          game_slug: a.games?.slug || null,
+          games: undefined,
+          challenges: links.filter((l: any) => l.simulation_activity_id === a.id),
+        }));
+        break;
+      }
+
+      case "simulation-activity": {
+        const activityId = body.simulation_activity_id || body.id;
+        if (!activityId) {
+          return new Response(JSON.stringify({ error: "simulation_activity_id required" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { data: activity, error: aErr } = await adminClient
+          .from("simulation_activities")
+          .select("id, canonical_name, canonical_slug, canonical_description, game_id, game_version, platform_applicability, activity_category, industry_domain, status, provenance, schema_version, created_at, updated_at, games(name, slug)")
+          .eq("id", activityId)
+          .maybeSingle();
+        if (aErr) throw aErr;
+        if (!activity) {
+          return new Response(JSON.stringify({ error: "Simulation activity not found" }), {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const { data: links } = await adminClient
+          .from("simulation_activity_challenges")
+          .select("challenge_id, challenge_task_id, mapping_status, is_primary")
+          .eq("simulation_activity_id", activityId);
+
+        const linkedChallengeIds = [...new Set((links || []).map((l: any) => l.challenge_id))];
+        let linkedChallenges: any[] = [];
+        let linkedTasks: any[] = [];
+        if (linkedChallengeIds.length > 0) {
+          const { data: chData } = await adminClient
+            .from("challenges")
+            .select("id, name, description, game_id, difficulty, is_active, content_classification, updated_at")
+            .in("id", linkedChallengeIds);
+          linkedChallenges = chData || [];
+          const { data: tData } = await adminClient
+            .from("challenge_tasks")
+            .select("id, challenge_id, title, description, display_order")
+            .in("challenge_id", linkedChallengeIds)
+            .order("display_order", { ascending: true });
+          linkedTasks = tData || [];
+        }
+
+        result = {
+          ...activity,
+          simulation_activity_id: activity.id,
+          game_name: (activity as any).games?.name || null,
+          game_slug: (activity as any).games?.slug || null,
+          games: undefined,
+          mappings: links || [],
+          challenges: linkedChallenges.map((c: any) => ({
+            ...c,
+            tasks: linkedTasks.filter((t: any) => t.challenge_id === c.id),
+          })),
+        };
         break;
       }
 
