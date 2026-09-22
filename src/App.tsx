@@ -258,6 +258,7 @@ const App = () => (
               <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
               <Route path="/admin/tournaments" element={<AdminRoute><AdminTournaments /></AdminRoute>} />
               <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
+              <Route path="/admin/activity-mapping" element={<AdminRoute><AdminActivityMapping /></AdminRoute>} />
               <Route path="/admin/quests" element={<Navigate to="/admin/challenges" replace />} />
               <Route path="/admin/bypass-codes" element={<AdminRoute><AdminBypassCodes /></AdminRoute>} />
               <Route path="/admin/tenants" element={<AdminRoute><AdminTenants /></AdminRoute>} />
