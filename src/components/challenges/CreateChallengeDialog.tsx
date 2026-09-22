@@ -151,6 +151,17 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         const { error: taskError } = await supabase.from("challenge_tasks").insert(tasks as any);
         if (taskError) throw taskError;
       }
+
+      if (challenge && form.content_classification === "simulation" && form.simulation_activity_id) {
+        const { error: mapErr } = await supabase.from("simulation_activity_challenges").insert({
+          simulation_activity_id: form.simulation_activity_id,
+          challenge_id: challenge.id,
+          challenge_task_id: null,
+          is_primary: true,
+          mapping_status: "matched",
+        } as any);
+        if (mapErr) throw mapErr;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invalidateQueryKey });
