@@ -346,7 +346,7 @@ Deno.serve(async (req) => {
 
       default:
         return new Response(
-          JSON.stringify({ error: `Unknown action: ${action}. Valid: tournaments, tenant-events, challenges, games, quests, player-progress, achievements, season-stats` }),
+          JSON.stringify({ error: `Unknown action: ${action}. Valid: tournaments, tenant-events, challenges, games, quests, player-progress, achievements, season-stats, simulation-activities, simulation-activity` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     }
