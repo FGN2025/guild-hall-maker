@@ -114,6 +114,7 @@ Deno.serve(async (req) => {
     checks.push(await probe("data_read", "Data API returns catalogue data", 200, dataApi, { "x-ecosystem-key": ecosystemKey }, { action: "tournaments", limit: 1 }));
     checks.push(await probe("challenges_read", "Data API returns challenges", 200, dataApi, { "x-ecosystem-key": ecosystemKey }, { action: "challenges", limit: 1 }));
     checks.push(await probe("achievements_read", "Data API returns achievements", 200, dataApi, { "x-ecosystem-key": ecosystemKey }, { action: "achievements", limit: 1 }));
+    checks.push(await probe("simulation_activities_read", "Data API returns simulation activities", 200, dataApi, { "x-ecosystem-key": ecosystemKey }, { action: "simulation-activities", limit: 5 }));
     checks.push(await probe("merit_health", "Merit connector health check", 200, meritApi, { "x-ecosystem-key": ecosystemKey, "x-ecosystem-app": "merit" }, { action: "health" }));
     checks.push(await probe("merit_app", "Merit connector rejects an unknown app", 401, meritApi, { "x-ecosystem-key": ecosystemKey, "x-ecosystem-app": "nope" }, { action: "health" }));
 
