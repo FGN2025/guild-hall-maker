@@ -69,6 +69,21 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [academyNextStepLabel, setAcademyNextStepLabel] = useState("");
   const [pointsOverrideReason, setPointsOverrideReason] = useState("");
   const [skillTags, setSkillTags] = useState<string[]>([]);
+  const [contentClassification, setContentClassification] = useState<"" | "simulation" | "entertainment_only">("");
+  const [simulationActivityId, setSimulationActivityId] = useState("");
+
+  const { data: simActivities = [] } = useQuery({
+    queryKey: ["simulation-activities-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("simulation_activities")
+        .select("id, canonical_name, game_id, status")
+        .neq("status", "retired")
+        .order("canonical_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active-with-steam"],
@@ -118,6 +133,8 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       setAcademyNextStepUrl(challenge.academy_next_step_url || "");
       setAcademyNextStepLabel(challenge.academy_next_step_label || "");
       setPointsOverrideReason(challenge.points_override_reason || "");
+      setContentClassification((challenge as any).content_classification || "");
+      setSimulationActivityId((challenge as any).simulation_activity_id || "");
       setSkillTags(Array.isArray(challenge.skill_tags) ? challenge.skill_tags : []);
     }
   }, [challenge, open]);
@@ -237,8 +254,38 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         points_override_reason: pointsOverrideReason.trim() || null,
         points_overridden_by: pointsOverrideReason.trim() ? user?.id ?? null : null,
         skill_tags: skillTags,
-      }).eq("id", challenge.id);
+        content_classification: contentClassification || null,
+      } as any).eq("id", challenge.id);
       if (error) throw error;
+
+      // Canonical mapping is written through the link table only.
+      const currentActivity = (challenge as any).simulation_activity_id || "";
+      if (simulationActivityId !== currentActivity) {
+        if (!simulationActivityId) {
+          const { error: delErr } = await supabase
+            .from("simulation_activity_challenges")
+            .delete()
+            .eq("challenge_id", challenge.id)
+            .is("challenge_task_id", null);
+          if (delErr) throw delErr;
+        } else if (currentActivity) {
+          const { error: updErr } = await supabase
+            .from("simulation_activity_challenges")
+            .update({ simulation_activity_id: simulationActivityId, mapping_status: "matched" } as any)
+            .eq("challenge_id", challenge.id)
+            .is("challenge_task_id", null);
+          if (updErr) throw updErr;
+        } else {
+          const { error: insErr } = await supabase.from("simulation_activity_challenges").insert({
+            simulation_activity_id: simulationActivityId,
+            challenge_id: challenge.id,
+            challenge_task_id: null,
+            is_primary: true,
+            mapping_status: "matched",
+          } as any);
+          if (insErr) throw insErr;
+        }
+      }
 
       // Sync tasks
       const toDelete = localTasks.filter((t) => t._deleted && t.id);
@@ -383,6 +430,42 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <Label>Content classification</Label>
+            <Select
+              value={contentClassification || undefined}
+              onValueChange={(v) => {
+                setContentClassification(v as any);
+                if (v === "entertainment_only") setSimulationActivityId("");
+              }}
+            >
+              <SelectTrigger><SelectValue placeholder="Choose classification" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="simulation">Simulation</SelectItem>
+                <SelectItem value="entertainment_only">Entertainment only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {contentClassification === "simulation" && (
+            <div>
+              <Label>Simulation activity</Label>
+              <Select value={simulationActivityId || undefined} onValueChange={setSimulationActivityId}>
+                <SelectTrigger><SelectValue placeholder="Select a canonical activity" /></SelectTrigger>
+                <SelectContent>
+                  {(simActivities as any[])
+                    .filter((a) => !gameId || a.game_id === gameId)
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.canonical_name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Manage activities in Admin → Activity Mapping.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>

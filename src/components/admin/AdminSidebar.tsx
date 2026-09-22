@@ -7,6 +7,7 @@ const sidebarItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/tournaments", label: "Tournaments", icon: Trophy },
   { to: "/admin/challenges", label: "Challenges", icon: Target },
+  { to: "/admin/activity-mapping", label: "Activity Mapping", icon: Compass },
   { to: "/admin/games", label: "Games", icon: Gamepad2 },
   { to: "/admin/seasons", label: "Seasons", icon: Calendar },
   { to: "/admin/achievements", label: "Achievements", icon: Award },

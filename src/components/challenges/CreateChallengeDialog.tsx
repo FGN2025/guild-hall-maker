@@ -43,6 +43,8 @@ const defaultForm = {
   academy_next_step_label: "",
   points_override_reason: "",
   skill_tags: [] as string[],
+  content_classification: "" as "" | "simulation" | "entertainment_only",
+  simulation_activity_id: "",
 };
 
 const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeDialogProps) => {
@@ -83,9 +85,28 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
     e.target.value = "";
   };
 
+  const { data: simActivities = [] } = useQuery({
+    queryKey: ["simulation-activities-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("simulation_activities")
+        .select("id, canonical_name, game_id, status")
+        .neq("status", "retired")
+        .order("canonical_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
+      if (!form.content_classification) {
+        throw new Error("Choose a content classification (Simulation or Entertainment only)");
+      }
+      if (form.content_classification === "simulation" && !form.simulation_activity_id) {
+        throw new Error("Simulation challenges need a canonical simulation activity before publishing");
+      }
 
       let coverUrl = form.cover_image_url || null;
 
@@ -133,6 +154,7 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         points_override_reason: form.points_override_reason?.trim() || null,
         points_overridden_by: form.points_override_reason?.trim() ? user.id : null,
         skill_tags: form.skill_tags,
+        content_classification: form.content_classification || null,
       } as any).select().single();
       if (error) throw error;
 
@@ -148,6 +170,17 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
         }));
         const { error: taskError } = await supabase.from("challenge_tasks").insert(tasks as any);
         if (taskError) throw taskError;
+      }
+
+      if (challenge && form.content_classification === "simulation" && form.simulation_activity_id) {
+        const { error: mapErr } = await supabase.from("simulation_activity_challenges").insert({
+          simulation_activity_id: form.simulation_activity_id,
+          challenge_id: challenge.id,
+          challenge_task_id: null,
+          is_primary: true,
+          mapping_status: "matched",
+        } as any);
+        if (mapErr) throw mapErr;
       }
     },
     onSuccess: () => {
@@ -245,6 +278,42 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label>Content classification</Label>
+            <Select
+              value={form.content_classification || undefined}
+              onValueChange={(v) => setForm({ ...form, content_classification: v as any, simulation_activity_id: "" })}
+            >
+              <SelectTrigger><SelectValue placeholder="Choose classification" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="simulation">Simulation</SelectItem>
+                <SelectItem value="entertainment_only">Entertainment only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {form.content_classification === "simulation" && (
+            <div className="space-y-2">
+              <Label>Simulation activity</Label>
+              <Select
+                value={form.simulation_activity_id || undefined}
+                onValueChange={(v) => setForm({ ...form, simulation_activity_id: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select a canonical activity" /></SelectTrigger>
+                <SelectContent>
+                  {(simActivities as any[])
+                    .filter((a) => !selectedGameId || a.game_id === selectedGameId)
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.canonical_name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Need a new one? Create it in Admin → Activity Mapping.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-2">
