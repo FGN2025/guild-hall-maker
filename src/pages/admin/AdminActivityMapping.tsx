@@ -15,7 +15,7 @@ import {
   suggestActivitiesForChallenge,
   type MappingStatus,
 } from "@/hooks/useSimulationActivities";
-import { usePageTitle } from "@/hooks/usePageTitle";
+import usePageTitle from "@/hooks/usePageTitle";
 
 const STATUSES: MappingStatus[] = ["matched", "needs_review", "legacy", "retired", "orphaned_source"];
 
