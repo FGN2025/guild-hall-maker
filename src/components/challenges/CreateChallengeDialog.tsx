@@ -43,6 +43,8 @@ const defaultForm = {
   academy_next_step_label: "",
   points_override_reason: "",
   skill_tags: [] as string[],
+  content_classification: "" as "" | "simulation" | "entertainment_only",
+  simulation_activity_id: "",
 };
 
 const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeDialogProps) => {
