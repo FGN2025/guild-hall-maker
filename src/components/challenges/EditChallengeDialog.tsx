@@ -254,8 +254,38 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         points_override_reason: pointsOverrideReason.trim() || null,
         points_overridden_by: pointsOverrideReason.trim() ? user?.id ?? null : null,
         skill_tags: skillTags,
-      }).eq("id", challenge.id);
+        content_classification: contentClassification || null,
+      } as any).eq("id", challenge.id);
       if (error) throw error;
+
+      // Canonical mapping is written through the link table only.
+      const currentActivity = (challenge as any).simulation_activity_id || "";
+      if (simulationActivityId !== currentActivity) {
+        if (!simulationActivityId) {
+          const { error: delErr } = await supabase
+            .from("simulation_activity_challenges")
+            .delete()
+            .eq("challenge_id", challenge.id)
+            .is("challenge_task_id", null);
+          if (delErr) throw delErr;
+        } else if (currentActivity) {
+          const { error: updErr } = await supabase
+            .from("simulation_activity_challenges")
+            .update({ simulation_activity_id: simulationActivityId, mapping_status: "matched" } as any)
+            .eq("challenge_id", challenge.id)
+            .is("challenge_task_id", null);
+          if (updErr) throw updErr;
+        } else {
+          const { error: insErr } = await supabase.from("simulation_activity_challenges").insert({
+            simulation_activity_id: simulationActivityId,
+            challenge_id: challenge.id,
+            challenge_task_id: null,
+            is_primary: true,
+            mapping_status: "matched",
+          } as any);
+          if (insErr) throw insErr;
+        }
+      }
 
       // Sync tasks
       const toDelete = localTasks.filter((t) => t._deleted && t.id);
