@@ -1092,6 +1092,7 @@ export type Database = {
           cfr_reference: string | null
           challenge_type: string
           coach_context: string | null
+          content_classification: string | null
           cover_image_prompt: string | null
           cover_image_url: string | null
           created_at: string
@@ -1121,6 +1122,7 @@ export type Database = {
           season_id: string | null
           series_id: string | null
           series_order: number | null
+          simulation_activity_id: string | null
           skill_tags: string[]
           start_date: string | null
           story_intro: string | null
@@ -1139,6 +1141,7 @@ export type Database = {
           cfr_reference?: string | null
           challenge_type?: string
           coach_context?: string | null
+          content_classification?: string | null
           cover_image_prompt?: string | null
           cover_image_url?: string | null
           created_at?: string
@@ -1168,6 +1171,7 @@ export type Database = {
           season_id?: string | null
           series_id?: string | null
           series_order?: number | null
+          simulation_activity_id?: string | null
           skill_tags?: string[]
           start_date?: string | null
           story_intro?: string | null
@@ -1186,6 +1190,7 @@ export type Database = {
           cfr_reference?: string | null
           challenge_type?: string
           coach_context?: string | null
+          content_classification?: string | null
           cover_image_prompt?: string | null
           cover_image_url?: string | null
           created_at?: string
@@ -1215,6 +1220,7 @@ export type Database = {
           season_id?: string | null
           series_id?: string | null
           series_order?: number | null
+          simulation_activity_id?: string | null
           skill_tags?: string[]
           start_date?: string | null
           story_intro?: string | null
@@ -1244,6 +1250,13 @@ export type Database = {
             columns: ["season_id"]
             isOneToOne: false
             referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_simulation_activity_id_fkey"
+            columns: ["simulation_activity_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_activities"
             referencedColumns: ["id"]
           },
         ]
@@ -4822,6 +4835,196 @@ export type Database = {
           },
         ]
       }
+      simulation_activities: {
+        Row: {
+          activity_category: string | null
+          canonical_description: string | null
+          canonical_name: string
+          canonical_slug: string
+          created_at: string
+          created_by: string | null
+          game_id: string
+          game_version: string | null
+          id: string
+          industry_domain: string | null
+          platform_applicability: string[]
+          provenance: Database["public"]["Enums"]["simulation_activity_provenance"]
+          schema_version: number
+          source_challenge_id: string | null
+          status: Database["public"]["Enums"]["simulation_activity_status"]
+          updated_at: string
+        }
+        Insert: {
+          activity_category?: string | null
+          canonical_description?: string | null
+          canonical_name: string
+          canonical_slug: string
+          created_at?: string
+          created_by?: string | null
+          game_id: string
+          game_version?: string | null
+          id?: string
+          industry_domain?: string | null
+          platform_applicability?: string[]
+          provenance?: Database["public"]["Enums"]["simulation_activity_provenance"]
+          schema_version?: number
+          source_challenge_id?: string | null
+          status?: Database["public"]["Enums"]["simulation_activity_status"]
+          updated_at?: string
+        }
+        Update: {
+          activity_category?: string | null
+          canonical_description?: string | null
+          canonical_name?: string
+          canonical_slug?: string
+          created_at?: string
+          created_by?: string | null
+          game_id?: string
+          game_version?: string | null
+          id?: string
+          industry_domain?: string | null
+          platform_applicability?: string[]
+          provenance?: Database["public"]["Enums"]["simulation_activity_provenance"]
+          schema_version?: number
+          source_challenge_id?: string | null
+          status?: Database["public"]["Enums"]["simulation_activity_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_activities_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulation_activities_source_challenge_id_fkey"
+            columns: ["source_challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulation_activity_candidates: {
+        Row: {
+          basis: string | null
+          challenge_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          similarity: number | null
+          state: Database["public"]["Enums"]["simulation_candidate_state"]
+          suggested_activity_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          basis?: string | null
+          challenge_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          similarity?: number | null
+          state?: Database["public"]["Enums"]["simulation_candidate_state"]
+          suggested_activity_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          basis?: string | null
+          challenge_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          similarity?: number | null
+          state?: Database["public"]["Enums"]["simulation_candidate_state"]
+          suggested_activity_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_activity_candidates_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulation_activity_candidates_suggested_activity_id_fkey"
+            columns: ["suggested_activity_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulation_activity_challenges: {
+        Row: {
+          challenge_id: string
+          challenge_task_id: string | null
+          created_at: string
+          id: string
+          is_primary: boolean
+          mapping_status: Database["public"]["Enums"]["simulation_mapping_status"]
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          simulation_activity_id: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          challenge_task_id?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          mapping_status?: Database["public"]["Enums"]["simulation_mapping_status"]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          simulation_activity_id: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          challenge_task_id?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          mapping_status?: Database["public"]["Enums"]["simulation_mapping_status"]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          simulation_activity_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_activity_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulation_activity_challenges_challenge_task_id_fkey"
+            columns: ["challenge_task_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulation_activity_challenges_simulation_activity_id_fkey"
+            columns: ["simulation_activity_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_connections: {
         Row: {
           access_token: string
@@ -7694,6 +7897,18 @@ export type Database = {
         | "partial"
         | "credited"
         | "returned"
+      simulation_activity_provenance:
+        | "manual"
+        | "derived_from_challenge"
+        | "imported"
+      simulation_activity_status: "draft" | "active" | "retired"
+      simulation_candidate_state: "pending" | "accepted" | "rejected"
+      simulation_mapping_status:
+        | "matched"
+        | "needs_review"
+        | "legacy"
+        | "retired"
+        | "orphaned_source"
       tournament_status:
         | "upcoming"
         | "open"
@@ -7862,6 +8077,20 @@ export const Constants = {
         "partial",
         "credited",
         "returned",
+      ],
+      simulation_activity_provenance: [
+        "manual",
+        "derived_from_challenge",
+        "imported",
+      ],
+      simulation_activity_status: ["draft", "active", "retired"],
+      simulation_candidate_state: ["pending", "accepted", "rejected"],
+      simulation_mapping_status: [
+        "matched",
+        "needs_review",
+        "legacy",
+        "retired",
+        "orphaned_source",
       ],
       tournament_status: [
         "upcoming",
