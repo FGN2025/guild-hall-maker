@@ -69,6 +69,21 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
   const [academyNextStepLabel, setAcademyNextStepLabel] = useState("");
   const [pointsOverrideReason, setPointsOverrideReason] = useState("");
   const [skillTags, setSkillTags] = useState<string[]>([]);
+  const [contentClassification, setContentClassification] = useState<"" | "simulation" | "entertainment_only">("");
+  const [simulationActivityId, setSimulationActivityId] = useState("");
+
+  const { data: simActivities = [] } = useQuery({
+    queryKey: ["simulation-activities-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("simulation_activities")
+        .select("id, canonical_name, game_id, status")
+        .neq("status", "retired")
+        .order("canonical_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const { data: games = [] } = useQuery({
     queryKey: ["games-active-with-steam"],
