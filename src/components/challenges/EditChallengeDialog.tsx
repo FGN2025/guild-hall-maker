@@ -431,6 +431,42 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             </Select>
           </div>
 
+          <div>
+            <Label>Content classification</Label>
+            <Select
+              value={contentClassification || undefined}
+              onValueChange={(v) => {
+                setContentClassification(v as any);
+                if (v === "entertainment_only") setSimulationActivityId("");
+              }}
+            >
+              <SelectTrigger><SelectValue placeholder="Choose classification" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="simulation">Simulation</SelectItem>
+                <SelectItem value="entertainment_only">Entertainment only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {contentClassification === "simulation" && (
+            <div>
+              <Label>Simulation activity</Label>
+              <Select value={simulationActivityId || undefined} onValueChange={setSimulationActivityId}>
+                <SelectTrigger><SelectValue placeholder="Select a canonical activity" /></SelectTrigger>
+                <SelectContent>
+                  {(simActivities as any[])
+                    .filter((a) => !gameId || a.game_id === gameId)
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.canonical_name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Manage activities in Admin → Activity Mapping.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Type</Label>
