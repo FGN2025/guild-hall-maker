@@ -279,6 +279,42 @@ const CreateChallengeDialog = ({ invalidateQueryKey, trigger }: CreateChallengeD
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label>Content classification</Label>
+            <Select
+              value={form.content_classification || undefined}
+              onValueChange={(v) => setForm({ ...form, content_classification: v as any, simulation_activity_id: "" })}
+            >
+              <SelectTrigger><SelectValue placeholder="Choose classification" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="simulation">Simulation</SelectItem>
+                <SelectItem value="entertainment_only">Entertainment only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {form.content_classification === "simulation" && (
+            <div className="space-y-2">
+              <Label>Simulation activity</Label>
+              <Select
+                value={form.simulation_activity_id || undefined}
+                onValueChange={(v) => setForm({ ...form, simulation_activity_id: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select a canonical activity" /></SelectTrigger>
+                <SelectContent>
+                  {(simActivities as any[])
+                    .filter((a) => !selectedGameId || a.game_id === selectedGameId)
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.canonical_name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Need a new one? Create it in Admin → Activity Mapping.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-2">
 
