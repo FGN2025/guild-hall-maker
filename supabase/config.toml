@@ -195,3 +195,5 @@ project_id = "yrhwzmkenjgiujhofucx"
     verify_jwt = true
   [functions.discord-register-commands]
     verify_jwt = true
+  [functions.studio-api]
+    verify_jwt = false

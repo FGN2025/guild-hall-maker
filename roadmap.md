@@ -1,4 +1,14 @@
+# FGN Studio partner read API
+
+- [x] Partner keys (organization-scoped, hashed, expiry, revoke) + short-lived token exchange
+- [x] studio-api read routes: capabilities, sources, challenges (+ full tasks), activities (+ lookup), work-order relationships
+- [x] Signed, scope-bound cursors; revision counters covering insert/update/delete; contract-version gate; approved-origin CORS
+- [x] docs/studio-api.openapi.yaml, docs/studio-api-integration.md, verification report (29 checks)
+- [ ] Add Studio's browser origin(s) to the approved list — waiting on the origin from Studio
+- [ ] Issue Studio's production key once the owning organization is named
+
 # Canonical Simulation Activity rollout
+
 
 - [x] Phase 3A proposal (ATS canonicalization map) delivered — parked per user until the configurator is built
 - [ ] Configurator tool — awaiting user brief

@@ -1,0 +1,220 @@
+openapi: 3.1.0
+info:
+  title: FGN.GG Studio Read API
+  version: "2026-09-23.1"
+  description: >
+    Read-only catalog access for authorized partner tooling (FGN Studio).
+    Credentials are organization-scoped and enforced server-side. There are no
+    write routes: catalog routes accept GET only and return 405 for anything else.
+    The single POST route, /token, exchanges a durable partner key for a
+    short-lived token and mutates no catalog content.
+
+servers:
+  - url: https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/studio-api
+    description: Production backend function host (the only real base path; there is no api.fgn.gg and no REST API on play.fgn.gg)
+
+security:
+  - bearer: []
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: >
+        Durable partner key (prefix fgnk_) for server-to-server use, or a
+        short-lived token (prefix fgnt_) obtained from /token. Never place a
+        durable key in a browser.
+  parameters:
+    contract:
+      name: X-Studio-Contract
+      in: header
+      required: true
+      schema: { type: string }
+      description: Must equal the contract version above. A missing or mismatched value returns 409 with no data.
+    cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+      description: Opaque signed cursor from the previous page's nextCursor.
+    limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+    sourceId:
+      name: sourceId
+      in: query
+      schema: { type: string, format: uuid }
+  responses:
+    Unauthorized:
+      description: Absent, invalid, expired or revoked credential.
+    Forbidden:
+      description: Out-of-scope organization or missing capability.
+    Conflict:
+      description: Contract version missing or mismatched.
+    TooMany:
+      description: Rate limit exceeded.
+    BadCursor:
+      description: Cursor malformed, unsigned, bound to a different query or a different organization scope.
+  schemas:
+    Task:
+      type: object
+      properties:
+        taskId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        order: { type: integer }
+        verificationType: { type: string, nullable: true }
+        taskVersion: { type: string }
+    Challenge:
+      type: object
+      properties:
+        challengeId: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        isActive: { type: boolean }
+        kind: { type: string, nullable: true }
+        difficulty: { type: string, nullable: true }
+        points: { type: integer, nullable: true }
+        xp: { type: integer, nullable: true }
+        contentClassification: { type: string, nullable: true }
+        canonicalActivityId: { type: string, format: uuid, nullable: true }
+        academyRelationship:
+          type: object
+          nullable: true
+          properties:
+            label: { type: string, nullable: true }
+            url: { type: string, nullable: true }
+        sourceId: { type: string, format: uuid }
+        scope: { type: string, enum: [global, organization] }
+        taskIds:
+          type: array
+          items: { type: string, format: uuid }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+    Activity:
+      type: object
+      properties:
+        activityId: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        actionDescription: { type: string, nullable: true }
+        sourceId: { type: string, format: uuid, nullable: true }
+        category: { type: string, nullable: true }
+        industryDomain: { type: string, nullable: true }
+        status: { type: string }
+        scope: { type: string, enum: [global, organization] }
+        variantChallengeIds:
+          type: array
+          items: { type: string, format: uuid }
+    Page:
+      type: object
+      properties:
+        contractVersion: { type: string }
+        revision: { type: integer }
+        revisionChanged: { type: boolean }
+        nextCursor: { type: string, nullable: true }
+
+paths:
+  /openapi.json:
+    get:
+      summary: This contract, machine readable. Unauthenticated.
+      security: []
+      responses:
+        "200": { description: Contract document }
+
+  /token:
+    post:
+      summary: Exchange a durable partner key for a short-lived organization-scoped token.
+      parameters: [{ $ref: "#/components/parameters/contract" }]
+      responses:
+        "200":
+          description: token, tokenType, expiresAt, expiresInSeconds, organizationId, capabilities
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/TooMany" }
+
+  /capabilities:
+    get:
+      summary: Capability discovery, organization scope, inactive-record policy, current revision.
+      parameters: [{ $ref: "#/components/parameters/contract" }]
+      responses:
+        "200": { description: Capability document }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /sources:
+    get:
+      summary: Catalog sources (games) with per-source revision and a scoped challenge count.
+      parameters:
+        - { $ref: "#/components/parameters/contract" }
+        - { $ref: "#/components/parameters/cursor" }
+        - { $ref: "#/components/parameters/limit" }
+      responses:
+        "200": { description: Page of sources }
+        "400": { $ref: "#/components/responses/BadCursor" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/TooMany" }
+
+  /challenges:
+    get:
+      summary: Challenges with descriptions and fully expanded ordered task objects.
+      parameters:
+        - { $ref: "#/components/parameters/contract" }
+        - { $ref: "#/components/parameters/sourceId" }
+        - { $ref: "#/components/parameters/cursor" }
+        - { $ref: "#/components/parameters/limit" }
+      responses:
+        "200": { description: Page of challenges }
+        "400": { $ref: "#/components/responses/BadCursor" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /challenges/{challengeId}:
+    get:
+      summary: One challenge with its ordered tasks.
+      parameters:
+        - { $ref: "#/components/parameters/contract" }
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Challenge }
+        "404": { description: Not found, or inactive and the credential may not see inactive records }
+
+  /activities:
+    get:
+      summary: Canonical simulation activities.
+      parameters:
+        - { $ref: "#/components/parameters/contract" }
+        - { $ref: "#/components/parameters/cursor" }
+        - { $ref: "#/components/parameters/limit" }
+      responses:
+        "200": { description: Page of activities }
+
+  /activities/{activityId}:
+    get:
+      summary: Canonical simulation activity lookup by id.
+      parameters:
+        - { $ref: "#/components/parameters/contract" }
+        - { name: activityId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Activity }
+        "404": { description: Not found }
+
+  /work-order-relationships:
+    get:
+      summary: Relationships FGN.GG holds between canonical activities and downstream work.
+      description: >
+        FGN Academy remains authoritative for its own work-order definitions and
+        maturity. This route reports only what FGN.GG holds, and says so in the
+        payload's authority field.
+      parameters:
+        - { $ref: "#/components/parameters/contract" }
+        - { name: activityIds, in: query, schema: { type: string }, description: Comma-separated activity ids }
+        - { $ref: "#/components/parameters/cursor" }
+        - { $ref: "#/components/parameters/limit" }
+      responses:
+        "200": { description: Page of relationships }
