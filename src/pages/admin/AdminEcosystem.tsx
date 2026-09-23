@@ -17,6 +17,8 @@ import DiscordChannelRouteManager from "@/components/admin/DiscordChannelRouteMa
 import EcosystemSyncHealth from "@/components/admin/EcosystemSyncHealth";
 import AcademyIntegrationHealth from "@/components/admin/AcademyIntegrationHealth";
 import EcosystemConnectionTest from "@/components/admin/EcosystemConnectionTest";
+import PartnerAccessManager from "@/components/admin/PartnerAccessManager";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -422,8 +424,12 @@ const AdminEcosystem = () => {
         )}
       </div>
 
+      {/* Partner Access (Studio read API) */}
+      <PartnerAccessManager />
+
       {/* Connection Test */}
       <EcosystemConnectionTest />
+
 
       {/* Academy Integration Health */}
       <AcademyIntegrationHealth />
