@@ -6,7 +6,9 @@ Base URL: **https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/studio-api**
 There is no `api.fgn.gg` host, and `play.fgn.gg` serves the player web app only — that is why probed `/api/...` paths returned the page. No alias other than the base URL above exists today; do not assume one.
 Do not use the project's database data API (`/rest/v1/`) as a substitute for these endpoints.
 
-Machine-readable contract: `GET {base}/openapi.json` (unauthenticated), and `docs/studio-api.openapi.yaml` in this repository.
+Machine-readable contract: `GET {base}/openapi.json` (unauthenticated), and `docs/studio-api.openapi.yaml` in this repository (generated from the live document — do not hand-edit).
+
+The published document now carries full request/response schemas for `/token`, `/capabilities`, sources, challenges with ordered tasks, activities and work-order relationships, sanitized examples on every route, exact error bodies for 400/401/403/404/405/409/429, and an `x-verifiedAgainstDeployedService` block listing which behaviours were exercised against the deployed service. `GET /openapi.json` and `OPTIONS` preflight require neither a credential nor the contract header; every catalog request requires both.
 
 ## 1. Credentials
 
