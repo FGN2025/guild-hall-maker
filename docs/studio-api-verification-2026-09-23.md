@@ -21,6 +21,10 @@ Run against the live endpoint with two throwaway credentials, both deleted after
 | 9 | Token exchange | 200, `fgnt_` token, 15-minute expiry, organization and capabilities carried over |
 | 10 | Token used on a catalog route | 200 |
 | 11 | Token used to mint another token | 401 (only durable keys may exchange) |
+| 11a | `POST /token` with an `Origin` header, no credential | 403, "Token exchange is server-only…" (refused before the credential is examined) |
+| 11b | `POST /token` with a **valid durable key** and `Origin: https://studio.fgn.gg` (the allowlisted origin) | 403 — a browser cannot exchange a key even from an approved origin |
+| 11c | `POST /token` with the same valid key and **no** `Origin` header | 200, token issued — legitimate server-to-server exchange unaffected |
+| 11d | Catalog read with `Origin: https://studio.fgn.gg` | 200 — browser catalog reads still work; only the exchange is server-only |
 | 12 | Challenge content | description present (382 chars on the sampled row), 5 fully expanded task objects with stable id, title, description, order, verification type and version |
 | 13 | Inactive visibility | Key A: 127 challenges, 13 inactive and flagged. Key B: 114 challenges, 0 inactive, `includesInactiveRecords: false` stated in the payload |
 | 14 | Pagination to exhaustion | 13 pages at limit 10, 127 ids, 127 unique, no duplicates, `nextCursor` null only at the end |
