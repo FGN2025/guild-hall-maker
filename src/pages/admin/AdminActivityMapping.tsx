@@ -64,13 +64,27 @@ const AdminActivityMapping = () => {
     return m;
   }, [mappings]);
 
+  const { data: allGames = [] } = useQuery({
+    queryKey: ["activity-mapping-games"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("games")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const games = useMemo(() => {
     const seen = new Map<string, string>();
+    (allGames as any[]).forEach((g) => seen.set(g.id, g.name));
     challenges.forEach((c: any) => {
       if (c.game_id && c.games?.name) seen.set(c.game_id, c.games.name);
     });
     return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [challenges]);
+  }, [challenges, allGames]);
 
   const rows = useMemo(() => {
     return challenges.filter((c: any) => {
