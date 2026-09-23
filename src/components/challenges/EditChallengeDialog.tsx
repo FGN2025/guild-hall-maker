@@ -396,7 +396,16 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Game</Label>
-              <Select value={gameId || "none"} onValueChange={(v) => setGameId(v === "none" ? null : v)}>
+              <Select
+                value={gameId || "none"}
+                onValueChange={(v) => {
+                  const next = v === "none" ? null : v;
+                  setGameId(next);
+                  const linked = (simActivities as any[]).find((a) => a.id === simulationActivityId);
+                  if (linked && linked.game_id !== next) setSimulationActivityId("");
+                }}
+              >
+
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No game</SelectItem>
@@ -431,24 +440,26 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             </Select>
           </div>
 
-          <div>
-            <Label>Content classification</Label>
-            <Select
-              value={contentClassification || undefined}
-              onValueChange={(v) => {
-                setContentClassification(v as any);
-                if (v === "entertainment_only") setSimulationActivityId("");
-              }}
-            >
-              <SelectTrigger><SelectValue placeholder="Choose classification" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="simulation">Simulation</SelectItem>
-                <SelectItem value="entertainment_only">Entertainment only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {isAdmin && (
+            <div>
+              <Label>Content classification</Label>
+              <Select
+                value={contentClassification || undefined}
+                onValueChange={(v) => {
+                  setContentClassification(v as any);
+                  if (v === "entertainment_only") setSimulationActivityId("");
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Choose classification" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="simulation">Simulation</SelectItem>
+                  <SelectItem value="entertainment_only">Entertainment only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {contentClassification === "simulation" && (
+          {isAdmin && contentClassification === "simulation" && (
             <div>
               <Label>Simulation activity</Label>
               <Select value={simulationActivityId || undefined} onValueChange={setSimulationActivityId}>
@@ -466,6 +477,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
               </p>
             </div>
           )}
+
 
           <div className="grid grid-cols-2 gap-3">
             <div>
