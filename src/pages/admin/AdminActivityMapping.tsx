@@ -221,6 +221,11 @@ const AdminActivityMapping = () => {
                         <Badge variant="outline" className="text-xs">
                           {activity ? activity.canonical_name : "No activity"}
                         </Badge>
+                        {activity && c.game_id && activity.game_id && activity.game_id !== c.game_id && (
+                          <Badge variant="outline" className="text-xs bg-destructive/15 text-destructive border-destructive/30">
+                            Game mismatch
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
