@@ -608,6 +608,19 @@ export const OPENAPI_DOC = {
             },
           },
           "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description:
+              "Request carried an `Origin` header. Token exchange is server-only and is refused before the credential is examined.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  error:
+                    "Token exchange is server-only; requests carrying an Origin header are rejected. Exchange durable keys from your server or proxy.",
+                },
+              },
+            },
+          },
           "405": { $ref: "#/components/responses/MethodNotAllowed" },
           "409": { $ref: "#/components/responses/Conflict" },
           "429": { $ref: "#/components/responses/TooMany" },
