@@ -1,3 +1,9 @@
+# Canonical Simulation Activity rollout
+
+- [x] Phase 3A proposal (ATS canonicalization map) delivered — parked per user until the configurator is built
+- [ ] Configurator tool — awaiting user brief
+- [ ] Phase 3A execution after configurator — seed approved ATS activities, link, classify
+
 # Run reliability checkpoint
 
 - [x] Steps 1–2: instrumentation and generation-attributed baseline
