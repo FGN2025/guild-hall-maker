@@ -774,6 +774,24 @@ export type Database = {
           },
         ]
       }
+      catalog_revisions: {
+        Row: {
+          revision: number
+          scope_key: string
+          updated_at: string
+        }
+        Insert: {
+          revision?: number
+          scope_key: string
+          updated_at?: string
+        }
+        Update: {
+          revision?: number
+          scope_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       challenge_completions: {
         Row: {
           academy_next_step: Json | null
@@ -3397,6 +3415,134 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      partner_access_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          key_id: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          key_id: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          key_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_access_tokens_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "partner_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_api_keys: {
+        Row: {
+          capabilities: string[]
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          include_inactive: boolean
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at: string | null
+          rate_limit_per_minute: number
+          revoked_at: string | null
+          tenant_id: string
+        }
+        Insert: {
+          capabilities?: string[]
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          include_inactive?: boolean
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at?: string | null
+          rate_limit_per_minute?: number
+          revoked_at?: string | null
+          tenant_id: string
+        }
+        Update: {
+          capabilities?: string[]
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          include_inactive?: boolean
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          last_used_at?: string | null
+          rate_limit_per_minute?: number
+          revoked_at?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_universal_asset_adoption_matrix"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
+      partner_request_counters: {
+        Row: {
+          key_id: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          key_id: string
+          request_count?: number
+          window_start: string
+        }
+        Update: {
+          key_id?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_request_counters_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "partner_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       passport_refresh_pending: {
         Row: {
@@ -7570,6 +7716,7 @@ export type Database = {
         Args: { _log_id: string }
         Returns: undefined
       }
+      bump_catalog_revision: { Args: { p_scope: string }; Returns: undefined }
       challenge_window_open: {
         Args: { _challenge_id: string; _user_id: string }
         Returns: boolean

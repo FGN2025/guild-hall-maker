@@ -36,6 +36,13 @@
       "when": 1790099982585,
       "tag": "0004_simulation_activity_canonical_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790140618864,
+      "tag": "0005_studio_partner_read_api",
+      "breakpoints": true
     }
   ]
 }
