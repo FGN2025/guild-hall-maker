@@ -4,7 +4,9 @@
 - [x] studio-api read routes: capabilities, sources, challenges (+ full tasks), activities (+ lookup), work-order relationships
 - [x] Signed, scope-bound cursors; revision counters covering insert/update/delete; contract-version gate; approved-origin CORS
 - [x] docs/studio-api.openapi.yaml, docs/studio-api-integration.md, verification report (29 checks)
-- [ ] Add Studio's browser origin(s) to the approved list — waiting on the origin from Studio
+- [x] Approved origin set to exactly https://studio.fgn.gg (no wildcards)
+- [ ] Add Studio's preview origin once its exact address is supplied
+- [ ] Issue Studio's durable key in the admin Partner Access screen, scoped to Fiber Gaming Network (read-only, inactive visibility on) — owner action, key never leaves that screen
 - [ ] Issue Studio's production key once the owning organization is named
 
 # Canonical Simulation Activity rollout
