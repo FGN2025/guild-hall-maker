@@ -294,6 +294,14 @@ Deno.serve(async (req) => {
     /* ── token exchange (durable key only; mutates no catalog content) ── */
     if (head === "token") {
       if (req.method !== "POST") return json(ctx, 405, { error: "Method not allowed" });
+      // Server-only exchange: any request carrying an Origin header is a browser-issued
+      // request and is rejected before the durable key is examined.
+      if (origin !== null) {
+        return json(ctx, 403, {
+          error:
+            "Token exchange is server-only; requests carrying an Origin header are rejected. Exchange durable keys from your server or proxy.",
+        });
+      }
       const auth = await resolveCredential(req, true, false);
       if (!auth.ok) return json(ctx, auth.status, { error: auth.error });
       if (await rateLimited(auth.cred)) return json(ctx, 429, { error: "Rate limit exceeded" });

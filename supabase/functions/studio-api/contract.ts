@@ -94,6 +94,7 @@ export const OPENAPI_DOC = {
       "Request naming another organization returns 403 'Credential is not scoped to the requested organization'",
       "Credential lacking activities:read receives 403 on /activities",
       "POST /token with a durable key returns a 15-minute fgnt_ token carrying the key's organization and capabilities",
+      "POST /token carrying any Origin header returns 403 before the credential is examined, including a valid durable key sent from an allowlisted origin; a request with no Origin header succeeds (server-only exchange verified directly, not inferred from CORS)",
       "A fgnt_ token presented to /token returns 401 (only durable keys may exchange)",
       "Token used on a catalog route returns 200",
       "Challenge payloads carry description plus fully expanded ordered task objects with stable ids",
@@ -571,7 +572,8 @@ export const OPENAPI_DOC = {
         description: [
           "Send the durable key in `Authorization: Bearer fgnk_…` — there is no key query parameter, no `X-Api-Key` header and no credential field in the body.",
           "The request body is not read: send none, or an empty JSON object. No body field can change the organization, capabilities, lifetime or inactive visibility of the issued token; all four are inherited from the key.",
-          "Browser rejection: the durable key must never reach a browser. CORS is an exact-match approved-origin allowlist, so a call from any unlisted origin receives no `Access-Control-Allow-Origin` header and the browser blocks the response; and a `fgnt_` token presented here returns 401 `This route requires a durable partner key`, so a browser cannot re-mint or extend its own token. Studio's browser calls only the operator proxy, which holds the key and returns the token.",
+          "Server-only exchange (primary control): any request carrying an `Origin` header is rejected with 403 `Token exchange is server-only; requests carrying an Origin header are rejected. Exchange durable keys from your server or proxy.` The rejection happens before the credential is examined, so a browser-issued exchange fails even with a valid durable key, and even if its origin is on the CORS allowlist. Server-to-server calls send no `Origin` header and are unaffected.",
+          "Two further, independent controls: CORS is an exact-match approved-origin allowlist, so an unlisted origin receives no `Access-Control-Allow-Origin` header; and a `fgnt_` token presented here returns 401 `This route requires a durable partner key`, so a browser cannot re-mint or extend its own token. Studio's browser calls only the operator proxy, which holds the key and returns the token.",
           "Tokens live 15 minutes (900 seconds) and are stored hashed. Revoking the key invalidates every token already minted from it immediately.",
         ].join("\n\n"),
         parameters: [{ $ref: "#/components/parameters/contract" }],
@@ -607,6 +609,19 @@ export const OPENAPI_DOC = {
             },
           },
           "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description:
+              "Request carried an `Origin` header. Token exchange is server-only and is refused before the credential is examined.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  error:
+                    "Token exchange is server-only; requests carrying an Origin header are rejected. Exchange durable keys from your server or proxy.",
+                },
+              },
+            },
+          },
           "405": { $ref: "#/components/responses/MethodNotAllowed" },
           "409": { $ref: "#/components/responses/Conflict" },
           "429": { $ref: "#/components/responses/TooMany" },

@@ -1,4 +1,3 @@
-# Generated from the live contract at {base}/openapi.json — do not hand-edit.
 openapi: 3.1.0
 info:
   title: FGN.GG Studio Read API
@@ -7,78 +6,68 @@ info:
     Read-only catalog access for authorized partner tooling (FGN Studio).
 
 
-    Authentication: two layers. A durable partner key (prefix `fgnk_`) lives only on an
-    operator-owned server and is exchanged at POST /token for a short-lived organization-scoped
-    token (prefix `fgnt_`, 15 minutes) which is the only credential a browser may hold. Both are
-    sent as `Authorization: Bearer <value>`.
+    Authentication: two layers. A durable partner key (prefix `fgnk_`) lives only on an operator-owned server and is
+    exchanged at POST /token for a short-lived organization-scoped token (prefix `fgnt_`, 15 minutes) which is the only
+    credential a browser may hold. Both are sent as `Authorization: Bearer <value>`.
 
 
-    Every request except `GET /openapi.json` and `OPTIONS` preflight must carry `X-Studio-Contract:
-    2026-09-23.1`; a missing or mismatched value returns 409 with no data. `GET /openapi.json` and
-    `OPTIONS` require neither credential nor contract header.
+    Every request except `GET /openapi.json` and `OPTIONS` preflight must carry `X-Studio-Contract: 2026-09-23.1`; a
+    missing or mismatched value returns 409 with no data. `GET /openapi.json` and `OPTIONS` require neither credential
+    nor contract header.
 
 
     Organization scope is taken from the credential and enforced server-side. A caller-supplied
-    `organizationId`/`tenantId` query parameter is a filter only; if it differs from the
-    credential's organization the request returns 403. Ids are stable server-issued UUIDs; no
-    `local:`, `proposal:` or `sim-` prefixed identifier is ever returned.
+    `organizationId`/`tenantId` query parameter is a filter only; if it differs from the credential's organization the
+    request returns 403. Ids are stable server-issued UUIDs; no `local:`, `proposal:` or `sim-` prefixed identifier is
+    ever returned.
 
 
-    No write route exists. Catalog routes accept GET only and return 405 otherwise. POST /token
-    mutates no catalog content.
+    No write route exists. Catalog routes accept GET only and return 405 otherwise. POST /token mutates no catalog
+    content.
 servers:
   - url: https://yrhwzmkenjgiujhofucx.supabase.co/functions/v1/studio-api
-    description: >-
-      The only real base path. There is no api.fgn.gg host and play.fgn.gg serves the player web app
-      only.
+    description: The only real base path. There is no api.fgn.gg host and play.fgn.gg serves the player web app only.
 security:
   - bearer: []
 x-verifiedAgainstDeployedService:
   lastRun: '2026-09-23'
   note: >-
-    Each behaviour below was exercised against this deployed service with throwaway
-    organization-scoped credentials that were deleted afterwards. Behaviours not listed are
-    specified but not separately exercised.
+    Each behaviour below was exercised against this deployed service with throwaway organization-scoped credentials that
+    were deleted afterwards. Behaviours not listed are specified but not separately exercised.
   verified:
     - GET /openapi.json returns 200 with no credential and no contract header
     - OPTIONS preflight returns 200 with no credential and no contract header
-    - >-
-      Catalog request without X-Studio-Contract returns 409 listing supportedContractVersions and no
-      data
+    - Catalog request without X-Studio-Contract returns 409 listing supportedContractVersions and no data
     - Catalog request with a wrong contract version returns 409
     - Catalog request with the contract header but no credential returns 401
     - Invalid credential returns 401
     - Valid credential returns 200 with its organization and capability list
     - POST on a catalog route returns 405 (read-only boundary)
-    - >-
-      Request naming another organization returns 403 'Credential is not scoped to the requested
-      organization'
+    - Request naming another organization returns 403 'Credential is not scoped to the requested organization'
     - Credential lacking activities:read receives 403 on /activities
+    - POST /token with a durable key returns a 15-minute fgnt_ token carrying the key's organization and capabilities
     - >-
-      POST /token with a durable key returns a 15-minute fgnt_ token carrying the key's organization
-      and capabilities
+      POST /token carrying any Origin header returns 403 before the credential is examined, including a valid durable
+      key sent from an allowlisted origin; a request with no Origin header succeeds (server-only exchange verified
+      directly, not inferred from CORS)
     - A fgnt_ token presented to /token returns 401 (only durable keys may exchange)
     - Token used on a catalog route returns 200
     - Challenge payloads carry description plus fully expanded ordered task objects with stable ids
     - >-
-      Inactive visibility on: inactive records returned and flagged; off: omitted, with
-      includesInactiveRecords false stated in the payload
-    - >-
-      Pagination to exhaustion: 13 pages at limit 10, 127 unique ids, no duplicates, nextCursor null
-      only at the end
+      Inactive visibility on: inactive records returned and flagged; off: omitted, with includesInactiveRecords false
+      stated in the payload
+    - 'Pagination to exhaustion: 13 pages at limit 10, 127 unique ids, no duplicates, nextCursor null only at the end'
     - Replayed cursor returns the identical page and cannot loop
     - Interrupted walk still carries a nextCursor, so an incomplete read is detectable
     - >-
-      Tampered cursor returns 400; cursor reused on a different query returns 400; cursor reused by
-      another organization returns 400
+      Tampered cursor returns 400; cursor reused on a different query returns 400; cursor reused by another organization
+      returns 400
     - Activities list and single-id lookup return 200
     - Work-order relationships return 200 including the Academy authority note
     - Revision increments on insert, on update and on delete
     - revisionChanged is true when the catalog moves mid-walk
     - 'Rate limiting: requests within the per-key limit return 200, the next requests return 429'
-    - >-
-      Revoked key returns 401 'Credential revoked', and a token minted before revocation returns 401
-      immediately after
+    - Revoked key returns 401 'Credential revoked', and a token minted before revocation returns 401 immediately after
     - CORS preflight from an unapproved origin returns no Access-Control-Allow-Origin
 tags:
   - name: discovery
@@ -93,9 +82,9 @@ components:
       type: http
       scheme: bearer
       description: >-
-        Durable partner key `fgnk_…` (server-side only; accepted on /token and on catalog routes) or
-        short-lived token `fgnt_…` from /token (catalog routes only). A `fgnt_` token presented to
-        /token returns 401: only durable keys may mint tokens.
+        Durable partner key `fgnk_…` (server-side only; accepted on /token and on catalog routes) or short-lived token
+        `fgnt_…` from /token (catalog routes only). A `fgnt_` token presented to /token returns 401: only durable keys
+        may mint tokens.
   parameters:
     contract:
       name: X-Studio-Contract
@@ -106,8 +95,8 @@ components:
         const: 2026-09-23.1
       example: 2026-09-23.1
       description: >-
-        Must equal 2026-09-23.1. Missing or different → 409, body lists supportedContractVersions
-        and carries no catalog data.
+        Must equal 2026-09-23.1. Missing or different → 409, body lists supportedContractVersions and carries no catalog
+        data.
     cursor:
       name: cursor
       in: query
@@ -115,11 +104,10 @@ components:
       schema:
         type: string
       description: >-
-        Opaque HMAC-signed cursor copied verbatim from the previous page's nextCursor. Carries the
-        last ordering tuple, a fingerprint of the query, the credential's organization scope and the
-        revision the walk began at. A tampered, unsigned, cross-query or cross-organization cursor
-        is rejected with 400. Replaying a cursor re-reads the same page and can never loop, because
-        the keyset strictly advances.
+        Opaque HMAC-signed cursor copied verbatim from the previous page's nextCursor. Carries the last ordering tuple,
+        a fingerprint of the query, the credential's organization scope and the revision the walk began at. A tampered,
+        unsigned, cross-query or cross-organization cursor is rejected with 400. Replaying a cursor re-reads the same
+        page and can never loop, because the keyset strictly advances.
     limit:
       name: limit
       in: query
@@ -130,8 +118,8 @@ components:
         maximum: 200
         default: 50
       description: >-
-        Page size. Values below 1 or above 200 are clamped rather than rejected. Ordering is always
-        created_at ascending, then id ascending.
+        Page size. Values below 1 or above 200 are clamped rather than rejected. Ordering is always created_at
+        ascending, then id ascending.
     sourceId:
       name: sourceId
       in: query
@@ -148,15 +136,15 @@ components:
         type: string
         format: uuid
       description: >-
-        Optional filter only, never authorization. Alias: tenantId. If it differs from the
-        credential's organization the request returns 403.
+        Optional filter only, never authorization. Alias: tenantId. If it differs from the credential's organization the
+        request returns 403.
   responses:
     Unauthorized:
       description: >-
-        Credential absent, malformed, invalid, expired or revoked. Exact `error` values: `Missing
-        bearer credential`, `Invalid credential`, `Token expired`, `Credential expired`, `Credential
-        revoked`, `This route requires a durable partner key` (a fgnt_ token was sent to /token).
-        Revoking a durable key invalidates it and every token minted from it immediately.
+        Credential absent, malformed, invalid, expired or revoked. Exact `error` values: `Missing bearer credential`,
+        `Invalid credential`, `Token expired`, `Credential expired`, `Credential revoked`, `This route requires a
+        durable partner key` (a fgnt_ token was sent to /token). Revoking a durable key invalidates it and every token
+        minted from it immediately.
       content:
         application/json:
           schema:
@@ -187,9 +175,7 @@ components:
               value:
                 error: Token expired
     Forbidden:
-      description: >-
-        Organization scope violation or missing capability. The credential is valid; the request is
-        not permitted.
+      description: Organization scope violation or missing capability. The credential is valid; the request is not permitted.
       content:
         application/json:
           schema:
@@ -223,8 +209,8 @@ components:
                   - catalog:read
     Conflict:
       description: >-
-        Contract header missing or mismatched. No catalog data is returned. Retrying with the same
-        header will always fail; resend with a supported version.
+        Contract header missing or mismatched. No catalog data is returned. Retrying with the same header will always
+        fail; resend with a supported version.
       content:
         application/json:
           schema:
@@ -262,8 +248,8 @@ components:
                   - 2026-09-23.1
     TooMany:
       description: >-
-        Per-key rate limit exceeded (fixed one-minute windows, default 120 requests/minute,
-        configured per credential). Retry after the current minute window closes.
+        Per-key rate limit exceeded (fixed one-minute windows, default 120 requests/minute, configured per credential).
+        Retry after the current minute window closes.
       content:
         application/json:
           schema:
@@ -292,8 +278,8 @@ components:
                 error: Rate limit exceeded
     BadCursor:
       description: >-
-        Cursor malformed, signature invalid, bound to a different query, or bound to a different
-        organization scope. Do not retry the same cursor; restart the walk.
+        Cursor malformed, signature invalid, bound to a different query, or bound to a different organization scope. Do
+        not retry the same cursor; restart the walk.
       content:
         application/json:
           schema:
@@ -355,9 +341,7 @@ components:
               value:
                 error: This API is read-only; only GET is accepted
     NotFound:
-      description: >-
-        Record does not exist, or it is inactive and the credential does not carry inactive
-        visibility.
+      description: Record does not exist, or it is inactive and the credential does not carry inactive visibility.
       content:
         application/json:
           schema:
@@ -417,9 +401,7 @@ components:
           const: 2026-09-23.1
         token:
           type: string
-          description: >-
-            Short-lived bearer token, prefix `fgnt_`. Hold in memory only; never persist it in
-            storage, cookies or logs.
+          description: Short-lived bearer token, prefix `fgnt_`. Hold in memory only; never persist it in storage, cookies or logs.
         tokenType:
           type: string
           const: Bearer
@@ -444,10 +426,9 @@ components:
         - activities:read
         - relationships:read
       description: >-
-        `catalog:read` — required by /sources, /challenges and /challenges/{challengeId}.
-        `activities:read` — required by /activities and /activities/{activityId}.
-        `relationships:read` — required by /work-order-relationships. Inactive visibility is NOT a
-        capability: it is a per-credential flag reported as `includesInactiveRecords` on
+        `catalog:read` — required by /sources, /challenges and /challenges/{challengeId}. `activities:read` — required
+        by /activities and /activities/{activityId}. `relationships:read` — required by /work-order-relationships.
+        Inactive visibility is NOT a capability: it is a per-credential flag reported as `includesInactiveRecords` on
         /capabilities and on /challenges pages.
     CapabilitiesResponse:
       type: object
@@ -491,9 +472,8 @@ components:
         includesInactiveRecords:
           type: boolean
           description: >-
-            When true, inactive records are returned and flagged (`isActive: false` / `status`), so
-            a hidden record can never be mistaken for a missing one. When false, inactive records
-            are omitted everywhere including counts.
+            When true, inactive records are returned and flagged (`isActive: false` / `status`), so a hidden record can
+            never be mistaken for a missing one. When false, inactive records are omitted everywhere including counts.
         catalogScope:
           type: string
           description: Human-readable statement of global vs organization visibility.
@@ -544,8 +524,8 @@ components:
         challengeCount:
           type: integer
           description: >-
-            Counted under the same visibility rules as the credential's reads, so a count never
-            describes rows you cannot read.
+            Counted under the same visibility rules as the credential's reads, so a count never describes rows you
+            cannot read.
     Task:
       type: object
       required:
@@ -827,21 +807,20 @@ components:
         revision:
           type: integer
           description: >-
-            Global catalog revision at the time this page was read. Bumped by database triggers on
-            insert, update and delete of challenges, challenge tasks, canonical activities and
-            activity-challenge mappings.
+            Global catalog revision at the time this page was read. Bumped by database triggers on insert, update and
+            delete of challenges, challenge tasks, canonical activities and activity-challenge mappings.
         revisionChanged:
           type: boolean
           description: >-
-            True when the global revision moved since the walk began (only meaningful on pages
-            fetched with a cursor). Restart the walk rather than merging two snapshots.
+            True when the global revision moved since the walk began (only meaningful on pages fetched with a cursor).
+            Restart the walk rather than merging two snapshots.
         nextCursor:
           type:
             - string
             - 'null'
           description: >-
-            Opaque signed cursor for the next page. Null only at true exhaustion; a non-null value
-            on an abandoned walk means the read is incomplete, never complete.
+            Opaque signed cursor for the next page. Null only at true exhaustion; a non-null value on an abandoned walk
+            means the read is incomplete, never complete.
         items:
           type: array
           items:
@@ -861,21 +840,20 @@ components:
         revision:
           type: integer
           description: >-
-            Global catalog revision at the time this page was read. Bumped by database triggers on
-            insert, update and delete of challenges, challenge tasks, canonical activities and
-            activity-challenge mappings.
+            Global catalog revision at the time this page was read. Bumped by database triggers on insert, update and
+            delete of challenges, challenge tasks, canonical activities and activity-challenge mappings.
         revisionChanged:
           type: boolean
           description: >-
-            True when the global revision moved since the walk began (only meaningful on pages
-            fetched with a cursor). Restart the walk rather than merging two snapshots.
+            True when the global revision moved since the walk began (only meaningful on pages fetched with a cursor).
+            Restart the walk rather than merging two snapshots.
         nextCursor:
           type:
             - string
             - 'null'
           description: >-
-            Opaque signed cursor for the next page. Null only at true exhaustion; a non-null value
-            on an abandoned walk means the read is incomplete, never complete.
+            Opaque signed cursor for the next page. Null only at true exhaustion; a non-null value on an abandoned walk
+            means the read is incomplete, never complete.
         sourceVersion:
           type:
             - integer
@@ -917,21 +895,20 @@ components:
         revision:
           type: integer
           description: >-
-            Global catalog revision at the time this page was read. Bumped by database triggers on
-            insert, update and delete of challenges, challenge tasks, canonical activities and
-            activity-challenge mappings.
+            Global catalog revision at the time this page was read. Bumped by database triggers on insert, update and
+            delete of challenges, challenge tasks, canonical activities and activity-challenge mappings.
         revisionChanged:
           type: boolean
           description: >-
-            True when the global revision moved since the walk began (only meaningful on pages
-            fetched with a cursor). Restart the walk rather than merging two snapshots.
+            True when the global revision moved since the walk began (only meaningful on pages fetched with a cursor).
+            Restart the walk rather than merging two snapshots.
         nextCursor:
           type:
             - string
             - 'null'
           description: >-
-            Opaque signed cursor for the next page. Null only at true exhaustion; a non-null value
-            on an abandoned walk means the read is incomplete, never complete.
+            Opaque signed cursor for the next page. Null only at true exhaustion; a non-null value on an abandoned walk
+            means the read is incomplete, never complete.
         items:
           type: array
           items:
@@ -965,26 +942,25 @@ components:
         revision:
           type: integer
           description: >-
-            Global catalog revision at the time this page was read. Bumped by database triggers on
-            insert, update and delete of challenges, challenge tasks, canonical activities and
-            activity-challenge mappings.
+            Global catalog revision at the time this page was read. Bumped by database triggers on insert, update and
+            delete of challenges, challenge tasks, canonical activities and activity-challenge mappings.
         revisionChanged:
           type: boolean
           description: >-
-            True when the global revision moved since the walk began (only meaningful on pages
-            fetched with a cursor). Restart the walk rather than merging two snapshots.
+            True when the global revision moved since the walk began (only meaningful on pages fetched with a cursor).
+            Restart the walk rather than merging two snapshots.
         nextCursor:
           type:
             - string
             - 'null'
           description: >-
-            Opaque signed cursor for the next page. Null only at true exhaustion; a non-null value
-            on an abandoned walk means the read is incomplete, never complete.
+            Opaque signed cursor for the next page. Null only at true exhaustion; a non-null value on an abandoned walk
+            means the read is incomplete, never complete.
         authority:
           type: string
           description: >-
-            FGN.GG publishes the relationships it holds. FGN Academy remains authoritative for its
-            own work-order definitions and maturity.
+            FGN.GG publishes the relationships it holds. FGN Academy remains authoritative for its own work-order
+            definitions and maturity.
         items:
           type: array
           items:
@@ -996,8 +972,8 @@ paths:
         - discovery
       summary: This contract, machine readable.
       description: >-
-        Unauthenticated and exempt from the X-Studio-Contract header. OPTIONS preflight on every
-        route is likewise exempt from both. Every other route requires both.
+        Unauthenticated and exempt from the X-Studio-Contract header. OPTIONS preflight on every route is likewise
+        exempt from both. Every other route requires both.
       security: []
       parameters: []
       responses:
@@ -1011,25 +987,29 @@ paths:
         - auth
       summary: Exchange a durable partner key for a short-lived organization-scoped token.
       description: >-
-        Send the durable key in `Authorization: Bearer fgnk_…` — there is no key query parameter, no
-        `X-Api-Key` header and no credential field in the body.
+        Send the durable key in `Authorization: Bearer fgnk_…` — there is no key query parameter, no `X-Api-Key` header
+        and no credential field in the body.
 
 
-        The request body is not read: send none, or an empty JSON object. No body field can change
-        the organization, capabilities, lifetime or inactive visibility of the issued token; all
-        four are inherited from the key.
+        The request body is not read: send none, or an empty JSON object. No body field can change the organization,
+        capabilities, lifetime or inactive visibility of the issued token; all four are inherited from the key.
 
 
-        Browser rejection: the durable key must never reach a browser. CORS is an exact-match
-        approved-origin allowlist, so a call from any unlisted origin receives no
-        `Access-Control-Allow-Origin` header and the browser blocks the response; and a `fgnt_`
-        token presented here returns 401 `This route requires a durable partner key`, so a browser
-        cannot re-mint or extend its own token. Studio's browser calls only the operator proxy,
-        which holds the key and returns the token.
+        Server-only exchange (primary control): any request carrying an `Origin` header is rejected with 403 `Token
+        exchange is server-only; requests carrying an Origin header are rejected. Exchange durable keys from your server
+        or proxy.` The rejection happens before the credential is examined, so a browser-issued exchange fails even with
+        a valid durable key, and even if its origin is on the CORS allowlist. Server-to-server calls send no `Origin`
+        header and are unaffected.
 
 
-        Tokens live 15 minutes (900 seconds) and are stored hashed. Revoking the key invalidates
-        every token already minted from it immediately.
+        Two further, independent controls: CORS is an exact-match approved-origin allowlist, so an unlisted origin
+        receives no `Access-Control-Allow-Origin` header; and a `fgnt_` token presented here returns 401 `This route
+        requires a durable partner key`, so a browser cannot re-mint or extend its own token. Studio's browser calls
+        only the operator proxy, which holds the key and returns the token.
+
+
+        Tokens live 15 minutes (900 seconds) and are stored hashed. Revoking the key invalidates every token already
+        minted from it immediately.
       parameters:
         - $ref: '#/components/parameters/contract'
       requestBody:
@@ -1061,6 +1041,18 @@ paths:
                   - relationships:read
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: >-
+            Request carried an `Origin` header. Token exchange is server-only and is refused before the credential is
+            examined.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: >-
+                  Token exchange is server-only; requests carrying an Origin header are rejected. Exchange durable keys
+                  from your server or proxy.
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
         '409':
@@ -1073,8 +1065,8 @@ paths:
         - catalog
       summary: Organization scope, permissions, inactive-record policy and current revision.
       description: >-
-        Works with either credential type. Requires no capability, so it is the correct probe for a
-        newly issued credential.
+        Works with either credential type. Requires no capability, so it is the correct probe for a newly issued
+        credential.
       parameters:
         - $ref: '#/components/parameters/contract'
         - $ref: '#/components/parameters/organizationId'
@@ -1098,10 +1090,9 @@ paths:
                   - relationships:read
                 includesInactiveRecords: true
                 catalogScope: >-
-                  Games, challenges, tasks and canonical simulation activities are platform-global
-                  records, visible to every authorized organization and flagged scope=global.
-                  Organization-owned records are flagged scope=organization and only the
-                  credential's organization can see them.
+                  Games, challenges, tasks and canonical simulation activities are platform-global records, visible to
+                  every authorized organization and flagged scope=global. Organization-owned records are flagged
+                  scope=organization and only the credential's organization can see them.
                 revision: 128
                 pagination:
                   style: cursor
@@ -1166,9 +1157,8 @@ paths:
         - catalog
       summary: Challenges with descriptions and fully expanded ordered task objects.
       description: >-
-        Requires capability `catalog:read`. Inactive challenges appear flagged `isActive: false`
-        only when the credential carries inactive visibility; the page repeats that policy as
-        `includesInactiveRecords`.
+        Requires capability `catalog:read`. Inactive challenges appear flagged `isActive: false` only when the
+        credential carries inactive visibility; the page repeats that policy as `includesInactiveRecords`.
       parameters:
         - $ref: '#/components/parameters/contract'
         - $ref: '#/components/parameters/sourceId'
@@ -1270,8 +1260,8 @@ paths:
         - catalog
       summary: Canonical simulation activities.
       description: >-
-        Requires capability `activities:read`. Without inactive visibility, only activities with
-        status `active` are returned.
+        Requires capability `activities:read`. Without inactive visibility, only activities with status `active` are
+        returned.
       parameters:
         - $ref: '#/components/parameters/contract'
         - $ref: '#/components/parameters/cursor'
@@ -1361,9 +1351,8 @@ paths:
         - catalog
       summary: Relationships FGN.GG holds between canonical activities and downstream work.
       description: >-
-        Requires capability `relationships:read`. FGN Academy remains authoritative for its own
-        work-order definitions and maturity; this route reports only what FGN.GG holds and says so
-        in the payload's `authority` field.
+        Requires capability `relationships:read`. FGN Academy remains authoritative for its own work-order definitions
+        and maturity; this route reports only what FGN.GG holds and says so in the payload's `authority` field.
       parameters:
         - $ref: '#/components/parameters/contract'
         - name: activityIds
@@ -1387,8 +1376,8 @@ paths:
                 revision: 128
                 revisionChanged: false
                 authority: >-
-                  FGN.GG publishes the relationships it holds. FGN Academy remains authoritative for
-                  its own work-order definitions and maturity.
+                  FGN.GG publishes the relationships it holds. FGN Academy remains authoritative for its own work-order
+                  definitions and maturity.
                 items:
                   - activityId: 33333333-3333-3333-3333-333333333333
                     challengeId: 22222222-2222-2222-2222-222222222222

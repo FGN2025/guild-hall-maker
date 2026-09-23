@@ -30,6 +30,8 @@ X-Studio-Contract: 2026-09-23.1
 
 Revoking the durable key immediately invalidates it and every token minted from it.
 
+**Token exchange is server-only, enforced directly.** `POST /token` rejects any request carrying an `Origin` header with 403, before the credential is examined — so a browser-issued exchange fails even with a valid durable key and even from an allowlisted origin. Server-to-server calls send no `Origin` header and are unaffected. The CORS allowlist and the 401 on token-for-token exchange are separate, additional protections, not the proof of this boundary.
+
 Keys are stored hashed (SHA-256). The raw value is displayed once at creation and never appears in logs, sync records or any API response. Issue and revoke keys in the platform admin area (Admin → Ecosystem → Partner Access); that path is admin-authenticated and entirely separate from this partner surface.
 
 Every credential is scoped to exactly one organization. There is no platform-wide Studio credential.
