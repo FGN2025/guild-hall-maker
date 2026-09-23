@@ -40,7 +40,7 @@ interface LocalTask {
 
 const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey }: EditChallengeDialogProps) => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { getPreset } = useImageLimits();
 
   const [name, setName] = useState("");
@@ -254,13 +254,13 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         points_override_reason: pointsOverrideReason.trim() || null,
         points_overridden_by: pointsOverrideReason.trim() ? user?.id ?? null : null,
         skill_tags: skillTags,
-        content_classification: contentClassification || null,
+        ...(isAdmin ? { content_classification: contentClassification || null } : {}),
       } as any).eq("id", challenge.id);
       if (error) throw error;
 
-      // Canonical mapping is written through the link table only.
+      // Canonical mapping is written through the link table only (admins only).
       const currentActivity = (challenge as any).simulation_activity_id || "";
-      if (simulationActivityId !== currentActivity) {
+      if (isAdmin && simulationActivityId !== currentActivity) {
         if (!simulationActivityId) {
           const { error: delErr } = await supabase
             .from("simulation_activity_challenges")
