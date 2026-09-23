@@ -40,7 +40,7 @@ interface LocalTask {
 
 const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey }: EditChallengeDialogProps) => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { getPreset } = useImageLimits();
 
   const [name, setName] = useState("");
@@ -254,13 +254,13 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         points_override_reason: pointsOverrideReason.trim() || null,
         points_overridden_by: pointsOverrideReason.trim() ? user?.id ?? null : null,
         skill_tags: skillTags,
-        content_classification: contentClassification || null,
+        ...(isAdmin ? { content_classification: contentClassification || null } : {}),
       } as any).eq("id", challenge.id);
       if (error) throw error;
 
-      // Canonical mapping is written through the link table only.
+      // Canonical mapping is written through the link table only (admins only).
       const currentActivity = (challenge as any).simulation_activity_id || "";
-      if (simulationActivityId !== currentActivity) {
+      if (isAdmin && simulationActivityId !== currentActivity) {
         if (!simulationActivityId) {
           const { error: delErr } = await supabase
             .from("simulation_activity_challenges")
@@ -396,7 +396,16 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Game</Label>
-              <Select value={gameId || "none"} onValueChange={(v) => setGameId(v === "none" ? null : v)}>
+              <Select
+                value={gameId || "none"}
+                onValueChange={(v) => {
+                  const next = v === "none" ? null : v;
+                  setGameId(next);
+                  const linked = (simActivities as any[]).find((a) => a.id === simulationActivityId);
+                  if (linked && linked.game_id !== next) setSimulationActivityId("");
+                }}
+              >
+
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No game</SelectItem>
@@ -431,24 +440,26 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
             </Select>
           </div>
 
-          <div>
-            <Label>Content classification</Label>
-            <Select
-              value={contentClassification || undefined}
-              onValueChange={(v) => {
-                setContentClassification(v as any);
-                if (v === "entertainment_only") setSimulationActivityId("");
-              }}
-            >
-              <SelectTrigger><SelectValue placeholder="Choose classification" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="simulation">Simulation</SelectItem>
-                <SelectItem value="entertainment_only">Entertainment only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {isAdmin && (
+            <div>
+              <Label>Content classification</Label>
+              <Select
+                value={contentClassification || undefined}
+                onValueChange={(v) => {
+                  setContentClassification(v as any);
+                  if (v === "entertainment_only") setSimulationActivityId("");
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Choose classification" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="simulation">Simulation</SelectItem>
+                  <SelectItem value="entertainment_only">Entertainment only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {contentClassification === "simulation" && (
+          {isAdmin && contentClassification === "simulation" && (
             <div>
               <Label>Simulation activity</Label>
               <Select value={simulationActivityId || undefined} onValueChange={setSimulationActivityId}>
@@ -466,6 +477,7 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
               </p>
             </div>
           )}
+
 
           <div className="grid grid-cols-2 gap-3">
             <div>

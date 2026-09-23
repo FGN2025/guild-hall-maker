@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,13 +66,27 @@ const AdminActivityMapping = () => {
     return m;
   }, [mappings]);
 
+  const { data: allGames = [] } = useQuery({
+    queryKey: ["activity-mapping-games"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("games")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const games = useMemo(() => {
     const seen = new Map<string, string>();
+    (allGames as any[]).forEach((g) => seen.set(g.id, g.name));
     challenges.forEach((c: any) => {
       if (c.game_id && c.games?.name) seen.set(c.game_id, c.games.name);
     });
     return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [challenges]);
+  }, [challenges, allGames]);
 
   const rows = useMemo(() => {
     return challenges.filter((c: any) => {
@@ -205,6 +221,11 @@ const AdminActivityMapping = () => {
                         <Badge variant="outline" className="text-xs">
                           {activity ? activity.canonical_name : "No activity"}
                         </Badge>
+                        {activity && c.game_id && activity.game_id && activity.game_id !== c.game_id && (
+                          <Badge variant="outline" className="text-xs bg-destructive/15 text-destructive border-destructive/30">
+                            Game mismatch
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
