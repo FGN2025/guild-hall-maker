@@ -228,6 +228,9 @@ const AdminEcosystem = () => {
         <h1 className="text-2xl font-display font-bold text-foreground">Ecosystem</h1>
       </div>
 
+      {/* Partner Access (Studio read API) */}
+      <PartnerAccessManager />
+
       {/* Ecosystem Apps */}
       <div className="rounded-lg border border-border bg-card p-6 space-y-4">
         <div className="flex items-center gap-2">
@@ -424,8 +427,6 @@ const AdminEcosystem = () => {
         )}
       </div>
 
-      {/* Partner Access (Studio read API) */}
-      <PartnerAccessManager />
 
       {/* Connection Test */}
       <EcosystemConnectionTest />
