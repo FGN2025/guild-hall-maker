@@ -262,6 +262,24 @@ const TournamentDetail = () => {
               {user ? (
                 t.is_registered ? (
                   <>
+                    {t.discord_role_id && (t.status === "open" || t.status === "upcoming") && (
+                      <Button
+                        variant="outline"
+                        className="w-full font-heading tracking-wide"
+                        onClick={async () => {
+                          const { data, error } = await supabase.functions.invoke("assign-tournament-role", {
+                            body: { tournament_id: t.id, user_id: user.id },
+                          });
+                          if (error) return toast.error("Couldn't reach Discord. Try again later.");
+                          if (data?.status === "success") toast.success("Discord role assigned!");
+                          else if (data?.reason === "not_in_guild") toast.error("Not in server, please register — join the FGN Discord server, then retry.");
+                          else if (data?.reason === "no_discord_link") toast.error("Link your Discord account in Profile Settings first.");
+                          else toast.error("Discord role couldn't be assigned. Staff have been notified in the log.");
+                        }}
+                      >
+                        Retry Discord role
+                      </Button>
+                    )}
                     <Button
                       variant="secondary"
                       className="w-full font-heading tracking-wide py-5"

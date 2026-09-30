@@ -245,6 +245,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Catch up tournament roles for open/upcoming tournaments already joined.
+    try {
+      const { data: regs } = await serviceClient
+        .from("tournament_registrations")
+        .select("tournament_id, tournaments!inner(status, discord_role_id)")
+        .eq("user_id", userId)
+        .in("tournaments.status", ["upcoming", "open"])
+        .not("tournaments.discord_role_id", "is", null);
+      for (const r of regs ?? []) {
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/assign-tournament-role`, {
+          method: "POST",
+          headers: { Authorization: authHeader, "Content-Type": "application/json" },
+          body: JSON.stringify({ tournament_id: (r as any).tournament_id, user_id: userId }),
+        }).catch((e) => console.error("tournament role catch-up failed:", e));
+      }
+    } catch (e) {
+      console.error("tournament role catch-up error:", e);
+    }
+
     return new Response(
       JSON.stringify({ success: true, discord_username: discordUsername }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
