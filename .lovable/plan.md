@@ -1,14 +1,29 @@
-# Make the Partner Access card visible on play.fgn.gg
+# Automatic Discord role on tournament registration
 
-## Why you don't see it
-1. The card sits **above** the Connection Test section, not below it as I told you. Your screenshot shows the area below it.
-2. You're on the live site (play.fgn.gg). The card was added after the last publish, so the live site may not have it yet. It is in the preview.
+## What we found
+- 132 tournaments have a Discord role set, including all 30 open or upcoming ones. 81 recent sign-ups came from players with a linked Discord account. So the settings and the players are both in place.
+- The role is added only by the player's browser, right after they sign up. It runs in the background and hides any error from the player.
+- There are no records of the role step running recently, and the role activity log has 0 entries. Either the step isn't running, or it fails without leaving a record.
+- Only the sign-up button on the tournament list triggers it. Players added by staff, sign-ups made another way, and players who link Discord after signing up never get the role.
+- If Discord rejects the request (player not in the FGN server, bot's role ranked too low, or the role was deleted), the reason is dropped.
 
-## Steps
-1. **Publish** so the live site gets the card. This changes no player-facing pages.
-2. Move the card to the top of the Ecosystem page, with a clear "Partner Access (Studio read API)" heading, so you can find it right away.
-3. Check it in the preview: the card shows up for platform admins and has the Issue button.
+The exact Discord error has not been confirmed yet, so the first step is to check it.
+
+## Plan
+1. **Diagnose (no changes).** Run the role step once for one real open tournament and a linked player. Record Discord's response: whether the player is missing from the server, the bot lacks permission, or the role is missing.
+2. **Run it from the server on every sign-up.** When a new sign-up is saved, the system adds the role automatically, whichever way the player signed up. Remove the browser-only call.
+3. **Catch up when Discord is linked later.** When a player links Discord, give them the roles for the open or upcoming tournaments they already signed up for.
+4. **Log every attempt** in the existing Discord role log: success, skipped (with the reason) or failed (with Discord's message). Admins can then see and retry failures in the existing admin screen.
+5. **One-time backfill** for linked players already signed up for the 30 open or upcoming tournaments.
+6. **Optional:** remove the role when a player cancels their sign-up.
+
+## Limits
+- Discord can only give a role to someone who is already in the FGN Discord server. Players who aren't members will be logged as "not in server". Adding them automatically would need an extra Discord permission; this is out of scope unless you ask for it.
+- The bot's own role must rank above the tournament roles in Discord's server settings.
 
 ## Technical details
-- In `src/pages/admin/AdminEcosystem.tsx`, move `<PartnerAccessManager />` (now on line 428, above `EcosystemConnectionTest`) to be the first section.
-- No backend, access-rule or key-handling changes.
+- Add an AFTER INSERT trigger on `tournament_registrations` that uses pg_net to call `assign-tournament-role` with an internal shared secret, following the pattern of `dispatch_discord_message`. Keep user-JWT auth for manual or admin calls.
+- The function writes to `discord_role_action_log` and returns Discord's status and body. Treat 404 Unknown Member as `skipped: not_in_guild`, and 403 or 50013 as `failed: permissions`.
+- In `discord-oauth-callback`, after a successful link, loop over the user's registrations for upcoming or open tournaments that have a `discord_role_id`.
+- Remove the `supabase.functions.invoke` call from `useTournaments.ts` registerMutation.
+- The backfill is an admin-triggered run over the eligible rows, logged to the same table and rate-limited to respect Discord's 429 responses.
