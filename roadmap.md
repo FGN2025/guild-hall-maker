@@ -35,7 +35,8 @@
 - [x] Seed approved task-to-requirement mappings (30 MSFS, 11 ATS Skills/CDL, 13 House Flipper/House Flipper 2)
 - [x] Universal player pathway hub and redesigned challenge detail
 - [ ] Activate Electricity / Automotive Maintenance / Safety challenge mappings — blocked on approved activation or new challenge authoring
-- [ ] Scouts tenant layer: branding, counselor review queues, partials, blue-card-equivalent export, award status
+- [x] Scouts tenant layer brief for the Merits app delivered (built in merits.fgn.academy, not fgn.gg)
+- [ ] Evidence events (evidence.submitted/approved) to Merits — blocked: needs owner to apply the dispatch migration (reads the stored dispatch secret, which the agent can't touch)
 
 # Merit connector (Scout Merit Builder Stop 7)
 
