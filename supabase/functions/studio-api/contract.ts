@@ -93,7 +93,7 @@ export const OPENAPI_DOC = {
       "POST on a catalog route returns 405 (read-only boundary)",
       "Request naming another organization returns 403 'Credential is not scoped to the requested organization'",
       "Credential lacking activities:read receives 403 on /activities",
-      "POST /token with a durable key returns a 15-minute fgnt_ token carrying the key's organization and capabilities",
+      "POST /token with a durable key returns a 2-hour fgnt_ token carrying the key's organization and capabilities",
       "POST /token carrying any Origin header returns 403 before the credential is examined, including a valid durable key sent from an allowlisted origin; a request with no Origin header succeeds (server-only exchange verified directly, not inferred from CORS)",
       "A fgnt_ token presented to /token returns 401 (only durable keys may exchange)",
       "Token used on a catalog route returns 200",

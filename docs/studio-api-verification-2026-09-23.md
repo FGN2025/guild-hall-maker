@@ -18,7 +18,7 @@ Run against the live endpoint with two throwaway credentials, both deleted after
 | 6 | POST on a catalog route | 405 (read-only boundary holds) |
 | 7 | Key A asking for Adams Fiber's organization id | 403, "Credential is not scoped to the requested organization" |
 | 8 | Key B calling `/activities` | 403, "Credential lacks capability activities:read" |
-| 9 | Token exchange | 200, `fgnt_` token, 15-minute expiry, organization and capabilities carried over |
+| 9 | Token exchange | 200, `fgnt_` token, 2-hour expiry (7200 s, raised from 900 s on 2026-10-04, owner-approved), organization and capabilities carried over |
 | 10 | Token used on a catalog route | 200 |
 | 11 | Token used to mint another token | 401 (only durable keys may exchange) |
 | 11a | `POST /token` with an `Origin` header, no credential | 403, "Token exchange is server-only…" (refused before the credential is examined) |
