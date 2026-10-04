@@ -7,7 +7,7 @@ info:
 
 
     Authentication: two layers. A durable partner key (prefix `fgnk_`) lives only on an operator-owned server and is
-    exchanged at POST /token for a short-lived organization-scoped token (prefix `fgnt_`, 15 minutes) which is the only
+    exchanged at POST /token for a short-lived organization-scoped token (prefix `fgnt_`, 2 hours) which is the only
     credential a browser may hold. Both are sent as `Authorization: Bearer <value>`.
 
 
@@ -45,7 +45,7 @@ x-verifiedAgainstDeployedService:
     - POST on a catalog route returns 405 (read-only boundary)
     - Request naming another organization returns 403 'Credential is not scoped to the requested organization'
     - Credential lacking activities:read receives 403 on /activities
-    - POST /token with a durable key returns a 15-minute fgnt_ token carrying the key's organization and capabilities
+    - POST /token with a durable key returns a 2-hour fgnt_ token carrying the key's organization and capabilities
     - >-
       POST /token carrying any Origin header returns 403 before the credential is examined, including a valid durable
       key sent from an allowlisted origin; a request with no Origin header succeeds (server-only exchange verified
@@ -410,7 +410,7 @@ components:
           format: date-time
         expiresInSeconds:
           type: integer
-          const: 900
+          const: 7200
         organizationId:
           type: string
           format: uuid
@@ -1008,7 +1008,7 @@ paths:
         only the operator proxy, which holds the key and returns the token.
 
 
-        Tokens live 15 minutes (900 seconds) and are stored hashed. Revoking the key invalidates every token already
+        Tokens live 2 hours (7200 seconds) and are stored hashed. Revoking the key invalidates every token already
         minted from it immediately.
       parameters:
         - $ref: '#/components/parameters/contract'
@@ -1033,7 +1033,7 @@ paths:
                 token: fgnt_0000000000000000000000000000000000000000000000000000000000000000
                 tokenType: Bearer
                 expiresAt: '2026-09-23T15:45:00.000Z'
-                expiresInSeconds: 900
+                expiresInSeconds: 7200
                 organizationId: 00000000-0000-0000-0000-000000000000
                 capabilities:
                   - catalog:read
