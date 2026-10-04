@@ -17,7 +17,7 @@ Two layers, by design:
 | Layer | Prefix | Where it lives | Lifetime |
 | --- | --- | --- | --- |
 | Durable partner key | `fgnk_` | Operator-owned server or proxy. Never a browser. | Until its expiry or revocation |
-| Short-lived token | `fgnt_` | Studio browser session, memory only | 15 minutes |
+| Short-lived token | `fgnt_` | Studio browser session, memory only | 2 hours |
 
 Both are sent as `Authorization: Bearer <value>`. Exchange:
 
