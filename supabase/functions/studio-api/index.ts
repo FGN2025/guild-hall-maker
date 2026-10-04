@@ -7,7 +7,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const CURSOR_SECRET = Deno.env.get("STUDIO_CURSOR_SECRET") ?? "";
 
-const TOKEN_TTL_SECONDS = 15 * 60;
+const TOKEN_TTL_SECONDS = 7200;
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 
