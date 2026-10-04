@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS challenge_tasks_challenge_order_unique ON public.challenge_tasks (challenge_id, display_order);

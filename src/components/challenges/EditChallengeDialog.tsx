@@ -300,8 +300,19 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
         if (delErr) throw delErr;
       }
 
-      // Re-index display_order based on visible order
+      // Re-index display_order based on visible order. Task order is unique per
+      // challenge, so park existing rows on negative slots first to avoid collisions.
       const visible = localTasks.filter((t) => !t._deleted);
+      for (let i = 0; i < visible.length; i++) {
+        const t = visible[i];
+        if (t.id && !t._isNew) {
+          const { error: parkErr } = await supabase
+            .from("challenge_tasks")
+            .update({ display_order: -(i + 1) } as any)
+            .eq("id", t.id);
+          if (parkErr) throw parkErr;
+        }
+      }
       for (let i = 0; i < visible.length; i++) {
         const t = visible[i];
         if (t.id && !t._isNew) {
@@ -321,13 +332,12 @@ const EditChallengeDialog = ({ challenge, open, onOpenChange, invalidateQueryKey
       }
 
       if (toInsert.length > 0) {
-        const visibleBeforeInsert = localTasks.filter((t) => !t._deleted && !t._isNew);
         const { error: insErr } = await supabase.from("challenge_tasks").insert(
-          toInsert.map((t, idx) => ({
+          toInsert.map((t) => ({
             challenge_id: challenge.id,
             title: t.title.trim(),
             description: t.description || null,
-            display_order: visibleBeforeInsert.length + idx,
+            display_order: visible.indexOf(t),
             verification_type: t.verification_type,
             steam_achievement_api_name: t.steam_achievement_api_name,
             steam_playtime_minutes: t.steam_playtime_minutes,

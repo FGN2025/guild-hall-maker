@@ -50,6 +50,13 @@
       "when": 1790789778343,
       "tag": "0006_discord_role_on_registration_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791090683261,
+      "tag": "0007_unique_challenge_task_order",
+      "breakpoints": true
     }
   ]
 }
