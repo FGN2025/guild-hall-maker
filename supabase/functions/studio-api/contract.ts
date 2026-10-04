@@ -59,7 +59,7 @@ export const OPENAPI_DOC = {
     description: [
       "Read-only catalog access for authorized partner tooling (FGN Studio).",
       "",
-      "Authentication: two layers. A durable partner key (prefix `fgnk_`) lives only on an operator-owned server and is exchanged at POST /token for a short-lived organization-scoped token (prefix `fgnt_`, 15 minutes) which is the only credential a browser may hold. Both are sent as `Authorization: Bearer <value>`.",
+      "Authentication: two layers. A durable partner key (prefix `fgnk_`) lives only on an operator-owned server and is exchanged at POST /token for a short-lived organization-scoped token (prefix `fgnt_`, 2 hours) which is the only credential a browser may hold. Both are sent as `Authorization: Bearer <value>`.",
       "",
       "Every request except `GET /openapi.json` and `OPTIONS` preflight must carry `X-Studio-Contract: " +
         CONTRACT_VERSION +
@@ -295,7 +295,7 @@ export const OPENAPI_DOC = {
           },
           tokenType: { type: "string", const: "Bearer" },
           expiresAt: { type: "string", format: "date-time" },
-          expiresInSeconds: { type: "integer", const: 900 },
+          expiresInSeconds: { type: "integer", const: 7200 },
           organizationId: {
             type: "string",
             format: "uuid",
@@ -574,7 +574,7 @@ export const OPENAPI_DOC = {
           "The request body is not read: send none, or an empty JSON object. No body field can change the organization, capabilities, lifetime or inactive visibility of the issued token; all four are inherited from the key.",
           "Server-only exchange (primary control): any request carrying an `Origin` header is rejected with 403 `Token exchange is server-only; requests carrying an Origin header are rejected. Exchange durable keys from your server or proxy.` The rejection happens before the credential is examined, so a browser-issued exchange fails even with a valid durable key, and even if its origin is on the CORS allowlist. Server-to-server calls send no `Origin` header and are unaffected.",
           "Two further, independent controls: CORS is an exact-match approved-origin allowlist, so an unlisted origin receives no `Access-Control-Allow-Origin` header; and a `fgnt_` token presented here returns 401 `This route requires a durable partner key`, so a browser cannot re-mint or extend its own token. Studio's browser calls only the operator proxy, which holds the key and returns the token.",
-          "Tokens live 15 minutes (900 seconds) and are stored hashed. Revoking the key invalidates every token already minted from it immediately.",
+          "Tokens live 2 hours (7200 seconds) and are stored hashed. Revoking the key invalidates every token already minted from it immediately.",
         ].join("\n\n"),
         parameters: [{ $ref: "#/components/parameters/contract" }],
         requestBody: {
@@ -601,7 +601,7 @@ export const OPENAPI_DOC = {
                   token: "fgnt_0000000000000000000000000000000000000000000000000000000000000000",
                   tokenType: "Bearer",
                   expiresAt: "2026-09-23T15:45:00.000Z",
-                  expiresInSeconds: 900,
+                  expiresInSeconds: 7200,
                   organizationId: "00000000-0000-0000-0000-000000000000",
                   capabilities: ["catalog:read", "activities:read", "relationships:read"],
                 },
