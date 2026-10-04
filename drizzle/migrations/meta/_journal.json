@@ -57,6 +57,13 @@
       "when": 1791090683261,
       "tag": "0007_unique_challenge_task_order",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791152847708,
+      "tag": "0008_challenges_game_id_idx",
+      "breakpoints": true
     }
   ]
 }

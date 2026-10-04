@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS challenges_game_id_idx ON public.challenges(game_id);

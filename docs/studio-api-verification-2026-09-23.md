@@ -45,3 +45,7 @@ Run against the live endpoint with two throwaway credentials, both deleted after
 | 29 | CORS from an unapproved origin | Preflight answered without `Access-Control-Allow-Origin`, so the browser blocks the call |
 
 Harness rows (one temporary inactive challenge, used for the revision checks) were deleted, and both verification keys were deleted at the end of the run. No player-facing record was modified, and no existing ecosystem consumer was touched.
+
+## Performance re-check 2026-10-04
+
+`GET /sources?limit=200`: 0.82–0.91 s across 3 calls (was ~24.6 s). Cause: per-source sequential count and revision lookups, replaced by two batched reads. 59 sources, 128 challenges counted; contract unchanged.
