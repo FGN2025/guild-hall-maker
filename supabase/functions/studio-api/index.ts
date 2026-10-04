@@ -402,24 +402,30 @@ Deno.serve(async (req) => {
       if (error) return json(ctx, 500, { error: error.message });
 
       const page = (data ?? []).slice(0, limit);
-      const items = [];
-      for (const g of page) {
-        let countQ = db
-          .from("challenges")
-          .select("id", { count: "exact", head: true })
-          .eq("game_id", g.id);
-        if (!cred.includeInactive) countQ = countQ.eq("is_active", true);
-        const { count } = await countQ;
-        items.push({
-          sourceId: g.id,
-          label: g.name,
-          slug: g.slug,
-          isActive: g.is_active,
-          scope: "global",
-          sourceVersion: await revisionFor(`game:${g.id}`),
-          challengeCount: count ?? 0,
-        });
+      const ids = page.map((g: any) => g.id);
+      const counts = new Map<string, number>();
+      const revs = new Map<string, number>();
+      if (ids.length > 0) {
+        let chQ = db.from("challenges").select("game_id").in("game_id", ids).limit(10000);
+        if (!cred.includeInactive) chQ = chQ.eq("is_active", true);
+        const [chRes, revRes] = await Promise.all([
+          chQ,
+          db.from("catalog_revisions").select("scope_key, revision")
+            .in("scope_key", ids.map((id: string) => `game:${id}`)),
+        ]);
+        if (chRes.error) return json(ctx, 500, { error: chRes.error.message });
+        for (const c of chRes.data ?? []) counts.set(c.game_id, (counts.get(c.game_id) ?? 0) + 1);
+        for (const r of revRes.data ?? []) revs.set(r.scope_key, Number(r.revision ?? 0));
       }
+      const items = page.map((g: any) => ({
+        sourceId: g.id,
+        label: g.name,
+        slug: g.slug,
+        isActive: g.is_active,
+        scope: "global",
+        sourceVersion: revs.get(`game:${g.id}`) ?? 0,
+        challengeCount: counts.get(g.id) ?? 0,
+      }));
 
       const last = page[page.length - 1];
       const nextCursor =
